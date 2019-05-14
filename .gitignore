@@ -1,0 +1,24 @@
+# Compilation artifacts
+*.pyc
+*.so
+*.o
+build/
+dist/
+
+# Eclipse artifacts
+.project
+.pydevproject
+.settings/
+
+# PLY artifacts
+*_parsetab.py
+parser.out
+
+#Runtime logs
+genshader*
+
+#Screenshots
+screenshot-*
+
+#OS Specific
+.DS_Store

@@ -1,0 +1,78 @@
+heightmap:
+    aliases:
+      perlin: gpunoise:perlin
+    noise:
+        add:
+            - fbm:
+                noise:
+                  ridged: perlin
+                octaves: 8
+                frequency: 4.0
+                scale: 0.1
+            - fbm:
+                noise:
+                  turbulence: perlin
+                octaves: 1
+                frequency: 0.5
+                scale: 2
+                offset: -0.15
+biome:
+    aliases:
+      perlin: gpunoise:perlin
+    noise:
+        fbm:
+            noise: perlin
+            octaves: 4
+water:
+    level: 0
+
+fog:
+    falloff: 0.035
+    density: 40
+    ground: -400
+
+appearance:
+    textures:
+      entries:
+        grass: ralph-data/textures/grass/GrassGreenTexture0003.jpg
+        snow: ralph-data/textures/snow/SnowIceTexture0007.jpg
+        rock: ralph-data/textures/rock/SeamlessMixedStone0009.jpg
+        gravel: ralph-data/textures/gravel/gravel_01.png
+        soil: ralph-data/textures/soil/dirt_02.png
+      scale: [0.5, 0.5]
+
+control:
+    biome:
+        - entry:
+            slope:
+              - entry: gravel
+              - entry:
+                  height:
+                  - entry: soil
+                    height: 200
+                    height-units: km
+                  - entry: snow
+                    height: 500
+                    height-units: km
+                    blend: 10
+                angle: 5
+                blend: 5
+        - entry:
+            slope:
+                - entry: soil
+                - entry:
+                    height:
+                        - entry: grass
+                          height: 200
+                          height-units: km
+                        - entry: snow
+                          height: 500
+                          height-units: km
+                          blend: 10
+                  angle: 5
+                  blend: 5
+                - entry: rock
+                  angle: 35
+                  blend: 10
+          value: 0
+          blend: 0.1

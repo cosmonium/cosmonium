@@ -1,0 +1,4 @@
+[submodule "data"]
+	path = data
+	url = https://github.com/cosmonium/cosmonium-data.git
+	branch = master
