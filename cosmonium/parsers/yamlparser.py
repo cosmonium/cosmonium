@@ -12,13 +12,16 @@ import pickle
 
 if sys.version_info[0] < 3:
     from ..support import yaml2 as yaml
+    try:
+        from ..support.yaml2 import CLoader as Loader
+    except ImportError:
+        from ..support.yaml2 import Loader
 else:
     from ..support import yaml
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
+    try:
+        from ..support.yaml import CLoader as Loader
+    except ImportError:
+        from ..support.yaml import Loader
 
 def yaml_include(loader, node):
     print("Loading", node.value)
