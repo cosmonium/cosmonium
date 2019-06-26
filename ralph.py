@@ -33,7 +33,7 @@ from cosmonium.procedural.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowCaster
-from cosmonium.parsers.yamlparser import YamlParser
+from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.textureparser import TextureControlYamlParser, TextureDictionaryYamlParser
 from cosmonium import settings
@@ -139,7 +139,7 @@ class WaterConfig():
         self.visible = visible
         self.scale = scale
 
-class RalphConfigParser(YamlParser):
+class RalphConfigParser(YamlModuleParser):
     def decode(self, data):
         noise_parser = NoiseYamlParser()
         heightmap = data.get('heightmap', None)
@@ -180,6 +180,10 @@ class RalphCamera(CameraBase):
 
     def get_camera_pos(self):
         return LPoint3d(*base.camera.get_pos())
+
+class RalphSplash():
+    def set_text(self, text):
+        pass
 
 class RoamingRalphDemo(CosmoniumBase):
 
@@ -357,8 +361,11 @@ class RoamingRalphDemo(CosmoniumBase):
     def __init__(self):
         CosmoniumBase.__init__(self)
 
+        self.config_file = 'ralph-data/ralph.yaml'
+        self.splash = RalphSplash()
+
         config = RalphConfigParser()
-        (self.noise, self.biome_noise, self.terrain_control, self.terrain_appearance, self.water, self.fog) = config.load_and_parse('ralph-data/ralph.yaml')
+        (self.noise, self.biome_noise, self.terrain_control, self.terrain_appearance, self.water, self.fog) = config.load_and_parse(self.config_file)
 
         self.tile_density = 64
         self.default_size = 128

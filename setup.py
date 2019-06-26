@@ -37,7 +37,9 @@ setup(
             'exclude_modules': {'*': excludes},
             'gui_apps': {
                 'cosmonium': 'main.py',
+                'ralph': 'ralph.py',
             },
+            'macos_main_app': 'cosmonium',
             'log_filename': '$USER_APPDATA/cosmonium/output.log',
             'log_append': False,
             'plugins': [
