@@ -502,6 +502,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.accept("shift-f3", self.toggle_wireframe)
         self.accept("f5", self.bufferViewer.toggleEnable)
         self.accept("f8", self.terrain_shape.dump_tree)
+        self.accept("f10", self.save_screenshot)
         self.accept('alt-enter', self.toggle_fullscreen)
 
         taskMgr.add(self.move, "moveTask")

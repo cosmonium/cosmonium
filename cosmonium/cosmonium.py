@@ -86,6 +86,8 @@ class CosmoniumBase(ShowBase):
         data = []
         request_opengl_config(data)
         self.app_panda_config(data)
+        data.append("screenshot-extension png")
+        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
         data.append("fullscreen %d" % settings.win_fullscreen)
         if settings.win_fullscreen:
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
@@ -222,6 +224,13 @@ class CosmoniumBase(ShowBase):
         if self.wireframe_filled:
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
+    def save_screenshot(self):
+        filename = self.screenshot()
+        if filename is not None:
+            print("Saving screenshot into", filename)
+        else:
+            print("Could not save filename")
+
 class Cosmonium(CosmoniumBase):
     def __init__(self):
         CosmoniumBase.__init__(self)
@@ -325,8 +334,6 @@ class Cosmonium(CosmoniumBase):
         icon = defaultDirContext.find_texture('cosmonium.ico')
         data.append("icon-filename %s" % icon)
         data.append("window-title Cosmonium")
-        data.append("screenshot-extension png")
-        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
 
     def set_nav(self, nav):
         if self.nav is not None:
@@ -361,13 +368,6 @@ class Cosmonium(CosmoniumBase):
             self.world.setAttrib(LightRampAttrib.makeHdr1())
         elif self.hdr == 3:
             self.world.setAttrib(LightRampAttrib.makeHdr2())
-
-    def save_screenshot(self):
-        filename = self.screenshot()
-        if filename is not None:
-            print("Saving screenshot into", filename)
-        else:
-            print("Could not save filename")
 
     def save_screenshot_no_annotation(self):
         self.gui.hide()
