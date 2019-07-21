@@ -276,7 +276,7 @@ class Cosmonium(CosmoniumBase):
 
         self.splash.set_text("Building octree...")
         self.universe.create_octree()
-        #self.universe.octree.print()
+        #self.universe.octree.print_summary()
         self.universe.octree.print_stats()
 
         self.sun = self.universe.find_by_path('Sol')
@@ -592,7 +592,6 @@ class Cosmonium(CosmoniumBase):
             print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
         self.last_visibles = self.visibles
 
-    @pstat
     def update_octree(self):
         self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
         self.universe.add_extra_to_list(self.selected, self.track)

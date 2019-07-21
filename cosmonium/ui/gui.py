@@ -70,6 +70,7 @@ class Gui(object):
         event_ctrl.accept('f4', self.cosmonium.toggle_hdr)
         event_ctrl.accept("f5", base.bufferViewer.toggleEnable)
         event_ctrl.accept('f7', self.cosmonium.universe.dumpOctreeStats)
+        event_ctrl.accept('shift-f7', self.cosmonium.universe.dumpOctree)
         event_ctrl.accept('f8', self.toggle_lod_freeze)
         event_ctrl.accept('shift-f8', self.dump_object_info)
         event_ctrl.accept('shift-control-f8', self.dump_object_info_2)
