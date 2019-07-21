@@ -9,6 +9,7 @@ from math import sqrt, pi, cos, sin, acos, asin, atan2
 from .zeros import newton
 
 class Orbit(object):
+    dynamic = False
     def __init__(self, frame=None):
         if frame is None:
             frame = J2000EclipticReferenceFrame()
@@ -141,6 +142,7 @@ class FixedOrbit(Orbit):
         return self.rotation
 
 class CircularOrbit(Orbit):
+    dynamic = True
     def __init__(self,
                  radius,
                  radius_units=units.AU,

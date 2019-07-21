@@ -716,6 +716,7 @@ class Cosmonium(CosmoniumBase):
             print("\tVector to obs", self.selected.vector_to_obs)
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
+            print("\tUpdate frozen:", self.selected.update_frozen)
             if isinstance(self.selected, ReflectiveBody):
                 print("\tCast shadow:", self.selected.cast_shadows, "Has shadows:", self.selected.has_shadows_persistent)
             if isinstance(self.selected, StellarBody):

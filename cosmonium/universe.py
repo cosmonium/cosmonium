@@ -231,8 +231,11 @@ class Universe(StellarSystem):
     def update(self, time):
         CompositeObject.update(self, time)
         for leaf in self.to_update:
-            leaf.update(time)
+            if not leaf.update_frozen:
+                #print("Update", leaf.get_name())
+                leaf.update(time)
         for extra in self.to_update_extra:
+            #print("Update", extra.get_name())
             extra.update(time)
 
     def update_obs(self, camera_pos):

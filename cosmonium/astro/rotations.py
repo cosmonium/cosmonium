@@ -9,6 +9,7 @@ from . import units
 import math
 
 class Rotation(object):
+    dynamic = False
     def __init__(self, frame=None):
         if frame is None:
             frame = J2000EquatorialReferenceFrame()
@@ -61,6 +62,7 @@ class FixedRotation(Rotation):
         return self.axis_rotation
     
 class UniformRotation(FixedRotation):
+    dynamic = True
     def __init__(self,
                  radial_speed=None,
                  period=None,

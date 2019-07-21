@@ -154,6 +154,8 @@ class StellarSystem(StellarObject):
 
     def update(self, time):
         StellarObject.update(self, time)
+        #No need to update the children if not visible
+        if not self.visible or not self.resolved: return
         for child in self.children:
             child.update(time)
 

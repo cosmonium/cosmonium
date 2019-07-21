@@ -124,6 +124,7 @@ class StellarObject(LabelledObject):
         self.star = None
         self.init_annotations = False
         self.init_components = False
+        self.update_frozen = False
         #TODO: Should be done properly
         self.orbit.body = self
         self.rotation.body = self
@@ -355,6 +356,7 @@ class StellarObject(LabelledObject):
         if self.star:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
         CompositeObject.update(self, time)
+        self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
 
     def update_obs(self, camera_pos):
         global_delta = self.get_global_position() - self.context.observer.camera_global_pos
