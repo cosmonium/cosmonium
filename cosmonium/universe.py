@@ -99,7 +99,7 @@ class Universe(StellarSystem):
             if abs_mag > dimmest:
                 skip = True
             else:
-                vector = leaf.global_position - camera_pos
+                vector = leaf._global_position - camera_pos
                 distance = vector.length()
                 app_magnitude = abs_to_app_mag(abs_mag, distance)
                 if app_magnitude > limit:
@@ -238,15 +238,15 @@ class Universe(StellarSystem):
             #print("Update", extra.get_name())
             extra.update(time)
 
-    def update_obs(self, camera_pos):
-        CompositeObject.update_obs(self, camera_pos)
+    def update_obs(self, observer):
+        CompositeObject.update_obs(self, observer)
         self.nearest_system = None
         for leaf in self.to_update:
-            leaf.update_obs(camera_pos)
+            leaf.update_obs(observer)
             if self.nearest_system is None or leaf.distance_to_obs < self.nearest_system.distance_to_obs:
                 self.nearest_system = leaf
         for extra in self.to_update_extra:
-            extra.update_obs(camera_pos)
+            extra.update_obs(observer)
 
     def check_visibility(self, pixel_size):
         CompositeObject.check_visibility(self, pixel_size)
@@ -283,7 +283,7 @@ class Universe(StellarSystem):
         return LPoint3d()
 
     def get_local_position(self):
-        return self.orbit_position
+        return self._orbit_position
     
     def get_abs_rotation(self):
-        return self.orientation
+        return self._orientation

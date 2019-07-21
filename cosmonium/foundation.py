@@ -87,7 +87,7 @@ class BaseObject(object):
     def update(self, time):
         pass
 
-    def update_obs(self, camera_pos):
+    def update_obs(self, observer):
         pass
 
     def check_visibility(self, pixel_size):
@@ -269,9 +269,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.update(time)
 
-    def update_obs(self, camera_pos):
+    def update_obs(self, observer):
         for component in self.components:
-            component.update_obs(camera_pos)
+            component.update_obs(observer)
 
     def check_visibility(self, pixel_size):
         for component in self.components:
@@ -358,15 +358,16 @@ class ObjectLabel(VisibleObject):
         self.look_at = self.instance.attachNewNode("dummy")
 
 class LabelledObject(CompositeObject):
-    label_class = None
-
     def __init__(self, names):
         CompositeObject.__init__(self, names)
         self.label = None
 
+    def create_label_instance(self):
+        return ObjectLabel(self.get_ascii_name() + '-label')
+
     def create_label(self):
-        if self.label is None and self.label_class is not None:
-            self.label = self.label_class(self.get_ascii_name() + '-label')
+        if self.label is None:
+            self.label = self.create_label_instance()
             self.add_component(self.label)
             self.label.check_settings()
 

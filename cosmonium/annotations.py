@@ -341,7 +341,7 @@ class Asterism(VisibleObject):
             for star in segment:
                 #TODO: Temporary workaround to have star pos
                 star.update(0)
-                star.update_obs(center)
+                star.update_obs(self.context.observer)
                 position, distance, scale_factor = self.get_real_pos_rel(star.rel_position, star.distance_to_obs, star.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4f(*self.color)
@@ -369,7 +369,6 @@ class Asterism(VisibleObject):
 class NamedAsterism(LabelledObject):
     ignore_light = True
     default_shown = True
-    label_class = BackgroundLabel
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
@@ -377,6 +376,9 @@ class NamedAsterism(LabelledObject):
         LabelledObject.__init__(self, name)
         self.visible = True
         self.create_components()
+
+    def create_label_instance(self):
+        return BackgroundLabel(self.get_ascii_name() + '-label')
 
     def create_components(self):
         self.create_label()
@@ -453,6 +455,9 @@ class Constellation(LabelledObject):
         self.center = center
         self.boundary = boundary
         self.create_components()
+
+    def create_label_instance(self):
+        return BackgroundLabel(self.get_ascii_name() + '-label')
 
     def create_components(self):
         self.create_label()

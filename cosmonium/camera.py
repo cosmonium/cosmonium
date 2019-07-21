@@ -213,6 +213,7 @@ class Camera(CameraBase):
         #Don't update camera position as everything is relative to camera
         self.camera_vector = self.get_camera_vector()
         self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
+        self._position = self.get_camera_pos()
         
     def camera_look_back(self):
         new_rot=utils.relative_rotation(self.get_camera_rot(), LVector3d.up(), pi)

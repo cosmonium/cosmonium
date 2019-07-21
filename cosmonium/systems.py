@@ -159,12 +159,12 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.update(time)
 
-    def update_obs(self, camera_pos):
-        StellarObject.update_obs(self, camera_pos)
+    def update_obs(self, observer):
+        StellarObject.update_obs(self, observer)
         #No need to check the children if not visible
         if not self.visible or not self.resolved: return
         for child in self.children:
-            child.update_obs(camera_pos)
+            child.update_obs(observer)
 
     def check_visibility(self, pixel_size):
         self.was_visible = self.visible and self.resolved

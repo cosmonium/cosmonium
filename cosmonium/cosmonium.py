@@ -602,7 +602,7 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_obs(self):
-        self.universe.update_obs(self.observer.get_camera_pos())
+        self.universe.update_obs(self.observer)
         if self.selected is not None:
             self.selected.calc_height_under(self.observer.get_camera_pos())
     @pstat
@@ -626,7 +626,6 @@ class Cosmonium(CosmoniumBase):
 
         self.time.update_time(dt)
         self.nav.update(dt)
-        self.observer.update_camera()
 
         self.update_octree()
 
@@ -635,6 +634,7 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.update_universe()
+        self.observer.update_camera()
         self.update_obs()
 
         if self.track != None:
@@ -710,9 +710,9 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(', self.selected.orbit_position, ')')
-            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected.orbit_rotation, ')')
-            print("\tOrientation", self.selected.orientation)
+            print("\tLocal position", self.selected.get_local_position(), '(', self.selected._orbit_position, ')')
+            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected._orbit_rotation, ')')
+            print("\tOrientation", self.selected._orientation)
             print("\tVector to obs", self.selected.vector_to_obs)
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
