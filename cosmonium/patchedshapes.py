@@ -62,6 +62,9 @@ class PatchBase(Shape):
             else:
                 self.instance.hide_bounds()
 
+    def update_instance(self):
+        pass
+
     def add_child(self, child):
         child.parent = self
         self.children.append(child)
@@ -147,13 +150,19 @@ class PatchBase(Shape):
             for new in news:
                 neighbour.neighbours[opposite].append(new)
 
-    def calc_outer_tesselation_level(self):
+    def calc_outer_tesselation_level(self, update):
         for face in range(4):
             #print("Check face", PatchBase.text[face])
             lod = self.get_neighbour_lower_lod(face)
             delta = self.lod - lod
             outer_level = 6 - delta
-            self.tesselation_outer_level[PatchBase.conv[face]] = 1 << outer_level
+            new_level = 1 << outer_level
+            dest = PatchBase.conv[face]
+            if self.tesselation_outer_level[dest] != new_level:
+                #print("Change from", self.tesselation_outer_level[dest], "to", new_level)
+                if not self in update:
+                    update.append(self)
+            self.tesselation_outer_level[dest] = new_level
             #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
     def in_patch(self, x, y):
@@ -596,7 +605,7 @@ class PatchedShapeBase(Shape):
     def create_root_patches(self):
         pass
 
-    def add_root_patches(self, patch):
+    def add_root_patches(self, patch, update):
         pass
 
     def split_patch(self, patch):
@@ -671,7 +680,7 @@ class PatchedShapeBase(Shape):
     def place_patches(self, owner):
         pass
 
-    def split_neighbours(self, patch):
+    def split_neighbours(self, patch, update):
         (bl, br, tr, tl) = patch.children
         tl.set_all_neighbours(patch.get_neighbours(PatchBase.NORTH), [tr], [bl], patch.get_neighbours(PatchBase.WEST))
         tr.set_all_neighbours(patch.get_neighbours(PatchBase.NORTH), patch.get_neighbours(PatchBase.EAST), [br], [tl])
@@ -686,13 +695,13 @@ class PatchedShapeBase(Shape):
             #text = ['tl', 'tr', 'br', 'bl']
             #print("*** Child", text[i], '***')
             new.remove_detached_neighbours()
-            new.calc_outer_tesselation_level()
+            new.calc_outer_tesselation_level(update)
         #print("Neighbours")
         for neighbour in neighbours:
             neighbour.remove_detached_neighbours()
-            neighbour.calc_outer_tesselation_level()
+            neighbour.calc_outer_tesselation_level(update)
 
-    def merge_neighbours(self, patch):
+    def merge_neighbours(self, patch, update):
         north = patch.children[0].get_neighbours(PatchBase.NORTH) + patch.children[1].get_neighbours(PatchBase.NORTH)
         east = patch.children[1].get_neighbours(PatchBase.EAST) + patch.children[2].get_neighbours(PatchBase.EAST)
         south = patch.children[2].get_neighbours(PatchBase.SOUTH) + patch.children[3].get_neighbours(PatchBase.SOUTH)
@@ -702,9 +711,9 @@ class PatchedShapeBase(Shape):
         patch.replace_neighbours(PatchBase.EAST, [patch.children[1], patch.children[2]], [patch])
         patch.replace_neighbours(PatchBase.SOUTH, [patch.children[2], patch.children[3]], [patch])
         patch.replace_neighbours(PatchBase.WEST,  [patch.children[3], patch.children[0]], [patch])
-        patch.calc_outer_tesselation_level()
+        patch.calc_outer_tesselation_level(update)
         for neighbour in north + east + south + west:
-            neighbour.calc_outer_tesselation_level()
+            neighbour.calc_outer_tesselation_level(update)
 
     def check_lod(self, patch, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
         patch.need_merge = False
@@ -773,6 +782,7 @@ class PatchedShapeBase(Shape):
         self.to_show.sort(key=lambda x: x.distance)
         self.to_remove.sort(key=lambda x: x.distance)
         apply_appearance = False
+        update = []
         for patch in self.to_show_children:
             if settings.debug_lod_split_merge: print(frame, "Children loaded", patch.str_id())
             for child in patch.children:
@@ -789,7 +799,7 @@ class PatchedShapeBase(Shape):
             process_nb += 1
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
             self.split_patch(patch)
-            self.split_neighbours(patch)
+            self.split_neighbours(patch, update)
             for child in patch.children:
                 child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude, pixel_size)
                 #print(child.str_id(), child.visible)
@@ -805,7 +815,7 @@ class PatchedShapeBase(Shape):
         for patch in self.to_instanciate:
             if settings.debug_lod_split_merge: print(frame, "Instanciate", patch.str_id(), patch.patch_in_view, patch.in_cone, patch.instance_ready)
             if patch.lod == 0:
-                self.add_root_patches(patch)
+                self.add_root_patches(patch, update)
             self.create_patch_instance(patch, hide=True)
             patch.instanciate_pending = True
             apply_appearance = True
@@ -833,7 +843,7 @@ class PatchedShapeBase(Shape):
             #Dampen high frequency split-merge anomaly
             if frame - patch.last_split < 5: continue
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
-            self.merge_neighbours(patch)
+            self.merge_neighbours(patch, update)
             if patch.visible:
                 self.create_patch_instance(patch, hide=True)
                 #TODO: self.merge_neighbours(patch)
@@ -848,6 +858,8 @@ class PatchedShapeBase(Shape):
                 patch.remove_children()
             patch.split_pending = False
         self.max_lod = self.new_max_lod
+        for patch in update:
+            patch.update_instance()
         #Return True when new instances have been created
         return apply_appearance
 

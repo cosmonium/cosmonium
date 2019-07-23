@@ -130,6 +130,9 @@ class WaterLayer(object):
         if not self.config.visible and self.water.waterNP:
             self.water.waterNP.stash()
 
+    def update_instance(self, patch):
+        pass
+
     def remove_instance(self):
         self.water.remove_instance()
 

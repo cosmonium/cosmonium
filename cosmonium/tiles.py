@@ -78,6 +78,12 @@ class Tile(PatchBase):
             layer.create_instance(self)
         return self.instance
 
+    def update_instance(self):
+        if self.instance is None: return
+        #print("Update", self.str_id())
+        for layer in self.layers:
+            layer.update_instance(self)
+
     def remove_instance(self):
         if self.instance:
             self.instance.removeNode()
@@ -111,6 +117,9 @@ class GpuPatchTerrainLayer(object):
         self.template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
 
+    def update_instance(self, patch):
+        pass
+
     def remove_instance(self):
         if self.instance is not None:
             self.instance.removeNode()
@@ -130,6 +139,9 @@ class MeshTerrainLayer(object):
         self.instance = NodePath('tile')
         self.template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
+
+    def update_instance(self, patch):
+        pass
 
     def remove_instance(self):
         if self.instance is not None:
@@ -178,8 +190,8 @@ class TiledShape(PatchedShapeBase):
         self.factory.create_patch(patch, lod, x + delta, y + delta)
         self.factory.create_patch(patch, lod, x - delta, y + delta)
 
-    def add_root_patches(self, patch):
-        #print("Create patches", patch.centre, self.scale, camera_pos, distance)
+    def add_root_patches(self, patch, update):
+        #print("Create root patches", patch.centre, self.scale)
         self.add_root_patch(patch.x - 1, patch.y - 1)
         if self.find_root_patch(patch.x, patch.y - 1) is None:
             south = self.add_root_patch(patch.x, patch.y - 1)
@@ -200,7 +212,7 @@ class TiledShape(PatchedShapeBase):
             patch.set_neighbours(PatchBase.NORTH, [north])
             north.set_neighbours(PatchBase.SOUTH, [patch])
         self.add_root_patch(patch.x + 1, patch.y + 1)
-        patch.calc_outer_tesselation_level()
+        patch.calc_outer_tesselation_level(update)
 
     def create_patch_instance_delayed(self, patch):
         PatchedShapeBase.create_patch_instance_delayed(self, patch)
