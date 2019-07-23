@@ -35,7 +35,7 @@ from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowCaster
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
-from cosmonium.parsers.textureparser import TextureControlYamlParser, TextureDictionaryYamlParser
+from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
 from cosmonium import settings
 
 from math import pow, pi, sqrt
@@ -146,38 +146,80 @@ class WaterConfig():
 
 class RalphConfigParser(YamlModuleParser):
     def decode(self, data):
-        noise_parser = NoiseYamlParser()
-        heightmap = data.get('heightmap', None)
         biome = data.get('biome', None)
         control = data.get('control', None)
         appearance = data.get('appearance', None)
         water = data.get('water', None)
         fog = data.get('fog', None)
-        if  heightmap is not None:
-            heightmap = noise_parser.decode(heightmap)
+
+        terrain = data.get('terrain', {})
+        self.tile_size = terrain.get("tile-size", 1024)
+        self.tile_density = terrain.get('tile-density', 64)
+        self.max_vertex_size = terrain.get('max-vertex-size', 64)
+        self.max_lod = terrain.get('max-lod', 10)
+        self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
+        self.heightmap_size = terrain.get('heightmap-size', 512)
+        self.biome_size = terrain.get('biome-size', 128)
+        #self.objects_density = int(25 * (1.0 * self.size / self.default_size) * (1.0 * self.size / self.default_size))
+        self.objects_density = terrain.get('object-density', 250)
+
+        heightmap = data.get('heightmap', {})
+        self.height_scale = heightmap.get('scale', 1.0)
+        scale_length = heightmap.get('scale-length', 1)
+        scale_length = scale_length * self.tile_size
+        noise = heightmap.get('noise')
+        scale_noise = heightmap.get('scale-noise', True)
+        median = heightmap.get('median', True)
+        #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
+        if scale_noise:
+            noise_scale = 1.0 / self.height_scale
+        else:
+            noise_scale = 1.0
+        noise_parser = NoiseYamlParser(noise_scale, scale_length)
+        self.heightmap = noise_parser.decode(noise)
+
+        self.shadow_size = terrain.get('shadow-size', 16)
+        self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
+
         if biome is not None:
-            biome = noise_parser.decode(biome)
+            self.biome = noise_parser.decode(biome)
+        else:
+            self.biome = None
+
         if control is not None:
-            control_parser = TextureControlYamlParser()
-            control = control_parser.decode(control)
+            control_type = control.get('type', 'textures')
+            if control_type == 'textures':
+                control_parser = TextureControlYamlParser()
+                self.control = control_parser.decode(control)
+            elif control_type == 'colormap':
+                control_parser = HeightColorControlYamlParser()
+                self.control = control_parser.decode(control, self.height_scale)
+            else:
+                print("Unknown control type '%'" % control_type)
+                self.control = None
+        else:
+            self.control = None
+
         if appearance is not None:
             appearance_parser = TextureDictionaryYamlParser()
-            appearance = appearance_parser.decode(appearance)
+            self.appearance = appearance_parser.decode(appearance)
+        else:
+            self.appearance = None
+
         if water is not None:
             level = water.get('level', 0)
-            visible = water.get('visible', True)
+            visible = water.get('visible', False)
             scale = 8.0 #* self.size / self.default_size
-            water = WaterConfig(level, visible, scale)
+            self.water = WaterConfig(level, visible, scale)
         else:
-            water = WaterConfig(0, False, 1.0)
-        if fog is not None:
-            fog_parameters = {}
-            fog_parameters['fall_off'] = fog.get('falloff', 0.035)
-            fog_parameters['density'] = fog.get('density', 20)
-            fog_parameters['ground'] = fog.get('ground', -500)
+            self.water = WaterConfig(0, False, 1.0)
+        if False and fog is not None:
+            self.fog_parameters = {}
+            self.fog_parameters['fall_off'] = fog.get('falloff', 0.035)
+            self.fog_parameters['density'] = fog.get('density', 20)
+            self.fog_parameters['ground'] = fog.get('ground', -500)
         else:
-            fog_parameters = None
-        return (heightmap, biome, control, appearance, water, fog_parameters)
+            self.fog_parameters = None
 
 class RalphCamera(CameraBase):
     def set_camera_pos(self, position):
@@ -196,25 +238,26 @@ class RoamingRalphDemo(CosmoniumBase):
         return base.cam.get_pos()
 
     def create_terrain_appearance(self):
+        self.terrain_appearance = self.ralph_config.appearance
         self.terrain_appearance.set_shadow(self.shadow_caster)
 
     def create_terrain_heightmap(self):
         self.heightmap = PatchedHeightmap('heightmap',
-                                          self.noise_size,
-                                          self.height_scale,
-                                          self.size,
-                                          self.size,
+                                          self.ralph_config.heightmap_size,
+                                          self.ralph_config.height_scale,
+                                          self.ralph_config.tile_size,
+                                          self.ralph_config.tile_size,
                                           True,
-                                          ShaderHeightmapPatchFactory(self.noise))
+                                          ShaderHeightmapPatchFactory(self.ralph_config.heightmap))
 
     def create_terrain_biome(self):
         self.biome = PatchedHeightmap('biome',
-                                      self.biome_size,
+                                      self.ralph_config.biome_size,
                                       1.0,
-                                      self.size,
-                                      self.size,
+                                      self.ralph_config.tile_size,
+                                      self.ralph_config.tile_size,
                                       False,
-                                      ShaderHeightmapPatchFactory(self.biome_noise))
+                                      ShaderHeightmapPatchFactory(self.ralph_config.biome))
 
     def create_terrain_shader(self):
 #         control4 = HeightColorMap('colormap',
@@ -227,7 +270,7 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        appearance = DetailMap(self.terrain_control, self.heightmap, create_normals=True)
+        appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
         data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
                        HeightmapDataSource(self.biome, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
                        TextureDictionaryDataSource(self.terrain_appearance, TextureDictionaryDataSource.F_hash)]
@@ -249,8 +292,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.tile_factory = TileFactory(self.tile_density, self.size, self.has_water, self.water)
-        self.terrain_shape = TiledShape(self.tile_factory, self.size, self.max_lod, lod_control=VertexSizeMaxDistancePatchLodControl(self.max_distance, self.max_vertex_size))
+        self.tile_factory = TileFactory(self.ralph_config.tile_density, self.ralph_config.tile_size, self.has_water, self.water)
+        self.terrain_shape = TiledShape(self.tile_factory,
+                                        self.ralph_config.tile_size,
+                                        self.ralph_config.max_lod,
+                                        VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
+                                                                             self.ralph_config.max_vertex_size,
+                                                                             max_lod=self.ralph_config.max_lod))
         self.create_terrain_heightmap()
         self.create_terrain_biome()
         self.create_terrain_appearance()
@@ -263,7 +311,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.biome,
                                self.terrain_appearance,
                                self.terrain_shader,
-                               self.size,
+                               self.ralph_config.tile_size,
                                clickable=False,
                                average=True)
         self.terrain.set_parent(self)
@@ -302,7 +350,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.skybox.setShaderOff(1)
         self.skybox.setTwoSided(True)
         # make big enough to cover whole terrain, else there'll be problems with the water reflections
-        self.skybox.setScale(1.5* self.size)
+        self.skybox.setScale(1.5 * self.ralph_config.tile_size)
         self.skybox.setBin('background', 1)
         self.skybox.setDepthWrite(False)
         self.skybox.setDepthTest(False)
@@ -316,15 +364,15 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def objects_density_for_patch(self, patch):
         scale = 1 << patch.lod
-        return int(self.objects_density / scale + 1.0)
+        return int(self.ralph_config.objects_density / scale + 1.0)
 
     def create_populator(self):
         if settings.allow_instancing:
             TerrainPopulator = GpuTerrainPopulator
         else:
             TerrainPopulator = CpuTerrainPopulator
-        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.objects_density, RandomObjectPlacer(self))
-        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.objects_density, RandomObjectPlacer(self))
+        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.ralph_config.objects_density, RandomObjectPlacer(self))
+        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.ralph_config.objects_density, RandomObjectPlacer(self))
         self.object_collection = MultiTerrainPopulator()
         self.object_collection.add_populator(self.rock_collection)
         self.object_collection.add_populator(self.tree_collection)
@@ -380,23 +428,11 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.config_file = 'ralph-data/ralph.yaml'
         self.splash = RalphSplash()
+        self.ralph_config = RalphConfigParser()
+        self.ralph_config.load_and_parse(self.config_file)
+        self.water = self.ralph_config.water
+        self.fog = self.ralph_config.fog_parameters
 
-        config = RalphConfigParser()
-        (self.noise, self.biome_noise, self.terrain_control, self.terrain_appearance, self.water, self.fog) = config.load_and_parse(self.config_file)
-
-        self.tile_density = 64
-        self.default_size = 128
-        self.max_vertex_size = 64
-        self.max_lod = 10
-
-        self.size = 128 * 8
-        self.max_distance = 1.001 * self.size * sqrt(2)
-        self.noise_size = 512
-        self.biome_size = 128
-        self.noise_scale = 0.5 * self.size / self.default_size
-        self.objects_density = int(25 * (1.0 * self.size / self.default_size) * (1.0 * self.size / self.default_size))
-        self.objects_density = 250
-        self.height_scale = 100 * 5.0
         self.has_water = True
         self.fullscreen = False
         self.shadow_caster = None
@@ -406,8 +442,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light_quat = LQuaternion()
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.directionalLight = None
-        self.shadow_size = self.default_size / 8
-        self.shadow_box_length = self.height_scale
 
         self.observer = RalphCamera(self.cam, self.camLens)
         self.observer.init()
@@ -417,9 +451,11 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_position = LVector3()
         self.scene_scale_factor = 1
         self.scene_orientation = LQuaternion()
+        self.context = self
+        self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
         #Size of an edge seen from 4 units above
-        self.edge_apparent_size = (1.0 * self.size / self.tile_density) / (4.0 * self.observer.pixel_size)
+        self.edge_apparent_size = (1.0 * self.ralph_config.tile_size / self.ralph_config.tile_density) / (4.0 * self.observer.pixel_size)
         print("Apparent size:", self.edge_apparent_size)
 
         self.win.setClearColor((135.0/255, 206.0/255, 235.0/255, 1))
@@ -439,8 +475,8 @@ class RoamingRalphDemo(CosmoniumBase):
         if True:
             self.shadow_caster = ShadowCaster(1024)
             self.shadow_caster.create()
-            self.shadow_caster.set_lens(self.shadow_size, -self.shadow_box_length / 2.0, self.shadow_box_length / 2.0, -self.light_dir)
-            self.shadow_caster.set_pos(self.light_dir * self.shadow_box_length / 2.0)
+            self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.light_dir)
+            self.shadow_caster.set_pos(self.light_dir * self.ralph_config.shadow_box_length / 2.0)
             self.shadow_caster.bias = 0.1
         else:
             self.shadow_caster = None
@@ -679,7 +715,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.cam.lookAt(self.floater)
 
         #self.shadow_caster.set_pos(self.ralph.get_pos())
-        self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.shadow_size / 2)
+        self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
 
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()

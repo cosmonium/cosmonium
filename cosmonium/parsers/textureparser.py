@@ -46,7 +46,7 @@ class HeightColorControlYamlParser(YamlParser):
             entries.append(self.decode_height_layer(entry))
         return HeightColorMap('colormap_%d' % self.colormap_id, entries)
 
-    def decode(self, data, scale, radius, median):
+    def decode(self, data, scale = 1.0, radius=1.0, median=True):
         entries = data.get('entries', [])
         self.percentage = data.get('percentage', False)
         self.float_values = data.get('float', False)

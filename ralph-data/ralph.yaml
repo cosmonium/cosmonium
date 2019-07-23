@@ -1,20 +1,26 @@
+terrain:
+    tile-size: 1024
 heightmap:
-    aliases:
-      perlin: gpunoise:perlin
+    scale: 500
     noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
         add:
             - fbm:
                 noise:
                   ridged: perlin
                 octaves: 8
-                frequency: 4.0
-                scale: 0.1
+                #frequency: 4.0
+                length: 64
+                scale: 50
             - fbm:
                 noise:
                   turbulence: perlin
                 octaves: 1
-                frequency: 0.5
-                scale: 2
+                #frequency: 0.5
+                length: 512
+                scale: 1000
                 offset: -0.15
 biome:
     aliases:
@@ -41,6 +47,27 @@ appearance:
         soil: data/procedural/textures/soil/dirt_02.png
       scale: [0.5, 0.5]
 
+control2:
+      type: colormap
+      percentage: true
+      entries:
+        - height: 0
+          bottom: [0, 0, 0] #black
+          top: [255, 120, 255] #Purple
+        - height: .2
+          top: [120, 120, 255] #Blue
+        - height: .4
+          top: [120, 255, 255] #Aqua
+        - height: .6
+          top: [120, 255, 1201] #Green
+        - height: .7
+          top: [255, 255, 120] #Yellow
+        - height: .9
+          top: [255, 120, 120] #Red
+        - height: 1.0
+          top: [255, 255, 255] #White
+        - height: 1.0
+          top: [0, 0, 0] #black
 control:
     biome:
         - entry:
