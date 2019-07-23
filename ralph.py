@@ -684,7 +684,7 @@ class RoamingRalphDemo(CosmoniumBase):
         # Normally, we would have to call traverse() to check for collisions.
         # However, the class ShowBase that we inherit from has a task to do
         # this for us, if we assign a CollisionTraverser to self.cTrav.
-        self.cTrav.traverse(render)
+        #self.cTrav.traverse(render)
 
         if False:
             # Adjust ralph's Z coordinate.  If ralph's ray hit anything, put
