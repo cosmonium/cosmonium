@@ -105,10 +105,10 @@ class TileFactory(object):
         patch = Tile(parent, lod, x, y, self.tile_density, self.size)
         #print("Create tile", lod, x, y, tile.size, tile.flat_coord)
         if settings.allow_tesselation:
-            TerrainLayer = GpuPatchTerrainLayer
+            terrain_layer = GpuPatchTerrainLayer()
         else:
-            TerrainLayer = MeshTerrainLayer
-        patch.add_layer(TerrainLayer())
+            terrain_layer = MeshTerrainLayer()
+        patch.add_layer(terrain_layer)
         if self.has_water:
             patch.add_layer(WaterLayer(self.water))
         return patch
