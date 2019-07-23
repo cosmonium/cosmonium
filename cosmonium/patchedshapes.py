@@ -911,7 +911,7 @@ class PatchedShapeBase(Shape):
 
     def dump_patch(self, patch):
         pad = ' ' * (patch.lod * 4)
-        print(pad, patch.str_id())
+        print(pad, patch.str_id(), hex(id(patch)))
         print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view, patch.in_cone)
         if patch.shown: print(pad, '  Shown')
         if patch.need_merge: print(pad, '  Need merge')
@@ -921,7 +921,10 @@ class PatchedShapeBase(Shape):
         if patch.instanciate_pending: print(pad, '  Instanciate pending')
         if not patch.instance_ready: print(pad, '  Instance ready')
         if patch.jobs_pending != 0: print(pad, '  Jobs', patch.jobs_pending)
-        print(pad, '  Distance', patch.distance)
+        #print(pad, '  Distance', patch.distance)
+        print(pad, "  Tesselation", '-'.join(map(str, patch.tesselation_outer_level)))
+        for i in range(4):
+            print(pad, "  Neighbours", map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours[i]))
 
     def _dump_tree(self, patch):
         self.dump_patch(patch)
