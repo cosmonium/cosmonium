@@ -329,8 +329,12 @@ class InstanceShape(Shape):
     def __init__(self, instance):
         Shape.__init__(self)
         self.instance = instance
-        (l, r) = self.instance.getTightBounds()
-        self.radius = max(r - l) / 2
+        bounds = self.instance.getTightBounds()
+        if bounds is not None:
+            (l, r) = bounds
+            self.radius = max(r - l) / 2
+        else:
+            self.radius = 0
 
     def create_instance(self, callback=None):
         self.apply_owner()
