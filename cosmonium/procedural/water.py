@@ -72,7 +72,7 @@ class WaterNode():
 
     def update(self, task):
         # update matrix of the reflection camera
-        mc = base.camera.getMat()
+        mc = base.cam.getMat()
         mf = self.waterPlane.getReflectionMat()
         self.watercamNP.setMat(mc * mf)
         self.waterNP.setShaderInput('time', task.time)

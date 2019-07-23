@@ -179,10 +179,10 @@ class RalphConfigParser(YamlModuleParser):
 
 class RalphCamera(CameraBase):
     def set_camera_pos(self, position):
-        base.camera.set_pos(*position)
+        base.cam.set_pos(*position)
 
     def get_camera_pos(self):
-        return LPoint3d(*base.camera.get_pos())
+        return LPoint3d(*base.cam.get_pos())
 
 class RalphSplash():
     def set_text(self, text):
@@ -191,7 +191,7 @@ class RalphSplash():
 class RoamingRalphDemo(CosmoniumBase):
 
     def get_local_position(self):
-        return base.camera.get_pos()
+        return base.cam.get_pos()
 
     def create_terrain_appearance(self):
         self.terrain_appearance.set_shadow(self.shadow_caster)
@@ -521,9 +521,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.isMoving = False
 
         # Set up the camera
-        self.camera.setPos(self.ralph.getX(), self.ralph.getY() + 10, 2)
+        self.cam.setPos(self.ralph.getX(), self.ralph.getY() + 10, 2)
         self.camera_height = 2.0
-        render.set_shader_input("camera", self.camera.get_pos())
+        render.set_shader_input("camera", self.cam.get_pos())
 
         self.cTrav = CollisionTraverser()
 
@@ -567,9 +567,9 @@ class RoamingRalphDemo(CosmoniumBase):
         # If the camera-right key is pressed, move camera right.
 
         if self.keyMap["cam-left"]:
-            self.camera.setX(self.camera, -20 * dt)
+            self.cam.setX(self.cam, -20 * dt)
         if self.keyMap["cam-right"]:
-            self.camera.setX(self.camera, +20 * dt)
+            self.cam.setX(self.cam, +20 * dt)
         if self.keyMap["cam-up"]:
             self.camera_height *= (1 + 2 * dt)
         if self.keyMap["cam-down"]:
@@ -619,15 +619,15 @@ class RoamingRalphDemo(CosmoniumBase):
         # If the camera is too far from ralph, move it closer.
         # If the camera is too close to ralph, move it farther.
 
-        camvec = self.ralph.getPos() - self.camera.getPos()
+        camvec = self.ralph.getPos() - self.cam.getPos()
         camvec.setZ(0)
         camdist = camvec.length()
         camvec.normalize()
         if camdist > 10.0:
-            self.camera.setPos(self.camera.getPos() + camvec * (camdist - 10))
+            self.cam.setPos(self.cam.getPos() + camvec * (camdist - 10))
             camdist = 10.0
         if camdist < 5.0:
-            self.camera.setPos(self.camera.getPos() - camvec * (5 - camdist))
+            self.cam.setPos(self.cam.getPos() - camvec * (5 - camdist))
             camdist = 5.0
 
         # Normally, we would have to call traverse() to check for collisions.
@@ -650,22 +650,22 @@ class RoamingRalphDemo(CosmoniumBase):
         # Keep the camera at one foot above the terrain,
         # or two feet above ralph, whichever is greater.
 
-        camera_height = self.get_height(self.camera.getPos()) + 1.0
+        camera_height = self.get_height(self.cam.getPos()) + 1.0
         if camera_height < ralph_height + self.camera_height:
-            self.camera.setZ(ralph_height + self.camera_height)
+            self.cam.setZ(ralph_height + self.camera_height)
         else:
-            self.camera.setZ(camera_height)
+            self.cam.setZ(camera_height)
         #self.limit_pos(self.camera)
 
         # The camera should look in ralph's direction,
         # but it should also try to stay horizontal, so look at
         # a floater which hovers above ralph's head.
-        self.camera.lookAt(self.floater)
+        self.cam.lookAt(self.floater)
 
         #self.shadow_caster.set_pos(self.ralph.get_pos())
         self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.shadow_size / 2)
 
-        render.set_shader_input("camera", self.camera.get_pos())
+        render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
 
@@ -680,6 +680,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def print_debug(self):
         print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
-        print("Camera:", base.camera.get_pos())
+        print("Camera:", base.cam.get_pos())
 demo = RoamingRalphDemo()
 demo.run()
