@@ -102,51 +102,49 @@ class Tile(PatchBase):
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)
 
-class GpuPatchTerrainLayer(object):
-    template = None
+class TerrainLayer(object):
+    def __init__(self):
+        self.instance = None
+
     def check_settings(self):
         pass
+
+    def create_instance(self, patch):
+        pass
+
+    def update_instance(self, patch):
+        pass
+
+    def remove_instance(self):
+        if self.instance is not None:
+            self.instance.removeNode()
+            self.instance = None
+
+class GpuPatchTerrainLayer(TerrainLayer):
+    template = None
 
     def create_instance(self, patch):
         if self.template is None:
             GpuPatchTerrainLayer.template = geometry.Patch(0.5)
         self.instance = NodePath('tile')
-        bounds = OmniBoundingVolume()
-        self.instance.node().setBounds(bounds)
-        self.instance.node().setFinal(1)
         self.template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
 
-    def update_instance(self, patch):
-        pass
-
-    def remove_instance(self):
-        if self.instance is not None:
-            self.instance.removeNode()
-            self.instance = None
-
-class MeshTerrainLayer(object):
-    template = None
-    def __init__(self):
-        self.density = 16
-
-    def check_settings(self):
-        pass
-
+class MeshTerrainLayer(TerrainLayer):
+    template = {}
     def create_instance(self, patch):
-        if self.template is None:
-            MeshTerrainLayer.template = geometry.Tile(size=0.5, split=self.density + 1)
+        tile_id = str(patch.tesselation_inner_level) + '-' + '-'.join(map(str, patch.tesselation_outer_level))
+        #print(tile_id)
+        if tile_id not in self.template:
+            self.template[tile_id] = geometry.Tile(size=0.5, inner=patch.tesselation_inner_level, outer=patch.tesselation_outer_level)
+        template = self.template[tile_id]
         self.instance = NodePath('tile')
-        self.template.instanceTo(self.instance)
+        template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
 
     def update_instance(self, patch):
-        pass
-
-    def remove_instance(self):
-        if self.instance is not None:
-            self.instance.removeNode()
-            self.instance = None
+        self.remove_instance()
+        self.create_instance(patch)
 
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):

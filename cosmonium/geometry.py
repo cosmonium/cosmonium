@@ -458,17 +458,20 @@ def IcoSphere(radius=1, subdivisions=1):
 
     return path
 
-def Tile(size, split, inv_u=False, inv_v=False, swap_uv=False):
-    r_split = split - 1
-
+def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
+    nb_vertices = inner + 1
+    if outer is None:
+        outer = [inner, inner, inner, inner]
+    ratio = map(lambda x: inner // x, outer)
+    #print("TILE", inner, outer, ratio)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            u = float(i) / r_split
-            v = float(j) / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            u = float(i) / inner
+            v = float(j) / inner
 
             x = 2.0 * u - 1.0
             y = 2.0 * v - 1.0
@@ -486,11 +489,94 @@ def Tile(size, split, inv_u=False, inv_v=False, swap_uv=False):
             gtanw.add_data3f(1, 0, 0)
             gbiw.add_data3f(0, 1, 0)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
+    for x in range(0, inner):
+        for y in range(0, inner):
+#     for x in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
+#         for y in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
+#    for x in (0, inner - 1): #range(0, inner):
+#        for y in (0, inner - 1): #range(0, inner):
+            if x == 0:
+                if y == 0:
+                    i = 0
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+                    i = 1
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
+                elif y == inner - 1:
+                    i = 1
+                    v = nb_vertices * y + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    i = 2
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                else:
+                    i = 1
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
+            elif x == inner - 1:
+                if y == 0:
+                    i = 0
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+                elif y == inner - 1:
+                    i = 2
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    prim.addVertices(v, vp + nb_vertices, v + 1)
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+                else:
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+            elif y == 0:
+                i = 0
+                v = nb_vertices * y + x
+                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+            elif y == inner - 1:
+                i = 2
+                v = nb_vertices * y + x
+                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                prim.addVertices(v, vp + nb_vertices, v + 1)
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+            else:
+                v = nb_vertices * y + x
+                prim.addVertices(v, v + nb_vertices, v + 1)
+                prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
     prim.closePrimitive()
     geom.addPrimitive(prim)
