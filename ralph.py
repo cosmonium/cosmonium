@@ -295,7 +295,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.tile_factory = TileFactory(self.ralph_config.tile_density, self.ralph_config.tile_size, self.has_water, self.water)
         self.terrain_shape = TiledShape(self.tile_factory,
                                         self.ralph_config.tile_size,
-                                        self.ralph_config.max_lod,
                                         VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
                                                                              self.ralph_config.max_vertex_size,
                                                                              max_lod=self.ralph_config.max_lod))

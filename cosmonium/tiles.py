@@ -149,11 +149,10 @@ class MeshTerrainLayer(object):
             self.instance = None
 
 class TiledShape(PatchedShapeBase):
-    def __init__(self, factory, scale, max_lod, lod_control):
+    def __init__(self, factory, scale, lod_control):
         PatchedShapeBase.__init__(self, lod_control)
         self.factory = factory
         self.scale = scale
-        self.max_lod = max_lod
         self.populator = None
 
     def set_populator(self, populator):
