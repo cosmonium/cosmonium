@@ -119,22 +119,24 @@ class WaterLayer(object):
         self.water = None
 
     def check_settings(self):
-        if self.water and self.water.waterNP:
+        if self.water is not None:
             if self.config.visible:
-                self.water.waterNP.unstash()
+                self.water.create_instance()
             else:
-                self.water.waterNP.stash()
+                self.water.remove_instance()
 
     def create_instance(self, patch):
         self.water = WaterNode(-0.5, -0.5, 0.5, 0.5, self.config.level, self.config.scale, patch)
-        if not self.config.visible and self.water.waterNP:
-            self.water.waterNP.stash()
+        if self.config.visible:
+            self.water.create_instance()
 
     def update_instance(self, patch):
         pass
 
     def remove_instance(self):
-        self.water.remove_instance()
+        if self.water is not None:
+            self.water.remove_instance()
+            self.water = None
 
 class WaterConfig():
     def __init__(self, level, visible, scale):
@@ -266,10 +268,16 @@ class RoamingRalphDemo(CosmoniumBase):
                                average=True)
         self.terrain.set_parent(self)
         self.terrain.create_instance()
+        if self.has_water:
+            WaterNode.create_cam()
 
     def toggle_water(self):
         if not self.has_water: return
         self.water.visible = not self.water.visible
+        if self.water.visible:
+            WaterNode.create_cam()
+        else:
+            WaterNode.remove_cam()
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
