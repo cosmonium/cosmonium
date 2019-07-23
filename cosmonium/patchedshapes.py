@@ -588,6 +588,10 @@ class PatchedShapeBase(Shape):
         if lod_control is None:
             lod_control = TexturePatchLodControl()
         self.lod_control = lod_control
+        self.max_lod = 0
+        self.new_max_lod = 0
+        self.frustum = None
+        self.lens_bounds = None
         self.to_split = []
         self.to_merge = []
         self.to_show_children = []
@@ -678,7 +682,8 @@ class PatchedShapeBase(Shape):
         patch.set_clickable(self.clickable)
 
     def place_patches(self, owner):
-        pass
+        if self.frustum is not None:
+            self.frustum.setPos(*(self.owner.scene_position + self.frustum_position))
 
     def split_neighbours(self, patch, update):
         (bl, br, tr, tl) = patch.children
@@ -764,7 +769,40 @@ class PatchedShapeBase(Shape):
         pass
 
     def create_culling_frustum(self, altitude):
-        pass
+        self.lens = self.owner.context.observer.realCamLens.make_copy()
+        if self.max_lod > 10:
+            factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
+        else:
+            factor = 2.0
+        self.limit = sqrt(max(0.0, altitude * (factor * self.owner.height_under + altitude)))
+        far = self.limit / settings.scale
+        self.lens.setNearFar(far * 1e-4, far)
+        self.lens_bounds = self.lens.makeBounds()
+        if self.frustum is not None:
+            self.frustum.remove_node()
+        if settings.debug_lod_frustum:
+            geom = self.lens.make_geometry()
+            self.frustum = render.attach_new_node('frustum')
+            node = GeomNode('frustum_node')
+            node.add_geom(geom)
+            self.frustum.attach_new_node(node)
+            self.frustum_position = -self.owner.scene_position
+            self.frustum.set_quat(base.cam.get_quat())
+            self.frustum.set_scale(base.cam.get_scale())
+
+    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+        return True
+
+    def is_patch_in_view(self, patch):
+        return True
+
+    def are_children_visibles(self, patch):
+        children_visible = len(patch.children_bb) == 0
+        for (i, child_bb) in enumerate(patch.children_bb):
+            if self.is_bb_in_view(child_bb, patch.children_normal[i], patch.children_offset[i]):
+                children_visible = True
+                break
+        return children_visible
 
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         if settings.debug_lod_freeze:
@@ -944,12 +982,9 @@ class PatchedShape(PatchedShapeBase):
     no_bounds = True
     def __init__(self, patch_size_from_texture=True, lod_control=None):
         PatchedShapeBase.__init__(self, lod_control)
-        self.max_lod = 0
-        self.new_max_lod = 0
-        self.frustum = None
-        self.lens_bounds = None
 
     def place_patches(self, owner):
+        PatchedShapeBase.place_patches(self, owner)
         if settings.standalone_patches:
             for patch in self.patches:
                 offset = LVector3d()
@@ -976,8 +1011,6 @@ class PatchedShape(PatchedShapeBase):
                         shader_input = patch.instance.get_shader_input(name)
                         if shader_input.getValueType() == 0:
                             print("WARNING", self.parent.get_name(), patch.str_id(), ":", name, "not found", patch.shown, patch.instance.isStashed())
-        if self.frustum is not None:
-            self.frustum.setPos(*(self.owner.scene_position + self.frustum_position))
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         offset = LVector3d()
@@ -997,36 +1030,6 @@ class PatchedShape(PatchedShapeBase):
 
     def is_patch_in_view(self, patch):
         return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
-
-    def are_children_visibles(self, patch):
-        children_visible = len(patch.children_bb) == 0
-        for (i, child_bb) in enumerate(patch.children_bb):
-            if self.is_bb_in_view(child_bb, patch.children_normal[i], patch.children_offset[i]):
-                children_visible = True
-                break
-        return children_visible
-
-    def create_culling_frustum(self, altitude):
-        self.lens = self.owner.context.observer.realCamLens.make_copy()
-        if self.max_lod > 10:
-            factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
-        else:
-            factor = 2.0
-        self.limit = sqrt(max(0.0, altitude * (factor * self.owner.height_under + altitude)))
-        far = self.limit / settings.scale
-        self.lens.setNearFar(far * 1e-4, far)
-        self.lens_bounds = self.lens.makeBounds()
-        if self.frustum is not None:
-            self.frustum.remove_node()
-        if settings.debug_lod_frustum:
-            geom = self.lens.make_geometry()
-            self.frustum = render.attach_new_node('frustum')
-            node = GeomNode('frustum_node')
-            node.add_geom(geom)
-            self.frustum.attach_new_node(node)
-            self.frustum_position = -self.owner.scene_position
-            self.frustum.set_quat(base.cam.get_quat())
-            self.frustum.set_scale(base.cam.get_scale())
 
     def xform_cam_to_model(self, camera_pos):
         position = self.owner.get_local_position()
