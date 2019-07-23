@@ -702,10 +702,23 @@ class PatchedShapeBase(Shape):
             neighbour.calc_outer_tesselation_level(update)
 
     def merge_neighbours(self, patch, update):
-        north = patch.children[0].get_neighbours(PatchBase.NORTH) + patch.children[1].get_neighbours(PatchBase.NORTH)
-        east = patch.children[1].get_neighbours(PatchBase.EAST) + patch.children[2].get_neighbours(PatchBase.EAST)
-        south = patch.children[2].get_neighbours(PatchBase.SOUTH) + patch.children[3].get_neighbours(PatchBase.SOUTH)
-        west = patch.children[3].get_neighbours(PatchBase.WEST) + patch.children[0].get_neighbours(PatchBase.WEST)
+        (bl, br, tr, tl) = patch.children
+        north = []
+        for neighbour in tl.get_neighbours(PatchBase.NORTH) + tr.get_neighbours(PatchBase.NORTH):
+            if neighbour not in north:
+                north.append(neighbour)
+        east = []
+        for neighbour in tr.get_neighbours(PatchBase.EAST) + br.get_neighbours(PatchBase.EAST):
+            if neighbour not in east:
+                east.append(neighbour)
+        south = []
+        for neighbour in bl.get_neighbours(PatchBase.SOUTH) + br.get_neighbours(PatchBase.SOUTH):
+            if neighbour not in south:
+                south.append(neighbour)
+        west = []
+        for neighbour in tl.get_neighbours(PatchBase.WEST) + bl.get_neighbours(PatchBase.WEST):
+            if neighbour not in west:
+                west.append(neighbour)
         patch.set_all_neighbours(north, east, south, west)
         patch.replace_neighbours(PatchBase.NORTH, [patch.children[0], patch.children[1]], [patch])
         patch.replace_neighbours(PatchBase.EAST, [patch.children[1], patch.children[2]], [patch])
