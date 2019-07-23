@@ -369,6 +369,12 @@ class RoamingRalphDemo(CosmoniumBase):
     def is_emissive(self):
         return False
 
+    def toggle_lod_freeze(self):
+        settings.debug_lod_freeze = not settings.debug_lod_freeze
+
+    def toggle_split_merge_debug(self):
+        settings.debug_lod_split_merge = not settings.debug_lod_split_merge
+
     def __init__(self):
         CosmoniumBase.__init__(self)
 
@@ -519,7 +525,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.accept("f3", self.toggle_filled_wireframe)
         self.accept("shift-f3", self.toggle_wireframe)
         self.accept("f5", self.bufferViewer.toggleEnable)
-        self.accept("f8", self.terrain_shape.dump_tree)
+        self.accept('f8', self.toggle_lod_freeze)
+        self.accept("shift-f8", self.terrain_shape.dump_tree)
+        self.accept('control-f8', self.toggle_split_merge_debug)
         self.accept("f10", self.save_screenshot)
         self.accept('alt-enter', self.toggle_fullscreen)
 
