@@ -778,6 +778,7 @@ class PatchedShapeBase(Shape):
         far = self.limit / settings.scale
         self.lens.setNearFar(far * 1e-4, far)
         self.lens_bounds = self.lens.makeBounds()
+        self.lens_bounds.xform(self.owner.context.observer.cam.getNetTransform().getMat())
         if self.frustum is not None:
             self.frustum.remove_node()
         if settings.debug_lod_frustum:
@@ -1021,9 +1022,9 @@ class PatchedShape(PatchedShapeBase):
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
         if settings.standalone_patches:
-            obj_bounds.xform(self.owner.context.world.getMat(base.cam))
+            obj_bounds.xform(self.owner.context.world.getMat(render))
         else:
-            obj_bounds.xform(self.instance.getMat(base.cam))
+            obj_bounds.xform(self.instance.getMat(render))
         #print(bb, obj_bounds, self.lens_bounds)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
