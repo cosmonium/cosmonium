@@ -1300,7 +1300,7 @@ class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
         self.max_distance = max_distance
 
     def should_instanciate(self, patch, apparent_patch_size, distance):
-        return distance < self.max_distance and patch.instance is None
+        return patch.visible and distance < self.max_distance and patch.instance is None
 
     def should_remove(self, patch, apparent_patch_size, distance):
-        return distance > self.max_distance and patch.instance is not None
+        return not patch.visible and patch.instance is not None
