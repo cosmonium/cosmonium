@@ -30,6 +30,7 @@ class PatchBase(Shape):
         self.lod = lod
         self.density = density
         self.flat_coord = None
+        self.bounds = None
         self.tesselation_inner_level = density
         self.tesselation_outer_level = [density, density, density, density]
         self.neighbours = [[], [], [], []]
@@ -581,6 +582,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
 class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
+    limit_far = False
     def __init__(self, lod_control=None):
         Shape.__init__(self)
         self.root_patches = []
@@ -773,13 +775,15 @@ class PatchedShapeBase(Shape):
 
     def create_culling_frustum(self, altitude):
         self.lens = self.owner.context.observer.realCamLens.make_copy()
-        if self.max_lod > 10:
-            factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
-        else:
-            factor = 2.0
-        self.limit = sqrt(max(0.0, altitude * (factor * self.owner.height_under + altitude)))
-        far = self.limit / settings.scale
-        self.lens.setNearFar(far * 1e-4, far)
+        if self.limit_far:
+            if self.max_lod > 10:
+                factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
+            else:
+                factor = 2.0
+            self.limit = sqrt(max(0.0, altitude * (factor * self.owner.height_under + altitude)))
+            #print(self.limit)
+            far = self.limit / settings.scale
+            self.lens.setNearFar(far * 1e-4, far)
         self.lens_bounds = self.lens.makeBounds()
         self.lens_bounds.xform(self.owner.context.observer.cam.getNetTransform().getMat())
         if self.frustum is not None:
@@ -986,6 +990,7 @@ class PatchedShapeBase(Shape):
 class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
+    limit_far = True
     def __init__(self, patch_size_from_texture=True, lod_control=None):
         PatchedShapeBase.__init__(self, lod_control)
 
