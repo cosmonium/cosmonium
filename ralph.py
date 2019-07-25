@@ -95,14 +95,15 @@ class TreeFactory(TerrainObjectFactory):
         return tree
 
 class TileFactory(object):
-    def __init__(self, tile_density, size, has_water, water):
+    def __init__(self, tile_density, size, height_scale, has_water, water):
         self.tile_density = tile_density
         self.size = size
+        self.height_scale = height_scale
         self.has_water = has_water
         self.water = water
 
     def create_patch(self, parent, lod, x, y):
-        patch = Tile(parent, lod, x, y, self.tile_density, self.size)
+        patch = Tile(parent, lod, x, y, self.tile_density, self.size, self.height_scale)
         #print("Create tile", lod, x, y, tile.size, tile.flat_coord)
         if settings.allow_tesselation:
             terrain_layer = GpuPatchTerrainLayer()
@@ -292,7 +293,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.tile_factory = TileFactory(self.ralph_config.tile_density, self.ralph_config.tile_size, self.has_water, self.water)
+        self.tile_factory = TileFactory(self.ralph_config.tile_density, self.ralph_config.tile_size, self.ralph_config.height_scale, self.has_water, self.water)
         self.terrain_shape = TiledShape(self.tile_factory,
                                         self.ralph_config.tile_size,
                                         VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,

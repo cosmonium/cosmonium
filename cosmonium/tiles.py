@@ -1,24 +1,26 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import OmniBoundingVolume
+from panda3d.core import OmniBoundingVolume, BoundingBox
 from panda3d.core import LPoint3d, LVector3, LVector4
 from panda3d.core import NodePath
 
 from .patchedshapes import PatchBase, PatchedShapeBase
 from .textures import TexCoord
 from . import geometry
+from . import settings
 
 from math import sqrt
 
 class Tile(PatchBase):
     coord = TexCoord.Flat
 
-    def __init__(self, parent, lod, x, y, density, scale):
+    def __init__(self, parent, lod, x, y, density, scale, height_scale):
         PatchBase.__init__(self, parent, lod, density)
         self.x = x
         self.y = y
         self.scale = scale
+        self.height_scale = height_scale
         self.size = 1.0 / (1 << lod)
         self.half_size = self.size / 2.0
 
@@ -31,7 +33,11 @@ class Tile(PatchBase):
                                     self.y0 * scale,
                                     (self.x1 - self.x0) * scale,
                                     (self.y1 - self.y0) * scale)
+        self.local_bounds = geometry.PatchAABB(0.5, self.height_scale)
         self.layers = []
+        self.create_holder_instance()
+        self.bounds = self.local_bounds.make_copy()
+        self.bounds.xform(self.holder.getNetTransform().getMat())
 
     def str_id(self):
         if self.x != 0:
@@ -59,20 +65,31 @@ class Tile(PatchBase):
     def check_visibility(self, worker, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
         if self.in_patch(*local):
             self.distance = sqrt(104)
+            within_patch = True
         else:
             self.distance = (self.centre - model_camera_pos).length()
             dx = max(self.x0 - model_camera_pos[0], 0, model_camera_pos[0] - self.x1)
             dy = max(self.y0 - model_camera_pos[1], 0, model_camera_pos[1] - self.y1)
             self.distance = sqrt(dx*dx + dy*dy) * self.scale + sqrt(104)
-        self.visible = True
-        self.patch_in_view = True
+            within_patch = False
+        self.patch_in_view = worker.is_patch_in_view(self)
         self.in_cone = True
+        self.visible = within_patch or (self.patch_in_view and self.in_cone)
+        #print(self.str_id(), within_patch, self.patch_in_view)
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 
+    def create_holder_instance(self):
+        self.holder = NodePath('tile')
+        self.holder.set_pos(*self.centre)
+        self.holder.set_scale(*self.get_scale())
+        if settings.debug_lod_bb:
+            self.holder.node().setBounds(self.local_bounds)
+        else:
+            self.holder.node().setBounds(OmniBoundingVolume())
+        self.holder.node().setFinal(1)
+
     def create_instance(self):
-        self.instance = NodePath('tile')
-        self.instance.set_pos(*self.centre)
-        self.instance.set_scale(*self.get_scale())
+        self.instance = self.holder
         self.apply_owner()
         for layer in self.layers:
             layer.create_instance(self)
@@ -84,13 +101,16 @@ class Tile(PatchBase):
         for layer in self.layers:
             layer.update_instance(self)
 
+    def remove_holder_instance(self):
+        if self.holder is not None:
+            self.holder.removeNode()
+            self.holder = None
+
     def remove_instance(self):
-        if self.instance:
-            self.instance.removeNode()
-            self.instance = None
-            self.instance_ready = False
         for layer in self.layers:
             layer.remove_instance()
+        self.instance = None
+        self.instance_ready = False
 
     def coord_to_uv(self, coord):
         (x, y) = coord
@@ -186,6 +206,13 @@ class TiledShape(PatchedShapeBase):
         self.factory.create_patch(patch, lod, x + delta, y - delta)
         self.factory.create_patch(patch, lod, x + delta, y + delta)
         self.factory.create_patch(patch, lod, x - delta, y + delta)
+        patch.children_bb = []
+        patch.children_normal = []
+        patch.children_offset = []
+        for child in patch.children:
+            patch.children_bb.append(child.bounds.make_copy())
+            patch.children_normal.append(None)
+            patch.children_offset.append(None)
 
     def add_root_patches(self, patch, update):
         #print("Create root patches", patch.centre, self.scale)
@@ -227,8 +254,15 @@ class TiledShape(PatchedShapeBase):
         (x, y) = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, None, (x, y))
 
-    def are_children_visibles(self, patch):
-        return True
+    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+        obj_bounds = bb.make_copy()
+        obj_bounds.xform(self.instance.getMat(render))
+        intersect = self.lens_bounds.contains(obj_bounds)
+        return (intersect & BoundingBox.IF_some) != 0
+
+    def is_patch_in_view(self, patch):
+        if patch.holder is None: return False
+        return self.is_bb_in_view(patch.bounds, None, None)
 
     def get_scale(self):
         return LVector3(self.scale, self.scale, 1.0)

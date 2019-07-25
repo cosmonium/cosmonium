@@ -583,6 +583,9 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
 
     return path
 
+def TileAABB(size=1.0, height=1.0):
+    return BoundingBox(LPoint3(-size, -size, -height ), LPoint3(size, size, height))
+
 def Patch(size=1.0):
     (path, node) = empty_node('patch')
     form = GeomVertexFormat.getV3()
@@ -603,6 +606,9 @@ def Patch(size=1.0):
 
     node.addGeom(gm)
     return path
+
+def PatchAABB(size=1.0, height=1.0):
+    return BoundingBox(LPoint3(-size, -size, -height ), LPoint3(size, size, height))
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     if x_inverted:
