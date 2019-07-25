@@ -458,37 +458,21 @@ def IcoSphere(radius=1, subdivisions=1):
 
     return path
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
+def make_config(inner, outer):
     nb_vertices = inner + 1
     if outer is None:
         outer = [inner, inner, inner, inner]
-    ratio = map(lambda x: inner // x, outer)
-    #print("TILE", inner, outer, ratio)
-    (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
-    node.add_geom(geom)
+    ratio = map(lambda x: inner // x if inner >= x else 1, outer)
+    return (nb_vertices, inner, outer, ratio)
 
-    for i in range(0, nb_vertices):
-        for j in range(0, nb_vertices):
-            u = float(i) / inner
-            v = float(j) / inner
+def make_square_primitives(prim, inner, nb_vertices):
+    for x in range(0, inner):
+        for y in range(0, inner):
+            v = nb_vertices * y + x
+            prim.addVertices(v, v + nb_vertices, v + 1)
+            prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
-            x = 2.0 * u - 1.0
-            y = 2.0 * v - 1.0
-
-            if inv_u:
-                u = 1.0 - u
-            if inv_v:
-                v = 1.0 - v
-            if swap_uv:
-                gtw.add_data2f(v, u)
-            else:
-                gtw.add_data2f(u, v)
-            gvw.add_data3f(x * size, y * size, 0)
-            gnw.add_data3f(0, 0, 1.0)
-            gtanw.add_data3f(1, 0, 0)
-            gbiw.add_data3f(0, 1, 0)
-
+def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
     for x in range(0, inner):
         for y in range(0, inner):
 #     for x in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
@@ -578,6 +562,34 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
                 prim.addVertices(v, v + nb_vertices, v + 1)
                 prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
+def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
+    (path, node) = empty_node('uv')
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+    node.add_geom(geom)
+
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            u = float(i) / inner
+            v = float(j) / inner
+
+            x = 2.0 * u - 1.0
+            y = 2.0 * v - 1.0
+
+            if inv_u:
+                u = 1.0 - u
+            if inv_v:
+                v = 1.0 - v
+            if swap_uv:
+                gtw.add_data2f(v, u)
+            else:
+                gtw.add_data2f(u, v)
+            gvw.add_data3f(x * size, y * size, 0)
+            gnw.add_data3f(0, 0, 1.0)
+            gtanw.add_data3f(1, 0, 0)
+            gbiw.add_data3f(0, 1, 0)
+
+    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -656,14 +668,14 @@ def QuadPatch(x0, y0, x1, y1,
     node.addGeom(gm)
     return path
 
-def SquarePatch(height, split,
+def SquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=True, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -671,16 +683,16 @@ def SquarePatch(height, split,
     if offset is None:
         offset = height
 
-    for i in range(0, split):
-        for j in range(0, split):
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
 
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
 
-            u = float(i) / r_split
-            v = float(j) / r_split
+            u = float(i) / inner
+            v = float(j) / inner
 
             if inv_u:
                 u = 1.0 - u
@@ -695,25 +707,19 @@ def SquarePatch(height, split,
             gtanw.add_data3f(1, 0, 0)
             gbiw.add_data3f(0, 1, 0)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
-
+    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
     return path
 
-def SquaredDistanceSquarePatch(height, split,
-                               x0, y0, x1, y1,
-                               inv_u=False, inv_v=True, swap_uv=False,
-                               x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
-
+def SquaredDistanceSquarePatch(height, inner, outer,
+                x0, y0, x1, y1,
+                inv_u=False, inv_v=True, swap_uv=False,
+                x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -721,12 +727,12 @@ def SquaredDistanceSquarePatch(height, split,
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            u = float(i) / r_split
-            v = float(j) / r_split
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            u = float(i) / inner
+            v = float(j) / inner
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
             z = 1.0
@@ -752,12 +758,7 @@ def SquaredDistanceSquarePatch(height, split,
             gtanw.add_data3f(z, y, -x)
             gbiw.add_data3f(x, z, -y)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
-
+    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -813,14 +814,13 @@ def SquaredDistanceSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
     z_max = max(a[2], b[2], c[2], d[2], m[2])
     return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
 
-def NormalizedSquarePatch(height, split,
+def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
                           global_texture=False, inv_u=False, inv_v=True, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
-
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -828,14 +828,14 @@ def NormalizedSquarePatch(height, split,
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
             vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
             vec.normalize()
-            u = float(i) / r_split
-            v = float(j) / r_split
+            u = float(i) / inner
+            v = float(j) / inner
             if inv_u:
                 u = 1.0 - u
             if inv_v:
@@ -853,12 +853,7 @@ def NormalizedSquarePatch(height, split,
             #gtanw.add_data3f(vec.z, vec.y, -vec.x)
             #gbiw.add_data3f(vec.x, vec.z, -vec.y)
 
-    for x in range(0, split - 1):
-        for y in range(0, split - 1):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
-
+    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 

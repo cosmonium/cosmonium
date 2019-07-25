@@ -10,7 +10,7 @@ from .textures import TexCoord
 from . import geometry
 from . import settings
 
-from math import cos, sin, pi, sqrt, copysign, acos, asin
+from math import cos, sin, pi, sqrt, copysign, log
 
 class PatchBase(Shape):
     NORTH = 0
@@ -29,6 +29,7 @@ class PatchBase(Shape):
         self.parent = parent
         self.lod = lod
         self.density = density
+        self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
         self.flat_coord = None
         self.bounds = None
         self.tesselation_inner_level = density
@@ -156,7 +157,7 @@ class PatchBase(Shape):
             #print("Check face", PatchBase.text[face])
             lod = self.get_neighbour_lower_lod(face)
             delta = self.lod - lod
-            outer_level = 6 - delta
+            outer_level = self.max_level - delta
             new_level = 1 << outer_level
             dest = PatchBase.conv[face]
             if self.tesselation_outer_level[dest] != new_level:
@@ -515,6 +516,7 @@ class NormalizedSquarePatch(SquarePatchBase):
     def create_patch_instance(self, x, y):
         return geometry.NormalizedSquarePatch(self.geom_scale,
                                               self.density,
+                                              self.tesselation_outer_level,
                                               float(x) / self.div,
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
@@ -560,6 +562,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
     def create_patch_instance(self, x, y):
         return geometry.SquaredDistanceSquarePatch(self.geom_scale,
                                                    self.density,
+                                                   self.tesselation_outer_level,
                                                    float(x) / self.div,
                                                    float(y) / self.div,
                                                    float(x + 1) / self.div,
