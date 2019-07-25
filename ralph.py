@@ -449,6 +449,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.height_under = 0.0
         self.scene_position = LVector3()
         self.scene_scale_factor = 1
+        self.scene_rel_position = LVector3()
         self.scene_orientation = LQuaternion()
         self.context = self
         self.size = self.ralph_config.tile_size #TODO: Needed by populator
@@ -719,6 +720,7 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
+        self.scene_rel_position = -base.cam.get_pos()
 
         if self.isMoving:
             #self.terrain_shape.test_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)

@@ -410,12 +410,12 @@ class StellarObject(LabelledObject):
     def check_and_update_instance(self, camera_pos, orientation, pointset):
         if self.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             height = self.get_height_under(camera_pos)
-            rel_position = self.rel_position + self.vector_to_obs * height
+            self.scene_rel_position = self.rel_position + self.vector_to_obs * height
             distance_to_obs = self.distance_to_obs - height
         else:
-            rel_position = self.rel_position
+            self.scene_rel_position = self.rel_position
             distance_to_obs = self.distance_to_obs
-        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(rel_position, distance_to_obs, self.vector_to_obs)
+        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self.get_abs_rotation()
         if self.label is None:
             self.create_label()

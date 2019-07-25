@@ -683,7 +683,10 @@ class PatchedShapeBase(Shape):
 
     def place_patches(self, owner):
         if self.frustum is not None:
-            self.frustum.setPos(*(self.owner.scene_position + self.frustum_position))
+            #Position the frustum relative to the body
+            #If lod checking is enabled, the position should be 0, the position of the camera
+            #If lod checking is frozen, we use the old relative position
+            self.frustum.setPos(*(self.owner.scene_position - self.scene_rel_position * self.owner.scene_scale_factor))
 
     def split_neighbours(self, patch, update):
         (bl, br, tr, tl) = patch.children
@@ -787,9 +790,11 @@ class PatchedShapeBase(Shape):
             node = GeomNode('frustum_node')
             node.add_geom(geom)
             self.frustum.attach_new_node(node)
-            self.frustum_position = -self.owner.scene_position
+            self.scene_rel_position = self.owner.scene_rel_position
             self.frustum.set_quat(base.cam.get_quat())
-            self.frustum.set_scale(base.cam.get_scale())
+            #The frustum position is updated in place_patches()
+            #Camera lens is not scaled, don't need to set the scale
+            #self.frustum.set_scale(base.cam.get_scale())
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         return True
