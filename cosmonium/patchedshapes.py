@@ -106,6 +106,9 @@ class PatchBase(Shape):
         self.neighbours[PatchBase.SOUTH] = south
         self.neighbours[PatchBase.WEST] = west
 
+    def clear_all_neighbours(self):
+        self.neighbours = [[], [], [], []]
+
     def get_all_neighbours(self):
         neighbours = []
         for i in range(4):
@@ -713,6 +716,7 @@ class PatchedShapeBase(Shape):
         for neighbour in neighbours:
             neighbour.remove_detached_neighbours()
             neighbour.calc_outer_tesselation_level(update)
+        patch.clear_all_neighbours()
 
     def merge_neighbours(self, patch, update):
         (bl, br, tr, tl) = patch.children
@@ -733,10 +737,10 @@ class PatchedShapeBase(Shape):
             if neighbour not in west:
                 west.append(neighbour)
         patch.set_all_neighbours(north, east, south, west)
-        patch.replace_neighbours(PatchBase.NORTH, [patch.children[0], patch.children[1]], [patch])
-        patch.replace_neighbours(PatchBase.EAST, [patch.children[1], patch.children[2]], [patch])
-        patch.replace_neighbours(PatchBase.SOUTH, [patch.children[2], patch.children[3]], [patch])
-        patch.replace_neighbours(PatchBase.WEST,  [patch.children[3], patch.children[0]], [patch])
+        patch.replace_neighbours(PatchBase.NORTH, [tl, tr], [patch])
+        patch.replace_neighbours(PatchBase.EAST, [tr, br], [patch])
+        patch.replace_neighbours(PatchBase.SOUTH, [bl, br], [patch])
+        patch.replace_neighbours(PatchBase.WEST,  [tl, bl], [patch])
         patch.calc_outer_tesselation_level(update)
         for neighbour in north + east + south + west:
             neighbour.calc_outer_tesselation_level(update)
@@ -910,7 +914,6 @@ class PatchedShapeBase(Shape):
             self.merge_neighbours(patch, update)
             if patch.visible:
                 self.create_patch_instance(patch, hide=True)
-                #TODO: self.merge_neighbours(patch)
                 apply_appearance = True
                 patch.merge_pending = True
                 patch.instanciate_pending = True
