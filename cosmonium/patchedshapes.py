@@ -64,7 +64,7 @@ class PatchBase(Shape):
             else:
                 self.instance.hide_bounds()
 
-    def update_instance(self):
+    def update_instance(self, shape):
         pass
 
     def add_child(self, child):
@@ -425,10 +425,17 @@ class SquarePatchBase(Patch):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
 
     def create_instance(self):
-        if self.owner.face_unique:
-            patch_id = "%d : %d - %d %d" % (self.lod, self.face, self.x, self.y)
+        if self.use_shader and self.use_tesselation:
+            if self.owner.face_unique:
+                patch_id = "%d : %d - %d %d" % (self.lod, self.face, self.x, self.y)
+            else:
+                patch_id = "%d : %d %d" % (self.lod, self.x, self.y)
         else:
-            patch_id = "%d : %d %d" % (self.lod, self.x, self.y)
+            tess_id = str(self.tesselation_inner_level) + '-' + '-'.join(map(str, self.tesselation_outer_level))
+            if self.owner.face_unique:
+                patch_id = "%d : %d - %d %d %s" % (self.lod, self.face, self.x, self.y, tess_id)
+            else:
+                patch_id = "%d : %d %d %s" % (self.lod, self.x, self.y, tess_id)
         if not self.owner in self.patch_cache:
             self.patch_cache[self.owner] = {}
         cache = self.patch_cache[self.owner]
@@ -458,6 +465,15 @@ class SquarePatchBase(Patch):
         else:
             self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
+
+    def update_instance(self, parent):
+        if self.instance is not None and not self.use_tesselation:
+            shown = self.shown
+            parent.remove_patch_instance(self)
+            parent.create_patch_instance(self, hide=True)
+            if shown and self.instance_ready:
+                parent.show_patch(self)
+                parent.owner.surface.jobs_done_cb(self)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
@@ -926,7 +942,7 @@ class PatchedShapeBase(Shape):
             patch.split_pending = False
         self.max_lod = self.new_max_lod
         for patch in update:
-            patch.update_instance()
+            patch.update_instance(self)
         #Return True when new instances have been created
         return apply_appearance
 
@@ -1075,15 +1091,20 @@ class PatchedSphereShape(PatchedShape):
         patch.owner = self
         return patch
 
+    def create_child_patch(self, patch, i, j):
+            average_height = 0.0
+            for k in range(2):
+                for l in range(2):
+                    average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
+            average_height = average_height / 4.0 / self.owner.get_apparent_radius()
+            self.create_patch(patch, patch.lod + 1, patch.sector * 2 + i, patch.ring * 2 + j, average_height)
+
     def split_patch(self, patch):
-        for i in range(2):
-            for j in range(2):
-                average_height = 0.0
-                for k in range(2):
-                    for l in range(2):
-                        average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
-                average_height = average_height / 4.0 / self.owner.get_apparent_radius()
-                self.create_patch(patch, patch.lod + 1, patch.sector * 2 + i, patch.ring * 2 + j, average_height)
+        #bl, br, tr, tl
+        self.create_child_patch(patch, 0, 0)
+        self.create_child_patch(patch, 1, 0)
+        self.create_child_patch(patch, 1, 1)
+        self.create_child_patch(patch, 0, 1)
         patch.children_bb = []
         patch.children_normal = []
         patch.children_offset = []
@@ -1123,15 +1144,20 @@ class PatchedSquareShapeBase(PatchedShape):
     def create_patch(self, parent, lod, face, x, y, average_heigt=1.0):
         return None
 
+    def create_child_patch(self, patch, i, j):
+            average_height = 0.0
+            for k in range(2):
+                for l in range(2):
+                    average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
+            average_height = average_height / 4.0 / self.owner.get_apparent_radius()
+            child = self.create_patch(patch, patch.lod + 1, patch.face, patch.x * 2 + i, patch.y * 2 + j, average_height)
+
     def split_patch(self, patch):
-        for i in range(2):
-            for j in range(2):
-                average_height = 0.0
-                for k in range(2):
-                    for l in range(2):
-                        average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
-                average_height = average_height / 4.0 / self.owner.get_apparent_radius()
-                self.create_patch(patch, patch.lod + 1, patch.face, patch.x * 2 + i, patch.y * 2 + j, average_height)
+        #bl, br, tr, tl
+        self.create_child_patch(patch, 0, 0)
+        self.create_child_patch(patch, 1, 0)
+        self.create_child_patch(patch, 1, 1)
+        self.create_child_patch(patch, 0, 1)
         patch.children_bb = []
         patch.children_normal = []
         patch.children_offset = []

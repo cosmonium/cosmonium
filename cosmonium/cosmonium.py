@@ -746,6 +746,7 @@ class Cosmonium(CosmoniumBase):
                     coord = self.selected.surface .global_to_shape_coord(x, y)
                     patch = self.selected.surface.shape.find_patch_at(coord)
                     if patch is not None:
+                        print("\tID:", patch.str_id())
                         print("\tLOD:", patch.lod)
                         print("\tView:", patch.patch_in_view)
                         print("\tSize:", patch.apparent_size, "Length:", patch.get_patch_length(), "App:", patch.apparent_size)
