@@ -1132,14 +1132,21 @@ class PatchedSquareShapeBase(PatchedShape):
         self.face_unique = False
 
     def create_root_patches(self):
-        self.root_patches = [
-                             self.create_patch(None, 0, 0, 0, 0),
-                             self.create_patch(None, 0, 1, 0, 0),
-                             self.create_patch(None, 0, 2, 0, 0),
-                             self.create_patch(None, 0, 3, 0, 0),
-                             self.create_patch(None, 0, 4, 0, 0),
-                             self.create_patch(None, 0, 5, 0, 0)
-                             ]
+        right = self.create_patch(None, 0, SquarePatchBase.RIGHT, 0, 0)
+        left = self.create_patch(None, 0, SquarePatchBase.LEFT, 0, 0)
+        back = self.create_patch(None, 0, SquarePatchBase.BACK, 0, 0)
+        front = self.create_patch(None, 0, SquarePatchBase.FRONT, 0, 0)
+        top = self.create_patch(None, 0, SquarePatchBase.TOP, 0, 0)
+        bottom = self.create_patch(None, 0, SquarePatchBase.BOTTOM, 0, 0)
+        self.root_patches = [ right, left, back, front, top, bottom ]
+        #north, east, south, west
+#         right.set_all_neighbours([front], [bottom], [back], [top])
+#         left.set_all_neighbours([], [], [], [])
+#         back.set_all_neighbours([], [], [top], [])
+#         front.set_all_neighbours([bottom], [right], [top], [left])
+#         top.set_all_neighbours([back], [left], [front], [right])
+#         bottom.set_all_neighbours([front], [right], [back], [left])
+
 
     def create_patch(self, parent, lod, face, x, y, average_heigt=1.0):
         return None
