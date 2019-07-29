@@ -11,8 +11,8 @@
 
 from __future__ import print_function
 
-from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LRGBColor, LQuaternion, LPoint3d,\
-    LColor
+from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LRGBColor, LQuaternion, LColor
+from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
 from panda3d.core import CollisionTraverser, CollisionNode, CollideMask
 from panda3d.core import CollisionHandlerQueue, CollisionRay
@@ -44,6 +44,7 @@ from cosmonium.procedural.shadernoise import NoiseMap
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
 from cosmonium.nav import NavBase
+from cosmonium.astro.frame import AbsoluteReferenceFrame
 
 class TreeAnimControl(GeometryControl):
     def get_id(self):
@@ -223,21 +224,55 @@ class RalphConfigParser(YamlModuleParser):
         else:
             self.fog_parameters = None
 
+class Ralph(object):
+    def __init__(self, instance):
+        self.instance = instance
+
+    def get_rel_position_to(self, position):
+        return LPoint3d(*self.instance.get_pos())
+
 class RalphCamera(CameraBase):
+    def __init__(self, cam, lens):
+        CameraBase.__init__(self, cam, lens)
+        self.camera_global_pos = LPoint3d()
+        self.camera_frame = AbsoluteReferenceFrame()
+
+    def get_frame_camera_pos(self):
+        return LPoint3d(*base.cam.get_pos())
+
+    def set_frame_camera_pos(self, position):
+        base.cam.set_pos(*position)
+
+    def get_frame_camera_rot(self):
+        return LQuaterniond(*base.cam.get_quat())
+
+    def set_frame_camera_rot(self, rot):
+        base.cam.set_quat(LQuaternion(*rot))
+
     def set_camera_pos(self, position):
         base.cam.set_pos(*position)
 
     def get_camera_pos(self):
         return LPoint3d(*base.cam.get_pos())
 
+    def set_camera_rot(self, rot):
+        base.cam.set_quat(LQuaternion(*rot))
+
+    def get_camera_rot(self):
+        return LQuaterniond(*base.cam.get_quat())
+
 class RalphNav(NavBase):
-    def __init__(self, ralph, cam, sun, owner):
+    def __init__(self, ralph, target, cam, observer, sun, owner):
         NavBase.__init__(self)
         self.ralph = ralph
+        self.target = target
         self.cam = cam
+        self.observer = observer
         self.sun = sun
         self.owner = owner
+        self.base = owner
         self.isMoving = False
+        self.mouseSelectClick = False
 
     def register_events(self, event_ctrl):
         self.keyMap = {
@@ -268,10 +303,39 @@ class RalphNav(NavBase):
         event_ctrl.accept("a-up", self.setKey, ["cam-left", False])
         event_ctrl.accept("s-up", self.setKey, ["cam-right", False])
 
+        event_ctrl.accept("mouse1", self.OnSelectClick )
+        event_ctrl.accept("mouse1-up", self.OnSelectRelease )
+
     def remove_events(self, event_ctrl):
         NavBase.remove_events(self, event_ctrl)
 
+    def OnSelectClick(self):
+        if self.base.mouseWatcherNode.hasMouse():
+            self.mouseSelectClick = True
+            mpos = self.owner.mouseWatcherNode.getMouse()
+            self.startX = mpos.getX()
+            self.startY = mpos.getY()
+            self.dragAngleX = pi
+            self.dragAngleY = pi
+            self.create_drag_params(self.target)
+
+    def OnSelectRelease(self):
+        if self.owner.mouseWatcherNode.hasMouse():
+            mpos = self.owner.mouseWatcherNode.getMouse()
+            if self.startX == mpos.getX() and self.startY == mpos.getY():
+                pass
+        self.mouseSelectClick = False
+
     def update(self, dt):
+        if self.mouseSelectClick and self.base.mouseWatcherNode.hasMouse():
+            mpos = self.base.mouseWatcherNode.getMouse()
+            deltaX = mpos.getX() - self.startX
+            deltaY = mpos.getY() - self.startY
+            z_angle = -deltaX * self.dragAngleX
+            x_angle = deltaY * self.dragAngleY
+            self.do_drag(z_angle, x_angle, True)
+            return True
+
         if self.keyMap["cam-left"]:
             self.cam.setX(self.cam, -20 * dt)
         if self.keyMap["cam-right"]:
@@ -309,6 +373,7 @@ class RalphNav(NavBase):
                 self.ralph.stop()
                 self.ralph.pose("walk", 5)
                 self.isMoving = False
+        return False
 
 class RalphSplash():
     def set_text(self, text):
@@ -600,7 +665,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)
         self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
 
-        self.nav = RalphNav(self.ralph, self.cam, self, self)
+        self.ralph_body = Ralph(self.ralph)
+        self.nav = RalphNav(self.ralph, self.ralph_body, self.cam, self.observer, self, self)
         self.nav.register_events(self)
 
         # Create a floater object, which floats 2 units above ralph.  We
@@ -663,56 +729,43 @@ class RoamingRalphDemo(CosmoniumBase):
         dt = globalClock.getDt()
         startpos = self.ralph.getPos()
 
-        self.nav.update(dt)
+        control = self.nav.update(dt)
 
-        # If the camera is too far from ralph, move it closer.
-        # If the camera is too close to ralph, move it farther.
+        if not control:
+            # If the camera is too far from ralph, move it closer.
+            # If the camera is too close to ralph, move it farther.
+    
+            camvec = self.ralph.getPos() - self.cam.getPos()
+            camvec.setZ(0)
+            camdist = camvec.length()
+            camvec.normalize()
+            if camdist > self.max_camdist:
+                self.cam.setPos(self.cam.getPos() + camvec * (camdist - self.max_camdist))
+                camdist = self.max_camdist
+            if camdist < self.min_camdist:
+                self.cam.setPos(self.cam.getPos() - camvec * (self.min_camdist - camdist))
+                camdist = self.min_camdist
 
-        camvec = self.ralph.getPos() - self.cam.getPos()
-        camvec.setZ(0)
-        camdist = camvec.length()
-        camvec.normalize()
-        if camdist > self.max_camdist:
-            self.cam.setPos(self.cam.getPos() + camvec * (camdist - self.max_camdist))
-            camdist = self.max_camdist
-        if camdist < self.min_camdist:
-            self.cam.setPos(self.cam.getPos() - camvec * (self.min_camdist - camdist))
-            camdist = self.min_camdist
+            ralph_height = self.get_height(self.ralph.getPos())
+            self.ralph.setZ(ralph_height)
 
-        # Normally, we would have to call traverse() to check for collisions.
-        # However, the class ShowBase that we inherit from has a task to do
-        # this for us, if we assign a CollisionTraverser to self.cTrav.
-        #self.cTrav.traverse(render)
+            # Keep the camera at one foot above the terrain,
+            # or two feet above ralph, whichever is greater.
+    
+            camera_height = self.get_height(self.cam.getPos()) + 1.0
+            if camera_height < ralph_height + self.camera_height:
+                self.cam.setZ(ralph_height + self.camera_height)
+            else:
+                self.cam.setZ(camera_height)
+            #self.limit_pos(self.camera)
+    
+            # The camera should look in ralph's direction,
+            # but it should also try to stay horizontal, so look at
+            # a floater which hovers above ralph's head.
+            self.cam.lookAt(self.floater)
 
-        if False:
-            # Adjust ralph's Z coordinate.  If ralph's ray hit anything, put
-            # him back where he was last frame.
-
-            entries = list(self.ralphGroundHandler.getEntries())
-            entries.sort(key=lambda x: x.getSurfacePoint(render).getZ())
-
-            if len(entries) > 0:
-                self.ralph.setPos(startpos)
-        ralph_height = self.get_height(self.ralph.getPos())
-        self.ralph.setZ(ralph_height)
-
-        # Keep the camera at one foot above the terrain,
-        # or two feet above ralph, whichever is greater.
-
-        camera_height = self.get_height(self.cam.getPos()) + 1.0
-        if camera_height < ralph_height + self.camera_height:
-            self.cam.setZ(ralph_height + self.camera_height)
-        else:
-            self.cam.setZ(camera_height)
-        #self.limit_pos(self.camera)
-
-        # The camera should look in ralph's direction,
-        # but it should also try to stay horizontal, so look at
-        # a floater which hovers above ralph's head.
-        self.cam.lookAt(self.floater)
-
-        #self.shadow_caster.set_pos(self.ralph.get_pos())
-        self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
+            #self.shadow_caster.set_pos(self.ralph.get_pos())
+            self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
 
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()

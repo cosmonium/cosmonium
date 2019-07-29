@@ -70,7 +70,7 @@ class AutoPilot(object):
 
     def do_camera_move(self, step):
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.camera.set_rel_camera_pos(position)
+        self.camera.set_frame_camera_pos(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -80,12 +80,12 @@ class AutoPilot(object):
             if absolute:
                 self.camera.set_camera_pos(new_pos)
             else:
-                self.camera.set_rel_camera_pos(new_pos)
+                self.camera.set_frame_camera_pos(new_pos)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             if absolute:
-                self.start_pos = self.camera.get_rel_camera_pos()
+                self.start_pos = self.camera.get_frame_camera_pos()
                 self.end_pos = self.camera.get_rel_position_of(new_pos)
             if ease:
                 blend_type = 'easeInOut'
@@ -127,7 +127,7 @@ class AutoPilot(object):
         rot.normalize()
         self.camera.set_camera_rot(rot)
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.camera.set_rel_camera_pos(position)
+        self.camera.set_frame_camera_pos(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -138,14 +138,14 @@ class AutoPilot(object):
                 self.camera.set_camera_pos(new_pos)
                 self.camera.set_camera_rot(new_rot)
             else:
-                self.camera.set_rel_camera_pos(new_pos)
-                self.camera.set_rel_camera_rot(new_rot)
+                self.camera.set_frame_camera_pos(new_pos)
+                self.camera.set_frame_camera_rot(new_rot)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             self.fake = NodePath('fake')
             if absolute:
-                self.start_pos = self.camera.get_rel_camera_pos()
+                self.start_pos = self.camera.get_frame_camera_pos()
                 self.end_pos = self.camera.get_rel_position_of(new_pos)
                 #TODO
                 #new_rot = self.camera.get_rel_rotation_of(new_pos)
@@ -385,13 +385,13 @@ class AutoPilot(object):
         target = self.ui.selected
         center = target.get_rel_position_to(self.camera.camera_global_pos)
         center = self.camera.get_rel_position_of(center)
-        relative_pos = self.camera.get_rel_camera_pos() - center
+        relative_pos = self.camera.get_frame_camera_pos() - center
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
         rot2 = self.camera.camera_rot.conjugate() * rot * self.camera.camera_rot
         rot2.normalize()
         new_pos = rot2.conjugate().xform(relative_pos)
-        self.camera.set_rel_camera_pos(new_pos + center)
+        self.camera.set_frame_camera_pos(new_pos + center)
         self.camera.turn_camera(self.camera.camera_rot * rot2, absolute=False)
 
     def orbit(self, axis, rate, duration=None):

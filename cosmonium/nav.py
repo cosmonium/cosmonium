@@ -43,9 +43,9 @@ class NavBase(object):
     def create_drag_params(self, target):
         center = target.get_rel_position_to(self.observer.camera_global_pos)
         self.dragCenter = self.observer.camera_frame.get_rel_position(center)
-        dragPosition = self.observer.camera_pos#self.get_camera_pos()
+        dragPosition = self.observer.get_frame_camera_pos()
         self.dragDir = self.dragCenter - dragPosition
-        self.dragOrientation = self.observer.camera_rot#self.get_camera_rot()
+        self.dragOrientation = self.observer.get_frame_camera_rot()
         self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
         self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
 
@@ -57,8 +57,8 @@ class NavBase(object):
         combined = xRotation * zRotation
         if move:
             delta = combined.xform(-self.dragDir)
-            self.observer.set_rel_camera_pos(delta + self.dragCenter)
-            self.observer.set_rel_camera_rot(self.dragOrientation * combined)
+            self.observer.set_frame_camera_pos(delta + self.dragCenter)
+            self.observer.set_frame_camera_rot(self.dragOrientation * combined)
         else:
             self.observer.set_camera_rot(self.dragOrientation * combined)
 
@@ -380,7 +380,7 @@ class FreeNav(NavBase):
 
     def stepRelative(self, x = 0, y = 0, z = 0):
         direction=LVector3d(x,y,z)
-        delta = self.observer.get_rel_camera_rot().xform(direction)
+        delta = self.observer.get_frame_camera_rot().xform(direction)
         self.observer.step_camera(delta, absolute=False)
 
     def onChangeAltitude(self, rate):

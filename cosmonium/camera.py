@@ -169,16 +169,16 @@ class Camera(CameraBase):
     def get_position_of(self, rel_position):
         return self.camera_global_pos + self.camera_frame.get_local_position(rel_position)
 
-    def set_rel_camera_pos(self, position):
+    def set_frame_camera_pos(self, position):
         self.camera_pos = position
 
-    def get_rel_camera_pos(self):
+    def get_frame_camera_pos(self):
         return self.camera_pos
 
-    def set_rel_camera_rot(self, orientation):
+    def set_frame_camera_rot(self, orientation):
         self.camera_rot = orientation
 
-    def get_rel_camera_rot(self):
+    def get_frame_camera_rot(self):
         return self.camera_rot
 
     def get_rel_position_of(self, position, local=True):
