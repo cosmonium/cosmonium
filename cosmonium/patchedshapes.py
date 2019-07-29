@@ -461,12 +461,13 @@ class SquarePatchBase(Patch):
 
     def update_instance(self, parent):
         if self.instance is not None and not self.use_tesselation:
-            shown = self.shown
-            parent.remove_patch_instance(self)
-            parent.create_patch_instance(self, hide=True)
-            if shown and self.instance_ready:
-                parent.show_patch(self)
+            if self.shown:
+                parent.remove_patch_instance(self)
+                parent.create_patch_instance(self)
                 parent.owner.surface.jobs_done_cb(self)
+            else:
+                parent.remove_patch_instance(self)
+                parent.create_patch_instance(self, hide=True)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
