@@ -82,11 +82,9 @@ max_fov = 120.0
 if use_double:
     offset_body_center = False
     shift_patch_origin = True
-    patch_scaling = False
 else:
     offset_body_center = True
     shift_patch_origin = True
-    patch_scaling = False
 
 min_altitude = 2 * units.m
 

@@ -179,7 +179,6 @@ class Patch(PatchBase):
         PatchBase.__init__(self, parent, lod, density)
         self.visible = False
         self.radius = radius
-        self.geom_scale = 1.0
         self.offset = 0.0
         self.orientation = LQuaterniond()
         self.distance_to_obs = None
@@ -219,8 +218,6 @@ class SpherePatch(Patch):
         self.r_div = 1 << self.lod
         self.s_div = 2 << self.lod
         self.cylindrical_map = True
-        if settings.patch_scaling:
-            self.geom_scale = float(1 << self.lod)
         self.average_height = average_height
         if settings.shift_patch_origin:
             self.offset = self.average_height
@@ -247,12 +244,12 @@ class SpherePatch(Patch):
                                     (lat1 - lat0))
         offset = self.offset - (self.average_height - 1)
         if self.lod > 0:
-            self.bounds = geometry.UVPatchAABB(self.geom_scale,
+            self.bounds = geometry.UVPatchAABB(1.0,
                                                self.x0, self.y0, self.x1, self.y1,
                                                offset=offset)
         else:
-            self.bounds = geometry.halfSphereAABB(self.geom_scale, self.sector == 1, offset)
-        self.centre =  geometry.UVPatchPoint(self.geom_scale,
+            self.bounds = geometry.halfSphereAABB(1.0, self.sector == 1, offset)
+        self.centre =  geometry.UVPatchPoint(1.0,
                                              0.5, 0.5,
                                              self.x0, self.y0,
                                              self.x1, self.y1,
@@ -272,7 +269,7 @@ class SpherePatch(Patch):
         if settings.software_instancing:
             patch_id = "%d-%d" % (self.lod, self.ring)
             if not patch_id in cache:
-                cache[patch_id] = geometry.UVPatch(self.geom_scale,
+                cache[patch_id] = geometry.UVPatch(1.0,
                                                    self.density, self.density,
                                                    0.0, self.y0,
                                                    1.0 / self.s_div,self.y1,
@@ -285,7 +282,7 @@ class SpherePatch(Patch):
         else:
             patch_id = "%d-%d %d" % (self.lod, self.ring, self.sector)
             if not patch_id in cache:
-                cache[patch_id] = geometry.UVPatch(self.geom_scale,
+                cache[patch_id] = geometry.UVPatch(1.0,
                                                    self.density, self.density,
                                                    self.x0, self.y0,
                                                    self.x1, self.y1,
@@ -382,10 +379,6 @@ class SquarePatchBase(Patch):
         self.sin_max_angle = sin(pi/2/self.div)
         self.source_normal = self.face_normal(x, y)
         self.normal = self.rotations[self.face].xform(self.source_normal)
-        if settings.patch_scaling:
-            self.geom_scale = float(1 << self.lod)
-        else:
-            self.geom_scale = 1.0
         self.average_height = average_height
         if settings.shift_patch_origin:
             self.offset = self.average_height
@@ -447,7 +440,7 @@ class SquarePatchBase(Patch):
                                                   float(self.x + 1) / self.div,
                                                   float(self.y + 1) / self.div)
                 else:
-                    template = geometry.SquarePatch(self.geom_scale,
+                    template = geometry.SquarePatch(1.0,
                                                   self.density,
                                                   float(self.x) / self.div,
                                                   float(self.y) / self.div,
@@ -517,7 +510,7 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                     float(y + 1) / self.div)
 
     def create_bounding_volume(self, x, y, offset):
-        return geometry.NormalizedSquarePatchAABB(self.geom_scale,
+        return geometry.NormalizedSquarePatchAABB(1.0,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
@@ -525,7 +518,7 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   offset)
 
     def create_centre(self, x, y, offset):
-        return geometry.NormalizedSquarePatchPoint(self.geom_scale,
+        return geometry.NormalizedSquarePatchPoint(1.0,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
@@ -533,7 +526,7 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   float(y + 1) / self.div,
                                                   offset)
     def create_patch_instance(self, x, y):
-        return geometry.NormalizedSquarePatch(self.geom_scale,
+        return geometry.NormalizedSquarePatch(1.0,
                                               self.density,
                                               self.tesselation_outer_level,
                                               float(x) / self.div,
@@ -562,7 +555,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                          self.x1, self.y1)
 
     def create_bounding_volume(self, x, y, offset):
-        return geometry.SquaredDistanceSquarePatchAABB(self.geom_scale,
+        return geometry.SquaredDistanceSquarePatchAABB(1.0,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
                                                        float(x + 1) / self.div,
@@ -570,7 +563,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                        offset=offset)
 
     def create_centre(self, x, y, offset):
-        return geometry.SquaredDistanceSquarePatchPoint(self.geom_scale,
+        return geometry.SquaredDistanceSquarePatchPoint(1.0,
                                                        0.5, 0.5,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
@@ -579,7 +572,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                        offset=offset)
 
     def create_patch_instance(self, x, y):
-        return geometry.SquaredDistanceSquarePatch(self.geom_scale,
+        return geometry.SquaredDistanceSquarePatch(1.0,
                                                    self.density,
                                                    self.tesselation_outer_level,
                                                    float(x) / self.div,
