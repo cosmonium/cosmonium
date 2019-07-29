@@ -12,6 +12,11 @@ class NavBase(object):
         self.base = None
         self.observer = None
         self.keyMap = {}
+        self.dragCenter = None
+        self.dragDir = None
+        self.dragOrientation = None
+        self.dragZAxis = None
+        self.dragXAxis = None
 
     def init(self, base, camera, ui):
         self.base = base
@@ -28,6 +33,34 @@ class NavBase(object):
 
     def remove_events(self, event_ctrl):
         pass
+
+    def stash_position(self):
+        self.dragCenter = self.observer.get_position_of(self.dragCenter)
+
+    def pop_position(self):
+        self.dragCenter = self.observer.get_rel_position_of(self.dragCenter, local=False)
+
+    def create_drag_params(self, target):
+        center = target.get_rel_position_to(self.observer.camera_global_pos)
+        self.dragCenter = self.observer.camera_frame.get_rel_position(center)
+        dragPosition = self.observer.camera_pos#self.get_camera_pos()
+        self.dragDir = self.dragCenter - dragPosition
+        self.dragOrientation = self.observer.camera_rot#self.get_camera_rot()
+        self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
+        self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
+
+    def do_drag(self, z_angle, x_angle, move=False):
+        zRotation = LQuaterniond()
+        zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
+        xRotation = LQuaterniond()
+        xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
+        combined = xRotation * zRotation
+        if move:
+            delta = combined.xform(-self.dragDir)
+            self.observer.set_rel_camera_pos(delta + self.dragCenter)
+            self.observer.set_rel_camera_rot(self.dragOrientation * combined)
+        else:
+            self.observer.set_camera_rot(self.dragOrientation * combined)
 
     def update(self, dt):
         pass
@@ -156,34 +189,6 @@ class FreeNav(NavBase):
 
     def stop(self):
         self.speed = 0
-
-    def stash_position(self):
-        self.dragCenter = self.observer.get_position_of(self.dragCenter)
-
-    def pop_position(self):
-        self.dragCenter = self.observer.get_rel_position_of(self.dragCenter, local=False)
-
-    def create_drag_params(self, target):
-        center = target.get_rel_position_to(self.observer.camera_global_pos)
-        self.dragCenter = self.observer.camera_frame.get_rel_position(center)
-        dragPosition = self.observer.camera_pos#self.get_camera_pos()
-        self.dragDir = self.dragCenter - dragPosition
-        self.dragOrientation = self.observer.camera_rot#self.get_camera_rot()
-        self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
-        self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
-
-    def do_drag(self, z_angle, x_angle, move=False):
-        zRotation = LQuaterniond()
-        zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
-        xRotation = LQuaterniond()
-        xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
-        combined = xRotation * zRotation
-        if move:
-            delta = combined.xform(-self.dragDir)
-            self.observer.set_rel_camera_pos(delta + self.dragCenter)
-            self.observer.set_rel_camera_rot(self.dragOrientation * combined)
-        else:
-            self.observer.set_camera_rot(self.dragOrientation * combined)
 
     def OnSelectClick(self):
         if self.base.mouseWatcherNode.hasMouse():

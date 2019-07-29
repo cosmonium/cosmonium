@@ -43,6 +43,7 @@ import sys
 from cosmonium.procedural.shadernoise import NoiseMap
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
+from cosmonium.nav import NavBase
 
 class TreeAnimControl(GeometryControl):
     def get_id(self):
@@ -228,6 +229,86 @@ class RalphCamera(CameraBase):
 
     def get_camera_pos(self):
         return LPoint3d(*base.cam.get_pos())
+
+class RalphNav(NavBase):
+    def __init__(self, ralph, cam, sun, owner):
+        NavBase.__init__(self)
+        self.ralph = ralph
+        self.cam = cam
+        self.sun = sun
+        self.owner = owner
+        self.isMoving = False
+
+    def register_events(self, event_ctrl):
+        self.keyMap = {
+            "left": 0, "right": 0, "forward": 0, "backward": 0,
+            "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
+            "sun-left": 0, "sun-right": 0,
+            "turbo": 0}
+        event_ctrl.accept("arrow_left", self.setKey, ["left", True])
+        event_ctrl.accept("arrow_right", self.setKey, ["right", True])
+        event_ctrl.accept("arrow_up", self.setKey, ["forward", True])
+        event_ctrl.accept("arrow_down", self.setKey, ["backward", True])
+        event_ctrl.accept("shift", self.setKey, ["turbo", True])
+        event_ctrl.accept("a", self.setKey, ["cam-left", True], direct=True)
+        event_ctrl.accept("s", self.setKey, ["cam-right", True], direct=True)
+        event_ctrl.accept("u", self.setKey, ["cam-up", True], direct=True)
+        event_ctrl.accept("u-up", self.setKey, ["cam-up", False])
+        event_ctrl.accept("d", self.setKey, ["cam-down", True], direct=True)
+        event_ctrl.accept("d-up", self.setKey, ["cam-down", False])
+        event_ctrl.accept("o", self.setKey, ["sun-left", True], direct=True)
+        event_ctrl.accept("o-up", self.setKey, ["sun-left", False])
+        event_ctrl.accept("p", self.setKey, ["sun-right", True], direct=True)
+        event_ctrl.accept("p-up", self.setKey, ["sun-right", False])
+        event_ctrl.accept("arrow_left-up", self.setKey, ["left", False])
+        event_ctrl.accept("arrow_right-up", self.setKey, ["right", False])
+        event_ctrl.accept("arrow_up-up", self.setKey, ["forward", False])
+        event_ctrl.accept("arrow_down-up", self.setKey, ["backward", False])
+        event_ctrl.accept("shift-up", self.setKey, ["turbo", False])
+        event_ctrl.accept("a-up", self.setKey, ["cam-left", False])
+        event_ctrl.accept("s-up", self.setKey, ["cam-right", False])
+
+    def remove_events(self, event_ctrl):
+        NavBase.remove_events(self, event_ctrl)
+
+    def update(self, dt):
+        if self.keyMap["cam-left"]:
+            self.cam.setX(self.cam, -20 * dt)
+        if self.keyMap["cam-right"]:
+            self.cam.setX(self.cam, +20 * dt)
+        if self.keyMap["cam-up"]:
+            self.owner.camera_height *= (1 + 2 * dt)
+        if self.keyMap["cam-down"]:
+            self.owner.camera_height *= (1 - 2 * dt)
+        if self.owner.camera_height < 1.0:
+            self.owner.camera_height = 1.0
+
+        if self.keyMap["sun-left"]:
+            self.sun.set_light_angle(self.light_angle + 30 * dt)
+        if self.keyMap["sun-right"]:
+            self.sun.set_light_angle(self.light_angle - 30 * dt)
+
+        delta = 25
+        if self.keyMap["turbo"]:
+            delta *= 10
+        if self.keyMap["left"]:
+            self.ralph.setH(self.ralph.getH() + 300 * dt)
+        if self.keyMap["right"]:
+            self.ralph.setH(self.ralph.getH() - 300 * dt)
+        if self.keyMap["forward"]:
+            self.ralph.setY(self.ralph, -delta * dt)
+        if self.keyMap["backward"]:
+            self.ralph.setY(self.ralph, delta * dt)
+
+        if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
+            if self.isMoving is False:
+                self.ralph.loop("run")
+                self.isMoving = True
+        else:
+            if self.isMoving:
+                self.ralph.stop()
+                self.ralph.pose("walk", 5)
+                self.isMoving = False
 
 class RalphSplash():
     def set_text(self, text):
@@ -461,13 +542,6 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.win.setClearColor((135.0/255, 206.0/255, 235.0/255, 1))
 
-        # This is used to store which keys are currently pressed.
-        self.keyMap = {
-            "left": 0, "right": 0, "forward": 0, "backward": 0,
-            "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
-            "sun-left": 0, "sun-right": 0,
-            "turbo": 0}
-
         self.max_camdist = 10.0
         self.min_camdist = 5.0
 
@@ -526,6 +600,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)
         self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
 
+        self.nav = RalphNav(self.ralph, self.cam, self, self)
+        self.nav.register_events(self)
+
         # Create a floater object, which floats 2 units above ralph.  We
         # use this as a target for the camera to look at.
 
@@ -537,28 +614,6 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.accept("escape", sys.exit)
         self.accept("control-q", sys.exit)
-        self.accept("arrow_left", self.setKey, ["left", True])
-        self.accept("arrow_right", self.setKey, ["right", True])
-        self.accept("arrow_up", self.setKey, ["forward", True])
-        self.accept("arrow_down", self.setKey, ["backward", True])
-        self.accept("shift", self.setKey, ["turbo", True])
-        self.accept("a", self.setKey, ["cam-left", True], direct=True)
-        self.accept("s", self.setKey, ["cam-right", True], direct=True)
-        self.accept("u", self.setKey, ["cam-up", True], direct=True)
-        self.accept("u-up", self.setKey, ["cam-up", False])
-        self.accept("d", self.setKey, ["cam-down", True], direct=True)
-        self.accept("d-up", self.setKey, ["cam-down", False])
-        self.accept("o", self.setKey, ["sun-left", True], direct=True)
-        self.accept("o-up", self.setKey, ["sun-left", False])
-        self.accept("p", self.setKey, ["sun-right", True], direct=True)
-        self.accept("p-up", self.setKey, ["sun-right", False])
-        self.accept("arrow_left-up", self.setKey, ["left", False])
-        self.accept("arrow_right-up", self.setKey, ["right", False])
-        self.accept("arrow_up-up", self.setKey, ["forward", False])
-        self.accept("arrow_down-up", self.setKey, ["backward", False])
-        self.accept("shift-up", self.setKey, ["turbo", False])
-        self.accept("a-up", self.setKey, ["cam-left", False])
-        self.accept("s-up", self.setKey, ["cam-right", False])
         self.accept("w", self.toggle_water)
         self.accept("h", self.print_debug)
         self.accept("f2", self.connect_pstats)
@@ -572,9 +627,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.accept('alt-enter', self.toggle_fullscreen)
 
         taskMgr.add(self.move, "moveTask")
-
-        # Game state variables
-        self.isMoving = False
 
         # Set up the camera
         self.cam.setPos(self.ralph.getX(), self.ralph.getY() + 10, 2)
@@ -607,71 +659,11 @@ class RoamingRalphDemo(CosmoniumBase):
         #self.terrain.shape_updated()
         self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
 
-    # Records the state of the arrow keys
-    def setKey(self, key, value):
-        self.keyMap[key] = value
-
-    # Accepts arrow keys to move either the player or the menu cursor,
-    # Also deals with grid checking and collision detection
     def move(self, task):
-
-        # Get the time that elapsed since last frame.  We multiply this with
-        # the desired speed in order to find out with which distance to move
-        # in order to achieve that desired speed.
         dt = globalClock.getDt()
-
-        # If the camera-left key is pressed, move camera left.
-        # If the camera-right key is pressed, move camera right.
-
-        if self.keyMap["cam-left"]:
-            self.cam.setX(self.cam, -20 * dt)
-        if self.keyMap["cam-right"]:
-            self.cam.setX(self.cam, +20 * dt)
-        if self.keyMap["cam-up"]:
-            self.camera_height *= (1 + 2 * dt)
-        if self.keyMap["cam-down"]:
-            self.camera_height *= (1 - 2 * dt)
-        if self.camera_height < 1.0:
-            self.camera_height = 1.0
-
-        if self.keyMap["sun-left"]:
-            self.set_light_angle(self.light_angle + 30 * dt)
-        if self.keyMap["sun-right"]:
-            self.set_light_angle(self.light_angle - 30 * dt)
-
-        # save ralph's initial position so that we can restore it,
-        # in case he falls off the map or runs into something.
-
         startpos = self.ralph.getPos()
 
-        # If a move-key is pressed, move ralph in the specified direction.
-
-        delta = 25
-        if self.keyMap["turbo"]:
-            delta *= 10
-        if self.keyMap["left"]:
-            self.ralph.setH(self.ralph.getH() + 300 * dt)
-        if self.keyMap["right"]:
-            self.ralph.setH(self.ralph.getH() - 300 * dt)
-        if self.keyMap["forward"]:
-            self.ralph.setY(self.ralph, -delta * dt)
-        if self.keyMap["backward"]:
-            self.ralph.setY(self.ralph, delta * dt)
-
-        #self.limit_pos(self.ralph)
-
-        # If ralph is moving, loop the run animation.
-        # If he is standing still, stop the animation.
-
-        if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
-            if self.isMoving is False:
-                self.ralph.loop("run")
-                self.isMoving = True
-        else:
-            if self.isMoving:
-                self.ralph.stop()
-                self.ralph.pose("walk", 5)
-                self.isMoving = False
+        self.nav.update(dt)
 
         # If the camera is too far from ralph, move it closer.
         # If the camera is too close to ralph, move it farther.
@@ -727,10 +719,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.vector_to_obs.normalize()
         self.distance_to_obs = self.camera_height
         self.scene_rel_position = -base.cam.get_pos()
-
-        if self.isMoving:
-            #self.terrain_shape.test_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-            pass#self.terrain_shape.update_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
 
         self.object_collection.update_instance()
         self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
