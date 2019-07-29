@@ -64,18 +64,17 @@ class Tile(PatchBase):
 
     def check_visibility(self, worker, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
         if self.in_patch(*local):
-            self.distance = sqrt(104)
+            self.distance = altitude
             within_patch = True
         else:
-            self.distance = (self.centre - model_camera_pos).length()
-            dx = max(self.x0 - model_camera_pos[0], 0, model_camera_pos[0] - self.x1)
-            dy = max(self.y0 - model_camera_pos[1], 0, model_camera_pos[1] - self.y1)
-            self.distance = sqrt(dx*dx + dy*dy) * self.scale + sqrt(104)
+            dx = max(self.x0 - model_camera_pos[0], 0, model_camera_pos[0] - self.x1) * self.scale
+            dy = max(self.y0 - model_camera_pos[1], 0, model_camera_pos[1] - self.y1) * self.scale
+            self.distance = sqrt(dx*dx + dy*dy + altitude * altitude)
             within_patch = False
         self.patch_in_view = worker.is_patch_in_view(self)
         self.in_cone = True
         self.visible = within_patch or (self.patch_in_view and self.in_cone)
-        #print(self.str_id(), within_patch, self.patch_in_view)
+        #print(self.str_id(), within_patch, self.patch_in_view, altitude, self.distance)
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 
     def create_holder_instance(self):

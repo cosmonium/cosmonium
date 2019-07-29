@@ -446,7 +446,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.observer = RalphCamera(self.cam, self.camLens)
         self.observer.init()
 
-        self.distance_to_obs = float('inf')
+        self.distance_to_obs = 0.0
         self.height_under = 0.0
         self.scene_position = LVector3()
         self.scene_scale_factor = 1
@@ -467,6 +467,9 @@ class RoamingRalphDemo(CosmoniumBase):
             "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
             "sun-left": 0, "sun-right": 0,
             "turbo": 0}
+
+        self.max_camdist = 10.0
+        self.min_camdist = 5.0
 
         # Set up the environment
         #
@@ -576,6 +579,7 @@ class RoamingRalphDemo(CosmoniumBase):
         # Set up the camera
         self.cam.setPos(self.ralph.getX(), self.ralph.getY() + 10, 2)
         self.camera_height = 2.0
+        self.distance_to_obs = self.camera_height
         render.set_shader_input("camera", self.cam.get_pos())
 
         self.cTrav = CollisionTraverser()
@@ -676,12 +680,12 @@ class RoamingRalphDemo(CosmoniumBase):
         camvec.setZ(0)
         camdist = camvec.length()
         camvec.normalize()
-        if camdist > 10.0:
-            self.cam.setPos(self.cam.getPos() + camvec * (camdist - 10))
-            camdist = 10.0
-        if camdist < 5.0:
-            self.cam.setPos(self.cam.getPos() - camvec * (5 - camdist))
-            camdist = 5.0
+        if camdist > self.max_camdist:
+            self.cam.setPos(self.cam.getPos() + camvec * (camdist - self.max_camdist))
+            camdist = self.max_camdist
+        if camdist < self.min_camdist:
+            self.cam.setPos(self.cam.getPos() - camvec * (self.min_camdist - camdist))
+            camdist = self.min_camdist
 
         # Normally, we would have to call traverse() to check for collisions.
         # However, the class ShowBase that we inherit from has a task to do
@@ -721,6 +725,7 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
+        self.distance_to_obs = self.camera_height
         self.scene_rel_position = -base.cam.get_pos()
 
         if self.isMoving:
