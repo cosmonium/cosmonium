@@ -768,6 +768,13 @@ class BasicShader(StructuredShader):
             if self.geometry_control.world_vertex:
                 self.world_vertex = True
 
+        if self.instance_control.use_vertex:
+            self.use_vertex = True
+            if self.instance_control.model_vertex:
+                self.model_vertex = True
+            if self.instance_control.world_vertex:
+                self.world_vertex = True
+
         if self.lighting_model.use_vertex:
             self.use_vertex = True
             if self.lighting_model.model_vertex:
@@ -1360,6 +1367,7 @@ class NoInstanceControl(InstanceControl):
 
 class OffsetScaleInstanceControl(InstanceControl):
     version = 140
+    use_vertex = True
     world_vertex = True
     def get_id(self):
         return "offset%d" % self.max_instances
