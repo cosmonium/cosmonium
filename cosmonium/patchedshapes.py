@@ -677,27 +677,15 @@ class PatchedShapeBase(Shape):
                     self.instance.node().setFinal(1)
         return self.instance
 
-    def remove_instance(self):
-        Shape.remove_instance(self)
-        if settings.standalone_patches:
-            self.remove_all_patches_instances()
-
     def create_patch_instance(self, patch, hide=False):
         if patch.instance is None:
             patch.create_instance()
-            if settings.standalone_patches:
-                patch.instance.reparentTo(self.owner.context.world)
-            else:
-                patch.instance.reparentTo(self.instance)
+            patch.instance.reparentTo(self.instance)
             if hide:
                 patch.instance.hide()
                 patch.instance.stash()
             self.patches.append(patch)
             patch.shown = not hide
-            if settings.standalone_patches:
-                patch.instance.reparentTo(self.owner.context.world)
-            else:
-                patch.instance.reparentTo(self.instance)
             if settings.debug_lod_show_tb: patch.instance.showTightBounds()
             if settings.debug_lod_show_bb: patch.instance.showBounds()
         else:
@@ -1018,17 +1006,7 @@ class PatchedShape(PatchedShapeBase):
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
-        if settings.standalone_patches:
-            for patch in self.patches:
-                offset = LVector3d()
-                if settings.shift_patch_origin:
-                    offset += owner.scene_orientation.xform(patch.normal) * patch.offset * self.owner.get_apparent_radius() * owner.scene_scale_factor
-                if settings.offset_body_center:
-                    offset += -owner.vector_to_obs * self.owner.height_under * owner.scene_scale_factor
-                patch.instance.setPos(*(self.owner.scene_position + offset))
-                patch.instance.setScale(self.owner.get_scale() * self.owner.scene_scale_factor / patch.geom_scale)
-                patch.instance.setQuat(LQuaternion(*(patch.orientation * owner.scene_orientation)))
-        elif settings.offset_body_center or settings.shift_patch_origin:
+        if settings.offset_body_center or settings.shift_patch_origin:
             offset = LVector3d()
             if settings.offset_body_center:
                 offset += owner.model_body_center_offset
@@ -1053,10 +1031,7 @@ class PatchedShape(PatchedShapeBase):
             offset = offset + patch_normal * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
-        if settings.standalone_patches:
-            obj_bounds.xform(self.owner.context.world.getMat(render))
-        else:
-            obj_bounds.xform(self.instance.getMat(render))
+        obj_bounds.xform(self.instance.getMat(render))
         #print(bb, obj_bounds, self.lens_bounds)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0

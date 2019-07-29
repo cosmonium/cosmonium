@@ -80,12 +80,10 @@ min_fov = 0.001
 max_fov = 120.0
 
 if use_double:
-    standalone_patches = False
     offset_body_center = False
     shift_patch_origin = True
     patch_scaling = False
 else:
-    standalone_patches = False
     offset_body_center = True
     shift_patch_origin = True
     patch_scaling = False

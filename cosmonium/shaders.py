@@ -41,9 +41,6 @@ class ShaderBase(object):
             self.shaders_cache[shader_id] = self.shader
         if self.shader is not None and shape is not None:
             shape.instance.setShader(self.shader)
-        if shape is not None and shape.patchable and settings.standalone_patches:
-            for patch in shape.patches:
-                patch.instance.setShader(self.shader)
 
     def apply(self, shape, appearance):
         if shape is None or shape.instance is None: return
@@ -51,15 +48,11 @@ class ShaderBase(object):
         self.update_shader_shape_static(shape, appearance)
         if shape.patchable:
             for patch in shape.patches:
-                if settings.standalone_patches:
-                    self.update_shader_shape_static(patch, appearance)
                 self.update_shader_patch_static(shape, patch, appearance)
         else:
             self.update_shader_patch_static(shape, shape, appearance)
 
     def apply_patch(self, shape, patch, appearance):
-        if settings.standalone_patches:
-            self.update_shader_shape_static(patch, appearance)
         self.update_shader_patch_static(shape, patch, appearance)
 
     def update_shader_shape_static(self, shape, appearance):
@@ -79,8 +72,6 @@ class ShaderBase(object):
         self.update_shader_shape(shape, appearance)
         if shape.patchable:
             for patch in shape.patches:
-                if settings.standalone_patches:
-                    self.update_shader_shape(patch, appearance)
                 self.update_shader_patch(shape, patch, appearance)
         else:
             self.update_shader_patch(shape, shape, appearance)
