@@ -696,8 +696,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.nav = RalphNav(self.ralph, self.ralph_floater, self.cam, self.observer, self, self)
         self.nav.register_events(self)
 
-        # Accept the control keys for movement and rotation
-
         self.accept("escape", sys.exit)
         self.accept("control-q", sys.exit)
         self.accept("w", self.toggle_water)
@@ -719,29 +717,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.distance_to_obs = self.camera_height
         render.set_shader_input("camera", self.cam.get_pos())
 
-        self.cTrav = CollisionTraverser()
-
-        self.ralphGroundRay = CollisionRay()
-        self.ralphGroundRay.setOrigin(0, 0, 9)
-        self.ralphGroundRay.setDirection(0, 0, -1)
-        self.ralphGroundCol = CollisionNode('ralphRay')
-        self.ralphGroundCol.addSolid(self.ralphGroundRay)
-        self.ralphGroundCol.setFromCollideMask(CollideMask.bit(0))
-        self.ralphGroundCol.setIntoCollideMask(CollideMask.allOff())
-        self.ralphGroundColNp = self.ralph.attachNewNode(self.ralphGroundCol)
-        self.ralphGroundHandler = CollisionHandlerQueue()
-        self.cTrav.addCollider(self.ralphGroundColNp, self.ralphGroundHandler)
-
-        # Uncomment this line to see the collision rays
-        #self.ralphGroundColNp.show()
-
-        # Uncomment this line to show a visual representation of the
-        # collisions occuring
-        #self.cTrav.showCollisions(render)
-
-        #self.terrain_shape.test_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-        #self.terrain_shape.update_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-        #self.terrain.shape_updated()
         self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
 
     def move(self, task):
@@ -775,9 +750,7 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.cam.setZ(ralph_height + self.camera_height)
             else:
                 self.cam.setZ(camera_height)
-            #self.limit_pos(self.camera)
     
-            #self.shadow_caster.set_pos(self.ralph.get_pos())
             self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
 
         # The camera should look in ralph's direction,
