@@ -49,7 +49,7 @@ class NavBase(object):
         self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
         self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
 
-    def do_drag(self, z_angle, x_angle, move=False):
+    def do_drag(self, z_angle, x_angle, move=False, rotate=True):
         zRotation = LQuaterniond()
         zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
         xRotation = LQuaterniond()
