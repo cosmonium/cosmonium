@@ -767,7 +767,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_rel_position = -base.cam.get_pos()
 
         self.object_collection.update_instance()
-        self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
+        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
         return task.cont
 
     def print_debug(self):
