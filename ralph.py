@@ -261,16 +261,64 @@ class RalphCamera(CameraBase):
     def get_camera_rot(self):
         return LQuaterniond(*base.cam.get_quat())
 
+class FollowCam(object):
+    def __init__(self, terrain, cam, target, floater):
+        self.terrain = terrain
+        self.cam = cam
+        self.target = target
+        self.floater = floater
+        self.height = 2.0
+        self.min_height = 1.0
+        self.max_dist = 10.0
+        self.min_dist = 5.0
+        self.cam.setPos(self.target.getX(), self.target.getY() + self.max_dist, self.height)
+
+    def set_limits(self, min_dist, max_dist):
+        self.min_dist = min_dist
+        self.max_dist = max_dist
+
+    def set_height(self, height):
+        self.height = max(height, self.min_height)
+
+    def scale_height(self, scale):
+        self.height = max(self.min_height, self.height * scale)
+
+    def update(self):
+        vec = self.target.getPos() - self.cam.getPos()
+        vec.setZ(0)
+        dist = vec.length()
+        vec.normalize()
+        if dist > self.max_dist:
+            self.cam.setPos(self.cam.getPos() + vec * (dist - self.max_dist))
+            dist = self.max_dist
+        if dist < self.min_dist:
+            self.cam.setPos(self.cam.getPos() - vec * (self.min_dist - dist))
+            dist = self.min_dist
+
+        # Keep the camera at min_height above the terrain,
+        # or camera_height above target, whichever is greater.
+        terrain_height = self.terrain.get_height(self.cam.getPos())
+        target_height = self.target.get_z()
+        if terrain_height + self.min_height < target_height + self.height:
+            new_camera_height = target_height + self.height
+        else:
+            new_camera_height = terrain_height + self.min_height
+        self.cam.setZ(new_camera_height)
+
+        # The camera should look in ralph's direction,
+        # but it should also try to stay horizontal, so look at
+        # a floater which hovers above ralph's head.
+        self.cam.lookAt(self.floater)
+
 class RalphNav(NavBase):
-    def __init__(self, ralph, target, cam, observer, sun, owner):
+    def __init__(self, ralph, target, cam, observer, sun, follow):
         NavBase.__init__(self)
         self.ralph = ralph
         self.target = target
         self.cam = cam
         self.observer = observer
         self.sun = sun
-        self.owner = owner
-        self.base = owner
+        self.follow = follow
         self.isMoving = False
         self.mouseSelectClick = False
 
@@ -317,9 +365,9 @@ class RalphNav(NavBase):
         NavBase.remove_events(self, event_ctrl)
 
     def OnSelectClick(self):
-        if self.base.mouseWatcherNode.hasMouse():
+        if base.mouseWatcherNode.hasMouse():
             self.mouseSelectClick = True
-            mpos = self.owner.mouseWatcherNode.getMouse()
+            mpos = base.mouseWatcherNode.getMouse()
             self.startX = mpos.getX()
             self.startY = mpos.getY()
             self.dragAngleX = pi
@@ -327,8 +375,8 @@ class RalphNav(NavBase):
             self.create_drag_params(self.target)
 
     def OnSelectRelease(self):
-        if self.owner.mouseWatcherNode.hasMouse():
-            mpos = self.owner.mouseWatcherNode.getMouse()
+        if base.mouseWatcherNode.hasMouse():
+            mpos = base.mouseWatcherNode.getMouse()
             if self.startX == mpos.getX() and self.startY == mpos.getY():
                 pass
         self.mouseSelectClick = False
@@ -338,20 +386,18 @@ class RalphNav(NavBase):
         camdist = camvec.length()
         camvec.normalize()
         new_dist = max(5.0, camdist * (1.0 + step))
-        self.owner.max_camdist = new_dist
-        self.owner.min_camdist = new_dist / 2.0
+        self.follow.set_limits(new_dist / 2.0, new_dist)
         self.cam.set_pos(self.ralph.getPos() - camvec * new_dist)
 
     def update(self, dt):
-        if self.mouseSelectClick and self.base.mouseWatcherNode.hasMouse():
-            mpos = self.base.mouseWatcherNode.getMouse()
+        if self.mouseSelectClick and base.mouseWatcherNode.hasMouse():
+            mpos = base.mouseWatcherNode.getMouse()
             deltaX = mpos.getX() - self.startX
             deltaY = mpos.getY() - self.startY
             z_angle = -deltaX * self.dragAngleX
             x_angle = deltaY * self.dragAngleY
             self.do_drag(z_angle, x_angle, move=True, rotate=False)
-            ralph_height = self.owner.get_height(self.ralph.getPos())
-            self.owner.camera_height = self.cam.get_z() - ralph_height
+            self.follow.set_height(self.cam.get_z() - self.ralph.get_z())
             return True
 
         if self.keyMap["cam-left"]:
@@ -359,16 +405,14 @@ class RalphNav(NavBase):
         if self.keyMap["cam-right"]:
             self.cam.setX(self.cam, +20 * dt)
         if self.keyMap["cam-up"]:
-            self.owner.camera_height *= (1 + 2 * dt)
+            self.follow.scale_height(1 + 2 * dt)
         if self.keyMap["cam-down"]:
-            self.owner.camera_height *= (1 - 2 * dt)
-        if self.owner.camera_height < 1.0:
-            self.owner.camera_height = 1.0
+            self.follow.scale_height(1 - 2 * dt)
 
         if self.keyMap["sun-left"]:
-            self.sun.set_light_angle(self.light_angle + 30 * dt)
+            self.sun.set_light_angle(self.sun.light_angle + 30 * dt)
         if self.keyMap["sun-right"]:
-            self.sun.set_light_angle(self.light_angle - 30 * dt)
+            self.sun.set_light_angle(self.sun.light_angle - 30 * dt)
 
         delta = 25
         if self.keyMap["turbo"]:
@@ -625,9 +669,6 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.win.setClearColor((135.0/255, 206.0/255, 235.0/255, 1))
 
-        self.camera_height = 2.0
-        self.max_camdist = 10.0
-        self.min_camdist = 5.0
 
         # Set up the environment
         #
@@ -693,7 +734,10 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.ralph_body = NodePathHolder(self.ralph)
         self.ralph_floater = NodePathHolder(self.floater)
-        self.nav = RalphNav(self.ralph, self.ralph_floater, self.cam, self.observer, self, self)
+
+        self.follow_cam = FollowCam(self, self.cam, self.ralph, self.floater)
+
+        self.nav = RalphNav(self.ralph, self.ralph_floater, self.cam, self.observer, self, self.follow_cam)
         self.nav.register_events(self)
 
         self.accept("escape", sys.exit)
@@ -713,57 +757,37 @@ class RoamingRalphDemo(CosmoniumBase):
         taskMgr.add(self.move, "moveTask")
 
         # Set up the camera
-        self.cam.setPos(self.ralph.getX(), self.ralph.getY() + self.max_camdist, self.camera_height)
-        self.distance_to_obs = self.camera_height
+        self.follow_cam.update()
+        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
         render.set_shader_input("camera", self.cam.get_pos())
 
-        self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
+        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
 
     def move(self, task):
         dt = globalClock.getDt()
 
         control = self.nav.update(dt)
 
-        if not control:
-            # If the camera is too far from ralph, move it closer.
-            # If the camera is too close to ralph, move it farther.
-    
-            camvec = self.ralph.getPos() - self.cam.getPos()
-            camvec.setZ(0)
-            camdist = camvec.length()
-            camvec.normalize()
-            if camdist > self.max_camdist:
-                self.cam.setPos(self.cam.getPos() + camvec * (camdist - self.max_camdist))
-                camdist = self.max_camdist
-            if camdist < self.min_camdist:
-                self.cam.setPos(self.cam.getPos() - camvec * (self.min_camdist - camdist))
-                camdist = self.min_camdist
-
         ralph_height = self.get_height(self.ralph.getPos())
         self.ralph.setZ(ralph_height)
 
-        # Keep the camera at one foot above the terrain,
-        # or camera_height above ralph, whichever is greater.
-    
-        camera_height = self.get_height(self.cam.getPos())
-        if camera_height + 1.0 < ralph_height + self.camera_height:
-            new_camera_height = ralph_height + self.camera_height
-        else:
-            new_camera_height = camera_height + 1.0
-    
         if not control:
-            self.cam.setZ(new_camera_height)
-            self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
+            self.follow_cam.update()
+        else:
+            #TODO: Should have a FreeCam class for mouse orbit and this in update()
+            self.cam.lookAt(self.floater)
 
-        # The camera should look in ralph's direction,
-        # but it should also try to stay horizontal, so look at
-        # a floater which hovers above ralph's head.
-        self.cam.lookAt(self.floater)
+        if self.shadow_caster is not None:
+            vec = self.ralph.getPos() - self.cam.getPos()
+            vec.set_z(0)
+            dist = vec.length()
+            vec.normalize()
+            self.shadow_caster.set_pos(self.ralph.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
-        self.distance_to_obs = new_camera_height - camera_height
+        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
         self.scene_rel_position = -base.cam.get_pos()
 
         self.object_collection.update_instance()
@@ -773,6 +797,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def print_debug(self):
         print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
-        print("Camera:", base.cam.get_pos(), self.camera_height, self.distance_to_obs)
+        print("Camera:", base.cam.get_pos(), self.follow_cam.height, self.distance_to_obs)
 demo = RoamingRalphDemo()
 demo.run()
