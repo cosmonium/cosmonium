@@ -739,18 +739,20 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.cam.setPos(self.cam.getPos() - camvec * (self.min_camdist - camdist))
                 camdist = self.min_camdist
 
-            ralph_height = self.get_height(self.ralph.getPos())
-            self.ralph.setZ(ralph_height)
+        ralph_height = self.get_height(self.ralph.getPos())
+        self.ralph.setZ(ralph_height)
 
-            # Keep the camera at one foot above the terrain,
-            # or camera_height above ralph, whichever is greater.
+        # Keep the camera at one foot above the terrain,
+        # or camera_height above ralph, whichever is greater.
     
-            camera_height = self.get_height(self.cam.getPos()) + 1.0
-            if camera_height < ralph_height + self.camera_height:
-                self.cam.setZ(ralph_height + self.camera_height)
-            else:
-                self.cam.setZ(camera_height)
+        camera_height = self.get_height(self.cam.getPos())
+        if camera_height + 1.0 < ralph_height + self.camera_height:
+            new_camera_height = ralph_height + self.camera_height
+        else:
+            new_camera_height = camera_height + 1.0
     
+        if not control:
+            self.cam.setZ(new_camera_height)
             self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.ralph_config.shadow_size / 2)
 
         # The camera should look in ralph's direction,
@@ -761,7 +763,7 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
-        self.distance_to_obs = self.camera_height
+        self.distance_to_obs = new_camera_height - camera_height
         self.scene_rel_position = -base.cam.get_pos()
 
         self.object_collection.update_instance()
@@ -771,6 +773,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def print_debug(self):
         print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
-        print("Camera:", base.cam.get_pos())
+        print("Camera:", base.cam.get_pos(), self.camera_height, self.distance_to_obs)
 demo = RoamingRalphDemo()
 demo.run()
