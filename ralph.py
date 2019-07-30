@@ -158,7 +158,7 @@ class RalphConfigParser(YamlModuleParser):
         terrain = data.get('terrain', {})
         self.tile_size = terrain.get("tile-size", 1024)
         self.tile_density = terrain.get('tile-density', 64)
-        self.max_vertex_size = terrain.get('max-vertex-size', 64)
+        self.max_vertex_size = terrain.get('max-vertex-size', 128)
         self.max_lod = terrain.get('max-lod', 10)
         self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
         self.heightmap_size = terrain.get('heightmap-size', 512)
