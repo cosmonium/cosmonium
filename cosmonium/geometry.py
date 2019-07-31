@@ -603,7 +603,7 @@ def Patch(size=1.0):
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
-    vertexWriter = GeomVertexWriter(vdata, b"vertex")
+    vertexWriter = GeomVertexWriter(vdata, "vertex")
     vertexWriter.addData3f(-size, -size, 0)
     vertexWriter.addData3f(size, -size, 0)
     vertexWriter.addData3f(size, size, 0)
@@ -648,7 +648,7 @@ def QuadPatch(x0, y0, x1, y1,
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
-    vertexWriter = GeomVertexWriter(vdata, b"vertex")
+    vertexWriter = GeomVertexWriter(vdata, "vertex")
     x0 = 2.0 * x0 - 1.0
     x1 = 2.0 * x1 - 1.0
     y0 = 2.0 * y0 - 1.0
