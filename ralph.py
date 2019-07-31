@@ -609,6 +609,18 @@ class RoamingRalphDemo(CosmoniumBase):
             self.skybox.setColor(self.skybox_color * 0)
         self.update()
 
+    def set_ambient(self, ambient):
+        settings.global_ambient = clamp(ambient, 0.0, 1.0)
+        if settings.use_srgb:
+            corrected_ambient = pow(settings.global_ambient, 2.2)
+        else:
+            corrected_ambient = settings.global_ambient
+        settings.corrected_global_ambient = corrected_ambient
+        print("Ambient light level:  %.2f" % settings.global_ambient)
+
+    def incr_ambient(self, ambient_incr):
+        self.set_ambient(settings.global_ambient + ambient_incr)
+
     def update(self):
         self.object_collection.update_instance()
         self.terrain.update_instance(None, None)
@@ -760,6 +772,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.accept('control-f8', self.toggle_split_merge_debug)
         self.accept("f10", self.save_screenshot)
         self.accept('alt-enter', self.toggle_fullscreen)
+        self.accept('{', self.incr_ambient, [-0.05])
+        self.accept('}', self.incr_ambient, [+0.05])
 
         taskMgr.add(self.move, "moveTask")
 
