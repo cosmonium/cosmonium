@@ -39,7 +39,9 @@ from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColo
 from cosmonium import settings
 
 from math import pow, pi, sqrt
+import argparse
 import sys
+
 from cosmonium.procedural.shadernoise import NoiseMap
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
@@ -223,6 +225,7 @@ class RalphConfigParser(YamlModuleParser):
             self.fog_parameters['ground'] = fog.get('ground', -500)
         else:
             self.fog_parameters = None
+        return True
 
 class NodePathHolder(object):
     def __init__(self, instance):
@@ -631,13 +634,17 @@ class RoamingRalphDemo(CosmoniumBase):
     def toggle_split_merge_debug(self):
         settings.debug_lod_split_merge = not settings.debug_lod_split_merge
 
-    def __init__(self):
+    def __init__(self, args):
         CosmoniumBase.__init__(self)
 
-        self.config_file = 'ralph-data/ralph.yaml'
+        if args.config is not None:
+            self.config_file = args.config
+        else:
+            self.config_file = 'ralph-data/ralph.yaml'
         self.splash = RalphSplash()
         self.ralph_config = RalphConfigParser()
-        self.ralph_config.load_and_parse(self.config_file)
+        if self.ralph_config.load_and_parse(self.config_file) is None:
+            sys.exit(1)
         self.water = self.ralph_config.water
         self.fog = self.ralph_config.fog_parameters
 
@@ -798,5 +805,15 @@ class RoamingRalphDemo(CosmoniumBase):
         print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
         print("Camera:", base.cam.get_pos(), self.follow_cam.height, self.distance_to_obs)
-demo = RoamingRalphDemo()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--config",
+                    help="Path to the file with the configuration",
+                    default=None)
+if sys.platform == "darwin":
+    #Ignore -psn_<app_id> from MacOS
+    parser.add_argument('-p', help=argparse.SUPPRESS)
+args = parser.parse_args()
+
+demo = RoamingRalphDemo(args)
 demo.run()
