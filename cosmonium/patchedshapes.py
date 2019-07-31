@@ -909,6 +909,7 @@ class PatchedShapeBase(Shape):
             #Dampen high frequency split-merge anomaly
             if frame - patch.last_split < 5: continue
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
+            self.merge_patch(patch)
             self.merge_neighbours(patch, update)
             if patch.visible:
                 self.create_patch_instance(patch, hide=True)

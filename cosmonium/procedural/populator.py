@@ -170,6 +170,16 @@ class MultiTerrainPopulator():
         for populator in self.populators:
             populator.update_instance()
 
+class TerrainPopulatorPatch(object):
+    def __init__(self):
+        self.children = []
+
+    def split(self):
+        pass
+
+    def merge(self):
+        pass
+
 class ObjectPlacer(object):
     def __init__(self):
         pass

@@ -28,7 +28,8 @@ from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.textures import PatchedGpuTextureSource
 from cosmonium.procedural.terrain import TerrainObject
-from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, RandomObjectPlacer, MultiTerrainPopulator, TerrainObjectFactory
+from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, RandomObjectPlacer, MultiTerrainPopulator, TerrainObjectFactory,\
+    TerrainPopulatorPatch
 from cosmonium.procedural.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
@@ -117,6 +118,26 @@ class TileFactory(object):
         if self.has_water:
             patch.add_layer(WaterLayer(self.water))
         return patch
+
+    def split_patch(self, parent):
+        lod = parent.lod + 1
+        delta = parent.half_size / 2.0
+        x = parent.x
+        y = parent.y
+        self.create_patch(parent, lod, x - delta, y - delta)
+        self.create_patch(parent, lod, x + delta, y - delta)
+        self.create_patch(parent, lod, x + delta, y + delta)
+        self.create_patch(parent, lod, x - delta, y + delta)
+        parent.children_bb = []
+        parent.children_normal = []
+        parent.children_offset = []
+        for child in parent.children:
+            parent.children_bb.append(child.bounds.make_copy())
+            parent.children_normal.append(None)
+            parent.children_offset.append(None)
+
+    def merge_patch(self, patch):
+        pass
 
 class WaterLayer(object):
     def __init__(self, config):

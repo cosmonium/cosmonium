@@ -197,21 +197,10 @@ class TiledShape(PatchedShapeBase):
         return patch
 
     def split_patch(self, patch):
-        lod = patch.lod + 1
-        delta = patch.half_size / 2.0
-        x = patch.x
-        y = patch.y
-        self.factory.create_patch(patch, lod, x - delta, y - delta)
-        self.factory.create_patch(patch, lod, x + delta, y - delta)
-        self.factory.create_patch(patch, lod, x + delta, y + delta)
-        self.factory.create_patch(patch, lod, x - delta, y + delta)
-        patch.children_bb = []
-        patch.children_normal = []
-        patch.children_offset = []
-        for child in patch.children:
-            patch.children_bb.append(child.bounds.make_copy())
-            patch.children_normal.append(None)
-            patch.children_offset.append(None)
+        self.factory.split_patch(patch)
+
+    def merge_patch(self, patch):
+        self.factory.merge_patch(patch)
 
     def add_root_patches(self, patch, update):
         #print("Create root patches", patch.centre, self.scale)
