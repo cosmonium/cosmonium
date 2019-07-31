@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+#TODO: Merge with ShapeObject ?
 class TerrainObject(object):
     def __init__(self, shape=None, appearance=None, shader=None):
         self.parent = None
@@ -7,6 +8,7 @@ class TerrainObject(object):
         self.set_shape(shape)
         self.appearance = appearance
         self.shader = shader
+        self.instance_ready = False
 
     def set_shape(self, shape):
         if self.shape is not None:
@@ -39,14 +41,19 @@ class TerrainObject(object):
             self.shader.update(self.shape, self.appearance)
         self.shape.apply_owner()
         self.instance.reparentTo(render)
+        self.instance_ready = True
 
     def create_instance(self, callback=None, cb_args=()):
+        print("Loading", self.parent.get_name())
         self.instance = self.shape.create_instance(callback, cb_args)
-        if self.instance is not None:
+        if not self.shape.deferred_instance:
             self.apply_instance(self.instance)
+        else:
+            self.shape.apply_owner()
+        return self.instance
 
     def create_instance_delayed(self):
-        self.instance_ready = True
+        pass
 
     def remove_instance(self):
         if self.instance:

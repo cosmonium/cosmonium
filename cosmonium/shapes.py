@@ -297,6 +297,7 @@ class MeshShape(Shape):
         self.flatten = flatten
         self.panda = panda
         self.callback = None
+        self.cb_args = None
 
     def create_instance_cb(self, mesh):
         if mesh is None: return

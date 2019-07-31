@@ -60,10 +60,11 @@ class TerrainPopulatorBase(object):
             del self.patch_map[patch]
 
     def update_instance(self):
-        if self.terrain_object is not None:
+        if self.terrain_object is not None and self.terrain_object.instance_ready:
             self.terrain_object.update_instance()
         for terrain_object in self.patch_map.values():
-            terrain_object.update_instance()
+            if terrain_object.instance_ready:
+                terrain_object.update_instance()
 
 class CpuTerrainPopulator(TerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
