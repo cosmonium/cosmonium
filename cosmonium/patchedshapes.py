@@ -160,7 +160,7 @@ class PatchBase(Shape):
             #print("Check face", PatchBase.text[face])
             lod = self.get_neighbour_lower_lod(face)
             delta = self.lod - lod
-            outer_level = self.max_level - delta
+            outer_level = max(0, self.max_level - delta)
             new_level = 1 << outer_level
             dest = PatchBase.conv[face]
             if self.tesselation_outer_level[dest] != new_level:
