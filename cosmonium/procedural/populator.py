@@ -25,6 +25,23 @@ class TerrainPopulatorBase(object):
         self.objects_factory = objects_factory
         self.count = count
         self.placer = placer
+        self.max_instances = None
+
+    def generate_instances_info_for(self, patch):
+        if callable(self.count):
+            patch_count = self.count(patch)
+        else:
+            patch_count = self.count
+        if self.max_instances is not None:
+            patch_count = min(patch_count, self.max_instances)
+        count = 0
+        offsets = []
+        while count < patch_count:
+            offset = self.placer.place_new(count, patch)
+            if offset is not None:
+                offsets.append(offset)
+            count += 1
+        return offsets
 
     def create_object(self):
         terrain_object = self.objects_factory.create_object()
@@ -89,21 +106,14 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def create_object_instance_cb(self, terrain_object, patch):
         #Hide the main instance
         terrain_object.instance.stash()
-        if callable(self.count):
-            patch_count = self.count(patch)
-        else:
-            patch_count = self.count
-        count = 0
-        while count < patch_count:
-            offset = self.placer.place_new(count, patch)
-            if offset is not None:
-                (x, y, height, scale) = offset
-                #TODO: This should be created in create_instance and derived from the parent
-                child = render.attach_new_node('instance_%d' % count)
-                terrain_object.instance.instanceTo(child)
-                child.set_pos(x, y, height)
-                child.set_scale(scale)
-            count += 1
+        offsets = self.generate_instances_info_for(patch)
+        for offset in offsets:
+            (x, y, height, scale) = offset
+            #TODO: This should be created in create_instance and derived from the parent
+            child = render.attach_new_node('instance_%d' % count)
+            terrain_object.instance.instanceTo(child)
+            child.set_pos(x, y, height)
+            child.set_scale(scale)
 
     def do_create_instances(self, terrain_object, patch):
         if terrain_object is None: return
@@ -128,24 +138,14 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
 
     def do_create_instances(self, terrain_object, patch):
         if terrain_object is None: return
-        if callable(self.count):
-            patch_count = self.count(patch)
-        else:
-            patch_count = self.count
-        patch_count = min(patch_count, self.max_instances)
+        data = self.generate_instances_info_for(patch)
+        self.offsets_nb = len(data)
         if settings.instancing_use_tex:
-            offsets = []
+            offsets = data
         else:
-            offsets = PTAVecBase4f.emptyArray(patch_count)
-        self.offsets_nb = 0
-        while self.offsets_nb < patch_count:
-            offset = self.placer.place_new(self.offsets_nb, patch)
-            if offset is not None:
-                if settings.instancing_use_tex:
-                    offsets.append(offset)
-                else:
+            offsets = PTAVecBase4f.emptyArray(self.offsets_nb)
+            for offset in data:
                     offsets[self.offsets_nb] = offset
-            self.offsets_nb += 1
         if settings.instancing_use_tex:
             texture = Texture()
             texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
