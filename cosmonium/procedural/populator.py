@@ -71,27 +71,81 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         self.count = count
         self.placer = placer
         self.patch_map = {}
+        self.visible_patches = {}
         self.lod_aware = False
 
-    def do_create_patch_instances(self, patch, terrain_patch):
-        pass
+    def create_data_for(self, patch, terrain_patch):
+        data = self.generate_instances_info_for(terrain_patch)
+        patch.set_data(data)
 
-    def do_remove_patch_instances(self, patch, terrain_patch):
-        pass
-
-    def create_instance_patch(self, terrain_patch):
-        self.create_object_template()
-        if not terrain_patch in self.patch_map:
-            data = self.generate_instances_info_for(terrain_patch)
-            patch = TerrainPopulatorPatch(data)
-            self.do_create_patch_instances(patch, terrain_patch)
+    def create_root_patch(self, terrain_patch):
+        #print("CREATE", terrain_patch.str_id())
+        if not terrain_patch in self.patch_map and terrain_patch.lod == 0:
+            patch = TerrainPopulatorPatch(None)
             self.patch_map[terrain_patch] = patch
 
-    def remove_instance_patch(self, terrain_patch):
+    def split_patch(self, terrain_patch):
+        if not terrain_patch in self.patch_map: return
+        #print("SPLIT", terrain_patch.str_id(), terrain_patch.x0, terrain_patch.y0, terrain_patch.x1, terrain_patch.y1)
+        patch = self.patch_map[terrain_patch]
+        if patch.data is None:
+            self.create_data_for(patch, terrain_patch)
+        bl = []
+        br = []
+        tr = []
+        tl = []
+        #TODO: Terrain scale should be retrieved properly...
+        size = self.placer.terrain.size
+        for data in patch.data:
+            (x, y, height, scale) = data
+            (u, v) = terrain_patch.coord_to_uv((x / size, y / size))
+            if u < 0.5:
+                if v < 0.5:
+                    tl.append(data)
+                else:
+                    bl.append(data)
+            else:
+                if v < 0.5:
+                    tr.append(data)
+                else:
+                    br.append(data)
+        #print(len(bl), len(br), len(tr), len(tl))
+        self.patch_map[terrain_patch.children[0]] = TerrainPopulatorPatch(bl)
+        self.patch_map[terrain_patch.children[1]] = TerrainPopulatorPatch(br)
+        self.patch_map[terrain_patch.children[2]] = TerrainPopulatorPatch(tr)
+        self.patch_map[terrain_patch.children[3]] = TerrainPopulatorPatch(tl)
+
+    def merge_patch(self, terrain_patch):
+        if not terrain_patch in self.patch_map: return
+        #print("MERGE", terrain_patch.str_id())
+        patch = self.patch_map[terrain_patch]
+        for child in terrain_patch.children:
+            if child in self.patch_map:
+                del self.patch_map[child]
+        patch.children = []
+
+    def create_patch_instances(self, patch, terrain_patch):
+        pass
+
+    def show_patch(self, terrain_patch):
+        self.create_object_template()
+        #print("SHOW", terrain_patch.str_id())
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
-            self.do_remove_patch_instances(patch, terrain_patch)
-            del self.patch_map[terrain_patch]
+            if patch.data is None:
+                self.create_data_for(patch, terrain_patch)
+            self.visible_patches[terrain_patch] = patch
+            self.create_patch_instances(patch, terrain_patch)
+
+    def remove_patch_instances(self, patch, terrain_patch):
+        pass
+
+    def hide_patch(self, terrain_patch):
+        #print("HIDE", terrain_patch.str_id())
+        if terrain_patch in self.visible_patches:
+            patch = self.visible_patches[terrain_patch]
+            self.remove_patch_instances(patch, terrain_patch)
+            del self.visible_patches[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
@@ -101,7 +155,7 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
         #Hide the main instance
         terrain_object.instance.stash()
 
-    def do_create_patch_instances(self, patch, terrain_patch):
+    def create_patch_instances(self, patch, terrain_patch):
         instances = []
         for (i, offset) in enumerate(patch.data):
             (x, y, height, scale) = offset
@@ -113,7 +167,7 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
             instances.append(child)
         patch.instances = instances
 
-    def do_remove_patch_instances(self, patch, terrain_patch):
+    def remove_patch_instances(self, patch, terrain_patch):
         for instance in patch.instances:
             instance.remove_node()
         patch.instances = []
@@ -130,17 +184,18 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         terrain_object.instance.node().setBounds(bounds)
         terrain_object.instance.node().setFinal(1)
 
-    def do_create_patch_instances(self, patch, terrain_patch):
+    def create_patch_instances(self, patch, terrain_patch):
         self.rebuild = True
 
-    def do_remove_patch_instances(self, patch, terrain_patch):
+    def remove_patch_instances(self, patch, terrain_patch):
         self.rebuild = True
 
     def generate_table(self):
         data = []
-        for patch in self.patch_map.values():
+        for patch in self.visible_patches.values():
             data += patch.data
         offsets_nb = len(data)
+        #print("GEN", offsets_nb)
         if settings.instancing_use_tex:
             offsets = data
         else:
@@ -179,32 +234,36 @@ class MultiTerrainPopulator():
     def add_populator(self, populator):
         self.populators.append(populator)
 
-    def create_instance(self):
+    def create_root_patch(self, patch):
         for populator in self.populators:
-            populator.create_instance()
+            populator.create_root_patch(patch)
 
-    def create_instance_patch(self, patch):
+    def split_patch(self, patch):
         for populator in self.populators:
-            populator.create_instance_patch(patch)
+            populator.split_patch(patch)
 
-    def remove_instance_patch(self, patch):
+    def merge_patch(self, patch):
         for populator in self.populators:
-            populator.remove_instance_patch(patch)
+            populator.merge_patch(patch)
+
+    def show_patch(self, patch):
+        for populator in self.populators:
+            populator.show_patch(patch)
+
+    def hide_patch(self, patch):
+        for populator in self.populators:
+            populator.hide_patch(patch)
 
     def update_instance(self):
         for populator in self.populators:
             populator.update_instance()
 
 class TerrainPopulatorPatch(object):
-    def __init__(self, data):
+    def __init__(self, data=None):
         self.data = data
-        self.children = []
 
-    def split(self):
-        pass
-
-    def merge(self):
-        pass
+    def set_data(self, data):
+        self.data = data
 
 class ObjectPlacer(object):
     def __init__(self):

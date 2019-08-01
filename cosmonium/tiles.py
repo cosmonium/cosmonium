@@ -170,10 +170,6 @@ class TiledShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, lod_control)
         self.factory = factory
         self.scale = scale
-        self.populator = None
-
-    def set_populator(self, populator):
-        self.populator = populator
 
     def find_patch_at(self, coord):
         (x, y) = coord
@@ -194,6 +190,8 @@ class TiledShape(PatchedShapeBase):
         if patch is None:
             patch = self.factory.create_patch(None, 0, x, y)
             self.root_patches.append(patch)
+            for layer in self.layers:
+                layer.create_root_patch(patch)
         return patch
 
     def split_patch(self, patch):
@@ -225,17 +223,6 @@ class TiledShape(PatchedShapeBase):
             north.set_neighbours(PatchBase.SOUTH, [patch])
         self.add_root_patch(patch.x + 1, patch.y + 1)
         patch.calc_outer_tesselation_level(update)
-
-    def create_patch_instance_delayed(self, patch):
-        PatchedShapeBase.create_patch_instance_delayed(self, patch)
-        if self.populator is not None and (self.populator.lod_aware or patch.lod == 0):
-            self.populator.create_instance_patch(patch)
-
-    def remove_patch_instance(self, patch, split=False):
-        if patch.instance is not None:
-            if self.populator is not None and (self.populator.lod_aware or (not split and patch.lod == 0)):
-                self.populator.remove_instance_patch(patch)
-        PatchedShapeBase.remove_patch_instance(self, patch)
 
     def xform_cam_to_model(self, camera_pos):
         model_camera_pos = camera_pos / self.scale

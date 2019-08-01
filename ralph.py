@@ -643,7 +643,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
     def update(self):
-        self.object_collection.update_instance()
         self.terrain.update_instance(None, None)
 
     def apply_instance(self, instance):
@@ -738,7 +737,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.create_terrain()
         self.create_populator()
-        self.terrain_shape.set_populator(self.object_collection)
+        self.terrain_shape.add_layer(self.object_collection)
         self.create_tile(0, 0)
         self.skybox_init()
 
@@ -832,7 +831,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
         self.scene_rel_position = -base.cam.get_pos()
 
-        self.object_collection.update_instance()
         self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
         return task.cont
 
