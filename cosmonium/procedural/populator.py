@@ -26,6 +26,7 @@ class TerrainPopulatorBase(object):
         self.count = count
         self.placer = placer
         self.max_instances = None
+        self.object_template = None
 
     def generate_instances_info_for(self, patch):
         if callable(self.count):
@@ -43,35 +44,25 @@ class TerrainPopulatorBase(object):
             count += 1
         return offsets
 
-    def create_object(self):
-        terrain_object = self.objects_factory.create_object()
-        return terrain_object
+    def create_object_template(self):
+        if self.object_template is None:
+            self.object_template = self.objects_factory.create_object()
+            self.object_template.create_instance(self.create_object_template_instance_cb)
 
-    def create_object_instance_cb(self, terrain_object, patch):
-        pass
+    def delete_object_template(self):
+        if self.object_template is not None:
+            self.object_template.remove_instance()
+            self.object_template = None
 
-    def create_object_instance(self, terrain_object, patch):
-        terrain_object.create_instance(self.create_object_instance_cb, patch)
-
-    def do_create_instances(self, terrain_object):
+    def create_object_template_instance_cb(self):
         pass
 
     def update_instance(self):
-        pass
+        if self.object_template is not None and self.object_template.instance_ready:
+            self.object_template.update_instance()
 
 class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
-    def __init__(self, objects_factory, count, placer):
-        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
-        self.terrain_object = None
-
-    def create_instance(self):
-        if self.terrain_object is None:
-            self.terrain_object = self.create_object()
-        self.do_create_instances(self.terrain_object)
-
-    def update_instance(self):
-        if self.terrain_object is not None and self.terrain_object.instance_ready:
-            self.terrain_object.update_instance()
+    pass
 
 class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
     def __init__(self, objects_factory, count, placer):
@@ -82,70 +73,80 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         self.patch_map = {}
         self.lod_aware = False
 
-    def create_instance_patch(self, patch):
-        if not patch in self.patch_map:
-            terrain_object = self.create_object()
-            self.do_create_instances(terrain_object, patch)
-            self.patch_map[patch] = terrain_object
+    def do_create_patch_instances(self, patch, terrain_patch):
+        pass
 
-    def remove_instance_patch(self, patch):
-        if patch in self.patch_map:
-            terrain_object = self.patch_map[patch]
-            terrain_object.remove_instance()
-            del self.patch_map[patch]
+    def do_remove_patch_instances(self, patch, terrain_patch):
+        pass
 
-    def update_instance(self):
-        for terrain_object in self.patch_map.values():
-            if terrain_object.instance_ready:
-                terrain_object.update_instance()
+    def create_instance_patch(self, terrain_patch):
+        self.create_object_template()
+        if not terrain_patch in self.patch_map:
+            data = self.generate_instances_info_for(terrain_patch)
+            patch = TerrainPopulatorPatch(data)
+            self.do_create_patch_instances(patch, terrain_patch)
+            self.patch_map[terrain_patch] = patch
+
+    def remove_instance_patch(self, terrain_patch):
+        if terrain_patch in self.patch_map:
+            patch = self.patch_map[terrain_patch]
+            self.do_remove_patch_instances(patch, terrain_patch)
+            del self.patch_map[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
         PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
 
-    def create_object_instance_cb(self, terrain_object, patch):
+    def create_object_template_instance_cb(self, terrain_object):
         #Hide the main instance
         terrain_object.instance.stash()
-        offsets = self.generate_instances_info_for(patch)
-        for offset in offsets:
+
+    def do_create_patch_instances(self, patch, terrain_patch):
+        instances = []
+        for (i, offset) in enumerate(patch.data):
             (x, y, height, scale) = offset
             #TODO: This should be created in create_instance and derived from the parent
-            child = render.attach_new_node('instance_%d' % count)
-            terrain_object.instance.instanceTo(child)
+            child = render.attach_new_node('instance_%d' % i)
+            self.object_template.instance.instanceTo(child)
             child.set_pos(x, y, height)
             child.set_scale(scale)
+            instances.append(child)
+        patch.instances = instances
 
-    def do_create_instances(self, terrain_object, patch):
-        if terrain_object is None: return
-        self.create_object_instance(terrain_object, (patch,))
+    def do_remove_patch_instances(self, patch, terrain_patch):
+        for instance in patch.instances:
+            instance.remove_node()
+        patch.instances = []
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
         PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
         self.max_instances = max_instances
+        self.rebuild = False
 
-    def create_object(self):
-        terrain_object = TerrainPopulatorBase.create_object(self)
-        if terrain_object is not None:
-            terrain_object.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
-        return terrain_object
-
-    def create_object_instance_cb(self, terrain_object, patch):
+    def create_object_template_instance_cb(self, terrain_object):
+        self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         bounds = OmniBoundingVolume()
         terrain_object.instance.node().setBounds(bounds)
         terrain_object.instance.node().setFinal(1)
-        terrain_object.instance.set_instance_count(self.offsets_nb)
 
-    def do_create_instances(self, terrain_object, patch):
-        if terrain_object is None: return
-        data = self.generate_instances_info_for(patch)
-        self.offsets_nb = len(data)
+    def do_create_patch_instances(self, patch, terrain_patch):
+        self.rebuild = True
+
+    def do_remove_patch_instances(self, patch, terrain_patch):
+        self.rebuild = True
+
+    def generate_table(self):
+        data = []
+        for patch in self.patch_map.values():
+            data += patch.data
+        offsets_nb = len(data)
         if settings.instancing_use_tex:
             offsets = data
         else:
-            offsets = PTAVecBase4f.emptyArray(self.offsets_nb)
+            offsets = PTAVecBase4f.emptyArray(offsets_nb)
             for offset in data:
-                    offsets[self.offsets_nb] = offset
+                    offsets[offsets_nb] = offset
         if settings.instancing_use_tex:
             texture = Texture()
             texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
@@ -155,10 +156,18 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
                 texture.setRamImage(data.tostring())
             else:
                 texture.setRamImage(data.tobytes())
-            terrain_object.appearance.offsets = texture
+            self.object_template.appearance.offsets = texture
         else:
-            terrain_object.appearance.offsets = offsets
-        self.create_object_instance(terrain_object, (patch,))
+            self.object_template.appearance.offsets = offsets
+        self.object_template.instance.set_instance_count(offsets_nb)
+        self.object_template.shader.apply(self.object_template.shape, self.object_template.appearance)
+        self.rebuild = False
+
+    def update_instance(self):
+        if self.object_template is not None and self.object_template.instance_ready:
+            if self.rebuild:
+                self.generate_table()
+            self.object_template.update_instance()
 
 class MultiTerrainPopulator():
     def __init__(self, populators=None):
@@ -187,7 +196,8 @@ class MultiTerrainPopulator():
             populator.update_instance()
 
 class TerrainPopulatorPatch(object):
-    def __init__(self):
+    def __init__(self, data):
+        self.data = data
         self.children = []
 
     def split(self):
