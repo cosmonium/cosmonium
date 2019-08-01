@@ -25,9 +25,6 @@ class TerrainPopulatorBase(object):
         self.objects_factory = objects_factory
         self.count = count
         self.placer = placer
-        self.terrain_object = None
-        self.patch_map = {}
-        self.lod_aware = False
 
     def create_object(self):
         terrain_object = self.objects_factory.create_object()
@@ -39,13 +36,34 @@ class TerrainPopulatorBase(object):
     def create_object_instance(self, terrain_object, patch):
         terrain_object.create_instance(self.create_object_instance_cb, patch)
 
-    def do_create_instances(self, terrain_object, patch):
+    def do_create_instances(self, terrain_object):
         pass
+
+    def update_instance(self):
+        pass
+
+class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
+    def __init__(self, objects_factory, count, placer):
+        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+        self.terrain_object = None
 
     def create_instance(self):
         if self.terrain_object is None:
             self.terrain_object = self.create_object()
-        self.do_create_instances(self.terrain_object, None)
+        self.do_create_instances(self.terrain_object)
+
+    def update_instance(self):
+        if self.terrain_object is not None and self.terrain_object.instance_ready:
+            self.terrain_object.update_instance()
+
+class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
+    def __init__(self, objects_factory, count, placer):
+        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+        self.objects_factory = objects_factory
+        self.count = count
+        self.placer = placer
+        self.patch_map = {}
+        self.lod_aware = False
 
     def create_instance_patch(self, patch):
         if not patch in self.patch_map:
@@ -60,15 +78,13 @@ class TerrainPopulatorBase(object):
             del self.patch_map[patch]
 
     def update_instance(self):
-        if self.terrain_object is not None and self.terrain_object.instance_ready:
-            self.terrain_object.update_instance()
         for terrain_object in self.patch_map.values():
             if terrain_object.instance_ready:
                 terrain_object.update_instance()
 
-class CpuTerrainPopulator(TerrainPopulatorBase):
+class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
-        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+        PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
 
     def create_object_instance_cb(self, terrain_object, patch):
         #Hide the main instance
@@ -93,9 +109,9 @@ class CpuTerrainPopulator(TerrainPopulatorBase):
         if terrain_object is None: return
         self.create_object_instance(terrain_object, (patch,))
 
-class GpuTerrainPopulator(TerrainPopulatorBase):
+class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, objects_factory, count, max_instances, placer):
-        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+        PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
         self.max_instances = max_instances
 
     def create_object(self):
