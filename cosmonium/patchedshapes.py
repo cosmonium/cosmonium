@@ -595,6 +595,20 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         binormal.normalize()
         return (normal, tangent, binormal)
 
+class PatchedShapeLayer(object):
+    def create_root_patch(self, patch):
+        pass
+    def update_instance(self):
+        pass
+    def split_patch(self, patch):
+        pass
+    def merge_patch(self, patch):
+        pass
+    def show_patch(self, patch):
+        pass
+    def hide_patch(self, patch):
+        pass
+
 class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
@@ -603,6 +617,7 @@ class PatchedShapeBase(Shape):
         Shape.__init__(self)
         self.root_patches = []
         self.patches = []
+        self.layers = []
         if lod_control is None:
             lod_control = TexturePatchLodControl()
         self.lod_control = lod_control
@@ -623,6 +638,12 @@ class PatchedShapeBase(Shape):
 
     def set_lod_control(self, lod_control):
         self.lod_control = lod_control
+
+    def add_layer(self, layer):
+        self.layers.append(layer)
+
+    def remove_layer(self, layer):
+        self.layers.remove(layer)
 
     def create_root_patches(self):
         pass
@@ -857,8 +878,12 @@ class PatchedShapeBase(Shape):
                     if settings.debug_lod_split_merge: print(frame, "Show", child.str_id(), child.instance_ready)
                     child.instanciate_pending = False
                     self.show_patch(child)
+                    for layer in self.layers:
+                        layer.show_patch(child)
             patch.split_pending = False
             patch.instanciate_pending = False
+            for layer in self.layers:
+                layer.hide_patch(patch)
             self.remove_patch_instance(patch, split=True)
             patch.last_split = frame
         for patch in self.to_split:
@@ -866,6 +891,8 @@ class PatchedShapeBase(Shape):
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
             self.split_patch(patch)
             self.split_neighbours(patch, update)
+            for layer in self.layers:
+                layer.split_patch(patch)
             for child in patch.children:
                 child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude, pixel_size)
                 #print(child.str_id(), child.visible)
@@ -890,8 +917,12 @@ class PatchedShapeBase(Shape):
             if patch.instance is not None:
                 #Could happen that the patch has just been removed by the parent in the same batch...
                 self.show_patch(patch)
+                for layer in self.layers:
+                    layer.show_patch(patch)
             patch.instanciate_pending = False
             if patch.merge_pending:
+                for layer in self.layers:
+                    layer.merge_patch(patch)
                 for child in patch.children:
                     self.remove_patch_instance(child)
                     child.parent_split_pending = False
@@ -900,6 +931,8 @@ class PatchedShapeBase(Shape):
                 patch.merge_pending = False
         for patch in self.to_remove:
             if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view, patch.in_cone)
+            for layer in self.layers:
+                layer.hide_patch(patch)
             self.remove_patch_instance(patch)
             patch.split_pending = False
             for child in patch.children:
@@ -917,6 +950,8 @@ class PatchedShapeBase(Shape):
                 patch.merge_pending = True
                 patch.instanciate_pending = True
             else:
+                for layer in self.layers:
+                    layer.merge_patch(patch)
                 for child in patch.children:
                     self.remove_patch_instance(child)
                     child.parent_split_pending = False
@@ -926,6 +961,8 @@ class PatchedShapeBase(Shape):
         self.max_lod = self.new_max_lod
         for patch in update:
             patch.update_instance(self)
+        for layer in self.layers:
+            layer.update_instance()
         #Return True when new instances have been created
         return apply_appearance
 
@@ -1053,6 +1090,9 @@ class PatchedSphereShape(PatchedShape):
         self.root_patches = [self.create_patch(None, 0, 0, 0),
                              self.create_patch(None, 0, 1, 0)
                             ]
+        for patch in self.root_patches:
+            for layer in self.layers:
+                layer.create_root_patch(patch)
 
     def create_patch(self, parent, lod, sector, ring, average_height = 1.0):
         density = self.lod_control.get_density_for(lod)
@@ -1116,6 +1156,9 @@ class PatchedSquareShapeBase(PatchedShape):
 #         front.set_all_neighbours([bottom], [right], [top], [left])
 #         top.set_all_neighbours([back], [left], [front], [right])
 #         bottom.set_all_neighbours([front], [right], [back], [left])
+        for patch in self.root_patches:
+            for layer in self.layers:
+                layer.create_root_patch(patch)
 
 
     def create_patch(self, parent, lod, face, x, y, average_heigt=1.0):
