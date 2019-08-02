@@ -186,8 +186,9 @@ class RalphConfigParser(YamlModuleParser):
         self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
         self.heightmap_size = terrain.get('heightmap-size', 512)
         self.biome_size = terrain.get('biome-size', 128)
-        #self.objects_density = int(25 * (1.0 * self.size / self.default_size) * (1.0 * self.size / self.default_size))
         self.objects_density = terrain.get('object-density', 250)
+        self.objects_density /= 1000000.0
+        self.max_objects_per_tile = self.objects_density * (self.tile_size * self.tile_size)
 
         heightmap = data.get('heightmap', {})
         self.height_scale = heightmap.get('scale', 1.0)
@@ -596,15 +597,15 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def objects_density_for_patch(self, patch):
         scale = 1 << patch.lod
-        return int(self.ralph_config.objects_density / scale + 1.0)
+        return round(self.ralph_config.max_objects_per_tile / scale)
 
     def create_populator(self):
         if settings.allow_instancing:
             TerrainPopulator = GpuTerrainPopulator
         else:
             TerrainPopulator = CpuTerrainPopulator
-        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.ralph_config.objects_density, RandomObjectPlacer(self))
-        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.ralph_config.objects_density, RandomObjectPlacer(self))
+        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
+        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
         self.object_collection = MultiTerrainPopulator()
         self.object_collection.add_populator(self.rock_collection)
         self.object_collection.add_populator(self.tree_collection)
