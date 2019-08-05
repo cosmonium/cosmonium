@@ -28,7 +28,7 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
 
     def create_bounding_volume(self, x, y, offset):
         (x, y) = self.calc_xy(x, y)
-        return geometry.NormalizedSquarePatchAABB(self.geom_scale,
+        return geometry.NormalizedSquarePatchAABB(1.0,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
@@ -37,7 +37,7 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
 
     def create_centre(self, x, y, offset):
         (x, y) = self.calc_xy(x, y)
-        return geometry.NormalizedSquarePatchPoint(self.geom_scale,
+        return geometry.NormalizedSquarePatchPoint(1.0,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
@@ -47,8 +47,9 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
 
     def create_patch_instance(self, x, y):
         (x, y) = self.calc_xy(x, y)
-        return geometry.NormalizedSquarePatch(self.geom_scale,
+        return geometry.NormalizedSquarePatch(1.0,
                                               self.density,
+                                              self.tesselation_outer_level,
                                               float(x) / self.div,
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
@@ -66,7 +67,7 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
 
 class SpaceEnginePatchedSquareShape(NormalizedSquareShape):
     def __init__(self, *args, **kwargs):
-        NormalizedSquareShape.__init__(*args, **kwargs)
+        NormalizedSquareShape.__init__(self, *args, **kwargs)
         self.face_unique = True
 
     def create_patch(self, parent, lod, face, x, y, average_height=1.0):

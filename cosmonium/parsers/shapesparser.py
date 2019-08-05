@@ -5,6 +5,7 @@ from panda3d.core import LVector3d
 
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
+from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 
 from .yamlparser import YamlModuleParser
 
@@ -41,6 +42,8 @@ class ShapeYamlParser(YamlModuleParser):
             shape = SquaredDistanceSquareShape()
         elif shape_type == 'cube-sphere':
             shape = NormalizedSquareShape()
+        elif shape_type == 'se-sphere':
+            shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':
             shape, extra = MeshYamlParser.decode(shape_data)
         else:
