@@ -17,6 +17,7 @@ from cosmonium.dircontext import defaultDirContext
 
 #import textures to register celestia texture parser
 from cosmonium.celestia import textures
+from cosmonium.spaceengine import textures
 from cosmonium import settings
 
 import argparse
