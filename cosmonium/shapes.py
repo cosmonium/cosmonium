@@ -120,6 +120,40 @@ class Shape:
             else:
                 self.instance.setCollideMask(BitMask32.all_off())
 
+class CompositeShapeObject(object):
+    def __init__(self):
+        self.components = []
+        self.owner = None
+
+    def add_component(self, component):
+        self.components.append(component)
+        component.set_owner(self.owner)
+
+    def set_owner(self, owner):
+        self.owner = owner
+        for component in self.components:
+            component.set_owner(self.owner)
+
+    def check_settings(self):
+        for component in self.components:
+            component.check_settings()
+
+    def add_after_effect(self, after_effect):
+        for component in self.components:
+            component.add_after_effect(after_effect)
+
+    def create_instance(self):
+        for component in self.components:
+            component.create_instance()
+
+    def update_instance(self, camera_pos, orientation):
+        for component in self.components:
+            component.update_instance(camera_pos, orientation)
+
+    def remove_instance(self):
+        for component in self.components:
+            component.remove_instance()
+
 class ShapeObject(VisibleObject):
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
@@ -131,6 +165,7 @@ class ShapeObject(VisibleObject):
         self.shader = shader
         self.clickable = clickable
         self.instance_ready = False
+        self.owner = None
 
     def check_settings(self):
         self.shape.check_settings()
@@ -143,6 +178,9 @@ class ShapeObject(VisibleObject):
         if shape is not None:
             self.shape.set_owner(self.parent)
             self.shape.parent = self
+
+    def set_owner(self, owner):
+        self.owner = owner
 
     def set_parent(self, parent):
         VisibleObject.set_parent(self, parent)

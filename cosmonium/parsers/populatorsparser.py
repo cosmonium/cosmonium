@@ -6,8 +6,7 @@ from .. import settings
 
 from .yamlparser import YamlModuleParser
 from ..procedural.populator import RandomObjectPlacer
-from cosmonium.procedural.populator import MultiTerrainPopulator,\
-    CpuTerrainPopulator, GpuTerrainPopulator
+from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator
 from cosmonium.parsers.shapesparser import ShapeYamlParser
 from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.shaders import BasicShader
@@ -36,7 +35,7 @@ class PlacerYamlParser(YamlModuleParser):
 
 class PopulatorYamlParser(YamlModuleParser):
     @classmethod
-    def decode_populator(cls, data):
+    def decode(cls, data):
         if settings.allow_instancing:
             default = 'gpu'
         else:
@@ -59,16 +58,4 @@ class PopulatorYamlParser(YamlModuleParser):
             populator = GpuTerrainPopulator(object_template, density, max_instances, placer)
         else:
             print("Unknown populator", populator_type, populator_data)
-        return populator
-
-    @classmethod
-    def decode(self, data):
-        populator = None
-        if isinstance(data, list):
-            populators = []
-            for entry in data:
-                populators.append(self.decode(entry))
-            populator = MultiTerrainPopulator(populators)
-        else:
-            populator = self.decode_populator(data) 
         return populator

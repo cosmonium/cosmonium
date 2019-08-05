@@ -190,8 +190,8 @@ class TiledShape(PatchedShapeBase):
         if patch is None:
             patch = self.factory.create_patch(None, 0, x, y)
             self.root_patches.append(patch)
-            for layer in self.layers:
-                layer.create_root_patch(patch)
+            for linked_object in self.linked_objects:
+                linked_object.create_root_patch(patch)
         return patch
 
     def split_patch(self, patch):

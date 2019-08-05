@@ -67,7 +67,10 @@ class TerrainPopulatorBase(object):
     def create_object_template_instance_cb(self):
         pass
 
-    def update_instance(self):
+    def create_instance(self):
+        pass
+
+    def update_instance(self, camera_pos, orientation):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             self.object_template.update_instance()
 
@@ -230,7 +233,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         self.object_template.shader.apply(self.object_template.shape, self.object_template.appearance)
         self.rebuild = False
 
-    def update_instance(self):
+    def update_instance(self, camera_pos, orientation):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             if self.rebuild:
                 self.generate_table()

@@ -23,7 +23,7 @@ from cosmonium.procedural.shaders import DetailMap, DisplacementGeometryControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, GeometryControl, ConstantTesselationControl
-from cosmonium.shapes import MeshShape, InstanceShape
+from cosmonium.shapes import MeshShape, InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.textures import PatchedGpuTextureSource
@@ -204,11 +204,10 @@ class RalphConfigParser(YamlModuleParser):
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
 
-        layers = data.get('layers', None)
-        if layers is not None:
-            self.layers = [PopulatorYamlParser.decode(layers)]
-        else:
-            self.layers = None
+        layers = data.get('layers', [])
+        self.layers = []
+        for layer in layers:
+            self.layers.append(PopulatorYamlParser.decode(layer))
 
         if biome is not None:
             self.biome = noise_parser.decode(biome)
@@ -533,7 +532,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.create_terrain_biome()
         self.create_terrain_appearance()
         self.create_terrain_shader()
-        self.terrain = HeightmapSurface(
+        self.terrain_object = HeightmapSurface(
                                'surface',
                                0,
                                self.terrain_shape,
@@ -544,7 +543,10 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.ralph_config.tile_size,
                                clickable=False,
                                average=True)
-        self.terrain.set_parent(self)
+        self.terrain = CompositeShapeObject()
+        self.terrain.add_component(self.terrain_object)
+        self.terrain_object.set_parent(self)
+        self.terrain.set_owner(self)
 
     def create_instance(self):
         self.terrain.create_instance()
@@ -561,14 +563,14 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
-        height = self.terrain.get_height(position)
+        height = self.terrain_object.get_height(position)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
 
     #Used by populator
     def get_height_patch(self, patch, u, v):
-        height = self.terrain.get_height_patch(patch, u, v)
+        height = self.terrain_object.get_height_patch(patch, u, v)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
@@ -728,15 +730,13 @@ class RoamingRalphDemo(CosmoniumBase):
         base.setFrameRateMeter(True)
 
         self.create_terrain()
-        for layer in self.ralph_config.layers:
-            self.terrain_shape.add_layer(layer)
+        for component in self.ralph_config.layers:
+            self.terrain.add_component(component)
+            self.terrain_shape.add_linked_object(component)
 
         if self.ralph_config.fog_parameters is not None:
             after_effect = Fog(**self.ralph_config.fog_parameters)
             self.terrain.add_after_effect(after_effect)
-            #TODO: Layer should be also configured
-            for layer in self.terrain_shape.layers:
-                layer.add_after_effect(after_effect)
 
         self.create_instance()
         self.create_tile(0, 0)
