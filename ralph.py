@@ -36,6 +36,7 @@ from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowCaster
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
+from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
 from cosmonium import settings
 
@@ -77,7 +78,6 @@ class RockFactory(TerrainObjectFactory):
             after_effects = None
         rock_shader = BasicShader(after_effects=after_effects)
         rock = TerrainObject(shape=rock_shape, appearance=rock_appearance, shader=rock_shader)
-        rock.set_parent(self.terrain)
         #bounds = self.rock.instance.getTightBounds()
         #offset = (bounds[1] - bounds[0]) / 2
         #offsets[count] = Vec4F(x, y, height - offset[2] * scale, scale)
@@ -96,7 +96,6 @@ class TreeFactory(TerrainObjectFactory):
             after_effects = None
         tree_shader = BasicShader(geometry_control=TreeAnimControl(), after_effects=after_effects)
         tree = TerrainObject(shape=tree_shape, appearance = tree_appearance, shader=tree_shader)
-        tree.set_parent(self.terrain)
         return tree
 
 class TileFactory(object):
@@ -186,9 +185,6 @@ class RalphConfigParser(YamlModuleParser):
         self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
         self.heightmap_size = terrain.get('heightmap-size', 512)
         self.biome_size = terrain.get('biome-size', 128)
-        self.objects_density = terrain.get('object-density', 250)
-        self.objects_density /= 1000000.0
-        self.max_objects_per_tile = self.objects_density * (self.tile_size * self.tile_size)
 
         heightmap = data.get('heightmap', {})
         self.height_scale = heightmap.get('scale', 1.0)
@@ -207,6 +203,12 @@ class RalphConfigParser(YamlModuleParser):
 
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
+
+        layers = data.get('layers', None)
+        if layers is not None:
+            self.layers = [PopulatorYamlParser.decode(layers)]
+        else:
+            self.layers = None
 
         if biome is not None:
             self.biome = noise_parser.decode(biome)
@@ -240,7 +242,7 @@ class RalphConfigParser(YamlModuleParser):
             self.water = WaterConfig(level, visible, scale)
         else:
             self.water = WaterConfig(0, False, 1.0)
-        if False and fog is not None:
+        if fog is not None:
             self.fog_parameters = {}
             self.fog_parameters['fall_off'] = fog.get('falloff', 0.035)
             self.fog_parameters['density'] = fog.get('density', 20)
@@ -512,15 +514,10 @@ class RoamingRalphDemo(CosmoniumBase):
             tesselation_control = ConstantTesselationControl(invert_v=False)
         else:
             tesselation_control = None
-        if self.fog is not None:
-            after_effects = [Fog(**self.fog)]
-        else:
-            after_effects = None
         self.terrain_shader = BasicShader(appearance=appearance,
                                           tesselation_control=tesselation_control,
                                           geometry_control=DisplacementGeometryControl(self.heightmap),
-                                          data_source=data_source,
-                                          after_effects=after_effects)
+                                          data_source=data_source)
 
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
@@ -548,6 +545,8 @@ class RoamingRalphDemo(CosmoniumBase):
                                clickable=False,
                                average=True)
         self.terrain.set_parent(self)
+
+    def create_instance(self):
         self.terrain.create_instance()
         if self.has_water:
             WaterNode.create_cam()
@@ -595,17 +594,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
         self.skybox.setColor(self.skybox_color)
 
-    def objects_density_for_patch(self, patch):
-        scale = 1 << patch.lod
-        return round(self.ralph_config.max_objects_per_tile / scale)
-
     def create_populator(self):
         if settings.allow_instancing:
             TerrainPopulator = GpuTerrainPopulator
         else:
             TerrainPopulator = CpuTerrainPopulator
-        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
-        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
+        self.rock_collection = TerrainPopulator(self, RockFactory(self).create_object(), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
+        self.tree_collection = TerrainPopulator(self, TreeFactory(self).create_object(), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
         self.object_collection = MultiTerrainPopulator()
         self.object_collection.add_populator(self.rock_collection)
         self.object_collection.add_populator(self.tree_collection)
@@ -649,9 +644,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def apply_instance(self, instance):
         pass
 
-    def create_instance_delayed(self):
-        pass
-
     def get_apparent_radius(self):
         return 0
 
@@ -679,7 +671,6 @@ class RoamingRalphDemo(CosmoniumBase):
         if self.ralph_config.load_and_parse(self.config_file) is None:
             sys.exit(1)
         self.water = self.ralph_config.water
-        self.fog = self.ralph_config.fog_parameters
 
         self.has_water = True
         self.fullscreen = False
@@ -737,8 +728,17 @@ class RoamingRalphDemo(CosmoniumBase):
         base.setFrameRateMeter(True)
 
         self.create_terrain()
-        self.create_populator()
-        self.terrain_shape.add_layer(self.object_collection)
+        for layer in self.ralph_config.layers:
+            self.terrain_shape.add_layer(layer)
+
+        if self.ralph_config.fog_parameters is not None:
+            after_effect = Fog(**self.ralph_config.fog_parameters)
+            self.terrain.add_after_effect(after_effect)
+            #TODO: Layer should be also configured
+            for layer in self.terrain_shape.layers:
+                layer.add_after_effect(after_effect)
+
+        self.create_instance()
         self.create_tile(0, 0)
         self.skybox_init()
 

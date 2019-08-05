@@ -731,6 +731,10 @@ class BasicShader(StructuredShader):
         self.vertex_shader.instance_control = instance_control
         self.vertex_shader.version = max(self.vertex_shader.version, instance_control.version)
 
+    def add_after_effect(self, after_effect):
+        self.after_effects.append(after_effect)
+        #As the list is referenced by the fragment shader no need to apply to fragment too...
+
     def create_shader_configuration(self, appearance):
         self.nb_textures_coord = 1
 

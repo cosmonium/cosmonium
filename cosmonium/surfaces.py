@@ -108,7 +108,6 @@ class ProceduralSurface(FlatSurface):
         FlatSurface.schedule_shape_jobs(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
-    has_heightmap = True
     def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, average=False):
         ProceduralSurface.__init__(self, name, shape, heightmap, appearance, shader, clickable)
         if radius != 0.0:

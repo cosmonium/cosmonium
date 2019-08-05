@@ -46,12 +46,6 @@ class Shape:
             self.instance = None
         self.instance_ready = False
 
-    def create_instance_delayed(self):
-        pass
-
-    def create_patch_instance_delayed(self, patch):
-        pass
-
     def create_collision_solid(self, radius=1.0):
         cs = CollisionSphere(0, 0, 0, radius)
         self.collision_solid = self.instance.attachNewNode(CollisionNode('cnode'))
@@ -127,8 +121,6 @@ class Shape:
                 self.instance.setCollideMask(BitMask32.all_off())
 
 class ShapeObject(VisibleObject):
-    #Temporary workaround until jobs are centralized
-    has_heightmap = False
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.shape = None
@@ -162,6 +154,10 @@ class ShapeObject(VisibleObject):
 
     def set_shader(self, shader):
         self.shader = shader
+
+    def add_after_effect(self, after_effect):
+        if self.shader is not None:
+            self.shader.add_after_effect(after_effect)
 
     def set_scale(self, scale):
         self.shape.set_scale(scale)
@@ -199,9 +195,6 @@ class ShapeObject(VisibleObject):
         self.instance.node().setFinal(True)
         self.schedule_jobs()
 
-    def create_instance_delayed(self):
-        pass
-
     def schedule_patch_jobs(self, patch):
         if self.appearance is not None:
             self.appearance.apply_patch(patch, self)
@@ -236,9 +229,6 @@ class ShapeObject(VisibleObject):
                     #HeightmapSurface called this too :
                     #self.shader.update_shader_patch(self.shape, patch, self.appearance)
                 patch.instance_ready = True
-                patch.create_instance_delayed()
-                self.shape.create_patch_instance_delayed(patch)
-
         else:
             self.shape.jobs_pending -= 1
             if self.shape.jobs_pending > 0: return
@@ -252,9 +242,7 @@ class ShapeObject(VisibleObject):
                     #HeightmapSurface called this too :
                     #self.shader.update_shader_shape(self.shape, self.appearance)
                 self.shape.instance_ready = True
-                self.shape.create_instance_delayed()
                 self.instance_ready = True
-                self.create_instance_delayed()
 
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved

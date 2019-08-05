@@ -95,7 +95,7 @@ class YamlParser(object):
                 object_type = list(data)[0]
                 object_data = data[object_type]
             else:
-                object_type = data.get('type', None)
+                object_type = data.get('type', default)
                 object_data = data
         return (object_type, object_data)
 

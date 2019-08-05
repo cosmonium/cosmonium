@@ -15,12 +15,13 @@ class MeshYamlParser(YamlModuleParser):
             data = {'model': data}
         model = data.get('model')
         create_uv = data.get('create-uv', False)
+        panda = data.get('panda', False)
         scale = data.get('scale', True)
         offset = data.get('offset', None)
         if offset is not None:
             offset = LVector3d(*offset)
         flatten = data.get('flatten', True)
-        shape = MeshShape(model, offset, scale, flatten, context=YamlModuleParser.context)
+        shape = MeshShape(model, offset, scale, flatten, panda, context=YamlModuleParser.context)
         return (shape, {'create_uv': create_uv})
 
 class ShapeYamlParser(YamlModuleParser):

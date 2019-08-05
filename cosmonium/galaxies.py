@@ -92,7 +92,6 @@ class GalaxyAppearance(AppearanceBase):
             shape.instance.setBin('background', settings.deep_space_depth)
         owner.shader.apply(shape, self)
         shape.instance_ready = True
-        shape.create_instance_delayed()
 
 class GalaxyShapeBase(Shape):
     templates = {}

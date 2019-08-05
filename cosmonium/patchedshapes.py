@@ -596,6 +596,8 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         return (normal, tangent, binormal)
 
 class PatchedShapeLayer(object):
+    def set_parent(self, parent):
+        pass
     def create_root_patch(self, patch):
         pass
     def update_instance(self):
@@ -641,6 +643,8 @@ class PatchedShapeBase(Shape):
 
     def add_layer(self, layer):
         self.layers.append(layer)
+        layer.set_parent(self)
+        layer.set_owner(self.owner)
 
     def remove_layer(self, layer):
         self.layers.remove(layer)

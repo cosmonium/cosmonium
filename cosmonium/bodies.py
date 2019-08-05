@@ -945,9 +945,6 @@ class SkySphere(VisibleObject):
             shader = BasicShader(lighting_model=FlatLightingModel())
         self.shader = shader
 
-    def create_instance_delayed(self):
-        pass
-
     def create_instance(self):
         if not self.instance:
             self.instance = self.shape.create_instance()

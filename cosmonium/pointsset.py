@@ -49,10 +49,6 @@ class PointsSet(VisibleObject):
             self.instance.setBin('background', self.background)
         self.instance.set_depth_write(False)
 
-    def create_instance_delayed(self):
-        #TODO: Due to ModelAppearance !
-        pass
-
     def jobs_done_cb(self, patch):
         pass
 

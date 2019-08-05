@@ -29,6 +29,19 @@ biome:
         fbm:
             noise: perlin
             octaves: 4
+layers:
+  - shape:
+      mesh:
+        model: 'ralph-data/models/trees/tree1'
+        panda: true
+        scale: false
+    placer: random
+  - shape:
+      mesh:
+        model: 'ralph-data/models/rock1'
+        panda: true
+        scale: false
+    placer: random
 water:
     level: 0
 

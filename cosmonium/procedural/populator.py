@@ -21,58 +21,70 @@ class TerrainObjectFactory(object):
         return None
 
 class TerrainPopulatorBase(object):
-    def __init__(self, objects_factory, count, placer):
-        self.objects_factory = objects_factory
+    def __init__(self, object_template, count, placer):
+        self.terrain = None
+        self.object_template = object_template
         self.count = count
         self.placer = placer
         self.max_instances = None
-        self.object_template = None
+
+    def set_parent(self, parent):
+        self.parent = parent
+        self.object_template.set_parent(parent)
+
+    def set_owner(self, owner):
+        self.owner = owner
+        self.terrain = owner
+        self.object_template.set_owner(owner)
+
+    def add_after_effect(self, after_effect):
+        self.object_template.add_after_effect(after_effect)
+
+    def calc_nb_of_instances(self, patch):
+        return self.count
 
     def generate_instances_info_for(self, patch):
-        if callable(self.count):
-            patch_count = self.count(patch)
-        else:
-            patch_count = self.count
+        nb_of_instances = self.calc_nb_of_instances(patch)
         if self.max_instances is not None:
-            patch_count = min(patch_count, self.max_instances)
+            nb_of_instances = min(nb_of_instances, self.max_instances)
         count = 0
         offsets = []
-        while count < patch_count:
-            offset = self.placer.place_new(count, patch)
+        while count < nb_of_instances:
+            offset = self.placer.place_new(self.terrain, count, patch)
             if offset is not None:
                 offsets.append(offset)
             count += 1
         return offsets
 
     def create_object_template(self):
-        if self.object_template is None:
-            self.object_template = self.objects_factory.create_object()
+        if self.object_template.instance is None:
             self.object_template.create_instance(self.create_object_template_instance_cb)
 
     def delete_object_template(self):
-        if self.object_template is not None:
+        if self.object_template.instance is not None:
             self.object_template.remove_instance()
-            self.object_template = None
 
     def create_object_template_instance_cb(self):
         pass
 
     def update_instance(self):
-        if self.object_template is not None and self.object_template.instance_ready:
+        if self.object_template.instance is not None and self.object_template.instance_ready:
             self.object_template.update_instance()
 
 class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
     pass
 
 class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
-    def __init__(self, objects_factory, count, placer):
-        TerrainPopulatorBase.__init__(self, objects_factory, count, placer)
-        self.objects_factory = objects_factory
-        self.count = count
-        self.placer = placer
+    def __init__(self, object_template, count, placer):
+        TerrainPopulatorBase.__init__(self, object_template, count, placer)
         self.patch_map = {}
         self.visible_patches = {}
         self.lod_aware = False
+
+    def calc_nb_of_instances(self, patch):
+        scale = 1 << patch.lod
+        count = self.count * self.terrain.size * self.terrain.size
+        return round(count / scale)
 
     def create_data_for(self, patch, terrain_patch):
         data = self.generate_instances_info_for(terrain_patch)
@@ -95,7 +107,7 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         tr = []
         tl = []
         #TODO: Terrain scale should be retrieved properly...
-        size = self.placer.terrain.size
+        size = self.terrain.size
         for data in patch.data:
             (x, y, height, scale) = data
             (u, v) = terrain_patch.coord_to_uv((x / size, y / size))
@@ -148,8 +160,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             del self.visible_patches[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
-    def __init__(self, objects_factory, count, max_instances, placer):
-        PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+    def __init__(self, object_template, count, max_instances, placer):
+        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer)
 
     def create_object_template_instance_cb(self, terrain_object):
         #Hide the main instance
@@ -173,8 +185,8 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
         patch.instances = []
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
-    def __init__(self, objects_factory, count, max_instances, placer):
-        PatchedTerrainPopulatorBase.__init__(self, objects_factory, count, placer)
+    def __init__(self, object_template, count, max_instances, placer):
+        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer)
         self.max_instances = max_instances
         self.rebuild = False
 
@@ -219,7 +231,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         self.rebuild = False
 
     def update_instance(self):
-        if self.object_template is not None and self.object_template.instance_ready:
+        if self.object_template.instance is not None and self.object_template.instance_ready:
             if self.rebuild:
                 self.generate_table()
             self.object_template.update_instance()
@@ -230,6 +242,18 @@ class MultiTerrainPopulator():
             populators = []
         self.populators =  populators
         self.lod_aware = False
+
+    def set_parent(self, parent):
+        for populator in self.populators:
+            populator.set_parent(parent)
+
+    def set_owner(self, owner):
+        for populator in self.populators:
+            populator.set_owner(owner)
+
+    def add_after_effect(self, after_effect):
+        for populator in self.populators:
+            populator.add_after_effect(after_effect)
 
     def add_populator(self, populator):
         self.populators.append(populator)
@@ -273,24 +297,20 @@ class ObjectPlacer(object):
         return None
 
 class RandomObjectPlacer(ObjectPlacer):
-    def __init__(self, terrain):
-        ObjectPlacer.__init__(self)
-        self.terrain = terrain
-
-    def place_new(self, count, patch=None):
+    def place_new(self, terrain, count, patch=None):
         if patch is not None:
             u = random()
             v = random()
-            height = self.terrain.get_height_patch(patch, u, v)
+            height = terrain.get_height_patch(patch, u, v)
             x, y = patch.get_xy_for(u, v)
-            x *= self.terrain.size
-            y *= self.terrain.size
+            x *= terrain.size
+            y *= terrain.size
         else:
-            x = uniform(-self.terrain.size, self.terrain.size)
-            y = uniform(-self.terrain.size, self.terrain.size)
-            height = self.terrain.get_height((x, y))
+            x = uniform(-terrain.size, terrain.size)
+            y = uniform(-terrain.size, terrain.size)
+            height = terrain.get_height((x, y))
         #TODO: Should not have such explicit dependency
-        if height > self.terrain.water.level:
+        if height > terrain.water.level:
             scale = uniform(0.1, 0.5)
             return (x, y, height, scale)
         else:
