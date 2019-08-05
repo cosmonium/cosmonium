@@ -74,7 +74,7 @@ class Shape:
             self.instance.setPythonTag('owner', self.owner)
 
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
-        pass
+        return False
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         pass
@@ -124,10 +124,17 @@ class CompositeShapeObject(object):
     def __init__(self):
         self.components = []
         self.owner = None
+        self.parent = None
 
     def add_component(self, component):
         self.components.append(component)
+        component.set_parent(self.parent)
         component.set_owner(self.owner)
+
+    def set_parent(self, parent):
+        self.parent = parent
+        for component in self.components:
+            component.set_parent(self.parent)
 
     def set_owner(self, owner):
         self.owner = owner
@@ -203,8 +210,10 @@ class ShapeObject(VisibleObject):
     def get_scale(self):
         return self.shape.get_scale()
 
-    def create_instance(self):
-        print("Loading", self.parent.get_name())
+    def create_instance(self, callback=None, cb_args=()):
+        print("Loading", self.get_name())
+        self.callback = callback
+        self.cb_args = cb_args
         self.instance = self.shape.create_instance()
         if not self.shape.deferred_instance:
             self.apply_instance(self.instance)
@@ -214,6 +223,7 @@ class ShapeObject(VisibleObject):
         return self.instance
 
     def apply_instance(self, instance):
+        #print("Apply", self.get_name())
         if instance != self.instance:
             if self.instance is not None:
                 self.instance.remove_node()
@@ -267,6 +277,8 @@ class ShapeObject(VisibleObject):
                     #HeightmapSurface called this too :
                     #self.shader.update_shader_patch(self.shape, patch, self.appearance)
                 patch.instance_ready = True
+                if self.callback is not None:
+                    self.callback(self, patch, *self.cb_args)
         else:
             self.shape.jobs_pending -= 1
             if self.shape.jobs_pending > 0: return
@@ -281,6 +293,8 @@ class ShapeObject(VisibleObject):
                     #self.shader.update_shader_shape(self.shape, self.appearance)
                 self.shape.instance_ready = True
                 self.instance_ready = True
+                if self.callback is not None:
+                    self.callback(self, *self.cb_args)
 
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
@@ -311,7 +325,7 @@ class ShapeObject(VisibleObject):
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, scale=True, flatten=True, panda=False, context=defaultDirContext):
+    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
         self.context = context
@@ -319,7 +333,7 @@ class MeshShape(Shape):
         if offset is None:
             offset = LPoint3d()
         self.offset = offset
-        self.scale = scale
+        self.scale_mesh = scale_mesh
         self.flatten = flatten
         self.panda = panda
         self.callback = None
@@ -327,7 +341,7 @@ class MeshShape(Shape):
 
     def create_instance_cb(self, mesh):
         if mesh is None: return
-        if self.scale:
+        if self.scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             self.scale_factor = 1.0 / major

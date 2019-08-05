@@ -10,17 +10,8 @@ from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopula
 from cosmonium.parsers.shapesparser import ShapeYamlParser
 from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.shaders import BasicShader
-from cosmonium.procedural.terrain import TerrainObject
 from cosmonium.parsers.shadersparser import VertexControlYamlParser
-
-class TerrainObjectYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(cls, data):
-        shape, extra = ShapeYamlParser.decode(data.get('shape'))
-        appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
-        shader = BasicShader(use_model_texcoord=not extra.get('create_uv', False))
-        terrain_object = TerrainObject(shape=shape, appearance = appearance, shader=shader)
-        return terrain_object
+from cosmonium.shapes import ShapeObject
 
 class PlacerYamlParser(YamlModuleParser):
     @classmethod
@@ -53,7 +44,7 @@ class PopulatorYamlParser(YamlModuleParser):
                              #scattering=scattering,
                              geometry_control=vertex_control,
                              use_model_texcoord=not extra.get('create_uv', False))
-        object_template = TerrainObject(shape=shape, appearance=appearance, shader=shader)
+        object_template = ShapeObject('template', shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))
         if populator_type == 'cpu':
             populator = CpuTerrainPopulator(object_template, density, max_instances, placer)

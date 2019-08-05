@@ -11,25 +11,20 @@
 
 from __future__ import print_function
 
-from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LRGBColor, LQuaternion, LColor
+from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
 from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
-from panda3d.core import CollisionTraverser, CollisionNode, CollideMask
-from panda3d.core import CollisionHandlerQueue, CollisionRay
 from direct.actor.Actor import Actor
 
 from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryDataSource
 from cosmonium.procedural.shaders import DetailMap, DisplacementGeometryControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, GeometryControl, ConstantTesselationControl
-from cosmonium.shapes import MeshShape, InstanceShape, CompositeShapeObject
+from cosmonium.shaders import BasicShader, Fog, ConstantTesselationControl
+from cosmonium.shapes import InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.textures import PatchedGpuTextureSource
-from cosmonium.procedural.terrain import TerrainObject
-from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, RandomObjectPlacer, MultiTerrainPopulator, TerrainObjectFactory,\
-    TerrainPopulatorPatch
 from cosmonium.procedural.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
@@ -44,7 +39,6 @@ from math import pow, pi, sqrt
 import argparse
 import sys
 
-from cosmonium.procedural.shadernoise import NoiseMap
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
 from cosmonium.nav import NavBase
@@ -499,6 +493,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain.add_component(self.terrain_object)
         self.terrain_object.set_parent(self)
         self.terrain.set_owner(self)
+        self.terrain.set_parent(self)
 
     def create_instance(self):
         self.terrain.create_instance()
@@ -547,17 +542,6 @@ class RoamingRalphDemo(CosmoniumBase):
         #self.skybox.setColor(.55, .65, .95, 1.0)
         self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
         self.skybox.setColor(self.skybox_color)
-
-    def create_populator(self):
-        if settings.allow_instancing:
-            TerrainPopulator = GpuTerrainPopulator
-        else:
-            TerrainPopulator = CpuTerrainPopulator
-        self.rock_collection = TerrainPopulator(self, RockFactory(self).create_object(), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
-        self.tree_collection = TerrainPopulator(self, TreeFactory(self).create_object(), self.objects_density_for_patch, self.ralph_config.max_objects_per_tile, RandomObjectPlacer(self))
-        self.object_collection = MultiTerrainPopulator()
-        self.object_collection.add_populator(self.rock_collection)
-        self.object_collection.add_populator(self.tree_collection)
 
     def set_light_angle(self, angle):
         self.light_angle = angle

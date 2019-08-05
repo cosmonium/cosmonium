@@ -1461,7 +1461,8 @@ class OffsetScaleInstanceControl(InstanceControl):
         code.append("world_vertex4 = world_vertex4 + vec4(offset_data.xyz, 0.0);")
 
     def update_shader_shape_static(self, shape, appearance):
-        shape.instance.set_shader_input('instances_offset', appearance.offsets)
+        if appearance.offsets is not None:
+            shape.instance.set_shader_input('instances_offset', appearance.offsets)
 
 class DataSource(ShaderComponent):
     def get_source_for(self, source, params=None, error=True):

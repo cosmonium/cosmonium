@@ -72,7 +72,7 @@ class TerrainPopulatorBase(object):
 
     def update_instance(self, camera_pos, orientation):
         if self.object_template.instance is not None and self.object_template.instance_ready:
-            self.object_template.update_instance()
+            self.object_template.update_instance(camera_pos, orientation)
 
 class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
     pass
@@ -191,10 +191,10 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer):
         PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer)
         self.max_instances = max_instances
+        self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         self.rebuild = False
 
     def create_object_template_instance_cb(self, terrain_object):
-        self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         bounds = OmniBoundingVolume()
         terrain_object.instance.node().setBounds(bounds)
         terrain_object.instance.node().setFinal(1)
@@ -237,53 +237,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             if self.rebuild:
                 self.generate_table()
-            self.object_template.update_instance()
-
-class MultiTerrainPopulator():
-    def __init__(self, populators=None):
-        if populators is None:
-            populators = []
-        self.populators =  populators
-        self.lod_aware = False
-
-    def set_parent(self, parent):
-        for populator in self.populators:
-            populator.set_parent(parent)
-
-    def set_owner(self, owner):
-        for populator in self.populators:
-            populator.set_owner(owner)
-
-    def add_after_effect(self, after_effect):
-        for populator in self.populators:
-            populator.add_after_effect(after_effect)
-
-    def add_populator(self, populator):
-        self.populators.append(populator)
-
-    def create_root_patch(self, patch):
-        for populator in self.populators:
-            populator.create_root_patch(patch)
-
-    def split_patch(self, patch):
-        for populator in self.populators:
-            populator.split_patch(patch)
-
-    def merge_patch(self, patch):
-        for populator in self.populators:
-            populator.merge_patch(patch)
-
-    def show_patch(self, patch):
-        for populator in self.populators:
-            populator.show_patch(patch)
-
-    def hide_patch(self, patch):
-        for populator in self.populators:
-            populator.hide_patch(patch)
-
-    def update_instance(self):
-        for populator in self.populators:
-            populator.update_instance()
+            self.object_template.update_instance(camera_pos, orientation)
 
 class TerrainPopulatorPatch(object):
     def __init__(self, data=None):
