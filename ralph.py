@@ -50,54 +50,6 @@ from cosmonium.camera import CameraBase
 from cosmonium.nav import NavBase
 from cosmonium.astro.frame import AbsoluteReferenceFrame
 
-class TreeAnimControl(GeometryControl):
-    def get_id(self):
-        return "tree"
-
-    def vertex_uniforms(self, code):
-        code.append("uniform float osg_FrameTime;")
-
-    def update_vertex(self, code):
-        code.append("    float isBark = step(0.251, model_texcoord0.y);")
-        code.append("    float animation = sin(osg_FrameTime);")
-        code.append("    animation *= sin(0.5 * osg_FrameTime);")
-        code.append("    animation *= isBark;")
-        code.append("    animation *= distance(model_vertex4.xy, vec2(0.0,0.0)) * 0.04;")
-        code.append("    model_vertex4 = vec4(model_vertex4.xyz + animation, model_vertex4.w);")
-
-class RockFactory(TerrainObjectFactory):
-    def __init__(self, terrain):
-        self.terrain = terrain
-
-    def create_object(self):
-        rock_shape = MeshShape('ralph-data/models/rock1', panda=True, scale=False)
-        rock_appearance = ModelAppearance()
-        if self.terrain.fog is not None:
-            after_effects = [Fog(**self.terrain.fog)]
-        else:
-            after_effects = None
-        rock_shader = BasicShader(after_effects=after_effects)
-        rock = TerrainObject(shape=rock_shape, appearance=rock_appearance, shader=rock_shader)
-        #bounds = self.rock.instance.getTightBounds()
-        #offset = (bounds[1] - bounds[0]) / 2
-        #offsets[count] = Vec4F(x, y, height - offset[2] * scale, scale)
-        return rock
-
-class TreeFactory(TerrainObjectFactory):
-    def __init__(self, terrain):
-        self.terrain = terrain
-
-    def create_object(self):
-        tree_shape = MeshShape('ralph-data/models/trees/tree1', panda=True, scale=False)
-        tree_appearance = ModelAppearance()
-        if self.terrain.fog is not None:
-            after_effects = [Fog(**self.terrain.fog)]
-        else:
-            after_effects = None
-        tree_shader = BasicShader(geometry_control=TreeAnimControl(), after_effects=after_effects)
-        tree = TerrainObject(shape=tree_shape, appearance = tree_appearance, shader=tree_shader)
-        return tree
-
 class TileFactory(object):
     def __init__(self, tile_density, size, height_scale, has_water, water):
         self.tile_density = tile_density

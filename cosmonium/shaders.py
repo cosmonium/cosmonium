@@ -998,6 +998,76 @@ class ShaderComponent(object):
     def update_shader_patch(self, shape, patch, appearance):
         pass
 
+class CustomShaderComponent(ShaderComponent):
+    def __init__(self, component_id):
+        self.component_id = component_id
+        self.use_vertex = False
+        self.use_vertex_frag = False
+        self.model_vertex = False
+        self.world_vertex = False
+        self.use_normal = False
+        self.model_normal = False
+        self.world_normal = False
+        self.use_tangent = False
+        self.dynamic_shader = False
+        self.use_double = False
+
+        self.vertex_uniforms_data = []
+        self.vertex_inputs_data = []
+        self.vertex_outputs_data = []
+        self.vertex_extra_data = []
+        self.update_vertex_data = []
+        self.update_normal_data = []
+        self.vertex_shader_data = []
+        self.fragment_uniforms_data = []
+        self.fragment_inputs_data = []
+        self.fragment_extra_data = []
+        self.fragment_shader_decl_data = []
+        self.fragment_shader_distort_coord_data = []
+        self.fragment_shader_data = []
+
+    def get_id(self):
+        return self.component_id
+
+    def vertex_uniforms(self, code):
+        code += self.vertex_uniforms_data
+
+    def vertex_inputs(self, code):
+        code += self.vertex_inputs_data
+
+    def vertex_outputs(self, code):
+        code += self.vertex_outputs_data
+
+    def vertex_extra(self, code):
+        code += self.vertex_extra_data
+
+    def update_vertex(self, code):
+        code += self.update_vertex_data
+
+    def update_normal(self, code):
+        code += self.update_normal_data
+
+    def vertex_shader(self, code):
+        code += self.vertex_shader_data
+
+    def fragment_uniforms(self, code):
+        code += self.fragment_uniforms_data
+
+    def fragment_inputs(self, code):
+        code += self.fragment_inputs_data
+
+    def fragment_extra(self, code):
+        code += self.fragment_extra_data
+
+    def fragment_shader_decl(self, code):
+        code += self.fragment_shader_decl_data
+
+    def fragment_shader_distort_coord(self, code):
+        code += self.fragment_shader_distort_coord_data
+
+    def fragment_shader(self, code):
+        code += self.fragment_shader_data
+
 class ShaderAppearance(ShaderComponent):
     def __init__(self, shader=None):
         ShaderComponent.__init__(self, shader)

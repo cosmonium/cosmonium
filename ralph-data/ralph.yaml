@@ -31,11 +31,21 @@ biome:
             octaves: 4
 layers:
   - shape:
-      mesh:
-        model: 'ralph-data/models/trees/tree1'
-        panda: true
-        scale: false
+      type: mesh
+      model: 'ralph-data/models/trees/tree1'
+      panda: true
+      scale: false
     placer: random
+    vertex:
+      type: custom
+      vertex-uniforms: "uniform float osg_FrameTime;"
+      update-vertex: |
+            float isBark = step(0.251, model_texcoord0.y);
+            float animation = sin(osg_FrameTime);
+            animation *= sin(0.5 * osg_FrameTime);
+            animation *= isBark;
+            animation *= distance(model_vertex4.xy, vec2(0.0,0.0)) * 0.04;
+            model_vertex4 = vec4(model_vertex4.xyz + animation, model_vertex4.w);
   - shape:
       mesh:
         model: 'ralph-data/models/rock1'

@@ -91,7 +91,7 @@ class YamlParser(object):
             object_type = data
             object_data = {}
         else:
-            if len(data) == 1:
+            if len(data) == 1 and data.get('type') is None:
                 object_type = list(data)[0]
                 object_data = data[object_type]
             else:

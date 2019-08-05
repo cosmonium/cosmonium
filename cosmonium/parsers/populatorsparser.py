@@ -11,6 +11,7 @@ from cosmonium.parsers.shapesparser import ShapeYamlParser
 from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.shaders import BasicShader
 from cosmonium.procedural.terrain import TerrainObject
+from cosmonium.parsers.shadersparser import VertexControlYamlParser
 
 class TerrainObjectYamlParser(YamlModuleParser):
     @classmethod
@@ -47,8 +48,10 @@ class PopulatorYamlParser(YamlModuleParser):
         max_instances = 250
         shape, extra = ShapeYamlParser.decode(populator_data.get('shape', None))
         appearance = AppearanceYamlParser.decode(populator_data.get('appearance', None), shape)
+        vertex_control = VertexControlYamlParser.decode(populator_data.get('vertex', None))
         shader = BasicShader(#lighting_model=lighting_model,
                              #scattering=scattering,
+                             geometry_control=vertex_control,
                              use_model_texcoord=not extra.get('create_uv', False))
         object_template = TerrainObject(shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))
