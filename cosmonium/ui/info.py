@@ -100,7 +100,10 @@ def surface(surface):
             texts.append(["License", data_source.license])
         if data_source.url is not None:
             texts.append(["URL", data_source.url])
-    return ["Surface", texts]
+    if len(texts) != 0:
+        return ["Surface", texts]
+    else:
+        return None
 
 def stellar_object(body):
     texts = []
@@ -141,7 +144,8 @@ def stellar_body(body):
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))
     texts.append(ObjectInfo.get_info_for(body.rotation))
-    texts.append(ObjectInfo.get_info_for(body.surface))
+    if body.surface is not None:
+        texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
 
 def star(body):
@@ -154,7 +158,7 @@ def star(body):
     general.append(["Radius", "%s (%s)" % (toUnit(body.get_apparent_radius(), units.lengths_scale), toUnit(body.get_apparent_radius(), units.diameter_scale))])
     general.append(["Spectral type", body.spectral_type.get_text() if body.spectral_type is not None else 'Unknown'])
     general.append(["Abs magnitude", "%g" % body.get_abs_magnitude()])
-    general.append(["Luminosity", "%g `W (%gx Sun)" % (body.get_luminosity() * units.L0,  body.get_luminosity())])
+    general.append(["Luminosity", "%g W (%gx Sun)" % (body.get_luminosity() * units.L0,  body.get_luminosity())])
     general.append(["Temperature", "%g K" % body.temperature if body.temperature is not None else 'Unknown'])
     if body.description != '':
         general.append(["Description", body.description])
@@ -163,7 +167,8 @@ def star(body):
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))
     texts.append(ObjectInfo.get_info_for(body.rotation))
-    texts.append(ObjectInfo.get_info_for(body.surface))
+    if body.surface is not None:
+        texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
 
 ObjectInfo.register(object, default_info)
