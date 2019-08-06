@@ -148,10 +148,12 @@ class ConfigParser(YamlParser):
 
     def decode_debug(self, data):
         settings.debug_jump = data.get('instant-jump', settings.debug_jump)
+        settings.debug_sync_load = data.get('sync-load', settings.debug_sync_load)
 
     def encode_debug(self):
         data = {}
         data['instant-jump'] = settings.debug_jump
+        data['sync-load'] = settings.debug_sync_load
         return data
 
     def decode(self, data):

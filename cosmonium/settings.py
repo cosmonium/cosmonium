@@ -101,6 +101,7 @@ debug_lod_bb = False
 dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False
+debug_sync_load = False
 
 debug_jump = False
 

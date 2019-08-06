@@ -265,7 +265,11 @@ class Cosmonium(CosmoniumBase):
         self.universe = Universe(self)
 
         self.splash = Splash()
-        self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
+        if not settings.debug_sync_load:
+            self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
+        else:
+            self.load_task()
+            self.configure_scene()
 
     def load_task(self):
         self.init_universe()
