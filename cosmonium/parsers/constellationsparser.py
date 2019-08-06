@@ -9,7 +9,7 @@ from ..astro import units
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import hour_angle_decoder, degree_angle_decoder
-from . import boundaries_parser
+from . import boundariesparser
 
 import re
 
@@ -30,7 +30,7 @@ class ConstellationYamlParser(YamlModuleParser):
             decl = 0
         center = InfinitePosition(right_asc=ra, declination=decl)
         boundaries = 'boundaries/%s.txt' % abbr.lower()
-        boundaries = boundaries_parser.load(boundaries, cls.context)
+        boundaries = boundariesparser.load(boundaries, cls.context)
         if boundaries is not None:
             constellation = Constellation(name, center, list(boundaries.values())[0])
         return constellation
