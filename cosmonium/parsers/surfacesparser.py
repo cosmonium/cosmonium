@@ -66,7 +66,7 @@ class SurfaceYamlParser(YamlModuleParser):
         if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
                                  scattering=scattering,
-                                 use_model_texcoord=not extra.get('create_uv', False))
+                                 use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(name, category=category, resolution=resolution, source=source,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
@@ -136,7 +136,7 @@ class SurfaceYamlParser(YamlModuleParser):
                                  appearance=shader_appearance,
                                  lighting_model=lighting_model,
                                  scattering=scattering,
-                                 use_model_texcoord=not extra.get('create_uv', False))
+                                 use_model_texcoord=not extra.get('create-uv', False))
             surface = HeightmapSurface(name, radius=radius,
                                        #category=category, resolution=resolution, source=source,
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)

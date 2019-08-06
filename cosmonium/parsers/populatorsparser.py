@@ -43,7 +43,7 @@ class PopulatorYamlParser(YamlModuleParser):
         shader = BasicShader(#lighting_model=lighting_model,
                              #scattering=scattering,
                              geometry_control=vertex_control,
-                             use_model_texcoord=not extra.get('create_uv', False))
+                             use_model_texcoord=not extra.get('create-uv', False))
         object_template = ShapeObject('template', shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))
         if populator_type == 'cpu':

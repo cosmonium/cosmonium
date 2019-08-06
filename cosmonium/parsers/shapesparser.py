@@ -23,7 +23,7 @@ class MeshYamlParser(YamlModuleParser):
             offset = LVector3d(*offset)
         flatten = data.get('flatten', True)
         shape = MeshShape(model, offset, scale, flatten, panda, context=YamlModuleParser.context)
-        return (shape, {'create_uv': create_uv})
+        return (shape, {'create-uv': create_uv})
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod

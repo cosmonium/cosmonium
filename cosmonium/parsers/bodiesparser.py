@@ -53,7 +53,7 @@ class ReflectiveYamlParser(YamlModuleParser):
             scattering = atmosphere.create_scattering_shader(atmosphere=False, calc_in_fragment=False, normalize=False)
             shader = BasicShader(lighting_model=lighting_model,
                                  scattering=scattering,
-                                 use_model_texcoord=not extra.get('create_uv', False))
+                                 use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(surface_name, category='visible', resolution=None, source=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
