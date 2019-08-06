@@ -151,6 +151,8 @@ help_background = LColor(0.5, 0.5, 0.5, 0.7)
 
 menu_text_size = 12
 
+query_delay = 0.333
+
 #These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
 asterisms_depth = 10

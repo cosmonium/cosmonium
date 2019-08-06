@@ -22,6 +22,7 @@ class Query:
         self.owner = None
         self.current_selection = -1
         self.current_list = []
+        self.completion_task = None
         self.max_columns = 4
         self.max_lines = 3
         self.max_elems = self.max_columns * self.max_lines
@@ -43,6 +44,9 @@ class Query:
         self.suggestions = None
         self.current_selection = -1
         self.current_list = []
+        if self.completion_task is not None:
+            taskMgr.remove(self.completion_task)
+            self.completion_task = None
 
     def escape(self, event):
         self.close()
@@ -69,7 +73,9 @@ class Query:
         else:
             self.current_list = []
         self.current_selection = 0
-        self.update_suggestions()
+        if self.completion_task is not None:
+            taskMgr.remove(self.completion_task)
+        self.completion_task = taskMgr.doMethodLater(settings.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
 
     def select(self, event):
         modifiers = event.getModifierButtons()
