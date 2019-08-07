@@ -130,6 +130,7 @@ class StellarObject(LabelledObject):
         self.scene_scale_factor = None
         self.world_body_center_offset = LVector3d()
         self.model_body_center_offset = LVector3d()
+        self.projected_world_body_center_offset = LVector3d()
         #Components
         self.orbit_object = None
         self.rotation_axis = None

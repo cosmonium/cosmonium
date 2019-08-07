@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import GeomNode
-from panda3d.core import LVecBase3, LPoint3d, LVector3
+from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
@@ -309,6 +309,11 @@ class ShapeObject(VisibleObject):
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
             self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))
+        if self.shape.patchable and settings.offset_body_center and self.parent is not None:
+            #In case of oblate shape, the offset can not be used directly to retrieve the body center
+            #The scale must be applied to the offset to retrieve the real center
+            offset = self.shape.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
+            self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
         if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.shape.patchable:
