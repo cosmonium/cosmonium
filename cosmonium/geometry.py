@@ -462,7 +462,7 @@ def make_config(inner, outer):
     nb_vertices = inner + 1
     if outer is None:
         outer = [inner, inner, inner, inner]
-    ratio = map(lambda x: inner // x if inner >= x else 1, outer)
+    ratio = [inner // x if inner >= x else 1 for x in outer]
     return (nb_vertices, inner, outer, ratio)
 
 def make_square_primitives(prim, inner, nb_vertices):
