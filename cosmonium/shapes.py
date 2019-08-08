@@ -173,6 +173,7 @@ class ShapeObject(VisibleObject):
         self.clickable = clickable
         self.instance_ready = False
         self.owner = None
+        self.first_patch = True
 
     def check_settings(self):
         self.shape.check_settings()
@@ -270,12 +271,14 @@ class ShapeObject(VisibleObject):
             patch.jobs_pending = 0
             patch.jobs = 0
             if patch.instance is not None:
+                if self.first_patch:
+                    if self.shader is not None:
+                        self.shader.apply(self.shape, self.appearance)
+                    self.first_patch = None
                 if self.appearance is not None:
                     self.appearance.apply_textures(patch)
                 if self.shader is not None:
                     self.shader.apply_patch(self.shape, patch, self.appearance)
-                    #HeightmapSurface called this too :
-                    #self.shader.update_shader_patch(self.shape, patch, self.appearance)
                 patch.instance_ready = True
                 if self.callback is not None:
                     self.callback(self, patch, *self.cb_args)
@@ -289,8 +292,6 @@ class ShapeObject(VisibleObject):
                     self.appearance.apply_textures(self.shape)
                 if self.shader is not None:
                     self.shader.apply(self.shape, self.appearance)
-                    #HeightmapSurface called this too :
-                    #self.shader.update_shader_shape(self.shape, self.appearance)
                 self.shape.instance_ready = True
                 self.instance_ready = True
                 if self.callback is not None:

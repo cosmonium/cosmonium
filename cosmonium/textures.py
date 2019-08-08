@@ -320,6 +320,7 @@ class VisibleTexture(SimpleTexture):
             srgb = settings.use_srgb
         SimpleTexture.__init__(self, source, srgb=srgb)
         self.tint_color = tint
+        self.check_specular_mask = False
         self.has_specular_mask = False
         self.transparent = False
 
@@ -347,7 +348,6 @@ class VisibleTexture(SimpleTexture):
 class SurfaceTexture(VisibleTexture):
     def __init__(self, source, tint=None, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb=srgb)
-        self.check_specular_mask = False
         self.check_transparency = False
         self.transparent = False
 
@@ -355,11 +355,15 @@ class SurfaceTexture(VisibleTexture):
         texture_format = texture.get_format()
         return texture_format in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
 
+    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
+        if self.check_specular_mask and self.texture_has_transparency(texture):
+            self.has_specular_mask = True
+        VisibleTexture.texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args)
+
     def init_texture_stage(self, texture_stage, texture):
         VisibleTexture.init_texture_stage(self, texture_stage, texture)
-        if self.check_specular_mask and self.texture_has_transparency(texture):
+        if self.has_specular_mask:
             texture_stage.setMode(TextureStage.MModulateGloss)
-            self.has_specular_mask = True
         if self.check_transparency and self.texture_has_transparency(texture):
             self.transparent = True
 

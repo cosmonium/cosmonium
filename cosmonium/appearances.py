@@ -183,6 +183,9 @@ class Appearance(AppearanceBase):
 
     def texture_loaded_cb(self, texture, patch, owner):
         shape = owner.shape
+        if self.texture is not None and self.texture.check_specular_mask:
+            self.has_specular_mask = self.texture.has_specular_mask
+            self.texture.check_specular_mask = False
         if shape.patchable:
             #print("CB", patch.str_id(), '-', patch.jobs_pending)
             owner.jobs_done_cb(patch)
