@@ -46,7 +46,7 @@ class Galaxy(DeepSpaceObject):
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude, body_class=body_class)
-        self.extend = self.radius
+        self._extend = self.radius
 
 class GalaxyAppearance(AppearanceBase):
     image = None

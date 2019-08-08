@@ -115,6 +115,7 @@ class StellarObject(LabelledObject):
         self._orientation = LQuaterniond()
         self._equatorial = LQuaterniond()
         self._app_magnitude = None
+        self._extend = 0.0
         #Scene parameters
         self.rel_position = None
         self.distance_to_obs = None
@@ -384,7 +385,7 @@ class StellarObject(LabelledObject):
 
     def check_visibility(self, pixel_size):
         if self.distance_to_obs > 0.0:
-            self.visible_size = self.extend / (self.distance_to_obs * pixel_size)
+            self.visible_size = self._extend / (self.distance_to_obs * pixel_size)
         else:
             self.visible_size = 0.0
         self._app_magnitude = self.get_app_magnitude()
@@ -545,7 +546,7 @@ class StellarBody(StellarObject):
         self.scale = scale
         if self.atmosphere is not None:
             self.atmosphere.owner = self
-        self.extend = self.get_extend()
+        self._extend = self.get_extend()
 
     def create_surface(self):
         self.surface = self.surface_factory.create(self)
@@ -890,7 +891,7 @@ class Star(EmissiveBody):
                 radius = 7000.0
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
-        self.extend = radius #TODO: Optim for octree
+        self._extend = radius #TODO: Optim for octree
         EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness,
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,

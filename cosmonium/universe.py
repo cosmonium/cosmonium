@@ -107,7 +107,7 @@ class Universe(StellarSystem):
                 else:
                     for plane in self.planes:
                         plane_dist = plane.distToPlane(vector / scale)
-                        if plane_dist > leaf.extend / scale:
+                        if plane_dist > leaf._extend / scale:
                             skip = True
                             break
             if not skip:

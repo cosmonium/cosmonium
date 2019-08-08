@@ -14,7 +14,6 @@ class StellarSystem(StellarObject):
         self.children_map = ObjectsDB()
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
-        self.extend = 0.0
         self.has_halo = False
 
     def apply_func(self, func):
@@ -116,8 +115,8 @@ class StellarSystem(StellarObject):
             old_parent.recalc_extend()
         if child.orbit is not None:
             orbit_size = child.orbit.get_apparent_radius()
-            if orbit_size > self.extend:
-                self.extend = orbit_size
+            if orbit_size > self._extend:
+                self._extend = orbit_size
         #TODO: Calc consolidated abs magnitude here
 
     def remove_child_fast(self, child):
@@ -139,7 +138,7 @@ class StellarSystem(StellarObject):
                 size += child.orbit.get_apparent_radius()
             if size > extend:
                 extend = size
-        self.extend = extend
+        self._extend = extend
 
     def recalc_recursive(self):
         for child in self.children:
@@ -200,7 +199,7 @@ class StellarSystem(StellarObject):
             child.remove_instance()
 
     def get_extend(self):
-        return self.extend
+        return self._extend
 
 class SimpleSystem(StellarSystem):
     label_class = StellarBodyLabel
