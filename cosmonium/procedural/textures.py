@@ -19,11 +19,11 @@ class ProceduralTextureSource(TextureSource):
     def can_split(self, patch):
         return True
 
-    def load(self, patch, grayscale):
+    def load(self, patch):
         return None
 
 class GpuTextureSource(ProceduralTextureSource):
-    def load(self, patch, grayscale):
+    def load(self, patch):
         heightmap = self.terrain.get_heightmap(None)
         #TODO: heightmap has no size, but width and height
         data = (heightmap.texture, self.terrain.width, 0)
@@ -35,7 +35,7 @@ class PatchedGpuTextureSource(ProceduralTextureSource):
         ProceduralTextureSource.__init__(self, terrain)
         self.textures_map = {}
 
-    def load(self, patch, grayscale):
+    def load(self, patch):
         if patch not in self.textures_map:
             heightmap = self.terrain.get_heightmap(patch)
             if heightmap is None:
@@ -85,7 +85,7 @@ class ProceduralVirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
             self._make_texture(patch, callback, cb_args)
         else:

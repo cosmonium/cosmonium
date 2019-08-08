@@ -20,21 +20,31 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
                 'neg_y',
                 ]
 
-    def __init__(self, root, ext, size, channel=None):
+    def __init__(self, root, ext, size, channel=None, alpha_channel=None):
         VirtualTextureSource.__init__(self, root, ext, size)
-        if channel is None:
-            channel = ''
-        else:
-            channel = '_' + channel
         self.channel = channel
+        self.alpha_channel = alpha_channel
+        if channel is None:
+            self.channel_text = ''
+        else:
+            self.channel_text = '_' + channel
+        if self.alpha_channel is None:
+            self.alpha_channel_text = ''
+        else:
+            self.alpha_channel_text = '_' + alpha_channel
 
     def child_texture_name(self, patch):
         dir_name = self.face_str[patch.face]
-        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, patch.y * 2, patch.x * 2, self.channel, self.ext)
+        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, patch.y * 2, patch.x * 2, self.channel_text, self.ext)
 
     def texture_name(self, patch):
         dir_name = self.face_str[patch.face]
-        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.channel, self.ext)
+        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.channel_text, self.ext)
+
+    def alpha_texture_name(self, patch):
+        if self.alpha_channel is not None:
+            dir_name = self.face_str[patch.face]
+            return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.alpha_channel_text, self.ext)
 
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
@@ -46,11 +56,15 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
                     all_faces = False
             if all_faces:
                 channel = None
+                alpha_channel = None
                 if os.path.exists(os.path.join(filename, 'base.jpg')):
                     channel = ''
-                elif os.path.exists(os.path.join(filename, 'base_c.jpg')):
-                    channel = 'c'
-                return SpaceEngineVirtualTextureSource(filename, 'jpg', 258, channel)
+                else:
+                    if os.path.exists(os.path.join(filename, 'base_c.jpg')):
+                        channel = 'c'
+                    if os.path.exists(os.path.join(filename, 'base_a.jpg')):
+                        alpha_channel = 'a'
+                return SpaceEngineVirtualTextureSource(filename, 'jpg', 258, channel, alpha_channel)
         return None
 
 #TODO: Should be done in Cosmonium main class

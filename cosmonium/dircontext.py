@@ -41,6 +41,7 @@ class DirContext(object):
             self.category_paths[category].remove(path)
 
     def find_file(self, category, pattern):
+        if pattern is None: return None
         if os.path.isabs(pattern):
             files = glob.glob(pattern)
             if len(files) > 0:

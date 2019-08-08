@@ -68,7 +68,7 @@ class TextureSource(object):
     def texture_name(self, patch):
         return None
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         pass
 
     def can_split(self, patch):
@@ -78,7 +78,7 @@ class TextureSource(object):
         return (None, 0, 0)
 
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         callback(None, 0, 0, *cb_args)
 
 class AutoTextureSource(TextureSource):
@@ -133,10 +133,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if self.source is None:
             self.create_source()
-        return self.source.load(patch, grayscale, color_space, sync, callback, cb_args)
+        return self.source.load(patch, color_space, sync, callback, cb_args)
 
     def can_split(self, patch):
         if self.source is None:
@@ -169,7 +169,7 @@ class TextureFileSource(TextureSource):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
@@ -177,7 +177,7 @@ class TextureFileSource(TextureSource):
                     texture = workers.syncTextureLoader.load_texture(filename)
                     self.texture_loaded_cb(texture, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, self.texture_loaded_cb, (callback, cb_args))
+                    workers.asyncTextureLoader.load_texture(filename, None, self.texture_loaded_cb, (callback, cb_args))
             else:
                 print("File", self.filename, "not found")
                 self.texture_loaded_cb(None, callback, cb_args)
@@ -206,7 +206,7 @@ class DirectTextureSource(TextureSource):
     def replace(self, texture):
         self.texture = texture
 
-    def load(self, patch, grayscale, callback, cb_args):
+    def load(self, patch, callback, cb_args):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
@@ -214,10 +214,9 @@ class DirectTextureSource(TextureSource):
         return (self.texture, 0, 0)
 
 class SimpleTexture(TextureBase):
-    def __init__(self, source, grayscale=False, srgb=False, offset=0):
+    def __init__(self, source, srgb=False, offset=0):
         if source is not None and not isinstance(source, TextureSource):
             source = AutoTextureSource(source)
-        self.grayscale = grayscale
         self.srgb = srgb
         self.source = source
         self.offset = offset
@@ -252,7 +251,7 @@ class SimpleTexture(TextureBase):
                 color_space=CS_linear
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            self.source.load(patch, grayscale=self.grayscale, color_space=color_space, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
+            self.source.load(patch, color_space=color_space, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
         else:
             if callback is not None:
                 callback(self, *cb_args)
@@ -427,9 +426,6 @@ class NormalMapTexture(SimpleTexture):
         return (.5, .5, 1, 1)
 
 class SpecularMapTexture(SimpleTexture):
-    def __init__(self, source):
-        SimpleTexture.__init__(self, source, grayscale=True)
-
     def init_texture_stage(self, texture_stage, texture):
         texture_stage.setMode(TextureStage.MGloss)
 
@@ -444,18 +440,17 @@ class BumpMapTexture(SimpleTexture):
         return (0, 0, 0, 0)
 
 class DataTexture(TextureBase):
-    def __init__(self, source, grayscale=False):
+    def __init__(self, source):
         if source is not None and not isinstance(source, TextureSource):
             source = TextureFileSource(source)
         self.source = source
-        self.grayscale = grayscale
         self.texture = None
         self.texture_size = 0
         self.texture_lod = 0
 
     def load(self, patch, callback=None):
         if not self.source.loaded or not self.source.cached:
-            (self.texture, self.texture_size, self.texture_lod) = self.source.load(patch, grayscale=self.grayscale)
+            (self.texture, self.texture_size, self.texture_lod) = self.source.load(patch)
         if callback is not None:
             callback(patch, self)
 
@@ -492,6 +487,9 @@ class VirtualTextureSource(TextureSource):
     def texture_name(self, patch):
         return None
 
+    def alpha_texture_name(self, patch):
+        return None
+
     def can_split(self, patch):
         tex_name = self.child_texture_name(patch)
         exists = os.path.isfile(tex_name)
@@ -513,16 +511,18 @@ class VirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
             tex_name = self.texture_name(patch)
             filename = self.context.find_texture(tex_name)
+            alpha_tex_name = self.alpha_texture_name(patch)
+            alpha_filename = self.context.find_texture(alpha_tex_name)
             if filename is not None:
                 if sync:
-                    texture = workers.syncTextureLoader.load_texture(filename)
+                    texture = workers.syncTextureLoader.load_texture(filename, alpha_filename)
                     self.texture_loaded_cb(texture, patch, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, self.texture_loaded_cb, (patch, callback, cb_args))
+                    workers.asyncTextureLoader.load_texture(filename, alpha_filename, self.texture_loaded_cb, (patch, callback, cb_args))
             else:
                 print("File", tex_name, "not found")
                 self.texture_loaded_cb(None, patch, callback, cb_args)
