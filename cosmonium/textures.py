@@ -53,6 +53,7 @@ class TextureBase(object):
 
 class TextureSource(object):
     cached = True
+    procedural = False
     def __init__(self):
         self.loaded = False
         self.texture = None

@@ -11,6 +11,7 @@ from .. import settings
 class ProceduralTextureSource(TextureSource):
     cached = False
     patched = True
+    procedural = True
     def __init__(self, terrain):
         self.terrain = terrain
         self.loaded = False
@@ -48,6 +49,7 @@ class PatchedGpuTextureSource(ProceduralTextureSource):
 class ProceduralVirtualTextureSource(TextureSource):
     tex_generators = {}
     cached = False
+    procedural = True
     def __init__(self, noise, size):
         TextureSource.__init__(self)
         self.noise = noise
