@@ -66,7 +66,7 @@ class CosmoniumConfig(object):
             self.celestia = True
         else:
             self.celestia = False
-        if self.celestia and self.script is None:
+        if self.celestia and self.script is None and self.default is None:
             self.script = self.celestia_start_script
 
 class CosmoniumConfigParser(YamlParser):
