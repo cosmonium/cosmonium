@@ -16,6 +16,7 @@ class ONeilAtmosphere(Atmosphere):
                  mie_coef = 0.0015,
                  sun_power = 15.0,
                  wavelength = [0.650, 0.570, 0.465],
+                 exposure = 0.8,
                  calc_in_fragment=True,
                  normalize=True,
                  appearance=None, shader=None):
@@ -26,6 +27,7 @@ class ONeilAtmosphere(Atmosphere):
         self.Km = mie_coef
         self.ESun = sun_power
         self.wavelength = wavelength
+        self.exposure = exposure,
         self.calc_in_fragment = calc_in_fragment
         self.normalize = normalize
 
@@ -101,6 +103,7 @@ class ONeilScattering(AtmosphericScattering):
         if self.atmosphere:
             code.append("uniform float fg;")
             code.append("uniform float fg2;")
+        code.append("uniform float fExposure;")
 
     def scale_func(self, code):
         code.append("float scale(float fCos)")
@@ -226,9 +229,11 @@ class ONeilScattering(AtmosphericScattering):
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
             code.append("    total_diffuse_color = fRayleighPhase * primary_color + fMiePhase * secondary_color;")
+            code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
             code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
         else:
             code.append("  total_diffuse_color.rgb = primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
+            code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:
@@ -263,7 +268,7 @@ class ONeilScattering(AtmosphericScattering):
         
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)
-        shape.instance.setShaderInput("fExposure", 2)
+        shape.instance.setShaderInput("fExposure", parameters.exposure)
 
         shape.instance.setShaderInput("fOuterRadius", outer_radius)
         shape.instance.setShaderInput("fInnerRadius", inner_radius)
