@@ -326,7 +326,7 @@ class Asterism(VisibleObject):
                 decl += star.orbit.get_declination()
             ra = atan2(ra_sin, ra_cos)
             decl /= len(self.segments[0])
-        self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
+            self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
