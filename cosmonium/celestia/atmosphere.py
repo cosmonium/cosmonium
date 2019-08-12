@@ -16,8 +16,8 @@ class CelestiaAtmosphere(Atmosphere):
                  mie_coef=0.0, mie_scale_height=0.0, mie_phase_asymmetry=0.0,
                  rayleigh_coef=None, rayleigh_scale_height=0.0,
                  absorption_coef=None,
-                 appearance=None, shader=None):
-        Atmosphere.__init__(self, appearance=appearance, shader=shader)
+                 shape=None, appearance=None, shader=None):
+        Atmosphere.__init__(self, shape=shape, appearance=appearance, shader=shader)
         self.height = height
         self.mie_coef = mie_coef
         self.mie_scale_height = mie_scale_height
