@@ -40,6 +40,9 @@ class CelestiaAtmosphere(Atmosphere):
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
+    def create_scattering_shader(self, atmosphere):
+        return CelestiaScattering(atmosphere)
+
 class CelestiaScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True

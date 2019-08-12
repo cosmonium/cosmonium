@@ -14,7 +14,7 @@ from ..universe import Universe
 from ..systems import StellarSystem, SimpleSystem
 from ..bodies import ReflectiveBody, ReferencePoint
 from ..surfaces import FlatSurface
-from ..bodyelements import Ring, Clouds
+from ..bodyelements import Ring, Clouds, NoAtmosphere
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LunarLambertLightingModel, LambertPhongLightingModel
@@ -90,11 +90,10 @@ def instanciate_atmosphere(data):
                                     rayleigh_coef = rayleigh_coef,
                                     rayleigh_scale_height = rayleigh_scale_height,
                                     absorption_coef = absorption_coef)
+    else:
+        atmosphere = NoAtmosphere()
     if clouds_height != 0:
-        if mie_phase_asymmetry != 0.0:
-            shader=BasicShader(scattering=CelestiaScattering(), lighting_model=LambertPhongLightingModel())
-        else:
-            shader=BasicShader(lighting_model=LambertPhongLightingModel())
+        shader=BasicShader(lighting_model=LambertPhongLightingModel())
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
 
@@ -126,7 +125,7 @@ def instanciate_body(universe, names, is_planet, data):
     oblateness=None
     scale=None
     lunar_lambert = 0.0
-    atmosphere=None
+    atmosphere = None
     clouds=None
     rings=None
     orbit=None
@@ -271,17 +270,16 @@ def instanciate_body(universe, names, is_planet, data):
     if bump_map is not None:
         appearance.set_bump_map(bump_map, bump_height)
     lighting_model = None
-    scattering = None
-    if atmosphere is not None:
-        scattering = CelestiaScattering()
     if lunar_lambert > 0.0:
         lighting_model = LunarLambertLightingModel()
     else:
         lighting_model = LambertPhongLightingModel()
+    if atmosphere is None:
+        atmosphere = NoAtmosphere()
     surface = FlatSurface(
                           shape=shape,
                           appearance=appearance,
-                          shader=BasicShader(lighting_model=lighting_model, scattering=scattering))
+                          shader=BasicShader(lighting_model=lighting_model))
     body = ReflectiveBody(names=names,
                           radius=radius,
                           surface=surface,
@@ -292,6 +290,9 @@ def instanciate_body(universe, names, is_planet, data):
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
+    atmosphere.add_shape_object(surface)
+    if clouds is not None:
+        atmosphere.add_shape_object(clouds)
     body.albedo = albedo
     body.body_class = body_class
     return body
