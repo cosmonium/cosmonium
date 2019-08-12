@@ -100,6 +100,9 @@ class CameraBase(object):
             self.calc_fov()
             self.set_focal(self.default_focal * self.zoom_factor)
 
+    def get_fov(self):
+        return self.fov
+
     def calc_pixel_size(self):
         self.height = self.height
         self.ratio = float(self.width) / self.height

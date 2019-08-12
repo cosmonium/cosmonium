@@ -48,6 +48,9 @@ class Universe(StellarSystem):
         self.octree_points = PointsSet(use_sprites=False, use_sizes=False, points_size=20)
         self.octree_points.instance.reparentTo(self.context.annotation)
 
+    def get_fullname(self, separator='/'):
+        return ''
+
     def dumpOctree(self):
         self.dump_octree = True
 

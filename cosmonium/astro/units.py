@@ -10,6 +10,7 @@ m=Km/1000.0
 AU=149597870.700 * Km
 KmPerLy=9460730472580.800
 Ly=KmPerLy * Km
+mLy = Ly / 1000000.0
 LyPerParsec = 3.26167
 Parsec=LyPerParsec * Ly
 KParsec = 1000 * Parsec

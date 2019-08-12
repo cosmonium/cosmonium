@@ -22,6 +22,43 @@ from .Menu import PopupMenu
 from .help import HelpPanel
 from .infopanel import InfoPanel
 
+import sys
+from cosmonium.celestia.cel_url import CelUrl
+from cosmonium.appstate import AppState
+
+try:
+    if sys.version_info[0] < 3:
+        from Tkinter import Tk
+    else:
+        from tkinter import Tk
+    has_tk = True
+except ImportError:
+    print("tinker not found, no copy&paste available")
+    has_tk = False
+
+class Clipboard():
+    def __init__(self):
+        if has_tk:
+            self.r = Tk()
+            self.r.withdraw()
+        else:
+            self.r = None
+
+    def copy_to(self, text):
+        if has_tk:
+            self.r.clipboard_clear()
+            self.r.clipboard_append(text)
+            self.r.update()
+        else:
+            print(text)
+
+    def copy_from(self):
+        text = ''
+        if has_tk:
+            self.r.update()
+            text = self.r.selection_get(selection="CLIPBOARD")
+        return text
+
 class Gui(object):
     def __init__(self, cosmonium, time, camera, mouse, nav, autopilot):
         self.cosmonium = cosmonium
@@ -36,6 +73,7 @@ class Gui(object):
             self.font = font.load()
         else:
             self.font = None
+        self.clipboard = Clipboard()
         self.hud = HUD(self.scale, self.font)
         self.query = Query(self.scale, self.font)
         self.last_fps = globalClock.getRealTime()
@@ -109,6 +147,9 @@ class Gui(object):
         event_ctrl.accept('control-g', self.autopilot.go_to_surface)
 
         event_ctrl.accept('h', self.cosmonium.go_home)
+
+        event_ctrl.accept('control-c', self.save_celurl)
+        event_ctrl.accept('control-v', self.load_celurl)
 
         event_ctrl.accept('shift-j', self.time.set_J2000_date)
         event_ctrl.accept('!', self.time.set_current_date)
@@ -189,6 +230,26 @@ class Gui(object):
 
     def right_click(self):
         self.popup_menu = self.create_popup_menu(self.mouse.get_over())
+
+    def save_celurl(self):
+        state = AppState()
+        state.save_state(self.cosmonium)
+        cel_url = CelUrl()
+        cel_url.store_state(self.cosmonium, state)
+        url = cel_url.encode()
+        print(url)
+
+    def load_celurl(self):
+        url = self.clipboard.copy_from()
+        if url is None or url == '': return
+        print(url)
+        cel_url = CelUrl()
+        cel_url.parse(url)
+        state = cel_url.convert_to_state(self.cosmonium)
+        if state is not None:
+            state.apply_state(self.cosmonium)
+        else:
+            print("Invalid URL: '%s'" % url)
 
     def toggle_lod_freeze(self):
         settings.debug_lod_freeze = not settings.debug_lod_freeze

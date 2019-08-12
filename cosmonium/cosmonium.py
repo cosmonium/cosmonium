@@ -25,6 +25,7 @@ from .pointsset import PointsSet
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
+from .celestia.cel_url import CelUrl
 
 #import orbits and rotations elements to add them to the DB
 from .astro.tables import kepler, ssd, uniform, vsop87, wgccre
@@ -428,6 +429,16 @@ class Cosmonium(CosmoniumBase):
             self.current_sequence.pause()
             self.current_sequence = None
 
+    def load_cel_url(self, url):
+        print("Loading", url)
+        cel_url = CelUrl()
+        cel_url.parse(url)
+        state = cel_url.convert_to_state(self)
+        if state is not None:
+            state.apply_state(self)
+        else:
+            print("Invalid cel://")
+
     def reset_all(self):
         self.gui.update_info("Cancel", 0.5, 1.0)
         self.reset_nav()
@@ -554,11 +565,14 @@ class Cosmonium(CosmoniumBase):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
     def follow_selected(self):
-        self.follow = self.selected
+        self.follow_body(self.selected)
+
+    def follow_body(self, body):
+        self.follow = body
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.observer.set_camera_frame(RelativeReferenceFrame(self.selected, self.selected.orbit.frame))
+            self.observer.set_camera_frame(RelativeReferenceFrame(body, body.orbit.frame))
         else:
             self.observer.set_camera_frame(AbsoluteReferenceFrame())
         if self.fly:
@@ -566,11 +580,14 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def sync_selected(self):
-        self.sync = self.selected
+        self.sync_body(self.selected)
+
+    def sync_body(self, body):
+        self.sync = body
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.observer.set_camera_frame(SynchroneReferenceFrame(self.selected))
+            self.observer.set_camera_frame(SynchroneReferenceFrame(body))
         else:
             self.observer.set_camera_frame(AbsoluteReferenceFrame())
         if self.fly:
@@ -578,16 +595,18 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def track_selected(self):
-        if self.selected is not None:
-            print("Track", self.selected.get_name())
-            self.track = self.selected
+        self.track_body(self.selected)
+
+    def track_body(self, body):
+        self.track = body
+        if self.track is not None:
+            print("Track", body.get_name())
 
     def toggle_track_selected(self):
         if self.track is not None:
-            self.track = None
+            self.track_body(None)
         elif self.selected is not None:
-            print("Track", self.selected.get_name())
-            self.track = self.selected
+            self.track_body(self.selected)
 
     def reset_visibles(self):
         self.visibles = []

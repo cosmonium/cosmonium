@@ -47,9 +47,9 @@ class StellarSystem(StellarObject):
                     return child.primary
         return None
 
-    def find_by_path(self, path, return_system=False, first=True):
+    def find_by_path(self, path, return_system=False, first=True, separator='/'):
         if not isinstance(path, list):
-            path=path.split('/')
+            path=path.split(separator)
         if len(path) > 0:
             #print("Looking for", path, "in '" + self.get_name() + "'", "RS:", return_system)
             name = path[0]

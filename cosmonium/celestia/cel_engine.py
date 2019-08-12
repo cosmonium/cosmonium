@@ -363,6 +363,15 @@ For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of
 def setframe(command_name, sequence, base, parameters):
     not_implemented(command_name, sequence, base, parameters)
 
+def seturl(command_name, sequence, base, parameters):
+    """Parameters:
+string url = ""
+Description:
+Reconfigure the engine with the given configuration URL.
+"""
+    url = parameters.get('url', '')
+    sequence.append(Func(base.load_cel_url, url))
+
 def setvisibilitylimit(command_name, sequence, base, parameters):
     """Parameters:
 float magnitude = 6.0
@@ -463,7 +472,7 @@ commands = {
     "setsurface": not_implemented,
     "settextcolor": not_implemented,
     "settextureresolution": not_implemented,
-    "seturl": not_implemented,
+    "seturl": seturl,
     "setvisibilitylimit": setvisibilitylimit,
     "singleview": not_implemented,
     "splitview": not_implemented,

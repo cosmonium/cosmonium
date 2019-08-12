@@ -186,10 +186,14 @@ class CosmoniumApp(Cosmonium):
     def start_universe(self):
         running = False
         if self.app_config.script is not None:
-            settings.debug_jump = False
-            print("Running", self.app_config.script)
-            script = cel_parser.load(self.app_config.script)
-            running = self.run_script(cel_engine.build_sequence(self, script))
+            if self.app_config.script.startswith('cel://'):
+                self.load_cel_url(self.app_config.script)
+                running = True
+            else:
+                settings.debug_jump = False
+                print("Running", self.app_config.script)
+                script = cel_parser.load(self.app_config.script)
+                running = self.run_script(cel_engine.build_sequence(self, script))
         if not running:
             self.select_body(self.universe.find_by_name(self.app_config.default))
             self.autopilot.go_to_front(duration=0.0)
