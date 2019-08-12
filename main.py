@@ -141,10 +141,11 @@ class CosmoniumApp(Cosmonium):
     def load_universe_celestia(self):
         self.find_celestia_data()
         names = star_parser.load_names(self.app_config.celestia_stars_names)
-        if self.app_config.celestia_stars_catalog.endswith('.dat'):
-            star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
-        else:
-            star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
+        if self.app_config.celestia_stars_catalog is not None:
+            if self.app_config.celestia_stars_catalog.endswith('.dat'):
+                star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
+            else:
+                star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
         stc_parser.load(self.app_config.celestia_stc, self.universe)
         ssc_parser.load(self.app_config.celestia_ssc, self.universe)
         asterisms_parser.load(self.app_config.celestia_asterisms, self.universe)
