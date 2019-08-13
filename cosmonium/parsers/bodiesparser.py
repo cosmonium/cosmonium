@@ -3,10 +3,12 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor, LVector3
 
+from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..bodies import ReflectiveBody
 from ..surfaces import FlatSurface
 from ..shaders import BasicShader
 from ..catalogs import objectsDB
+from .. import settings
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
@@ -50,6 +52,11 @@ class ReflectiveYamlParser(YamlModuleParser):
             shape, extra = ShapeYamlParser.decode(data.get('shape'))
             appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
             lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
+            if shape.patchable:
+                if appearance.texture is None or appearance.texture.source.procedural:
+                    shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+                else:
+                    shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
             shader = BasicShader(lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(surface_name, category='visible', resolution=None, source=None,

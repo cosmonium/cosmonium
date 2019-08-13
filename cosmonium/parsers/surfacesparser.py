@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader, PandaTextureDataSource
-from ..patchedshapes import VertexSizePatchLodControl
+from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..astro import units
 from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource, DetailMap, TextureDictionaryDataSource
 from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
@@ -60,8 +60,11 @@ class SurfaceYamlParser(YamlModuleParser):
         shape, extra = ShapeYamlParser.decode(shape)
         appearance = AppearanceYamlParser.decode(appearance, shape)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        if shape.patchable and (appearance.texture is None or appearance.texture.source.procedural):
-            shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+        if shape.patchable:
+            if appearance.texture is None or appearance.texture.source.procedural:
+                shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+            else:
+                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
         if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))

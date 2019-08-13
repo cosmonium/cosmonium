@@ -3,6 +3,8 @@ from __future__ import absolute_import
 
 from ..bodyelements import Clouds, Ring
 from ..shaders import BasicShader
+from ..patchedshapes import VertexSizePatchLodControl, TexturePatchLodControl
+from .. import settings
 
 from .yamlparser import YamlModuleParser
 from .appearancesparser import AppearanceYamlParser
@@ -15,6 +17,11 @@ class CloudsYamlParser(YamlModuleParser):
         height = float(data.get('height'))
         shape, extra = ShapeYamlParser.decode(data.get('shape'))
         appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
+        if shape.patchable:
+            if appearance.texture is None or appearance.texture.source.procedural:
+                shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+            else:
+                shape.set_lod_control(TexturePatchLodControl())
         lighting_model = None
         shader = BasicShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)

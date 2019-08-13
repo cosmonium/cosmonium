@@ -615,13 +615,11 @@ class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
     limit_far = False
-    def __init__(self, lod_control=None):
+    def __init__(self, lod_control):
         Shape.__init__(self)
         self.root_patches = []
         self.patches = []
         self.linked_objects = []
-        if lod_control is None:
-            lod_control = TexturePatchLodControl()
         self.lod_control = lod_control
         self.max_lod = 0
         self.new_max_lod = 0
@@ -1331,6 +1329,20 @@ class TexturePatchLodControl(PatchLodControl):
 
     def should_merge(self, patch, apparent_patch_size, distance):
         return apparent_patch_size < self.patch_size / 1.99
+
+class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
+    def __init__(self, max_vertex_size, min_density=8, density=32, max_lod=100):
+        TexturePatchLodControl.__init__(self, min_density, density, max_lod)
+        self.max_vertex_size = max_vertex_size
+
+    def should_split(self, patch, apparent_patch_size, distance):
+        if patch.lod >= self.max_lod: return False
+        if self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.01:
+            if self.appearance.texture.can_split(patch):
+                return True
+            else:
+                apparent_vertex_size = apparent_patch_size / patch.density
+                return apparent_vertex_size > self.max_vertex_size
 
 class VertexSizePatchLodControl(PatchLodControl):
     def __init__(self, max_vertex_size, density=32, max_lod=100):
