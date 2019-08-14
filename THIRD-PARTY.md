@@ -100,9 +100,11 @@ License: BSD
 
 Reference: [Homepage](http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/)
 
-## celestia/atmosphere
+## celestia
 
-Atmosphere shader code from Celestia used for compatibility.
+atmosphere.py: Atmosphere shader code from Celestia used for compatibility.
+
+bigfix.py: 64.64 fixed precision code from Celestia used for compatibility with cel:// urls
 
 Copyright: Copyright (c) 2001-2017, Celestia Development Team
 
