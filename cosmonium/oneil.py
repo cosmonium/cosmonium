@@ -17,6 +17,8 @@ class ONeilAtmosphere(Atmosphere):
                  mie_coef = 0.0015,
                  sun_power = 15.0,
                  wavelength = [0.650, 0.570, 0.465],
+                 calc_in_fragment=True,
+                 normalize=True,
                  appearance=None, shader=None):
         Atmosphere.__init__(self, shape, appearance, shader)
         self.alpha_mode = ColorBlendAttrib.OOne
@@ -26,6 +28,8 @@ class ONeilAtmosphere(Atmosphere):
         self.Km = mie_coef
         self.ESun = sun_power
         self.wavelength = wavelength
+        self.calc_in_fragment = calc_in_fragment
+        self.normalize = normalize
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -34,8 +38,8 @@ class ONeilAtmosphere(Atmosphere):
             self.radius = self.planet_radius * self.AtmosphereRatio
             self.ratio = self.radius / self.planet_radius
 
-    def create_scattering_shader(self, atmosphere, calc_in_fragment, normalize):
-        return ONeilScattering(atmosphere=atmosphere, calc_in_fragment=calc_in_fragment, normalize=normalize)
+    def create_scattering_shader(self, atmosphere):
+        return ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize)
 
 class ONeilScattering(AtmosphericScattering):
     use_vertex = True

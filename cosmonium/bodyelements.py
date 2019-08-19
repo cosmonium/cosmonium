@@ -5,6 +5,7 @@ from panda3d.core import ColorBlendAttrib, CullFaceAttrib, TransparencyAttrib
 from panda3d.core import DepthOffsetAttrib
 from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
+from .shaders import AtmosphericScattering
 from . import settings
 
 class Ring(ShapeObject):
@@ -25,6 +26,39 @@ class Atmosphere(ShapeObject):
         self.radius = 0
         self.ratio = 0
         self.alpha_mode = None
+        self.shape_objects = []
+        self.check_settings()
+
+    def check_settings(self):
+        if settings.show_atmospheres != self.shown:
+            for shape_object in self.shape_objects:
+                if self.shown:
+                    self.remove_scattering_on(shape_object)
+                else:
+                    self.set_scattering_on(shape_object)
+        self.set_shown(settings.show_atmospheres)
+
+    def set_scattering_on(self, shape_object):
+        if shape_object.shader is not None:
+            scattering = self.create_scattering_shader(atmosphere=False)
+            shape_object.shader.set_scattering(scattering)
+            shape_object.update_shader()
+
+    def remove_scattering_on(self, shape_object):
+        if shape_object.shader is not None:
+            shape_object.shader.set_scattering(AtmosphericScattering())
+            shape_object.update_shader()
+
+    def add_shape_object(self, shape_object):
+        self.shape_objects.append(shape_object)
+        if self.shown:
+            self.set_scattering_on(shape_object)
+
+    def remove_shape_object(self, shape_object):
+        if shape_object in self.shape_objects:
+            self.shape_objects.remove(shape_object)
+            if self.shown:
+                self.remove_scattering_on(shape_object)
 
     def get_pixel_height(self):
         return self.parent.visible_size * (self.ratio - 1.0)
@@ -43,15 +77,12 @@ class Atmosphere(ShapeObject):
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
 
-        def create_scattering_shader(self, atmosphere, calc_in_fragment):
-            return None
+    def create_scattering_shader(self, atmosphere):
+        return AtmosphericScattering()
 
 class NoAtmosphere(Atmosphere):
     def check_visibility(self, pixel_size):
         self.visible = False
-
-    def create_scattering_shader(self, atmosphere, calc_in_fragment, normalize):
-        return None
 
 class Clouds(ShapeObject):
     def __init__(self, height, appearance, shader=None, shape=None):

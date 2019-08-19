@@ -124,7 +124,7 @@ class Gui(object):
         event_ctrl.accept('}', self.cosmonium.incr_ambient, [+0.05])
 
         #Render
-        #event_ctrl.accept('ctrl-a', self.cosmonium.toggle_atmospheres)
+        event_ctrl.accept('control-a', self.cosmonium.toggle_atmosphere)
         event_ctrl.accept('shift-a', self.cosmonium.toggle_rotation_axis)
         event_ctrl.accept('shift-control-r', self.cosmonium.toggle_reference_axis)
         event_ctrl.accept('control-b', self.cosmonium.toggle_boundaries)

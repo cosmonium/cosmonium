@@ -60,12 +60,10 @@ class SurfaceYamlParser(YamlModuleParser):
         shape, extra = ShapeYamlParser.decode(shape)
         appearance = AppearanceYamlParser.decode(appearance, shape)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        scattering = atmosphere.create_scattering_shader(atmosphere=False, calc_in_fragment=True, normalize=True)
         if appearance.texture is None and shape.patchable:
             shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
         if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
-                                 scattering=scattering,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(name, category=category, resolution=resolution, source=source,
                                   shape=shape, appearance=appearance, shader=shader)
@@ -135,11 +133,11 @@ class SurfaceYamlParser(YamlModuleParser):
                                  data_source=data_source,
                                  appearance=shader_appearance,
                                  lighting_model=lighting_model,
-                                 scattering=scattering,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = HeightmapSurface(name, radius=radius,
                                        #category=category, resolution=resolution, source=source,
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
+        atmosphere.add_shape_object(surface)
         return surface
 
     @classmethod

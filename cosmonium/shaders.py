@@ -697,6 +697,7 @@ class BasicShader(StructuredShader):
                                                         scattering=self.scattering)
         else:
             self.tesselation_control = TesselationControl()
+            self.tesselation_eval_shader = None
             self.vertex_shader = VertexShader(self,
                                               shader_type='vertex',
                                               vertex_source=vertex_source,
@@ -739,6 +740,15 @@ class BasicShader(StructuredShader):
         self.instance_control = instance_control
         self.vertex_shader.instance_control = instance_control
         self.vertex_shader.version = max(self.vertex_shader.version, instance_control.version)
+
+    def set_scattering(self, scattering):
+        self.scattering = scattering
+        self.scattering.shader = self
+        if self.tesselation_eval_shader is None:
+            self.vertex_shader.scattering = scattering
+        else:
+            self.tesselation_eval_shader.scattering = scattering
+        self.fragment_shader.scattering = scattering
 
     def add_after_effect(self, after_effect):
         self.after_effects.append(after_effect)

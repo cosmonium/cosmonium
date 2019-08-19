@@ -45,6 +45,7 @@ class ConfigParser(YamlParser):
     def decode_render(self, data):
         settings.show_orbits = data.get('orbits', settings.show_orbits)
         settings.show_clouds = data.get('clouds', settings.show_clouds)
+        settings.show_atmospheres = data.get('atmospheres', settings.show_atmospheres)
         settings.show_asterisms = data.get('asterisms', settings.show_asterisms)
         settings.show_boundaries = data.get('boundaries', settings.show_boundaries)
         settings.show_rotation_axis = data.get('rotation-axis', settings.show_rotation_axis)
@@ -57,6 +58,7 @@ class ConfigParser(YamlParser):
         data = {}
         data['orbits'] = settings.show_orbits
         data['clouds'] = settings.show_clouds
+        data['atmospheres'] = settings.show_atmospheres
         data['asterisms'] = settings.show_asterisms
         data['boundaries'] = settings.show_boundaries
         data['ecliptic-grid'] = settings.show_ecliptic_grid

@@ -16,9 +16,9 @@ class CloudsYamlParser(YamlModuleParser):
         shape, extra = ShapeYamlParser.decode(data.get('shape'))
         appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
         lighting_model = None
-        scattering = atmosphere.create_scattering_shader(atmosphere=False, calc_in_fragment=False, normalize=False)
-        shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
+        shader = BasicShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
+        atmosphere.add_shape_object(clouds)
         return clouds
 
 class RingsYamlParser(YamlModuleParser):

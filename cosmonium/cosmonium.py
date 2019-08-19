@@ -445,6 +445,10 @@ class Cosmonium(CosmoniumBase):
         settings.show_clouds = not settings.show_clouds
         self.update_settings()
             
+    def toggle_atmosphere(self):
+        settings.show_atmospheres = not settings.show_atmospheres
+        self.update_settings()
+
     def toggle_rotation_axis(self):
         settings.show_rotation_axis = not settings.show_rotation_axis
         self.update_settings()

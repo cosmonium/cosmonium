@@ -50,13 +50,12 @@ class ReflectiveYamlParser(YamlModuleParser):
             shape, extra = ShapeYamlParser.decode(data.get('shape'))
             appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
             lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
-            scattering = atmosphere.create_scattering_shader(atmosphere=False, calc_in_fragment=False, normalize=False)
             shader = BasicShader(lighting_model=lighting_model,
-                                 scattering=scattering,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(surface_name, category='visible', resolution=None, source=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
+            atmosphere.add_shape_object(surface)
         else:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, data)
             surface = surfaces.pop(0)

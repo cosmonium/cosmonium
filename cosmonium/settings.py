@@ -122,6 +122,7 @@ axis_fade = 20
 axis_thickness = 0.9
 
 show_clouds = True
+show_atmospheres = True
 show_asterisms = False
 show_boundaries = False
 show_ecliptic_grid = False
