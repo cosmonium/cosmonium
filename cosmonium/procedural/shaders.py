@@ -1,15 +1,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..shaders import DataSource, GeometryControl, ShaderAppearance
+from ..shaders import DataSource, VertexControl, ShaderAppearance
 from ..textures import DataTexture
 from .. import settings
 
-class DisplacementGeometryControl(GeometryControl):
+class DisplacementVertexControl(VertexControl):
     use_normal = True
 
     def __init__(self, heightmap, shader=None):
-        GeometryControl.__init__(self, shader)
+        VertexControl.__init__(self, shader)
         self.heightmap = heightmap
 
     def get_id(self):

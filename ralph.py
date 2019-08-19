@@ -17,7 +17,7 @@ from panda3d.core import PandaNode, NodePath
 from direct.actor.Actor import Actor
 
 from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryDataSource
-from cosmonium.procedural.shaders import DetailMap, DisplacementGeometryControl
+from cosmonium.procedural.shaders import DetailMap, DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTesselationControl
@@ -461,7 +461,7 @@ class RoamingRalphDemo(CosmoniumBase):
             tesselation_control = None
         self.terrain_shader = BasicShader(appearance=appearance,
                                           tesselation_control=tesselation_control,
-                                          geometry_control=DisplacementGeometryControl(self.heightmap),
+                                          vertex_control=DisplacementVertexControl(self.heightmap),
                                           data_source=data_source)
 
     def create_tile(self, x, y):

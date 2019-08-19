@@ -42,7 +42,7 @@ class PopulatorYamlParser(YamlModuleParser):
         vertex_control = VertexControlYamlParser.decode(populator_data.get('vertex', None))
         shader = BasicShader(#lighting_model=lighting_model,
                              #scattering=scattering,
-                             geometry_control=vertex_control,
+                             vertex_control=vertex_control,
                              use_model_texcoord=not extra.get('create-uv', False))
         object_template = ShapeObject('template', shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))

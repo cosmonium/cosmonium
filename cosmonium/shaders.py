@@ -324,16 +324,25 @@ class TesselationVertexShader(ShaderProgram):
         code.append("gl_Position = p3d_Vertex;")
 
 class VertexShader(ShaderProgram):
-    def __init__(self, config, shader_type, vertex_source, data_source, appearance, geometry_control, instance_control, lighting_model, scattering):
+    def __init__(self,
+                 config,
+                 shader_type,
+                 vertex_source,
+                 data_source,
+                 appearance,
+                 vertex_control,
+                 instance_control,
+                 lighting_model,
+                 scattering):
         ShaderProgram.__init__(self, shader_type)
-        if shader_type == 'eval' or geometry_control.use_double:
+        if shader_type == 'eval' or vertex_control.use_double:
             self.version = max(410, self.version)
         self.version = max(instance_control.version, self.version)
         self.config = config
         self.vertex_source = vertex_source
         self.data_source = data_source
         self.appearance = appearance
-        self.geometry_control = geometry_control
+        self.vertex_control = vertex_control
         self.instance_control = instance_control
         self.lighting_model = lighting_model
         self.scattering = scattering
@@ -353,7 +362,7 @@ class VertexShader(ShaderProgram):
             code.append("uniform float near_plane_height;")
             if self.config.scale_point_static:
                 code.append("uniform float size_scale;")
-        self.geometry_control.vertex_uniforms(code)
+        self.vertex_control.vertex_uniforms(code)
         self.instance_control.vertex_uniforms(code)
         self.lighting_model.vertex_uniforms(code)
         self.scattering.vertex_uniforms(code)
@@ -390,7 +399,7 @@ class VertexShader(ShaderProgram):
             code.append("out vec4 texcoord0p;")
         if self.config.use_shadow:
             code.append("out vec4 lightcoord;")
-        self.geometry_control.vertex_outputs(code)
+        self.vertex_control.vertex_outputs(code)
         self.lighting_model.vertex_outputs(code)
         self.scattering.vertex_outputs(code)
         self.data_source.vertex_outputs(code)
@@ -400,11 +409,11 @@ class VertexShader(ShaderProgram):
         ShaderProgram.create_extra(self, code)
         self.data_source.vertex_extra(code)
         self.vertex_source.vertex_extra(code)
-        self.geometry_control.vertex_extra(code)
+        self.vertex_control.vertex_extra(code)
 
     def create_body(self, code):
         code.append("vec4 model_vertex4;")
-        if self.config.use_normal or self.config.geometry_control.use_normal:
+        if self.config.use_normal or self.config.vertex_control.use_normal:
             code.append("vec4 model_normal4;")
         if self.config.use_tangent:
             code.append("vec4 model_binormal4;")
@@ -434,17 +443,17 @@ class VertexShader(ShaderProgram):
         if not self.config.fragment_uses_tangent:
             code.append("vec3 binormal;")
             code.append("vec3 tangent;")
-        self.geometry_control.update_vertex(code)
+        self.vertex_control.update_vertex(code)
         if self.config.use_normal:
-            self.geometry_control.update_normal(code)
-        if self.config.use_vertex and self.config.world_vertex and not (self.geometry_control.world_vertex or self.instance_control.world_vertex):
+            self.vertex_control.update_normal(code)
+        if self.config.use_vertex and self.config.world_vertex and not (self.vertex_control.world_vertex or self.instance_control.world_vertex):
             code.append("world_vertex4 = p3d_ModelMatrix * model_vertex4;")
             if self.config.eye_vertex:
                 code.append("eye_vertex4 = p3d_ViewMatrix * world_vertex4;")
         self.instance_control.update_vertex(code)
         if self.config.use_normal:
             self.instance_control.update_normal(code)
-        if self.geometry_control.world_vertex or self.instance_control.world_vertex:
+        if self.vertex_control.world_vertex or self.instance_control.world_vertex:
             code.append("gl_Position = p3d_ProjectionMatrix * (p3d_ViewMatrix * world_vertex4);")
         else:
             code.append("gl_Position = p3d_ProjectionMatrix * (p3d_ModelViewMatrix * model_vertex4);")
@@ -627,7 +636,7 @@ class BasicShader(StructuredShader):
                  lighting_model=None,
                  scattering=None,
                  tesselation_control=None,
-                 geometry_control=None,
+                 vertex_control=None,
                  instance_control=None,
                  data_source=None,
                  after_effects=None,
@@ -644,8 +653,8 @@ class BasicShader(StructuredShader):
         if scattering is None:
             scattering = AtmosphericScattering()
         lighting_model.set_shader(self)
-        if geometry_control is None:
-            geometry_control = DefaultGeometryControl()
+        if vertex_control is None:
+            vertex_control = DefaultVertexControl()
         if instance_control is None:
             instance_control = NoInstanceControl()
         if tesselation_control is not None:
@@ -663,8 +672,8 @@ class BasicShader(StructuredShader):
         self.lighting_model.shader = self
         self.scattering = scattering
         self.scattering.shader = self
-        self.geometry_control = geometry_control
-        self.geometry_control.shader = self
+        self.vertex_control = vertex_control
+        self.vertex_control.shader = self
         self.instance_control = instance_control
         self.instance_control.shader = self
         self.data_source = data_source
@@ -682,7 +691,7 @@ class BasicShader(StructuredShader):
                                                         vertex_source=vertex_source,
                                                         data_source=self.data_source,
                                                         appearance=self.appearance,
-                                                        geometry_control=self.geometry_control,
+                                                        vertex_control=self.vertex_control,
                                                         instance_control=self.instance_control,
                                                         lighting_model=self.lighting_model,
                                                         scattering=self.scattering)
@@ -693,7 +702,7 @@ class BasicShader(StructuredShader):
                                               vertex_source=vertex_source,
                                               data_source=self.data_source,
                                               appearance=self.appearance,
-                                              geometry_control=self.geometry_control,
+                                              vertex_control=self.vertex_control,
                                               instance_control=self.instance_control,
                                               lighting_model=self.lighting_model,
                                               scattering=self.scattering)
@@ -765,11 +774,11 @@ class BasicShader(StructuredShader):
                     self.world_vertex = True
                 self.fragment_uses_vertex = True
 
-        if self.geometry_control.use_vertex:
+        if self.vertex_control.use_vertex:
             self.use_vertex = True
-            if self.geometry_control.model_vertex:
+            if self.vertex_control.model_vertex:
                 self.model_vertex = True
-            if self.geometry_control.world_vertex:
+            if self.vertex_control.world_vertex:
                 self.world_vertex = True
 
         if self.instance_control.use_vertex:
@@ -840,7 +849,7 @@ class BasicShader(StructuredShader):
         sc_id = self.scattering.get_id()
         if sc_id:
             name += "-" + sc_id
-        gc_id = self.geometry_control.get_id()
+        gc_id = self.vertex_control.get_id()
         if gc_id:
             name += "-" + gc_id
         ic_id = self.instance_control.get_id()
@@ -870,7 +879,7 @@ class BasicShader(StructuredShader):
         self.tesselation_control.update_shader_shape_static(shape, appearance)
         self.lighting_model.update_shader_shape_static(shape, appearance)
         self.scattering.update_shader_shape_static(shape, appearance)
-        self.geometry_control.update_shader_shape_static(shape, appearance)
+        self.vertex_control.update_shader_shape_static(shape, appearance)
         self.instance_control.update_shader_shape_static(shape, appearance)
         self.data_source.update_shader_shape_static(shape, appearance)
         for effect in self.after_effects:
@@ -897,7 +906,7 @@ class BasicShader(StructuredShader):
         self.tesselation_control.update_shader_shape(shape, appearance)
         self.lighting_model.update_shader_shape(shape, appearance)
         self.scattering.update_shader_shape(shape, appearance)
-        self.geometry_control.update_shader_shape(shape, appearance)
+        self.vertex_control.update_shader_shape(shape, appearance)
         self.data_source.update_shader_shape(shape, appearance)
         for effect in self.after_effects:
             effect.update_shader_shape(shape, appearance)
@@ -909,7 +918,7 @@ class BasicShader(StructuredShader):
         self.tesselation_control.update_shader_patch_static(shape, patch, appearance)
         self.lighting_model.update_shader_patch_static(shape, patch, appearance)
         self.scattering.update_shader_patch_static(shape, patch, appearance)
-        self.geometry_control.update_shader_patch_static(shape, patch, appearance)
+        self.vertex_control.update_shader_patch_static(shape, patch, appearance)
         self.data_source.update_shader_patch_static(shape, patch, appearance)
         for effect in self.after_effects:
             effect.update_shader_patch_static(shape, patch, appearance)
@@ -919,7 +928,7 @@ class BasicShader(StructuredShader):
         self.tesselation_control.update_shader_patch(shape, patch, appearance)
         self.lighting_model.update_shader_patch(shape, patch, appearance)
         self.scattering.update_shader_patch(shape, patch, appearance)
-        self.geometry_control.update_shader_patch(shape, patch, appearance)
+        self.vertex_control.update_shader_patch(shape, patch, appearance)
         self.data_source.update_shader_patch(shape, patch, appearance)
         for effect in self.after_effects:
             effect.update_shader_patch(shape, patch, appearance)
@@ -1209,7 +1218,7 @@ class DirectVertexInput(VertexInput):
         code.append("in vec4 p3d_Vertex;")
         if self.config.point_shader:
             code.append("in float size;")
-        if self.config.use_normal or self.config.geometry_control.use_normal:
+        if self.config.use_normal or self.config.vertex_control.use_normal:
             code.append("in vec3 p3d_Normal;")
         if self.config.use_tangent:
             code.append("in vec3 p3d_Binormal;")
@@ -1219,7 +1228,7 @@ class DirectVertexInput(VertexInput):
 
     def vertex_shader(self, code):
         code.append("model_vertex4 = p3d_Vertex;")
-        if self.config.use_normal or self.config.geometry_control.use_normal:
+        if self.config.use_normal or self.config.vertex_control.use_normal:
             code.append("model_normal4 = vec4(p3d_Normal, 0.0);")
         if self.config.use_tangent:
             code.append("model_binormal4 = vec4(p3d_Binormal, 0.0);")
@@ -1266,7 +1275,7 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
                               gl_in[3].gl_Position);
 ''']
         #TODO: Retrieve normals from tesselator
-        if self.config.use_normal or self.config.geometry_control.use_normal:
+        if self.config.use_normal or self.config.vertex_control.use_normal:
             code.append("model_normal4 = vec4(0.0, 0.0, 1.0, 0.0);")
         if self.config.use_tangent:
             code.append("model_binormal4 = vec4(1.0, 0.0, 0.0, 0.0);")
@@ -1312,7 +1321,7 @@ class ConstantTesselationControl(TesselationControl):
         patch.instance.set_shader_input('TessLevelInner', patch.tesselation_inner_level)
         patch.instance.set_shader_input('TessLevelOuter', *patch.tesselation_outer_level)
 
-class GeometryControl(ShaderComponent):
+class VertexControl(ShaderComponent):
     use_double = False
     def update_vertex(self, code):
         pass
@@ -1320,10 +1329,10 @@ class GeometryControl(ShaderComponent):
     def update_normal(self, code):
         pass
 
-class DefaultGeometryControl(GeometryControl):
+class DefaultVertexControl(VertexControl):
     pass
 
-class LargeObjectGeometryControl(GeometryControl):
+class LargeObjectVertexControl(VertexControl):
     use_vertex = True
     world_vertex = True
 
@@ -1344,7 +1353,7 @@ class LargeObjectGeometryControl(GeometryControl):
         code.append("  world_vertex4.xyz = not_scaled + scaled;")
         code.append("}")
 
-class NormalizedCubeGeometryControl(GeometryControl):
+class NormalizedCubeVertexControl(VertexControl):
     use_vertex = True
 
     def get_id(self):
@@ -1367,7 +1376,7 @@ class NormalizedCubeGeometryControl(GeometryControl):
     def update_shader_patch_static(self, shape, patch, appearance):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
 
-class SquaredDistanceCubeGeometryControl(GeometryControl):
+class SquaredDistanceCubeVertexControl(VertexControl):
     use_vertex = True
 
     def get_id(self):
@@ -1395,7 +1404,7 @@ class SquaredDistanceCubeGeometryControl(GeometryControl):
     def update_shader_patch_static(self, shape, patch, appearance):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
 
-class DoubleSquaredDistanceCubeGeometryControl(GeometryControl):
+class DoubleSquaredDistanceCubeVertexControl(VertexControl):
     use_double = True
     use_vertex = True
 

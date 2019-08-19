@@ -10,7 +10,7 @@ from .foundation import VisibleObject, ObjectLabel, LabelledObject
 from .astro.orbits import FixedOrbit, InfinitePosition
 from .astro import units
 from .bodyclass import bodyClasses
-from .shaders import BasicShader, FlatLightingModel, LargeObjectGeometryControl
+from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
 from .appearances import ModelAppearance
 from .mesh import load_panda_model
 from . import settings
@@ -113,10 +113,10 @@ class Orbit(VisibleObject):
         self.instance.setAntialias(AntialiasAttrib.MMultisample)
         self.appearance = ModelAppearance(attribute_color=True)
         if settings.use_inv_scaling:
-            geometry_control = LargeObjectGeometryControl()
+            vertex_control = LargeObjectVertexControl()
         else:
-            geometry_control = None
-        self.shader = BasicShader(lighting_model=FlatLightingModel(), geometry_control=geometry_control)
+            vertex_control = None
+        self.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
 

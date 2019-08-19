@@ -6,7 +6,7 @@ from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader, PandaTextureDataSource
 from ..patchedshapes import VertexSizePatchLodControl
 from ..astro import units
-from ..procedural.shaders import DisplacementGeometryControl, HeightmapDataSource, DetailMap, TextureDictionaryDataSource
+from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource, DetailMap, TextureDictionaryDataSource
 from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
 from ..procedural.heightmap import PatchedHeightmap, heightmapRegistry
 from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
@@ -131,7 +131,7 @@ class SurfaceYamlParser(YamlModuleParser):
             data_source = [HeightmapDataSource(heightmap, heightmap_source_type, filtering=filtering)]
             if appearance_source is not None:
                 data_source.append(appearance_source)
-            shader = BasicShader(geometry_control=DisplacementGeometryControl(heightmap),
+            shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
                                  data_source=data_source,
                                  appearance=shader_appearance,
                                  lighting_model=lighting_model,
