@@ -12,6 +12,7 @@ from .shapes import Shape
 from .surfaces import FlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
+from .utils import TransparencyBlend
 
 from .bodies import DeepSpaceObject
 from .shaders import BasicShader, FlatLightingModel
@@ -83,7 +84,7 @@ class GalaxyAppearance(AppearanceBase):
                 self.image = self.sprite.generate()
             texture = Texture()
             texture.load(self.image)
-            self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparentTexture.TB_PremultipliedAlpha)
+            self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha)
             self.texture.set_tex_matrix(False)
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         self.texture.apply(shape)

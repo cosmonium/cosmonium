@@ -1,10 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import ColorBlendAttrib
-
 from .bodyelements import Atmosphere
 from .shaders import AtmosphericScattering
+from .utils import TransparencyBlend
 
 from math import pow, pi
 
@@ -21,8 +20,7 @@ class ONeilAtmosphere(Atmosphere):
                  normalize=True,
                  appearance=None, shader=None):
         Atmosphere.__init__(self, shape, appearance, shader)
-        self.alpha_mode = ColorBlendAttrib.OOne
-        #self.alpha_mode = ColorBlendAttrib.OIncomingAlpha
+        self.blend = TransparencyBlend.TB_Alpha
         self.G = mie_phase_asymmetry
         self.Kr = rayleigh_coef
         self.Km = mie_coef
@@ -228,7 +226,7 @@ class ONeilScattering(AtmosphericScattering):
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
             code.append("    total_diffuse_color = fRayleighPhase * primary_color + fMiePhase * secondary_color;")
-            code.append("    //total_color.a = max(total_color.r, max(total_color.g, total_color.b));")
+            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
         else:
             code.append("  total_diffuse_color.rgb = primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
 

@@ -7,10 +7,12 @@ from ..shapes import MeshShape
 from ..appearances import Appearance, ModelAppearance
 from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
+from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
 from .noiseparser import NoiseYamlParser
 from .textureparser import TextureDictionaryYamlParser
+from cosmonium.utils import TransparencyBlend
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -40,7 +42,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             tint = LColor(*tint)
         transparency = data.get('transparency', False)
         transparency_level = data.get('transparency-level', 0.0)
-        transparency_blend = data.get('transparency-blend', TransparentTexture.TB_Alpha)
+        transparency_blend = data.get('transparency-blend', TransparencyBlend.TB_Alpha)
         texture = data.get('texture')
         if texture is not None:
             texture_source, texture_offset = self.decode_source(texture)

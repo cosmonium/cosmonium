@@ -2,9 +2,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
-from panda3d.core import ColorBlendAttrib, TransparencyAttrib
 
 from .dircontext import defaultDirContext
+from .utils import TransparencyBlend
 from . import workers
 from . import utils
 from . import settings
@@ -375,49 +375,14 @@ class NightTexture(SurfaceTexture):
         return (0, 0, 0, 1)
 
 class TransparentTexture(VisibleTexture):
-    TB_None = 0
-    TB_Alpha = 1
-    TB_PremultipliedAlpha = 2
-    TB_Additive = 3
-    TB_AlphaAdditive = 4
-
-    def __init__(self, source, tint=None, level=0.0, blend=TB_Alpha, srgb=None):
+    def __init__(self, source, tint=None, level=0.0, blend=TransparencyBlend.TB_Alpha, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb)
         self.level = level
         self.transparent = True
         self.blend = blend
 
     def configure_instance(self, instance):
-        blendAttrib = None
-        translucid = False
-        if self.blend == TransparentTexture.TB_Alpha:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one_minus_incoming_alpha,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_PremultipliedAlpha:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one_minus_incoming_alpha,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_Additive:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_AlphaAdditive:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        if blendAttrib is not None:
-            instance.setAttrib(blendAttrib)
-        if translucid:
-            instance.setTransparency(TransparencyAttrib.MAlpha)
+        TransparencyBlend.apply(self.blend, instance)
 
     def get_default_color(self):
         return (1, 1, 1, 0)

@@ -1,11 +1,14 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import ColorBlendAttrib, CullFaceAttrib, TransparencyAttrib
+from panda3d.core import CullFaceAttrib
 from panda3d.core import DepthOffsetAttrib
+
 from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
+from .utils import TransparencyBlend
 from .shaders import AtmosphericScattering
+
 from . import settings
 
 class Ring(ShapeObject):
@@ -25,7 +28,7 @@ class Atmosphere(ShapeObject):
         self.planet_radius = 0
         self.radius = 0
         self.ratio = 0
-        self.alpha_mode = None
+        self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
         self.check_settings()
 
@@ -71,9 +74,7 @@ class Atmosphere(ShapeObject):
     def create_instance(self):
         self.shape.set_radius(self.radius)
         ShapeObject.create_instance(self)
-        self.instance.setTransparency(TransparencyAttrib.MAlpha)
-        blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OOne, self.alpha_mode)
-        self.instance.setAttrib(blendAttrib)
+        TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
 

@@ -6,6 +6,7 @@ from panda3d.core import TransparencyAttrib
 
 from .textures import TextureBase, SurfaceTexture, TransparentTexture, NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from .textures import AutoTextureSource
+from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
 
 from . import settings
@@ -29,7 +30,7 @@ class AppearanceBase:
         self.specularColor = None
         self.transparency = False
         self.transparency_level = 0.0
-        self.transparency_blend = TransparentTexture.TB_None
+        self.transparency_blend = TransparencyBlend.TB_None
         self.has_vertex_color = False
         self.has_attribute_color = False
         self.has_material = False
@@ -60,7 +61,7 @@ class Appearance(AppearanceBase):
                  shininess=1.0,
                  transparency=False,
                  transparency_level=0.0,
-                 transparency_blend=TransparentTexture.TB_Alpha,
+                 transparency_blend=TransparencyBlend.TB_Alpha,
                  texture=None,
                  normalMap=None,
                  specularMap=None,
@@ -126,7 +127,7 @@ class Appearance(AppearanceBase):
         self.check_specular_mask()
         self.calc_indexes()
 
-    def set_texture(self, texture, tint=None, transparency=False, transparency_level=0.0, transparency_blend=TransparentTexture.TB_Alpha, offset=0, context=defaultDirContext):
+    def set_texture(self, texture, tint=None, transparency=False, transparency_level=0.0, transparency_blend=TransparencyBlend.TB_Alpha, offset=0, context=defaultDirContext):
         if texture is not None and not isinstance(texture, TextureBase):
             if transparency:
                 texture = TransparentTexture(AutoTextureSource(texture, context), tint, level=transparency_level, blend=transparency_blend, srgb=self.srgb)
@@ -268,7 +269,7 @@ class ModelAppearance(AppearanceBase):
         self.night_texture_index = 0
         self.has_specular_mask = False
         self.transparency = False
-        self.transparency_blend = TransparentTexture.TB_None
+        self.transparency_blend = TransparencyBlend.TB_None
 
     def set_shadow(self, shadow):
         self.shadow = shadow
@@ -322,25 +323,25 @@ class ModelAppearance(AppearanceBase):
                         transparency_mode = attrib.get_mode()
         if transparency_mode == TransparencyAttrib.M_none:
             self.transparency = False
-            self.transparency_blend = TransparentTexture.TB_None
+            self.transparency_blend = TransparencyBlend.TB_None
         elif transparency_mode == TransparencyAttrib.M_alpha:
             self.transparency = True
             self.transparency_level = 0.0
-            self.transparency_blend = TransparentTexture.TB_Alpha
+            self.transparency_blend = TransparencyBlend.TB_Alpha
         elif transparency_mode == TransparencyAttrib.M_premultiplied_alpha:
             self.transparency = True
             self.transparency_level = 0.0
-            self.transparency_blend = TransparentTexture.TB_PremultipliedAlpha
+            self.transparency_blend = TransparencyBlend.TB_PremultipliedAlpha
         elif transparency_mode == TransparencyAttrib.M_binary:
             self.transparency = True
             self.transparency_level = 0.5
-            self.transparency_blend = TransparentTexture.TB_None
+            self.transparency_blend = TransparencyBlend.TB_None
         else:
             print("Unsupported transparency mode", transparency_mode)
             #Activate transparency anyway
             self.transparency = True
             self.transparency_level = 0.0
-            self.transparency_blend = TransparentTexture.TB_Alpha
+            self.transparency_blend = TransparencyBlend.TB_Alpha
         self.nb_textures_coord = 1
 
     def apply(self, shape, owner):

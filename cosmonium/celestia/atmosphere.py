@@ -1,9 +1,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import ColorBlendAttrib, LVector3d
+from panda3d.core import LVector3d
 
 from ..bodyelements import Atmosphere
+from ..utils import TransparencyBlend
 from ..shaders import AtmosphericScattering
 
 from math import log
@@ -30,7 +31,7 @@ class CelestiaAtmosphere(Atmosphere):
             self.absorption_coef = LVector3d()
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
-        self.alpha_mode = ColorBlendAttrib.OIncomingAlpha
+        self.blend = TransparencyBlend.TB_AlphaAdditive
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
