@@ -250,6 +250,26 @@ class SimpleSystem(StellarSystem):
     def get_abs_magnitude(self):
         return self.primary.get_abs_magnitude()
 
+    def update(self, time):
+        StellarSystem.update(self, time)
+        primary = self.primary
+        if primary is None or primary.is_emissive(): return
+        check_primary = primary.visible and primary.resolved and primary.in_view
+        for child in self.children:
+            child.start_shadows_update()
+        for child in self.children:
+            if child == primary: continue
+            if child.visible and child.resolved and child.in_view:
+                if primary.check_cast_shadow_on(child):
+                    #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())
+                    primary.add_shadow_target(child)
+            if check_primary:
+                if child.check_cast_shadow_on(primary):
+                    #print(child.get_friendly_name(), "casts shadow on", primary.get_friendly_name())
+                    child.add_shadow_target(primary)
+        for child in self.children:
+            child.end_shadows_update()
+
 class Barycenter(StellarSystem):
     label_class = StellarBodyLabel
     has_halo = True

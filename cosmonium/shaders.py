@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Shader, ShaderAttrib
+from panda3d.core import Shader, ShaderAttrib, LVector3d, LVector4d
 
 from .cache import create_path_for
 from . import settings
@@ -332,6 +332,7 @@ class VertexShader(ShaderProgram):
                  appearance,
                  vertex_control,
                  instance_control,
+                 shadows,
                  lighting_model,
                  scattering):
         ShaderProgram.__init__(self, shader_type)
@@ -344,6 +345,7 @@ class VertexShader(ShaderProgram):
         self.appearance = appearance
         self.vertex_control = vertex_control
         self.instance_control = instance_control
+        self.shadows = shadows
         self.lighting_model = lighting_model
         self.scattering = scattering
 
@@ -355,15 +357,14 @@ class VertexShader(ShaderProgram):
         code.append("uniform mat4 p3d_ModelMatrix;")
         code.append("uniform mat4 p3d_ViewMatrix;")
         code.append("uniform mat4 p3d_ModelViewMatrix;")
-        if self.config.use_shadow:
-            code.append("uniform mat4 trans_model_to_clip_of_sunLight;")
-            code.append("uniform float shadow_bias;")
         if self.config.point_shader:
             code.append("uniform float near_plane_height;")
             if self.config.scale_point_static:
                 code.append("uniform float size_scale;")
         self.vertex_control.vertex_uniforms(code)
         self.instance_control.vertex_uniforms(code)
+        for shadow in self.shadows:
+            shadow.vertex_uniforms(code)
         self.lighting_model.vertex_uniforms(code)
         self.scattering.vertex_uniforms(code)
         self.data_source.vertex_uniforms(code)
@@ -371,6 +372,8 @@ class VertexShader(ShaderProgram):
 
     def create_inputs(self, code):
         self.vertex_source.vertex_inputs(code)
+        for shadow in self.shadows:
+            shadow.vertex_inputs(code)
         self.lighting_model.vertex_inputs(code)
         self.scattering.vertex_inputs(code)
         self.instance_control.vertex_inputs(code)
@@ -397,9 +400,9 @@ class VertexShader(ShaderProgram):
             code.append("out vec4 texcoord%i;" % i)
         if not self.config.use_model_texcoord:
             code.append("out vec4 texcoord0p;")
-        if self.config.use_shadow:
-            code.append("out vec4 lightcoord;")
         self.vertex_control.vertex_outputs(code)
+        for shadow in self.shadows:
+            shadow.vertex_outputs(code)
         self.lighting_model.vertex_outputs(code)
         self.scattering.vertex_outputs(code)
         self.data_source.vertex_outputs(code)
@@ -476,9 +479,6 @@ class VertexShader(ShaderProgram):
             code.append("texcoord%i = model_texcoord%i;" % (i, i))
         if not self.config.use_model_texcoord:
             code.append("texcoord0p = model_texcoord0p;")
-        if self.config.use_shadow:
-            code.append("vec4 lightclip = trans_model_to_clip_of_sunLight * (model_vertex4 + model_normal4 * shadow_bias);")
-            code.append("lightcoord = lightclip * vec4(0.5, 0.5, 0.5, 1.0) + lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);")
         if self.config.use_vertex:
             if self.config.model_vertex:
                 code.append("model_vertex = model_vertex4.xyz / model_vertex4.w;")
@@ -493,6 +493,8 @@ class VertexShader(ShaderProgram):
                 code.append("gl_PointSize = size * size_scale;")
             else:
                 code.append("gl_PointSize = size;")
+        for shadow in self.shadows:
+            shadow.vertex_shader(code)
         self.lighting_model.vertex_shader(code)
         self.scattering.vertex_shader(code)
         self.data_source.vertex_shader(code)
@@ -528,11 +530,19 @@ class TesselationShader(ShaderProgram):
         code.append("gl_out[id].gl_Position = gl_in[id].gl_Position;")
 
 class FragmentShader(ShaderProgram):
-    def __init__(self, config, data_source, appearance, lighting_model, scattering, after_effects):
+    def __init__(self,
+                 config,
+                 data_source,
+                 appearance,
+                 shadows,
+                 lighting_model,
+                 scattering,
+                 after_effects):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
         self.data_source = data_source
         self.appearance = appearance
+        self.shadows = shadows
         self.lighting_model = lighting_model
         self.scattering = scattering
         self.after_effects = after_effects
@@ -542,8 +552,8 @@ class FragmentShader(ShaderProgram):
         self.data_source.fragment_uniforms(code)
 #         if self.config.has_bump_texture:
 #             code.append("uniform float bump_height;")
-        if self.config.use_shadow:
-            code.append("uniform sampler2DShadow depthmap;")
+        for shadow in self.shadows:
+            shadow.fragment_uniforms(code)
         self.lighting_model.fragment_uniforms(code)
         self.scattering.fragment_uniforms(code)
         for effect in self.after_effects:
@@ -572,8 +582,8 @@ class FragmentShader(ShaderProgram):
             code.append("in vec4 texcoord0p;")
         self.appearance.fragment_inputs(code)
         self.data_source.fragment_inputs(code)
-        if self.config.use_shadow:
-            code.append("in vec4 lightcoord;")
+        for shadow in self.shadows:
+            shadow.fragment_inputs(code)
         self.lighting_model.fragment_inputs(code)
         self.scattering.fragment_inputs(code)
 
@@ -584,6 +594,8 @@ class FragmentShader(ShaderProgram):
         ShaderProgram.create_extra(self, code)
         self.data_source.fragment_extra(code)
         self.appearance.fragment_extra(code)
+        for shadow in self.shadows:
+            shadow.fragment_extra(code)
         self.lighting_model.fragment_extra(code)
         self.scattering.fragment_extra(code)
         for effect in self.after_effects:
@@ -618,12 +630,11 @@ class FragmentShader(ShaderProgram):
                          ]
             else:
                 code.append("normal = pixel_normal;")
-        if self.config.use_shadow:
-            code.append("float shadow = texture(depthmap, lightcoord.xyz);")
-        else:
-            code.append("float shadow = 1.0;")
         code.append("vec4 total_diffuse_color = vec4(0, 0, 0, 0);")
         code.append("vec4 total_emission_color = vec4(0, 0, 0, 0);")
+        code.append("float shadow = 1.0;")
+        for shadow in self.shadows:
+            shadow.fragment_shader(code)
         self.lighting_model.fragment_shader(code)
         self.scattering.fragment_shader(code)
         code.append("vec4 total_color = total_diffuse_color + total_emission_color;")
@@ -632,7 +643,9 @@ class FragmentShader(ShaderProgram):
         code.append("frag_color = clamp(total_color, 0.0, 1.0);")
 
 class BasicShader(StructuredShader):
-    def __init__(self, appearance=None,
+    def __init__(self,
+                 appearance=None,
+                 shadows=None,
                  lighting_model=None,
                  scattering=None,
                  tesselation_control=None,
@@ -648,6 +661,8 @@ class BasicShader(StructuredShader):
         if appearance is None:
             appearance = TextureAppearance()
         appearance.set_shader(self)
+        if shadows is None:
+            shadows = []
         if lighting_model is None:
             lighting_model = LambertPhongLightingModel()
         if scattering is None:
@@ -668,6 +683,9 @@ class BasicShader(StructuredShader):
             after_effects = []
         self.appearance = appearance
         self.appearance.shader = self
+        self.shadows = shadows
+        for shadow in self.shadows:
+            shadow.shader = self
         self.lighting_model = lighting_model
         self.lighting_model.shader = self
         self.scattering = scattering
@@ -693,6 +711,7 @@ class BasicShader(StructuredShader):
                                                         appearance=self.appearance,
                                                         vertex_control=self.vertex_control,
                                                         instance_control=self.instance_control,
+                                                        shadows=self.shadows,
                                                         lighting_model=self.lighting_model,
                                                         scattering=self.scattering)
         else:
@@ -705,11 +724,13 @@ class BasicShader(StructuredShader):
                                               appearance=self.appearance,
                                               vertex_control=self.vertex_control,
                                               instance_control=self.instance_control,
+                                              shadows=self.shadows,
                                               lighting_model=self.lighting_model,
                                               scattering=self.scattering)
         self.fragment_shader = FragmentShader(self,
                                               data_source=self.data_source,
                                               appearance=self.appearance,
+                                              shadows=self.shadows,
                                               lighting_model=self.lighting_model,
                                               scattering=self.scattering,
                                               after_effects=self.after_effects)
@@ -728,7 +749,6 @@ class BasicShader(StructuredShader):
         self.fragment_uses_normal = False
         self.use_tangent = False
         self.fragment_uses_tangent = False
-        self.use_shadow = False
         self.use_model_texcoord = use_model_texcoord
         #TODO: Should be moved to a Point Shader
         self.point_shader = point_shader
@@ -738,6 +758,7 @@ class BasicShader(StructuredShader):
 
     def set_instance_control(self, instance_control):
         self.instance_control = instance_control
+        #TODO: wrong if there is tesselation
         self.vertex_shader.instance_control = instance_control
         self.vertex_shader.version = max(self.vertex_shader.version, instance_control.version)
 
@@ -749,6 +770,29 @@ class BasicShader(StructuredShader):
         else:
             self.tesselation_eval_shader.scattering = scattering
         self.fragment_shader.scattering = scattering
+
+    def add_shadows(self, shadows):
+        self.shadows.append(shadows)
+        shadows.shader = self
+        #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
+
+    def remove_shadows(self, shape, appearance, shadow):
+        if shadow in self.shadows:
+            if shape.instance_ready:
+                shadow.clear(shape, appearance)
+            self.shadows.remove(shadow)
+            shadow.shader = None
+        else:
+            print("SHADOW NOT FOUND")
+        #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
+
+    def clear_shadows(self, shape, appearance):
+        while self.shadows:
+            shadow = self.shadows.pop()
+            if shape.instance_ready:
+                shadow.clear(shape, appearance)
+            shadow.shader = None
+        #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
 
     def add_after_effect(self, after_effect):
         self.after_effects.append(after_effect)
@@ -830,12 +874,22 @@ class BasicShader(StructuredShader):
             if self.scattering.use_vertex_frag:
                 self.fragment_uses_vertex = True
 
-        if appearance.shadow is not None:
-            self.use_shadow = True
-            self.use_normal = True
-            self.model_normal = True
-        else:
-            self.use_shadow = False
+        for shadow in self.shadows:
+            if shadow.use_vertex:
+                self.use_vertex = True
+                if shadow.model_vertex:
+                    self.model_vertex = True
+                if shadow.world_vertex:
+                    self.world_vertex = True
+                if shadow.use_vertex_frag:
+                    self.fragment_uses_vertex = True
+    
+            if shadow.use_normal:
+                self.use_normal = True
+                if shadow.model_normal:
+                    self.model_normal = True
+                if shadow.world_normal:
+                    self.world_normal = True
 
         if self.point_shader:
             pass
@@ -853,6 +907,10 @@ class BasicShader(StructuredShader):
         ap_id = self.appearance.get_id()
         if ap_id:
             name += "-" + ap_id
+        for shadow in self.shadows:
+            shadow_id = shadow.get_id()
+            if shadow_id:
+                name += "-" + shadow_id
         lm_id = self.lighting_model.get_id()
         if lm_id:
             name += "-" + lm_id
@@ -869,8 +927,6 @@ class BasicShader(StructuredShader):
         if ds_id:
             name += ds_id
         config = ''
-        if self.use_shadow:
-            config += 'h'
         if not self.use_model_texcoord:
             config += 'g'
         if config:
@@ -887,6 +943,8 @@ class BasicShader(StructuredShader):
     def update_shader_shape_static(self, shape, appearance):
         self.appearance.update_shader_shape_static(shape, appearance)
         self.tesselation_control.update_shader_shape_static(shape, appearance)
+        for shadow in self.shadows:
+            shadow.update_shader_shape_static(shape, appearance)
         self.lighting_model.update_shader_shape_static(shape, appearance)
         self.scattering.update_shader_shape_static(shape, appearance)
         self.vertex_control.update_shader_shape_static(shape, appearance)
@@ -896,13 +954,6 @@ class BasicShader(StructuredShader):
             effect.update_shader_shape_static(shape, appearance)
 #         if self.has_bump_texture:
 #             shape.instance.setShaderInput("bump_height", appearance.bump_height / settings.scale)
-        if self.use_shadow:
-            shape.instance.setShaderInput('shadow_bias', appearance.shadow.bias)
-            shape.instance.setShaderInput('depthmap', appearance.shadow.depthmap)
-            shape.instance.setShaderInput("sunLight", appearance.shadow.cam)
-        else:
-            shape.instance.clearShaderInput('depthmap')
-            shape.instance.clearShaderInput("sunLight")
         if self.point_shader:
             attrib = shape.instance.getAttrib(ShaderAttrib)
             attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
@@ -914,6 +965,8 @@ class BasicShader(StructuredShader):
     def update_shader_shape(self, shape, appearance):
         self.appearance.update_shader_shape(shape, appearance)
         self.tesselation_control.update_shader_shape(shape, appearance)
+        for shadow in self.shadows:
+            shadow.update_shader_shape(shape, appearance)
         self.lighting_model.update_shader_shape(shape, appearance)
         self.scattering.update_shader_shape(shape, appearance)
         self.vertex_control.update_shader_shape(shape, appearance)
@@ -926,6 +979,8 @@ class BasicShader(StructuredShader):
     def update_shader_patch_static(self, shape, patch, appearance):
         self.appearance.update_shader_patch_static(shape, patch, appearance)
         self.tesselation_control.update_shader_patch_static(shape, patch, appearance)
+        for shadow in self.shadows:
+            shadow.update_shader_shape_static(shape, appearance)
         self.lighting_model.update_shader_patch_static(shape, patch, appearance)
         self.scattering.update_shader_patch_static(shape, patch, appearance)
         self.vertex_control.update_shader_patch_static(shape, patch, appearance)
@@ -1015,6 +1070,9 @@ class ShaderComponent(object):
         pass
 
     def update_shader_patch(self, shape, patch, appearance):
+        pass
+
+    def clear(self, shape, appearance):
         pass
 
 class CustomShaderComponent(ShaderComponent):
@@ -1740,6 +1798,162 @@ class PandaTextureDataSource(DataSource):
     def update_shader_shape_static(self, shape, appearance):
         if self.has_night_texture:
             shape.instance.setShaderInput("nightscale", 0.02)
+
+class ShaderShadow(ShaderComponent):
+    pass
+
+class ShaderShadowMap(ShaderShadow):
+    use_vertex = True
+    model_vertex = True
+    use_normal = True
+    model_normal = True
+
+    def get_id(self):
+        return 'sm'
+
+    def vertex_uniforms(self, code):
+        code.append("uniform mat4 trans_model_to_clip_of_sunLight;")
+        code.append("uniform float shadow_bias;")
+
+    def vertex_outputs(self, code):
+        code.append("out vec4 lightcoord;")
+
+    def vertex_shader(self, code):
+        code.append("vec4 lightclip = trans_model_to_clip_of_sunLight * (model_vertex4 + model_normal4 * shadow_bias);")
+        code.append("lightcoord = lightclip * vec4(0.5, 0.5, 0.5, 1.0) + lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);")
+
+    def fragment_uniforms(self, code):
+        code.append("uniform sampler2DShadow depthmap;")
+
+    def fragment_inputs(self, code):
+        code.append("in vec4 lightcoord;")
+
+    def fragment_shader(self, code):
+        code.append("shadow *= texture(depthmap, lightcoord.xyz);")
+
+    def update_shader_shape_static(self, shape, appearance):
+        shape.instance.setShaderInput('shadow_bias', appearance.shadow.bias)
+        shape.instance.setShaderInput('depthmap', appearance.shadow.depthmap)
+        shape.instance.setShaderInput("sunLight", appearance.shadow.cam)
+
+    def clear(self, shape, appearance):
+        shape.instance.clearShaderInput('depthmap')
+        shape.instance.clearShaderInput("sunLight")
+
+class ShaderSphereShadow(ShaderShadow):
+    use_vertex = True
+    use_vertex_frag = True
+    world_vertex = True
+    model_vertex = True
+    max_occluders = 4
+    def get_id(self):
+        return "ss"
+
+    def fragment_uniforms(self, code):
+        code.append("uniform vec3 star_center;")
+        code.append("uniform float star_radius;")
+        code.append("uniform vec3 occluder_centers[%d];" % self.max_occluders)
+        code.append("uniform float occluder_radii[%d];" % self.max_occluders)
+        code.append("uniform int nb_of_occluders;")
+
+    def fragment_shader(self, code):
+        code.append("vec3 star_local = star_center - world_vertex;")
+        code.append("float aa = dot(star_local, star_local);")
+        code.append("for (int i = 0; i < nb_of_occluders; i++) {")
+        code.append("  vec3 occluder_local = occluder_centers[i] - world_vertex;")
+        code.append("  float occluder_radius = occluder_radii[i];")
+        code.append("  float bb = dot(occluder_local, occluder_local);")
+        code.append("  float ab = dot(star_local, occluder_local);")
+        code.append("  if (ab > 0) { //Apply shadow only if the occluder is between the target and the star")
+        code.append("    float s = ab*ab + star_radius*star_radius*bb + occluder_radius*occluder_radius*aa - aa*bb;")
+        code.append("    float t = 2.0*ab*star_radius*occluder_radius;")
+
+        code.append("    if ((s + t) < 0.0) {");
+        code.append("      //No overlap")
+        code.append("    } else if ((s - t) < 0.0) {");
+        code.append("      //Partial overlap, use angular radius to calculate actual occlusion")
+        code.append("      float star_ar = asin(star_radius / length(star_local));")
+        code.append("      float occluder_ar = asin(occluder_radius / length(occluder_local));")
+        code.append("      float separation = acos(min(1.0, dot(normalize(star_local), normalize(occluder_local))));")
+        code.append("      if (separation <= star_ar - occluder_ar) {")
+        code.append("        //Occluder fully inside star, attenuation is the ratio of the visible surfaces");
+        code.append("        shadow *= 1.0 - (occluder_ar * occluder_ar) / (star_ar * star_ar);");
+        code.append("      } else {");
+        code.append("        //Occluder partially occluding star, use linear approximation");
+        code.append("        shadow *= ((separation - abs(star_ar - occluder_ar)) / (star_ar + occluder_ar - abs(star_ar - occluder_ar)));")
+        code.append("      }");
+        code.append("    } else {");
+        code.append("      shadow = 0.0; //Full overlap")
+        code.append("    }")
+        code.append("  } else {")
+        code.append("    //Not in shadow");
+        code.append("  }")
+        code.append("}")
+
+    def update_shader_shape(self, shape, appearance):
+        #TODO: This is quite ugly....
+        star = shape.owner.star
+        observer = shape.owner.context.observer._position
+        scale = shape.owner.scene_scale_factor
+        star_center = (star._position - observer) * scale
+        star_radius = star.get_apparent_radius() * scale
+        shape.instance.setShaderInput('star_center', star_center)
+        shape.instance.setShaderInput('star_radius', star_radius)
+        centers = []
+        radii = []
+        for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
+            centers.append((shadow_caster.body._position - observer) * scale)
+            radii.append(shadow_caster.body.get_apparent_radius() * scale)
+        nb_of_occluders = len(shape.parent.shadows.sphere_shadows.occluders)
+        shape.instance.setShaderInput('occluder_centers', centers)
+        shape.instance.setShaderInput('occluder_radii', radii)
+        shape.instance.setShaderInput("nb_of_occluders", nb_of_occluders)
+
+class ShaderRingShadow(ShaderShadow):
+    use_vertex = True
+    use_vertex_frag = True
+    world_vertex = True
+    model_vertex = True
+    def get_id(self):
+        return 'rs'
+
+    def fragment_uniforms(self, code):
+        code.append("uniform sampler2D shadow_ring_tex;")
+        code.append("uniform vec3 ring_normal;")
+        code.append("uniform float ring_inner_radius;")
+        code.append("uniform float ring_outer_radius;")
+        code.append("uniform vec3 body_center;")
+
+    def fragment_shader(self, code):
+        #Simple line-plane intersection:
+        #line is surface of the planet to the center of the light source
+        #plane is the plane of the rings system
+        code.append("vec3 new_pos = world_vertex - body_center;")
+        code.append("float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot(light_dir, ring_normal.xyz);")
+        code.append("if (ring_intersection_param > 0.0) {")
+        code.append("  vec3 ring_intersection = new_pos + light_dir * ring_intersection_param;")
+        code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
+        code.append("  shadow *= 1.0 - texture(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
+        code.append("} else {")
+        code.append("  //Not in shadow")
+        code.append("}")
+
+    #TODO: Should be in static
+    def update_shader_shape(self, shape, appearance):
+        #TODO: This is quite ugly....
+        ring = shape.parent.shadows.ring_shadow.ring
+        (texture, texture_size, texture_lod) = ring.appearance.texture.source.get_texture(ring.shape)
+        if texture is not None:
+            shape.instance.setShaderInput('shadow_ring_tex',texture)
+        normal = shape.owner.scene_orientation.xform(LVector3d.up())
+        shape.instance.setShaderInput('ring_normal', normal)
+        shape.instance.setShaderInput('ring_inner_radius', ring.inner_radius * shape.owner.scene_scale_factor)
+        shape.instance.setShaderInput('ring_outer_radius', ring.outer_radius * shape.owner.scene_scale_factor)
+        if shape.owner.support_offset_body_center and settings.offset_body_center:
+            body_center = shape.owner.scene_position + shape.owner.projected_world_body_center_offset
+        else:
+            body_center = shape.owner.scene_position
+        shape.instance.setShaderInput('body_center', body_center)
 
 class LightingModel(ShaderComponent):
     pass

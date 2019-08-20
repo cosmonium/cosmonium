@@ -20,7 +20,8 @@ from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryD
 from cosmonium.procedural.shaders import DetailMap, DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, ConstantTesselationControl
+from cosmonium.shaders import BasicShader, Fog, ConstantTesselationControl,\
+    ShaderShadowMap
 from cosmonium.shapes import InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
@@ -28,7 +29,7 @@ from cosmonium.procedural.textures import PatchedGpuTextureSource
 from cosmonium.procedural.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
-from cosmonium.shadows import ShadowCaster
+from cosmonium.shadows import ShadowMap
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
@@ -463,6 +464,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                           tesselation_control=tesselation_control,
                                           vertex_control=DisplacementVertexControl(self.heightmap),
                                           data_source=data_source)
+        self.terrain_shader.add_shadows(ShaderShadowMap())
 
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
@@ -645,7 +647,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
         if True:
-            self.shadow_caster = ShadowCaster(1024)
+            self.shadow_caster = ShadowMap(1024)
             self.shadow_caster.create()
             self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.light_dir)
             self.shadow_caster.set_pos(self.light_dir * self.ralph_config.shadow_box_length / 2.0)
@@ -696,6 +698,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_appearance = ModelAppearance(self.ralph)
         self.ralph_appearance.set_shadow(self.shadow_caster)
         self.ralph_shader = BasicShader()
+        self.ralph_shader.add_shadows(ShaderShadowMap())
         self.ralph_appearance.bake()
         self.ralph_appearance.apply(self.ralph_shape, self.ralph_shader)
         self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)

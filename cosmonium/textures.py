@@ -4,9 +4,9 @@ from __future__ import absolute_import
 from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
 
 from .dircontext import defaultDirContext
+from .shapes import RingShape #TODO: Workaround, see below !
 from .utils import TransparencyBlend
 from . import workers
-from . import utils
 from . import settings
 
 import os
@@ -268,6 +268,10 @@ class SimpleTexture(TextureBase):
             self.mipmap(texture)
         else:
             self.linear(texture)
+        #TODO: Remove this ugly workaround and create an actual RingTexture !
+        if isinstance(shape, RingShape):
+            texture.setWrapU(Texture.WM_border_color)
+            texture.setBorderColor(LColor(0, 0, 0, 0))
         if self.tex_matrix:
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
             if shape.swap_uv:

@@ -13,6 +13,7 @@ from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from . import geometry
 from . import settings
+from cosmonium.shadows import MultiShadows
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -20,6 +21,7 @@ class Shape:
     offset = False
     use_collision_solid = False
     deferred_instance = False
+
     def __init__(self):
         self.instance = None
         self.collision_solid = None
@@ -36,6 +38,9 @@ class Shape:
     
     def check_settings(self):
         pass
+
+    def is_spherical(self):
+        return True
 
     def create_instance(self):
         return None
@@ -174,6 +179,8 @@ class ShapeObject(VisibleObject):
         self.instance_ready = False
         self.owner = None
         self.first_patch = True
+        self.shadows = MultiShadows(self)
+        self.shadow_caster = None
 
     def check_settings(self):
         self.shape.check_settings()
@@ -243,6 +250,21 @@ class ShapeObject(VisibleObject):
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.schedule_jobs()
+
+    def create_shadows(self):
+        pass
+
+    def start_shadows_update(self):
+        self.shadows.start_update()
+
+    def end_shadows_update(self):
+        self.shadows.end_update()
+
+    def add_shadow_target(self, target):
+        if self.shadow_caster is None:
+            self.create_shadows()
+        if self.shadow_caster is not None:
+            self.shadow_caster.add_target(target)
 
     def schedule_patch_jobs(self, patch):
         if self.appearance is not None:
@@ -321,10 +343,14 @@ class ShapeObject(VisibleObject):
             self.shape.place_patches(self.parent)
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+        if self.shadows.update_needed:
+            self.update_shader()
+            self.shadows.update_needed = False
         if self.shader is not None:
             self.shader.update(self.shape, self.appearance)
 
     def remove_instance(self):
+        self.shadows.clear_shadows()
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
@@ -344,6 +370,9 @@ class MeshShape(Shape):
         self.panda = panda
         self.callback = None
         self.cb_args = None
+
+    def is_spherical(self):
+        return False
 
     def create_instance_cb(self, mesh):
         if mesh is None: return
@@ -460,6 +489,9 @@ class RingShape(Shape):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.nbOfPoints = 360
+
+    def is_spherical(self):
+        return False
 
     def create_instance(self):
         self.instance = NodePath("ring")

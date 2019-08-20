@@ -744,8 +744,9 @@ class Cosmonium(CosmoniumBase):
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
             print("\tUpdate frozen:", self.selected.update_frozen)
-            if isinstance(self.selected, ReflectiveBody):
-                print("\tCast shadow:", self.selected.cast_shadows, "Has shadows:", self.selected.has_shadows_persistent)
+            if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
+                print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
+                print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(self.selected, StellarBody):
                 if self.selected.scene_scale_factor is not None:
                     print("Scene")

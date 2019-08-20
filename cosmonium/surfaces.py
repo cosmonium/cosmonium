@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from .shapes import ShapeObject
 from panda3d.core import NodePath
+from cosmonium.shadows import SphereShadowCaster
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -28,6 +29,12 @@ class Surface(ShapeObject):
         self.source = source
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
+
+    def create_shadows(self):
+        if self.shape is not None and self.shape.is_spherical():
+            self.shadow_caster = SphereShadowCaster(self.owner)
+        else:
+            self.shadow_caster = None
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()

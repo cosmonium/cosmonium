@@ -8,6 +8,7 @@ from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
 from .utils import TransparencyBlend
 from .shaders import AtmosphericScattering
+from .shadows import RingShadowCaster
 
 from . import settings
 
@@ -17,6 +18,7 @@ class Ring(ShapeObject):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.set_shape(RingShape(inner_radius, outer_radius))
+        self.shadow_caster = RingShadowCaster(self)
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):

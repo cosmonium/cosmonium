@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3d, LVector3, LQuaternion, LQuaterniond, LColor, DrawMask, BitMask32
+from panda3d.core import LPoint3d, LVector3d, LVector3, LQuaternion, LQuaterniond, LColor, BitMask32
 from panda3d.core import DirectionalLight
 
 from .foundation import VisibleObject, CompositeObject, ObjectLabel, LabelledObject
@@ -17,7 +17,6 @@ from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
 from .astro.blackbody import temp_to_RGB
 from .astro import units
 from .shaders import BasicShader, FlatLightingModel
-from .shadows import ShadowCaster
 from .bodyclass import bodyClasses
 from .catalogs import objectsDB
 from . import settings
@@ -101,11 +100,10 @@ class StellarObject(LabelledObject):
         self.point_color = point_color
         self.abs_magnitude = 99.0
         #Flags
-        self.visible = True
-        self.resolved = True
-        self.in_view = True
+        self.visible = True #TODO: Should be False at init
+        self.resolved = True #TODO: Should be False at init
+        self.in_view = False
         self.selected = False
-        self.cast_shadows = False
         #Cached values
         self._position = LPoint3d()
         self._global_position = LPoint3d()
@@ -414,7 +412,7 @@ class StellarObject(LabelledObject):
         else:
             #Don't bother checking the visibility of a point
             self.in_view = True
-        self.visible = self.cast_shadows or (self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude))
+        self.visible = self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         if not self.virtual_object and self.resolved and self.in_view:
             self.context.add_visible(self)
         LabelledObject.check_visibility(self, pixel_size)
@@ -660,21 +658,9 @@ class StellarBody(StellarObject):
 
 class ReflectiveBody(StellarBody):
     def __init__(self, *args, **kwargs):
-        shadow = kwargs.pop('shadow', True)
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
         self.sunLight = None
-        self.has_shadow_map = False
-        self.has_shadows = False
-        self.has_shadows_persistent = False
-        self.cast_shadows = False
-        self.custom_shadows = False
-        self.shadow_caster = None
-        self.shadow_camera = None
-        if (shadow or self.ring is not None) and settings.allow_shadows:
-            self.has_shadow_map = True
-            if self.surface is not None:
-                self.custom_shadows = self.surface.shader is not None
 
     def is_emissive(self):
         return False
@@ -720,75 +706,14 @@ class ReflectiveBody(StellarBody):
         face = self.vector_to_star.dot(projected - position)
         return face < 0.0 and distance < self.get_apparent_radius() + body.get_apparent_radius()
 
-    def update(self, time):
-        StellarBody.update(self, time)
-        self.cast_shadows = False
-        if self.ring is not None and self.visible and self.resolved and self.in_view:
-            self.has_shadows = True
-            self.cast_shadows = True
-        #Only support shadows in a Simple System
-        primary = self.parent.primary
-        if primary is None:
-            return
-        if primary == self:
-            for child in self.parent.children:
-                if child != self and child.has_shadow_map and child.visible and child.resolved and child.in_view:
-                    if self.check_cast_shadow_on(child):
-                        child.has_shadows = True
-                        self.cast_shadows = True
-        else:
-            if isinstance(primary, ReflectiveBody) and primary.has_shadow_map and primary.visible and primary.resolved and primary.in_view:
-                if self.check_cast_shadow_on(primary):
-                    primary.has_shadows = True
-                    self.cast_shadows = True
+    def start_shadows_update(self):
+        self.surface.start_shadows_update()
 
-    def create_shadow_caster(self):
-        if self.custom_shadows:
-            print("Create custom shadow caster for", self.get_name())
-            self.shadow_caster = ShadowCaster(settings.shadow_size)
-            self.shadow_caster.create()
-            self.shadow_camera = self.shadow_caster.node
-            #TODO: should be done in surface
-            self.surface.appearance.set_shadow(self.shadow_caster)
-            if self.surface.instance_ready:
-                self.surface.shader.apply(self.surface.shape, self.surface.appearance)
-            if self.ring is not None:
-                self.ring.appearance.set_shadow(self.shadow_caster)
-                if self.ring.instance_ready:
-                    self.ring.shader.apply(self.ring.shape, self.ring.appearance)
-        else:
-            print("Create Panda3D shadow caster")
-            self.dir_light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)
-            self.shadow_caster = self.dir_light
-            self.shadow_camera = self.dir_light
-        if settings.debug_shadow_frustum:
-            self.shadow_camera.showFrustum()
-        self.shadow_camera.set_camera_mask(DrawMask(1))
+    def add_shadow_target(self, target):
+            self.surface.add_shadow_target(target.surface)
 
-    def update_shadow_caster(self):
-        radius = self.get_extend() / settings.scale
-        self.shadow_caster.get_lens().set_film_size(radius * 2.1, radius * 2.1)
-        self.shadow_caster.get_lens().setNear(-self.context.observer.infinity)
-        self.shadow_caster.get_lens().setFar(self.context.observer.infinity)
-        self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.vector_to_star), LVector3.up())
-        if self.custom_shadows:
-            self.shadow_caster.set_pos(self.sunLight.getPos())
-
-    def remove_shadow_caster(self):
-        if self.custom_shadows:
-            if self.shadow_caster is not None:
-                print("Remove custom shadow caster", self.get_name())
-                self.shadow_caster.remove()
-                #TODO: Temporary until all dangling instance references have been removed
-                self.surface.appearance.set_shadow(None)
-                self.surface.shader.apply(self.surface.shape, self.surface.appearance)
-                if self.ring is not None:
-                    self.ring.appearance.set_shadow(None)
-                    self.ring.shader.apply(self.ring.shape, self.ring.appearance)
-        else:
-            self.dir_light.setShadowCaster(False)
-        self.shadow_caster = None
-        self.shadow_camera = None
+    def end_shadows_update(self):
+        self.surface.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())
@@ -808,6 +733,15 @@ class ReflectiveBody(StellarBody):
         self.sunLight = None
         self.dir_light = None
 
+    def configure_shape(self):
+        StellarBody.configure_shape(self)
+        self.surface.create_shadows()
+        if self.ring is not None and self.surface is not None:
+            self.ring.shadow_caster.add_target(self.surface)
+            self.ring.start_shadows_update()
+            self.surface.shadow_caster.add_target(self.ring)
+            self.ring.end_shadows_update()
+
     def create_components(self):
         StellarBody.create_components(self)
         if self.sunLight is None:
@@ -817,31 +751,12 @@ class ReflectiveBody(StellarBody):
     def update_components(self, camera_pos):
         if self.sunLight is not None:
             self.update_light(camera_pos)
-        if self.shadow_caster is not None:
-            self.update_shadow_caster()
 
     def remove_components(self):
-        if self.shadow_caster is not None:
-            self.remove_shadow_caster()
-            #TODO: Temporary until all dangling instance references have been removed
-            self.surface.appearance.set_shadow(None)
-            self.update_shader()
         if self.sunLight is not None:
             self.remove_light()
             self.update_shader()
         StellarBody.remove_components(self)
-
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
-        StellarBody.check_and_update_instance(self, camera_pos, orientation, pointset)
-        if self.visible and self.in_view and self.resolved:
-            if self.has_shadow_map and self.has_shadows and self.shadow_caster is None:
-                self.create_shadow_caster()
-                self.update_shader()
-            if self.has_shadow_map and not self.has_shadows and self.shadow_caster is not None:
-                self.remove_shadow_caster()
-                self.update_shader()
-        self.has_shadows_persistent = self.has_shadows
-        self.has_shadows = False
 
 class EmissiveBody(StellarBody):
     has_halo = True
