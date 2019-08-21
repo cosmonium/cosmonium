@@ -83,8 +83,10 @@ class Gui(object):
         self.height = 0
         self.update_size(self.screen_width, self.screen_height)
         self.popup_menu = None
-        self.info = InfoPanel(self.scale, settings.markdown_font)
-        self.help = TextWindow('Help', 'control.md', self.scale, settings.markdown_font)
+        self.opened_windows = []
+        self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
+        self.help = TextWindow('Help', 'control.md', self.scale, settings.markdown_font, owner=self)
+        self.license = TextWindow('License', 'COPYING.md', self.scale, settings.markdown_font, owner=self)
         self.create_menubar()
         if settings.show_hud:
             self.show_hud()
@@ -110,8 +112,8 @@ class Gui(object):
         event_ctrl.accept('shift-z-repeat', self.camera.zoom, [1.0/1.05])
         event_ctrl.accept('control-m', self.toggle_menu)
 
-        event_ctrl.accept('f1', self.toggle_info)
-        event_ctrl.accept('shift-f1', self.toggle_help)
+        event_ctrl.accept('f1', self.show_info)
+        event_ctrl.accept('shift-f1', self.show_help)
         event_ctrl.accept('f2', self.cosmonium.connect_pstats)
         event_ctrl.accept('f3', self.cosmonium.toggle_filled_wireframe)
         event_ctrl.accept('shift-f3', self.cosmonium.toggle_wireframe)
@@ -223,11 +225,14 @@ class Gui(object):
         event_ctrl.accept('shift-h', self.cosmonium.print_debug)
         event_ctrl.accept('shift-y', self.cosmonium.toggle_fly_mode)
 
+    def window_closed(self, window):
+        if window in self.opened_windows:
+            self.opened_windows.remove(window)
+
     def escape(self):
-        if self.info.shown():
-            self.hide_info()
-        elif self.help.shown():
-            self.hide_help()
+        if len(self.opened_windows) != 0:
+            window = self.opened_windows.pop()
+            window.hide()
         else:
             self.cosmonium.reset_all()
 
@@ -294,10 +299,10 @@ class Gui(object):
 
     def create_help_menu_items(self):
         return (
-       ('User _guide>Shift-F1', 0, self.toggle_help),
+       ('User _guide>Shift-F1', 0, self.show_help),
        0, # separator
        ('_Credits', 0, lambda:0),
-       ('_License', 0, lambda:0),
+       ('_License', 0, self.show_license),
        0, # separator
        ('_About', 0, lambda:0),
        )
@@ -576,27 +581,18 @@ class Gui(object):
 
     def show_help(self):
         self.help.show()
+        if not self.help in self.opened_windows:
+            self.opened_windows.append(self.help)
 
-    def hide_help(self):
-        self.help.hide()
+    def show_license(self):
+        self.license.show()
+        if not self.license in self.opened_windows:
+            self.opened_windows.append(self.license)
 
     def show_info(self):
         if self.cosmonium.selected is not None:
             if self.info.shown():
                 self.hide_info()
             self.info.show(self.cosmonium.selected)
-
-    def hide_info(self):
-        self.info.hide()
-
-    def toggle_info(self):
-        if not self.info.shown():
-            self.show_info()
-        else:
-            self.hide_info()
-
-    def toggle_help(self):
-        if not self.help.shown():
-            self.show_help()
-        else:
-            self.hide_help()
+            if not self.info in self.opened_windows:
+                self.opened_windows.append(self.info)

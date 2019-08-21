@@ -11,13 +11,14 @@ from .markdown import create_markdown_renderer
 from .widgets import ScrollText
 
 class TextWindow():
-    def __init__(self, title, filename, scale, font_family, font_size = 14):
+    def __init__(self, title, filename, scale, font_family, font_size = 14, owner=None):
         self.title = title
         self.window = None
         self.layout = None
         self.last_pos = None
         self.scale = scale
         self.font_size = font_size
+        self.owner = owner
         filename = defaultDirContext.find_doc(filename)
         with open(filename) as md_file:
             self.text = ''.join(md_file.readlines())
@@ -53,3 +54,5 @@ class TextWindow():
             self.last_pos = self.window.getPos()
             self.window = None
             self.layout = None
+            if self.owner is not None:
+                self.owner.window_closed(self)

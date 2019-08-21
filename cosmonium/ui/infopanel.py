@@ -11,12 +11,13 @@ from .layout import Layout
 from .window import Window
 
 class InfoPanel():
-    def __init__(self, scale, font_family, font_size = 14):
+    def __init__(self, scale, font_family, font_size = 14, owner=None):
         self.window = None
         self.layout = None
         self.last_pos = None
         self.scale = scale
         self.font_size = font_size
+        self.owner = owner
         self.font_normal = fontsManager.get_font(font_family, Font.STYLE_NORMAL)
         if self.font_normal is not None:
             self.font_normal = self.font_normal.load()
@@ -109,3 +110,5 @@ class InfoPanel():
             self.last_pos = self.window.getPos()
             self.window = None
             self.layout = None
+            if self.owner is not None:
+                self.owner.window_closed(self)
