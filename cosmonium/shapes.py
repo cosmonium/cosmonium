@@ -375,6 +375,8 @@ class MeshShape(Shape):
 
     def create_instance_cb(self, mesh):
         if mesh is None: return
+        #The shape has been removed from the view while the mesh was loaded
+        if self.instance is None: return
         if self.scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
