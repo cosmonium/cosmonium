@@ -71,7 +71,6 @@ class CelUrl(object):
         # ShowHorizonGrid     = 0x1000000
         # ShowEcliptic        = 0x2000000
         # ShowTintedIllumination = 0x4000000
-        print(render)
         return render
 
     def parse_label_flags(self, flags):

@@ -219,7 +219,6 @@ class ShapeObject(VisibleObject):
         return self.shape.get_scale()
 
     def create_instance(self, callback=None, cb_args=()):
-        print("Loading", self.get_name())
         self.callback = callback
         self.cb_args = cb_args
         self.instance = self.shape.create_instance()
