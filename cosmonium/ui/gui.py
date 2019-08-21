@@ -13,18 +13,18 @@ from ..astro.units import toUnit
 from ..dircontext import defaultDirContext
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
+from ..appstate import AppState
+from ..celestia.cel_url import CelUrl
 from .. import utils
 from .. import settings
 
 from .hud import HUD
 from .query import Query
 from .Menu import PopupMenu
-from .help import HelpPanel
+from .textwindow import TextWindow
 from .infopanel import InfoPanel
 
 import sys
-from cosmonium.celestia.cel_url import CelUrl
-from cosmonium.appstate import AppState
 
 try:
     if sys.version_info[0] < 3:
@@ -84,7 +84,7 @@ class Gui(object):
         self.update_size(self.screen_width, self.screen_height)
         self.popup_menu = None
         self.info = InfoPanel(self.scale, settings.markdown_font)
-        self.help = HelpPanel(self.scale, settings.markdown_font)
+        self.help = TextWindow('Help', 'control.md', self.scale, settings.markdown_font)
 
     def calc_scale(self):
         screen_width = base.pipe.getDisplayWidth()

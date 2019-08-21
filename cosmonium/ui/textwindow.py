@@ -10,26 +10,26 @@ from .window import Window
 from .markdown import create_markdown_renderer
 from .widgets import ScrollText
 
-class HelpPanel():
-    def __init__(self, scale, font_family, font_size = 14):
+class TextWindow():
+    def __init__(self, title, filename, scale, font_family, font_size = 14):
+        self.title = title
         self.window = None
         self.layout = None
         self.last_pos = None
         self.scale = scale
         self.font_size = font_size
-        filename = defaultDirContext.find_doc('control.md')
-        with open(filename) as help_file:
-            self.help_text = ''.join(help_file.readlines())
+        filename = defaultDirContext.find_doc(filename)
+        with open(filename) as md_file:
+            self.text = ''.join(md_file.readlines())
         self.markdown = create_markdown_renderer(font_family)
 
     def create_layout(self):
-        self.layout = ScrollText(text=self.markdown(self.help_text),
+        self.layout = ScrollText(text=self.markdown(self.text),
                                  align=TextNode.ALeft,
                                  scale=self.scale,
                                  font=self.markdown.renderer.font_normal,
                                  font_size=self.font_size)
-        title = "Help"
-        self.window = Window(title, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self, transparent=True)
 
     def show(self):
         self.create_layout()
