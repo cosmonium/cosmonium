@@ -592,7 +592,7 @@ class Gui(object):
     def show_info(self):
         if self.cosmonium.selected is not None:
             if self.info.shown():
-                self.hide_info()
+                self.info.hide()
             self.info.show(self.cosmonium.selected)
             if not self.info in self.opened_windows:
                 self.opened_windows.append(self.info)

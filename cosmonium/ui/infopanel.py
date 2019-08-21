@@ -68,6 +68,9 @@ class InfoPanel():
         return (titles, infos)
 
     def show(self, body):
+        if self.shown():
+            print("Info panel already shown")
+            return
         (titles, infos) = self.get_info_for(body)
         self.create_layout(body, len(infos))
         for (i, (title, info)) in enumerate(zip(titles, infos)):
