@@ -9,7 +9,7 @@ from .. import settings
 import os
 
 class ConfigParser(YamlParser):
-    data_version = 0
+    data_version = 1
     def __init__(self, config_file):
         YamlParser.__init__(self)
         self.config_file = config_file
@@ -69,16 +69,32 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_ui_hud(self, data):
+        settings.show_hud = data.get('visible', settings.show_hud)
         settings.hud_font = data.get('font', settings.hud_font)
         settings.hud_color = data.get('color', settings.hud_color)
+
+    def encode_ui_hud(self):
+        data = {}
+        data['visible'] = settings.show_hud
+        data['font'] = settings.hud_font
+        data['color'] = list(settings.hud_color)
+        return data
+
+    def decode_ui_menu(self, data):
+        settings.show_menubar = data.get('visible', settings.show_menubar)
+
+    def encode_ui_menu(self):
+        data = {}
+        data['visible'] = settings.show_menubar
+        return data
+
+    def decode_ui_nav(self, data):
         settings.invert_wheel = data.get('invert-wheel', settings.invert_wheel)
         settings.celestia_nav = data.get('celestia-nav', settings.celestia_nav)
         settings.damped_nav = data.get('damped-nav', settings.damped_nav)
 
-    def encode_ui_hud(self):
+    def encode_ui_nav(self):
         data = {}
-        data['font'] = settings.hud_font
-        data['color'] = list(settings.hud_color)
         data['invert-wheel'] = settings.invert_wheel
         data['celestia-nav'] = settings.celestia_nav
         data['damped-nav'] = settings.damped_nav
@@ -104,12 +120,16 @@ class ConfigParser(YamlParser):
 
     def decode_ui(self, data):
         self.decode_ui_hud(data.get('hud', {}))
+        self.decode_ui_menu(data.get('menu', {}))
+        self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
         self.decode_ui_constellations(data.get('constellations', {}))
 
     def encode_ui(self):
         data = {}
         data['hud'] = self.encode_ui_hud()
+        data['menu'] = self.encode_ui_menu()
+        data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()
         data['constellations'] = self.encode_ui_constellations()
         return data

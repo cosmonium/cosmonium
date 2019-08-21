@@ -22,16 +22,12 @@ class HUDObject(object):
         self.instance.show()
         self.shown = True
 
-    def toggle_shown(self):
-        if self.shown:
-            self.hide()
-        else:
-            self.show()
-
 class TextLine(HUDObject):
     def __init__(self, anchor, y_offset, align, down, pos, font, scale, color=None):
         HUDObject.__init__(self)
         self.anchor = anchor
+        if down:
+            y_offset = -y_offset
         self.y_offset = y_offset
         self.align = align
         self.down = down
@@ -55,10 +51,20 @@ class TextLine(HUDObject):
     def set_font(self, font):
         self.font = font
 
+    def update_instance(self):
+        if self.instance is not None:
+            #self.instance.setScale(*self.scale)
+            self.instance.setPos(0, self.pos * self.scale[1] + self.y_offset)
+
     def set_scale(self, scale):
         self.scale = scale * self.size
-        self.instance.setScale(*self.scale)
-        self.instance.setPos(0, self.pos * self.scale[1])
+        self.update_instance()
+
+    def set_y_offset(self, y_offset):
+        if self.down:
+            y_offset = -y_offset
+        self.y_offset = y_offset
+        self.update_instance()
 
     def create(self):
         return OnscreenText(text="",
@@ -116,15 +122,24 @@ class TextBlock(HUDObject):
     def set_font(self, font):
         self.font = font
 
-    def set_scale(self, scale):
-        self.scale = scale
+    def update_instance(self):
         for i in range(self.count):
             if self.down:
                 pos = -(i + 1)
             else:
                 pos = i + 0.1
-            self.instances[i].setScale(*self.scale)
+            #self.instances[i].set_scale(*self.scale)
             self.instances[i].setPos(0, pos * self.scale[1] + self.y_offset)
+
+    def set_scale(self, scale):
+        self.scale = scale
+        self.update_instance()
+
+    def set_y_offset(self, y_offset):
+        if self.down:
+            y_offset = -y_offset
+        self.y_offset = y_offset
+        self.update_instance()
 
     def create_line(self, i):
         if self.down:
@@ -183,3 +198,9 @@ class HUD(HUDObject):
         self.topRight.show()
         self.bottomRight.show()
         self.shown = True
+
+    def set_y_offset(self, y_offset):
+        self.title.set_y_offset(y_offset)
+        title_height = self.title.get_height()
+        self.topLeft.set_y_offset(y_offset + title_height)
+        self.topRight.set_y_offset(y_offset)

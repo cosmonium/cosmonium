@@ -20,7 +20,7 @@ from .. import settings
 
 from .hud import HUD
 from .query import Query
-from .Menu import PopupMenu
+from .Menu import DropDownMenu, PopupMenu
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
 
@@ -85,6 +85,15 @@ class Gui(object):
         self.popup_menu = None
         self.info = InfoPanel(self.scale, settings.markdown_font)
         self.help = TextWindow('Help', 'control.md', self.scale, settings.markdown_font)
+        self.create_menubar()
+        if settings.show_hud:
+            self.show_hud()
+        else:
+            self.hide_hud()
+        if settings.show_menubar:
+            self.show_menu()
+        else:
+            self.hide_menu()
 
     def calc_scale(self):
         screen_width = base.pipe.getDisplayWidth()
@@ -99,6 +108,7 @@ class Gui(object):
         event_ctrl.accept('z', self.camera.zoom, [1.05])
         event_ctrl.accept('shift-z', self.camera.zoom, [1.0/1.05])
         event_ctrl.accept('shift-z-repeat', self.camera.zoom, [1.0/1.05])
+        event_ctrl.accept('control-m', self.toggle_menu)
 
         event_ctrl.accept('f1', self.toggle_info)
         event_ctrl.accept('shift-f1', self.toggle_help)
@@ -205,7 +215,7 @@ class Gui(object):
         event_ctrl.accept('=', self.cosmonium.toggle_label, ['constellation'])
         #event_ctrl.accept('&', self.toggle_label, ['location'])
 
-        event_ctrl.accept('v', self.hud.toggle_shown)
+        event_ctrl.accept('v', self.toggle_hud)
 
         for i in range(0, 10):
             event_ctrl.accept("%d" % i, self.cosmonium.select_planet, [i])
@@ -275,60 +285,107 @@ class Gui(object):
     def toggle_split_merge_debug(self):
         settings.debug_lod_split_merge = not settings.debug_lod_split_merge
 
+    def create_main_menu_items(self):
+        return (
+       ('_Open URL', 0, lambda:0),
+       0, # separator
+       ('_Quit>Control-Q', 0, self.cosmonium.exit),
+       )
+
+    def create_help_menu_items(self):
+        return (
+       ('User _guide>Shift-F1', 0, self.toggle_help),
+       0, # separator
+       ('_Credits', 0, lambda:0),
+       ('_License', 0, lambda:0),
+       0, # separator
+       ('_About', 0, lambda:0),
+       )
+
+    def create_menubar(self):
+        scale = self.hud.scale
+        scale = LVector3(scale[0], 1.0, scale[1])
+        scale[0] *= settings.menu_text_size
+        scale[2] *= settings.menu_text_size
+        self.menubar = DropDownMenu(
+            items=(('_Cosmonium', self.create_main_menu_items),
+                   ('_Help', self.create_help_menu_items),),
+            sidePad=.75,
+            align=DropDownMenu.ALeft,
+            baselineOffset=-.35,
+            scale=scale, itemHeight=1.2, leftPad=.2,
+            separatorHeight=.3,
+            underscoreThickness=1,
+            BGColor=(.9,.9,.9,.9),
+            BGBorderColor=(.3,.3,.3,1),
+            separatorColor=(0,0,0,1),
+            frameColorHover=(.3,.3,.3,1),
+            frameColorPress=(.3,.3,.3,.1),
+            textColorReady=(0,0,0,1),
+            textColorHover=(.7,.7,.7,1),
+            textColorPress=(0,0,0,1),
+            textColorDisabled=(.3,.3,.3,1))
+        self.menubar_shown = True
+
     def popup_done(self):
         self.popup_menu = False
 
     def create_popup_menu(self, over):
-        if over is None:
+        if over is None and self.menubar_shown:
             return False
-        self.cosmonium.select_body(over)
         items = []
-        items.append((over.get_friendly_name(), 0, self.cosmonium.autopilot.center_on_object))
-        items.append(0)
-        items.append(['_Info', 0, self.show_info])
-        items.append(['_Goto', 0, self.autopilot.go_to_object])
-        items.append(['_Follow', 0, self.cosmonium.follow_selected])
-        items.append(['S_ync', 0, self.cosmonium.sync_selected])
-        if isinstance(over, StellarBody) and len(over.surfaces) > 1:
+        if over is not None:
+            self.cosmonium.select_body(over)
+            items.append((over.get_friendly_name(), 0, self.cosmonium.autopilot.center_on_object))
+            items.append(0)
+            items.append(['_Info', 0, self.show_info])
+            items.append(['_Goto', 0, self.autopilot.go_to_object])
+            items.append(['_Follow', 0, self.cosmonium.follow_selected])
+            items.append(['S_ync', 0, self.cosmonium.sync_selected])
+            if isinstance(over, StellarBody) and len(over.surfaces) > 1:
+                subitems = []
+                for surface in over.surfaces:
+                    name = surface.get_name()
+                    if surface.category is not None:
+                        if name != '':
+                            name += " (%s)" % surface.category.name
+                        else:
+                            name = "%s" % surface.category.name
+                    if surface.resolution is not None:
+                        if isinstance(surface.resolution, int):
+                            name += " (%dK)" % surface.resolution
+                        else:
+                            name += " (%s)" % surface.resolution
+                    if surface is over.surface:
+                        subitems.append([name, 0, None, None])
+                    else:
+                        subitems.append([name, 0, over.set_surface, surface])
+                items.append(["Surfaces", 0, subitems])
+            if over.system is not None and not isinstance(over.system, Universe):
+                subitems = []
+                for child in over.system.children:
+                    if child != over:
+                        if isinstance(child, SimpleSystem):
+                            subitems.append([child.primary.get_friendly_name(), 0, self.cosmonium.select_body, child.primary])
+                        else:
+                            subitems.append([child.get_friendly_name(), 0, self.cosmonium.select_body, child])
+                if len(subitems) > 0:
+                    items.append(["Orbiting bodies", 0, subitems])
             subitems = []
-            for surface in over.surfaces:
-                name = surface.get_name()
-                if surface.category is not None:
-                    if name != '':
-                        name += " (%s)" % surface.category.name
-                    else:
-                        name = "%s" % surface.category.name
-                if surface.resolution is not None:
-                    if isinstance(surface.resolution, int):
-                        name += " (%dK)" % surface.resolution
-                    else:
-                        name += " (%s)" % surface.resolution
-                if surface is over.surface:
-                    subitems.append([name, 0, None, None])
+            parent = over.parent
+            while parent is not None and not isinstance(parent, Universe):
+                if isinstance(parent, SimpleSystem):
+                    if parent.primary != over:
+                        subitems.append([parent.primary.get_friendly_name(), 0, self.cosmonium.select_body, parent.primary])
                 else:
-                    subitems.append([name, 0, over.set_surface, surface])
-            items.append(["Surfaces", 0, subitems])
-        if over.system is not None and not isinstance(over.system, Universe):
-            subitems = []
-            for child in over.system.children:
-                if child != over:
-                    if isinstance(child, SimpleSystem):
-                        subitems.append([child.primary.get_friendly_name(), 0, self.cosmonium.select_body, child.primary])
-                    else:
-                        subitems.append([child.get_friendly_name(), 0, self.cosmonium.select_body, child])
+                    subitems.append([parent.get_friendly_name(), 0, self.cosmonium.select_body, parent])
+                parent = parent.parent
             if len(subitems) > 0:
-                items.append(["Orbiting bodies", 0, subitems])
-        subitems = []
-        parent = over.parent
-        while parent is not None and not isinstance(parent, Universe):
-            if isinstance(parent, SimpleSystem):
-                if parent.primary != over:
-                    subitems.append([parent.primary.get_friendly_name(), 0, self.cosmonium.select_body, parent.primary])
-            else:
-                subitems.append([parent.get_friendly_name(), 0, self.cosmonium.select_body, parent])
-            parent = parent.parent
-        if len(subitems) > 0:
-            items.append(["Orbits", 0, subitems])
+                items.append(["Orbits", 0, subitems])
+        if not self.menubar_shown:
+            if over is not None:
+                items.append(0)
+            items.append(['Show _menubar', 0, self.show_menu])
         scale = self.hud.scale
         scale = LVector3(scale[0], 1.0, scale[1])
         scale[0] *= settings.menu_text_size
@@ -479,9 +536,43 @@ class Gui(object):
 
     def hide(self):
         self.hud.hide()
+        self.hide_menu()
 
     def show(self):
         self.hud.show()
+        self.show_menu()
+
+    def show_hud(self):
+        self.hud.show()
+
+    def hide_hud(self):
+        self.hud.hide()
+
+    def toggle_hud(self):
+        if self.hud.shown:
+            self.hud.hide()
+        else:
+            self.hud.show()
+        settings.show_hud = self.hud.shown
+        self.cosmonium.save_settings()
+
+    def show_menu(self):
+        self.menubar.menu.show()
+        self.menubar_shown = True
+        self.hud.set_y_offset(self.menubar.height)
+
+    def hide_menu(self):
+        self.menubar.menu.hide()
+        self.menubar_shown = False
+        self.hud.set_y_offset(0)
+
+    def toggle_menu(self):
+        if self.menubar_shown:
+            self.hide_menu()
+        else:
+            self.show_menu()
+        settings.show_menubar = self.menubar_shown
+        self.cosmonium.save_settings()
 
     def show_help(self):
         self.help.show()

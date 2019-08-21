@@ -146,6 +146,8 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+show_hud = True
+show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
 help_background = LColor(0.5, 0.5, 0.5, 0.7)

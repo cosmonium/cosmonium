@@ -446,6 +446,9 @@ class Cosmonium(CosmoniumBase):
 
     def update_settings(self):
         self.trigger_check_settings = True
+        self.save_settings()
+
+    def save_settings(self):
         configParser.save()
 
     def toggle_orbits(self):
