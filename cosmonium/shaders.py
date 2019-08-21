@@ -6,6 +6,7 @@ from panda3d.core import Shader, ShaderAttrib, LVector3d, LVector4d
 from .cache import create_path_for
 from . import settings
 
+from math import asin
 import hashlib
 import os
 
@@ -1846,35 +1847,54 @@ class ShaderSphereShadow(ShaderShadow):
     world_vertex = True
     model_vertex = True
     max_occluders = 4
+    far_sun = True
     def get_id(self):
         return "ss"
 
     def fragment_uniforms(self, code):
-        code.append("uniform vec3 star_center;")
-        code.append("uniform float star_radius;")
+        if self.far_sun:
+            code.append("uniform vec3 vector_to_star;")
+            code.append("uniform float star_dist_radius_ratio;")
+            code.append("uniform float star_ar;")
+        else:
+            code.append("uniform vec3 star_center;")
+            code.append("uniform float star_radius;")
         code.append("uniform vec3 occluder_centers[%d];" % self.max_occluders)
         code.append("uniform float occluder_radii[%d];" % self.max_occluders)
         code.append("uniform int nb_of_occluders;")
 
     def fragment_shader(self, code):
-        code.append("vec3 star_local = star_center - world_vertex;")
-        code.append("float aa = dot(star_local, star_local);")
+        if self.far_sun:
+            code.append("float aa = star_dist_radius_ratio * star_dist_radius_ratio;")
+        else:
+            code.append("vec3 star_local = star_center - world_vertex;")
+            code.append("float aa = dot(star_local, star_local);")
         code.append("for (int i = 0; i < nb_of_occluders; i++) {")
         code.append("  vec3 occluder_local = occluder_centers[i] - world_vertex;")
         code.append("  float occluder_radius = occluder_radii[i];")
         code.append("  float bb = dot(occluder_local, occluder_local);")
-        code.append("  float ab = dot(star_local, occluder_local);")
+        if self.far_sun:
+            code.append("  float ab = dot(vector_to_star, occluder_local) * star_dist_radius_ratio;")
+        else:
+            code.append("  float ab = dot(star_local, occluder_local);")
         code.append("  if (ab > 0) { //Apply shadow only if the occluder is between the target and the star")
-        code.append("    float s = ab*ab + star_radius*star_radius*bb + occluder_radius*occluder_radius*aa - aa*bb;")
-        code.append("    float t = 2.0*ab*star_radius*occluder_radius;")
-
+        if self.far_sun:
+            code.append("    float s = ab*ab + bb + occluder_radius*occluder_radius*aa - aa*bb;")
+            code.append("    float t = 2.0*ab*occluder_radius;")
+        else:
+            code.append("    float s = ab*ab + star_radius*star_radius*bb + occluder_radius*occluder_radius*aa - aa*bb;")
+            code.append("    float t = 2.0*ab*star_radius*occluder_radius;")
         code.append("    if ((s + t) < 0.0) {");
         code.append("      //No overlap")
         code.append("    } else if ((s - t) < 0.0) {");
         code.append("      //Partial overlap, use angular radius to calculate actual occlusion")
-        code.append("      float star_ar = asin(star_radius / length(star_local));")
+        if not self.far_sun:
+            code.append("      float star_ar = asin(star_radius / length(star_local));")
         code.append("      float occluder_ar = asin(occluder_radius / length(occluder_local));")
-        code.append("      float separation = acos(min(1.0, dot(normalize(star_local), normalize(occluder_local))));")
+        if self.far_sun:
+            code.append("      float separation = acos(min(1.0, dot(vector_to_star, normalize(occluder_local))));")
+        else:
+            code.append("      float separation = acos(min(1.0, dot(normalize(star_local), normalize(occluder_local))));")
         code.append("      if (separation <= star_ar - occluder_ar) {")
         code.append("        //Occluder fully inside star, attenuation is the ratio of the visible surfaces");
         code.append("        shadow *= 1.0 - (occluder_ar * occluder_ar) / (star_ar * star_ar);");
@@ -1895,10 +1915,15 @@ class ShaderSphereShadow(ShaderShadow):
         star = shape.owner.star
         observer = shape.owner.context.observer._position
         scale = shape.owner.scene_scale_factor
-        star_center = (star._position - observer) * scale
-        star_radius = star.get_apparent_radius() * scale
-        shape.instance.setShaderInput('star_center', star_center)
-        shape.instance.setShaderInput('star_radius', star_radius)
+        if self.far_sun:
+            shape.instance.setShaderInput('vector_to_star', shape.owner.vector_to_star)
+            shape.instance.setShaderInput('star_dist_radius_ratio', shape.owner.distance_to_star / star.get_apparent_radius())
+            shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.distance_to_star))
+        else:
+            star_center = (star._position - observer) * scale
+            star_radius = star.get_apparent_radius() * scale
+            shape.instance.setShaderInput('star_center', star_center)
+            shape.instance.setShaderInput('star_radius', star_radius)
         centers = []
         radii = []
         for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
