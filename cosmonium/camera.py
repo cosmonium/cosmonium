@@ -16,14 +16,13 @@ class CameraBase(object):
         self.cam = cam
         self.camLens = lens
         #Field of view (vertical)
+        self.default_fov = None
         self.fov = None
         #Camera film size
         self.width = 0
         self.height = 0
-        #Focal configuration
+        #Default focal (Fullscreen with default fov), used for the zoom factor
         self.default_focal = None
-        self.focal = None
-        self.min_focal = None
         #Current zoom factor
         self.zoom_factor = 1.0
 
@@ -56,49 +55,49 @@ class CameraBase(object):
         self.width = screen_width
         self.height = screen_height
         self.fov = settings.default_fov
-        self.min_focal = screen_height / tan(settings.max_fov * pi / 180 / 2.0) / 2.0
-        self.max_focal = screen_height / tan(settings.min_fov * pi / 180 / 2.0) / 2.0
-        self.calc_fov()
+        self.do_set_fov(settings.default_fov)
+        self.default_fov = settings.default_fov
+        self.default_focal = self.realCamLens.get_focal_length()
         self.set_film_size(self.width, self.height)
 
-    def calc_fov(self):
-        hfov = 2 * atan(tan(self.fov * pi / 180 / 2) * self.width / self.height) * 180 / pi
+    def do_set_fov(self, fov):
+        hfov = 2 * atan(tan(fov * pi / 180 / 2) * self.width / self.height) * 180 / pi
         self.camLens.set_film_size(self.width, self.height)
-        self.camLens.set_fov(hfov, self.fov)
+        self.camLens.set_fov(hfov, fov)
         self.realCamLens.set_film_size(self.width, self.height)
-        self.realCamLens.set_fov(hfov, self.fov)
-        self.focal = self.camLens.get_focal_length()
-        self.default_focal = self.focal
+        self.realCamLens.set_fov(hfov, fov)
+        self.fov = fov
 
     def set_focal(self, new_focal):
-        if new_focal >= self.min_focal and new_focal <= self.max_focal:
-            self.camLens.set_focal_length(new_focal)
-            self.realCamLens.set_focal_length(new_focal)
-            self.focal = new_focal
-            self.calc_pixel_size()
+        new_fov = atan(self.height / 2 / new_focal) * 2 / pi * 180
+        self.set_fov(new_fov)
 
     def set_film_size(self, width, height):
-        self.camLens.setFilmSize(width, height)
-        self.camLens.set_focal_length(self.focal)
+        focal = self.realCamLens.get_focal_length()
+        self.camLens.set_film_size(width, height)
+        self.camLens.set_focal_length(focal)
         self.realCamLens.setFilmSize(width, height)
-        self.realCamLens.set_focal_length(self.focal)
+        self.realCamLens.set_focal_length(focal)
         self.height = height
         self.width = width
+        self.fov = self.realCamLens.getVfov()
+        self.update_zoom_factor()
         self.calc_pixel_size()
+
+    def update_zoom_factor(self):
+        self.zoom_factor = self.realCamLens.get_focal_length() / self.default_focal
 
     def zoom(self, factor):
         zoom_factor = self.zoom_factor * factor
         new_focal = self.default_focal * zoom_factor
-        if new_focal >= self.min_focal and new_focal <= self.max_focal:
-            self.zoom_factor = zoom_factor
-            self.set_focal(new_focal)
+        self.set_focal(new_focal)
 
     def set_fov(self, new_fov):
         if new_fov >= settings.min_fov and new_fov <= settings.max_fov:
             print("Setting FoV to", new_fov)
-            self.fov = new_fov
-            self.calc_fov()
-            self.set_focal(self.default_focal * self.zoom_factor)
+            self.do_set_fov(new_fov)
+            self.update_zoom_factor()
+            self.calc_pixel_size()
 
     def get_fov(self):
         return self.fov
@@ -106,7 +105,7 @@ class CameraBase(object):
     def calc_pixel_size(self):
         self.height = self.height
         self.ratio = float(self.width) / self.height
-        fov2 = self.realCamLens.getVfov() / 180 * pi / 2.0
+        fov2 =  self.fov / 180 * pi / 2.0
         self.tan_fov2 = tan(fov2)
         self.sqr_tan_fov2 = self.tan_fov2 * self.tan_fov2
         self.inv_tan_fov2 = 1.0 / self.tan_fov2
