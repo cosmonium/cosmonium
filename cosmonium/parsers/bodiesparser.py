@@ -5,7 +5,7 @@ from panda3d.core import LColor, LVector3
 
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..bodies import ReflectiveBody
-from ..surfaces import FlatSurface
+from ..surfaces import FlatSurface, surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..catalogs import objectsDB
 from .. import settings
@@ -48,7 +48,6 @@ class ReflectiveYamlParser(YamlModuleParser):
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
         if data.get('surfaces') is None:
-            surface_name = 'surface'
             shape, extra = ShapeYamlParser.decode(data.get('shape'))
             appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
             lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
@@ -59,7 +58,12 @@ class ReflectiveYamlParser(YamlModuleParser):
                     shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
             shader = BasicShader(lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))
-            surface = FlatSurface(surface_name, category='visible', resolution=None, source=None,
+            category = surfaceCategoryDB.get('visible')
+            if category is None:
+                print("Category 'visible' unknown")
+                category = SurfaceCategory('visible')
+                surfaceCategoryDB.add(category)
+            surface = FlatSurface(name=None, category=category, resolution=None, source=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
             atmosphere.add_shape_object(surface)

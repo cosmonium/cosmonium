@@ -59,6 +59,9 @@ class InfoPanel():
                     titles.append(title)
                     infos.append('')
                     for entry in value:
+                        if len(entry) != 2:
+                            print("Invalid entry for", title, entry)
+                            continue
                         (title, value) = entry
                         titles.append(title)
                         infos.append(value)

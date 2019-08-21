@@ -83,8 +83,8 @@ def circular_rotation_info(rotation):
 def surface(surface):
     texts = []
     name = surface.get_name()
-    if name != '':
-        texts.append(["Name", ])
+    if name is not None and name != '':
+        texts.append(["Name", name])
     if surface.category is not None:
         texts.append(["Category", surface.category.name])
     if surface.resolution is not None:
