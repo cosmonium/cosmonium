@@ -292,7 +292,7 @@ class Gui(object):
 
     def create_main_menu_items(self):
         return (
-       ('_Open URL', 0, lambda:0),
+       ('_Open URL', 0, 0),
        0, # separator
        ('_Quit>Control-Q', 0, self.cosmonium.exit),
        )
@@ -301,10 +301,10 @@ class Gui(object):
         return (
        ('User _guide>Shift-F1', 0, self.show_help),
        0, # separator
-       ('_Credits', 0, lambda:0),
+       ('_Credits', 0, 0),
        ('_License', 0, self.show_license),
        0, # separator
-       ('_About', 0, lambda:0),
+       ('_About', 0, 0),
        )
 
     def create_menubar(self):
@@ -315,6 +315,7 @@ class Gui(object):
         self.menubar = DropDownMenu(
             items=(('_Cosmonium', self.create_main_menu_items),
                    ('_Help', self.create_help_menu_items),),
+            font=self.font,
             sidePad=.75,
             align=DropDownMenu.ALeft,
             baselineOffset=-.35,
@@ -396,6 +397,7 @@ class Gui(object):
         scale[0] *= settings.menu_text_size
         scale[2] *= settings.menu_text_size
         PopupMenu(items=items,
+                  font=self.font,
                   baselineOffset=-.35,
                   scale=scale, itemHeight=1.2, leftPad=.2,
                   separatorHeight=.3,
