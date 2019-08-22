@@ -1938,14 +1938,14 @@ class ShaderSphereShadow(ShaderShadow):
             shape.instance.setShaderInput('star_dist_radius_ratio', shape.owner.distance_to_star / star.get_apparent_radius())
             shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.distance_to_star))
         else:
-            star_center = (star._position - observer) * scale
+            star_center = (star._local_position - observer) * scale
             star_radius = star.get_apparent_radius() * scale
             shape.instance.setShaderInput('star_center', star_center)
             shape.instance.setShaderInput('star_radius', star_radius)
         centers = []
         radii = []
         for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
-            centers.append((shadow_caster.body._position - observer) * scale)
+            centers.append((shadow_caster.body._local_position - observer) * scale)
             radii.append(shadow_caster.body.get_apparent_radius() * scale)
         nb_of_occluders = len(shape.parent.shadows.sphere_shadows.occluders)
         shape.instance.setShaderInput('occluder_centers', centers)
