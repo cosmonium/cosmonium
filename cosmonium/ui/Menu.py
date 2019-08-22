@@ -564,7 +564,7 @@ class PopupMenu(DirectObject):
              t,imgPath,f=item[:3]
              haveSubmenu=type(f) in SEQUENCE_TYPES
              anyArrow|=haveSubmenu
-             anyImage|=bool(imgPath)
+             anyImage|=isinstance(imgPath, bool) or bool(imgPath)
              disabled=not len(f) if haveSubmenu else not callable(f)
              args=item[3:]
              underlinePos=t.find('_')
@@ -632,25 +632,37 @@ class PopupMenu(DirectObject):
                        sct.setZ(arrowZpos)
                        shortcutTexts.append(sct)
                    shortcutText.removeNode()
-             if imgPath:
-                img=loader.loadTexture(imgPath)
-                if disabled:
-                   if imgPath in PopupMenu.grayImages:
-                      img=PopupMenu.grayImages[imgPath]
-                   else:
-                      pnm=PNMImage()
-                      img.store(pnm)
-                      pnm.makeGrayscale(.2,.2,.2)
-                      img=Texture()
-                      img.load(pnm)
-                      PopupMenu.grayImages[imgPath]=img
-                img.setMinfilter(Texture.FTLinearMipmapLinear)
-                img.setWrapU(Texture.WMClamp)
-                img.setWrapV(Texture.WMClamp)
-                CM=CardMaker('')
-                CM.setFrame(-2*imageHalfHeight-leftPad,-leftPad, itemZcenter-imageHalfHeight,itemZcenter+imageHalfHeight)
-                imgCard=b.attachNewNode(CM.generate())
-                imgCard.setTexture(img)
+             if isinstance(imgPath, bool):
+                 if imgPath:
+                    if disabled:
+                        fg=textColorDisabled
+                    else:
+                        fg=textColorReady
+                    tick=NodePath( OnscreenText(
+                         parent=b, text=u"\u2714", font=self.font,
+                         scale=1, fg=fg, align=TextNode.ALeft,
+                      ))
+                    tick.setX(-2*imageHalfHeight-leftPad)
+             elif imgPath:
+                img=loader.loadTexture(imgPath, okMissing=True)
+                if img is not None:
+                    if disabled:
+                       if imgPath in PopupMenu.grayImages:
+                          img=PopupMenu.grayImages[imgPath]
+                       else:
+                          pnm=PNMImage()
+                          img.store(pnm)
+                          pnm.makeGrayscale(.2,.2,.2)
+                          img=Texture()
+                          img.load(pnm)
+                          PopupMenu.grayImages[imgPath]=img
+                    img.setMinfilter(Texture.FTLinearMipmapLinear)
+                    img.setWrapU(Texture.WMClamp)
+                    img.setWrapV(Texture.WMClamp)
+                    CM=CardMaker('')
+                    CM.setFrame(-2*imageHalfHeight-leftPad,-leftPad, itemZcenter-imageHalfHeight,itemZcenter+imageHalfHeight)
+                    imgCard=b.attachNewNode(CM.generate())
+                    imgCard.setTexture(img)
              if underlinePos>-1:
                 oneLineText=t[:underlinePos+1]
                 oneLineText=oneLineText[oneLineText.rfind('\n')+1:]
