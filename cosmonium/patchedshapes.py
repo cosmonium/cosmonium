@@ -913,7 +913,7 @@ class PatchedShapeBase(Shape):
             patch.instanciate_pending = True
             apply_appearance = True
         for patch in self.to_show:
-            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.instance_ready, patch.instance_ready)
+            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.instance_ready, patch.merge_pending, patch.split_pending)
             if patch.instance is not None:
                 #Could happen that the patch has just been removed by the parent in the same batch...
                 self.show_patch(patch)
@@ -944,20 +944,28 @@ class PatchedShapeBase(Shape):
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
             self.merge_patch(patch)
             self.merge_neighbours(patch, update)
-            if patch.visible:
-                self.create_patch_instance(patch, hide=True)
-                apply_appearance = True
-                patch.merge_pending = True
-                patch.instanciate_pending = True
-            else:
-                for linked_object in self.linked_objects:
-                    linked_object.merge_patch(patch)
+            if patch.shown and patch.split_pending:
                 for child in patch.children:
                     self.remove_patch_instance(child)
                     child.parent_split_pending = False
                     child.instanciate_pending = False
                 patch.remove_children()
-            patch.split_pending = False
+                patch.split_pending = False
+            else:
+                if patch.visible:
+                    self.create_patch_instance(patch, hide=True)
+                    apply_appearance = True
+                    patch.merge_pending = True
+                    patch.instanciate_pending = True
+                else:
+                    for linked_object in self.linked_objects:
+                        linked_object.merge_patch(patch)
+                    for child in patch.children:
+                        self.remove_patch_instance(child)
+                        child.parent_split_pending = False
+                        child.instanciate_pending = False
+                    patch.remove_children()
+                patch.split_pending = False
         self.max_lod = self.new_max_lod
         for patch in update:
             patch.update_instance(self)
@@ -1007,7 +1015,7 @@ class PatchedShapeBase(Shape):
         if patch.merge_pending: print(pad, '  Merge pending')
         if patch.parent_split_pending: print(pad, '  Parent split pending')
         if patch.instanciate_pending: print(pad, '  Instanciate pending')
-        if not patch.instance_ready: print(pad, '  Instance ready')
+        if not patch.instance_ready: print(pad, '  Instance not ready')
         if patch.jobs_pending != 0: print(pad, '  Jobs', patch.jobs_pending)
         #print(pad, '  Distance', patch.distance)
         print(pad, "  Tesselation", '-'.join(map(str, patch.tesselation_outer_level)))
