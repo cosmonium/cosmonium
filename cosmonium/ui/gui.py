@@ -25,6 +25,7 @@ from .textwindow import TextWindow
 from .infopanel import InfoPanel
 
 import sys
+from cosmonium.bodyclass import bodyClasses
 
 try:
     if sys.version_info[0] < 3:
@@ -293,17 +294,85 @@ class Gui(object):
     def create_main_menu_items(self):
         return (
        ('_Open URL', 0, 0),
-       0, # separator
+       0,
        ('_Quit>Control-Q', 0, self.cosmonium.exit),
        )
 
     def create_select_menu_items(self):
         has_selected = self.cosmonium.selected is not None
         return (
-            ('_Info>F1', True, self.show_info if has_selected else 0),
+            ('_Info>F1', 0, self.show_info if has_selected else 0),
             ('_Goto>G', 0, self.autopilot.go_to_object if has_selected else 0),
             ('_Follow>F', 0, self.cosmonium.follow_selected if has_selected else 0),
             ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0)
+        )
+
+    def create_render_menu_items(self):
+        labels = (
+                  ('Galaxies>E', bodyClasses.get_show_label('galaxy'), self.cosmonium.toggle_label, 'galaxy'),
+                  #('Globular>Shift-E', self.toggle_label, 'globular'),
+                  ('Stars>B', bodyClasses.get_show_label('star'), self.cosmonium.toggle_label, 'star'),
+                  ('Planets>P', bodyClasses.get_show_label('planet'), self.cosmonium.toggle_label, 'planet'),
+                  ('Dwarf planets>Shift-P', bodyClasses.get_show_label('dwarfplanet'), self.cosmonium.toggle_label, 'dwarfplanet'),
+                  ('Moons>M', bodyClasses.get_show_label('moon'), self.cosmonium.toggle_label, 'moon'),
+                  ('Minor Moons>Shift-M', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
+                  ('Comets>Shift-W', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
+                  ('Asteroids>W', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
+                  ('Spacecrafts>N', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
+                  ('Constellations>=', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
+                  #('Locations>&', self.toggle_label, 'location'),
+        )
+
+        orbits = (
+                  ('All orbits>O', settings.show_orbits, self.cosmonium.toggle_orbits),
+                  0,
+                  ('Stars>Shift-Control-B', bodyClasses.get_show_orbit('star'), self.cosmonium.toggle_orbit, 'star'),
+                  ('Planets>Shift-Control-P', bodyClasses.get_show_orbit('planet'), self.cosmonium.toggle_orbit, 'planet'),
+                  ('Dwarf planets>Shift-Control-D', bodyClasses.get_show_orbit('dwarfplanet'), self.cosmonium.toggle_orbit, 'dwarfplanet'),
+                  ('Moons>Shift-control-M', bodyClasses.get_show_orbit('moon'), self.cosmonium.toggle_orbit, 'moon'),
+                  ('Minor moons>Shift-Control-O', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
+                  ('Comets>Shift-Control-C', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
+                  ('Asteroids>Shift-Control-A', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
+                  ('Spacecrafts>Shift-Control-S', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
+                  )
+
+        bodies = (
+                  ('Galaxies>U', bodyClasses.get_show('galaxy'), self.cosmonium.toggle_body_class, 'galaxy'),
+                  #('shift-u', self.cosmonium.toggle_globulars)
+                  #('^', self.cosmonium.toggle_nebulae)
+                  )
+
+        options = (
+                   ('Atmospheres>Control-A', settings.show_atmospheres, self.cosmonium.toggle_atmosphere),
+                   ('Clouds>I', settings.show_clouds, self.cosmonium.toggle_clouds),
+                   #('control-e', self.toggle_shadows)
+                   #('control-l', self.cosmonium.toggle_nightsides)
+                   #('control-t', self.cosmonium.toggle_comet_tails)
+                   )
+
+        guides = (
+                   ('Boundaries>Control-B', settings.show_boundaries, self.cosmonium.toggle_boundaries),
+                   ('Asterisms>/', settings.show_asterisms, self.cosmonium.toggle_asterisms),
+                   )
+
+        grids = (
+                 ('Equatorial>;', settings.show_equatorial_grid, self.cosmonium.toggle_grid_equatorial),
+                 ('Ecliptic>:', settings.show_ecliptic_grid, self.cosmonium.toggle_grid_ecliptic),
+                 )
+
+        advanced = (
+                    ('Rotation axis>Shift-A', settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
+                    ('Reference frame>Shift-Control-R', settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
+                    )
+
+        return (
+            ('_Labels', 0, labels),
+            ('_Orbits', 0, orbits),
+            ('_Bodies', 0, bodies),
+            ('O_ptions', 0, options),
+            ('_Grids', 0, grids),
+            ('G_uides', 0, guides),
+            ('_Advanced', 0, advanced),
         )
 
     def create_help_menu_items(self):
@@ -324,6 +393,7 @@ class Gui(object):
         self.menubar = DropDownMenu(
             items=(('_Cosmonium', self.create_main_menu_items),
                    ('_Select', self.create_select_menu_items),
+                   ('_Render', self.create_render_menu_items),
                    ('_Help', self.create_help_menu_items),),
             font=self.font,
             sidePad=.75,
