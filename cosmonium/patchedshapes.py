@@ -1337,12 +1337,16 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
 
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
-        if self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.01:
-            if self.appearance.texture.can_split(patch):
-                return True
-            else:
-                apparent_vertex_size = apparent_patch_size / patch.density
-                return apparent_vertex_size > self.max_vertex_size
+        if self.patch_size > 0:
+            if apparent_patch_size > self.patch_size * 1.01:
+                if self.appearance.texture.can_split(patch):
+                    return True
+                else:
+                    apparent_vertex_size = apparent_patch_size / patch.density
+                    return apparent_vertex_size > self.max_vertex_size
+        else:
+            apparent_vertex_size = apparent_patch_size / patch.density
+            return apparent_vertex_size > self.max_vertex_size
 
 class VertexSizePatchLodControl(PatchLodControl):
     def __init__(self, max_vertex_size, density=32, max_lod=100):
