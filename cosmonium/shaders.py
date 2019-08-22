@@ -81,6 +81,24 @@ class ShaderBase(object):
         self.update_shader_patch(shape, patch, appearance)
 
 class AutoShader(ShaderBase):
+    def set_instance_control(self, instance_control):
+        print("AutoShader: set_instance_control not supported")
+
+    def set_scattering(self, scattering):
+        print("AutoShader: set_scattering not supported")
+
+    def add_shadows(self, shadows):
+        print("AutoShader: add_shadows not supported")
+
+    def remove_shadows(self, shape, appearance, shadow):
+        pass
+
+    def clear_shadows(self, shape, appearance):
+        pass
+
+    def add_after_effect(self, after_effect):
+        print("AutoShader: add_after_effect not supported")
+
     def apply(self, shape, appearance):
         pass
 
