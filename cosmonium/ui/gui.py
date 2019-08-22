@@ -298,6 +298,20 @@ class Gui(object):
        ('_Quit>Control-Q', 0, self.cosmonium.exit),
        )
 
+    def create_time_menu_items(self):
+        return (
+                ('Increase rate 10x>L', 0, self.time.accelerate_time, 2.0),
+                ('Increase rate 2x>shift-L', 0, self.time.accelerate_time, 10.0),
+                ('Decrease rate 10x>K', 0, self.time.slow_time, 2.0),
+                ('Decrease rate 2x>shift-K', 0, self.time.slow_time, 10.0),
+                ('Reverse time>J', 0, self.time.invert_time),
+                ('Freeze time>Space', 0, self.time.toggle_freeze_time),
+                ('Set real time>\\', 0, self.time.set_real_time),
+                0,
+                ('Set current time>!', 0, self.time.set_current_date),
+                ('Set J2000 epoch>Shift-J', 0, self.time.set_J2000_date),
+                )
+
     def create_select_menu_items(self):
         has_selected = self.cosmonium.selected is not None
         return (
@@ -393,6 +407,7 @@ class Gui(object):
         self.menubar = DropDownMenu(
             items=(('_Cosmonium', self.create_main_menu_items),
                    ('_Select', self.create_select_menu_items),
+                   ('_Time', self.create_time_menu_items),
                    ('_Render', self.create_render_menu_items),
                    ('_Help', self.create_help_menu_items),),
             font=self.font,
