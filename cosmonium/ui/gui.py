@@ -166,10 +166,10 @@ class Gui(object):
 
         event_ctrl.accept('shift-j', self.time.set_J2000_date)
         event_ctrl.accept('!', self.time.set_current_date)
-        event_ctrl.accept('l', self.time.accelerate_time, [2.0])
-        event_ctrl.accept('shift-l', self.time.accelerate_time, [10.0])
-        event_ctrl.accept('k', self.time.slow_time, [2.0])
-        event_ctrl.accept('shift-k', self.time.slow_time, [10.0])
+        event_ctrl.accept('l', self.time.accelerate_time, [10.0])
+        event_ctrl.accept('shift-l', self.time.accelerate_time, [2.0])
+        event_ctrl.accept('k', self.time.slow_time, [10.0])
+        event_ctrl.accept('shift-k', self.time.slow_time, [2.0])
         event_ctrl.accept('j', self.time.invert_time)
         event_ctrl.accept('space', self.time.toggle_freeze_time)
         event_ctrl.accept('\\', self.time.set_real_time)
@@ -300,10 +300,10 @@ class Gui(object):
 
     def create_time_menu_items(self):
         return (
-                ('Increase rate 10x>L', 0, self.time.accelerate_time, 2.0),
-                ('Increase rate 2x>shift-L', 0, self.time.accelerate_time, 10.0),
-                ('Decrease rate 10x>K', 0, self.time.slow_time, 2.0),
-                ('Decrease rate 2x>shift-K', 0, self.time.slow_time, 10.0),
+                ('Increase rate 10x>L', 0, self.time.accelerate_time, 10.0),
+                ('Increase rate 2x>shift-L', 0, self.time.accelerate_time, 2.0),
+                ('Decrease rate 10x>K', 0, self.time.slow_time, 10.0),
+                ('Decrease rate 2x>shift-K', 0, self.time.slow_time, 2.0),
                 ('Reverse time>J', 0, self.time.invert_time),
                 ('Freeze time>Space', 0, self.time.toggle_freeze_time),
                 ('Set real time>\\', 0, self.time.set_real_time),
