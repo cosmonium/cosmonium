@@ -293,10 +293,11 @@ class Gui(object):
 
     def create_main_menu_items(self):
         return (
-       ('_Open URL', 0, 0),
-       0,
-       ('_Quit>Control-Q', 0, self.cosmonium.exit),
-       )
+                ('Save URL>Control-C', 0, self.save_celurl),
+                ('Load URL>Control-V', 0, self.load_celurl),
+                0,
+                ('_Quit>Control-Q', 0, self.cosmonium.exit),
+                )
 
     def create_time_menu_items(self):
         return (
@@ -316,9 +317,13 @@ class Gui(object):
         has_selected = self.cosmonium.selected is not None
         return (
             ('_Info>F1', 0, self.show_info if has_selected else 0),
+            0,
             ('_Goto>G', 0, self.autopilot.go_to_object if has_selected else 0),
             ('_Follow>F', 0, self.cosmonium.follow_selected if has_selected else 0),
-            ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0)
+            ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0),
+            0,
+            ('_Center on>C', 0, self.autopilot.center_on_object if has_selected else 0),
+            ('_Track>Y', 0, self.cosmonium.track_selected if has_selected else 0),
         )
 
     def create_render_menu_items(self):
@@ -375,6 +380,9 @@ class Gui(object):
                  )
 
         advanced = (
+                    ('Decrease ambient>{', 0, self.cosmonium.incr_ambient, -0.05),
+                    ('Increase ambient>}', 0, self.cosmonium.incr_ambient, +0.05),
+                    0,
                     ('Rotation axis>Shift-A', settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
                     ('Reference frame>Shift-Control-R', settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
                     )
@@ -388,6 +396,11 @@ class Gui(object):
             ('G_uides', 0, guides),
             ('_Advanced', 0, advanced),
         )
+
+    def create_debug_menu_items(self):
+        return (
+                ('Instant movement>Control-J', settings.debug_jump, self.autopilot.toggle_jump),
+                )
 
     def create_help_menu_items(self):
         return (
@@ -409,6 +422,7 @@ class Gui(object):
                    ('_Select', self.create_select_menu_items),
                    ('_Time', self.create_time_menu_items),
                    ('_Render', self.create_render_menu_items),
+                   ('_Debug', self.create_debug_menu_items),
                    ('_Help', self.create_help_menu_items),),
             font=self.font,
             sidePad=.75,
