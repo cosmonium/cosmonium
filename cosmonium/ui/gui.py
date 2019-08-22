@@ -297,6 +297,15 @@ class Gui(object):
        ('_Quit>Control-Q', 0, self.cosmonium.exit),
        )
 
+    def create_select_menu_items(self):
+        has_selected = self.cosmonium.selected is not None
+        return (
+            ('_Info>F1', True, self.show_info if has_selected else 0),
+            ('_Goto>G', 0, self.autopilot.go_to_object if has_selected else 0),
+            ('_Follow>F', 0, self.cosmonium.follow_selected if has_selected else 0),
+            ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0)
+        )
+
     def create_help_menu_items(self):
         return (
        ('User _guide>Shift-F1', 0, self.show_help),
@@ -314,6 +323,7 @@ class Gui(object):
         scale[2] *= settings.menu_text_size
         self.menubar = DropDownMenu(
             items=(('_Cosmonium', self.create_main_menu_items),
+                   ('_Select', self.create_select_menu_items),
                    ('_Help', self.create_help_menu_items),),
             font=self.font,
             sidePad=.75,
