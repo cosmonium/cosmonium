@@ -63,6 +63,29 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
         prim.reserve_num_vertices(nb_vertices)
     return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom)
 
+def BoundingBoxGeom(box):
+    (path, node) = empty_node('bb')
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
+    node.add_geom(geom)
+    for i in range(8):
+        gvw.set_data3(box.get_point(i))
+
+    prim.add_vertices(0, 4, 5)
+    prim.add_vertices(0, 5, 1)
+    prim.add_vertices(4, 6, 7)
+    prim.add_vertices(4, 7, 5)
+    prim.add_vertices(6, 2, 3)
+    prim.add_vertices(6, 3, 7)
+    prim.add_vertices(2, 0, 1)
+    prim.add_vertices(2, 1, 3)
+    prim.add_vertices(1, 5, 7)
+    prim.add_vertices(1, 7, 3)
+    prim.add_vertices(2, 6, 4)
+    prim.add_vertices(2, 4, 0)
+
+    geom.add_primitive(prim)
+    return path
+
 def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=True):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
@@ -801,18 +824,18 @@ def SquaredDistanceSquarePatchNormal(x0, y0, x1, y1,
 
 def SquaredDistanceSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
                                    x_inverted=False, y_inverted=False, xy_swap=False):
-    a = SquaredDistanceSquarePatchPoint(radius, 0, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    b = SquaredDistanceSquarePatchPoint(radius, 1, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    c = SquaredDistanceSquarePatchPoint(radius, 1, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    d = SquaredDistanceSquarePatchPoint(radius, 0, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    m = SquaredDistanceSquarePatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    points = []
+    for i in (0.0, 0.5, 1.0):
+        for j in (0.0, 0.5, 1.0):
+            points.append(SquaredDistanceSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
 def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
@@ -885,18 +908,18 @@ def NormalizedSquarePatchNormal(x0, y0, x1, y1,
 
 def NormalizedSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
                               x_inverted=False, y_inverted=False, xy_swap=False):
-    a = NormalizedSquarePatchPoint(radius, 0, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    b = NormalizedSquarePatchPoint(radius, 1, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    c = NormalizedSquarePatchPoint(radius, 1, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    d = NormalizedSquarePatchPoint(radius, 0, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    m = NormalizedSquarePatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    points = []
+    for i in (0.0, 0.5, 1.0):
+        for j in (0.0, 0.5, 1.0):
+            points.append(NormalizedSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
 def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
     format = GeomVertexFormat.getV3n3cpt2()

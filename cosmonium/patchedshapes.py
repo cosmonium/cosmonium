@@ -2,15 +2,42 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode
-from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LQuaterniond, LQuaternion, LMatrix4
+from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4
 from panda3d.core import NodePath, BoundingBox
-
+from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from .shapes import Shape
 from .textures import TexCoord
 from . import geometry
 from . import settings
 
 from math import cos, sin, pi, sqrt, copysign, log
+
+class BoundingBoxShape():
+    state = None
+    def __init__(self, box):
+        self.box = box
+        self.instance = None
+
+    def create_instance(self):
+        if self.instance is not None: return
+        self.instance = geometry.BoundingBoxGeom(self.box)
+        if BoundingBoxShape.state is None:
+            sa = ShaderAttrib.make()
+            sa.set_shader_auto(True, 1000)
+            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(1, 0, 0, 1)),#0.3, 1.0, 0.5, 1.0)),
+                                                      RenderModeAttrib.make(RenderModeAttrib.M_wireframe),
+                                                      CullFaceAttrib.make(CullFaceAttrib.M_cull_clockwise),
+                                                      sa,
+                                                      1000)
+            print(BoundingBoxShape.state.getOverride(ShaderAttrib))
+        self.instance.set_state(self.state)
+        self.instance.set_shader_auto(True)
+        return self.instance
+
+    def remove_instance(self):
+        if self.instance is not None:
+            self.instance.remove_node()
+            self.instance = None
 
 class PatchBase(Shape):
     NORTH = 0
@@ -397,6 +424,7 @@ class SquarePatchBase(Patch):
         self.bounds.xform(self.rotations_mat[self.face])
         centre = self.create_centre(x, y, -(self.average_height - 1))
         self.centre = self.rotations[self.face].xform(centre) * self.radius
+        self.bounds_shape = None
 
     def face_normal(self, x, y):
         return None
@@ -454,9 +482,9 @@ class SquarePatchBase(Patch):
         self.orientation = self.rotations[self.face]
         self.instance.setQuat(LQuaternion(*self.orientation))
         if settings.debug_lod_bb:
-            self.instance.node().setBounds(self.bounds)
-        else:
-            self.instance.node().setBounds(OmniBoundingVolume())
+            self.bounds_shape = BoundingBoxShape(self.bounds)
+            self.bounds_shape.create_instance()
+        self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
 
     def update_instance(self, parent):
@@ -468,6 +496,11 @@ class SquarePatchBase(Patch):
             else:
                 parent.remove_patch_instance(self)
                 parent.create_patch_instance(self, hide=True)
+
+    def remove_instance(self):
+        Patch.remove_instance(self)
+        if self.bounds_shape is not None:
+            self.bounds_shape.remove_instance()
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
@@ -702,7 +735,8 @@ class PatchedShapeBase(Shape):
             self.patches.append(patch)
             patch.shown = not hide
             if settings.debug_lod_show_tb: patch.instance.showTightBounds()
-            if settings.debug_lod_show_bb: patch.instance.showBounds()
+            if settings.debug_lod_show_bb:
+                patch.bounds_shape.instance.reparent_to(self.instance)
         else:
             if not hide:
                 self.show_patch(patch)
@@ -1038,22 +1072,26 @@ class PatchedShapeBase(Shape):
 class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
-    limit_far = True
+    #limit_far = True
     def __init__(self, patch_size_from_texture=True, lod_control=None):
         PatchedShapeBase.__init__(self, lod_control)
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
         if settings.offset_body_center or settings.shift_patch_origin:
-            offset = LVector3d()
             if settings.offset_body_center:
-                offset += owner.model_body_center_offset
+                body_offset = owner.model_body_center_offset
+            else:
+                body_offset = LVector3d()
             for patch in self.patches:
                 if settings.shift_patch_origin:
-                    patch_offset = offset + patch.normal * patch.offset
-                    patch.instance.setPos(*(patch_offset))
+                    patch_offset = body_offset + patch.normal * patch.offset
                 else:
-                    patch.instance.setPos(*(offset))
+                    patch_offset = body_offset
+                patch.instance.setPos(*patch_offset)
+                if settings.debug_lod_show_bb:
+                    if patch.bounds_shape is not None and patch.bounds_shape.instance is not None:
+                        patch.bounds_shape.instance.setPos(*patch_offset)
                 if False and self.parent.appearance.tex_transform:
                     for i in range(self.parent.appearance.nb_textures):
                         name = 'texmat_%d' % i
@@ -1248,7 +1286,11 @@ class PatchedSquareShapeBase(PatchedShape):
         if self.instance is None:
             return None
         (face, x, y) = coord
-        return self._find_patch_at(self.root_patches[face], x, y)
+        if face < len(self.root_patches):
+            return self._find_patch_at(self.root_patches[face], x, y)
+        else:
+            print("Unknown face", face)
+            return None
 
 class NormalizedSquareShape(PatchedSquareShapeBase):
     def create_patch(self, parent, lod, face, x, y, average_height=1.0):

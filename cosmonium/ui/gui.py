@@ -269,6 +269,7 @@ class Gui(object):
 
     def toggle_lod_freeze(self):
         settings.debug_lod_freeze = not settings.debug_lod_freeze
+        settings.auto_scale = not settings.auto_scale
 
     def toggle_bb(self):
         settings.debug_lod_show_bb = not settings.debug_lod_show_bb
