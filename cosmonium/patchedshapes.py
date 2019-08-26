@@ -88,12 +88,20 @@ class PatchBase(Shape):
         Shape.check_settings(self)
         if self.instance is not None:
             if settings.debug_lod_show_bb:
-                self.instance.show_bounds()
+                if self.bounds_shape.instance is None:
+                    self.bounds_shape.create_instance()
+                    #TODO: This is more that ugly...
+                    self.bounds_shape.instance.reparent_to(self.surface.shape.instance)
             else:
-                self.instance.hide_bounds()
+                self.bounds_shape.remove_instance()
 
     def update_instance(self, shape):
         pass
+
+    def remove_instance(self):
+        Shape.remove_instance(self)
+        if self.bounds_shape is not None:
+            self.bounds_shape.remove_instance()
 
     def add_child(self, child):
         child.parent = self
@@ -280,6 +288,7 @@ class SpherePatch(Patch):
                                                offset=offset)
         else:
             self.bounds = geometry.halfSphereAABB(1.0, self.sector == 1, offset)
+        self.bounds_shape = BoundingBoxShape(self.bounds)
         self.centre =  geometry.UVPatchPoint(1.0,
                                              0.5, 0.5,
                                              self.x0, self.y0,
@@ -320,10 +329,10 @@ class SpherePatch(Patch):
                                                    offset=self.offset)
             self.instance = cache[patch_id]
         self.instance.setPythonTag('patch', self)
-        if settings.debug_lod_bb:
-            self.instance.node().setBounds(self.bounds)
-        else:
-            self.instance.node().setBounds(OmniBoundingVolume())
+        if settings.debug_lod_show_bb:
+            self.bounds_shape = BoundingBoxShape(self.bounds)
+            self.bounds_shape.create_instance()
+        self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
@@ -426,6 +435,7 @@ class SquarePatchBase(Patch):
         offset = self.offset - (self.average_height - 1)
         self.bounds = self.create_bounding_volume(x, y, offset)
         self.bounds.xform(self.rotations_mat[self.face])
+        self.bounds_shape = BoundingBoxShape(self.bounds)
         centre = self.create_centre(x, y, -(self.average_height - 1))
         self.centre = self.rotations[self.face].xform(centre) * self.average_radius
 
@@ -484,8 +494,7 @@ class SquarePatchBase(Patch):
         cache[patch_id].instanceTo(self.instance)
         self.orientation = self.rotations[self.face]
         self.instance.setQuat(LQuaternion(*self.orientation))
-        if settings.debug_lod_bb:
-            self.bounds_shape = BoundingBoxShape(self.bounds)
+        if settings.debug_lod_show_bb:
             self.bounds_shape.create_instance()
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
@@ -499,11 +508,6 @@ class SquarePatchBase(Patch):
             else:
                 parent.remove_patch_instance(self)
                 parent.create_patch_instance(self, hide=True)
-
-    def remove_instance(self):
-        Patch.remove_instance(self)
-        if self.bounds_shape is not None:
-            self.bounds_shape.remove_instance()
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
@@ -675,6 +679,9 @@ class PatchedShapeBase(Shape):
     def check_settings(self):
         for patch in self.patches:
             patch.check_settings()
+        if self.frustum is not None and not settings.debug_lod_frustum:
+            self.frustum.remove_node()
+            self.frustum = None
 
     def set_lod_control(self, lod_control):
         self.lod_control = lod_control
@@ -741,8 +748,7 @@ class PatchedShapeBase(Shape):
                 patch.instance.stash()
             self.patches.append(patch)
             patch.shown = not hide
-            if settings.debug_lod_show_tb: patch.instance.showTightBounds()
-            if settings.debug_lod_show_bb and patch.bounds_shape is not None:
+            if patch.bounds_shape.instance is not None:
                 patch.bounds_shape.instance.reparent_to(self.instance)
         else:
             if not hide:
@@ -1099,9 +1105,8 @@ class PatchedShape(PatchedShapeBase):
                 else:
                     patch_offset = body_offset
                 patch.instance.setPos(*patch_offset)
-                if settings.debug_lod_show_bb:
-                    if patch.bounds_shape is not None and patch.bounds_shape.instance is not None:
-                        patch.bounds_shape.instance.setPos(*patch_offset)
+                if patch.bounds_shape.instance is not None:
+                    patch.bounds_shape.instance.setPos(*patch_offset)
                 if False and self.parent.appearance.tex_transform:
                     for i in range(self.parent.appearance.nb_textures):
                         name = 'texmat_%d' % i

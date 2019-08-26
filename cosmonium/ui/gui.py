@@ -126,7 +126,8 @@ class Gui(object):
         event_ctrl.accept('shift-f8', self.dump_object_info)
         event_ctrl.accept('shift-control-f8', self.dump_object_info_2)
         event_ctrl.accept('control-f8', self.toggle_split_merge_debug)
-        event_ctrl.accept('control-f9', self.toggle_bb)
+        event_ctrl.accept('shift-f9', self.toggle_bb)
+        event_ctrl.accept('control-f9', self.toggle_frustum)
         #event_ctrl.accept('f8', self.cosmonium.universe.dumpOctree)
         #event_ctrl.accept('f9', self.cosmonium.universe.addPlanes)
         event_ctrl.accept('f10', self.cosmonium.save_screenshot)
@@ -273,6 +274,10 @@ class Gui(object):
 
     def toggle_bb(self):
         settings.debug_lod_show_bb = not settings.debug_lod_show_bb
+        self.cosmonium.trigger_check_settings = True
+
+    def toggle_frustum(self):
+        settings.debug_lod_frustum = not settings.debug_lod_frustum
         self.cosmonium.trigger_check_settings = True
 
     def dump_object_info(self):
@@ -438,7 +443,8 @@ class Gui(object):
                 ('Dump LOD tree>Shift-F8', 0, self.dump_object_info),
                 ('Dump LOD flat tree>Shift-Control-F8', 0, self.dump_object_info_2),
                 ('Log LOD events>Control-F8', settings.debug_lod_split_merge, self.toggle_split_merge_debug),
-                ('Show LOD bounding boxes>Control-F9', settings.debug_lod_show_bb, self.toggle_bb),
+                ('Show LOD bounding boxes>Shift-F9', settings.debug_lod_show_bb, self.toggle_bb),
+                ('Show LOD culling frustum>Control-F9', settings.debug_lod_frustum, self.toggle_frustum),
                 0,
                 ('Show octree stats>F7', 0, self.cosmonium.universe.dumpOctreeStats),
                 ('Dump octree>Shift-F7', 0, self.cosmonium.universe.dumpOctree),

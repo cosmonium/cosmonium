@@ -92,12 +92,10 @@ shader_noise=True
 c_noise=True
 
 debug_vt = False
-debug_lod_show_tb = False
-debug_lod_show_bb = True
+debug_lod_show_bb = False
 debug_lod_freeze = False
 debug_lod_split_merge = False
-debug_lod_frustum = True
-debug_lod_bb = True
+debug_lod_frustum = False
 dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False

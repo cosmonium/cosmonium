@@ -5,7 +5,7 @@ from panda3d.core import OmniBoundingVolume, BoundingBox
 from panda3d.core import LPoint3d, LVector3, LVector4
 from panda3d.core import NodePath
 
-from .patchedshapes import PatchBase, PatchedShapeBase
+from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape
 from .textures import TexCoord
 from . import geometry
 from . import settings
@@ -81,10 +81,9 @@ class Tile(PatchBase):
         self.holder = NodePath('tile')
         self.holder.set_pos(*self.centre)
         self.holder.set_scale(*self.get_scale())
-        if settings.debug_lod_bb:
-            self.holder.node().setBounds(self.local_bounds)
-        else:
-            self.holder.node().setBounds(OmniBoundingVolume())
+        if settings.debug_lod_show_bb:
+            self.bounds_shape.create_instance()
+        self.holder.node().setBounds(OmniBoundingVolume())
         self.holder.node().setFinal(1)
 
     def create_instance(self):
