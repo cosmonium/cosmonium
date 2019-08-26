@@ -218,14 +218,14 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     sin_s = sin(2*pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
-    x = cos_s * sin_r
-    y = sin_s * sin_r
-    z = cos_r
+    x = cos_s * sin_r * radius
+    y = sin_s * sin_r * radius
+    z = cos_r * radius
 
     if offset is not None:
-        x = (x - normal[0] * offset) * radius
-        y = (y - normal[1] * offset) * radius
-        z = (z - normal[2] * offset) * radius
+        x = x - normal[0] * offset
+        y = y - normal[1] * offset
+        z = z - normal[2] * offset
 
     return LVector3d(x, y, z)
 
@@ -270,7 +270,9 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
                     u = 1.0 - u
                 gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f((x - normal[0] * offset) * radius, (y - normal[1] * offset) * radius, (z - normal[2] * offset) * radius)
+                gvw.add_data3f(x * radius - normal[0] * offset,
+                               y * radius - normal[1] * offset,
+                               z * radius - normal[2] * offset)
             else:
                 gvw.add_data3f(x * radius, y * radius, z * radius)
             gnw.add_data3f(x, y, z)
@@ -308,19 +310,24 @@ def halfSphereAABB(height, positive, offset):
         max_points = LPoint3(1, offset, 1)
     return BoundingBox(min_points, max_points)
 
-def UVPatchAABB(radius, x0, y0, x1, y1, offset):
-    a = UVPatchPoint(radius, 0, 0, x0, y0, x1, y1, offset)
-    b = UVPatchPoint(radius, 1, 0, x0, y0, x1, y1, offset)
-    c = UVPatchPoint(radius, 1, 1, x0, y0, x1, y1, offset)
-    d = UVPatchPoint(radius, 0, 1, x0, y0, x1, y1, offset)
-    m = UVPatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+def UVPatchAABB(min_radius, max_radius, x0, y0, x1, y1, offset):
+    points = []
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(UVPatchPoint(radius, i, j, x0, y0, x1, y1, offset))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
 def UVPatchedSphere(radius=1, rings=8, sectors=16, lod=2):
     #LOD = 1 : Two half sphere

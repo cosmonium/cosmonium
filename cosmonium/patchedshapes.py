@@ -59,6 +59,7 @@ class PatchBase(Shape):
         self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
         self.flat_coord = None
         self.bounds = None
+        self.bounds_shape = None
         self.tesselation_inner_level = density
         self.tesselation_outer_level = [density, density, density, density]
         self.neighbours = [[], [], [], []]
@@ -238,8 +239,8 @@ class SpherePatch(Patch):
     patch_cache = {}
     coord = TexCoord.Cylindrical
 
-    def __init__(self, parent, lod, density, sector, ring, radius, average_height):
-        Patch.__init__(self, parent, lod, density, radius)
+    def __init__(self, parent, lod, density, sector, ring, surface, average_height):
+        Patch.__init__(self, parent, lod, density, surface)
         self.face = -1
         self.sector = sector
         self.ring = ring
@@ -260,8 +261,8 @@ class SpherePatch(Patch):
         self.lod_scale_x = 1.0 / self.s_div
         self.lod_scale_y = 1.0 / self.r_div
         self.normal = geometry.UVPatchNormal(self.x0, self.y0, self.x1, self.y1)
-        long_scale = 2 * pi * radius * 1000.0
-        lat_scale = pi * radius * 1000.0
+        long_scale = 2 * pi * self.average_radius * 1000.0
+        lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale
         long1 = self.x1 * long_scale
         lat0 = self.y0 * lat_scale
@@ -272,7 +273,9 @@ class SpherePatch(Patch):
                                     (lat1 - lat0))
         offset = self.offset - (self.average_height - 1)
         if self.lod > 0:
-            self.bounds = geometry.UVPatchAABB(1.0,
+            min_radius = self.surface.get_min_radius() / self.average_radius
+            max_radius = self.surface.get_max_radius() / self.average_radius
+            self.bounds = geometry.UVPatchAABB(min_radius, max_radius,
                                                self.x0, self.y0, self.x1, self.y1,
                                                offset=offset)
         else:
@@ -425,7 +428,6 @@ class SquarePatchBase(Patch):
         self.bounds.xform(self.rotations_mat[self.face])
         centre = self.create_centre(x, y, -(self.average_height - 1))
         self.centre = self.rotations[self.face].xform(centre) * self.average_radius
-        self.bounds_shape = None
 
     def face_normal(self, x, y):
         return None
@@ -740,7 +742,7 @@ class PatchedShapeBase(Shape):
             self.patches.append(patch)
             patch.shown = not hide
             if settings.debug_lod_show_tb: patch.instance.showTightBounds()
-            if settings.debug_lod_show_bb:
+            if settings.debug_lod_show_bb and patch.bounds_shape is not None:
                 patch.bounds_shape.instance.reparent_to(self.instance)
         else:
             if not hide:
