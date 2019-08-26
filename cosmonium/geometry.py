@@ -822,12 +822,18 @@ def SquaredDistanceSquarePatchNormal(x0, y0, x1, y1,
 
     return SquaredDistanceSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
-def SquaredDistanceSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
+def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
+                                   x0, y0, x1, y1, offset=None,
                                    x_inverted=False, y_inverted=False, xy_swap=False):
     points = []
-    for i in (0.0, 0.5, 1.0):
-        for j in (0.0, 0.5, 1.0):
-            points.append(SquaredDistanceSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(SquaredDistanceSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
@@ -906,12 +912,18 @@ def NormalizedSquarePatchNormal(x0, y0, x1, y1,
                                 x_inverted=False, y_inverted=False, xy_swap=False):
     return NormalizedSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
-def NormalizedSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
+def NormalizedSquarePatchAABB(min_radius, max_radius,
+                              x0, y0, x1, y1, offset=None,
                               x_inverted=False, y_inverted=False, xy_swap=False):
     points = []
-    for i in (0.0, 0.5, 1.0):
-        for j in (0.0, 0.5, 1.0):
-            points.append(NormalizedSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(NormalizedSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
