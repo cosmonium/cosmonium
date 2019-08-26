@@ -545,7 +545,9 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                     float(y + 1) / self.div)
 
     def create_bounding_volume(self, x, y, offset):
-        return geometry.NormalizedSquarePatchAABB(1.0, 1.0,
+        min_radius = self.surface.get_min_radius() / self.average_radius
+        max_radius = self.surface.get_max_radius() / self.average_radius
+        return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
@@ -590,7 +592,9 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                          self.x1, self.y1)
 
     def create_bounding_volume(self, x, y, offset):
-        return geometry.SquaredDistanceSquarePatchAABB(1.0, 1.0,
+        min_radius = self.surface.get_min_radius() / self.average_radius
+        max_radius = self.surface.get_max_radius() / self.average_radius
+        return geometry.SquaredDistanceSquarePatchAABB(min_radius, max_radius,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
                                                        float(x + 1) / self.div,

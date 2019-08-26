@@ -774,7 +774,9 @@ def SquaredDistanceSquarePatch(height, inner, outer,
             else:
                 gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f((x - normal[0] * offset) * height, (y - normal[1] * offset) * height, (z - normal[2] * offset) * height)
+                gvw.add_data3f(x * height - normal[0] * offset,
+                               y * height - normal[1] * offset,
+                               z * height - normal[2] * offset)
             else:
                 gvw.add_data3f(x * height, y * height, z * height)
             gnw.add_data3f(x, y, z)
@@ -810,10 +812,11 @@ def SquaredDistanceSquarePatchPoint(radius,
     y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
     z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
     vec = LVector3d(x, y, z)
+    vec *= radius
 
     if offset is not None:
         normal = SquaredDistanceSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-        vec = (vec - normal * offset) * radius
+        vec = vec - normal * offset
 
     return vec
 
@@ -873,10 +876,12 @@ def NormalizedSquarePatch(height, inner, outer,
                 gtw.add_data2f(v, u)
             else:
                 gtw.add_data2f(u, v)
+            nvec = vec
+            vec = vec * height
             if offset is not None:
-                nvec = (vec - normal * offset)
-            gvw.add_data3f(*(nvec * height))
-            gnw.add_data3f(vec.x, vec.y, vec.z)
+                vec = vec - normal * offset
+            gvw.add_data3f(*vec)
+            gnw.add_data3f(nvec.x, nvec.y, nvec.z)
             gtanw.add_data3f(-(1.0 + y*y), x*y, x)
             gbiw.add_data3f(x * y, -(1.0 + x*x), y)
             #gtanw.add_data3f(vec.z, vec.y, -vec.x)
@@ -902,9 +907,10 @@ def NormalizedSquarePatchPoint(radius,
     y = y0 + v * dy
     vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
     vec.normalize()
+    vec *= radius
 
     if offset is not None:
-        vec = (vec - normal * offset) * radius
+        vec = vec - normal * offset
 
     return vec
 
