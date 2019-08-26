@@ -293,24 +293,28 @@ class Gui(object):
 
     def create_main_menu_items(self):
         return (
-                ('Save URL>Control-C', 0, self.save_celurl),
-                ('Load URL>Control-V', 0, self.load_celurl),
+                ('_Find object>Enter', 0, self.open_find_object),
+                0,
+                ('_Save URL>Control-C', 0, self.save_celurl),
+                ('_Load URL>Control-V', 0, self.load_celurl),
+                0,
+                ('Go to _home>H', 0, self.cosmonium.go_home),
                 0,
                 ('_Quit>Control-Q', 0, self.cosmonium.exit),
                 )
 
     def create_time_menu_items(self):
         return (
-                ('Increase rate 10x>L', 0, self.time.accelerate_time, 10.0),
-                ('Increase rate 2x>shift-L', 0, self.time.accelerate_time, 2.0),
-                ('Decrease rate 10x>K', 0, self.time.slow_time, 10.0),
-                ('Decrease rate 2x>shift-K', 0, self.time.slow_time, 2.0),
-                ('Reverse time>J', 0, self.time.invert_time),
-                ('Freeze time>Space', 0, self.time.toggle_freeze_time),
-                ('Set real time>\\', 0, self.time.set_real_time),
+                ('_Increase rate 10x>L', 0, self.time.accelerate_time, 10.0),
+                ('I_ncrease rate 2x>shift-L', 0, self.time.accelerate_time, 2.0),
+                ('_Decrease rate 10x>K', 0, self.time.slow_time, 10.0),
+                ('D_ecrease rate 2x>shift-K', 0, self.time.slow_time, 2.0),
+                ('_Reverse time>J', 0, self.time.invert_time),
+                ('_Freeze time>Space', 0, self.time.toggle_freeze_time),
+                ('_Set real time>\\', 0, self.time.set_real_time),
                 0,
-                ('Set current time>!', 0, self.time.set_current_date),
-                ('Set J2000 epoch>Shift-J', 0, self.time.set_J2000_date),
+                ('Set _current time>!', 0, self.time.set_current_date),
+                ('Set _J2000 epoch>Shift-J', 0, self.time.set_J2000_date),
                 )
 
     def create_select_menu_items(self):
@@ -318,73 +322,86 @@ class Gui(object):
         return (
             ('_Info>F1', 0, self.show_info if has_selected else 0),
             0,
-            ('_Goto>G', 0, self.autopilot.go_to_object if has_selected else 0),
+            ('_Go to>G', 0, self.autopilot.go_to_object if has_selected else 0),
+            ('Go to f_ront>D', 0, self.autopilot.go_to_front if has_selected else 0),
+            ('Go to _surface>Control-G', 0, self.autopilot.go_to_surface if has_selected else 0),
+            0,
             ('_Follow>F', 0, self.cosmonium.follow_selected if has_selected else 0),
             ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0),
             0,
-            ('_Center on>C', 0, self.autopilot.center_on_object if has_selected else 0),
-            ('_Track>Y', 0, self.cosmonium.track_selected if has_selected else 0),
+            ('_Reset navigation>Escape', 0, self.escape if has_selected else 0),
         )
+
+    def create_camera_menu_items(self):
+        has_selected = self.cosmonium.selected is not None
+        return (
+                ('_Center on>C', 0, self.autopilot.center_on_object if has_selected else 0),
+                ('Look _back>*', 0, self.camera.camera_look_back),
+                ('_Track>Y', 0, self.cosmonium.track_selected if has_selected else 0),
+                0,
+                ('Zoom _in>Z', 0, self.camera.zoom, [1.05]),
+                ('Zoom _out>Shift-Z', 0, self.camera.zoom, [1.0/1.05]),
+                )
 
     def create_render_menu_items(self):
         labels = (
-                  ('Galaxies>E', bodyClasses.get_show_label('galaxy'), self.cosmonium.toggle_label, 'galaxy'),
+                  ('_Galaxies>E', bodyClasses.get_show_label('galaxy'), self.cosmonium.toggle_label, 'galaxy'),
                   #('Globular>Shift-E', self.toggle_label, 'globular'),
-                  ('Stars>B', bodyClasses.get_show_label('star'), self.cosmonium.toggle_label, 'star'),
-                  ('Planets>P', bodyClasses.get_show_label('planet'), self.cosmonium.toggle_label, 'planet'),
-                  ('Dwarf planets>Shift-P', bodyClasses.get_show_label('dwarfplanet'), self.cosmonium.toggle_label, 'dwarfplanet'),
-                  ('Moons>M', bodyClasses.get_show_label('moon'), self.cosmonium.toggle_label, 'moon'),
-                  ('Minor Moons>Shift-M', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
-                  ('Comets>Shift-W', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
-                  ('Asteroids>W', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
-                  ('Spacecrafts>N', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
-                  ('Constellations>=', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
+                  ('_Stars>B', bodyClasses.get_show_label('star'), self.cosmonium.toggle_label, 'star'),
+                  ('_Planets>P', bodyClasses.get_show_label('planet'), self.cosmonium.toggle_label, 'planet'),
+                  ('_Dwarf planets>Shift-P', bodyClasses.get_show_label('dwarfplanet'), self.cosmonium.toggle_label, 'dwarfplanet'),
+                  ('_Moons>M', bodyClasses.get_show_label('moon'), self.cosmonium.toggle_label, 'moon'),
+                  ('M_inor Moons>Shift-M', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
+                  ('C_omets>Shift-W', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
+                  ('_Asteroids>W', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
+                  ('S_pacecrafts>N', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
+                  ('_Constellations>=', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
                   #('Locations>&', self.toggle_label, 'location'),
         )
 
         orbits = (
-                  ('All orbits>O', settings.show_orbits, self.cosmonium.toggle_orbits),
+                  ('All _orbits>O', settings.show_orbits, self.cosmonium.toggle_orbits),
                   0,
-                  ('Stars>Shift-Control-B', bodyClasses.get_show_orbit('star'), self.cosmonium.toggle_orbit, 'star'),
-                  ('Planets>Shift-Control-P', bodyClasses.get_show_orbit('planet'), self.cosmonium.toggle_orbit, 'planet'),
-                  ('Dwarf planets>Shift-Control-D', bodyClasses.get_show_orbit('dwarfplanet'), self.cosmonium.toggle_orbit, 'dwarfplanet'),
-                  ('Moons>Shift-control-M', bodyClasses.get_show_orbit('moon'), self.cosmonium.toggle_orbit, 'moon'),
-                  ('Minor moons>Shift-Control-O', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
-                  ('Comets>Shift-Control-C', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
-                  ('Asteroids>Shift-Control-A', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
-                  ('Spacecrafts>Shift-Control-S', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
+                  ('_Stars>Shift-Control-B', bodyClasses.get_show_orbit('star'), self.cosmonium.toggle_orbit, 'star'),
+                  ('_Planets>Shift-Control-P', bodyClasses.get_show_orbit('planet'), self.cosmonium.toggle_orbit, 'planet'),
+                  ('_Dwarf planets>Shift-Control-D', bodyClasses.get_show_orbit('dwarfplanet'), self.cosmonium.toggle_orbit, 'dwarfplanet'),
+                  ('_Moons>Shift-control-M', bodyClasses.get_show_orbit('moon'), self.cosmonium.toggle_orbit, 'moon'),
+                  ('M_inor moons>Shift-Control-O', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
+                  ('_Comets>Shift-Control-C', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
+                  ('_Asteroids>Shift-Control-A', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
+                  ('S_pacecrafts>Shift-Control-S', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
                   )
 
         bodies = (
-                  ('Galaxies>U', bodyClasses.get_show('galaxy'), self.cosmonium.toggle_body_class, 'galaxy'),
+                  ('_Galaxies>U', bodyClasses.get_show('galaxy'), self.cosmonium.toggle_body_class, 'galaxy'),
                   #('shift-u', self.cosmonium.toggle_globulars)
                   #('^', self.cosmonium.toggle_nebulae)
                   )
 
         options = (
-                   ('Atmospheres>Control-A', settings.show_atmospheres, self.cosmonium.toggle_atmosphere),
-                   ('Clouds>I', settings.show_clouds, self.cosmonium.toggle_clouds),
+                   ('_Atmospheres>Control-A', settings.show_atmospheres, self.cosmonium.toggle_atmosphere),
+                   ('_Clouds>I', settings.show_clouds, self.cosmonium.toggle_clouds),
                    #('control-e', self.toggle_shadows)
                    #('control-l', self.cosmonium.toggle_nightsides)
                    #('control-t', self.cosmonium.toggle_comet_tails)
                    )
 
         guides = (
-                   ('Boundaries>Control-B', settings.show_boundaries, self.cosmonium.toggle_boundaries),
-                   ('Asterisms>/', settings.show_asterisms, self.cosmonium.toggle_asterisms),
+                   ('_Boundaries>Control-B', settings.show_boundaries, self.cosmonium.toggle_boundaries),
+                   ('_Asterisms>/', settings.show_asterisms, self.cosmonium.toggle_asterisms),
                    )
 
         grids = (
-                 ('Equatorial>;', settings.show_equatorial_grid, self.cosmonium.toggle_grid_equatorial),
-                 ('Ecliptic>:', settings.show_ecliptic_grid, self.cosmonium.toggle_grid_ecliptic),
+                 ('_Equatorial>;', settings.show_equatorial_grid, self.cosmonium.toggle_grid_equatorial),
+                 ('E_cliptic>:', settings.show_ecliptic_grid, self.cosmonium.toggle_grid_ecliptic),
                  )
 
         advanced = (
-                    ('Decrease ambient>{', 0, self.cosmonium.incr_ambient, -0.05),
-                    ('Increase ambient>}', 0, self.cosmonium.incr_ambient, +0.05),
+                    ('_Decrease ambient>{', 0, self.cosmonium.incr_ambient, -0.05),
+                    ('_Increase ambient>}', 0, self.cosmonium.incr_ambient, +0.05),
                     0,
-                    ('Rotation axis>Shift-A', settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
-                    ('Reference frame>Shift-Control-R', settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
+                    ('_Rotation axis>Shift-A', settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
+                    ('Reference _frame>Shift-Control-R', settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
                     )
 
         return (
@@ -397,9 +414,33 @@ class Gui(object):
             ('_Advanced', 0, advanced),
         )
 
+    def create_window_menu_items(self):
+        return (
+                ('Toggle _fullscreen>Alt-Enter', 0, self.cosmonium.toggle_fullscreen),
+                ('Toggle _menubar>Control-M', 0, self.toggle_menu),
+                ('Toggle _HUD>V', 0, self.toggle_hud),
+                0,
+                ('Save _screenshot>F10', 0, self.cosmonium.save_screenshot),
+                ('Save screenshot _without UI>Shift-F10', 0, self.cosmonium.save_screenshot_no_annotation),
+                )
+
     def create_debug_menu_items(self):
         return (
+                ('Toggle filled wireframe>F3', 0, self.cosmonium.toggle_filled_wireframe),
+                ('Toggle wireframe>Shift-F3', 0, self.cosmonium.toggle_wireframe),
+                ("Show render buffers>F5", 0, base.bufferViewer.toggleEnable),
+                0,
                 ('Instant movement>Control-J', settings.debug_jump, self.autopilot.toggle_jump),
+                ('Connect pstats>F2', 0, self.cosmonium.connect_pstats),
+                0,
+                ('Freeze LOD>F8', settings.debug_lod_freeze, self.toggle_lod_freeze),
+                ('Dump LOD tree>Shift-F8', 0, self.dump_object_info),
+                ('Dump LOD flat tree>Shift-Control-F8', 0, self.dump_object_info_2),
+                ('Log LOD events>Control-F8', settings.debug_lod_split_merge, self.toggle_split_merge_debug),
+                ('Show LOD bounding boxes>Control-F9', settings.debug_lod_show_bb, self.toggle_bb),
+                0,
+                ('Show octree stats>F7', 0, self.cosmonium.universe.dumpOctreeStats),
+                ('Dump octree>Shift-F7', 0, self.cosmonium.universe.dumpOctree),
                 )
 
     def create_help_menu_items(self):
@@ -421,7 +462,9 @@ class Gui(object):
             items=(('_Cosmonium', self.create_main_menu_items),
                    ('_Select', self.create_select_menu_items),
                    ('_Time', self.create_time_menu_items),
+                   ('_Camera', self.create_camera_menu_items),
                    ('_Render', self.create_render_menu_items),
+                   ('_Window', self.create_window_menu_items),
                    ('_Debug', self.create_debug_menu_items),
                    ('_Help', self.create_help_menu_items),),
             font=self.font,
