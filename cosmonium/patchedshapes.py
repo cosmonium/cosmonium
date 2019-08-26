@@ -833,14 +833,14 @@ class PatchedShapeBase(Shape):
     def xform_cam_to_model(self, camera_pos):
         pass
 
-    def create_culling_frustum(self, altitude):
+    def create_culling_frustum(self, altitude_to_ground, altitude_to_min_radius):
         self.lens = self.owner.context.observer.realCamLens.make_copy()
         if self.limit_far:
             if self.max_lod > 10:
                 factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
             else:
                 factor = 2.0
-            self.limit = sqrt(max(0.0, altitude * (factor * self.owner.height_under + altitude)))
+            self.limit = sqrt(max(0.0, factor * self.owner.surface.min_radius() * altitude_to_min_radius))
             #print(self.limit)
             far = self.limit / settings.scale
             self.lens.setNearFar(far * 1e-4, far)
@@ -879,11 +879,14 @@ class PatchedShapeBase(Shape):
             return
         if self.instance is None:
             return False
-        if distance_to_obs < self.radius:
+        min_radius = self.owner.surface.get_min_radius()
+        if distance_to_obs < min_radius:
+            print("Too low !")
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
-        altitude = self.owner.distance_to_obs - self.owner.height_under
-        self.create_culling_frustum(altitude)
+        altitude_to_ground = self.owner.distance_to_obs - self.owner.height_under
+        altitude_to_min_radius = self.owner.distance_to_obs - min_radius
+        self.create_culling_frustum(altitude_to_ground, altitude_to_min_radius)
         self.to_split = []
         self.to_merge = []
         self.to_show_children = []
@@ -895,7 +898,7 @@ class PatchedShapeBase(Shape):
         frame = globalClock.getFrameCount()
         self.lod_control.set_appearance(appearance)
         for patch in self.root_patches:
-            self.check_lod(patch, coord, model_camera_pos, model_camera_vector, altitude, pixel_size, self.lod_control)
+            self.check_lod(patch, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
         self.to_split.sort(key=lambda x: x.distance)
         self.to_merge.sort(key=lambda x: x.distance)
         self.to_show_children.sort(key=lambda x: x.distance)
@@ -928,7 +931,7 @@ class PatchedShapeBase(Shape):
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
             for child in patch.children:
-                child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude, pixel_size)
+                child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
                 #print(child.str_id(), child.visible)
                 if self.lod_control.should_instanciate(child, 0, 0):
                     child.parent_split_pending = True
