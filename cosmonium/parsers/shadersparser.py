@@ -3,7 +3,8 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor
 
-from ..shaders import FlatLightingModel, LunarLambertLightingModel, LambertPhongLightingModel, OrenNayarPhongLightingModel, CustomShaderComponent
+from ..shaders import FlatLightingModel, LambertPhongLightingModel, OrenNayarPhongLightingModel, CustomShaderComponent
+from ..celestia.shaders import LunarLambertLightingModel
 
 from .yamlparser import YamlModuleParser
 

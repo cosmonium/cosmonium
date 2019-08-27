@@ -8,6 +8,7 @@ from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orb
     instanciate_uniform_rotation, instanciate_precessing_rotation, instanciate_custom_rotation, \
     instanciate_reference_frame, \
     names_list, body_path
+from .shaders import LunarLambertLightingModel
 
 from ..celestia.atmosphere import CelestiaAtmosphere, CelestiaScattering
 from ..universe import Universe
@@ -17,7 +18,7 @@ from ..surfaces import FlatSurface
 from ..bodyelements import Ring, Clouds, NoAtmosphere
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
-from ..shaders import BasicShader, LunarLambertLightingModel, LambertPhongLightingModel
+from ..shaders import BasicShader, LambertPhongLightingModel
 from ..astro.orbits import FixedOrbit
 from ..astro.rotations import FixedRotation, UniformRotation
 from ..astro import units
