@@ -1416,10 +1416,11 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
     def should_merge(self, patch, apparent_patch_size, distance):
         if self.patch_size > 0:
             if apparent_patch_size < self.patch_size / 2.01:
-                return True
-            else:
-                apparent_vertex_size = apparent_patch_size / patch.density
-                return apparent_vertex_size < self.max_vertex_size / 2.01
+                if patch.parent is not None and self.appearance.texture.can_split(patch.parent):
+                    return True
+                else:
+                    apparent_vertex_size = apparent_patch_size / patch.density
+                    return apparent_vertex_size < self.max_vertex_size / 2.01
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size < self.max_vertex_size / 2.01
