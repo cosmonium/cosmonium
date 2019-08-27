@@ -37,6 +37,20 @@ except ImportError:
     print("tinker not found, no copy&paste available")
     has_tk = False
 
+about_text = """
+# Cosmonium
+
+**Version**: %s
+Copyright 2018,2019 LD
+
+**Website**: http://github.com/cosmonium/cosmonium
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+""" % settings.version
+
 class Clipboard():
     def __init__(self):
         if has_tk:
@@ -86,8 +100,12 @@ class Gui(object):
         self.popup_menu = None
         self.opened_windows = []
         self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
-        self.help = TextWindow('Help', 'control.md', self.scale, settings.markdown_font, owner=self)
-        self.license = TextWindow('License', 'COPYING.md', self.scale, settings.markdown_font, owner=self)
+        self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)
+        self.help.load('control.md')
+        self.license = TextWindow('License', self.scale, settings.markdown_font, owner=self)
+        self.license.load('COPYING.md')
+        self.about = TextWindow('About', self.scale, settings.markdown_font, owner=self)
+        self.about.set_text(about_text)
         self.create_menubar()
         if settings.show_hud:
             self.show_hud()
@@ -457,7 +475,7 @@ class Gui(object):
        ('_Credits', 0, 0),
        ('_License', 0, self.show_license),
        0, # separator
-       ('_About', 0, 0),
+       ('_About', 0, self.show_about),
        )
 
     def create_menubar(self):
@@ -749,6 +767,11 @@ class Gui(object):
         self.license.show()
         if not self.license in self.opened_windows:
             self.opened_windows.append(self.license)
+
+    def show_about(self):
+        self.about.show()
+        if not self.about in self.opened_windows:
+            self.opened_windows.append(self.about)
 
     def show_info(self):
         if self.cosmonium.selected is not None:

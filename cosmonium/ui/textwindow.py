@@ -11,7 +11,7 @@ from .markdown import create_markdown_renderer
 from .widgets import ScrollText
 
 class TextWindow():
-    def __init__(self, title, filename, scale, font_family, font_size = 14, owner=None):
+    def __init__(self, title, scale, font_family, font_size = 14, owner=None):
         self.title = title
         self.window = None
         self.layout = None
@@ -19,13 +19,22 @@ class TextWindow():
         self.scale = scale
         self.font_size = font_size
         self.owner = owner
-        filename = defaultDirContext.find_doc(filename)
-        with open(filename) as md_file:
-            self.text = ''.join(md_file.readlines())
         self.markdown = create_markdown_renderer(font_family)
 
+    def load(self, filename, markdown=True):
+        filename = defaultDirContext.find_doc(filename)
+        with open(filename) as text_file:
+            self.text = ''.join(text_file.readlines())
+        if markdown:
+            self.text = self.markdown(self.text)
+
+    def set_text(self, text, markdown=True):
+        self.text = text
+        if markdown:
+            self.text = self.markdown(self.text)
+
     def create_layout(self):
-        self.layout = ScrollText(text=self.markdown(self.text),
+        self.layout = ScrollText(text=self.text,
                                  align=TextNode.ALeft,
                                  scale=self.scale,
                                  font=self.markdown.renderer.font_normal,
