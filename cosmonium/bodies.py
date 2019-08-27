@@ -552,6 +552,8 @@ class StellarBody(StellarObject):
         self.height_under = radius
         self.oblateness = oblateness
         self.scale = scale
+        if self.clouds is not None:
+            self.clouds.owner = self
         if self.atmosphere is not None:
             self.atmosphere.owner = self
         self._extend = self.get_extend()

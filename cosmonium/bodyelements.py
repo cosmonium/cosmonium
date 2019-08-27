@@ -6,6 +6,7 @@ from panda3d.core import DepthOffsetAttrib
 
 from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
+from .surfaces import FlatSurface
 from .utils import TransparencyBlend
 from .shaders import AtmosphericScattering
 from .shadows import RingShadowCaster
@@ -87,11 +88,11 @@ class NoAtmosphere(Atmosphere):
     def check_visibility(self, pixel_size):
         self.visible = False
 
-class Clouds(ShapeObject):
+class Clouds(FlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
-        ShapeObject.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        FlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
         self.inside = False
         if appearance is not None:
