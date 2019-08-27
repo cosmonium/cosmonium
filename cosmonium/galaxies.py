@@ -19,7 +19,7 @@ from .shaders import BasicShader, FlatLightingModel
 from .astro import units
 from . import settings
 
-from math import cos, sin, pi, log, tan, tanh
+from math import cos, sin, pi, log, tan, tanh, sqrt
 from random import random, gauss, choice
 from cosmonium.utils import mag_to_scale_nolimit
 
@@ -64,17 +64,17 @@ class GalaxyAppearance(AppearanceBase):
         self.texture_index = 0
         self.transparency = True
         self.background = True
-        self.correction = 0.4
+        self.min_coef = 0.2
 
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             axis = owner.scene_orientation.xform(LVector3d.up())
             cosa = abs(axis.dot(owner.vector_to_obs))
-            coef = cosa * self.correction + (1.0 - self.correction)
-            scale = float(self.color_scale) / 255 * coef * mag_to_scale_nolimit(app_magnitude)
+            coef = max(self.min_coef, sqrt(cosa))
+            scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
             size = owner.get_apparent_radius() / owner.distance_to_obs
             if size > 1.0:
-                scale = scale / size
+                scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
             shader.set_size_scale(size)
 
@@ -268,7 +268,8 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
         distance = 0
         for i in (-1.0, 1.0):
             for c in range(count):
-                angle = random() * 2.0 * pi
+                t = sqrt(random())
+                angle = t * 2.0 * pi
                 shape = func(angle)
                 x = i * cos(angle) * shape + gauss(0.0, spread)
                 y = i * sin(angle) * shape + gauss(0.0, spread)
@@ -277,7 +278,7 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 points.append(point)
                 distance = max(distance, point.length())
                 colors.append(color)
-                size = sprite_size + gauss(0, half_sprite_size)
+                size = (sprite_size + gauss(0, half_sprite_size))
                 sizes.append(size)
         self.size = distance
 

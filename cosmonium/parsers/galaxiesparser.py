@@ -27,7 +27,7 @@ class GalaxyAppearanceYamlParser(YamlModuleParser):
             else:
                 print("Unknown sprite '%s'", sprite)
                 sprite = None
-        color_scale = data.get('scale', 10.0)
+        color_scale = data.get('scale', 5.0)
         return GalaxyAppearance(sprite, color_scale)
 
     @classmethod
