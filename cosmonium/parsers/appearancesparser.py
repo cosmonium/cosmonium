@@ -62,6 +62,8 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         diffuse_color = data.get('diffuse-color')
         if diffuse_color is not None:
             appearance.diffuseColor = LColor(*diffuse_color)
+        roughness = data.get('roughness', 0.0)
+        appearance.set_roughness(roughness)
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):

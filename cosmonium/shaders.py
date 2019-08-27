@@ -2066,6 +2066,68 @@ class LambertPhongLightingModel(LightingModel):
             half_vec.normalize()
             shape.instance.setShaderInput("half_vec", *half_vec)
 
+class OrenNayarPhongLightingModel(LightingModel):
+    use_normal = True
+    world_normal = True
+    use_tangent = False
+
+    def get_id(self):
+        return "oren-nayar"
+
+    def fragment_uniforms(self, code):
+        code.append("uniform float ambient_coef;")
+        code.append("uniform vec3 light_dir;")
+        code.append("uniform vec3 obs_dir;")
+        code.append("uniform vec4 ambient_color;")
+        code.append("uniform vec4 light_color;")
+        code.append("uniform float roughness_squared;")
+        if self.appearance.has_specular:
+            code.append("uniform vec3 half_vec;")
+
+    def fragment_shader(self, code):
+        if self.appearance.has_specular:
+            code.append("float spec_angle = clamp(dot(normal, half_vec), 0.0, 1.0);")
+            code.append("vec4 specular = light_color * pow(spec_angle, shininess);")
+        code.append("vec4 ambient = ambient_color * ambient_coef;")
+        code.append("float v_dot_n = dot(obs_dir, normal);")
+        code.append("float l_dot_n = dot(light_dir, normal);")
+        code.append("float theta_r = acos(v_dot_n);")
+        code.append("float theta_i = acos(l_dot_n);")
+        code.append("float alpha = max(theta_r, theta_i);")
+        code.append("float beta = min(theta_r, theta_i);")
+        code.append("float delta = dot(normalize(obs_dir - normal * v_dot_n), normalize(light_dir - normal * l_dot_n));")
+        code.append("float a = 1.0 - 0.5 * roughness_squared / (roughness_squared + 0.33);")
+        code.append("float b = 0.45 * roughness_squared / (roughness_squared + 0.09);")
+        code.append("float c = sin(alpha) * tan(beta);")
+        code.append("float diffuse_coef = max(0.0, l_dot_n) * (a + b * max(0.0, delta) * c);")
+        code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
+        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("total_light.a = 1.0;")
+        code.append("total_diffuse_color = surface_color * total_light;")
+        if self.appearance.has_material:
+            code.append("total_diffuse_color *= p3d_Material.diffuse;")
+        if self.appearance.has_specular:
+            code.append("total_diffuse_color.rgb += specular.rgb * specular_factor.rgb * specular_color.rgb * shadow;")
+        if self.appearance.has_night_texture:
+            code.append("if (diffuse_angle < 0.0) {")
+            code.append("  float emission_coef = clamp(sqrt(-diffuse_angle), 0.0, 1.0);")
+            code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
+            code.append("}")
+
+    def update_shader_shape(self, shape, appearance):
+        light_dir = shape.owner.vector_to_star
+        light_color = shape.owner.light_color
+        shape.instance.setShaderInput("light_dir", *light_dir)
+        shape.instance.setShaderInput("obs_dir", *shape.owner.vector_to_obs)
+        shape.instance.setShaderInput("light_color", light_color)
+        shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
+        shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
+        shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
+        if self.appearance.has_specular:
+            half_vec = shape.owner.vector_to_star + shape.owner.vector_to_obs
+            half_vec.normalize()
+            shape.instance.setShaderInput("half_vec", *half_vec)
+
 class LunarLambertLightingModel(LightingModel):
     use_normal = True
     use_vertex = True
