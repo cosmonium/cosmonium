@@ -1367,8 +1367,8 @@ class PatchLodControl(object):
 
 #The lod control classes uses hysteresis to avoid cycle of split/merge due to
 #precision errors.
-#When splitting the resulting patch will be 1.01/2 bigger than the merge limit
-#When merging, the resulting patch will be  2/2.01 smaller than the slit limit
+#When splitting the resulting patch will be 1.1/2 bigger than the merge limit
+#When merging, the resulting patch will be  2/2.1 smaller than the slit limit
 
 class TexturePatchLodControl(PatchLodControl):
     def __init__(self, min_density=8, density=32, max_lod=100):
@@ -1390,10 +1390,10 @@ class TexturePatchLodControl(PatchLodControl):
 
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
-        return self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.01 and self.appearance.texture.can_split(patch)
+        return self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.1 and self.appearance.texture.can_split(patch)
 
     def should_merge(self, patch, apparent_patch_size, distance):
-        return apparent_patch_size < self.patch_size / 2.01
+        return apparent_patch_size < self.patch_size / 2.1
 
 class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
     def __init__(self, max_vertex_size, min_density=8, density=32, max_lod=100):
@@ -1403,27 +1403,27 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
         if self.patch_size > 0:
-            if apparent_patch_size > self.patch_size * 1.01:
+            if apparent_patch_size > self.patch_size * 1.1:
                 if self.appearance.texture.can_split(patch):
                     return True
                 else:
                     apparent_vertex_size = apparent_patch_size / patch.density
-                    return apparent_vertex_size > self.max_vertex_size * 1.01
+                    return apparent_vertex_size > self.max_vertex_size * 1.1
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size > self.max_vertex_size
 
     def should_merge(self, patch, apparent_patch_size, distance):
         if self.patch_size > 0:
-            if apparent_patch_size < self.patch_size / 2.01:
+            if apparent_patch_size < self.patch_size / 2.1:
                 if patch.parent is not None and self.appearance.texture.can_split(patch.parent):
                     return True
                 else:
                     apparent_vertex_size = apparent_patch_size / patch.density
-                    return apparent_vertex_size < self.max_vertex_size / 2.01
+                    return apparent_vertex_size < self.max_vertex_size / 2.1
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
-            return apparent_vertex_size < self.max_vertex_size / 2.01
+            return apparent_vertex_size < self.max_vertex_size / 2.1
 
 class VertexSizePatchLodControl(PatchLodControl):
     def __init__(self, max_vertex_size, density=32, max_lod=100):
@@ -1433,11 +1433,13 @@ class VertexSizePatchLodControl(PatchLodControl):
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
         apparent_vertex_size = apparent_patch_size / patch.density
-        return apparent_vertex_size > self.max_vertex_size * 1.01
+        to_split = apparent_vertex_size > self.max_vertex_size * 1.1
+        return to_split
 
     def should_merge(self, patch, apparent_patch_size, distance):
         apparent_vertex_size = apparent_patch_size / patch.density
-        return apparent_vertex_size < self.max_vertex_size / 2.01
+        to_merge = apparent_vertex_size < self.max_vertex_size / 2.1
+        return to_merge
 
 class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
     def __init__(self, max_distance, max_vertex_size, density=32, max_lod=100):
