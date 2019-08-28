@@ -823,8 +823,9 @@ class PatchedShapeBase(Shape):
             if patch.shown and not patch.split_pending:
                 self.to_remove.append(patch)
         else:
-            #Split patch only when visible and when the heightmap is available, otherwise offset is wrong
-            can_split = patch.visible and (not settings.shift_patch_origin or patch.instance_ready)
+            #OLD: Split patch only when visible and when the heightmap is available, otherwise offset is wrong
+            #Split patch only when visible and when instance is ready, otherwise the parent may never be removed
+            can_split = patch.visible and patch.instance_ready and not patch.parent_split_pending
             if can_split and lod_control.should_split(patch, patch.apparent_size, patch.distance):
                 if self.are_children_visibles(patch):
                     self.to_split.append(patch)
