@@ -107,21 +107,19 @@ class Clouds(FlatSurface):
     def check_settings(self):
         self.set_shown(settings.show_clouds)
 
-    def create_instance(self):
-        ShapeObject.create_instance(self)
-        #geomNode = self.parent.instance.find('**/+GeomNode')
-        #self.instance.reparentTo(geomNode)
-        #geomNode.setEffect(DecalEffect.make())
-        if not settings.use_inverse_z:
-            self.instance.setAttrib(DepthOffsetAttrib.make(int(self.height)))
-
     def update_instance(self, camera_pos, orientation):
         radius = self.parent.get_apparent_radius() + self.height
         inside = self.parent.distance_to_obs < radius
         if self.inside != inside:
             if inside:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
+                if not settings.use_inverse_z:
+                    self.instance.setAttrib(DepthOffsetAttrib.make(0))
+                self.instance.set_depth_write(True)
             else:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
+                if not settings.use_inverse_z:
+                    self.instance.setAttrib(DepthOffsetAttrib.make(int(1)))
+                self.instance.set_depth_write(False)
             self.inside = inside
         return ShapeObject.update_instance(self, camera_pos, orientation)
