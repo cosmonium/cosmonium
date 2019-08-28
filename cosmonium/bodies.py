@@ -431,15 +431,15 @@ class StellarObject(LabelledObject):
             self.create_label()
         if self.visible:
             if not self.init_annotations:
-                #Check again settings as they might have changed since object creation
-                self.check_settings()
                 self.create_annotations()
+                self.check_settings()
             if self.resolved:
                 if self.support_offset_body_center and settings.offset_body_center:
                     self.world_body_center_offset = -self.vector_to_obs * self.height_under * self.scene_scale_factor
                     self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self.height_under / self.get_apparent_radius()
                 if not self.init_components:
                     self.create_components()
+                    self.check_settings()
                 self.update_components(camera_pos)
                 if self.visible_size < settings.min_body_size * 2:
                     self.update_point(pointset)
