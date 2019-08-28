@@ -667,10 +667,6 @@ class ReflectiveBody(StellarBody):
     def is_emissive(self):
         return False
 
-    def create_surface(self):
-        StellarBody.create_surface(self)
-        self.custom_shadows = self.surface.shader is not None
-
     def get_abs_magnitude(self):
         luminosity = self.get_luminosity() * self.get_phase()
         if luminosity > 0.0:
@@ -710,12 +706,19 @@ class ReflectiveBody(StellarBody):
 
     def start_shadows_update(self):
         self.surface.start_shadows_update()
+        #TODO: this should be done by looping over components
+        if self.clouds is not None:
+            self.clouds.start_shadows_update()
 
     def add_shadow_target(self, target):
-            self.surface.add_shadow_target(target.surface)
+        self.surface.add_shadow_target(target.surface)
+        if target.clouds is not None:
+            self.surface.add_shadow_target(target.clouds)
 
     def end_shadows_update(self):
         self.surface.end_shadows_update()
+        if self.clouds is not None:
+            self.clouds.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())
@@ -739,7 +742,10 @@ class ReflectiveBody(StellarBody):
         StellarBody.configure_shape(self)
         self.surface.create_shadows()
         if self.ring is not None and self.surface is not None:
+            #TODO: This should be in start_shadow_update...
             self.ring.shadow_caster.add_target(self.surface)
+            if self.clouds is not None:
+                self.ring.shadow_caster.add_target(self.clouds)
             self.ring.start_shadows_update()
             self.surface.shadow_caster.add_target(self.ring)
             self.ring.end_shadows_update()
