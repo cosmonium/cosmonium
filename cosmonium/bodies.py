@@ -613,6 +613,24 @@ class StellarBody(StellarObject):
     def get_apparent_radius(self):
         return self.radius
 
+    def get_min_radius(self):
+        if self.surface is not None:
+            return self.surface.get_min_radius()
+        else:
+            return self.get_apparent_radius()
+
+    def get_average_radius(self):
+        if self.surface is not None:
+            return self.surface.get_average_radius()
+        else:
+            return self.get_apparent_radius()
+
+    def get_max_radius(self):
+        if self.surface is not None:
+            return self.surface.get_max_radius()
+        else:
+            return self.get_apparent_radius()
+
     def get_scale(self):
         if self.surface is not None:
             return self.surface.shape.get_scale()
