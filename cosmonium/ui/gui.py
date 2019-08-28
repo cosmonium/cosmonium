@@ -161,7 +161,7 @@ class Gui(object):
         event_ctrl.accept('shift-d', self.autopilot.go_to_front, [None, None, None, True])
         event_ctrl.accept('g', self.autopilot.go_to_object)
         event_ctrl.accept('c', self.autopilot.center_on_object)
-        event_ctrl.accept('control-j', self.autopilot.toggle_jump)
+        event_ctrl.accept('control-j', self.toggle_jump)
         event_ctrl.accept('*', self.camera.camera_look_back)
 
         event_ctrl.accept('shift-n', self.autopilot.go_north)
@@ -286,9 +286,20 @@ class Gui(object):
         else:
             print("Invalid URL: '%s'" % url)
 
+    def toggle_jump(self):
+        settings.debug_jump = not settings.debug_jump
+        if settings.debug_jump:
+            self.update_info("Instant move")
+        else:
+            self.update_info("Normal move")
+
     def toggle_lod_freeze(self):
         settings.debug_lod_freeze = not settings.debug_lod_freeze
         settings.auto_scale = not settings.auto_scale
+        if settings.debug_lod_freeze:
+            self.update_info("Freeze LOD")
+        else:
+            self.update_info("Unfreeze LOD")
 
     def toggle_bb(self):
         settings.debug_lod_show_bb = not settings.debug_lod_show_bb
@@ -454,7 +465,7 @@ class Gui(object):
                 ('Toggle wireframe>Shift-F3', 0, self.cosmonium.toggle_wireframe),
                 ("Show render buffers>F5", 0, base.bufferViewer.toggleEnable),
                 0,
-                ('Instant movement>Control-J', settings.debug_jump, self.autopilot.toggle_jump),
+                ('Instant movement>Control-J', settings.debug_jump, self.toggle_jump),
                 ('Connect pstats>F2', 0, self.cosmonium.connect_pstats),
                 0,
                 ('Freeze LOD>F8', settings.debug_lod_freeze, self.toggle_lod_freeze),

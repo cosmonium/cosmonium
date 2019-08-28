@@ -25,9 +25,6 @@ class AutoPilot(object):
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
 
-    def toggle_jump(self):
-        settings.debug_jump = not settings.debug_jump
-
     def reset(self):
         if self.current_interval != None:
             self.current_interval.pause()
