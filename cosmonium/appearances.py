@@ -36,6 +36,7 @@ class AppearanceBase:
         self.has_material = False
         self.shadow = None
         self.roughness = 0.0
+        self.backlit = 0.0
         self.attribution = None
 
     def bake(self):
@@ -105,6 +106,9 @@ class Appearance(AppearanceBase):
 
     def set_roughness(self, roughness):
         self.roughness = roughness
+
+    def set_backlit(self, backlit):
+        self.backlit = backlit
 
     def check_specular_mask(self):
         if self.texture is not None and self.specularColor is not None:

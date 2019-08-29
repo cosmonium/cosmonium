@@ -2026,6 +2026,7 @@ class LambertPhongLightingModel(LightingModel):
  
     def fragment_uniforms(self, code):
         code.append("uniform float ambient_coef;")
+        code.append("uniform float backlit;")
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")
         code.append("uniform vec4 light_color;")
@@ -2048,11 +2049,12 @@ class LambertPhongLightingModel(LightingModel):
             code.append("total_diffuse_color *= p3d_Material.diffuse;")
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_factor.rgb * specular_color.rgb * shadow;")
+        code.append("if (diffuse_angle < 0.0) {")
         if self.appearance.has_night_texture:
-            code.append("if (diffuse_angle < 0.0) {")
             code.append("  float emission_coef = clamp(sqrt(-diffuse_angle), 0.0, 1.0);")
             code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
-            code.append("}")
+        code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-diffuse_angle);")
+        code.append("}")
 
     def update_shader_shape(self, shape, appearance):
         light_dir = shape.owner.vector_to_star
@@ -2061,6 +2063,7 @@ class LambertPhongLightingModel(LightingModel):
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
+        shape.instance.setShaderInput("backlit", appearance.backlit)
         if self.appearance.has_specular:
             half_vec = shape.owner.vector_to_star + shape.owner.vector_to_obs
             half_vec.normalize()
@@ -2080,6 +2083,7 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("uniform vec3 obs_dir;")
         code.append("uniform vec4 ambient_color;")
         code.append("uniform vec4 light_color;")
+        code.append("uniform float backlit;")
         code.append("uniform float roughness_squared;")
         if self.appearance.has_specular:
             code.append("uniform vec3 half_vec;")
@@ -2108,11 +2112,12 @@ class OrenNayarPhongLightingModel(LightingModel):
             code.append("total_diffuse_color *= p3d_Material.diffuse;")
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_factor.rgb * specular_color.rgb * shadow;")
+        code.append("if (l_dot_n < 0.0) {")
         if self.appearance.has_night_texture:
-            code.append("if (diffuse_angle < 0.0) {")
-            code.append("  float emission_coef = clamp(sqrt(-diffuse_angle), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
-            code.append("}")
+            code.append("  float emission_coef = clamp(sqrt(-l_dot_n), 0.0, 1.0);")
+            code.append("  total_emission_color.rgb += night_color.rgb * emission_coef;")
+        code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-l_dot_n);")
+        code.append("}")
 
     def update_shader_shape(self, shape, appearance):
         light_dir = shape.owner.vector_to_star
@@ -2122,6 +2127,7 @@ class OrenNayarPhongLightingModel(LightingModel):
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
+        shape.instance.setShaderInput("backlit", appearance.backlit)
         shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
         if self.appearance.has_specular:
             half_vec = shape.owner.vector_to_star + shape.owner.vector_to_obs

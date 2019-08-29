@@ -9,6 +9,7 @@ from .. import settings
 from .yamlparser import YamlModuleParser
 from .appearancesparser import AppearanceYamlParser
 from .shapesparser import ShapeYamlParser
+from .shadersparser import LightingModelYamlParser
 
 class CloudsYamlParser(YamlModuleParser):
     @classmethod
@@ -34,8 +35,9 @@ class RingsYamlParser(YamlModuleParser):
         if data is None: return None
         inner_radius = data.get('inner-radius')
         outer_radius = data.get('outer-radius')
+        lighting_model = data.get('lighting-model')
         appearance = AppearanceYamlParser.decode(data.get('appearance'), None)
-        lighting_model = None
+        lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model)
         rings = Ring(inner_radius, outer_radius, appearance, shader)
         return rings

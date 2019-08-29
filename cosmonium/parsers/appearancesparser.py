@@ -67,6 +67,8 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             appearance.diffuseColor = LColor(*diffuse_color)
         roughness = data.get('roughness', 0.0)
         appearance.set_roughness(roughness)
+        backlit = data.get('backlit', 0.0)
+        appearance.set_backlit(backlit)
         attribution = data.get('attribution', None)
         appearance.attribution = attribution
         return appearance
