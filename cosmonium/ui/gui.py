@@ -295,7 +295,6 @@ class Gui(object):
 
     def toggle_lod_freeze(self):
         settings.debug_lod_freeze = not settings.debug_lod_freeze
-        settings.auto_scale = not settings.auto_scale
         if settings.debug_lod_freeze:
             self.update_info("Freeze LOD")
         else:
