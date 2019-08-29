@@ -36,6 +36,7 @@ class AppearanceBase:
         self.has_material = False
         self.shadow = None
         self.roughness = 0.0
+        self.attribution = None
 
     def bake(self):
         pass
@@ -134,9 +135,9 @@ class Appearance(AppearanceBase):
     def set_texture(self, texture, tint=None, transparency=False, transparency_level=0.0, transparency_blend=TransparencyBlend.TB_Alpha, offset=0, context=defaultDirContext):
         if texture is not None and not isinstance(texture, TextureBase):
             if transparency:
-                texture = TransparentTexture(AutoTextureSource(texture, context), tint, level=transparency_level, blend=transparency_blend, srgb=self.srgb)
+                texture = TransparentTexture(AutoTextureSource(texture, None, context), tint, level=transparency_level, blend=transparency_blend, srgb=self.srgb)
             else:
-                texture = SurfaceTexture(AutoTextureSource(texture, context), tint, srgb=self.srgb)
+                texture = SurfaceTexture(AutoTextureSource(texture, None, context), tint, srgb=self.srgb)
         self.texture = texture
         self.transparency = transparency
         self.transparency_level = transparency_level
@@ -146,22 +147,22 @@ class Appearance(AppearanceBase):
 
     def set_night_texture(self, night_texture, tint=None, context=defaultDirContext):
         if night_texture is not None and not isinstance(night_texture, TextureBase):
-            night_texture = NightTexture(AutoTextureSource(night_texture, context), tint, srgb=self.srgb)
+            night_texture = NightTexture(AutoTextureSource(night_texture, None, context), tint, srgb=self.srgb)
         self.night_texture = night_texture
 
     def set_normal_map(self, normal_map, context=defaultDirContext):
         if normal_map is not None and not isinstance(normal_map, TextureBase):
-            normal_map = NormalMapTexture(AutoTextureSource(normal_map, context))
+            normal_map = NormalMapTexture(AutoTextureSource(normal_map, None, context))
         self.normal_map = normal_map
 
     def set_specular_map(self, specular_map, context=defaultDirContext):
         if specular_map is not None and not isinstance(specular_map, TextureBase):
-            specular_map = SpecularMapTexture(AutoTextureSource(specular_map, context))
+            specular_map = SpecularMapTexture(AutoTextureSource(specular_map, None, context))
         self.specular_map = specular_map
 
     def set_bump_map(self, bump_map, bump_height, context=defaultDirContext):
         if bump_map is not None and not isinstance(bump_map, TextureBase):
-            bump_map = BumpMapTexture(AutoTextureSource(bump_map, context))
+            bump_map = BumpMapTexture(AutoTextureSource(bump_map, None, context))
         self.bump_map = bump_map
         self.bump_height = bump_height
 

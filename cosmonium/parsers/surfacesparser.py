@@ -48,7 +48,7 @@ class SurfaceYamlParser(YamlModuleParser):
             category = SurfaceCategory(category_name)
             surfaceCategoryDB.add(category)
         resolution = data.get('resolution', None)
-        source = data.get('source', None)
+        attribution = data.get('attribution', data.get('source', None))
         heightmap = data.get('heightmap', previous.get('heightmap'))
         if heightmap is not None:
             default_shape = 'sqrt-sphere'
@@ -68,7 +68,7 @@ class SurfaceYamlParser(YamlModuleParser):
         if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))
-            surface = FlatSurface(name, category=category, resolution=resolution, source=source,
+            surface = FlatSurface(name, category=category, resolution=resolution, attribution=attribution,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
             radius = owner.get('radius')

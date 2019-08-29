@@ -22,11 +22,11 @@ class SurfaceCategoryDB(object):
 surfaceCategoryDB = SurfaceCategoryDB()
 
 class Surface(ShapeObject):
-    def __init__(self, name=None, category=None, resolution=None, source=None, shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(self, name=None, category=None, resolution=None, attribution=None, shape=None, appearance=None, shader=None, clickable=True):
         ShapeObject.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
-        self.source = source
+        self.attribution = attribution
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
 

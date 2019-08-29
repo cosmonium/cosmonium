@@ -17,6 +17,8 @@ from cosmonium.utils import TransparencyBlend
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode_source(cls, data):
+        texture_source = None
+        texture_offset = None
         if isinstance(data, str):
             object_type = 'file'
             parameters = {'file': data}
@@ -24,7 +26,8 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             object_type = data.get('type', 'file')
             parameters = data
         if object_type == 'file':
-            texture_source = AutoTextureSource(parameters.get('file'), YamlModuleParser.context)
+            texture_attribution = parameters.get('attribution', None)
+            texture_source = AutoTextureSource(parameters.get('file'), texture_attribution, YamlModuleParser.context)
             texture_offset = parameters.get('offset', 0)
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()
@@ -64,6 +67,8 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             appearance.diffuseColor = LColor(*diffuse_color)
         roughness = data.get('roughness', 0.0)
         appearance.set_roughness(roughness)
+        attribution = data.get('attribution', None)
+        appearance.attribution = attribution
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):

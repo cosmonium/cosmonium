@@ -54,10 +54,11 @@ class TextureBase(object):
 class TextureSource(object):
     cached = True
     procedural = False
-    def __init__(self):
+    def __init__(self, attribution=None):
         self.loaded = False
         self.texture = None
         self.texture_size = 0
+        self.attribution = attribution
 
     def is_patched(self):
         return False
@@ -83,8 +84,8 @@ class InvalidTextureSource(TextureSource):
 
 class AutoTextureSource(TextureSource):
     factories = []
-    def __init__(self, filename, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, filename, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.filename = filename
         self.context = context
         self.source = None
@@ -154,8 +155,8 @@ class TextureSourceFactory(object):
 
 class TextureFileSource(TextureSource):
     cached = True
-    def __init__(self, filename, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, filename, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.filename = filename
         self.context = context
         self.loaded = False
@@ -190,7 +191,7 @@ class TextureFileSource(TextureSource):
 
 class TextureFileSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
-        return TextureFileSource(filename, context)
+        return TextureFileSource(filename, None, context)
 
 #TODO: Should be done in cosmonium class
 #Priority is set to a high value (ie low priority) as this is the fallback factory
@@ -216,7 +217,7 @@ class DirectTextureSource(TextureSource):
 class SimpleTexture(TextureBase):
     def __init__(self, source, srgb=False, offset=0):
         if source is not None and not isinstance(source, TextureSource):
-            source = AutoTextureSource(source)
+            source = AutoTextureSource(source, attribution=None)
         self.srgb = srgb
         self.source = source
         self.offset = offset
@@ -443,8 +444,8 @@ class DataTexture(TextureBase):
 
 class VirtualTextureSource(TextureSource):
     cached = False
-    def __init__(self, root, ext, size, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, root, ext, size, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.map_patch = {}
         self.root = root
         self.ext = ext

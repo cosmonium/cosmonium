@@ -35,7 +35,8 @@ class Shape:
         self.jobs_pending = 0
         self.jobs = 0
         self.clickable = False
-    
+        self.attribution = None
+
     def check_settings(self):
         pass
 
@@ -356,9 +357,10 @@ class ShapeObject(VisibleObject):
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, context=defaultDirContext):
+    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
+        self.attribution = attribution
         self.context = context
         self.scale_factor = 1.0
         if offset is None:

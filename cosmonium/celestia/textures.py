@@ -7,8 +7,8 @@ from ..dircontext import defaultDirContext
 import os
 
 class CelestiaVirtualTextureSource(VirtualTextureSource):
-    def __init__(self, root, ext, size, prefix='tx_', offset=0, context=defaultDirContext):
-        VirtualTextureSource.__init__(self, root, ext, size, context)
+    def __init__(self, root, ext, size, prefix='tx_', offset=0, attribution=None, context=defaultDirContext):
+        VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.prefix = prefix
         self.offset = offset
 

@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from ..bodies import StellarObject, StellarBody, Star
 from ..bodyelements import NoAtmosphere
-from ..datasource import dataSourceDB
+from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit
 from ..astro.rotations import Rotation, UniformRotation
@@ -92,15 +92,31 @@ def surface(surface):
             texts.append(["Resolution", "%dK" % surface.resolution])
         else:
             texts.append(["Resolution", "%s" % surface.resolution])
-    data_source = dataSourceDB.get_source(surface.source)
-    if data_source is not None:
-        texts.append(["Source", data_source.name])
-        if data_source.copyright is not None:
-            texts.append(["Copyright", data_source.copyright])
-        if data_source.license is not None:
-            texts.append(["License", data_source.license])
-        if data_source.url is not None:
-            texts.append(["URL", data_source.url])
+    attributions = []
+    if surface.attribution is not None:
+        attributions.append(('Surface', surface.attribution))
+    else:
+        if surface.shape is not None and surface.shape.attribution is not None:
+            attributions.append(('Model', surface.shape.attribution))
+        if surface.appearance is not None:
+            if surface.appearance.attribution is not None:
+                attributions.append(('Textures', surface.appearance.attribution))
+            elif surface.appearance.texture is not None and surface.appearance.texture.source.attribution is not None:
+                attributions.append(('Texture', surface.appearance.texture.source.attribution))
+    for (name, attribution) in attributions:
+        if attribution is None: continue
+        data_attribution = dataAttributionDB.get_attribution(attribution)
+        texts.append([name, ''])
+        if data_attribution is not None:
+            texts.append(["Source", data_attribution.name])
+            if data_attribution.copyright is not None:
+                texts.append(["Copyright", data_attribution.copyright])
+            if data_attribution.license is not None:
+                texts.append(["License", data_attribution.license])
+            if data_attribution.url is not None:
+                texts.append(["URL", data_attribution.url])
+        else:
+            texts.append(["Source", attribution])
     if len(texts) != 0:
         return ["Surface", texts]
     else:

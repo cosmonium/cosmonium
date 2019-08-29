@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from ..bodies import StellarObject
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..datasource import DataSource, dataSourceDB
+from ..dataattribution import DataAttribution, dataAttributionDB
 
 from .yamlparser import YamlModuleParser
 
@@ -76,21 +76,24 @@ class IncludeYamlParser(YamlModuleParser):
         body = parser.load_and_parse(filename)
         return body
 
-class DataSourceYamlParser(YamlModuleParser):
+class DataAttributionYamlParser(YamlModuleParser):
     @classmethod
-    def decode_source(self, data):
+    def decode(self, data, attribution_id=None):
+        if attribution_id is None:
+            attribution_id = data.get('id')
         name = data.get('name')
         copyright = data.get('copyright', None)
         license = data.get('license', None)
         url = data.get('url', None)
-        source = DataSource(name, copyright, license, url)
-        return source
+        attribution = DataAttribution(name, copyright, license, url)
+        dataAttributionDB.add_attribution(attribution_id, attribution)
+        return None
 
+class DataAttributionsListYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
-        for (source_id, source_data) in data.items():
-            source = self.decode_source(source_data)
-            dataSourceDB.add_source(source_id, source)
+        for (attribution_id, attribution_data) in data.items():
+            DataAttributionYamlParser.decode(attribution_data, attribution_id)
         return None
 
 class SurfaceCategoryYamlParser(YamlModuleParser):
@@ -102,5 +105,7 @@ class SurfaceCategoryYamlParser(YamlModuleParser):
         return None
 
 ObjectYamlParser.register_object_parser('include', IncludeYamlParser())
-ObjectYamlParser.register_object_parser('data-sources', DataSourceYamlParser())
+ObjectYamlParser.register_object_parser('data-sources', DataAttributionsListYamlParser())
+ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
+ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser())
 ObjectYamlParser.register_object_parser('surface-category', SurfaceCategoryYamlParser())

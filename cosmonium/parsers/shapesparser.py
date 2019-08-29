@@ -22,7 +22,8 @@ class MeshYamlParser(YamlModuleParser):
         if offset is not None:
             offset = LVector3d(*offset)
         flatten = data.get('flatten', True)
-        shape = MeshShape(model, offset, scale, flatten, panda, context=YamlModuleParser.context)
+        attribution = data.get('attribution', None)
+        shape = MeshShape(model, offset, scale, flatten, panda, attribution, context=YamlModuleParser.context)
         return (shape, {'create-uv': create_uv})
 
 class ShapeYamlParser(YamlModuleParser):

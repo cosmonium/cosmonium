@@ -63,7 +63,7 @@ class ReflectiveYamlParser(YamlModuleParser):
                 print("Category 'visible' unknown")
                 category = SurfaceCategory('visible')
                 surfaceCategoryDB.add(category)
-            surface = FlatSurface(name=None, category=category, resolution=None, source=None,
+            surface = FlatSurface(name=None, category=category, resolution=None, attribution=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
             atmosphere.add_shape_object(surface)
