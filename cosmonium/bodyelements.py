@@ -94,7 +94,7 @@ class Clouds(FlatSurface):
             shape = SphereShape()
         FlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
-        self.inside = False
+        self.inside = None
         if appearance is not None:
             #TODO: Disabled as it causes blinking
             pass#appearance.check_transparency()
@@ -119,7 +119,7 @@ class Clouds(FlatSurface):
             else:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
                 if not settings.use_inverse_z:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(int(1)))
+                    self.instance.setAttrib(DepthOffsetAttrib.make(1))
                 self.instance.set_depth_write(False)
             self.inside = inside
         return ShapeObject.update_instance(self, camera_pos, orientation)
