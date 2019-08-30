@@ -5,14 +5,13 @@ from panda3d.core import LColor
 
 from ..shapes import MeshShape
 from ..appearances import Appearance, ModelAppearance
-from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture
+from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
 from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
 from .noiseparser import NoiseYamlParser
 from .textureparser import TextureDictionaryYamlParser
-from cosmonium.utils import TransparencyBlend
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -54,14 +53,35 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             else:
                 texture = SurfaceTexture(texture_source)
             appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend, offset=texture_offset, context=YamlModuleParser.context)
-        appearance.set_night_texture(data.get('night-texture'), context=YamlModuleParser.context)
-        appearance.set_normal_map(data.get('normalmap'), context=YamlModuleParser.context)
+        night_texture = data.get('night-texture')
+        if night_texture is not None:
+            texture_source, texture_offset = self.decode_source(night_texture)
+            night_texture = NightTexture(texture_source)
+            #TODO: missing texture offset
+            appearance.set_night_texture(night_texture, context=YamlModuleParser.context)
+        normal_map = data.get('normalmap')
+        if normal_map is not None:
+            texture_source, texture_offset = self.decode_source(normal_map)
+            normal_map = NormalMapTexture(texture_source)
+            #TODO: missing texture offset
+            appearance.set_normal_map(normal_map, context=YamlModuleParser.context)
         specular_color = data.get('specular-color')
         if specular_color is not None:
             appearance.specularColor = LColor(*specular_color)
             appearance.shininess = data.get('shininess', 1)
-            appearance.set_specular_map(data.get('specularmap'), context=YamlModuleParser.context)
-        appearance.set_bump_map(data.get('bumpmap'), data.get('bump-height', 0), context=YamlModuleParser.context)
+            specular_map = data.get('specularmap')
+            if specular_map is not None:
+                texture_source, texture_offset = self.decode_source(specular_map)
+                specular_map = SpecularMapTexture(texture_source)
+                #TODO: missing texture offset
+                appearance.set_specular_map(specular_map, context=YamlModuleParser.context)
+        bump_map = data.get('bumpmap')
+        if bump_map is not None:
+            texture_source, texture_offset = self.decode_source(bump_map)
+            bump_map = BumpMapTexture(texture_source)
+            bump_height = data.get('bump-height', 0)
+            #TODO: missing texture offset
+            appearance.set_bump_map(bump_map, bump_height, context=YamlModuleParser.context)
         diffuse_color = data.get('diffuse-color')
         if diffuse_color is not None:
             appearance.diffuseColor = LColor(*diffuse_color)
