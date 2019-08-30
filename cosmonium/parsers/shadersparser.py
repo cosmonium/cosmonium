@@ -48,6 +48,9 @@ class LightingModelYamlParser(YamlModuleParser):
             model = LambertPhongLightingModel()
         elif object_type == 'oren-nayar':
             model = OrenNayarPhongLightingModel()
+            #TODO: This should be done a better way...
+            if appearance.roughness is None:
+                appearance.roughness = 0.9
         elif object_type == 'lunar-lambert':
             model = LunarLambertLightingModel()
         elif object_type == 'flat':
