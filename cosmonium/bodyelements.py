@@ -115,11 +115,13 @@ class Clouds(FlatSurface):
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
                 if not settings.use_inverse_z:
                     self.instance.setAttrib(DepthOffsetAttrib.make(0))
-                self.instance.set_depth_write(True)
+                if self.appearance.transparency:
+                    self.instance.set_depth_write(True)
             else:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
                 if not settings.use_inverse_z:
                     self.instance.setAttrib(DepthOffsetAttrib.make(1))
-                self.instance.set_depth_write(False)
+                if self.appearance.transparency:
+                    self.instance.set_depth_write(False)
             self.inside = inside
         return ShapeObject.update_instance(self, camera_pos, orientation)
