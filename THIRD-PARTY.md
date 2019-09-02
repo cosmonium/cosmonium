@@ -42,26 +42,6 @@ License: BSD
 
 Reference: [Github](https://github.com/lepture/mistune)
 
-## support/conv3ds2egg
-
-3DS to EGG conversion tool.
-
-Copyright: Copyright (C) 2013 Treeform.
-
-License: WTFPL
-
-Reference: [Github](https://github.com/treeform/3ds2egg)
-
-## support/FilterManager
-
-Render to buffer helper class from Panda3D
-
-Copyright: Copyright (C) 2008, Carnegie Mellon University.
-
-License: BSD
-
-Reference: [Homepage](https://www.panda3d.org) [Github](https://github.com/panda3d/panda3d)
-
 ## ui/Menu
 
 Dropdown and popup menu for DirectGUI.

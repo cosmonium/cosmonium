@@ -4,9 +4,9 @@ from __future__ import absolute_import
 from panda3d.core import loadPrcFileData
 from panda3d.core import DepthTestAttrib, Texture, Shader
 from panda3d.core import FrameBufferProperties
+from direct.filter.FilterManager import FilterManager
 
 from .shaders import PostProcessShader
-from .support.FilterManager import FilterManager
 from . import settings
 
 import sys
@@ -107,34 +107,40 @@ def check_and_create_rendering_buffers(showbase):
         buffer_multisamples = settings.multisamples
 
     if settings.render_scene_to_buffer:
+        print("Render scene to buffer")
         manager = FilterManager(showbase.win, showbase.cam)
         color_buffer = Texture()
         if settings.use_inverse_z:
             render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
             depth_buffer = Texture()
             showbase.win.set_clear_depth(0)
-            depthtex = depth_buffer
-            floatdepth = True
-            depthbits = 24
+            float_depth = True
+            depth_bits = 24
         else:
-            depthtex = None
-            floatdepth = False
-            depthbits = 1
+            depth_buffer = None
+            float_depth = False
+            depth_bits = 1
         if settings.render_scene_to_float:
             if settings.floating_point_buffer:
-                rgbabits = (32, 32, 32, 32)
-                floatcolor = True
+                rgba_bits = (32, 32, 32, 32)
+                float_colors = True
             else:
                 print("Floating point buffer not available, sRBG conversion will show artifacts")
-                rgbabits = (1, 1, 1, 1)
-                floatcolor = False
+                rgba_bits = (1, 1, 1, 1)
+                float_colors = False
         else:
-            rgbabits = (1, 1, 1, 1)
-            floatcolor = False
+            rgba_bits = (1, 1, 1, 1)
+            float_colors = False
         srgb_buffer = settings.use_srgb and settings.use_hardware_srgb
-        final_quad = manager.render_scene_into(colortex=color_buffer, rgbabits=rgbabits, floatcolor=floatcolor, srgb=srgb_buffer,
-                                               depthtex=depthtex, depthbits=depthbits, floatdepth=floatdepth,
-                                               multisamples=buffer_multisamples)
+        textures = {'color': color_buffer, 'depth': depth_buffer}
+        fbprops = FrameBufferProperties()
+        fbprops.setFloatColor(float_colors)
+        fbprops.setRgbaBits(*rgba_bits)
+        fbprops.setSrgbColor(srgb_buffer)
+        fbprops.setDepthBits(depth_bits)
+        fbprops.setFloatDepth(float_depth)
+        fbprops.setMultisamples(buffer_multisamples)
+        final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
         final_quad_shader = PostProcessShader(gamma_correction=final_stage_srgb, hdr=settings.use_hdr).create_shader()
         final_quad.set_shader(final_quad_shader)
         final_quad.set_shader_input("color_buffer", color_buffer)
