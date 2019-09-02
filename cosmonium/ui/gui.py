@@ -555,14 +555,18 @@ class Gui(object):
                         subitems.append([name, 0, over.set_surface, surface])
                 items.append(["Surfaces", 0, subitems])
             if over.system is not None and not isinstance(over.system, Universe):
-                subitems = []
+                children = []
                 for child in over.system.children:
                     if child != over:
+                        children.append(child)
+                if len(children) > 0:
+                    children.sort(key=lambda body: body.orbit.get_apparent_radius())
+                    subitems = []
+                    for child in children:
                         if isinstance(child, SimpleSystem):
                             subitems.append([child.primary.get_friendly_name(), 0, self.cosmonium.select_body, child.primary])
                         else:
                             subitems.append([child.get_friendly_name(), 0, self.cosmonium.select_body, child])
-                if len(subitems) > 0:
                     items.append(["Orbiting bodies", 0, subitems])
             subitems = []
             parent = over.parent
