@@ -353,6 +353,8 @@ class Gui(object):
 
     def create_select_menu_items(self):
         has_selected = self.cosmonium.selected is not None
+        orbiting_bodies = self.create_orbiting_bodies_menu_items(self.cosmonium.selected)
+        orbits = self.create_orbits_menu_items(self.cosmonium.selected)
         return (
             ('_Info>F1', 0, self.show_info if has_selected else 0),
             0,
@@ -364,6 +366,9 @@ class Gui(object):
             ('S_ync>Y', 0, self.cosmonium.sync_selected if has_selected else 0),
             0,
             ('_Reset navigation>Escape', 0, self.escape if has_selected else 0),
+            0,
+            ("Orbiting bodies", 0, orbiting_bodies),
+            ("Orbits", 0, orbits),
         )
 
     def create_camera_menu_items(self):
@@ -523,6 +528,36 @@ class Gui(object):
     def popup_done(self):
         self.popup_menu = False
 
+    def create_orbiting_bodies_menu_items(self, body):
+        subitems = []
+        if body is not None and body.system is not None and not isinstance(body.system, Universe):
+            children = []
+            for child in body.system.children:
+                if child != body:
+                    children.append(child)
+            if len(children) > 0:
+                children.sort(key=lambda x: x.orbit.get_apparent_radius())
+                subitems = []
+                for child in children:
+                    if isinstance(child, SimpleSystem):
+                        subitems.append([child.primary.get_friendly_name(), 0, self.cosmonium.select_body, child.primary])
+                    else:
+                        subitems.append([child.get_friendly_name(), 0, self.cosmonium.select_body, child])
+        return subitems
+
+    def create_orbits_menu_items(self, body):
+        subitems = []
+        if body is not None:
+            parent = body.parent
+            while parent is not None and not isinstance(parent, Universe):
+                if isinstance(parent, SimpleSystem):
+                    if parent.primary != body:
+                        subitems.append([parent.primary.get_friendly_name(), 0, self.cosmonium.select_body, parent.primary])
+                else:
+                    subitems.append([parent.get_friendly_name(), 0, self.cosmonium.select_body, parent])
+                parent = parent.parent
+        return subitems
+
     def create_popup_menu(self, over):
         if over is None and self.menubar_shown:
             return False
@@ -554,29 +589,10 @@ class Gui(object):
                     else:
                         subitems.append([name, 0, over.set_surface, surface])
                 items.append(["Surfaces", 0, subitems])
-            if over.system is not None and not isinstance(over.system, Universe):
-                children = []
-                for child in over.system.children:
-                    if child != over:
-                        children.append(child)
-                if len(children) > 0:
-                    children.sort(key=lambda body: body.orbit.get_apparent_radius())
-                    subitems = []
-                    for child in children:
-                        if isinstance(child, SimpleSystem):
-                            subitems.append([child.primary.get_friendly_name(), 0, self.cosmonium.select_body, child.primary])
-                        else:
-                            subitems.append([child.get_friendly_name(), 0, self.cosmonium.select_body, child])
-                    items.append(["Orbiting bodies", 0, subitems])
-            subitems = []
-            parent = over.parent
-            while parent is not None and not isinstance(parent, Universe):
-                if isinstance(parent, SimpleSystem):
-                    if parent.primary != over:
-                        subitems.append([parent.primary.get_friendly_name(), 0, self.cosmonium.select_body, parent.primary])
-                else:
-                    subitems.append([parent.get_friendly_name(), 0, self.cosmonium.select_body, parent])
-                parent = parent.parent
+            subitems = self.create_orbiting_bodies_menu_items(over)
+            if len(subitems) > 0:
+                items.append(["Orbiting bodies", 0, subitems])
+            subitems = self.create_orbits_menu_items(over)
             if len(subitems) > 0:
                 items.append(["Orbits", 0, subitems])
         if not self.menubar_shown:
