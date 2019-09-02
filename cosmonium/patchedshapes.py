@@ -1084,7 +1084,7 @@ class PatchedShapeBase(Shape):
 class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
-    limit_far = True
+    #limit_far = True
     def __init__(self, patch_size_from_texture=True, lod_control=None):
         PatchedShapeBase.__init__(self, lod_control)
 
