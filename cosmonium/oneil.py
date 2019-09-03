@@ -34,9 +34,9 @@ class ONeilAtmosphere(Atmosphere):
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
-            self.planet_radius = parent.get_apparent_radius()
+            self.planet_radius = parent.get_min_radius()
             self.radius = self.planet_radius * self.AtmosphereRatio
-            self.ratio = self.radius / self.planet_radius
+            self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere):
         return ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize)
@@ -70,7 +70,7 @@ class ONeilScattering(AtmosphericScattering):
         return name
 
     def define_shader(self, shape, appearance):
-        planet_radius = shape.owner.get_apparent_radius()
+        planet_radius = shape.owner.get_min_radius()
         radius = planet_radius * self.AtmosphereRatio
         self.inside = shape.owner.distance_to_obs < radius
 
