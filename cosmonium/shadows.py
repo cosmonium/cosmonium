@@ -5,10 +5,9 @@ from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, 
 from panda3d.core import DrawMask
 from panda3d.core import LVector3, ColorWriteAttrib, LColor, CullFaceAttrib
 
-from .shaders import ShaderShadowMap, ShaderRingShadow
+from .shaders import ShaderShadowMap, ShaderRingShadow, ShaderSphereShadow
 
 from . import settings
-from cosmonium.shaders import ShaderSphereShadow
 
 class ShadowMap(object):
     def __init__(self, size):
@@ -236,6 +235,12 @@ class MultiShadows(ShadowBase):
             self.update_needed = True
         elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
             self.target.shader.add_shadows(self.sphere_shadows.shader_component)
+            #TODO: This is an extremely ugly hack :
+            #Currently only ring shape support oblate sphere shadow caster
+            #To know if we target a ring without introducing an import loop
+            #we check the shadow caster type... this is to remove ASAP
+            if isinstance(self.target.shadow_caster, RingShadowCaster):
+                self.sphere_shadows.shader_component.oblate_occluder = True
             print("Add sphere shadow component")
             self.update_needed = True
 
