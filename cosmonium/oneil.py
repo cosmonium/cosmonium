@@ -17,8 +17,8 @@ class ONeilAtmosphere(Atmosphere):
                  sun_power = 15.0,
                  wavelength = [0.650, 0.570, 0.465],
                  exposure = 0.8,
-                 calc_in_fragment=True,
-                 normalize=True,
+                 calc_in_fragment=False,
+                 normalize=False,
                  hdr=False,
                  appearance=None, shader=None):
         Atmosphere.__init__(self, shape, appearance, shader)
@@ -88,6 +88,8 @@ class ONeilScattering(AtmosphericScattering):
             name += "-infrag"
         if self.hdr:
             name += "-hdr"
+        if self.hdr:
+            name += "-norm"
         return name
 
     def uniforms_scattering(self, code):
