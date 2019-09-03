@@ -150,6 +150,7 @@ class ONeilScattering(AtmosphericScattering):
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos);")
         else:
             code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
+        code.append("  float scaled_vertex_length = length(scaled_vertex);")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
         code.append("  float fFar = length(v3Ray);")
         code.append("  v3Ray /= fFar;")
@@ -183,8 +184,13 @@ class ONeilScattering(AtmosphericScattering):
                 code.append("  float fDepth = exp((fInnerRadius - fCameraHeight) / fScaleDepth);")
             else:
                 code.append("  float fDepth = exp((fInnerRadius - fOuterRadius) / fScaleDepth);")
-            code.append("  float fCameraAngle = dot(-v3Ray, scaled_vertex) / length(scaled_vertex);")
-            code.append("  float fLightAngle = dot(v3LightPos, scaled_vertex) / length(scaled_vertex);")
+            code.append("  float fCameraAngle;")
+            code.append("  if(fCameraHeight > scaled_vertex_length) {")
+            code.append("    fCameraAngle = dot(-v3Ray, scaled_vertex) / scaled_vertex_length;")
+            code.append("  } else {")
+            code.append("    fCameraAngle = dot(v3Ray, scaled_vertex) / scaled_vertex_length;")
+            code.append("  }")
+            code.append("  float fLightAngle = dot(v3LightPos, scaled_vertex) / scaled_vertex_length;")
             code.append("  float fCameraScale = scale(fCameraAngle);")
             code.append("  float fLightScale = scale(fLightAngle);")
             code.append("  float fCameraOffset = fDepth*fCameraScale;")
