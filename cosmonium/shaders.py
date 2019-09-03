@@ -11,7 +11,6 @@ import hashlib
 import os
 
 class ShaderBase(object):
-    dynamic_shader = False
     shaders_cache = {}
 
     def __init__(self):
@@ -32,7 +31,7 @@ class ShaderBase(object):
         pass
 
     def create_and_register_shader(self, shape, appearance, force=False):
-        if force or self.shader is None or self.dynamic_shader:
+        if force or self.shader is None:
             self.define_shader(shape, appearance)
             shader_id = self.get_shader_id()
             self.shader = self.find_shader(shader_id)
@@ -716,7 +715,6 @@ class BasicShader(StructuredShader):
         self.data_source = data_source
         self.data_source.set_shader(self)
         self.after_effects = after_effects
-        self.dynamic_shader = scattering.dynamic_shader
         self.appearance.data = self.data_source
         self.lighting_model.appearance = self.appearance
         if tesselation_control is not None:
@@ -1026,7 +1024,6 @@ class ShaderComponent(object):
     model_normal = False
     world_normal = False
     use_tangent = False
-    dynamic_shader = False
 
     def __init__(self, shader=None):
         self.shader = shader
@@ -1105,7 +1102,6 @@ class CustomShaderComponent(ShaderComponent):
         self.model_normal = False
         self.world_normal = False
         self.use_tangent = False
-        self.dynamic_shader = False
         self.use_double = False
 
         self.vertex_uniforms_data = []

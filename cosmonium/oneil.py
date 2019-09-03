@@ -30,6 +30,7 @@ class ONeilAtmosphere(Atmosphere):
         self.exposure = exposure,
         self.calc_in_fragment = calc_in_fragment
         self.normalize = normalize
+        self.inside = None
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -39,12 +40,27 @@ class ONeilAtmosphere(Atmosphere):
             self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere):
-        return ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize)
+        scattering = ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize)
+        scattering.inside = self.inside
+        return scattering
+
+    def do_update_scattering(self, shape_object):
+        shape_object.shader.scattering.inside = self.inside
+
+    def update_instance(self, camera_pos, orientation):
+        planet_radius = self.owner.get_min_radius()
+        radius = planet_radius * self.AtmosphereRatio
+        inside = self.owner.distance_to_obs < radius
+        if self.inside != inside:
+            self.inside = inside
+            self.shader.scattering.inside = inside
+            self.update_shader()
+            self.update_scattering()
+        return Atmosphere.update_instance(self, camera_pos, orientation)
 
 class ONeilScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True
-    dynamic_shader=True
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
 
@@ -68,11 +84,6 @@ class ONeilScattering(AtmosphericScattering):
         if self.calc_in_fragment:
             name += "-infrag"
         return name
-
-    def define_shader(self, shape, appearance):
-        planet_radius = shape.owner.get_min_radius()
-        radius = planet_radius * self.AtmosphereRatio
-        self.inside = shape.owner.distance_to_obs < radius
 
     def uniforms_scattering(self, code):
         code.append("uniform vec3 v3OriginPos;")       # Center of the planet
