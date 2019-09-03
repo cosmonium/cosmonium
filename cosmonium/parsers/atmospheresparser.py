@@ -47,9 +47,10 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc_in-fragment', True)
         normalize = data.get('normalize', True)
+        hdr = data.get('hdr', False)
         appearance = Appearance()
         lighting_model = LightingModel()
-        scattering = ONeilScattering(atmosphere=True, calc_in_fragment=True, normalize=True)
+        scattering = ONeilScattering(atmosphere=True, calc_in_fragment=True, normalize=True, hdr=True)
         shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
         atmosphere = ONeilAtmosphere(shape=shape,
@@ -59,6 +60,7 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
                                      exposure=exposure,
                                      calc_in_fragment=calc_in_fragment,
                                      normalize=normalize,
+                                     hdr=hdr,
                                      appearance=appearance, shader=shader)
         return atmosphere
 

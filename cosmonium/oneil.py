@@ -19,6 +19,7 @@ class ONeilAtmosphere(Atmosphere):
                  exposure = 0.8,
                  calc_in_fragment=True,
                  normalize=True,
+                 hdr=False,
                  appearance=None, shader=None):
         Atmosphere.__init__(self, shape, appearance, shader)
         self.blend = TransparencyBlend.TB_Alpha
@@ -30,6 +31,7 @@ class ONeilAtmosphere(Atmosphere):
         self.exposure = exposure,
         self.calc_in_fragment = calc_in_fragment
         self.normalize = normalize
+        self.hdr = hdr
         self.inside = None
 
     def set_parent(self, parent):
@@ -40,7 +42,7 @@ class ONeilAtmosphere(Atmosphere):
             self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere):
-        scattering = ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize)
+        scattering = ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -64,12 +66,13 @@ class ONeilScattering(AtmosphericScattering):
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
 
-    def __init__(self, atmosphere=False, calc_in_fragment=False, normalize=False):
+    def __init__(self, atmosphere=False, calc_in_fragment=False, normalize=False, hdr=False):
         AtmosphericScattering.__init__(self)
         self.atmosphere = atmosphere
         self.calc_in_fragment = calc_in_fragment
         self.use_vertex_frag = calc_in_fragment
         self.normalize = normalize
+        self.hdr = hdr
         self.use_normal = False#not self.atmosphere
         self.inside = False
 
@@ -83,6 +86,8 @@ class ONeilScattering(AtmosphericScattering):
             name += '-inside'
         if self.calc_in_fragment:
             name += "-infrag"
+        if self.hdr:
+            name += "-hdr"
         return name
 
     def uniforms_scattering(self, code):
@@ -246,11 +251,13 @@ class ONeilScattering(AtmosphericScattering):
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
             code.append("    total_diffuse_color = fRayleighPhase * primary_color + fMiePhase * secondary_color;")
-            code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
+            if self.hdr:
+                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
             code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
         else:
             code.append("  total_diffuse_color.rgb = shadow * primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
-            code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
+            if self.hdr:
+                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:
