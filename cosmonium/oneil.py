@@ -165,7 +165,7 @@ class ONeilScattering(AtmosphericScattering):
             if self.atmosphere:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
             else:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos);")
+                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
         else:
             code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
@@ -272,8 +272,9 @@ class ONeilScattering(AtmosphericScattering):
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = shape.owner.atmosphere
-        inner_radius = 1.0
-        outer_radius = self.AtmosphereRatio
+        planet_radius = shape.owner.get_min_radius()
+        inner_radius = planet_radius
+        outer_radius = planet_radius * self.AtmosphereRatio
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
@@ -306,16 +307,12 @@ class ONeilScattering(AtmosphericScattering):
         shape.instance.setShaderInput("fScaleOverScaleDepth", scale / self.ScaleDepth)
 
     def update_shader_shape(self, shape, appearance):
-        planet_radius = shape.owner.get_apparent_radius()
-        factor = 1.0 / (shape.owner.scene_scale_factor * planet_radius)
+        factor = 1.0 / shape.owner.scene_scale_factor
 
-        camera_height = max(shape.owner.distance_to_obs / planet_radius, 1.0)
+        camera_height = shape.owner.distance_to_obs
         light_dir = shape.owner.vector_to_star
 
-        pos = shape.owner.rel_position / planet_radius
-        distance = pos.length()
-        if distance < 1.0:
-            pos.normalize()
+        pos = shape.owner.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)
         shape.instance.setShaderInput("v3CameraPos", -pos)
 
