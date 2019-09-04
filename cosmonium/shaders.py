@@ -68,10 +68,14 @@ class ShaderBase(object):
         pass
 
     def update(self, shape, appearance):
+        if not shape.instance_ready:
+            print("shader update called on non ready shape instance")
         self.create_and_register_shader(shape, appearance)
         self.update_shader_shape(shape, appearance)
         if shape.patchable:
             for patch in shape.patches:
+                if not shape.instance_ready:
+                    print("shader update called on non ready patch instance")
                 self.update_shader_patch(shape, patch, appearance)
         else:
             self.update_shader_patch(shape, shape, appearance)
