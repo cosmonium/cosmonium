@@ -6,7 +6,7 @@ from panda3d.core import LColor
 from ..procedural.detailtextures import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
-from ..procedural.appearances import TexturesDictionary
+from ..procedural.appearances import TexturesDictionary, TextureTilingMode
 from ..astro import units
 
 from .utilsparser import DistanceUnitsYamlParser
@@ -129,6 +129,17 @@ class TextureControlYamlParser(YamlParser):
         self.height_scale = 1.0 / radius
         return self.decode_entry(data)
 
+class TextureTilingYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data):
+        (object_type, object_data) = cls.get_type_and_data(data, 'default')
+        if object_type == 'default':
+            return TextureTilingMode.F_none
+        elif object_type == 'hash':
+            return TextureTilingMode.F_hash
+        else:
+            return None
+
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
     def decode_textures_dictionary_entry(self, data):
@@ -138,7 +149,8 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     def decode_textures_dictionary(cls, data):
         entries = data.get('entries')
         scale = data.get('scale')
-        return TexturesDictionary(entries, scale, context=YamlModuleParser.context)
+        tiling = TextureTilingYamlParser.decode(data.get('tiling'))
+        return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
 
     @classmethod
     def decode(cls, data):

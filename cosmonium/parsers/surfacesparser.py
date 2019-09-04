@@ -118,7 +118,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 if control_type == 'textures':
                     control_parser = TextureControlYamlParser()
                     control = control_parser.decode(control, height_scale, radius)
-                    appearance_source = TextureDictionaryDataSource(appearance, TextureDictionaryDataSource.F_hash)
+                    appearance_source = TextureDictionaryDataSource(appearance)
                 elif control_type == 'colormap':
                     control_parser = HeightColorControlYamlParser()
                     control = control_parser.decode(control, height_scale, radius, median)

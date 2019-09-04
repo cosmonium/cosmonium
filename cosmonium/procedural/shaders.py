@@ -5,6 +5,8 @@ from ..shaders import DataSource, VertexControl, ShaderAppearance
 from ..textures import DataTexture
 from .. import settings
 
+from .appearances import TextureTilingMode
+
 class DisplacementVertexControl(VertexControl):
     use_normal = True
 
@@ -419,12 +421,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         patch.instance.set_shader_input("heightmap_%s_v_scale" % self.name, self.heightmap.get_v_scale(patch))
 
 class TextureDictionaryDataSource(DataSource):
-    F_none = 0
-    F_hash = 1
-    def __init__(self, dictionary, filtering=F_none, shader=None):
+    def __init__(self, dictionary, shader=None):
         DataSource.__init__(self, shader)
         self.dictionary = dictionary
-        self.filtering = filtering
+        self.tiling = dictionary.tiling
 
     def get_id(self):
         return 'dict' + str(id(self))
@@ -483,7 +483,7 @@ vec4 textureNoTile( sampler2D samp, in vec2 uv )
 
     def fragment_extra(self, code):
         DataSource.fragment_extra(self, code)
-        if self.filtering == self.F_hash:
+        if self.tiling == TextureTilingMode.F_hash:
             self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
             self.shader.fragment_shader.add_function(code, 'textureNoTile', self.textureNoTile)
         for texture_id in self.dictionary.textures.keys():
@@ -496,7 +496,7 @@ vec4 textureNoTile( sampler2D samp, in vec2 uv )
         return ''
 
     def fragment_shader(self, code):
-        if self.filtering == self.F_hash:
+        if self.tiling == TextureTilingMode.F_hash:
             sampler = 'textureNoTile'
         else:
             sampler = 'texture'
