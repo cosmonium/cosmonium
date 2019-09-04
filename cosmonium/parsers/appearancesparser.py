@@ -7,6 +7,9 @@ from ..shapes import MeshShape
 from ..appearances import Appearance, ModelAppearance
 from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
+#TODO: Should not be here but in respective packages
+from ..celestia.textures import CelestiaVirtualTextureSource
+from ..spaceengine.textures import SpaceEngineVirtualTextureSource
 from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
@@ -28,12 +31,33 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             texture_attribution = parameters.get('attribution', None)
             texture_source = AutoTextureSource(parameters.get('file'), texture_attribution, YamlModuleParser.context)
             texture_offset = parameters.get('offset', 0)
+            parameters = data
+        elif object_type == 'ctx':
+            root = parameters.get('root', None)
+            ext = parameters.get('ext', 'dds')
+            size = parameters.get('size', None)
+            prefix = parameters.get('prefix', 'tx_')
+            offset = parameters.get('offset', 0)
+            attribution = parameters.get('attribution', None)
+            texture_source = CelestiaVirtualTextureSource(root, ext, size, prefix, offset, attribution, YamlModuleParser.context)
+            texture_offset = 0
+        elif object_type == 'se':
+            root = parameters.get('root', None)
+            ext = parameters.get('ext', 'jpg')
+            size = parameters.get('size', 258)
+            channel = parameters.get('color', None)
+            alpha_channel = parameters.get('alpha', None)
+            attribution = parameters.get('attribution', None)
+            texture_source = SpaceEngineVirtualTextureSource(root, ext, size, channel, alpha_channel, attribution)
+            texture_offset = 0
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()
             noise = noise_parser.decode(data.get('noise'))
             size = int(data.get('size', 256))
             texture_source = ProceduralVirtualTextureSource(noise, size)
             texture_offset = parameters.get('offset', 0)
+        else:
+            print("Unknown type", object_type)
         return texture_source, texture_offset
 
     @classmethod
