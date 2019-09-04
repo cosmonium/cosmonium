@@ -38,6 +38,7 @@ class Tile(PatchBase):
         self.create_holder_instance()
         self.bounds = self.local_bounds.make_copy()
         self.bounds.xform(self.holder.getNetTransform().getMat())
+        self.bounds_shape = BoundingBoxShape(self.bounds)
 
     def str_id(self):
         if self.x != 0:

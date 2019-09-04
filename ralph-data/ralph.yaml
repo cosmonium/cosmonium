@@ -69,6 +69,7 @@ appearance:
         gravel: data/procedural/textures/gravel/gravel_01.png
         soil: data/procedural/textures/soil/dirt_02.png
       scale: [0.5, 0.5]
+      tiling: hash
 
 control2:
       type: colormap

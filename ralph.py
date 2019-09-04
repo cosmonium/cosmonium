@@ -455,7 +455,7 @@ class RoamingRalphDemo(CosmoniumBase):
         appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
         data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
                        HeightmapDataSource(self.biome, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
-                       TextureDictionaryDataSource(self.terrain_appearance, TextureDictionaryDataSource.F_hash)]
+                       TextureDictionaryDataSource(self.terrain_appearance)]
         if settings.allow_tesselation:
             tesselation_control = ConstantTesselationControl(invert_v=False)
         else:
@@ -587,6 +587,12 @@ class RoamingRalphDemo(CosmoniumBase):
     def get_apparent_radius(self):
         return 0
 
+    def get_min_radius(self):
+        return 0
+
+    def get_max_radius(self):
+        return 0
+
     def get_name(self):
         return "terrain"
 
@@ -625,7 +631,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.observer = RalphCamera(self.cam, self.camLens)
         self.observer.init()
 
-        self.distance_to_obs = 0.0
+        self.distance_to_obs = 2.0 #Can not be 0 !
         self.height_under = 0.0
         self.scene_position = LVector3()
         self.scene_scale_factor = 1
@@ -675,6 +681,7 @@ class RoamingRalphDemo(CosmoniumBase):
         if self.ralph_config.fog_parameters is not None:
             after_effect = Fog(**self.ralph_config.fog_parameters)
             self.terrain.add_after_effect(after_effect)
+        self.surface = self.terrain_object
 
         self.create_instance()
         self.create_tile(0, 0)
