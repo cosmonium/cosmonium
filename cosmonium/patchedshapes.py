@@ -849,7 +849,7 @@ class PatchedShapeBase(Shape):
                 factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
             else:
                 factor = 2.0
-            self.limit = sqrt(max(0.0, factor * self.owner.surface.get_min_radius() * altitude_to_min_radius))
+            self.limit = sqrt(max(0.0, (factor * self.owner.surface.get_min_radius() + altitude_to_min_radius) * altitude_to_min_radius))
             far = self.limit / settings.scale
             #print(self.limit, far)
             self.lens.setNearFar(far * 1e-4, far)
@@ -1084,7 +1084,7 @@ class PatchedShapeBase(Shape):
 class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
-    #limit_far = True
+    limit_far = True
     def __init__(self, patch_size_from_texture=True, lod_control=None):
         PatchedShapeBase.__init__(self, lod_control)
 
