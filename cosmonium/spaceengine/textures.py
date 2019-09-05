@@ -61,7 +61,7 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
                 channel = None
                 alpha_channel = None
                 if os.path.exists(os.path.join(filename, 'base.jpg')):
-                    channel = ''
+                    channel = None
                 else:
                     if os.path.exists(os.path.join(filename, 'base_c.jpg')):
                         channel = 'c'
