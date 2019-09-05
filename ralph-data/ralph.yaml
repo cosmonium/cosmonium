@@ -1,5 +1,20 @@
 terrain:
-    tile-size: 1024
+    tile-size: 16384
+    max-distance: 16384
+heightmap2:
+    scale: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        fbm:
+          noise:
+            ridged:
+              noise: perlin
+              shift: False
+          octaves: 8
+          length: 1024
+          scale: 500
 heightmap:
     scale: 500
     noise:
@@ -11,17 +26,52 @@ heightmap:
                 noise:
                   ridged: perlin
                 octaves: 8
-                #frequency: 4.0
                 length: 64
                 scale: 50
-            - fbm:
-                noise:
-                  turbulence: perlin
-                octaves: 1
-                #frequency: 0.5
-                length: 512
-                scale: 1000
-                offset: -0.15
+            - mul:
+              - clamp:
+                  noise:
+                    offset:
+                      offset: 0.0
+                      noise:
+                        fbm:
+                          noise:
+                            pow:
+                              - perlin
+                              - 3.0
+                          octaves: 8
+                          length: 2048
+                          scale: 40
+                          height: false
+              - fbm:
+                  noise:
+                    ridged:
+                      noise: perlin
+                      shift: False
+                  octaves: 8
+                  length: 1024
+                  scale: 500
+            - mul:
+              - clamp:
+                  noise:
+                    offset:
+                      offset: -0.0
+                      noise:
+                        fbm:
+                          noise:
+                            pow:
+                              - perlin
+                              - 1
+                          octaves: 6
+                          length: 2048
+                          scale: 40
+                          height: false
+              - fbm:
+                  noise: perlin
+                  octaves: 6
+                  length: 1024
+                  min: -500
+                  max: 0
 biome:
     aliases:
       perlin: gpunoise:perlin
@@ -58,7 +108,7 @@ water:
 fog:
     falloff: 0.035
     density: 40
-    ground: -400
+    ground: -300
 
 appearance:
     textures:
