@@ -20,6 +20,7 @@ class NoiseYamlParser(YamlParser):
 
     def add_scale(self, noise, data):
         if not isinstance(data, dict): return noise
+        height = data.get('height', True)
         min_value = data.get('min', None)
         max_value = data.get('max', None)
         if min_value is None and max_value is None:
@@ -28,7 +29,8 @@ class NoiseYamlParser(YamlParser):
             if scale is None and offset is None:
                 return noise
             if scale is not None:
-                scale *= self.height_scale
+                if height:
+                    scale *= self.height_scale
             else:
                 scale = 1.0
             if offset is None:
@@ -37,11 +39,13 @@ class NoiseYamlParser(YamlParser):
             max_value = scale + offset
         else:
             if min_value is not None:
-                min_value *= self.height_scale
+                if height:
+                    min_value *= self.height_scale
             else:
                 min_value = -1.0
             if max_value is not None:
-                max_value *= self.height_scale
+                if height:
+                    max_value *= self.height_scale
             else:
                 max_value = 1.0
         return NoiseMap(noise, min_value, max_value)
@@ -111,7 +115,9 @@ def create_threshold_noise(parser, data, height_scale, length_scale):
 def create_clamp_noise(parser, data, height_scale, length_scale):
     noise = parser.decode_noise_dict(data.get('noise'))
     min_value = data.get('min', 0.0)
-    max_value = data.get('min', 1.0)
+    max_value = data.get('max', 1.0)
+    data['min'] = None
+    data['max'] = None
     return NoiseClamp(noise, min_value, max_value)
 
 def create_gpunoise_perlin_noise(parser, data, height_scale, length_scale):
@@ -138,8 +144,11 @@ def create_offset_noise(parser, data, height_scale, length_scale):
     return NoiseOffset(noise, offset)
 
 def create_ridged_noise(parser, data, height_scale, length_scale):
-    noise = parser.decode_noise_dict(data)
-    return RidgedNoise(noise)
+    if isinstance(data, str):
+        data = {'noise': data}
+    noise = parser.decode_noise_dict(data.get('noise'))
+    shift = data.get('shift', True)
+    return RidgedNoise(noise, shift=shift)
 
 def create_turbulence_noise(parser, data, height_scale, length_scale):
     noise = parser.decode_noise_dict(data)

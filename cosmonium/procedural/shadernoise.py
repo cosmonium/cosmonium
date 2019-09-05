@@ -114,8 +114,10 @@ class AbsNoise(NoiseSource):
         code.append('        }')
 
 class RidgedNoise(NoiseSource):
-    def __init__(self, noise):
+    def __init__(self, noise, offset=0.33, shift=True):
         self.noise = noise
+        self.offset = offset
+        self.shift = shift
 
     def get_id(self):
         return 'ridged-' + self.noise.get_id()
@@ -132,7 +134,10 @@ class RidgedNoise(NoiseSource):
     def noise_value(self, code, value, point):
         code.append('        {')
         self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s  = (1.0 - abs(tmp) - 0.6) * 2.0 - 1.0;' % value)
+        if self.shift:
+            code.append('        %s  = (1.0 - abs(tmp) - %g) * 2.0 - 1.0;' % (value, self.offset))
+        else:
+            code.append('        %s  = (1.0 - abs(tmp) - %g);' % (value, self.offset))
         code.append('        }')
 
 class NoiseSourceScale(NoiseSource):
@@ -156,6 +161,9 @@ class NoiseSourceScale(NoiseSource):
     def noise_value(self, code, value, point):
         self.noise.noise_value(code, value, '%s * %g' % (point, self.value))
 
+    def update(self, instance):
+        self.noise.update(instance)
+
 class NoiseOffset(NoiseSource):
     def __init__(self, noise, value):
         NoiseSource.__init__(self)
@@ -176,6 +184,9 @@ class NoiseOffset(NoiseSource):
 
     def noise_value(self, code, value, point):
         self.noise.noise_value(code, value, '%s + %g' % (point, self.value))
+
+    def update(self, instance):
+        self.noise.update(instance)
 
 class NoiseAdd(NoiseSource):
     fid = 0
