@@ -83,7 +83,7 @@ class YamlParser(object):
         return data
 
     @classmethod
-    def get_type_and_data(cls, data, default=None):
+    def get_type_and_data(cls, data, default=None, detect_trivial=True):
         if data is None:
             object_type = default
             object_data = {}
@@ -91,7 +91,7 @@ class YamlParser(object):
             object_type = data
             object_data = {}
         else:
-            if len(data) == 1 and data.get('type') is None:
+            if detect_trivial and len(data) == 1 and data.get('type') is None:
                 object_type = list(data)[0]
                 object_data = data[object_type]
             else:

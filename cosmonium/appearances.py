@@ -54,6 +54,9 @@ class AppearanceBase:
     def update_lod(self, nodepath, apparent_radius, distance_to_obs, pixel_size):
         pass
 
+    def get_recommended_shape(self):
+        return None
+
 class Appearance(AppearanceBase):
     JOB_TEXTURE_LOAD = 0x0001
     def __init__(self,
@@ -190,6 +193,12 @@ class Appearance(AppearanceBase):
             self.nb_textures += 1
         if self.nb_textures > 0:
             self.nb_textures_coord = 1
+
+    def get_recommended_shape(self):
+        if self.texture is not None and self.texture.source is not None:
+            return self.texture.source.get_recommended_shape()
+        else:
+            return None
 
     def texture_loaded_cb(self, texture, patch, owner):
         shape = owner.shape

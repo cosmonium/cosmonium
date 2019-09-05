@@ -17,7 +17,7 @@ class CloudsYamlParser(YamlModuleParser):
         if data is None: return None
         height = float(data.get('height'))
         shape, extra = ShapeYamlParser.decode(data.get('shape'))
-        appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
+        appearance = AppearanceYamlParser.decode(data.get('appearance'))
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
                 shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
@@ -36,7 +36,7 @@ class RingsYamlParser(YamlModuleParser):
         inner_radius = data.get('inner-radius')
         outer_radius = data.get('outer-radius')
         lighting_model = data.get('lighting-model')
-        appearance = AppearanceYamlParser.decode(data.get('appearance'), None)
+        appearance = AppearanceYamlParser.decode(data.get('appearance'))
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model)
         rings = Ring(inner_radius, outer_radius, appearance, shader)

@@ -29,6 +29,9 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
     def texture_name(self, patch):
         return os.path.join(self.root, 'level%d' % patch.lod, self.get_patch_name(patch))
 
+    def get_recommended_shape(self):
+        return 'patched-sphere'
+
 class CelestiaVirtualTextureSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
         return ctx_parser.parse_file(filename, context)

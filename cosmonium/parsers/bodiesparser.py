@@ -49,7 +49,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
         if data.get('surfaces') is None:
             shape, extra = ShapeYamlParser.decode(data.get('shape'))
-            appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
+            appearance = AppearanceYamlParser.decode(data.get('appearance'))
             lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
             if shape.patchable:
                 if appearance.texture is None or appearance.texture.source.procedural:

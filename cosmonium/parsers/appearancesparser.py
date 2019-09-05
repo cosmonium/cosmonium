@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor
 
-from ..shapes import MeshShape
 from ..appearances import Appearance, ModelAppearance
 from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
@@ -119,20 +118,12 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
 
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, shape):
-        if data is None:
-            if isinstance(shape, MeshShape):
-                return ModelAppearance()
-            else:
-                return Appearance()
-        if isinstance(data, str):
-            object_type = data
-            parameters = {}
-        else:
-            object_type = data.get('type', 'textures')
-            parameters = data
+    def decode(self, data):
+        (object_type, parameters) = self.get_type_and_data(data, 'textures', detect_trivial=False)
         if object_type == 'textures':
             appearance = TexturesAppearanceYamlParser.decode(parameters)
+        elif object_type == 'model':
+            appearance = ModelAppearance()
         elif object_type == 'textures-dict':
             appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
         else:

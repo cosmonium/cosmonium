@@ -78,6 +78,9 @@ class TextureSource(object):
     def get_texture(self, patch):
         return (None, 0, 0)
 
+    def get_recommended_shape(self):
+        return None
+
 class InvalidTextureSource(TextureSource):
     def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         callback(None, 0, 0, *cb_args)
@@ -148,6 +151,11 @@ class AutoTextureSource(TextureSource):
         if self.source is None:
             self.create_source()
         return self.source.get_texture(patch)
+
+    def get_recommended_shape(self):
+        if self.source is None:
+            self.create_source()
+        return self.source.get_recommended_shape()
 
 class TextureSourceFactory(object):
     def create_source(self, filename, context=defaultDirContext):

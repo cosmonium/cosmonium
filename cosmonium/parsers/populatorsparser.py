@@ -11,7 +11,7 @@ from cosmonium.parsers.shapesparser import ShapeYamlParser
 from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.shaders import BasicShader
 from cosmonium.parsers.shadersparser import VertexControlYamlParser
-from cosmonium.shapes import ShapeObject
+from cosmonium.shapes import ShapeObject, MeshShape
 
 class PlacerYamlParser(YamlModuleParser):
     @classmethod
@@ -38,7 +38,13 @@ class PopulatorYamlParser(YamlModuleParser):
         density /= 1000000.0
         max_instances = 250
         shape, extra = ShapeYamlParser.decode(populator_data.get('shape', None))
-        appearance = AppearanceYamlParser.decode(populator_data.get('appearance', None), shape)
+        appearance = populator_data.get('appearance', None)
+        if appearance is None:
+            if isinstance(shape, MeshShape):
+                appearance = 'model'
+            else:
+                appearance = 'textures'
+        appearance = AppearanceYamlParser.decode(appearance)
         vertex_control = VertexControlYamlParser.decode(populator_data.get('vertex', None))
         shader = BasicShader(#lighting_model=lighting_model,
                              #scattering=scattering,

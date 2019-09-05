@@ -5,6 +5,7 @@ from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader, PandaTextureDataSource
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
+from ..shapes import MeshShape
 from ..astro import units
 from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource, DetailMap, TextureDictionaryDataSource
 from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
@@ -48,17 +49,32 @@ class SurfaceYamlParser(YamlModuleParser):
             category = SurfaceCategory(category_name)
             surfaceCategoryDB.add(category)
         resolution = data.get('resolution', None)
-        attribution = data.get('attribution', data.get('source', None))
-        heightmap = data.get('heightmap', previous.get('heightmap'))
-        if heightmap is not None:
-            default_shape = 'sqrt-sphere'
-        else:
-            default_shape = 'patched-sphere'
-        shape = data.setdefault('shape', previous.get('shape', default_shape))
+        attribution = data.get('attribution', data.get('source'))
+        #The next parameters are using set_default in order to propagate
+        #their manual configuration to the next surface, if any.
+        heightmap = data.setdefault('heightmap', previous.get('heightmap'))
+        shape = data.setdefault('shape', previous.get('shape'))
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
-        shape, extra = ShapeYamlParser.decode(shape)
-        appearance = AppearanceYamlParser.decode(appearance, shape)
+        if shape is not None:
+            shape, extra = ShapeYamlParser.decode(shape)
+        if appearance is not None:
+            appearance = AppearanceYamlParser.decode(appearance)
+        if shape is None:
+            recommended_shape = None
+            if heightmap is not None:
+                recommended_shape = 'sqrt-sphere'
+            elif appearance is not None:
+                recommended_shape = appearance.get_recommended_shape()
+            if recommended_shape is None:
+                recommended_shape = 'patched-sphere'
+            shape, extra = ShapeYamlParser.decode(recommended_shape)
+        if appearance is None:
+            if isinstance(shape, MeshShape):
+                appearance = 'model'
+            else:
+                appearance = 'textures'
+            appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:

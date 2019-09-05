@@ -46,6 +46,9 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
             dir_name = self.face_str[patch.face]
             return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.alpha_channel_text, self.ext)
 
+    def get_recommended_shape(self):
+        return 'se-sphere'
+
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
         filename = context.find_texture(filename)
