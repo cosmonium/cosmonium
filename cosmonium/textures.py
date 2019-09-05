@@ -491,7 +491,7 @@ class VirtualTextureSource(TextureSource):
                     callback(*(self.map_patch[parent_patch] + cb_args))
             else:
                 if callback is not None:
-                    callback(None, None, self.texture_size, patch.lod, *cb_args)
+                    callback(None, self.texture_size, patch.lod, *cb_args)
 
     def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
@@ -521,4 +521,4 @@ class VirtualTextureSource(TextureSource):
             if parent_patch is not None:
                 return self.map_patch[parent_patch]
             else:
-                return (None, None, self.texture_size, patch.lod)
+                return (None, self.texture_size, patch.lod)
