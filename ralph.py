@@ -637,6 +637,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_scale_factor = 1
         self.scene_rel_position = LVector3()
         self.scene_orientation = LQuaternion()
+        self.model_body_center_offset = LVector3()
+        self.world_body_center_offset = LVector3()
         self.context = self
         self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
@@ -782,7 +784,7 @@ class RoamingRalphDemo(CosmoniumBase):
         return task.cont
 
     def print_debug(self):
-        print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
+        print("Height:", self.get_height(self.ralph.getPos()), self.terrain_object.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
         print("Camera:", base.cam.get_pos(), self.follow_cam.height, self.distance_to_obs)
 
