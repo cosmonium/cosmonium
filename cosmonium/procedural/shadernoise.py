@@ -735,6 +735,7 @@ class NoiseFragmentShader(ShaderProgram):
         code.append("uniform vec3 noiseScale;")
         code.append("uniform float global_frequency;")
         code.append("uniform vec3 global_offset;")
+        code.append("uniform float global_scale;")
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             code.append("uniform mat3 cube_rot;")
         self.noise_source.noise_uniforms(code)
@@ -791,7 +792,7 @@ class NoiseFragmentShader(ShaderProgram):
         code.append('position = position * global_frequency + global_offset;')
         code.append('float value;')
         self.noise_source.noise_value(code, 'value', 'position')
-        code.append('return value;')
+        code.append('return value * global_scale;')
         code.append('}')
 
     def create_body(self, code):
@@ -816,6 +817,7 @@ class NoiseShader(StructuredShader):
         self.scale = scale
         self.global_frequency = 1.0
         self.global_offset = LVector3(0, 0, 0)
+        self.global_scale = 1.0
         self.vertex_shader = NoiseVertexShader()
         self.fragment_shader = NoiseFragmentShader(self.coord, self.noise_source, self.noise_target)
         #self.texture = loader.loadTexture('permtexture.png')
@@ -869,6 +871,7 @@ class NoiseShader(StructuredShader):
         instance.set_shader_input('noiseScale', self.scale)
         instance.set_shader_input('global_frequency', self.global_frequency)
         instance.set_shader_input('global_offset', self.global_offset)
+        instance.set_shader_input('global_scale', self.global_scale)
         #instance.set_shader_input('permTexture', self.texture)
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             mat = self.get_rot_for_face(face)

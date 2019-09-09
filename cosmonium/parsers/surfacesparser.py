@@ -92,33 +92,29 @@ class SurfaceYamlParser(YamlModuleParser):
                 #TODO: Refactor with HeightmapYamlParser !
                 name = data.get('name', 'heightmap')
                 size = heightmap.get('size', 256)
-                height_scale = heightmap.get('scale', 1.0)
-                scale_units = DistanceUnitsYamlParser.decode(data.get('scale-units'), units.m)
+                raw_height_scale = heightmap.get('max-height', 1.0)
+                height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height'), units.m)
                 scale_length = heightmap.get('scale-length', None)
                 scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
                 if scale_length is not None:
                     scale_length *= scale_length_units
                 else:
                     scale_length = radius * 2 * pi
-                scale_noise = heightmap.get('scale-noise', True)
                 median = heightmap.get('median', True)
                 filtering = self.decode_filtering(heightmap.get('filter', 'none'))
-                height_scale *= scale_units
-                if scale_noise:
-                    noise_scale = 1.0 / height_scale
-                else:
-                    noise_scale = 1.0
-                scale = height_scale / radius
-                noise_parser = NoiseYamlParser(noise_scale * scale_units, scale_length)
+                height_scale = raw_height_scale * height_scale_units
+                relative_height_scale = height_scale / radius
+                noise_parser = NoiseYamlParser(scale_length)
                 noise = noise_parser.decode(heightmap.get('noise'))
-                noise_offset = None
-                noise_scale = None
                 if shape.patchable:
-                    heightmap = PatchedHeightmap(name, size, scale, pi, pi, median, ShaderHeightmapPatchFactory(noise))
+                    heightmap = PatchedHeightmap(name, size, relative_height_scale, pi, pi, median, ShaderHeightmapPatchFactory(noise))
                     heightmap_source_type = PatchedGpuTextureSource
+                    heightmap.global_scale = 1.0 / raw_height_scale
                 else:
-                    heightmap = ShaderHeightmap(name, size, size // 2, scale, median, noise, noise_offset, noise_scale)
+                    heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise)
                     heightmap_source_type = GpuTextureSource
+                #TODO: should be set using a method or in constructor
+                heightmap.global_scale = 1.0 / raw_height_scale
             else:
                 if shape.patchable:
                     heightmap = heightmapRegistry.get(heightmap + '-patched')

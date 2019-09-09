@@ -134,6 +134,7 @@ class Heightmap(object):
         else:
             self.offset = 0.0
         self.global_frequency = 1.0
+        self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
 
     def set_height_scale(self, height_scale):

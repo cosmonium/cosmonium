@@ -18,16 +18,17 @@ class HeightmapYamlParser(YamlModuleParser):
         name = data.get('name')
         if name is None: return None
         size = data.get('size', 256)
-        scale = data.get('scale', 1.0)
-        scale_units = DistanceUnitsYamlParser.decode(data.get('scale-units'), units.Km)
+        raw_height_scale = data.get('max-height', 1.0)
+        height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.Km)
         median = data.get('median', True)
         noise_parser = NoiseYamlParser()
         noise = noise_parser.decode(data.get('noise'))
-        noise_offset = None
-        noise_scale = None
-        scale *= scale_units
-        patched_heightmap = PatchedHeightmap(name, size, scale, pi, pi, median, ShaderHeightmapPatchFactory(noise))
-        heightmap = ShaderHeightmap(name, size, size // 2, scale, median, noise, noise_offset, noise_scale)
+        height_scale = raw_height_scale * height_scale_units
+        patched_heightmap = PatchedHeightmap(name, size, height_scale, pi, pi, median, ShaderHeightmapPatchFactory(noise))
+        heightmap = ShaderHeightmap(name, size, size // 2, height_scale, median, noise)
+        #TODO: should be set using a method or in constructor
+        patched_heightmap.global_scale = 1.0 / raw_height_scale
+        heightmap.global_scale = 1.0 / raw_height_scale
         heightmapRegistry.register(name, heightmap)
         heightmapRegistry.register(name + '-patched', patched_heightmap)
         return None

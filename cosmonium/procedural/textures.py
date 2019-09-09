@@ -56,6 +56,7 @@ class ProceduralVirtualTextureSource(TextureSource):
         self.texture_size = size
         self.map_patch = {}
         self.global_frequency = 1.0
+        self.global_scale = 1.0
 
     def is_patched(self):
         return True
@@ -109,6 +110,7 @@ class ProceduralVirtualTextureSource(TextureSource):
                                  offset=(patch.x0, patch.y0, 0.0),
                                  scale=(patch.lod_scale_x, patch.lod_scale_y, 1.0))
             shader.global_frequency = self.global_frequency
+            shader.global_scale = self.global_scale
             shader.create_and_register_shader(None, None)
         self.texture = Texture()
         self.texture.set_wrap_u(Texture.WMClamp)

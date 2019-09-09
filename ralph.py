@@ -134,19 +134,16 @@ class RalphConfigParser(YamlModuleParser):
         self.biome_size = terrain.get('biome-size', 128)
 
         heightmap = data.get('heightmap', {})
-        self.height_scale = heightmap.get('scale', 1.0)
+        raw_height_scale = heightmap.get('max-height', 1.0)
+        height_scale_units = heightmap.get('max-height-units', 1.0)
         scale_length = heightmap.get('scale-length', 2.0)
         noise = heightmap.get('noise')
-        scale_noise = heightmap.get('scale-noise', True)
         median = heightmap.get('median', True)
+        self.height_scale = raw_height_scale * height_scale_units
+        self.noise_scale = raw_height_scale
         #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
-        if scale_noise:
-            noise_scale = 1.0 / self.height_scale
-        else:
-            noise_scale = 1.0
-        noise_parser = NoiseYamlParser(noise_scale, scale_length)
+        noise_parser = NoiseYamlParser(scale_length)
         self.heightmap = noise_parser.decode(noise)
-
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
 
@@ -430,6 +427,8 @@ class RoamingRalphDemo(CosmoniumBase):
                                           self.ralph_config.tile_size,
                                           True,
                                           ShaderHeightmapPatchFactory(self.ralph_config.heightmap))
+        #TODO: should be set using a method or in constructor
+        self.heightmap.global_scale = 1.0 / self.ralph_config.noise_scale
 
     def create_terrain_biome(self):
         self.biome = PatchedHeightmap('biome',

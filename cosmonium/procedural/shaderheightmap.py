@@ -14,7 +14,7 @@ import traceback
 class ShaderHeightmap(Heightmap):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, median, noise, offset, scale, coord = TexCoord.Cylindrical):
+    def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical):
         Heightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median)
         self.noise = noise
         self.offset = offset
@@ -121,6 +121,7 @@ class ShaderHeightmap(Heightmap):
                                       offset = self.offset,
                                       scale = self.scale)
             self.shader.global_frequency = self.global_frequency
+            self.shader.global_scale = self.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, 0, self.texture, self.heightmap_ready_cb, (callback, cb_args))
 
@@ -228,5 +229,6 @@ class ShaderHeightmapPatch(HeightmapPatch):
                                       offset=(self.x0, self.y0, 0.0),
                                       scale=(self.lod_scale_x, self.lod_scale_y, 1.0))
             self.shader.global_frequency = self.parent.global_frequency
+            self.shader.global_scale = self.parent.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, self.face, self.texture, self.heightmap_ready_cb, (callback, cb_args))
