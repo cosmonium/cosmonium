@@ -86,6 +86,8 @@ layers:
       panda: true
       scale: false
     placer: random
+    min-lod: 4
+    density: 250
     vertex:
       type: custom
       vertex-uniforms: "uniform float osg_FrameTime;"
@@ -102,6 +104,7 @@ layers:
         panda: true
         scale: false
     placer: random
+    min-lod: 4
 water:
     level: 0
 

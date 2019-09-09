@@ -78,26 +78,36 @@ class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
     pass
 
 class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
-    def __init__(self, object_template, count, placer):
+    def __init__(self, object_template, count, placer, min_lod=0):
         TerrainPopulatorBase.__init__(self, object_template, count, placer)
+        self.min_lod = min_lod
         self.patch_map = {}
         self.visible_patches = {}
-        self.lod_aware = False
 
     def calc_nb_of_instances(self, patch):
         scale = 1 << patch.lod
         count = self.count * self.terrain.size * self.terrain.size
-        return round(count / scale)
+        scaled_count = count / (scale * scale)
+        return scaled_count
+
+    def patch_valid(self, terrain_patch):
+        return terrain_patch in self.patch_map or terrain_patch.lod >= self.min_lod
+
+    def create_patch_for(self, terrain_patch):
+        patch = None
+        #print("CREATE", terrain_patch.str_id())
+        if not terrain_patch in self.patch_map and terrain_patch.lod >= self.min_lod:
+            patch = TerrainPopulatorPatch(None)
+            self.patch_map[terrain_patch] = patch
+        return patch
 
     def create_data_for(self, patch, terrain_patch):
         data = self.generate_instances_info_for(terrain_patch)
         patch.set_data(data)
 
     def create_root_patch(self, terrain_patch):
-        #print("CREATE", terrain_patch.str_id())
-        if not terrain_patch in self.patch_map and terrain_patch.lod == 0:
-            patch = TerrainPopulatorPatch(None)
-            self.patch_map[terrain_patch] = patch
+        if self.patch_valid(terrain_patch):
+            self.create_patch_for(terrain_patch)
 
     def split_patch(self, terrain_patch):
         if not terrain_patch in self.patch_map: return
@@ -143,7 +153,9 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         pass
 
     def show_patch(self, terrain_patch):
+        if not self.patch_valid(terrain_patch): return
         self.create_object_template()
+        self.create_patch_for(terrain_patch)
         #print("SHOW", terrain_patch.str_id())
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
@@ -163,8 +175,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             del self.visible_patches[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
-    def __init__(self, object_template, count, max_instances, placer):
-        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer)
+    def __init__(self, object_template, count, max_instances, placer, min_lod=0):
+        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
 
     def create_object_template_instance_cb(self, terrain_object):
         #Hide the main instance
@@ -188,8 +200,8 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
         patch.instances = []
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
-    def __init__(self, object_template, count, max_instances, placer):
-        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer)
+    def __init__(self, object_template, count, max_instances, placer, min_lod=0):
+        PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
         self.max_instances = max_instances
         self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         self.rebuild = False

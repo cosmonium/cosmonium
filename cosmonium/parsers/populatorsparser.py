@@ -36,7 +36,8 @@ class PopulatorYamlParser(YamlModuleParser):
         populator = None
         density = data.get('density', 250)
         density /= 1000000.0
-        max_instances = 250
+        max_instances = data.get('max-instances', 1000)
+        min_lod = data.get('min-lod', 0)
         shape, extra = ShapeYamlParser.decode(populator_data.get('shape', None))
         appearance = populator_data.get('appearance', None)
         if appearance is None:
@@ -53,9 +54,9 @@ class PopulatorYamlParser(YamlModuleParser):
         object_template = ShapeObject('template', shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))
         if populator_type == 'cpu':
-            populator = CpuTerrainPopulator(object_template, density, max_instances, placer)
+            populator = CpuTerrainPopulator(object_template, density, max_instances, placer, min_lod)
         elif populator_type == 'gpu':
-            populator = GpuTerrainPopulator(object_template, density, max_instances, placer)
+            populator = GpuTerrainPopulator(object_template, density, max_instances, placer, min_lod)
         else:
             print("Unknown populator", populator_type, populator_data)
         return populator
