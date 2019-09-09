@@ -1,5 +1,5 @@
 terrain:
-    tile-size: 16384
+    tile-size: 1024
     max-distance: 16384
 heightmap2:
     scale: 500

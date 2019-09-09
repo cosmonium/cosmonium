@@ -85,9 +85,11 @@ class NoiseYamlParser(YamlParser):
 
 from ..procedural.shadernoise import NoiseSourceScale, NoiseOffset, NoiseClamp
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
-from ..procedural.shadernoise import RidgedNoise, TurbulenceNoise, AbsNoise, FbmNoise
+from ..procedural.shadernoise import RidgedNoise, TurbulenceNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
 from ..procedural.shadernoise import NoiseWarp, Noise1D
-from ..procedural.shadernoise import GpuNoiseLibPerlin3D, SteGuPerlin3D, QuilezPerlin3D
+from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D
+from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
+from ..procedural.shadernoise import QuilezPerlin3D
 
 def create_add_noise(parser, data, height_scale, length_scale):
     noises = parser.decode_noise_list(data)
@@ -123,8 +125,19 @@ def create_clamp_noise(parser, data, height_scale, length_scale):
 def create_gpunoise_perlin_noise(parser, data, height_scale, length_scale):
     return GpuNoiseLibPerlin3D()
 
+def create_gpunoise_cellular_noise(parser, data, height_scale, length_scale):
+    return GpuNoiseLibCellular3D()
+
 def create_stegu_perlin_noise(parser, data, height_scale, length_scale):
     return SteGuPerlin3D()
+
+def create_stegu_cellular_noise(parser, data, height_scale, length_scale):
+    fast = data.get('fast', None)
+    return SteGuCellular3D(fast)
+
+def create_stegu_cellulardiff_noise(parser, data, height_scale, length_scale):
+    fast = data.get('fast', None)
+    return SteGuCellularDiff3D(fast)
 
 def create_iq_perlin_noise(parser, data, height_scale, length_scale):
     return QuilezPerlin3D()
@@ -157,6 +170,14 @@ def create_turbulence_noise(parser, data, height_scale, length_scale):
 def create_abs_noise(parser, data, height_scale, length_scale):
     noise = parser.decode_noise_dict(data)
     return AbsNoise(noise)
+
+def create_square_noise(parser, data, height_scale, length_scale):
+    noise = parser.decode_noise_dict(data)
+    return SquareNoise(noise)
+
+def create_cube_noise(parser, data, height_scale, length_scale):
+    noise = parser.decode_noise_dict(data)
+    return CubeNoise(noise)
 
 def create_1d_noise(parser, data, height_scale, length_scale):
     noise = parser.decode_noise_dict(data.get('noise'))
@@ -199,6 +220,8 @@ NoiseYamlParser.register_noise_parser('threshold', create_threshold_noise)
 NoiseYamlParser.register_noise_parser('clamp', create_clamp_noise)
 NoiseYamlParser.register_noise_parser('abs', create_abs_noise)
 NoiseYamlParser.register_noise_parser('1d', create_1d_noise)
+NoiseYamlParser.register_noise_parser('square', create_square_noise)
+NoiseYamlParser.register_noise_parser('cube', create_cube_noise)
 
 NoiseYamlParser.register_noise_parser('ridged', create_ridged_noise)
 NoiseYamlParser.register_noise_parser('turbulence', create_turbulence_noise)
@@ -206,5 +229,8 @@ NoiseYamlParser.register_noise_parser('fbm', create_fbm_noise)
 NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
 
 NoiseYamlParser.register_noise_parser('gpunoise:perlin', create_gpunoise_perlin_noise)
+NoiseYamlParser.register_noise_parser('gpunoise:cellular', create_gpunoise_cellular_noise)
 NoiseYamlParser.register_noise_parser('stegu:perlin', create_stegu_perlin_noise)
+NoiseYamlParser.register_noise_parser('stegu:cellular', create_stegu_cellular_noise)
+NoiseYamlParser.register_noise_parser('stegu:cellulardiff', create_stegu_cellulardiff_noise)
 NoiseYamlParser.register_noise_parser('iq:perlin', create_iq_perlin_noise)

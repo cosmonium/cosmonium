@@ -42,29 +42,76 @@ class GpuNoiseLibPerlin3D(NoiseSource):
         return 'gnl-perlin3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
-        program.include(code, 'Interpolation', defaultDirContext.find_shader("gpu-noise-lib/Interpolation.glsl"))
-        program.include(code, 'Noise', defaultDirContext.find_shader("gpu-noise-lib/Perlin3D.glsl"))
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Interpolation', defaultDirContext.find_shader("gpu-noise-lib/Interpolation.glsl"))
+        program.include(code, 'gnl-Noise', defaultDirContext.find_shader("gpu-noise-lib/Perlin3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = Perlin3D(%s);' % (value, point))
+
+class GpuNoiseLibCellular3D(NoiseSource):
+    def get_id(self):
+        return 'gnl-cell3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Cellular', defaultDirContext.find_shader("gpu-noise-lib/Cellular.glsl"))
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = sqrt(Cellular3D(%s));' % (value, point))
 
 class SteGuPerlin3D(NoiseSource):
     def get_id(self):
         return 'stegu-perlin3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'snoise', defaultDirContext.find_shader("stegu/noise3D.glsl"))
+        program.include(code, 'stegu-common', defaultDirContext.find_shader("stegu/common.glsl"))
+        program.include(code, 'stegu-snoise', defaultDirContext.find_shader("stegu/noise3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = snoise(%s);' % (value, point))
+
+class SteGuCellular3D(NoiseSource):
+    def __init__(self, fast):
+        NoiseSource.__init__(self)
+        self.fast = fast
+
+    def get_id(self):
+        if self.fast:
+            return 'stegu-cellular3d-fast'
+        else:
+            return 'stegu-cellular3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'stegu-common', defaultDirContext.find_shader("stegu/common.glsl"))
+        if self.fast:
+            program.include(code, 'stegu-cellular', defaultDirContext.find_shader("stegu/cellular2x2x2.glsl"))
+        else:
+            program.include(code, 'stegu-cellular', defaultDirContext.find_shader("stegu/cellular3D.glsl"))
+
+    def noise_value(self, code, value, point):
+        if self.fast:
+            code.append('        %s = cellular2x2x2(%s).x;' % (value, point))
+        else:
+            code.append('        %s = cellular(%s).x;' % (value, point))
+
+class SteGuCellularDiff3D(SteGuCellular3D):
+    def get_id(self):
+        return SteGuCellular3D.get_id(self) + '-diff'
+
+    def noise_value(self, code, value, point):
+        if self.fast:
+            code.append('        vec2 F = cellular2x2x2(%s);' % (point))
+        else:
+            code.append('        vec2 F = cellular(%s);' % (point))
+        code.append('        %s  = F.y - F.x;' % (value))
 
 class QuilezPerlin3D(NoiseSource):
     def get_id(self):
         return 'quilez-gradientnoise3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
+        program.include(code, 'quilez-noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = noise(%s);' % (value, point))
@@ -138,6 +185,50 @@ class RidgedNoise(NoiseSource):
             code.append('        %s  = (1.0 - abs(tmp) - %g) * 2.0 - 1.0;' % (value, self.offset))
         else:
             code.append('        %s  = (1.0 - abs(tmp) - %g);' % (value, self.offset))
+        code.append('        }')
+
+class SquareNoise(NoiseSource):
+    def __init__(self, noise):
+        self.noise = noise
+
+    def get_id(self):
+        return 'square-' + self.noise.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+
+    def noise_value(self, code, value, point):
+        code.append('        {')
+        self.noise.noise_value(code, 'float tmp', point)
+        code.append('        %s = tmp * tmp;' % value)
+        code.append('        }')
+
+class CubeNoise(NoiseSource):
+    def __init__(self, noise):
+        self.noise = noise
+
+    def get_id(self):
+        return 'cube-' + self.noise.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+
+    def noise_value(self, code, value, point):
+        code.append('        {')
+        self.noise.noise_value(code, 'float tmp', point)
+        code.append('        %s = tmp * tmp * tmp;' % value)
         code.append('        }')
 
 class NoiseSourceScale(NoiseSource):
