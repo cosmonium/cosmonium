@@ -46,6 +46,7 @@ allow_shadows = True
 shadow_size = 1024
 multisamples = 2
 max_vertex_size_patch = 64
+max_sprite_size = 400
 
 render_points = True
 render_sprite_points = True

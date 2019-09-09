@@ -515,6 +515,9 @@ class VertexShader(ShaderProgram):
                 code.append("gl_PointSize = size * size_scale;")
             else:
                 code.append("gl_PointSize = size;")
+            #TODO: crude workaround to avoid sprite overdrawn
+            if settings.max_sprite_size != 0:
+                code.append("if (gl_PointSize > %d) gl_PointSize = 0;" % settings.max_sprite_size)
         for shadow in self.shadows:
             shadow.vertex_shader(code)
         self.lighting_model.vertex_shader(code)
