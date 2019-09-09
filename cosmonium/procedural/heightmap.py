@@ -39,7 +39,7 @@ class HeightmapPatch:
 
     @classmethod
     def create_from_patch(cls, noise, parent,
-                          x, y, lod, density,
+                          x, y, scale, lod, density,
                           coord=TexCoord.Cylindrical, face=-1):
         #TODO: Should be move to Patch/Tile
         if coord == TexCoord.Cylindrical:
@@ -63,19 +63,19 @@ class HeightmapPatch:
             s_div = div
             size = 1.0 / (1 << lod)
             half_size = size / 2.0
-            x0 = x - half_size
-            y0 = y - half_size
-            x1 = x + half_size
-            y1 = y + half_size
+            x0 = (x - half_size) * scale
+            y0 = (y - half_size) * scale
+            x1 = (x + half_size) * scale
+            y1 = (y + half_size) * scale
         patch = cls(noise, parent,
                     x0, y0, x1, y1,
                     width=density, height=density,
-                    scale=1.0,
+                    scale=scale,
                     coord=coord, face=face, border=1)
         patch.patch_lod = lod
         patch.lod = lod
-        patch.lod_scale_x = 1.0 / s_div
-        patch.lod_scale_y = 1.0 / r_div
+        patch.lod_scale_x = scale / s_div
+        patch.lod_scale_y = scale / r_div
         patch.density = density
         patch.x = x
         patch.y = y
@@ -239,7 +239,7 @@ class PatchedHeightmap(Heightmap):
                 y = patch.y
                 face = patch.face
             #TODO: Should be done with a factory
-            heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, lod=patch.lod, density=self.size,
+            heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, scale=patch.scale, lod=patch.lod, density=self.size,
                                                        coord=patch.coord, face=face)
             self.map_patch[patch.str_id()] = heightmap
             #TODO: Should be linked properly

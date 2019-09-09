@@ -49,6 +49,7 @@ class PatchBase(Shape):
     def __init__(self, parent, lod, density):
         Shape.__init__(self)
         self.parent = parent
+        self.scale = 1.0
         self.lod = lod
         self.density = density
         self.max_level = int(log(density, 2)) #TODO: should be done properly with checks

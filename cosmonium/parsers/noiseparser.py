@@ -139,7 +139,7 @@ def create_scale_noise(parser, data, height_scale, length_scale):
 def create_offset_noise(parser, data, height_scale, length_scale):
     noise = parser.decode_noise_dict(data.get('noise'))
     offset = data.get('offset', 0.0)
-    #TODO: rename this parameter to src-offset ?
+    #TODO: rename this parameter to src-offset to avoid conflict ?
     data['offset'] = None
     return NoiseOffset(noise, offset)
 

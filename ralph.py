@@ -55,7 +55,7 @@ class TileFactory(object):
 
     def create_patch(self, parent, lod, x, y):
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, self.height_scale)
-        #print("Create tile", lod, x, y, tile.size, tile.flat_coord)
+        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
         if settings.allow_tesselation:
             terrain_layer = GpuPatchTerrainLayer()
         else:
@@ -135,8 +135,7 @@ class RalphConfigParser(YamlModuleParser):
 
         heightmap = data.get('heightmap', {})
         self.height_scale = heightmap.get('scale', 1.0)
-        scale_length = heightmap.get('scale-length', 1)
-        scale_length = scale_length * self.tile_size
+        scale_length = heightmap.get('scale-length', 2.0)
         noise = heightmap.get('noise')
         scale_noise = heightmap.get('scale-noise', True)
         median = heightmap.get('median', True)
