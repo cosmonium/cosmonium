@@ -1,6 +1,136 @@
 terrain:
     tile-size: 16384
     max-distance: 16384
+heightmap1:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        fbm:
+          noise:
+            ridged:
+              noise: perlin
+              shift: False
+          octaves: 1
+          length: 128
+          scale: 50
+heightmap2:
+    max-height: 500
+    noise:
+      aliases:
+        cellular: stegu:cellulardiff
+      noise:
+        fbm:
+          noise: cellular
+          octaves: 1
+          length: 256
+          max-height: 500
+heightmap3:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+          clamp:
+              noise:
+                fbm:
+                  noise: perlin
+                  octaves: 4
+                  length: 4096
+                  scale: 40
+              scale: 100.0
+heightmap4:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        mul:
+          - clamp:
+              noise:
+                fbm:
+                  noise: perlin
+                  octaves: 4
+                  length: 4096
+                  scale: 40
+          - fbm:
+              noise:
+                ridged: perlin
+              octaves: 8
+              length: 1024
+              max-height: 500
+heightmap5:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      noise:
+        add:
+          - fbm:
+                noise:
+                  ridged: perlin
+                octaves: 8
+                length: 256
+                scale: 50
+          - fbm:
+              noise:
+                square:
+                  type: cellular
+                  fast: false
+              octaves: 3
+              length: 192
+              scale: 250
+          - fbm:
+              noise:
+                ridged:
+                  noise: perlin
+                  shift: False
+              octaves: 8
+              length: 2048
+              scale: 250
+heightmap6:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      noise:
+        mul:
+          - clamp:
+              noise:
+                offset:
+                  offset: 1.0
+                  noise:
+                    fbm:
+                      noise:
+                        cube: perlin
+                      octaves: 4
+                      length: 4096
+                      scale: 40
+          - add:
+              - fbm:
+                  noise:
+                    ridged: perlin
+                  octaves: 8
+                  length: 256
+                  scale: 50
+              - fbm:
+                  noise:
+                    type: cellular
+                    fast: false
+                  octaves: 3
+                  length: 192
+                  scale: 250
+              - fbm:
+                  noise:
+                    ridged:
+                      noise: perlin
+                      shift: False
+                  octaves: 8
+                  length: 2048
+                  scale: 250
 heightmap:
     max-height: 500
     noise:
@@ -94,9 +224,9 @@ layers:
 water:
     level: 0
 
-fog:
+fog2:
     falloff: 0.035
-    density: 10
+    density: 40
     ground: -300
 
 appearance:
