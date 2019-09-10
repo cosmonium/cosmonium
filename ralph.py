@@ -455,7 +455,7 @@ class RoamingRalphDemo(CosmoniumBase):
                        HeightmapDataSource(self.biome, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
                        TextureDictionaryDataSource(self.terrain_appearance)]
         if settings.allow_tesselation:
-            tesselation_control = ConstantTesselationControl(invert_v=False)
+            tesselation_control = ConstantTesselationControl(invert_v=True)
         else:
             tesselation_control = None
         self.terrain_shader = BasicShader(appearance=appearance,

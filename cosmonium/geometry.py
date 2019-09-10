@@ -592,7 +592,7 @@ def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
                 prim.addVertices(v, v + nb_vertices, v + 1)
                 prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
+def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)

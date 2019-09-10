@@ -113,10 +113,10 @@ class Tile(PatchBase):
 
     def coord_to_uv(self, coord):
         (x, y) = coord
-        return (x - self.x0) / self.size, 1 - (y - self.y0) / self.size
+        return (x - self.x0) / self.size, (y - self.y0) / self.size
 
     def get_xy_for(self, u, v):
-        return u * self.size + self.x0, (1 - v) * self.size + self.y0
+        return u * self.size + self.x0, v * self.size + self.y0
 
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)

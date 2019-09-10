@@ -804,7 +804,7 @@ class NoiseFragmentShader(ShaderProgram):
             code.append("position.z = p.z * sqrt(1.0 - p2.x * 0.5 - p2.y * 0.5 + p2.x * p2.y / 3.0);")
         else:
             code.append('position.x = noiseOffset.x + coord.x * noiseScale.x;')
-            code.append('position.y = noiseOffset.y + coord.y * noiseScale.y;')
+            code.append('position.y = noiseOffset.y + (1.0 - coord.y) * noiseScale.y;')
             code.append('position.z = noiseOffset.z;')
         code.append('position = position * global_frequency + global_offset;')
         code.append('float value;')
