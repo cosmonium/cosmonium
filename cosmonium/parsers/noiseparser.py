@@ -77,7 +77,7 @@ from ..procedural.shadernoise import NoiseSourceScale, NoiseOffset, NoiseClamp
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, TurbulenceNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
 from ..procedural.shadernoise import NoiseWarp, Noise1D
-from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D
+from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
 from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
 from ..procedural.shadernoise import QuilezPerlin3D
 
@@ -117,6 +117,13 @@ def create_gpunoise_perlin_noise(parser, data, length_scale):
 
 def create_gpunoise_cellular_noise(parser, data, length_scale):
     return GpuNoiseLibCellular3D()
+
+def create_gpunoise_polkadot_noise(parser, data, length_scale):
+    min_value = data.get('min', 0.0)
+    max_value = data.get('max', 1.0)
+    data['min'] = None
+    data['max'] = None
+    return GpuNoiseLibPolkaDot3D(min_value, max_value)
 
 def create_stegu_perlin_noise(parser, data, length_scale):
     return SteGuPerlin3D()
@@ -220,6 +227,7 @@ NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
 
 NoiseYamlParser.register_noise_parser('gpunoise:perlin', create_gpunoise_perlin_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:cellular', create_gpunoise_cellular_noise)
+NoiseYamlParser.register_noise_parser('gpunoise:polkadot', create_gpunoise_polkadot_noise)
 NoiseYamlParser.register_noise_parser('stegu:perlin', create_stegu_perlin_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellular', create_stegu_cellular_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellulardiff', create_stegu_cellulardiff_noise)

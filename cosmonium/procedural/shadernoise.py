@@ -60,6 +60,23 @@ class GpuNoiseLibCellular3D(NoiseSource):
     def noise_value(self, code, value, point):
         code.append('        %s  = sqrt(Cellular3D(%s));' % (value, point))
 
+class GpuNoiseLibPolkaDot3D(NoiseSource):
+    def __init__(self, min_radius, max_radius):
+        NoiseSource.__init__(self)
+        self.min_radius = min_radius
+        self.max_radius = max_radius
+
+    def get_id(self):
+        return 'gnl-polkadot3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Falloff', defaultDirContext.find_shader("gpu-noise-lib/Falloff.glsl"))
+        program.include(code, 'gnl-PolkaDot', defaultDirContext.find_shader("gpu-noise-lib/PolkaDot.glsl"))
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = PolkaDot3D(%s, %g, %g);' % (value, point, self.min_radius, self.max_radius))
+
 class SteGuPerlin3D(NoiseSource):
     def get_id(self):
         return 'stegu-perlin3d'
