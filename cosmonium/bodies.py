@@ -716,11 +716,22 @@ class ReflectiveBody(StellarBody):
         position = self.get_local_position()
         body_position = body.get_local_position()
         pa = body_position - position
+        self_radius = self.get_apparent_radius()
+        #TODO: should be refactored somehow
+        self_ar = self.radius / pa.length()
+        star_ar = self.star.get_apparent_radius() / (self.star._local_position - body_position).length()
+        ar_ratio = star_ar / self_ar
+        #TODO: No longer valid if we are using HDR
+        if ar_ratio * ar_ratio > 255:
+            #the shadow coef is smaller than the min change in pixel color
+            #the umbra will have no visible impact
+            return False
         distance_vector = pa - self.vector_to_star * self.vector_to_star.dot(pa)
         distance = distance_vector.length()
         projected = self.vector_to_star * self.vector_to_star.dot(body_position)
         face = self.vector_to_star.dot(projected - position)
-        return face < 0.0 and distance < self.get_apparent_radius() + body.get_apparent_radius()
+        radius = (1 + ar_ratio) * self_radius + body.get_apparent_radius()
+        return face < 0.0 and distance < radius
 
     def start_shadows_update(self):
         self.surface.start_shadows_update()
