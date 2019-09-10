@@ -163,6 +163,10 @@ class CompositeShapeObject(object):
         for component in self.components:
             component.update_instance(camera_pos, orientation)
 
+    def update_shader(self):
+        for component in self.components:
+            component.update_shader()
+
     def remove_instance(self):
         for component in self.components:
             component.remove_instance()

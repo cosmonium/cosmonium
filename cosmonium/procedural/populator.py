@@ -74,6 +74,10 @@ class TerrainPopulatorBase(object):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             self.object_template.update_instance(camera_pos, orientation)
 
+    def update_shader(self):
+        if self.object_template.instance is not None and self.object_template.instance_ready:
+            self.object_template.update_shader()
+
 class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
     pass
 

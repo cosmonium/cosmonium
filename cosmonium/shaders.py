@@ -2187,6 +2187,8 @@ class Fog(ShaderComponent):
         self.fog_fall_off = fall_off
         self.fog_density = density
         self.fog_ground = ground
+        self.fog_color = (0.5, 0.6, 0.7, 1.0)
+        self.sun_color = (1.0, 0.9, 0.7, 1.0)
 
     def get_id(self):
         return "fog"
@@ -2196,6 +2198,8 @@ class Fog(ShaderComponent):
         code.append("uniform float fogFallOff;")
         code.append("uniform float fogDensity;")
         code.append("uniform float fogGround;")
+        code.append("uniform vec4 fogColor;")
+        code.append("uniform vec4 sunColor;")
 
     def applyFog(self, code):
         code.append('''
@@ -2207,9 +2211,7 @@ vec3 applyFog(in vec3  pixelColor, in vec3 position)
     float fogAmount = fogDensity / fogFallOff * exp(-(camera.z - fogGround) * fogFallOff) * (1.0 - exp(-cam_distance * cam_to_point.z * fogFallOff )) / cam_to_point.z;
     //float fogAmount = fogDensity / fogFallOff * (exp(-(camera.z - fogGround) * fogFallOff) - exp(-(camera.z - fogGround + cam_distance * cam_to_point.z) * fogFallOff )) / cam_to_point.z;
     float sunAmount = max( dot( cam_to_point, light_dir ), 0.0 );
-    vec3 fogColor = vec3(0.5, 0.6, 0.7);
-    vec3 sunColor = vec3(1.0, 0.9, 0.7);
-    vec3  mixColor = mix( fogColor, sunColor, pow(sunAmount, 8.0));
+    vec3  mixColor = mix( fogColor.xyz, sunColor.xyz, pow(sunAmount, 8.0));
     return mix(pixelColor, mixColor, clamp(fogAmount, 0, 1));
 }
 ''')
@@ -2224,3 +2226,5 @@ vec3 applyFog(in vec3  pixelColor, in vec3 position)
         shape.instance.set_shader_input("fogFallOff", self.fog_fall_off)
         shape.instance.set_shader_input("fogDensity", self.fog_density)
         shape.instance.set_shader_input("fogGround", self.fog_ground)
+        shape.instance.set_shader_input("fogColor", self.fog_color)
+        shape.instance.set_shader_input("sunColor", self.sun_color)

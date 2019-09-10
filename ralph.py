@@ -541,6 +541,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         #self.skybox.setColor(.55, .65, .95, 1.0)
         self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
+        self.sun_color = LColor(pow(1.0, 1/2.2), pow(0.9, 1/2.2), pow(0.7, 1/2.2), 1.0)
         self.skybox.setColor(self.skybox_color)
 
     def set_light_angle(self, angle):
@@ -558,11 +559,17 @@ class RoamingRalphDemo(CosmoniumBase):
             self.light_color = (1, coef, coef, 1)
             self.directionalLight.setColor(self.light_color)
             self.skybox.setColor(self.skybox_color * cosA)
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * cosA
+                self.fog.sun_color = self.sun_color * cosA
         else:
-            self.light_color = (1, 0, 0, 1)
+            self.light_color = (0, 0, 0, 1)
             self.directionalLight.setColor(self.light_color)
             self.skybox.setColor(self.skybox_color * 0)
-        self.update()
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * 0
+                self.fog.sun_color = self.sun_color * 0
+        self.terrain.update_shader()
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
@@ -679,8 +686,10 @@ class RoamingRalphDemo(CosmoniumBase):
             self.terrain_shape.add_linked_object(component)
 
         if self.ralph_config.fog_parameters is not None:
-            after_effect = Fog(**self.ralph_config.fog_parameters)
-            self.terrain.add_after_effect(after_effect)
+            self.fog = Fog(**self.ralph_config.fog_parameters)
+            self.terrain.add_after_effect(self.fog)
+        else:
+            self.fog = None
         self.surface = self.terrain_object
 
         self.create_instance()
