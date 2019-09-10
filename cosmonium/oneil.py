@@ -252,7 +252,7 @@ class ONeilScattering(AtmosphericScattering):
             code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
-            code.append("    total_diffuse_color = fRayleighPhase * primary_color + fMiePhase * secondary_color;")
+            code.append("    total_diffuse_color = shadow * (fRayleighPhase * primary_color + fMiePhase * secondary_color);")
             if self.hdr:
                 code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
             code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")

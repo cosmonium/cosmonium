@@ -738,16 +738,22 @@ class ReflectiveBody(StellarBody):
         #TODO: this should be done by looping over components
         if self.clouds is not None:
             self.clouds.start_shadows_update()
+        if self.atmosphere is not None:
+            self.atmosphere.start_shadows_update()
 
     def add_shadow_target(self, target):
         self.surface.add_shadow_target(target.surface)
         if target.clouds is not None:
             self.surface.add_shadow_target(target.clouds)
+        if target.atmosphere is not None:
+            self.surface.add_shadow_target(target.atmosphere)
 
     def end_shadows_update(self):
         self.surface.end_shadows_update()
         if self.clouds is not None:
             self.clouds.end_shadows_update()
+        if self.atmosphere is not None:
+            self.atmosphere.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())

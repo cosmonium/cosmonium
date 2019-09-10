@@ -178,9 +178,9 @@ uniform vec3 v3LightDir;
     vec3 scatteredComponent = (phRayleigh * rayleighCoeff + phMie * mieCoeff) * invScatterCoeffSum * scatteredColor;
 ''']
         if self.atmosphere:
-            code.append("  total_diffuse_color = vec4(scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
+            code.append("  total_diffuse_color = vec4(shadow * scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
         else:
-            code.append("          total_diffuse_color = vec4(scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
+            code.append("          total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:
