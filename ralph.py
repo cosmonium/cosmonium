@@ -563,14 +563,16 @@ class RoamingRalphDemo(CosmoniumBase):
             coef = sqrt(cosA)
             self.light_color = (1, coef, coef, 1)
             self.directionalLight.setColor(self.light_color)
-            self.skybox.setColor(self.skybox_color * cosA)
+            new_sky_color = self.skybox_color * cosA
+            new_sky_color[3] = 1.0
+            self.skybox.setColor(new_sky_color)
             if self.fog is not None:
                 self.fog.fog_color = self.skybox_color * cosA
                 self.fog.sun_color = self.sun_color * cosA
         else:
             self.light_color = (0, 0, 0, 1)
             self.directionalLight.setColor(self.light_color)
-            self.skybox.setColor(self.skybox_color * 0)
+            self.skybox.setColor(self.light_color)
             if self.fog is not None:
                 self.fog.fog_color = self.skybox_color * 0
                 self.fog.sun_color = self.sun_color * 0
