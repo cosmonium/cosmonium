@@ -44,6 +44,7 @@ from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
 from cosmonium.nav import NavBase
 from cosmonium.astro.frame import AbsoluteReferenceFrame
+from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
 
 class TileFactory(object):
     def __init__(self, tile_density, size, height_scale, has_water, water):
@@ -146,6 +147,8 @@ class RalphConfigParser(YamlModuleParser):
         self.heightmap = noise_parser.decode(noise)
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
+        self.interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
+        self.heightmap_max_lod = heightmap.get('max-lod', 100)
 
         layers = data.get('layers', [])
         self.layers = []
@@ -426,7 +429,9 @@ class RoamingRalphDemo(CosmoniumBase):
                                           self.ralph_config.tile_size,
                                           self.ralph_config.tile_size,
                                           True,
-                                          ShaderHeightmapPatchFactory(self.ralph_config.heightmap))
+                                          ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
+                                          self.ralph_config.interpolator,
+                                          max_lod=self.ralph_config.heightmap_max_lod)
         #TODO: should be set using a method or in constructor
         self.heightmap.global_scale = 1.0 / self.ralph_config.noise_scale
 
@@ -451,8 +456,8 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
         appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
-        data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
-                       HeightmapDataSource(self.biome, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
+        data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource),
+                       HeightmapDataSource(self.biome, PatchedGpuTextureSource),
                        TextureDictionaryDataSource(self.terrain_appearance)]
         if settings.allow_tesselation:
             tesselation_control = ConstantTesselationControl(invert_v=True)

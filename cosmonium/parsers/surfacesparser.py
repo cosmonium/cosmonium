@@ -19,26 +19,12 @@ from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser
 from .noiseparser import NoiseYamlParser
+from .heightmapsparser import InterpolatorYamlParser
 from .textureparser import TextureControlYamlParser, HeightColorControlYamlParser
 
 from math import pi
 
 class SurfaceYamlParser(YamlModuleParser):
-    @classmethod
-    def decode_filtering(cls, data):
-        if data == 'none':
-            filtering = HeightmapDataSource.F_none
-        elif data == 'linear':
-            filtering = HeightmapDataSource.F_improved_linear
-        elif data == 'quintic':
-            filtering = HeightmapDataSource.F_quintic
-        elif data == 'bspline':
-            filtering = HeightmapDataSource.F_bspline
-        else:
-            print("Unknown heightmap filtering", data)
-            filtering = HeightmapDataSource.F_none
-        return filtering
-
     @classmethod
     def decode_surface(self, data, atmosphere, previous, owner):
         name = data.get('name', None)
@@ -101,17 +87,20 @@ class SurfaceYamlParser(YamlModuleParser):
                 else:
                     scale_length = radius * 2 * pi
                 median = heightmap.get('median', True)
-                filtering = self.decode_filtering(heightmap.get('filter', 'none'))
+                interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
                 height_scale = raw_height_scale * height_scale_units
                 relative_height_scale = height_scale / radius
                 noise_parser = NoiseYamlParser(scale_length)
                 noise = noise_parser.decode(heightmap.get('noise'))
                 if shape.patchable:
-                    heightmap = PatchedHeightmap(name, size, relative_height_scale, pi, pi, median, ShaderHeightmapPatchFactory(noise))
+                    max_lod = heightmap.get('max-lod', 100)
+                    heightmap = PatchedHeightmap(name, size,
+                                                 relative_height_scale, pi, pi, median,
+                                                 ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
                     heightmap_source_type = PatchedGpuTextureSource
                     heightmap.global_scale = 1.0 / raw_height_scale
                 else:
-                    heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise)
+                    heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
                     heightmap_source_type = GpuTextureSource
                 #TODO: should be set using a method or in constructor
                 heightmap.global_scale = 1.0 / raw_height_scale
@@ -122,8 +111,6 @@ class SurfaceYamlParser(YamlModuleParser):
                 else:
                     heightmap = heightmapRegistry.get(heightmap)
                     heightmap_source_type = GpuTextureSource
-                #TODO: Should be retrieve from registry
-                filtering = HeightmapDataSource.F_none
             control = data.get('control', None)
             if control is not None:
                 control_type = control.get('type', 'textures')
@@ -141,7 +128,7 @@ class SurfaceYamlParser(YamlModuleParser):
             else:
                 shader_appearance = None
                 appearance_source = PandaTextureDataSource()
-            data_source = [HeightmapDataSource(heightmap, heightmap_source_type, filtering=filtering)]
+            data_source = [HeightmapDataSource(heightmap, heightmap_source_type)]
             if appearance_source is not None:
                 data_source.append(appearance_source)
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),

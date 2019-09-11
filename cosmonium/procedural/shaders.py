@@ -23,22 +23,22 @@ class DisplacementVertexControl(VertexControl):
 
 class HeightmapDataSource(DataSource):
     F_none = 0
-    F_improved_linear = 1
+    F_improved_bilinear = 1
     F_quintic = 2
     F_bspline = 3
 
-    def __init__(self, heightmap, texture_class, normals=True, shader=None, filtering=F_none):
+    def __init__(self, heightmap, texture_class, normals=True, shader=None):
         DataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.name = self.heightmap.name
         self.texture_source = DataTexture(texture_class(heightmap))
         self.has_normal_texture = normals
-        self.filtering = filtering
+        self.filtering = heightmap.interpolator.get_data_source_filtering()
 
     def get_id(self):
         str_id = self.name
         config = ''
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             config = 'i'
         elif self.filtering == self.F_quintic:
             config = 'q'
@@ -228,7 +228,7 @@ float decode_height(vec4 encoded) {
 }
 ''']
     def get_terrain_height(self, code):
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             sampler = 'textureGood'
         elif self.filtering == self.F_quintic:
             sampler = 'textureInter'
@@ -274,7 +274,7 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         if settings.encode_float:
             self.shader.vertex_shader.add_decode_rgba(code)
         self.shader.vertex_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             self.shader.vertex_shader.add_function(code, 'textureGood', self.textureGood)
         elif self.filtering == self.F_quintic:
             self.shader.vertex_shader.add_function(code, 'textureInter', self.textureInter)
@@ -286,7 +286,7 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         if settings.encode_float:
             self.shader.fragment_shader.add_decode_rgba(code)
         self.shader.fragment_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             self.shader.fragment_shader.add_function(code, 'textureGood', self.textureGood)
         elif self.filtering == self.F_quintic:
             self.shader.fragment_shader.add_function(code, 'textureInter', self.textureInter)

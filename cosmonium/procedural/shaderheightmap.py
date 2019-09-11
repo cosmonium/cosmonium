@@ -14,8 +14,8 @@ import traceback
 class ShaderHeightmap(Heightmap):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical):
-        Heightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median)
+    def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
+        Heightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
         self.noise = noise
         self.offset = offset
         self.scale = scale
@@ -60,28 +60,11 @@ class ShaderHeightmap(Heightmap):
             print("No peeker")
             traceback.print_stack()
             return 0.0
-        try:
-            color = LColor()
-            #pos = LVector2(x * self.texture_scale[0], ((self.height - 1) - y) * self.texture_scale[1]) + self.texture_offset
-            new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-            #new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #new_y = ((self.height - 1) - new_y)
-            new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #print(x, y, int(new_x), int(new_y), self.texture_scale, self.texture_offset)
-            self.texture_peeker.fetch_pixel(color, min(int(new_x), self.width - 1), min(int(new_y), self.height - 1))
-            #self.texture_peeker.fetch_pixel(color, x, y)
-            if settings.encode_float:
-                height = color[0] + color[1] / 255.0 + color[2] / 65025.0 + color[3] / 16581375.0
-            else:
-                height = color[0]
-        except AssertionError as e:
-            #traceback.print_stack()
-            #print(e)
-            print(x, y)
-            print(int(new_x), int(new_y))
-            print(((self.height - 1) - y), self.texture_scale[1], ((self.height - 1) - y) * self.texture_scale[1], self.texture_offset[1] * self.height)
-            height = 0.0
-        #print(height, self.parent.height_scale)
+        new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
+        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_x = min(new_x, self.width - 1)
+        new_y = min(new_y, self.height - 1)
+        height = self.interpolator.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale# + self.offset
 
     def heightmap_ready_cb(self, texture, callback, cb_args):
@@ -98,8 +81,7 @@ class ShaderHeightmap(Heightmap):
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.texture.setMinfilter(Texture.FT_linear)
-            self.texture.setMagfilter(Texture.FT_linear)
+            self.interpolator.configure_texture(self.texture)
             self._make_heightmap(callback, cb_args)
         else:
             if callback is not None:
@@ -167,28 +149,11 @@ class ShaderHeightmapPatch(HeightmapPatch):
             print("No peeker", self.patch.str_id(), self.patch.instance_ready)
             traceback.print_stack()
             return 0.0
-        try:
-            color = LColor()
-            #pos = LVector2(x * self.texture_scale[0], ((self.height - 1) - y) * self.texture_scale[1]) + self.texture_offset
-            new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-            #new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #new_y = ((self.height - 1) - new_y)
-            new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #print(x, y, int(new_x), int(new_y), self.texture_scale, self.texture_offset)
-            self.texture_peeker.fetch_pixel(color, min(int(new_x), self.width - 1), min(int(new_y), self.height - 1))
-            #self.texture_peeker.fetch_pixel(color, x, y)
-            if settings.encode_float:
-                height = color[0] + color[1] / 255.0 + color[2] / 65025.0 + color[3] / 16581375.0
-            else:
-                height = color[0]
-        except AssertionError as e:
-            #traceback.print_stack()
-            #print(e)
-            print(x, y)
-            print(int(new_x), int(new_y))
-            print(((self.height - 1) - y), self.texture_scale[1], ((self.height - 1) - y) * self.texture_scale[1], self.texture_offset[1] * self.height)
-            height = 0.0
-        #print(height, self.parent.height_scale)
+        new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
+        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_x = min(new_x, self.width - 1)
+        new_y = min(new_y, self.height - 1)
+        height = self.parent.interpolator.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale# + self.parent.offset
 
@@ -197,8 +162,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.texture.setMinfilter(Texture.FT_linear)
-            self.texture.setMagfilter(Texture.FT_linear)
+            self.parent.interpolator.configure_texture(self.texture)
             self._make_heightmap(callback, cb_args)
         else:
             if callback is not None:

@@ -5,6 +5,8 @@ from panda3d.core import LVector2
 from ..patchedshapes import PatchLodControl
 from ..textures import TexCoord
 
+from .interpolator import BilinearInterpolator
+
 from math import floor, ceil
 
 class HeightmapPatch:
@@ -121,7 +123,7 @@ class HeightmapPatchFactory(object):
 class Heightmap(object):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median):
+    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None):
         self.name = name
         self.width = width
         self.height = height
@@ -133,6 +135,9 @@ class Heightmap(object):
             self.offset = -0.5 * self.height_scale
         else:
             self.offset = 0.0
+        if interpolator is None:
+            interpolator = BilinearInterpolator()
+        self.interpolator = interpolator
         self.global_frequency = 1.0
         self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
@@ -193,8 +198,8 @@ class Heightmap(object):
         return None
 
 class PatchedHeightmap(Heightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, max_lod=100):
-        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median)
+    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, max_lod=100):
+        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median, interpolator)
         self.size = size
         self.patch_factory = patch_factory
         self.max_lod = max_lod
