@@ -64,11 +64,10 @@ class HeightmapPatch:
             r_div = div
             s_div = div
             size = 1.0 / (1 << lod)
-            half_size = size / 2.0
-            x0 = (x - half_size) * scale
-            y0 = (y - half_size) * scale
-            x1 = (x + half_size) * scale
-            y1 = (y + half_size) * scale
+            x0 = (x) * scale
+            y0 = (y) * scale
+            x1 = (x + size) * scale
+            y1 = (y + size) * scale
         patch = cls(noise, parent,
                     x0, y0, x1, y1,
                     width=density, height=density,
@@ -256,10 +255,16 @@ class PatchedHeightmap(Heightmap):
                 heightmap.copy_from(parent_heightmap)
                 delta = patch.lod - heightmap.lod
                 scale = 1 << delta
-                x_tex = int(x / scale) * scale
-                y_tex = int(y / scale) * scale
-                x_delta = float(x - x_tex) / scale
-                y_delta = float(y - y_tex) / scale
+                if patch.coord != TexCoord.Flat:
+                    x_tex = int(x / scale) * scale
+                    y_tex = int(y / scale) * scale
+                    x_delta = float(x - x_tex) / scale
+                    y_delta = float(y - y_tex) / scale
+                else:
+                    x_tex = int(x * scale) / scale
+                    y_tex = int(y * scale) / scale
+                    x_delta = float(x - x_tex)
+                    y_delta = float(y - y_tex)
                 #Y orientation is the opposite of the texture v axis
                 y_delta = 1.0 - y_delta - 1.0 / scale
                 if y_delta == 1.0: y_delta = 0.0

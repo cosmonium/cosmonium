@@ -603,8 +603,8 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
             u = float(i) / inner
             v = float(j) / inner
 
-            x = 2.0 * u - 1.0
-            y = 2.0 * v - 1.0
+            x = u
+            y = v
 
             if inv_u:
                 u = 1.0 - u
@@ -626,7 +626,7 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
     return path
 
 def TileAABB(size=1.0, height=1.0):
-    return BoundingBox(LPoint3(-size, -size, -height ), LPoint3(size, size, height))
+    return BoundingBox(LPoint3(0, 0, -height ), LPoint3(size, size, height))
 
 def Patch(size=1.0):
     (path, node) = empty_node('patch')
@@ -634,10 +634,10 @@ def Patch(size=1.0):
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
     vertexWriter = GeomVertexWriter(vdata, "vertex")
-    vertexWriter.addData3f(-size, -size, 0)
-    vertexWriter.addData3f(size, -size, 0)
+    vertexWriter.addData3f(0, 0, 0)
+    vertexWriter.addData3f(size, 0, 0)
     vertexWriter.addData3f(size, size, 0)
-    vertexWriter.addData3f(-size, size, 0)
+    vertexWriter.addData3f(0, size, 0)
     patches = GeomPatches(4, Geom.UHStatic)
 
     patches.addConsecutiveVertices(0, 4) #South, west, north, east
@@ -650,7 +650,7 @@ def Patch(size=1.0):
     return path
 
 def PatchAABB(size=1.0, height=1.0):
-    return BoundingBox(LPoint3(-size, -size, -height ), LPoint3(size, size, height))
+    return BoundingBox(LPoint3(0, 0, -height ), LPoint3(size, size, height))
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     if x_inverted:

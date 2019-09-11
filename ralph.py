@@ -68,13 +68,13 @@ class TileFactory(object):
 
     def split_patch(self, parent):
         lod = parent.lod + 1
-        delta = parent.half_size / 2.0
+        delta = parent.half_size
         x = parent.x
         y = parent.y
-        self.create_patch(parent, lod, x - delta, y - delta)
-        self.create_patch(parent, lod, x + delta, y - delta)
+        self.create_patch(parent, lod, x, y)
+        self.create_patch(parent, lod, x + delta, y)
         self.create_patch(parent, lod, x + delta, y + delta)
-        self.create_patch(parent, lod, x - delta, y + delta)
+        self.create_patch(parent, lod, x, y + delta)
         parent.children_bb = []
         parent.children_normal = []
         parent.children_offset = []

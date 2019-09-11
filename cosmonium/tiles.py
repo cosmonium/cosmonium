@@ -24,16 +24,16 @@ class Tile(PatchBase):
         self.size = 1.0 / (1 << lod)
         self.half_size = self.size / 2.0
 
-        self.x0 = x - self.half_size
-        self.y0 = y - self.half_size
-        self.x1 = x + self.half_size
-        self.y1 = y + self.half_size
-        self.centre = LPoint3d(x, y, 0.0)
+        self.x0 = x
+        self.y0 = y
+        self.x1 = x + self.size
+        self.y1 = y + self.size
+        self.centre = LPoint3d(x + self.half_size, y + self.half_size, 0.0)
         self.flat_coord = LVector4(self.x0 * scale,
                                     self.y0 * scale,
                                     (self.x1 - self.x0) * scale,
                                     (self.y1 - self.y0) * scale)
-        self.local_bounds = geometry.PatchAABB(0.5, self.height_scale)
+        self.local_bounds = geometry.PatchAABB(1.0, self.height_scale)
         self.layers = []
         self.create_holder_instance()
         self.bounds = self.local_bounds.make_copy()
@@ -41,15 +41,7 @@ class Tile(PatchBase):
         self.bounds_shape = BoundingBoxShape(self.bounds)
 
     def str_id(self):
-        if self.x != 0:
-            x = 1.0 / self.x
-        else:
-            x = 0
-        if self.y != 0:
-            y = 1.0 / self.y
-        else:
-            y = 0
-        return "%d - %g %g" % (self.lod, x, y)
+        return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -80,7 +72,7 @@ class Tile(PatchBase):
 
     def create_holder_instance(self):
         self.holder = NodePath('tile')
-        self.holder.set_pos(*self.centre)
+        self.holder.set_pos(self.x0, self.y0, 0.0)
         self.holder.set_scale(*self.get_scale())
         if settings.debug_lod_show_bb:
             self.bounds_shape.create_instance()
@@ -144,7 +136,7 @@ class GpuPatchTerrainLayer(TerrainLayer):
 
     def create_instance(self, patch):
         if self.template is None:
-            GpuPatchTerrainLayer.template = geometry.Patch(0.5)
+            GpuPatchTerrainLayer.template = geometry.Patch(1.0)
         self.instance = NodePath('tile')
         self.template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
@@ -155,7 +147,7 @@ class MeshTerrainLayer(TerrainLayer):
         tile_id = str(patch.tesselation_inner_level) + '-' + '-'.join(map(str, patch.tesselation_outer_level))
         #print(tile_id)
         if tile_id not in self.template:
-            self.template[tile_id] = geometry.Tile(size=0.5, inner=patch.tesselation_inner_level, outer=patch.tesselation_outer_level)
+            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tesselation_inner_level, outer=patch.tesselation_outer_level)
         template = self.template[tile_id]
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)
