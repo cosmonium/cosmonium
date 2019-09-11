@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from panda3d.core import Shader, ShaderAttrib, LVector3d, LVector3
 
+from .utils import TransparencyBlend
 from .cache import create_path_for
 from . import settings
 
@@ -1208,6 +1209,8 @@ class TextureAppearance(ShaderAppearance):
             config += "i"
         if self.has_transparency:
             config += "t"
+            if self.transparency_blend == TransparencyBlend.TB_None:
+                config += "b"
         if self.has_vertex_color:
             config += 'v'
         if self.has_attribute_color:
@@ -1227,6 +1230,7 @@ class TextureAppearance(ShaderAppearance):
         self.has_night_texture = appearance.night_texture is not None
 
         self.has_transparency = appearance.transparency
+        self.transparency_blend = appearance.transparency_blend
         #TODO: should be in ShaderAppearance
         self.has_vertex_color = appearance.has_vertex_color
         self.has_attribute_color = appearance.has_attribute_color
@@ -1282,6 +1286,8 @@ class TextureAppearance(ShaderAppearance):
         if self.has_transparency:
             #TODO: technically binary transparency is alpha strictly lower than .5
             code.append("if (surface_color.a <= transparency_level) discard;")
+            if self.transparency_blend == TransparencyBlend.TB_None:
+                code.append("surface_color.a = 1.0;")
         if self.has_normal_texture:
             code.append("pixel_normal = %s;" % self.data.get_source_for('normal'))
         if self.has_specular_texture:
