@@ -971,6 +971,8 @@ class PatchedShapeBase(Shape):
                 for linked_object in self.linked_objects:
                     linked_object.merge_patch(patch)
                 for child in patch.children:
+                    for linked_object in self.linked_objects:
+                        linked_object.hide_patch(child)
                     self.remove_patch_instance(child)
                     child.parent_split_pending = False
                     child.instanciate_pending = False

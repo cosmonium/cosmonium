@@ -107,6 +107,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         return patch
 
     def create_data_for(self, patch, terrain_patch):
+        if settings.debug_lod_split_merge:
+            print("Populator create data", terrain_patch.str_id())
         data = self.generate_instances_info_for(terrain_patch)
         patch.set_data(data)
 
@@ -148,7 +150,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
 
     def merge_patch(self, terrain_patch):
         if not terrain_patch in self.patch_map: return
-        #print("MERGE", terrain_patch.str_id())
+        if settings.debug_lod_split_merge:
+            print("Populator merge patch", terrain_patch.str_id())
         patch = self.patch_map[terrain_patch]
         for child in terrain_patch.children:
             if child in self.patch_map:
