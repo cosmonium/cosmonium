@@ -116,6 +116,7 @@ class Orbit(VisibleObject):
             vertex_control = LargeObjectVertexControl()
         else:
             vertex_control = None
+        self.instance_ready = True
         self.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
