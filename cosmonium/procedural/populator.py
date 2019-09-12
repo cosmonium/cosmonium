@@ -99,8 +99,9 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
 
     def create_patch_for(self, terrain_patch):
         patch = None
-        #print("CREATE", terrain_patch.str_id())
         if not terrain_patch in self.patch_map and terrain_patch.lod >= self.min_lod:
+            if settings.debug_lod_split_merge:
+                print("Populator create patch", terrain_patch.str_id())
             patch = TerrainPopulatorPatch(None)
             self.patch_map[terrain_patch] = patch
         return patch
@@ -115,7 +116,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
 
     def split_patch(self, terrain_patch):
         if not terrain_patch in self.patch_map: return
-        #print("SPLIT", terrain_patch.str_id(), terrain_patch.x0, terrain_patch.y0, terrain_patch.x1, terrain_patch.y1)
+        if settings.debug_lod_split_merge:
+            print("Populator split patch", terrain_patch.str_id())
         patch = self.patch_map[terrain_patch]
         if patch.data is None:
             self.create_data_for(patch, terrain_patch)
@@ -130,14 +132,14 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             (u, v) = terrain_patch.coord_to_uv((x / size, y / size))
             if u < 0.5:
                 if v < 0.5:
-                    tl.append(data)
-                else:
                     bl.append(data)
+                else:
+                    tl.append(data)
             else:
                 if v < 0.5:
-                    tr.append(data)
-                else:
                     br.append(data)
+                else:
+                    tr.append(data)
         #print(len(bl), len(br), len(tr), len(tl))
         self.patch_map[terrain_patch.children[0]] = TerrainPopulatorPatch(bl)
         self.patch_map[terrain_patch.children[1]] = TerrainPopulatorPatch(br)
@@ -158,9 +160,10 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
 
     def show_patch(self, terrain_patch):
         if not self.patch_valid(terrain_patch): return
+        if settings.debug_lod_split_merge:
+            print("Populator show patch", terrain_patch.str_id())
         self.create_object_template()
         self.create_patch_for(terrain_patch)
-        #print("SHOW", terrain_patch.str_id())
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
             if patch.data is None:
@@ -172,7 +175,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         pass
 
     def hide_patch(self, terrain_patch):
-        #print("HIDE", terrain_patch.str_id())
+        if settings.debug_lod_split_merge:
+            print("Populator hide patch", terrain_patch.str_id())
         if terrain_patch in self.visible_patches:
             patch = self.visible_patches[terrain_patch]
             self.remove_patch_instances(patch, terrain_patch)
@@ -226,7 +230,8 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         for patch in self.visible_patches.values():
             data += patch.data
         offsets_nb = len(data)
-        #print("GEN", offsets_nb)
+        if settings.debug_lod_split_merge:
+            print("Populator regenerate", offsets_nb)
         if settings.instancing_use_tex:
             offsets = data
         else:
