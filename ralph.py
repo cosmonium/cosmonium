@@ -356,10 +356,12 @@ class RalphNav(NavBase):
     def change_distance(self, step):
         camvec = self.ralph.getPos() - self.cam.getPos()
         camdist = camvec.length()
-        camvec.normalize()
+        camvec /= camdist
         new_dist = max(5.0, camdist * (1.0 + step))
+        new_pos = self.ralph.getPos() - camvec * new_dist
         self.follow.set_limits(new_dist / 2.0, new_dist)
-        self.cam.set_pos(self.ralph.getPos() - camvec * new_dist)
+        self.follow.set_height(new_pos.get_z() - self.ralph.get_z())
+        self.cam.set_pos(new_pos)
 
     def update(self, dt):
         if self.mouseSelectClick and base.mouseWatcherNode.hasMouse():
@@ -369,7 +371,10 @@ class RalphNav(NavBase):
             z_angle = -deltaX * self.dragAngleX
             x_angle = deltaY * self.dragAngleY
             self.do_drag(z_angle, x_angle, move=True, rotate=False)
+            camvec = self.ralph.getPos() - self.cam.getPos()
+            camdist = camvec.length()
             self.follow.set_height(self.cam.get_z() - self.ralph.get_z())
+            self.follow.set_limits(camdist / 2.0, camdist)
             return True
 
         if self.keyMap["cam-left"]:
