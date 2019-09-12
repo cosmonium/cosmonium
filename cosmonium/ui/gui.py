@@ -625,6 +625,10 @@ class Gui(object):
     def select_object(self, body):
         self.cosmonium.select_body(body)
 
+    def get_object(self, name):
+        result = objectsDB.get(name)
+        return result
+
     def list_objects(self, prefix):
         result = objectsDB.startswith(prefix)
         text_result = []
