@@ -112,6 +112,10 @@ def create_clamp_noise(parser, data, length_scale):
     data['max'] = None
     return NoiseClamp(noise, min_value, max_value)
 
+def create_const_noise(parser, data, length_scale):
+    value = data.get('value')
+    return NoiseConst(value)
+
 def create_gpunoise_perlin_noise(parser, data, length_scale):
     return GpuNoiseLibPerlin3D()
 
@@ -225,6 +229,7 @@ NoiseYamlParser.register_noise_parser('turbulence', create_turbulence_noise)
 NoiseYamlParser.register_noise_parser('fbm', create_fbm_noise)
 NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
 
+NoiseYamlParser.register_noise_parser('const', create_const_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:perlin', create_gpunoise_perlin_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:cellular', create_gpunoise_cellular_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:polkadot', create_gpunoise_polkadot_noise)
