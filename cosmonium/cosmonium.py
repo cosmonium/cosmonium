@@ -83,6 +83,9 @@ class CosmoniumBase(ShowBase):
         self.world.setShaderAuto()
         self.annotation_shader.setShaderAuto()
 
+        workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
+        workers.syncTextureLoader = workers.SyncTextureLoader()
+
     def panda_config(self):
         data = []
         request_opengl_config(data)
@@ -238,9 +241,6 @@ class Cosmonium(CosmoniumBase):
 
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
-
-        workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
-        workers.syncTextureLoader = workers.SyncTextureLoader()
 
         self.over = None
         self.patch = None

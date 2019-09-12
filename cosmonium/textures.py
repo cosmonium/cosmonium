@@ -230,6 +230,12 @@ class SimpleTexture(TextureBase):
         self.source = source
         self.offset = offset
         self.tex_matrix= True
+        self.panda = True
+        self.input_name = None
+
+    def set_target(self, panda, input_name=None):
+        self.panda = panda
+        self.input_name = input_name
 
     def set_offset(self, offset):
         self.offset = offset
@@ -269,18 +275,31 @@ class SimpleTexture(TextureBase):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             (texture, texture_size, texture_lod) = self.get_default_texture()
-        texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
-        self.init_texture_stage(texture_stage, texture)
         if self.source.is_patched():
             self.clamp(texture)
-        if not self.source.is_patched() or shape.lod == 0:
+        if not self.source.is_patched():
             self.mipmap(texture)
         else:
-            self.linear(texture)
+            if shape.lod == 0:
+                self.mipmap_min(texture)
+            else:
+                self.linear(texture)
         #TODO: Remove this ugly workaround and create an actual RingTexture !
         if isinstance(shape, RingShape):
             texture.setWrapU(Texture.WM_border_color)
             texture.setBorderColor(LColor(0, 0, 0, 0))
+        if self.panda:
+            self.apply_panda(shape, texture, texture_lod)
+        else:
+            self.apply_shader(shape, self.input_name, texture, texture_lod)
+        self.configure_instance(shape.instance)
+
+    def apply_shader(self, shape, input_name, texture, texture_lod):
+        shape.instance.set_shader_input(input_name, texture)
+
+    def apply_panda(self, shape, texture, texture_lod):
+        texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
+        self.init_texture_stage(texture_stage, texture)
         if self.tex_matrix:
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
             if shape.swap_uv:
@@ -305,7 +324,6 @@ class SimpleTexture(TextureBase):
             shape.instance.setTexScale(texture_stage, scale)
             shape.instance.setTexOffset(texture_stage, offset)
         shape.instance.setTexture(texture_stage, texture, 1)
-        self.configure_instance(shape.instance)
 
     def can_split(self, patch):
         return self.source.can_split(patch)
@@ -316,10 +334,14 @@ class SimpleTexture(TextureBase):
 
     def mipmap(self, texture):
         texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMagfilter(Texture.FT_linear_mipmap_linear)
+
+    def mipmap_min(self, texture):
+        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
         texture.setMagfilter(Texture.FT_linear)
 
     def linear(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMinfilter(Texture.FT_linear)
         texture.setMagfilter(Texture.FT_linear)
 
     def debug_borders(self, texture):

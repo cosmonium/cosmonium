@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor
 
-from ..procedural.detailtextures import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
+from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
 from ..procedural.appearances import TexturesDictionary, TextureTilingMode
