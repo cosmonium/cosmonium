@@ -7,6 +7,9 @@ from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
 from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
+
+from . import settings
+
 from math import sin, cos, pi, atan2, sqrt, asin
 
 def empty_node(prefix, color=False):
@@ -592,10 +595,85 @@ def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
                 prim.addVertices(v, v + nb_vertices, v + 1)
                 prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
+def make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio):
+    for a in range(0, 4):
+        start = nb_vertices * nb_vertices + a * nb_vertices
+        for b in range(0, inner):
+            skirt = start + b
+            if a == 0:
+                i = 1
+                x = 0
+                y = b
+            elif a == 1:
+                i = 3
+                x = inner - 1
+                y = b
+            elif a == 2:
+                i = 0
+                x = b
+                y = 0
+            elif a == 3:
+                i = 2
+                x = b
+                y = inner - 1
+            v = nb_vertices * x + y
+            if a == 0:
+                if (y % ratio[i]) == 0:
+                    prim.addVertices(v, v + ratio[i], skirt)
+                    prim.addVertices(skirt, v + ratio[i], skirt + ratio[i])
+            elif a == 1:
+                if (y % ratio[i]) == 0:
+                    prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + ratio[i])
+                    prim.addVertices(v + nb_vertices + ratio[i], skirt, skirt + ratio[i])
+            elif a == 2:
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(v, skirt, v + nb_vertices * ratio[i])
+                    prim.addVertices(v + nb_vertices * ratio[i], skirt, skirt + ratio[i])
+            elif a == 3:
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(skirt + ratio[i], v + 1, v + nb_vertices * ratio[i] + 1)
+                    prim.addVertices(skirt, v + 1, skirt + ratio[i])
+
+def make_primitives_skirt(prim, inner, nb_vertices):
+    for a in range(0, 4):
+        start = nb_vertices * nb_vertices + a * nb_vertices
+        for b in range(0, inner):
+            skirt = start + b
+            if a == 0:
+                x = 0
+                y = b
+            elif a == 1:
+                x = inner - 1
+                y = b
+            elif a == 2:
+                x = b
+                y = 0
+            elif a == 3:
+                x = b
+                y = inner - 1
+            v = nb_vertices * x + y
+            if a == 0:
+                prim.addVertices(v, v + 1, skirt)
+                prim.addVertices(skirt, v + 1, skirt + 1)
+            elif a == 1:
+                prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + 1)
+                prim.addVertices(v + nb_vertices + 1, skirt, skirt + 1)
+            elif a == 2:
+                prim.addVertices(v, skirt, v + nb_vertices)
+                prim.addVertices(v + nb_vertices, skirt, skirt + 1)
+            elif a == 3:
+                prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
+                prim.addVertices(skirt, v + 1, skirt + 1)
+
 def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     for i in range(0, nb_vertices):
@@ -619,7 +697,48 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
             gtanw.add_data3f(1, 0, 0)
             gbiw.add_data3f(0, 1, 0)
 
-    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+    if settings.use_patch_skirts:
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                u = float(i) / inner
+                v = float(j) / inner
+
+                x = u
+                y = v
+
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                gvw.add_data3f(x * size, y * size, -size)
+                gnw.add_data3f(0, 0, 1.0)
+                gtanw.add_data3f(1, 0, 0)
+                gbiw.add_data3f(0, 1, 0)
+
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
