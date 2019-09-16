@@ -868,7 +868,12 @@ def SquaredDistanceSquarePatch(height, inner, outer,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -909,7 +914,63 @@ def SquaredDistanceSquarePatch(height, inner, outer,
             gtanw.add_data3f(z, y, -x)
             gbiw.add_data3f(x, z, -y)
 
-    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+    if settings.use_patch_skirts:
+        if offset is None:
+            offset = 0
+        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                u = float(i) / inner
+                v = float(j) / inner
+                x = x0 + i * dx / inner
+                y = y0 + j * dy / inner
+                x = 2.0 * x - 1.0
+                y = 2.0 * y - 1.0
+                z = 1.0
+                x2 = x * x
+                y2 = y * y
+                z2 = z * z
+                x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+                y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+                z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                if offset is not None:
+                    gvw.add_data3f(x * height - normal[0] * offset,
+                                   y * height - normal[1] * offset,
+                                   z * height - normal[2] * offset)
+                else:
+                    gvw.add_data3f(x * height, y * height, z * height)
+                gnw.add_data3f(x, y, z)
+                gtanw.add_data3f(z, y, -x)
+                gbiw.add_data3f(x, z, -y)
+
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -978,7 +1039,12 @@ def NormalizedSquarePatch(height, inner, outer,
                           x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -1013,7 +1079,57 @@ def NormalizedSquarePatch(height, inner, outer,
             #gtanw.add_data3f(vec.z, vec.y, -vec.x)
             #gbiw.add_data3f(vec.x, vec.z, -vec.y)
 
-    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+    if settings.use_patch_skirts:
+        if offset is None:
+            offset = 0
+        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                x = x0 + i * dx / inner
+                y = y0 + j * dy / inner
+                vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+                vec.normalize()
+                u = float(i) / inner
+                v = float(j) / inner
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                nvec = vec
+                vec = vec * height
+                if offset is not None:
+                    vec = vec - normal * offset
+                gvw.add_data3f(*vec)
+                gnw.add_data3f(nvec.x, nvec.y, nvec.z)
+                gtanw.add_data3f(-(1.0 + y*y), x*y, x)
+                gbiw.add_data3f(x * y, -(1.0 + x*x), y)
+                #gtanw.add_data3f(vec.z, vec.y, -vec.x)
+                #gbiw.add_data3f(vec.x, vec.z, -vec.y)
+
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
