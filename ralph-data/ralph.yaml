@@ -14,7 +14,7 @@ heightmap:
             - clamp:
                 noise:
                   offset:
-                    offset: 1.0
+                    offset: 50000.0
                     noise:
                       fbm:
                         noise:
@@ -48,7 +48,7 @@ heightmap:
               - clamp:
                   noise:
                     offset:
-                      offset: -1.0
+                      offset: -2.0
                       noise:
                         fbm:
                           noise:
@@ -93,7 +93,7 @@ layers:
     min-lod: 4
 water:
     level: 0
-
+    visible: true
 fog:
     falloff: 0.035
     density: 10
