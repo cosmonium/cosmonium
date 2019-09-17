@@ -129,6 +129,10 @@ class PatchBase(Shape):
     def set_neighbours(self, face, neighbours):
         self.neighbours[face] = neighbours
 
+    def add_neighbour(self, face, neighbour):
+        if neighbour not in self.neighbours[face]:
+            self.neighbours[face].append(neighbour)
+
     def get_neighbours(self, face):
         return [] + self.neighbours[face]
 
