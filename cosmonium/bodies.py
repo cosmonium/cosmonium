@@ -150,14 +150,18 @@ class StellarObject(LabelledObject):
         self.set_shown(bodyClasses.get_show(self.body_class))
 
     def get_fullname(self, separator='/'):
-        if hasattr(self.parent, "primary") and self.parent.primary is not None:
-            fullname = self.parent.parent.get_fullname(separator)
+        if hasattr(self, "primary") and self.primary is not None:
+            name = self.primary.get_friendly_name()
         else:
+            name = self.get_friendly_name()
+        if not hasattr(self.parent, "primary") or self.parent.primary is not self:
             fullname = self.parent.get_fullname(separator)
-        if fullname != '':
-            return fullname + separator + self.get_friendly_name()
         else:
-            return self.get_friendly_name()
+            fullname = self.parent.parent.get_fullname(separator)
+        if fullname != '':
+            return fullname + separator + name
+        else:
+            return name
 
     def create_label_instance(self):
         if isinstance(self.orbit, FixedPosition):
