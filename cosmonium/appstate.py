@@ -49,6 +49,7 @@ class AppState(object):
         self.render = {}
         self.render['orbits'] = settings.show_orbits
         self.render['clouds'] = settings.show_clouds
+        self.render['atmospheres'] = settings.show_atmospheres
         self.render['asterisms'] = settings.show_asterisms
         self.render['boundaries'] = settings.show_boundaries
         self.render['equatorialgrid'] = cosmonium.equatorial_grid.shown

@@ -266,7 +266,9 @@ class CelUrl(object):
     def encode_render_flags(self, render):
         flags = 0
         # ShowStars           =   0x0001
+        flags |= 0x0001
         # ShowPlanets         =   0x0002
+        flags |= 0x0002
         if render.get('galaxy', False):
             flags |= 0x0004
         if render.get('asterisms', False):
@@ -278,23 +280,33 @@ class CelUrl(object):
         if render.get('equatorialgrid', False):
             flags |= 0x0040
         # ShowNightMaps       =   0x0080
+        flags |= 0x0080
         if render.get('atmospheres', False):
             flags |= 0x0100
         # ShowSmoothLines     =   0x0200
+        flags |= 0x0200
         # ShowEclipseShadows  =   0x0400
+        flags |= 0x0400
         # ShowStarsAsPoints   =   0x0800
+        flags |= 0x0800
         # ShowRingShadows     =   0x1000
+        flags |= 0x1000
         # ShowBoundaries      =   0x2000
         if render.get('boundaries', False):
             flags |=  0x2000
         # ShowAutoMag         =   0x4000
         # ShowCometTails      =   0x8000
+        flags |= 0x8000
         # ShowMarkers         =  0x10000
         # ShowPartialTrajectories = 0x20000
         # ShowNebulae         =  0x40000
+        flags |= 0x40000
         # ShowOpenClusters    =  0x80000
+        flags |= 0x80000
         # ShowGlobulars       =  0x100000
+        flags |= 0x100000
         # ShowCloudShadows    =  0x200000
+        flags |= 0x200000
         # ShowGalacticGrid    =  0x400000
         if render.get('eclipticgrid', False):
             flags |= 0x800000
