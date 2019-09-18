@@ -20,7 +20,7 @@ class Query:
         self.query = None
         self.suggestions = None
         self.owner = None
-        self.current_selection = -1
+        self.current_selection = None
         self.current_list = []
         self.completion_task = None
         self.max_columns = 4
@@ -47,7 +47,7 @@ class Query:
         self.query = None
         self.suggestions.destroy()
         self.suggestions = None
-        self.current_selection = -1
+        self.current_selection = None
         self.current_list = []
         if self.completion_task is not None:
             taskMgr.remove(self.completion_task)
