@@ -185,6 +185,8 @@ class CosmoniumBase(ShowBase):
         if settings.win_fullscreen:
             resolutions = self.get_fullscreen_sizes()
             wp.setSize(*resolutions[0])
+        else:
+            wp.setSize(settings.win_width, settings.win_height)
         self.win.requestProperties(wp)
         configParser.save()
 
