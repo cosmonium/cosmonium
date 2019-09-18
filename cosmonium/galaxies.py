@@ -222,7 +222,6 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         sizes = []
         nb_points = self.nb_points
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = [self.yellow_color, self.blue_color]
         spread = self.spread
         zspread = self.zspread
@@ -233,7 +232,7 @@ class IrregularGalaxyShape(GalaxyShapeBase):
             if value < 0.5:
                 points.append(p * radius)
                 colors.append(choice(color))
-                size = sprite_size + gauss(0, half_sprite_size)
+                size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
                 count += 1
         return (points, colors, sizes)
@@ -249,7 +248,6 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
 
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.yellow_color
         for i in range(count):
             x = gauss(0.0, spread)
@@ -257,13 +255,12 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
             z = gauss(0.0, zspread)
             points.append(LPoint3d(x * radius, y * radius, z * radius))
             colors.append(color)
-            size = sprite_size + gauss(0, half_sprite_size)
+            size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
     def create_spiral(self, count,radius, spread, zspread, points, colors, sizes):
         func = self.shape_func
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.blue_color
         distance = 0
         for i in (-1.0, 1.0):
@@ -278,7 +275,7 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 points.append(point)
                 distance = max(distance, point.length())
                 colors.append(color)
-                size = (sprite_size + gauss(0, half_sprite_size))
+                size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
         self.size = distance
 
@@ -355,7 +352,6 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
 
     def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.yellow_color
         for r in range(count * 2):
             distance = self.bulge_radius + abs(gauss(0, (1 - self.bulge_radius)))
@@ -365,5 +361,5 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             z = gauss(0.0, zspread)
             points.append(LPoint3d(x * radius, y * radius, z * radius))
             colors.append(color)
-            size = sprite_size + gauss(0, half_sprite_size)
+            size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
