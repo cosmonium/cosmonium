@@ -278,13 +278,15 @@ class Gui(object):
         url = self.clipboard.copy_from()
         if url is None or url == '': return
         print(url)
+        state = None
         cel_url = CelUrl()
-        cel_url.parse(url)
-        state = cel_url.convert_to_state(self.cosmonium)
+        if cel_url.parse(url):
+            state = cel_url.convert_to_state(self.cosmonium)
         if state is not None:
             state.apply_state(self.cosmonium)
         else:
             print("Invalid URL: '%s'" % url)
+            self.update_info("Invalid URL...")
 
     def toggle_jump(self):
         settings.debug_jump = not settings.debug_jump

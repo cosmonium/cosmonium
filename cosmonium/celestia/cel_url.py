@@ -10,7 +10,6 @@ from .bigfix import Bigfix
 
 import sys
 import re
-from sys import flags
 
 if sys.version_info[0] < 3:
     import urlparse
@@ -189,6 +188,7 @@ class CelUrl(object):
             self.label_flags = self.parse_label_flags(int(self.label_flags))
         self.time_source = parameters.get('tsrc', None)
         self.valid = True
+        return self.valid
 
     def convert_to_state(self, engine):
         if not self.valid: return None

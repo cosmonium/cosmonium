@@ -433,13 +433,15 @@ class Cosmonium(CosmoniumBase):
 
     def load_cel_url(self, url):
         print("Loading", url)
+        state = None
         cel_url = CelUrl()
-        cel_url.parse(url)
-        state = cel_url.convert_to_state(self)
+        if cel_url.parse(url):
+            state = cel_url.convert_to_state(self)
         if state is not None:
             state.apply_state(self)
         else:
             print("Invalid cel://")
+            self.gui.update_info("Invalid URL...")
 
     def reset_all(self):
         self.gui.update_info("Cancel", 0.5, 1.0)
