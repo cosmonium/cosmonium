@@ -47,8 +47,8 @@ def orbit_info(orbit):
 
 def fixed_orbit_info(orbit):
     texts = []
-    texts.append(["Right Ascension", "%dh%dm%gs" % toHourMinSec(orbit.right_asc * 180 / pi) + "%g" % (orbit.right_asc * 180 / pi)])
-    texts.append(["Declination", "%d°%d'%g\"" % toDegMinSec(orbit.declination * 180 / pi)])
+    texts.append(["Right Ascension", "%dh%dm%gs" % toHourMinSec(orbit.get_right_asc() * 180 / pi)])
+    texts.append(["Declination", "%d°%d'%g\"" % toDegMinSec(orbit.get_declination() * 180 / pi)])
     return ["Position", texts]
 
 def elliptic_orbit_info(orbit):
