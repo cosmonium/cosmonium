@@ -10,6 +10,8 @@ from ..textures import TexCoord
 from .. import settings
 
 import traceback
+import numpy
+import sys
 
 class ShaderHeightmap(Heightmap):
     tex_generators = {}
@@ -136,6 +138,9 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.cloned = False
         self.texture_offset = LVector2()
         self.texture_scale = LVector2(1, 1)
+        self.min_height = None
+        self.max_height = None
+        self.mean_height = None
 
     def copy_from(self, heightmap_patch):
         self.cloned = True
@@ -174,6 +179,16 @@ class ShaderHeightmapPatch(HeightmapPatch):
 #         if self.texture_peeker is None:
 #             print("NOT READY !!!")
         self.heightmap_ready = True
+        data = self.texture.getRamImage()
+        if sys.version_info[0] < 3:
+            buf = data.getData()
+            np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
+        else:
+            np_buffer = numpy.frombuffer(data, numpy.float32)
+        np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
+        self.min_height = np_buffer.min()
+        self.max_height = np_buffer.max()
+        self.mean_height = np_buffer.mean()
         if callback is not None:
             callback(self, *cb_args)
 
