@@ -1125,9 +1125,9 @@ class PatchedShape(PatchedShapeBase):
             offset = offset + patch_normal * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
-        obj_bounds.xform(self.instance.getMat(render))
-        #print(bb, obj_bounds, self.lens_bounds)
-        intersect = self.lens_bounds.contains(obj_bounds)
+        lens_bounds = self.lens_bounds.make_copy()
+        lens_bounds.xform(render.get_mat(self.instance))
+        intersect = lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
 
     def is_patch_in_view(self, patch):

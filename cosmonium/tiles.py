@@ -230,9 +230,9 @@ class TiledShape(PatchedShapeBase):
         return (model_camera_pos, None, (x, y))
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
-        obj_bounds = bb.make_copy()
-        obj_bounds.xform(self.instance.getMat(render))
-        intersect = self.lens_bounds.contains(obj_bounds)
+        lens_bounds = self.lens_bounds.make_copy()
+        lens_bounds.xform(render.get_mat(self.instance))
+        intersect = lens_bounds.contains(bb)
         return (intersect & BoundingBox.IF_some) != 0
 
     def is_patch_in_view(self, patch):
