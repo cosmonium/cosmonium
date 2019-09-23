@@ -850,7 +850,9 @@ class PatchedShapeBase(Shape):
             self.limit = sqrt(max(0.0, (factor * self.owner.surface.get_min_radius() + altitude_to_min_radius) * altitude_to_min_radius))
             far = self.limit / settings.scale
             #print(self.limit, far)
-            self.lens.setNearFar(far * 1e-4, far)
+            #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
+            #TODO: get the actual value from the config
+            self.lens.setNearFar(far * 1e-6, far)
         self.lens_bounds = self.lens.makeBounds()
         self.lens_bounds.xform(self.owner.context.observer.cam.getNetTransform().getMat())
         if self.frustum is not None:
