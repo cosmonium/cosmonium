@@ -47,6 +47,7 @@ class Tile(PatchBase):
         self.layers.append(layer)
 
     def check_settings(self):
+        PatchBase.check_settings(self)
         for layer in self.layers:
             layer.check_settings()
         for child in self.children:
@@ -100,8 +101,10 @@ class Tile(PatchBase):
     def remove_instance(self):
         for layer in self.layers:
             layer.remove_instance()
+        #Set instance to None before calling PatchBase.remove_instance
+        #as the instance is the holder and should not be removed
         self.instance = None
-        self.instance_ready = False
+        PatchBase.remove_instance(self)
 
     def coord_to_uv(self, coord):
         (x, y) = coord
@@ -181,6 +184,7 @@ class TiledShape(PatchedShapeBase):
         patch = self.find_root_patch(x, y)
         if patch is None:
             patch = self.factory.create_patch(None, 0, x, y)
+            patch.owner = self
             self.root_patches.append(patch)
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)

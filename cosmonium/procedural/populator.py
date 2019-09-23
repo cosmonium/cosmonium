@@ -37,6 +37,9 @@ class TerrainPopulatorBase(object):
         self.terrain = owner
         self.object_template.set_owner(owner)
 
+    def check_settings(self):
+        pass
+
     def add_after_effect(self, after_effect):
         self.object_template.add_after_effect(after_effect)
 

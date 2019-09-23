@@ -82,6 +82,7 @@ class TileFactory(object):
             parent.children_bb.append(child.bounds.make_copy())
             parent.children_normal.append(None)
             parent.children_offset.append(None)
+            child.owner = parent.owner
 
     def merge_patch(self, patch):
         pass
@@ -622,6 +623,14 @@ class RoamingRalphDemo(CosmoniumBase):
     def toggle_split_merge_debug(self):
         settings.debug_lod_split_merge = not settings.debug_lod_split_merge
 
+    def toggle_bb(self):
+        settings.debug_lod_show_bb = not settings.debug_lod_show_bb
+        self.trigger_check_settings = True
+
+    def toggle_frustum(self):
+        settings.debug_lod_frustum = not settings.debug_lod_frustum
+        self.trigger_check_settings = True
+
     def __init__(self, args):
         CosmoniumBase.__init__(self)
 
@@ -758,6 +767,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.accept('f8', self.toggle_lod_freeze)
         self.accept("shift-f8", self.terrain_shape.dump_tree)
         self.accept('control-f8', self.toggle_split_merge_debug)
+        self.accept('shift-f9', self.toggle_bb)
+        self.accept('control-f9', self.toggle_frustum)
         self.accept("f10", self.save_screenshot)
         self.accept('alt-enter', self.toggle_fullscreen)
         self.accept('{', self.incr_ambient, [-0.05])
@@ -774,6 +785,10 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def move(self, task):
         dt = globalClock.getDt()
+
+        if self.trigger_check_settings:
+            self.terrain.check_settings()
+            self.trigger_check_settings = False
 
         control = self.nav.update(dt)
 

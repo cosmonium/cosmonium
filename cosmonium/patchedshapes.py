@@ -87,7 +87,7 @@ class PatchBase(Shape):
                 if self.bounds_shape.instance is None:
                     self.bounds_shape.create_instance()
                     #TODO: This is more that ugly...
-                    self.bounds_shape.instance.reparent_to(self.surface.shape.instance)
+                    self.bounds_shape.instance.reparent_to(self.owner.instance)
             else:
                 self.bounds_shape.remove_instance()
 

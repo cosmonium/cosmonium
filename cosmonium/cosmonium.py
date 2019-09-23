@@ -59,6 +59,7 @@ class CosmoniumBase(ShowBase):
         self.observer = None #TODO: For window_event below
         self.wireframe = False
         self.wireframe_filled = False
+        self.trigger_check_settings = True
 
         self.print_info()
         self.panda_config()
@@ -255,7 +256,6 @@ class Cosmonium(CosmoniumBase):
         self.gui = None
         self.last_visibles = []
         self.visibles = []
-        self.trigger_check_settings = True
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
