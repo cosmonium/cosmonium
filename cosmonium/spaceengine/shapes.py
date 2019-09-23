@@ -37,9 +37,9 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                                   float(y + 1) / self.div,
                                                   offset=self.offset)
 
-    def create_centre(self, x, y):
+    def create_centre(self, x, y, radius):
         (x, y) = self.calc_xy(x, y)
-        return geometry.NormalizedSquarePatchPoint(1.0,
+        return geometry.NormalizedSquarePatchPoint(radius,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,

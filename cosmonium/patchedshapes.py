@@ -286,7 +286,7 @@ class SpherePatch(Patch):
         else:
             self.bounds = geometry.halfSphereAABB(1.0, self.sector == 1, self.offset)
         self.bounds_shape = BoundingBoxShape(self.bounds)
-        self.centre =  geometry.UVPatchPoint(1.0,
+        self.centre =  geometry.UVPatchPoint(self.mean_radius,
                                              0.5, 0.5,
                                              self.x0, self.y0,
                                              self.x1, self.y1) * self.average_radius
@@ -431,7 +431,7 @@ class SquarePatchBase(Patch):
         self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius)
         self.bounds.xform(self.rotations_mat[self.face])
         self.bounds_shape = BoundingBoxShape(self.bounds)
-        centre = self.create_centre(x, y)
+        centre = self.create_centre(x, y, self.mean_radius)
         self.centre = self.rotations[self.face].xform(centre) * self.average_radius
 
     def face_normal(self, x, y):
@@ -553,8 +553,8 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   float(y + 1) / self.div,
                                                   offset=self.offset)
 
-    def create_centre(self, x, y):
-        return geometry.NormalizedSquarePatchPoint(1.0,
+    def create_centre(self, x, y, radius):
+        return geometry.NormalizedSquarePatchPoint(radius,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
@@ -597,8 +597,8 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                        float(y + 1) / self.div,
                                                        offset=self.offset)
 
-    def create_centre(self, x, y):
-        return geometry.SquaredDistanceSquarePatchPoint(1.0,
+    def create_centre(self, x, y, radius):
+        return geometry.SquaredDistanceSquarePatchPoint(radius,
                                                        0.5, 0.5,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
