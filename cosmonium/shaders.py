@@ -644,6 +644,8 @@ class FragmentShader(ShaderProgram):
                 code.append("vec3 model_normal = normalize(model_normal);")
             if self.config.world_normal:
                 code.append("vec3 normal = normalize(world_normal);")
+                if self.appearance.has_normal_texture:
+                    code.append("vec3 shape_normal = normal;")
         self.data_source.fragment_shader(code)
         self.appearance.fragment_shader(code)
         if self.config.fragment_uses_normal and self.appearance.has_normal_texture:
@@ -2046,6 +2048,10 @@ class ShaderRingShadow(ShaderShadow):
         shape.instance.setShaderInput('body_center', body_center)
 
 class LightingModel(ShaderComponent):
+    #TODO: Until proper self-shadowing is added, the effect of the normal map
+    #is damped by this factor when the angle between the normal and the light
+    #is negative (angle > 90deg)
+    fake_self_shadow = 0.05
     pass
 
 class FlatLightingModel(LightingModel):
@@ -2086,7 +2092,11 @@ class LambertPhongLightingModel(LightingModel):
             code.append("float spec_angle = clamp(dot(normal, half_vec), 0.0, 1.0);")
             code.append("vec4 specular = light_color * pow(spec_angle, shininess);")
         code.append("vec4 ambient = ambient_color * ambient_coef;")
-        code.append("float diffuse_angle = dot(normal, light_dir);")
+        code.append("float diffuse_angle = 0.0;")
+        code.append("diffuse_angle = dot(normal, light_dir);")
+        if self.appearance.has_normal_texture:
+            code.append("float terminator_coef = dot(shape_normal, light_dir);")
+            code.append("diffuse_angle = diffuse_angle * smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
         code.append("float diffuse_coef = clamp(diffuse_angle, 0.0, 1.0);")
         code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
         code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
@@ -2151,6 +2161,9 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("float b = 0.45 * roughness_squared / (roughness_squared + 0.09);")
         code.append("float c = sin(alpha) * tan(beta);")
         code.append("float diffuse_coef = max(0.0, l_dot_n) * (a + b * max(0.0, delta) * c);")
+        if self.appearance.has_normal_texture:
+            code.append("float terminator_coef = dot(shape_normal, light_dir);")
+            code.append("diffuse_coef = diffuse_coef * smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
         code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
         code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
         code.append("total_light.a = 1.0;")
