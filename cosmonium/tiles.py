@@ -161,7 +161,7 @@ class MeshTerrainLayer(TerrainLayer):
 
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):
-        PatchedShapeBase.__init__(self, lod_control)
+        PatchedShapeBase.__init__(self, None, lod_control)
         self.factory = factory
         self.scale = scale
 

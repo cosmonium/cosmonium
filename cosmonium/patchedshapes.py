@@ -247,7 +247,7 @@ class SpherePatch(Patch):
     patch_cache = {}
     coord = TexCoord.Cylindrical
 
-    def __init__(self, parent, lod, density, sector, ring, surface, average_height):
+    def __init__(self, parent, lod, density, sector, ring, surface, min_radius, max_radius, mean_radius):
         Patch.__init__(self, parent, lod, density, surface)
         self.face = -1
         self.sector = sector
@@ -255,9 +255,9 @@ class SpherePatch(Patch):
         self.r_div = 1 << self.lod
         self.s_div = 2 << self.lod
         self.cylindrical_map = True
-        self.average_height = average_height
+        self.mean_radius = mean_radius
         if settings.shift_patch_origin:
-            self.offset = self.average_height
+            self.offset = self.mean_radius
         if self.lod == 0:
             self.sin_max_angle = 1.0
         else:
@@ -279,10 +279,8 @@ class SpherePatch(Patch):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        offset = self.offset - (self.average_height - 1)
+        offset = self.offset - (self.mean_radius - 1)
         if self.lod > 0:
-            min_radius = self.surface.get_min_radius() / self.average_radius
-            max_radius = self.surface.get_max_radius() / self.average_radius
             self.bounds = geometry.UVPatchAABB(min_radius, max_radius,
                                                self.x0, self.y0, self.x1, self.y1,
                                                offset=offset)
@@ -293,11 +291,11 @@ class SpherePatch(Patch):
                                              0.5, 0.5,
                                              self.x0, self.y0,
                                              self.x1, self.y1,
-                                             offset=-(self.average_height - 1)) * self.average_radius
+                                             offset=-(self.mean_radius - 1)) * self.average_radius
 
     def get_patch_length(self):
         nb_sectors = 2 << self.lod
-        return self.average_radius * self.average_height * 2 * pi / nb_sectors
+        return self.average_radius * self.mean_radius * 2 * pi / nb_sectors
 
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.ring, self.sector)
@@ -401,7 +399,7 @@ class SquarePatchBase(Patch):
     for i in range(6):
         LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
 
-    def __init__(self, face, x, y, parent, lod, density, surface, average_height, user_shader, use_tesselation):
+    def __init__(self, face, x, y, parent, lod, density, surface, min_radius, max_radius, mean_radius, user_shader, use_tesselation):
         Patch.__init__(self, parent, lod, density, surface)
         self.face = face
         self.x = x
@@ -419,9 +417,9 @@ class SquarePatchBase(Patch):
         self.sin_max_angle = sin(pi/2/self.div)
         self.source_normal = self.face_normal(x, y)
         self.normal = self.rotations[self.face].xform(self.source_normal)
-        self.average_height = average_height
+        self.mean_radius = mean_radius
         if settings.shift_patch_origin:
-            self.offset = self.average_height
+            self.offset = self.mean_radius
         long_scale = 2 * pi * self.average_radius * 1000.0
         lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale / 4
@@ -432,17 +430,17 @@ class SquarePatchBase(Patch):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        offset = self.offset - (self.average_height - 1)
-        self.bounds = self.create_bounding_volume(x, y, offset)
+        offset = self.offset - (self.mean_radius - 1)
+        self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius, offset)
         self.bounds.xform(self.rotations_mat[self.face])
         self.bounds_shape = BoundingBoxShape(self.bounds)
-        centre = self.create_centre(x, y, -(self.average_height - 1))
+        centre = self.create_centre(x, y, -(self.mean_radius - 1))
         self.centre = self.rotations[self.face].xform(centre) * self.average_radius
 
     def face_normal(self, x, y):
         return None
 
-    def create_bounding_volume(self, x, y, offset):
+    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
         return None
 
     def create_centre(self, x, y, offset):
@@ -453,7 +451,7 @@ class SquarePatchBase(Patch):
 
     def get_patch_length(self):
         nb_sectors = 4 << self.lod
-        return self.average_radius * 2 * pi / nb_sectors
+        return self.average_radius * self.mean_radius * 2 * pi / nb_sectors
 
     def str_id(self):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
@@ -550,9 +548,7 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                     float(x + 1) / self.div,
                                                     float(y + 1) / self.div)
 
-    def create_bounding_volume(self, x, y, offset):
-        min_radius = self.surface.get_min_radius() / self.average_radius
-        max_radius = self.surface.get_max_radius() / self.average_radius
+    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
         return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
@@ -597,9 +593,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         return geometry.SquaredDistanceSquarePatchNormal(self.x0, self.y0,
                                                          self.x1, self.y1)
 
-    def create_bounding_volume(self, x, y, offset):
-        min_radius = self.surface.get_min_radius() / self.average_radius
-        max_radius = self.surface.get_max_radius() / self.average_radius
+    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
         return geometry.SquaredDistanceSquarePatchAABB(min_radius, max_radius,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
@@ -659,11 +653,12 @@ class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
     limit_far = False
-    def __init__(self, lod_control):
+    def __init__(self, heightmap=None, lod_control=None):
         Shape.__init__(self)
         self.root_patches = []
         self.patches = []
         self.linked_objects = []
+        self.heightmap = heightmap
         self.lod_control = lod_control
         self.max_lod = 0
         self.new_max_lod = 0
@@ -682,6 +677,9 @@ class PatchedShapeBase(Shape):
         if self.frustum is not None and not settings.debug_lod_frustum:
             self.frustum.remove_node()
             self.frustum = None
+
+    def set_heightmap(self, heightmap):
+        self.heightmap = heightmap
 
     def set_lod_control(self, lod_control):
         self.lod_control = lod_control
@@ -1092,8 +1090,19 @@ class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
     limit_far = True
-    def __init__(self, patch_size_from_texture=True, lod_control=None):
-        PatchedShapeBase.__init__(self, lod_control)
+
+    def get_patch_limits(self, patch):
+        min_radius = 1.0
+        max_radius = 1.0
+        mean_radius = 1.0
+        if self.heightmap is not None and patch is not None:
+            heightmap_patch = self.heightmap.get_heightmap(patch)
+            if heightmap_patch is not None:
+                height_scale = self.heightmap.height_scale
+                min_radius = 1.0 + heightmap_patch.min_height * height_scale
+                max_radius = 1.0 + heightmap_patch.max_height * height_scale
+                mean_radius = 1.0 + heightmap_patch.mean_height * height_scale
+        return (min_radius, max_radius, mean_radius)
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
@@ -1156,20 +1165,17 @@ class PatchedSphereShape(PatchedShape):
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
 
-    def create_patch(self, parent, lod, sector, ring, average_height = 1.0):
+    def create_patch(self, parent, lod, sector, ring):
         density = self.lod_control.get_density_for(lod)
-        patch = SpherePatch(parent, lod, density, sector, ring, self.parent, average_height)
+        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
+        patch = SpherePatch(parent, lod, density, sector, ring, self.parent, min_radius, max_radius, mean_radius)
         #TODO: Temporary or make right
         patch.owner = self
         return patch
 
     def create_child_patch(self, patch, i, j):
-            average_height = 0.0
-            for k in range(2):
-                for l in range(2):
-                    average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
-            average_height = average_height / 4.0 / self.owner.get_apparent_radius()
-            self.create_patch(patch, patch.lod + 1, patch.sector * 2 + i, patch.ring * 2 + j, average_height)
+        child = self.create_patch(patch, patch.lod + 1, patch.sector * 2 + i, patch.ring * 2 + j)
+        return child
 
     def split_patch(self, patch):
         #bl, br, tr, tl
@@ -1197,8 +1203,8 @@ class PatchedSphereShape(PatchedShape):
         return None
 
 class PatchedSquareShapeBase(PatchedShape):
-    def __init__(self, patch_size_from_texture=True, lod_control=None, use_shader=False, use_tesselation=False):
-        PatchedShape.__init__(self, patch_size_from_texture, lod_control)
+    def __init__(self, heightmap=None, lod_control=None, use_shader=False, use_tesselation=False):
+        PatchedShape.__init__(self, heightmap, lod_control)
         self.use_shader = use_shader
         self.use_tesselation = use_tesselation
         self.face_unique = False
@@ -1227,12 +1233,8 @@ class PatchedSquareShapeBase(PatchedShape):
         return None
 
     def create_child_patch(self, patch, i, j):
-            average_height = 0.0
-            for k in range(2):
-                for l in range(2):
-                    average_height += self.owner.surface.get_height_patch(patch, i * 0.5 + k * 0.5, j * 0.5 + l * 0.5)
-            average_height = average_height / 4.0 / self.owner.get_apparent_radius()
-            child = self.create_patch(patch, patch.lod + 1, patch.face, patch.x * 2 + i, patch.y * 2 + j, average_height)
+        child = self.create_patch(patch, patch.lod + 1, patch.face, patch.x * 2 + i, patch.y * 2 + j)
+        return child
 
     def split_patch(self, patch):
         #bl, br, tr, tl
@@ -1311,9 +1313,10 @@ class PatchedSquareShapeBase(PatchedShape):
             return None
 
 class NormalizedSquareShape(PatchedSquareShapeBase):
-    def create_patch(self, parent, lod, face, x, y, average_height=1.0):
+    def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.parent, average_height, self.use_shader, self.use_tesselation)
+        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
+        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tesselation)
         #TODO: Temporary or make right
         patch.owner = self
         return patch
@@ -1325,9 +1328,10 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
         return (vx, vy)
 
 class SquaredDistanceSquareShape(PatchedSquareShapeBase):
-    def create_patch(self, parent, lod, face, x, y, average_height=1.0):
+    def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.parent, average_height, self.use_shader, self.use_tesselation)
+        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
+        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tesselation)
         #TODO: Temporary or make right
         patch.owner = self
         return patch

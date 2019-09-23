@@ -787,6 +787,7 @@ class Cosmonium(CosmoniumBase):
                         print("\tLength:", patch.get_patch_length(), "App:", patch.apparent_size)
                         print("\tCoord:", coord, "Distance:", patch.distance)
                         print("\tCos:", patch.cos_angle, "Sin:", patch.sin_max_angle)
+                        print("\tMean:", patch.mean_radius)
                         print("\tflat:", patch.flat_coord)
                         if patch.instance is not None:
                             print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(self.world))

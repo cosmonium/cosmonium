@@ -137,6 +137,7 @@ class HeightmapSurface(ProceduralSurface):
         self.average = average
         #TODO: Make a proper method for this...
         shape.face_unique = True
+        shape.set_heightmap(heightmap)
 
     def get_average_radius(self):
         return self.radius

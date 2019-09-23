@@ -148,6 +148,9 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.texture = heightmap_patch.texture
         self.texture_peeker = heightmap_patch.texture_peeker
         self.heightmap_ready = heightmap_patch.heightmap_ready
+        self.min_height = heightmap_patch.min_height
+        self.max_height = heightmap_patch.max_height
+        self.mean_height = heightmap_patch.mean_height
 
     def get_height(self, x, y):
         if self.texture_peeker is None:

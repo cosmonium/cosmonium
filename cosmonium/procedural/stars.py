@@ -17,9 +17,8 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         self .noise = noise
 
     def create(self, body):
-        shape = SquaredDistanceSquareShape(patch_size_from_texture=False,
-                                                lod_control=VertexSizePatchLodControl(max_vertex_size=64),
-                                                use_shader=False)
+        shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=64),
+                                           use_shader=False)
         shader = BasicShader(lighting_model=FlatLightingModel())
         surface = FlatSurface(appearance=Appearance(emissionColor=body.point_color,
                                                     texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise, self.size))),
