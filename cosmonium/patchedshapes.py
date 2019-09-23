@@ -279,13 +279,12 @@ class SpherePatch(Patch):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        offset = self.offset - (self.mean_radius - 1)
         if self.lod > 0:
             self.bounds = geometry.UVPatchAABB(min_radius, max_radius,
                                                self.x0, self.y0, self.x1, self.y1,
-                                               offset=offset)
+                                               offset=self.offset)
         else:
-            self.bounds = geometry.halfSphereAABB(1.0, self.sector == 1, offset)
+            self.bounds = geometry.halfSphereAABB(1.0, self.sector == 1, self.offset)
         self.bounds_shape = BoundingBoxShape(self.bounds)
         self.centre =  geometry.UVPatchPoint(1.0,
                                              0.5, 0.5,
@@ -430,8 +429,7 @@ class SquarePatchBase(Patch):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        offset = self.offset - (self.mean_radius - 1)
-        self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius, offset)
+        self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius)
         self.bounds.xform(self.rotations_mat[self.face])
         self.bounds_shape = BoundingBoxShape(self.bounds)
         centre = self.create_centre(x, y, -(self.mean_radius - 1))
@@ -440,7 +438,7 @@ class SquarePatchBase(Patch):
     def face_normal(self, x, y):
         return None
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
+    def create_bounding_volume(self, x, y, min_radius, max_radius):
         return None
 
     def create_centre(self, x, y, offset):
@@ -548,13 +546,13 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                     float(x + 1) / self.div,
                                                     float(y + 1) / self.div)
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
+    def create_bounding_volume(self, x, y, min_radius, max_radius):
         return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
                                                   float(y + 1) / self.div,
-                                                  offset)
+                                                  offset=self.offset)
 
     def create_centre(self, x, y, offset):
         return geometry.NormalizedSquarePatchPoint(1.0,
@@ -563,7 +561,7 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
                                                   float(y + 1) / self.div,
-                                                  offset)
+                                                  offset=offset)
     def create_patch_instance(self, x, y):
         return geometry.NormalizedSquarePatch(1.0,
                                               self.density,
@@ -593,13 +591,13 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         return geometry.SquaredDistanceSquarePatchNormal(self.x0, self.y0,
                                                          self.x1, self.y1)
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius, offset):
+    def create_bounding_volume(self, x, y, min_radius, max_radius):
         return geometry.SquaredDistanceSquarePatchAABB(min_radius, max_radius,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
                                                        float(x + 1) / self.div,
                                                        float(y + 1) / self.div,
-                                                       offset=offset)
+                                                       offset=self.offset)
 
     def create_centre(self, x, y, offset):
         return geometry.SquaredDistanceSquarePatchPoint(1.0,
