@@ -65,8 +65,7 @@ class Tile(PatchBase):
             self.distance = sqrt(dx*dx + dy*dy + altitude * altitude)
             within_patch = False
         self.patch_in_view = worker.is_patch_in_view(self)
-        self.in_cone = True
-        self.visible = within_patch or (self.patch_in_view and self.in_cone)
+        self.visible = within_patch or self.patch_in_view
         #print(self.str_id(), within_patch, self.patch_in_view, altitude, self.distance)
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 

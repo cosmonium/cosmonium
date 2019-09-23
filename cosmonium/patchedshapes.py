@@ -72,7 +72,6 @@ class PatchBase(Shape):
         self.shown = False
         self.apparent_size = None
         self.patch_in_view = False
-        self.in_cone = False
         self.last_split = 0
         if self.parent is not None:
             self.parent.add_child(self)
@@ -219,8 +218,6 @@ class Patch(PatchBase):
         self.offset = 0.0
         self.orientation = LQuaterniond()
         self.distance_to_obs = None
-        self.sin_max_angle = None
-        self.cos_angle = None
 
     def check_visibility(self, worker, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
         #Testing if we are inside the patch create visual artifacts
@@ -231,10 +228,8 @@ class Patch(PatchBase):
         else:
             within_patch = False
             self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.get_patch_length() * 0.5)
-        self.cos_angle = self.normal.dot(model_camera_vector)
         self.patch_in_view = worker.is_patch_in_view(self)
-        self.in_cone = True#self.cos_angle < self.sin_max_angle
-        self.visible = within_patch or (self.patch_in_view and self.in_cone)
+        self.visible = within_patch or self.patch_in_view
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 
     def get_patch_length(self):
@@ -952,7 +947,7 @@ class PatchedShapeBase(Shape):
             if process_nb > 2:
                 break
         for patch in self.to_instanciate:
-            if settings.debug_lod_split_merge: print(frame, "Instanciate", patch.str_id(), patch.patch_in_view, patch.in_cone, patch.instance_ready)
+            if settings.debug_lod_split_merge: print(frame, "Instanciate", patch.str_id(), patch.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
             self.create_patch_instance(patch, hide=True)
@@ -978,7 +973,7 @@ class PatchedShapeBase(Shape):
                 patch.remove_children()
                 patch.merge_pending = False
         for patch in self.to_remove:
-            if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view, patch.in_cone)
+            if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view)
             for linked_object in self.linked_objects:
                 linked_object.hide_patch(patch)
             self.remove_patch_instance(patch)
@@ -1056,7 +1051,7 @@ class PatchedShapeBase(Shape):
     def dump_patch(self, patch):
         pad = ' ' * (patch.lod * 4)
         print(pad, patch.str_id(), hex(id(patch)))
-        print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view, patch.in_cone)
+        print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
         if patch.shown: print(pad, '  Shown')
         if patch.need_merge: print(pad, '  Need merge')
         if patch.split_pending: print(pad, '  Split pending')
