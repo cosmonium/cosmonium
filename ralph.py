@@ -47,7 +47,8 @@ from cosmonium.astro.frame import AbsoluteReferenceFrame
 from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
 
 class TileFactory(object):
-    def __init__(self, tile_density, size, height_scale, has_water, water):
+    def __init__(self, heightmap, tile_density, size, height_scale, has_water, water):
+        self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
         self.height_scale = height_scale
@@ -55,7 +56,14 @@ class TileFactory(object):
         self.water = water
 
     def create_patch(self, parent, lod, x, y):
-        patch = Tile(parent, lod, x, y, self.tile_density, self.size, self.height_scale)
+        min_height = -self.height_scale
+        max_height = self.height_scale
+        if parent is not None:
+            heightmap_patch = self.heightmap.get_heightmap(parent)
+            if heightmap_patch is not None:
+                min_height = heightmap_patch.min_height * self.height_scale
+                max_height = heightmap_patch.max_height * self.height_scale
+        patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
         if settings.allow_tesselation:
             terrain_layer = GpuPatchTerrainLayer()
@@ -479,14 +487,14 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.tile_factory = TileFactory(self.ralph_config.tile_density, self.ralph_config.tile_size, self.ralph_config.height_scale, self.has_water, self.water)
+        self.create_terrain_heightmap()
+        self.create_terrain_biome()
+        self.tile_factory = TileFactory(self.heightmap, self.ralph_config.tile_density, self.ralph_config.tile_size, self.ralph_config.height_scale, self.has_water, self.water)
         self.terrain_shape = TiledShape(self.tile_factory,
                                         self.ralph_config.tile_size,
                                         VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
                                                                              self.ralph_config.max_vertex_size,
                                                                              max_lod=self.ralph_config.max_lod))
-        self.create_terrain_heightmap()
-        self.create_terrain_biome()
         self.create_terrain_appearance()
         self.create_terrain_shader()
         self.terrain_object = HeightmapSurface(

@@ -15,12 +15,11 @@ from math import sqrt
 class Tile(PatchBase):
     coord = TexCoord.Flat
 
-    def __init__(self, parent, lod, x, y, density, scale, height_scale):
+    def __init__(self, parent, lod, x, y, density, scale, min_height, max_height):
         PatchBase.__init__(self, parent, lod, density)
         self.x = x
         self.y = y
         self.scale = scale
-        self.height_scale = height_scale
         self.size = 1.0 / (1 << lod)
         self.half_size = self.size / 2.0
 
@@ -33,7 +32,7 @@ class Tile(PatchBase):
                                     self.y0 * scale,
                                     (self.x1 - self.x0) * scale,
                                     (self.y1 - self.y0) * scale)
-        self.local_bounds = geometry.PatchAABB(1.0, self.height_scale)
+        self.local_bounds = geometry.PatchAABB(1.0, min_height, max_height)
         self.layers = []
         self.create_holder_instance()
         self.bounds = self.local_bounds.make_copy()
