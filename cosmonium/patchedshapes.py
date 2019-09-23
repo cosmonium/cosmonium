@@ -230,7 +230,7 @@ class Patch(PatchBase):
             self.distance = altitude
         else:
             within_patch = False
-            self.distance = (self.centre - model_camera_pos).length()
+            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.get_patch_length() * 0.5)
         self.cos_angle = self.normal.dot(model_camera_vector)
         self.patch_in_view = worker.is_patch_in_view(self)
         self.in_cone = True#self.cos_angle < self.sin_max_angle

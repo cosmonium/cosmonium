@@ -784,7 +784,7 @@ class Cosmonium(CosmoniumBase):
                         print("\tID:", patch.str_id())
                         print("\tLOD:", patch.lod)
                         print("\tView:", patch.patch_in_view)
-                        print("\tSize:", patch.apparent_size, "Length:", patch.get_patch_length(), "App:", patch.apparent_size)
+                        print("\tLength:", patch.get_patch_length(), "App:", patch.apparent_size)
                         print("\tCoord:", coord, "Distance:", patch.distance)
                         print("\tCos:", patch.cos_angle, "Sin:", patch.sin_max_angle)
                         print("\tflat:", patch.flat_coord)
