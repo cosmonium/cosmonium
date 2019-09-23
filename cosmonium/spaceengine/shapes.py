@@ -26,7 +26,7 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                                   float(x + 1) / self.div,
                                                   float(y + 1) / self.div)
 
-    def create_bounding_volume(self, x, y, offset):
+    def create_bounding_volume(self, x, y):
         (x, y) = self.calc_xy(x, y)
         min_radius = self.surface.get_min_radius() / self.average_radius
         max_radius = self.surface.get_max_radius() / self.average_radius
@@ -35,17 +35,16 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
                                                   float(y + 1) / self.div,
-                                                  offset)
+                                                  offset=self.offset)
 
-    def create_centre(self, x, y, offset):
+    def create_centre(self, x, y):
         (x, y) = self.calc_xy(x, y)
         return geometry.NormalizedSquarePatchPoint(1.0,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
-                                                  float(y + 1) / self.div,
-                                                  offset)
+                                                  float(y + 1) / self.div)
 
     def create_patch_instance(self, x, y):
         (x, y) = self.calc_xy(x, y)

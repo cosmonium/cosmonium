@@ -289,8 +289,7 @@ class SpherePatch(Patch):
         self.centre =  geometry.UVPatchPoint(1.0,
                                              0.5, 0.5,
                                              self.x0, self.y0,
-                                             self.x1, self.y1,
-                                             offset=-(self.mean_radius - 1)) * self.average_radius
+                                             self.x1, self.y1) * self.average_radius
 
     def get_patch_length(self):
         nb_sectors = 2 << self.lod
@@ -432,7 +431,7 @@ class SquarePatchBase(Patch):
         self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius)
         self.bounds.xform(self.rotations_mat[self.face])
         self.bounds_shape = BoundingBoxShape(self.bounds)
-        centre = self.create_centre(x, y, -(self.mean_radius - 1))
+        centre = self.create_centre(x, y)
         self.centre = self.rotations[self.face].xform(centre) * self.average_radius
 
     def face_normal(self, x, y):
@@ -441,7 +440,7 @@ class SquarePatchBase(Patch):
     def create_bounding_volume(self, x, y, min_radius, max_radius):
         return None
 
-    def create_centre(self, x, y, offset):
+    def create_centre(self, x, y):
         return None
 
     def create_patch_instance(self, x, y):
@@ -554,14 +553,13 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   float(y + 1) / self.div,
                                                   offset=self.offset)
 
-    def create_centre(self, x, y, offset):
+    def create_centre(self, x, y):
         return geometry.NormalizedSquarePatchPoint(1.0,
                                                   0.5, 0.5,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
                                                   float(x + 1) / self.div,
-                                                  float(y + 1) / self.div,
-                                                  offset=offset)
+                                                  float(y + 1) / self.div)
     def create_patch_instance(self, x, y):
         return geometry.NormalizedSquarePatch(1.0,
                                               self.density,
@@ -599,14 +597,13 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
                                                        float(y + 1) / self.div,
                                                        offset=self.offset)
 
-    def create_centre(self, x, y, offset):
+    def create_centre(self, x, y):
         return geometry.SquaredDistanceSquarePatchPoint(1.0,
                                                        0.5, 0.5,
                                                        float(x) / self.div,
                                                        float(y) / self.div,
                                                        float(x + 1) / self.div,
-                                                       float(y + 1) / self.div,
-                                                       offset=offset)
+                                                       float(y + 1) / self.div)
 
     def create_patch_instance(self, x, y):
         return geometry.SquaredDistanceSquarePatch(1.0,
