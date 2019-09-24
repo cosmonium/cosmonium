@@ -63,22 +63,23 @@ class StellarBodyLabel(ObjectLabel):
         self.fade = clamp(self.fade, 0.0, 1.0)
 
     def update_instance(self, camera_pos, orientation):
-        if self.parent.is_emissive() and (not self.parent.resolved or isinstance(self.parent, DeepSpaceObject)):
-            if self.parent.scene_position != None:
-                self.instance.setPos(*self.parent.scene_position)
-                scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.parent.scene_distance)
+        body = self.parent
+        if body.is_emissive() and (not body.resolved or isinstance(body, DeepSpaceObject)):
+            if body.scene_position != None:
+                self.instance.setPos(*body.scene_position)
+                scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.scene_distance)
             else:
                 scale = 0.0
         else:
-            offset = self.parent.get_apparent_radius() * 1.01
-            front_pos = self.parent._local_position - orientation.xform(LPoint3d(0, offset, 0))
-            vector_to_obs = LVector3d(camera_pos - front_pos)
+            offset = body.get_apparent_radius() * 1.01
+            rel_front_pos = body.rel_position - orientation.xform(LPoint3d(0, offset, 0))
+            vector_to_obs = LVector3d(-rel_front_pos)
             distance_to_obs = vector_to_obs.length()
             vector_to_obs /= distance_to_obs
-            position, distance, scale_factor = self.get_real_pos(front_pos, camera_pos, distance_to_obs, vector_to_obs)
+            position, distance, scale_factor = self.get_real_pos_rel(rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
-            scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * distance)
-        color = self.parent.get_label_color() * self.fade
+            scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
+        color = body.get_label_color() * self.fade
         self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
         color[3] = 1.0

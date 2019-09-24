@@ -768,6 +768,8 @@ class Cosmonium(CosmoniumBase):
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
             print("\tUpdate frozen:", self.selected.update_frozen)
+            if self.selected.label is not None:
+                print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
                 print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
                 print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
@@ -811,6 +813,12 @@ class Cosmonium(CosmoniumBase):
                             print("\tScale:", patch.instance.get_scale())
                             if patch.offset is not None:
                                 print("\tOffset:", patch.offset, patch.offset * self.selected.get_apparent_radius())
+            else:
+                if self.selected.scene_scale_factor is not None:
+                    print("Scene:")
+                    print("\tPosition:", self.selected.scene_position, self.selected.scene_distance)
+                    print("\tOrientation:", self.selected.scene_orientation)
+                    print("\tScale:", self.selected.scene_scale_factor)
 
     def init_universe(self):
         pass
