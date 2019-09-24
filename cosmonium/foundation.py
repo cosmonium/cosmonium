@@ -125,29 +125,7 @@ class BaseObject(object):
         pass
 
     def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        midPlane = self.context.observer.midPlane
-        distance_to_obs /= settings.scale 
-        if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = (abs_position - camera_pos) / settings.scale
-            distance = distance_to_obs
-            scale_factor = 1.0 / settings.scale
-        elif settings.use_inv_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - midPlane / distance_to_obs)
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        elif settings.use_log_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - log(midPlane / distance_to_obs + 1, 2))
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        return position, distance, scale_factor
+        return self.get_real_pos_rel(abs_position - camera_pos, distance_to_obs, vector_to_obs)
 
     def get_real_pos_rel(self, rel_position, distance_to_obs, vector_to_obs):
         midPlane = self.context.observer.midPlane
