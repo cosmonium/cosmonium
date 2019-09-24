@@ -124,18 +124,21 @@ def surface(surface):
                 attributions.append(('Texture', surface.appearance.texture.source.attribution))
     for (name, attribution) in attributions:
         if attribution is None: continue
-        data_attribution = dataAttributionDB.get_attribution(attribution)
         texts.append([name, ''])
-        if data_attribution is not None:
-            texts.append(["Source", data_attribution.name])
-            if data_attribution.copyright is not None:
-                texts.append(["Copyright", data_attribution.copyright])
-            if data_attribution.license is not None:
-                texts.append(["License", data_attribution.license])
-            if data_attribution.url is not None:
-                texts.append(["URL", data_attribution.url])
-        else:
-            texts.append(["Source", attribution])
+        if not isinstance(attribution, list):
+            attribution = [attribution]
+        for entry in attribution:
+            data_attribution = dataAttributionDB.get_attribution(entry)
+            if data_attribution is not None:
+                texts.append(["Source", data_attribution.name])
+                if data_attribution.copyright is not None:
+                    texts.append(["Copyright", data_attribution.copyright])
+                if data_attribution.license is not None:
+                    texts.append(["License", data_attribution.license])
+                if data_attribution.url is not None:
+                    texts.append(["URL", data_attribution.url])
+            else:
+                texts.append(["Source", entry])
     if len(texts) != 0:
         return ["Surface", texts]
     else:
