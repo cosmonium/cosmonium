@@ -45,7 +45,8 @@ class CloudsYamlParser(YamlModuleParser):
         lighting_model = None
         shader = BasicShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
-        atmosphere.add_shape_object(clouds)
+        if atmosphere is not None:
+            atmosphere.add_shape_object(clouds)
         return clouds
 
 class RingsYamlParser(YamlModuleParser):

@@ -22,7 +22,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..bodies import StellarObject, StellarBody, Star
-from ..bodyelements import NoAtmosphere
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit
@@ -173,7 +172,7 @@ def stellar_body(body):
         general.append(["Polar radius", "%s (%s)" % (toUnit(polar_radius, units.lengths_scale), toUnit(polar_radius, units.diameter_scale))])
         general.append(["Equatorial radius", "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale))])
         general.append(["Ellipticity", "%g" % body.oblateness])
-    general.append(["Atmosphere", "Yes" if not isinstance(body.atmosphere, NoAtmosphere) else "No"])
+    general.append(["Atmosphere", "Yes" if body.atmosphere is not None else "No"])
     general.append(["Clouds", "Yes" if body.clouds is not None else "No"])
     general.append(["Rings", "Yes" if body.ring is not None else "No"])
     if body.description != '':

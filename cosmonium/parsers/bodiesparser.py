@@ -85,7 +85,8 @@ class ReflectiveYamlParser(YamlModuleParser):
             surface = FlatSurface(name=None, category=category, resolution=None, attribution=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
-            atmosphere.add_shape_object(surface)
+            if atmosphere is not None:
+                atmosphere.add_shape_object(surface)
         else:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, data)
             surface = surfaces.pop(0)

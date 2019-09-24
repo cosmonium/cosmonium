@@ -20,7 +20,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..bodyelements import NoAtmosphere
 from ..shaders import BasicShader, LightingModel
 from ..appearances import Appearance
 from ..oneil import ONeilScattering, ONeilAtmosphere
@@ -89,7 +88,7 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
 class AtmosphereYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        if data is None: return NoAtmosphere()
+        if data is None: return None
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'oneil':
             return ONeilAtmosphereYamlParser.decode(parameters)
@@ -97,5 +96,5 @@ class AtmosphereYamlParser(YamlModuleParser):
             return CelestiaAtmosphereYamlParser.decode(parameters)
         else:
             print("Atmosphpere type", object_type, "unknown")
-            return NoAtmosphere()
+            return None
 

@@ -108,10 +108,6 @@ class Atmosphere(ShapeObject):
     def create_scattering_shader(self, atmosphere):
         return AtmosphericScattering()
 
-class NoAtmosphere(Atmosphere):
-    def check_visibility(self, pixel_size):
-        self.visible = False
-
 class Clouds(FlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:

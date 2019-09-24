@@ -34,7 +34,7 @@ from ..universe import Universe
 from ..systems import StellarSystem, SimpleSystem
 from ..bodies import ReflectiveBody, ReferencePoint
 from ..surfaces import FlatSurface
-from ..bodyelements import Ring, Clouds, NoAtmosphere
+from ..bodyelements import Ring, Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LambertPhongLightingModel
@@ -110,8 +110,6 @@ def instanciate_atmosphere(data):
                                     rayleigh_coef = rayleigh_coef,
                                     rayleigh_scale_height = rayleigh_scale_height,
                                     absorption_coef = absorption_coef)
-    else:
-        atmosphere = NoAtmosphere()
     if clouds_height != 0:
         shader=BasicShader(lighting_model=LambertPhongLightingModel())
         clouds = Clouds(clouds_height, clouds_appearance, shader)
@@ -294,8 +292,6 @@ def instanciate_body(universe, names, is_planet, data):
         lighting_model = LunarLambertLightingModel()
     else:
         lighting_model = LambertPhongLightingModel()
-    if atmosphere is None:
-        atmosphere = NoAtmosphere()
     surface = FlatSurface(
                           shape=shape,
                           appearance=appearance,
