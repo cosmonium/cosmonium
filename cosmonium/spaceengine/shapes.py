@@ -45,10 +45,8 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                                   float(x + 1) / self.div,
                                                   float(y + 1) / self.div)
 
-    def create_bounding_volume(self, x, y):
+    def create_bounding_volume(self, x, y, min_radius, max_radius):
         (x, y) = self.calc_xy(x, y)
-        min_radius = self.surface.get_min_radius() / self.average_radius
-        max_radius = self.surface.get_max_radius() / self.average_radius
         return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
                                                   float(x) / self.div,
                                                   float(y) / self.div,
@@ -90,9 +88,10 @@ class SpaceEnginePatchedSquareShape(NormalizedSquareShape):
         NormalizedSquareShape.__init__(self, *args, **kwargs)
         self.face_unique = True
 
-    def create_patch(self, parent, lod, face, x, y, average_height=1.0):
+    def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        patch = SpaceEngineTextureSquarePatch(face, x, y, parent, lod, density, self.parent, average_height, self.use_shader, self.use_tesselation)
+        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
+        patch = SpaceEngineTextureSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tesselation)
         #TODO: Temporary or make right
         patch.owner = self
         return patch
