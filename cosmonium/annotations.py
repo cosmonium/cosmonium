@@ -465,7 +465,6 @@ class Boundary(VisibleObject):
 class Constellation(LabelledObject):
     ignore_light = True
     default_shown = True
-    label_class = BackgroundLabel
     background_level = settings.constellations_depth
     body_class = 'constellation'
 

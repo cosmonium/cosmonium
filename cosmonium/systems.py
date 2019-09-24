@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .bodies import StellarObject, StellarBodyLabel, Star
+from .bodies import StellarObject, Star
 from .catalogs import ObjectsDB, objectsDB
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
 
@@ -221,7 +221,6 @@ class StellarSystem(StellarObject):
         return self._extend
 
 class SimpleSystem(StellarSystem):
-    label_class = StellarBodyLabel
     def __init__(self, names, primary=None, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
         self.set_primary(primary)
@@ -290,7 +289,6 @@ class SimpleSystem(StellarSystem):
             child.end_shadows_update()
 
 class Barycenter(StellarSystem):
-    label_class = StellarBodyLabel
     has_halo = True
     
     def __init__(self, *args, **kwargs):
