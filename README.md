@@ -60,4 +60,4 @@ Cosmonium data (textures, models, orbital elements,..) come from many sources. T
 
 ![Python](https://github.com/cosmonium/cosmonium/wiki/images/python-powered-w-200x80.png)
 
-![Panda3D](https://github.com/cosmonium/cosmonium/wiki/images/panda3d-200.png)
+![Panda3D](https://github.com/cosmonium/cosmonium/wiki/images/panda3d_logo.png)
