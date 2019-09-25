@@ -259,6 +259,7 @@ class Gui(object):
         cel_url = CelUrl()
         cel_url.store_state(self.cosmonium, state)
         url = cel_url.encode()
+        self.clipboard.copy_to(url)
         print(url)
 
     def load_celurl(self):
