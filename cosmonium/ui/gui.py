@@ -32,6 +32,7 @@ from ..astro.units import toUnit
 from ..dircontext import defaultDirContext
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
+from ..bodyclass import bodyClasses
 from ..appstate import AppState
 from ..celestia.cel_url import CelUrl
 from .. import utils
@@ -42,19 +43,9 @@ from .query import Query
 from .Menu import DropDownMenu, PopupMenu
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
+from .clipboard import create_clipboard
 
 import sys
-from cosmonium.bodyclass import bodyClasses
-
-try:
-    if sys.version_info[0] < 3:
-        from Tkinter import Tk
-    else:
-        from tkinter import Tk
-    has_tk = True
-except ImportError:
-    print("tinker not found, no copy&paste available")
-    has_tk = False
 
 about_text = """
 # Cosmonium
@@ -70,29 +61,6 @@ Foundation; either version 3 of the License, or (at your option) any later
 version.
 """ % settings.version
 
-class Clipboard():
-    def __init__(self):
-        if has_tk:
-            self.r = Tk()
-            self.r.withdraw()
-        else:
-            self.r = None
-
-    def copy_to(self, text):
-        if has_tk:
-            self.r.clipboard_clear()
-            self.r.clipboard_append(text)
-            self.r.update()
-        else:
-            print(text)
-
-    def copy_from(self):
-        text = ''
-        if has_tk:
-            self.r.update()
-            text = self.r.selection_get(selection="CLIPBOARD")
-        return text
-
 class Gui(object):
     def __init__(self, cosmonium, time, camera, mouse, nav, autopilot):
         self.cosmonium = cosmonium
@@ -107,7 +75,7 @@ class Gui(object):
             self.font = font.load()
         else:
             self.font = None
-        self.clipboard = Clipboard()
+        self.clipboard = create_clipboard()
         self.hud = HUD(self.scale, self.font)
         self.query = Query(self.scale, self.font)
         self.last_fps = globalClock.getRealTime()
