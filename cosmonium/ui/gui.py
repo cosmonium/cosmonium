@@ -45,20 +45,23 @@ from .textwindow import TextWindow
 from .infopanel import InfoPanel
 from .clipboard import create_clipboard
 
-import sys
-
-about_text = """
-# Cosmonium
+about_text = """# Cosmonium
 
 **Version**: %s
-Copyright 2018,2019 LD
+Copyright 2018-2019 Laurent Deru
+
 
 **Website**: http://github.com/cosmonium/cosmonium
+
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 3 of the License, or (at your option) any later
 version.
+
+
+This program uses several third-party libraries which are subject to their own
+licenses, see Third-Party.md for the complete list.
 """ % settings.version
 
 class Gui(object):

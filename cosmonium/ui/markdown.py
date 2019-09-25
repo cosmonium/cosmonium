@@ -135,7 +135,7 @@ class MarkdownRenderer(mistune.Renderer):
 
     def newline(self):
         """Rendering newline element."""
-        return ''
+        return '\n'
 
     def footnote_ref(self, key, index):
         return "%s" % key
