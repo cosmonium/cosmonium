@@ -1067,8 +1067,11 @@ class PatchedShapeBase(Shape):
             print("Patch not found", coord)
             return (LVector3d.up(), LVector3d.forward(), LVector3d.left())
 
-    def dump_patch(self, patch):
-        pad = ' ' * (patch.lod * 4)
+    def dump_patch(self, patch, padding=True):
+        if padding:
+            pad = ' ' * (patch.lod * 4)
+        else:
+            pad = ''
         print(pad, patch.str_id(), hex(id(patch)))
         print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
         if patch.shown: print(pad, '  Shown')
@@ -1082,7 +1085,7 @@ class PatchedShapeBase(Shape):
         #print(pad, '  Distance', patch.distance)
         print(pad, "  Tesselation", '-'.join(map(str, patch.tesselation_outer_level)))
         for i in range(4):
-            print(pad, "  Neighbours", map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours[i]))
+            print(pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours[i])))
 
     def _dump_tree(self, patch):
         self.dump_patch(patch)
@@ -1095,7 +1098,7 @@ class PatchedShapeBase(Shape):
 
     def dump_patches(self):
         for patch in self.patches:
-            self.dump_patch(patch)
+            self.dump_patch(patch, padding=False)
 
 class PatchedShape(PatchedShapeBase):
     offset = True

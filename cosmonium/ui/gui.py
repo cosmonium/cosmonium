@@ -299,17 +299,33 @@ class Gui(object):
         self.cosmonium.trigger_check_settings = True
 
     def dump_object_info(self):
-        if self.cosmonium.selected is None: return
-        if self.cosmonium.selected.surface is not None:
-            shape = self.cosmonium.selected.surface.shape
+        selected = self.cosmonium.selected
+        if selected is None: return
+        if not isinstance(selected, StellarBody): return
+        if selected.surface is not None:
+            shape = selected.surface.shape
             if shape.patchable:
+                print("Surface")
+                shape.dump_tree()
+        if selected.clouds is not None:
+            shape = selected.clouds.shape
+            if shape.patchable:
+                print("Clouds")
                 shape.dump_tree()
 
     def dump_object_info_2(self):
-        if self.cosmonium.selected is None: return
-        if self.cosmonium.selected.surface is not None:
-            shape = self.cosmonium.selected.surface.shape
+        selected = self.cosmonium.selected
+        if selected is None: return
+        if not isinstance(selected, StellarBody): return
+        if selected.surface is not None:
+            shape = selected.surface.shape
             if shape.patchable:
+                print("Surface")
+                shape.dump_patches()
+        if selected.clouds is not None:
+            shape = selected.clouds.shape
+            if shape.patchable:
+                print("Clouds")
                 shape.dump_patches()
 
     def toggle_split_merge_debug(self):
