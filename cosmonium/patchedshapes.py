@@ -746,6 +746,10 @@ class PatchedShapeBase(Shape):
                     self.instance.node().setFinal(1)
         return self.instance
 
+    def remove_instance(self):
+        self.remove_all_patches_instances()
+        Shape.remove_instance(self)
+
     def create_patch_instance(self, patch, hide=False):
         if patch.instance is None:
             patch.create_instance()

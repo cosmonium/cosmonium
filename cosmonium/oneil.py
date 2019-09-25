@@ -79,6 +79,10 @@ class ONeilAtmosphere(Atmosphere):
             self.update_scattering()
         return Atmosphere.update_instance(self, camera_pos, orientation)
 
+    def remove_instance(self):
+        Atmosphere.remove_instance(self)
+        self.inside = None
+
 class ONeilScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True

@@ -144,4 +144,8 @@ class Clouds(FlatSurface):
                 if self.appearance.transparency:
                     self.instance.set_depth_write(False)
             self.inside = inside
-        return ShapeObject.update_instance(self, camera_pos, orientation)
+        return FlatSurface.update_instance(self, camera_pos, orientation)
+
+    def remove_instance(self):
+        FlatSurface.remove_instance(self)
+        self.inside = None
