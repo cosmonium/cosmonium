@@ -46,9 +46,9 @@ Reference: [Github](https://github.com/lepture/mistune)
 
 Dropdown and popup menu for DirectGUI.
 
-Copyright: ynjh_jo <ynjh d0t jo At gmail.com>
+Copyright: Joni Hariyanto <ynjh d0t jo At gmail.com>
 
-License: Public domain ?
+License: WTFPL
 
 Reference: [Panda3D](https://discourse.panda3d.org/t/popup-menu-drop-down-menu-bar/4886) [Homepage](http://jon1.us/P3D/) [Source](http://jon1.us/P3D/other/)
 

@@ -17,6 +17,9 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+#This code is copyright Joni Hariyanto <ynjh d0t jo At gmail.com> http://jon1.us/P3D/
+#The code is licensed under the WTFPL, see http://www.wtfpl.net/
+
 from __future__ import print_function
 __all__ = ['PopupMenu','DropDownMenu']
 
