@@ -70,17 +70,22 @@ class WinClipboard(Clipboard):
     def __init__(self):
         import win32clipboard
         import win32con
+        self.w = win32clipboard
+        self.type = win32con.CF_UNICODETEXT
 
     def copy_to(self, text):
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(win32con.CF_TEXT, text)
-        win32clipboard.CloseClipboard()
+        self.w.OpenClipboard()
+        self.w.EmptyClipboard()
+        self.w.SetClipboardData(self.type, text)
+        self.w.CloseClipboard()
 
     def copy_from(self):
-        win32clipboard.OpenClipboard()
-        result = w.GetClipboardData(win32con.CF_TEXT)
-        win32clipboard.CloseClipboard()
+        self.w.OpenClipboard()
+        result = ''
+        try:
+            result = self.w.GetClipboardData(self.type)
+        finally:
+            self.w.CloseClipboard()
         return result
 
 class DarwinClipboard(Clipboard):
