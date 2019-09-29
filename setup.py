@@ -68,7 +68,18 @@ config = {
                 'p3ptloader',
                 'p3assimp'
             ],
-        }
+            'icons' : {
+                "cosmonium" : [
+                    "textures/cosmonium-512.png",
+                    "textures/cosmonium-256.png",
+                    "textures/cosmonium-128.png",
+                    "textures/cosmonium-64.png",
+                    "textures/cosmonium-48.png",
+                    "textures/cosmonium-32.png",
+                    "textures/cosmonium-16.png",
+                ],
+            },
+       }
     }
 }
 
