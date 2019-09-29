@@ -8,11 +8,14 @@
 - **Escape** : Reset navigation and script
 - **F1** : Show body information
 - **Alt-Enter** : Toggle fullscreen mode
-- **Z** : Zoom in (Decrease FoV)
-- **Shift-Z** : Zoom in out (Increase FoV)
+- **Z** : Zoom in
+- **Shift-Z** : Zoom out
+- **Control-R** : Reset zoom
 - **F10** : Save screenshot
 - **Shift-F10** : Save screenshot without HUD
 - **Shift-F1** : Show this help
+- **V** : Toggle HUD verbosity
+- **Control-M** : Toggle menubar
 - **Control-Q** : Exit Cosmonium
 
 ### Navigation
@@ -63,7 +66,7 @@
 
 
 - **Shift-E** : Align on Ecliptic plane
-- **Shift-Q** : Align on Equatorial planes
+- **Shift-Q** : Align on Equatorial plane
  
 ### Time
 
@@ -101,6 +104,7 @@
 
 - **I** : Toggle clouds rendering
 - **U** : Toggle galaxies rendering
+- **Control-A** : Toggle atmosphere rendering
 
 
 - **{ / }** : Decrease / increase ambient lighting
@@ -131,7 +135,8 @@
 - **Shift-F8** : Dump LOD information
 - **Shift-Ctrl-F8** : Dump LOD information (different layout)
 - **Control-F8** : Toggle LOD debug traces
-- **Control-F9** : Toggle Bounding Box debug (if BB enabled)
+- **Shift-F9** : Toggle Bounding Box display
+- **Control-F9** : Toggle camera frustum
 - **F11** : Open scene explorer
 - **F12** : Trigger scene analysis
 
