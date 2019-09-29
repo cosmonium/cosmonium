@@ -1,6 +1,6 @@
 ![Cosmonium](textures/cosmonium-name.png)
 
-Cosmonium is a 3D astronomy and space exploration program. With Cosmonium you can navigate in our solar system and discover all the planets and their moons. You can also visits the neighboring stars and discover the true size of our galaxy and the Universe.
+Cosmonium is a 3D astronomy and space exploration program. With Cosmonium you can navigate in our solar system and discover all the planets and their moons. You can also visit the neighboring stars and discover the true size of our galaxy and the Universe.
 
 Cosmonium also supports (or will support) the creation of fictional planets and stellar system using procedural generation.
 
@@ -8,7 +8,7 @@ Cosmonium also already supports some Celestia addons (though CMOD and CelX are n
 
 ### Requirements
 
-Cosmonium runs on Windows, Linux or MacOS machine with a graphic card supporting OpenGL 3.0 or better (OpenGL 4.5 is recommended) and at least 512MB of disk (up to 4GB if the HD and UHD textures are installed).
+Cosmonium runs on Windows, Linux or MacOS machine with a graphic card supporting OpenGL 2.1 or better (OpenGL 4.5 is recommended), 2GB of memory and at least 512MB of disk (up to 4GB if the HD and UHD textures are installed).
 
 ### Installation 
 
@@ -46,7 +46,7 @@ If you encounter any problem to install or run Cosmonium, please don't hesitate 
 
 ## License 
 
-Cosmonium is (C) 2018-2019 LD. 
+Cosmonium is (C) 2018-2019 Laurent Deru.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
@@ -58,6 +58,6 @@ Cosmonium data (textures, models, orbital elements,..) come from many sources. T
 
 ## Powered by
 
-![Python](https://github.com/cosmonium/cosmonium/wiki/images/python-powered-w-200x80.png)
+[![Python](https://github.com/cosmonium/cosmonium/wiki/images/python-powered-w-200x80.png)](http://www.python.org)
 
-![Panda3D](https://github.com/cosmonium/cosmonium/wiki/images/panda3d_logo.png)
+[![Panda3D](https://github.com/cosmonium/cosmonium/wiki/images/panda3d_logo.png)](http://www.panda3d.org)
