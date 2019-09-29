@@ -111,6 +111,9 @@ class CameraBase(object):
         new_focal = self.default_focal * zoom_factor
         self.set_focal(new_focal)
 
+    def reset_zoom(self):
+        self.set_focal(self.default_focal)
+
     def set_fov(self, new_fov):
         if new_fov >= settings.min_fov and new_fov <= settings.max_fov:
             print("Setting FoV to", new_fov)

@@ -119,6 +119,7 @@ class Gui(object):
         event_ctrl.accept('z', self.camera.zoom, [1.05])
         event_ctrl.accept('shift-z', self.camera.zoom, [1.0/1.05])
         event_ctrl.accept('shift-z-repeat', self.camera.zoom, [1.0/1.05])
+        event_ctrl.accept('control-r', self.camera.reset_zoom)
         event_ctrl.accept('control-m', self.toggle_menu)
 
         event_ctrl.accept('f1', self.show_info)
@@ -387,8 +388,9 @@ class Gui(object):
                 ('Look _back>*', 0, self.camera.camera_look_back),
                 ('_Track>Y', 0, self.cosmonium.track_selected if has_selected else 0),
                 0,
-                ('Zoom _in>Z', 0, self.camera.zoom, [1.05]),
-                ('Zoom _out>Shift-Z', 0, self.camera.zoom, [1.0/1.05]),
+                ('Zoom _in>Z', 0, self.camera.zoom, 1.05),
+                ('Zoom _out>Shift-Z', 0, self.camera.zoom, 1.0/1.05),
+                ('_Reset Zoom>Control-R', 0, self.camera.reset_zoom),
                 )
 
     def create_render_menu_items(self):
