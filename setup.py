@@ -25,12 +25,13 @@ if sys.version_info[0] < 3:
 else:
     excludes = ['cosmonium.support.yaml2']
 
-setup(
-    name="cosmonium",
-    version="0.1.0",
-    license='GPLv3+',
-    options = {
+config = {
+    'name': "cosmonium",
+    'version': "0.1.0",
+    'license': 'GPLv3+',
+    'options': {
         'build_apps': {
+            'platforms': ['manylinux1_x86_64', 'macosx_10_6_x86_64'],
             'include_patterns': [
                 'shaders/**',
                 'data/**',
@@ -68,4 +69,7 @@ setup(
             ],
         }
     }
-)
+}
+
+if __name__ == '__main__':
+    setup(**config)
