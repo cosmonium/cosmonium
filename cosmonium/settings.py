@@ -30,7 +30,7 @@ from .support.appdirs.appdirs import AppDirs
 import os
 
 app_name = 'cosmonium'
-version = '0.1.1.dev0'
+version = '0.1.1'
 
 use_double = LPoint3 == LPoint3d
 cache_yaml = True
