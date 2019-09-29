@@ -47,7 +47,7 @@ from .clipboard import create_clipboard
 
 about_text = """# Cosmonium
 
-**Version**: %s
+**Version**: V%s
 Copyright 2018-2019 Laurent Deru
 
 

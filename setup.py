@@ -18,6 +18,7 @@
 #
 
 from setuptools import setup
+from cosmonium import settings
 import sys
 
 if sys.version_info[0] < 3:
@@ -27,7 +28,7 @@ else:
 
 config = {
     'name': "cosmonium",
-    'version': "0.1.0",
+    'version': settings.version,
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
