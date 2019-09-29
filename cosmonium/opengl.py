@@ -21,8 +21,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import loadPrcFileData
-from panda3d.core import DepthTestAttrib, Texture, Shader
-from panda3d.core import FrameBufferProperties
+from panda3d.core import DepthTestAttrib, Texture
+from panda3d.core import WindowProperties, FrameBufferProperties
 from direct.filter.FilterManager import FilterManager
 
 from .shaders import PostProcessShader
@@ -31,32 +31,20 @@ from . import settings
 import sys
 
 def request_opengl_config(data):
-    if settings.use_inverse_z:
-        settings.shader_min_version = max(410, settings.shader_min_version)
-        settings.render_scene_to_buffer = True
-        settings.power_of_two_textures = False
-    if settings.allow_tesselation:
-        settings.shader_min_version = max(410, settings.shader_min_version)
-    if settings.allow_instancing:
-        settings.shader_min_version = max(140, settings.shader_min_version)
-    settings.shader_min_version = max(130, settings.shader_min_version)
-    if sys.platform == "darwin":
-        #MacOS does not support GLSL version 130
-        settings.shader_min_version = max(150, settings.shader_min_version)
-    if settings.use_hdr:
-        settings.render_scene_to_buffer = True
-        settings.power_of_two_textures = False
-        settings.render_scene_to_float = True
-    data.append("gl-version 3 2")
-    if settings.use_srgb:
-        if settings.use_hardware_srgb:
-            data.append("framebuffer-srgb true")
+    if settings.use_gl_version is not None:
+        data.append("gl-version %s" % settings.use_gl_version)
+    elif sys.platform == "darwin" and settings.use_core_profile_mac:
+        data.append("gl-version 3 2")
+    if settings.use_srgb and settings.use_hardware_srgb:
+        data.append("framebuffer-srgb true")
     if settings.use_inverse_z:
         data.append("gl-depth-zero-to-one true")
-    if not settings.power_of_two_textures:
+    if settings.force_power_of_two_textures:
+        data.append("textures-power-2 down")
+    else:
         data.append("textures-power-2 none")
-    data.append("hardware-point-sprites #t")
-    data.append("text-encoding utf8")
+    if settings.use_hardware_sprites:
+        data.append("hardware-point-sprites #t")
     data.append("gl-coordinate-system default")
     data.append("gl-check-errors #t")
     if settings.dump_panda_shaders:
@@ -65,41 +53,61 @@ def request_opengl_config(data):
         data.append("framebuffer-multisample 1")
         data.append("multisamples %d" % settings.multisamples)
     data.append("driver-generate-mipmaps #t")
-    #TODO: Still needed ?
-    data.append("bounds-type box")
 
-def check_opengl_config(gsg):
-    #TODO: Test if the requested configuration above is supported by the generated GSG
-    print("Hardware Vendor:", gsg.driver_vendor)
-    print("Driver Renderer: %s (%s)" % (gsg.driver_renderer, gsg.driver_version))
-    print("Shader version: %d.%d" % (gsg.getDriverShaderVersionMajor(), gsg.getDriverShaderVersionMinor()))
-    print("Hardware sRGB:", settings.use_hardware_srgb)
-    print("Hardware instancing:", settings.allow_instancing)
-    print("Hardware tesselation:", settings.allow_tesselation)
-    print("Inverse-Z buffer:", settings.use_inverse_z)
-    print("HDR:", settings.use_hdr)
+def _create_main_window(base):
+    props = WindowProperties.get_default()
+    have_window = False
+    try:
+        base.open_default_window(props=props)
+        have_window = True
+    except Exception:
+        pass
+    if have_window:
+        base.bufferViewer.win = base.win
+    return have_window
 
-def test_floating_point_buffer(rgba_bits):
-        props = FrameBufferProperties()
-        props.set_srgb_color(False)
-        props.set_float_color(True)
-        props.set_rgba_bits(*rgba_bits)
-        buffer = base.win.make_texture_buffer("testBuffer", 256, 256, to_ram=True, fbp=props)
-        if buffer is not None:
-            supported = True
-            buffer.set_active(False)
-            base.graphicsEngine.removeWindow(buffer)
-        else:
-            supported = False
-        return supported
+def create_main_window(base):
+    if _create_main_window(base):
+        return
+    #We could not open the window, try to fallback to a supported configuration
+    if settings.multisamples > 0:
+        loadPrcFileData("", "framebuffer-multisample #f")
+        settings.disable_multisampling = True
+        if _create_main_window(base):
+            print("Failed to open window with multisample, deactivating it")
+            return
+    #Can't create window even without multisampling
+    print("Failed to open window with OpenGL Core; falling back to older OpenGL.")
+    loadPrcFileData("", "gl-version")
+    if _create_main_window(base):
+        return
+    print("Could not open any window")
+    sys.exit(1)
 
-def check_and_create_rendering_buffers(showbase):
-    if settings.allow_floating_point_buffer:
+def check_glsl_version(glsl_version):
+    settings.shader_version = glsl_version
+
+def test_floating_point_buffer(base, rgba_bits):
+    props = FrameBufferProperties()
+    props.set_srgb_color(False)
+    props.set_float_color(True)
+    props.set_rgba_bits(*rgba_bits)
+    buffer = base.win.make_texture_buffer("testBuffer", 256, 256, to_ram=True, fbp=props)
+    if buffer is not None:
+        supported = True
+        buffer.set_active(False)
+        base.graphicsEngine.removeWindow(buffer)
+    else:
+        supported = False
+    return supported
+
+def check_floating_point_buffer(base):
+    if settings.use_floating_point_buffer:
         settings.floating_point_buffer = True
-        if not test_floating_point_buffer((32, 0, 0, 0)):
+        if not test_floating_point_buffer(base, (32, 0, 0, 0)):
             print("One component floating point buffer not supported")
             settings.floating_point_buffer = False
-        if not test_floating_point_buffer((32, 32, 32, 32)):
+        elif not test_floating_point_buffer(base, (32, 32, 32, 32)):
             print("Three components floating point buffer not supported")
             settings.floating_point_buffer = False
     else:
@@ -111,56 +119,102 @@ def check_and_create_rendering_buffers(showbase):
     if not settings.encode_float and not settings.floating_point_buffer:
         settings.encode_float = True
 
-    if settings.use_srgb and settings.use_hardware_srgb and not showbase.win.getFbProperties().get_srgb_color():
-        print("Could not enable sRGB on main framebuffer")
-        settings.use_hardware_srgb = False
+def check_srgb_buffer(base):
+    if settings.use_srgb:
+        if not settings.use_hardware_srgb:
+            settings.srgb_buffer = False
+        elif not base.win.getFbProperties().get_srgb_color():
+            print("Could not enable sRGB on main framebuffer")
+            settings.srgb_buffer = False
+        else:
+            settings.srgb_buffer = True
 
-    final_stage_srgb = False
-    if settings.use_srgb and not settings.use_hardware_srgb:
+def check_opengl_config(base):
+    gsg = base.win.gsg
+    glsl_version = gsg.getDriverShaderVersionMajor() * 100 + gsg.getDriverShaderVersionMinor()
+    settings.buffer_texture = gsg.supports_buffer_texture
+    settings.srgb_texture = gsg.supports_texture_srgb
+    settings.non_power_of_two_textures = not settings.force_power_of_two_textures and gsg.supports_tex_non_pow2
+    settings.hardware_tessellation = settings.use_hardware_tessellation and gsg.supports_tessellation_shaders
+    settings.hardware_instancing = settings.use_hardware_instancing and gsg.supports_geometry_instancing
+    check_floating_point_buffer(base)
+    check_srgb_buffer(base)
+    check_glsl_version(glsl_version)
+
+    if settings.use_srgb and settings.srgb_texture:
+        settings.srgb = True
+
+    if settings.srgb and not settings.srgb_buffer and settings.buffer_texture and settings.non_power_of_two_textures:
         settings.render_scene_to_buffer = True
-        settings.render_scene_to_float = True
-        final_stage_srgb = True
+        settings.software_srgb = True
+
+    if settings.use_hdr and settings.buffer_texture and settings.floating_point_buffer and settings.non_power_of_two_textures:
+        settings.render_scene_to_buffer = True
+        settings.hdr = True
+
+    if settings.use_inverse_z and settings.buffer_texture and settings.non_power_of_two_textures:
+        settings.render_scene_to_buffer = True
+
+    print("Hardware Vendor:", gsg.driver_vendor)
+    print("Driver Renderer: %s (%s)" % (gsg.driver_renderer, gsg.driver_version))
+    print("Shader version: %d" % glsl_version)
+    print("Hardware sRGB:", settings.srgb_buffer)
+    print("sRGB textures:", settings.srgb_texture)
+    print("Hardware instancing:", settings.hardware_instancing)
+    print("Hardware tessellation:", settings.hardware_tessellation)
+    print("Inverse-Z buffer:", settings.use_inverse_z)
+    print("HDR:", settings.hdr)
+    print("sRGB:", settings.srgb)
+    print("Render to buffer", settings.buffer_texture)
+    print("Floating point buffer", settings.floating_point_buffer)
+
+def check_and_create_rendering_buffers(showbase):
+    if not settings.render_scene_to_buffer:
+        return
+
+    if not settings.buffer_texture:
+        print("Render to buffer not supported")
+        return
+
+    print("Render scene to buffer")
 
     buffer_multisamples = 0
-    if settings.render_scene_to_buffer and settings.multisamples > 0:
+    if settings.render_scene_to_buffer and not settings.disable_multisampling and settings.use_multisampling and settings.multisamples > 0:
         buffer_multisamples = settings.multisamples
 
-    if settings.render_scene_to_buffer:
-        print("Render scene to buffer")
-        manager = FilterManager(showbase.win, showbase.cam)
-        color_buffer = Texture()
-        if settings.use_inverse_z:
-            render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
-            depth_buffer = Texture()
-            showbase.win.set_clear_depth(0)
-            float_depth = True
-            depth_bits = 24
+    manager = FilterManager(showbase.win, showbase.cam)
+    color_buffer = Texture()
+    if settings.use_inverse_z:
+        render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
+        depth_buffer = Texture()
+        showbase.win.set_clear_depth(0)
+        float_depth = True
+        depth_bits = 24
+    else:
+        depth_buffer = None
+        float_depth = False
+        depth_bits = 1
+    if settings.render_scene_to_float:
+        if settings.floating_point_buffer:
+            rgba_bits = (32, 32, 32, 32)
+            float_colors = True
         else:
-            depth_buffer = None
-            float_depth = False
-            depth_bits = 1
-        if settings.render_scene_to_float:
-            if settings.floating_point_buffer:
-                rgba_bits = (32, 32, 32, 32)
-                float_colors = True
-            else:
-                print("Floating point buffer not available, sRBG conversion will show artifacts")
-                rgba_bits = (1, 1, 1, 1)
-                float_colors = False
-        else:
+            print("Floating point buffer not available, sRBG conversion will show artifacts")
             rgba_bits = (1, 1, 1, 1)
             float_colors = False
-        srgb_buffer = settings.use_srgb and settings.use_hardware_srgb
-        textures = {'color': color_buffer, 'depth': depth_buffer}
-        fbprops = FrameBufferProperties()
-        fbprops.setFloatColor(float_colors)
-        fbprops.setRgbaBits(*rgba_bits)
-        fbprops.setSrgbColor(srgb_buffer)
-        fbprops.setDepthBits(depth_bits)
-        fbprops.setFloatDepth(float_depth)
-        fbprops.setMultisamples(buffer_multisamples)
-        final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
-        final_quad_shader = PostProcessShader(gamma_correction=final_stage_srgb, hdr=settings.use_hdr).create_shader()
-        final_quad.set_shader(final_quad_shader)
-        final_quad.set_shader_input("color_buffer", color_buffer)
-        final_quad.set_shader_input("exposure", 2)
+    else:
+        rgba_bits = (1, 1, 1, 1)
+        float_colors = False
+    textures = {'color': color_buffer, 'depth': depth_buffer}
+    fbprops = FrameBufferProperties()
+    fbprops.setFloatColor(float_colors)
+    fbprops.setRgbaBits(*rgba_bits)
+    fbprops.setSrgbColor(settings.srgb_buffer)
+    fbprops.setDepthBits(depth_bits)
+    fbprops.setFloatDepth(float_depth)
+    fbprops.setMultisamples(buffer_multisamples)
+    final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
+    final_quad_shader = PostProcessShader(gamma_correction=settings.software_srgb, hdr=settings.use_hdr).create_shader()
+    final_quad.set_shader(final_quad_shader)
+    final_quad.set_shader_input("color_buffer", color_buffer)
+    final_quad.set_shader_input("exposure", 2)

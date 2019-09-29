@@ -36,18 +36,25 @@ use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
 
-use_inverse_z = False
-use_srgb = True
+#OpenGL user configuration
+use_core_profile_mac = True
+use_gl_version = None
 use_hardware_srgb = True
-use_hdr = False
-encode_float = False
-shader_min_version = 130
-allow_floating_point_buffer = True
-allow_tesselation = True
-allow_instancing = True
+use_multisampling = True
+multisamples = 2
+use_hardware_sprites = True
+use_floating_point_buffer = True
+force_power_of_two_textures = False
+use_hardware_tessellation = True
+use_hardware_instancing = True
+use_inverse_z = False
 instancing_use_tex = True
-floating_point_buffer = False
+
+#Settings
+use_hdr = False
+use_srgb = True
 use_assimp = True
+encode_float = False
 
 deferred=False
 deferred_split=False
@@ -63,7 +70,6 @@ global_ambient = 0.0
 corrected_global_ambient = global_ambient
 allow_shadows = True
 shadow_size = 1024
-multisamples = 2
 max_vertex_size_patch = 64
 max_sprite_size = 400
 use_patch_adaptation = True
@@ -185,9 +191,20 @@ boundaries_depth = 20
 deep_space_depth = 50
 halo_depth = 100
 
+shader_version = None
 render_scene_to_buffer = False
 render_scene_to_float = False
-power_of_two_textures = False
+non_power_of_two_textures = False
+disable_multisampling = False
+floating_point_buffer = False
+buffer_texture = False
+hdr = False
+srgb = False
+srgb_buffer = False
+srgb_texture = False
+software_srgb = False
+hardware_tessellation = False
+hardware_instancing = False
 
 # Window configuration
 win_fullscreen = False

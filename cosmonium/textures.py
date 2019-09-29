@@ -371,7 +371,7 @@ class SimpleTexture(TextureBase):
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
         if srgb is None:
-            srgb = settings.use_srgb
+            srgb = settings.srgb
         SimpleTexture.__init__(self, source, srgb=srgb)
         self.tint_color = tint
         self.check_specular_mask = False

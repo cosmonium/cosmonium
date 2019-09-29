@@ -94,10 +94,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     vec2 iuv = floor( st );
     vec2 fuv = fract( st );
 
-    vec4 a = texture( sam, (iuv+vec2(0.5,0.5))/res );
-    vec4 b = texture( sam, (iuv+vec2(1.5,0.5))/res );
-    vec4 c = texture( sam, (iuv+vec2(0.5,1.5))/res );
-    vec4 d = texture( sam, (iuv+vec2(1.5,1.5))/res );
+    vec4 a = texture2D( sam, (iuv+vec2(0.5,0.5))/res );
+    vec4 b = texture2D( sam, (iuv+vec2(1.5,0.5))/res );
+    vec4 c = texture2D( sam, (iuv+vec2(0.5,1.5))/res );
+    vec4 d = texture2D( sam, (iuv+vec2(1.5,1.5))/res );
 
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
@@ -116,7 +116,7 @@ vec4 textureInter( sampler2D sam, vec2 p )
     p = i + f;
 
     p = (p - 0.5)/res;
-    return texture( sam, p );
+    return texture2D( sam, p );
 }
 ''']
 
@@ -152,10 +152,10 @@ vec4 textureBSpline(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -193,10 +193,10 @@ float textureBSplineDerivX(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -222,10 +222,10 @@ float textureBSplineDerivY(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = (p01 - p00) * sx;
     float b = (p11 - p10) * sx;
@@ -254,7 +254,7 @@ float decode_height(vec4 encoded) {
         elif self.filtering == self.F_bspline:
             sampler = 'textureBSpline'
         else:
-            sampler = 'texture'
+            sampler = 'texture2D'
         code += ['''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, float height_scale, vec2 offset, vec2 scale) {
     vec2 pos = texcoord * scale + offset;
@@ -383,10 +383,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     vec2 iuv = floor( st );
     vec2 fuv = fract( st );
 
-    vec4 a = texture( sam, (iuv+vec2(0.5,0.5))/res );
-    vec4 b = texture( sam, (iuv+vec2(1.5,0.5))/res );
-    vec4 c = texture( sam, (iuv+vec2(0.5,1.5))/res );
-    vec4 d = texture( sam, (iuv+vec2(1.5,1.5))/res );
+    vec4 a = texture2D( sam, (iuv+vec2(0.5,0.5))/res );
+    vec4 b = texture2D( sam, (iuv+vec2(1.5,0.5))/res );
+    vec4 c = texture2D( sam, (iuv+vec2(0.5,1.5))/res );
+    vec4 d = texture2D( sam, (iuv+vec2(1.5,1.5))/res );
 
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
@@ -397,7 +397,7 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         code.append('float get_terrain_height_%s(vec2 texcoord) {' % self.name)
         code.append('float height = 0.0;')
         for heightmap in self.heightmap.heightmaps:
-            code.append("height += decode_height(texture(heightmap_%s, texcoord)) * heightmap_%s_height_scale;" % (heightmap.name, heightmap.name))
+            code.append("height += decode_height(texture2D(heightmap_%s, texcoord)) * heightmap_%s_height_scale;" % (heightmap.name, heightmap.name))
         code.append('return height;')
         code.append('}')
 
@@ -518,7 +518,7 @@ vec4 textureNoTile(sampler2D samp, in vec2 uv)
         if self.tiling == TextureTilingMode.F_hash:
             sampler = 'textureNoTile'
         else:
-            sampler = 'texture'
+            sampler = 'texture2D'
         for texture_id in self.dictionary.textures.keys():
             code.append("    tex_%s_color = %s(tex_%s, position.xy * detail_factor).xyz;" % (texture_id, sampler, texture_id))
 

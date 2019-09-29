@@ -29,6 +29,7 @@ from . import settings
 from math import asin
 import hashlib
 import os
+import re
 
 class ShaderBase(object):
     shaders_cache = {}
@@ -152,7 +153,7 @@ class FileShader(ShaderBase):
 class ShaderProgram(object):
     def __init__(self, shader_type):
         self.shader_type = shader_type
-        self.version = settings.shader_min_version
+        self.version = settings.shader_version
         self.functions = {}
 
     def clear_functions(self):
@@ -228,6 +229,28 @@ float DecodeFloatRGBA( vec4 rgba ) {
     def create_body(self, code):
         pass
 
+    def use_legacy_in(self, code):
+        new_code = []
+        if self.shader_type == 'vertex':
+            new_out = "attribute "
+        else:
+            new_out = "varying "
+        regex = re.compile("^\s*in\s+")
+        for line in code:
+            new_line = regex.sub(new_out, line)
+            new_code.append(new_line)
+        return new_code
+
+    def use_legacy_out(self, code):
+        if self.shader_type != 'vertex':
+            return code
+        new_code = []
+        regex = re.compile("^\s*out\s+")
+        for line in code:
+            new_line = regex.sub("varying ", line)
+            new_code.append(new_line)
+        return new_code
+
     def generate_shader(self, dump=None, shader_id=''):
         code = []
         self.clear_functions()
@@ -237,9 +260,17 @@ float DecodeFloatRGBA( vec4 rgba ) {
         code.append("// Shader uniforms ")
         self.create_uniforms(code)
         code.append("// Shader inputs")
-        self.create_inputs(code)
+        inputs = []
+        self.create_inputs(inputs)
+        if self.version < 130:
+            inputs = self.use_legacy_in(inputs)
+        code += inputs
         code.append("// Shader outputs")
-        self.create_outputs(code)
+        outputs = []
+        self.create_outputs(outputs)
+        if self.version < 130:
+            outputs = self.use_legacy_out(outputs)
+        code += outputs
         self.create_extra(code)
         code.append("void main() {")
         self.create_body(code)
@@ -254,7 +285,6 @@ float DecodeFloatRGBA( vec4 rgba ) {
 class StructuredShader(ShaderBase):
     def __init__(self):
         ShaderBase.__init__(self)
-        self.version = None
         self.vertex_shader = None
         self.tesselation_control_shader = None
         self.tesselation_eval_shader = None
@@ -335,7 +365,7 @@ class PassThroughFragmentShader(ShaderProgram):
         self.add_function(code, 'to_srgb', self.to_srgb)
 
     def create_body(self, code):
-        code.append("vec4 final_color = texture(color_buffer, uv.xy);")
+        code.append("vec4 final_color = texture2D(color_buffer, uv.xy);")
         if self.config.hdr:
             code.append("final_color = 1.0 - exp(final_color * -exposure);")
         if self.config.gamma_correction:
@@ -378,9 +408,6 @@ class VertexShader(ShaderProgram):
                  lighting_model,
                  scattering):
         ShaderProgram.__init__(self, shader_type)
-        if shader_type == 'eval' or vertex_control.use_double:
-            self.version = max(410, self.version)
-        self.version = max(instance_control.version, self.version)
         self.config = config
         self.vertex_source = vertex_source
         self.data_source = data_source
@@ -548,7 +575,6 @@ class VertexShader(ShaderProgram):
 class TesselationShader(ShaderProgram):
     def __init__(self, config, tesselation_control):
         ShaderProgram.__init__(self, 'control')
-        self.version = 410
         self.config = config
         self.tesselation_control = tesselation_control
 
@@ -633,7 +659,8 @@ class FragmentShader(ShaderProgram):
         self.scattering.fragment_inputs(code)
 
     def create_outputs(self, code):
-        code.append("out vec4 frag_color;")
+        if self.version >= 130:
+            code.append("out vec4 frag_color;")
 
     def create_extra(self, code):
         ShaderProgram.create_extra(self, code)
@@ -647,6 +674,8 @@ class FragmentShader(ShaderProgram):
             effect.fragment_extra(code)
 
     def create_body(self, code):
+        if self.version < 130:
+            code.append("vec4 frag_color;")
         if self.config.point_shader:
             for i in range(self.config.nb_textures_coord):
                 code.append("vec4 texcoord%i = vec4(gl_PointCoord, 0, 0);" % i)
@@ -688,6 +717,8 @@ class FragmentShader(ShaderProgram):
         for effect in self.after_effects:
             effect.fragment_shader(code)
         code.append("frag_color = clamp(total_color, 0.0, 1.0);")
+        if self.version < 130:
+            code.append("gl_FragColor = frag_color;")
 
 class BasicShader(StructuredShader):
     def __init__(self,
@@ -748,6 +779,7 @@ class BasicShader(StructuredShader):
         self.lighting_model.appearance = self.appearance
         if tesselation_control is not None:
             self.tesselation_control = tesselation_control
+            self.tesselation_control.shader = self
             self.vertex_shader = TesselationVertexShader()
             self.tesselation_control_shader = TesselationShader(self, tesselation_control)
             self.tesselation_eval_shader = VertexShader(self,
@@ -806,7 +838,6 @@ class BasicShader(StructuredShader):
         self.instance_control = instance_control
         #TODO: wrong if there is tesselation
         self.vertex_shader.instance_control = instance_control
-        self.vertex_shader.version = max(self.vertex_shader.version, instance_control.version)
 
     def set_scattering(self, scattering):
         self.scattering = scattering
@@ -1369,6 +1400,8 @@ class QuadTesselationVertexInput(VertexInput):
 
     def vertex_layout(self, code):
         code.append("layout(quads, equal_spacing, ccw) in;")
+        if self.config.vertex_shader.version < 400:
+            code.append("#extension GL_ARB_tessellation_shader : enable")
 
     def interpolate(self, code):
         code += ['''
@@ -1418,6 +1451,8 @@ class ConstantTesselationControl(TesselationControl):
 
     def vertex_layout(self, code):
         code.append("layout(vertices = 4) out;")
+        if self.shader.vertex_shader.version < 400:
+            code.append("#extension GL_ARB_tessellation_shader : enable")
 
     def vertex_uniforms(self, code):
         code.append("uniform float TessLevelInner;")
@@ -1550,7 +1585,6 @@ class DoubleSquaredDistanceCubeVertexControl(VertexControl):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
 
 class InstanceControl(ShaderComponent):
-    version = 0
     def __init__(self, max_instances):
         ShaderComponent.__init__(self)
         self.max_instances = max_instances
@@ -1566,7 +1600,6 @@ class NoInstanceControl(InstanceControl):
         InstanceControl.__init__(self, 0)
 
 class OffsetScaleInstanceControl(InstanceControl):
-    version = 140
     use_vertex = True
     world_vertex = True
     def get_id(self):
@@ -1772,7 +1805,7 @@ class PandaTextureDataSource(DataSource):
 
     def create_sample_texture(self, texture_id):
         code = []
-        code.append("vec4 tex%i = texture(p3d_Texture%i, texcoord_tex%d.xy);" % (texture_id, texture_id, texture_id))
+        code.append("vec4 tex%i = texture2D(p3d_Texture%i, texcoord_tex%d.xy);" % (texture_id, texture_id, texture_id))
         return code
 
     def fragment_uniforms(self, code):
@@ -1878,7 +1911,10 @@ class ShaderShadowMap(ShaderShadow):
         code.append("in vec4 lightcoord;")
 
     def fragment_shader(self, code):
-        code.append("shadow *= texture(depthmap, lightcoord.xyz);")
+        if self.shader.fragment_shader.version < 130:
+            code.append("shadow *= shadow2D(depthmap, lightcoord.xyz).x;")
+        else:
+            code.append("shadow *= texture(depthmap, lightcoord.xyz);")
 
     def update_shader_shape_static(self, shape, appearance):
         shape.instance.setShaderInput('shadow_bias', appearance.shadow.bias)
@@ -2044,7 +2080,7 @@ class ShaderRingShadow(ShaderShadow):
         code.append("if (ring_intersection_param > 0.0) {")
         code.append("  vec3 ring_intersection = new_pos + light_dir * ring_intersection_param;")
         code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
-        code.append("  shadow *= 1.0 - texture(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
+        code.append("  shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
         code.append("} else {")
         code.append("  //Not in shadow")
         code.append("}")

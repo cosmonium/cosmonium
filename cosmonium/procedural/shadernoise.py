@@ -765,8 +765,6 @@ class NoiseFragmentShader(ShaderProgram):
         self.noise_target = noise_target
 
     def create_uniforms(self, code):
-        code.append("precision highp float;")
-        code.append("#pragma optionNV(fastprecision off)")
         code.append("uniform vec3 noiseOffset;")
         code.append("uniform vec3 noiseScale;")
         code.append("uniform float global_frequency;")
@@ -781,7 +779,8 @@ class NoiseFragmentShader(ShaderProgram):
         code.append("in vec2 texcoord;")
 
     def create_outputs(self, code):
-        code.append("out vec4 frag_output;")
+        if self.version >= 130:
+            code.append("out vec4 frag_output;")
 
     def create_extra(self, code):
         self.pi(code)
@@ -832,8 +831,12 @@ class NoiseFragmentShader(ShaderProgram):
         code.append('}')
 
     def create_body(self, code):
+        if self.version < 130:
+            code.append('vec4 frag_output;')
         code.append('float value = calc_noise_value(texcoord.xy);')
         self.noise_target.apply_noise(code)
+        if self.version < 130:
+            code.append('gl_FragColor = frag_output;')
 
 class NoiseShader(StructuredShader):
     coord_map = {TexCoord.Cylindrical: 'cyl',

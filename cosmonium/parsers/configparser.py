@@ -173,18 +173,22 @@ class ConfigParser(YamlParser):
         settings.multisamples = data.get('multisamples', settings.multisamples)
         settings.use_srgb = data.get('srgb', settings.use_srgb)
         settings.use_hardware_srgb = data.get('hw-srgb', settings.use_hardware_srgb)
-        settings.allow_tesselation = data.get('hw-tesselation', settings.allow_tesselation)
-        settings.allow_instancing = data.get('hw-instancing', settings.allow_instancing)
-        settings.allow_floating_point_buffer = data.get('hw-fp-buffer', settings.allow_floating_point_buffer)
+        settings.use_hardware_tessellation = data.get('hw-tessellation', settings.use_hardware_tessellation)
+        settings.use_hardware_instancing = data.get('hw-instancing', settings.use_hardware_instancing)
+        settings.use_floating_point_buffer = data.get('hw-fp-buffer', settings.use_floating_point_buffer)
+        settings.use_core_profile_mac = data.get('core-profile-mac', settings.use_core_profile_mac)
+        settings.use_gl_version = data.get('gl-version', settings.use_gl_version)
 
     def encode_opengl(self):
         data = {}
         data['multisamples'] = settings.multisamples
         data['srgb'] = settings.use_srgb
         data['hw-srgb'] = settings.use_hardware_srgb
-        data['hw-tesselation'] = settings.allow_tesselation
-        data['hw-instancing'] = settings.allow_instancing
-        data['hw-fp-buffer'] = settings.allow_floating_point_buffer
+        data['hw-tessellation'] = settings.use_hardware_tessellation
+        data['hw-instancing'] = settings.use_hardware_instancing
+        data['hw-fp-buffer'] = settings.use_floating_point_buffer
+        data['core-profile-mac'] = settings.use_core_profile_mac
+        data['gl-version'] = settings.use_gl_version
         return data
 
     def decode_debug(self, data):

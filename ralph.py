@@ -79,7 +79,7 @@ class TileFactory(object):
                 max_height = heightmap_patch.max_height * self.height_scale
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
-        if settings.allow_tesselation:
+        if settings.hardware_tessellation:
             terrain_layer = GpuPatchTerrainLayer()
         else:
             terrain_layer = MeshTerrainLayer()
@@ -487,7 +487,7 @@ class RoamingRalphDemo(CosmoniumBase):
         data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource),
                        HeightmapDataSource(self.biome, PatchedGpuTextureSource),
                        TextureDictionaryDataSource(self.terrain_appearance)]
-        if settings.allow_tesselation:
+        if settings.hardware_tessellation:
             tesselation_control = ConstantTesselationControl(invert_v=True)
         else:
             tesselation_control = None
@@ -608,7 +608,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
-        if settings.use_srgb:
+        if settings.srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
             corrected_ambient = settings.global_ambient

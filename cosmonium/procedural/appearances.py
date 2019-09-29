@@ -37,7 +37,7 @@ class TexturesDictionary(AppearanceBase):
         self.scale_factor = scale_factor
         self.tiling = tiling
         self.shadow = shadow
-        self.srgb = settings.use_srgb
+        self.srgb = settings.srgb
         self.nb_textures = 0
         for (name, texture) in self.textures.items():
             if texture is not None and not isinstance(texture, TextureBase):

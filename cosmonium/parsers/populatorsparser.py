@@ -47,7 +47,7 @@ class PlacerYamlParser(YamlModuleParser):
 class PopulatorYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        if settings.allow_instancing:
+        if settings.hardware_instancing:
             default = 'gpu'
         else:
             default = 'cpu'

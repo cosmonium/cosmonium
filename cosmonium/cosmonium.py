@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, getModelPath, PandaSystem, PStatClient
+from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import DrawMask
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib
@@ -33,7 +33,7 @@ import logging
 from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
-from .opengl import request_opengl_config, check_opengl_config, check_and_create_rendering_buffers
+from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
 from .bodies import StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
@@ -81,8 +81,8 @@ class CosmoniumBase(ShowBase):
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
-        self.create_main_window()
-        check_opengl_config(self.win.gsg)
+        create_main_window(self)
+        check_opengl_config(self)
 
         BaseObject.context = self
 
@@ -108,6 +108,10 @@ class CosmoniumBase(ShowBase):
         data = []
         request_opengl_config(data)
         self.app_panda_config(data)
+        data.append("text-encoding utf8")
+        data.append("paste-emit-keystrokes #f")
+        #TODO: Still needed ?
+        data.append("bounds-type box")
         data.append("screenshot-extension png")
         data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
         data.append("fullscreen %d" % settings.win_fullscreen)
@@ -130,21 +134,6 @@ class CosmoniumBase(ShowBase):
 
     def app_panda_config(self, data):
         pass
-
-    def create_main_window(self):
-        props = WindowProperties.get_default()
-        have_window = False
-        try:
-            self.open_default_window(props=props)
-            have_window = True
-        except Exception:
-            pass
-
-        if not have_window:
-            print("Failed to open window with OpenGL 3.2; falling back to older OpenGL.")
-            loadPrcFileData("", "gl-version")
-            self.open_default_window(props=props)
-        self.bufferViewer.win = self.win
 
     def print_info(self):
         print("Python version:", platform.python_version())
@@ -573,7 +562,7 @@ class Cosmonium(CosmoniumBase):
             self.world.clearLight(self.globalAmbientPath)
             self.globalAmbientPath.removeNode()
         self.globalAmbient=AmbientLight('globalAmbient')
-        if settings.use_srgb:
+        if settings.srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
             corrected_ambient = settings.global_ambient
