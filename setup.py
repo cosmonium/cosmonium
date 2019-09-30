@@ -18,8 +18,9 @@
 #
 
 from setuptools import setup
-from cosmonium import settings
 import sys
+
+version = '0.1.1'
 
 if sys.version_info[0] < 3:
     excludes = ['cosmonium.support.yaml']
@@ -28,7 +29,7 @@ else:
 
 config = {
     'name': "cosmonium",
-    'version': settings.version,
+    'version': version,
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
