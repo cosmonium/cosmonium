@@ -33,8 +33,10 @@ import sys
 def request_opengl_config(data):
     if settings.use_gl_version is not None:
         data.append("gl-version %s" % settings.use_gl_version)
+        settings.core_profile = True
     elif sys.platform == "darwin" and settings.use_core_profile_mac:
         data.append("gl-version 3 2")
+        settings.core_profile = True
     if settings.use_srgb and settings.use_hardware_srgb:
         data.append("framebuffer-srgb true")
     if settings.use_inverse_z:

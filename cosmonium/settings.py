@@ -192,6 +192,7 @@ deep_space_depth = 50
 halo_depth = 100
 
 shader_version = None
+core_profile = None
 render_scene_to_buffer = False
 render_scene_to_float = False
 non_power_of_two_textures = False

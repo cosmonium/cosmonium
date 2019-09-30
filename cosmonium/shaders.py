@@ -210,6 +210,8 @@ float DecodeFloatRGBA( vec4 rgba ) {
     def create_shader_version(self, code):
         if self.version is not None:
             code.append("#version %d" % self.version)
+            if self.version >= 300 and settings.core_profile:
+                code.append("#define texture2D texture")
 
     def create_layout(self, code):
         pass

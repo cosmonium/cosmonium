@@ -1,5 +1,9 @@
 #version 140
 
+#if __VERSION__ > 120
+#define texture2D texture
+#endif
+
 // tex_0: reflection texture as produced by reflection camera
 // tex_1: distortion texture
 //
