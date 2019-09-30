@@ -167,8 +167,8 @@ def check_opengl_config(base):
     print("Inverse-Z buffer:", settings.use_inverse_z)
     print("HDR:", settings.hdr)
     print("sRGB:", settings.srgb)
-    print("Render to buffer", settings.buffer_texture)
-    print("Floating point buffer", settings.floating_point_buffer)
+    print("Render to buffer:", settings.buffer_texture)
+    print("Floating point buffer:", settings.floating_point_buffer)
 
 def check_and_create_rendering_buffers(showbase):
     if not settings.render_scene_to_buffer:

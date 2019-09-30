@@ -164,10 +164,10 @@ class GpuPatchTerrainLayer(TerrainLayer):
 class MeshTerrainLayer(TerrainLayer):
     template = {}
     def create_instance(self, patch):
-        tile_id = str(patch.tesselation_inner_level) + '-' + '-'.join(map(str, patch.tesselation_outer_level))
+        tile_id = str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
         #print(tile_id)
         if tile_id not in self.template:
-            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tesselation_inner_level, outer=patch.tesselation_outer_level)
+            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tessellation_inner_level, outer=patch.tessellation_outer_level)
         template = self.template[tile_id]
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)
@@ -239,7 +239,7 @@ class TiledShape(PatchedShapeBase):
         patch.add_neighbour(PatchBase.NORTH, north)
         north.add_neighbour(PatchBase.SOUTH, patch)
         self.add_root_patch(patch.x + 1, patch.y + 1)
-        patch.calc_outer_tesselation_level(update)
+        patch.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
         model_camera_pos = camera_pos / self.scale

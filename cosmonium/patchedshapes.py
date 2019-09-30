@@ -75,8 +75,8 @@ class PatchBase(Shape):
         self.flat_coord = None
         self.bounds = None
         self.bounds_shape = None
-        self.tesselation_inner_level = density
-        self.tesselation_outer_level = [density, density, density, density]
+        self.tessellation_inner_level = density
+        self.tessellation_outer_level = [density, density, density, density]
         self.neighbours = [[], [], [], []]
         self.children = []
         self.children_bb = []
@@ -209,7 +209,7 @@ class PatchBase(Shape):
             for new in news:
                 neighbour.neighbours[opposite].append(new)
 
-    def calc_outer_tesselation_level(self, update):
+    def calc_outer_tessellation_level(self, update):
         for face in range(4):
             #print("Check face", PatchBase.text[face])
             lod = self.get_neighbour_lower_lod(face)
@@ -217,11 +217,11 @@ class PatchBase(Shape):
             outer_level = max(0, self.max_level - delta)
             new_level = 1 << outer_level
             dest = PatchBase.conv[face]
-            if self.tesselation_outer_level[dest] != new_level:
-                #print("Change from", self.tesselation_outer_level[dest], "to", new_level)
+            if self.tessellation_outer_level[dest] != new_level:
+                #print("Change from", self.tessellation_outer_level[dest], "to", new_level)
                 if not self in update:
                     update.append(self)
-            self.tesselation_outer_level[dest] = new_level
+            self.tessellation_outer_level[dest] = new_level
             #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
     def in_patch(self, x, y):
@@ -411,14 +411,14 @@ class SquarePatchBase(Patch):
     for i in range(6):
         LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
 
-    def __init__(self, face, x, y, parent, lod, density, surface, min_radius, max_radius, mean_radius, user_shader, use_tesselation):
+    def __init__(self, face, x, y, parent, lod, density, surface, min_radius, max_radius, mean_radius, user_shader, use_tessellation):
         Patch.__init__(self, parent, lod, density, surface)
         self.face = face
         self.x = x
         self.y = y
         self.cube_map = True
         self.use_shader = user_shader
-        self.use_tesselation = use_tesselation
+        self.use_tessellation = use_tessellation
         self.div = 1 << self.lod
         self.x0 = float(self.x) / self.div
         self.y0 = float(self.y) / self.div
@@ -468,13 +468,13 @@ class SquarePatchBase(Patch):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
 
     def create_instance(self):
-        if self.use_shader and self.use_tesselation:
+        if self.use_shader and self.use_tessellation:
             if self.owner.face_unique:
                 patch_id = "%d : %d - %d %d" % (self.lod, self.face, self.x, self.y)
             else:
                 patch_id = "%d : %d %d" % (self.lod, self.x, self.y)
         else:
-            tess_id = str(self.tesselation_inner_level) + '-' + '-'.join(map(str, self.tesselation_outer_level))
+            tess_id = str(self.tessellation_inner_level) + '-' + '-'.join(map(str, self.tessellation_outer_level))
             if self.owner.face_unique:
                 patch_id = "%d : %d - %d %d %s" % (self.lod, self.face, self.x, self.y, tess_id)
             else:
@@ -484,7 +484,7 @@ class SquarePatchBase(Patch):
         cache = self.patch_cache[self.owner]
         if not patch_id in cache:
             if self.use_shader:
-                if self.use_tesselation:
+                if self.use_tessellation:
                     template = geometry.QuadPatch(float(self.x) / self.div,
                                                   float(self.y) / self.div,
                                                   float(self.x + 1) / self.div,
@@ -509,7 +509,7 @@ class SquarePatchBase(Patch):
         self.instance.node().setFinal(1)
 
     def update_instance(self, parent):
-        if self.instance is not None and not self.use_tesselation:
+        if self.instance is not None and not self.use_tessellation:
             if self.shown:
                 parent.remove_patch_instance(self)
                 parent.create_patch_instance(self)
@@ -577,7 +577,7 @@ class NormalizedSquarePatch(SquarePatchBase):
     def create_patch_instance(self, x, y):
         return geometry.NormalizedSquarePatch(1.0,
                                               self.density,
-                                              self.tesselation_outer_level,
+                                              self.tessellation_outer_level,
                                               float(x) / self.div,
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
@@ -622,7 +622,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
     def create_patch_instance(self, x, y):
         return geometry.SquaredDistanceSquarePatch(1.0,
                                                    self.density,
-                                                   self.tesselation_outer_level,
+                                                   self.tessellation_outer_level,
                                                    float(x) / self.div,
                                                    float(y) / self.div,
                                                    float(x + 1) / self.div,
@@ -788,11 +788,11 @@ class PatchedShapeBase(Shape):
             #text = ['tl', 'tr', 'br', 'bl']
             #print("*** Child", text[i], '***')
             new.remove_detached_neighbours()
-            new.calc_outer_tesselation_level(update)
+            new.calc_outer_tessellation_level(update)
         #print("Neighbours")
         for neighbour in neighbours:
             neighbour.remove_detached_neighbours()
-            neighbour.calc_outer_tesselation_level(update)
+            neighbour.calc_outer_tessellation_level(update)
         patch.clear_all_neighbours()
 
     def merge_neighbours(self, patch, update):
@@ -818,9 +818,9 @@ class PatchedShapeBase(Shape):
         patch.replace_neighbours(PatchBase.EAST, [tr, br], [patch])
         patch.replace_neighbours(PatchBase.SOUTH, [bl, br], [patch])
         patch.replace_neighbours(PatchBase.WEST,  [tl, bl], [patch])
-        patch.calc_outer_tesselation_level(update)
+        patch.calc_outer_tessellation_level(update)
         for neighbour in north + east + south + west:
-            neighbour.calc_outer_tesselation_level(update)
+            neighbour.calc_outer_tessellation_level(update)
 
     def check_lod(self, patch, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
         patch.need_merge = False
@@ -1087,7 +1087,7 @@ class PatchedShapeBase(Shape):
         if not patch.instance_ready: print(pad, '  Instance not ready')
         if patch.jobs_pending != 0: print(pad, '  Jobs', patch.jobs_pending)
         #print(pad, '  Distance', patch.distance)
-        print(pad, "  Tesselation", '-'.join(map(str, patch.tesselation_outer_level)))
+        print(pad, "  Tessellation", '-'.join(map(str, patch.tessellation_outer_level)))
         for i in range(4):
             print(pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours[i])))
 
@@ -1221,10 +1221,10 @@ class PatchedSphereShape(PatchedShape):
         return None
 
 class PatchedSquareShapeBase(PatchedShape):
-    def __init__(self, heightmap=None, lod_control=None, use_shader=False, use_tesselation=False):
+    def __init__(self, heightmap=None, lod_control=None, use_shader=False, use_tessellation=False):
         PatchedShape.__init__(self, heightmap, lod_control)
         self.use_shader = use_shader
-        self.use_tesselation = use_tesselation
+        self.use_tessellation = use_tessellation
         self.face_unique = False
 
     def create_root_patches(self):
@@ -1334,7 +1334,7 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tesselation)
+        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tessellation)
         #TODO: Temporary or make right
         patch.owner = self
         return patch
@@ -1349,7 +1349,7 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tesselation)
+        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tessellation)
         #TODO: Temporary or make right
         patch.owner = self
         return patch

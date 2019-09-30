@@ -288,8 +288,8 @@ class StructuredShader(ShaderBase):
     def __init__(self):
         ShaderBase.__init__(self)
         self.vertex_shader = None
-        self.tesselation_control_shader = None
-        self.tesselation_eval_shader = None
+        self.tessellation_control_shader = None
+        self.tessellation_eval_shader = None
         self.geometry_shader = None
         self.fragment_shader = None
 
@@ -306,12 +306,12 @@ class StructuredShader(ShaderBase):
             vertex = self.vertex_shader.generate_shader(dump, shader_id)
         else:
             vertex = ''
-        if self.tesselation_control_shader:
-            tess_control = self.tesselation_control_shader.generate_shader(dump, shader_id)
+        if self.tessellation_control_shader:
+            tess_control = self.tessellation_control_shader.generate_shader(dump, shader_id)
         else:
             tess_control = ''
-        if self.tesselation_eval_shader:
-            tess_evaluation = self.tesselation_eval_shader.generate_shader(dump, shader_id)
+        if self.tessellation_eval_shader:
+            tess_evaluation = self.tessellation_eval_shader.generate_shader(dump, shader_id)
         else:
             tess_evaluation = ''
         if self.geometry_shader:
@@ -387,7 +387,7 @@ class PostProcessShader(StructuredShader):
     def get_shader_id(self):
         return "postprocess"
 
-class TesselationVertexShader(ShaderProgram):
+class TessellationVertexShader(ShaderProgram):
     def __init__(self):
         ShaderProgram.__init__(self, 'vertex')
 
@@ -574,31 +574,31 @@ class VertexShader(ShaderProgram):
         self.data_source.vertex_shader(code)
         self.appearance.vertex_shader(code)
 
-class TesselationShader(ShaderProgram):
-    def __init__(self, config, tesselation_control):
+class TessellationShader(ShaderProgram):
+    def __init__(self, config, tessellation_control):
         ShaderProgram.__init__(self, 'control')
         self.config = config
-        self.tesselation_control = tesselation_control
+        self.tessellation_control = tessellation_control
 
     def create_layout(self, code):
-        self.tesselation_control.vertex_layout(code)
+        self.tessellation_control.vertex_layout(code)
 
     def create_uniforms(self, code):
-        self.tesselation_control.vertex_uniforms(code)
+        self.tessellation_control.vertex_uniforms(code)
 
     def create_inputs(self, code):
-        self.tesselation_control.vertex_inputs(code)
+        self.tessellation_control.vertex_inputs(code)
 
     def create_outputs(self, code):
-        self.tesselation_control.vertex_outputs(code)
+        self.tessellation_control.vertex_outputs(code)
 
     def create_extra(self, code):
         code.append("#define id gl_InvocationID")
-        self.tesselation_control.vertex_extra(code)
+        self.tessellation_control.vertex_extra(code)
 
     def create_body(self, code):
         code.append("if (id == 0) {")
-        self.tesselation_control.vertex_shader(code)
+        self.tessellation_control.vertex_shader(code)
         code.append("}")
         code.append("gl_out[id].gl_Position = gl_in[id].gl_Position;")
 
@@ -728,7 +728,7 @@ class BasicShader(StructuredShader):
                  shadows=None,
                  lighting_model=None,
                  scattering=None,
-                 tesselation_control=None,
+                 tessellation_control=None,
                  vertex_control=None,
                  instance_control=None,
                  data_source=None,
@@ -752,8 +752,8 @@ class BasicShader(StructuredShader):
             vertex_control = DefaultVertexControl()
         if instance_control is None:
             instance_control = NoInstanceControl()
-        if tesselation_control is not None:
-            vertex_source = QuadTesselationVertexInput(tesselation_control.invert_v, self)
+        if tessellation_control is not None:
+            vertex_source = QuadTessellationVertexInput(tessellation_control.invert_v, self)
         else:
             vertex_source = DirectVertexInput(self)
         if data_source is None:
@@ -779,12 +779,12 @@ class BasicShader(StructuredShader):
         self.after_effects = after_effects
         self.appearance.data = self.data_source
         self.lighting_model.appearance = self.appearance
-        if tesselation_control is not None:
-            self.tesselation_control = tesselation_control
-            self.tesselation_control.shader = self
-            self.vertex_shader = TesselationVertexShader()
-            self.tesselation_control_shader = TesselationShader(self, tesselation_control)
-            self.tesselation_eval_shader = VertexShader(self,
+        if tessellation_control is not None:
+            self.tessellation_control = tessellation_control
+            self.tessellation_control.shader = self
+            self.vertex_shader = TessellationVertexShader()
+            self.tessellation_control_shader = TessellationShader(self, tessellation_control)
+            self.tessellation_eval_shader = VertexShader(self,
                                                         shader_type='eval',
                                                         vertex_source=vertex_source,
                                                         data_source=self.data_source,
@@ -795,8 +795,8 @@ class BasicShader(StructuredShader):
                                                         lighting_model=self.lighting_model,
                                                         scattering=self.scattering)
         else:
-            self.tesselation_control = TesselationControl()
-            self.tesselation_eval_shader = None
+            self.tessellation_control = TessellationControl()
+            self.tessellation_eval_shader = None
             self.vertex_shader = VertexShader(self,
                                               shader_type='vertex',
                                               vertex_source=vertex_source,
@@ -838,16 +838,16 @@ class BasicShader(StructuredShader):
 
     def set_instance_control(self, instance_control):
         self.instance_control = instance_control
-        #TODO: wrong if there is tesselation
+        #TODO: wrong if there is tessellation
         self.vertex_shader.instance_control = instance_control
 
     def set_scattering(self, scattering):
         self.scattering = scattering
         self.scattering.shader = self
-        if self.tesselation_eval_shader is None:
+        if self.tessellation_eval_shader is None:
             self.vertex_shader.scattering = scattering
         else:
-            self.tesselation_eval_shader.scattering = scattering
+            self.tessellation_eval_shader.scattering = scattering
         self.fragment_shader.scattering = scattering
 
     def add_shadows(self, shadows):
@@ -1010,7 +1010,7 @@ class BasicShader(StructuredShader):
             config += 'g'
         if config:
             name += '-' + config
-        tc_id = self.tesselation_control.get_id()
+        tc_id = self.tessellation_control.get_id()
         if tc_id:
             name += '-' + tc_id
         return name
@@ -1021,7 +1021,7 @@ class BasicShader(StructuredShader):
 
     def update_shader_shape_static(self, shape, appearance):
         self.appearance.update_shader_shape_static(shape, appearance)
-        self.tesselation_control.update_shader_shape_static(shape, appearance)
+        self.tessellation_control.update_shader_shape_static(shape, appearance)
         for shadow in self.shadows:
             shadow.update_shader_shape_static(shape, appearance)
         self.lighting_model.update_shader_shape_static(shape, appearance)
@@ -1043,7 +1043,7 @@ class BasicShader(StructuredShader):
 
     def update_shader_shape(self, shape, appearance):
         self.appearance.update_shader_shape(shape, appearance)
-        self.tesselation_control.update_shader_shape(shape, appearance)
+        self.tessellation_control.update_shader_shape(shape, appearance)
         for shadow in self.shadows:
             shadow.update_shader_shape(shape, appearance)
         self.lighting_model.update_shader_shape(shape, appearance)
@@ -1057,7 +1057,7 @@ class BasicShader(StructuredShader):
 
     def update_shader_patch_static(self, shape, patch, appearance):
         self.appearance.update_shader_patch_static(shape, patch, appearance)
-        self.tesselation_control.update_shader_patch_static(shape, patch, appearance)
+        self.tessellation_control.update_shader_patch_static(shape, patch, appearance)
         for shadow in self.shadows:
             shadow.update_shader_shape_static(shape, appearance)
         self.lighting_model.update_shader_patch_static(shape, patch, appearance)
@@ -1069,7 +1069,7 @@ class BasicShader(StructuredShader):
 
     def update_shader_patch(self, shape, patch, appearance):
         self.appearance.update_shader_patch(shape, patch, appearance)
-        self.tesselation_control.update_shader_patch(shape, patch, appearance)
+        self.tessellation_control.update_shader_patch(shape, patch, appearance)
         self.lighting_model.update_shader_patch(shape, patch, appearance)
         self.scattering.update_shader_patch(shape, patch, appearance)
         self.vertex_control.update_shader_patch(shape, patch, appearance)
@@ -1395,7 +1395,7 @@ class DirectVertexInput(VertexInput):
             code.append("model_texcoord0 = vec4(fract(u), v, 0, 1);")
             code.append("model_texcoord0p = vec4(fract(u + 0.5) - 0.5, v, 0, 1);")
 
-class QuadTesselationVertexInput(VertexInput):
+class QuadTessellationVertexInput(VertexInput):
     def __init__(self, invert_v=True, shader=None):
         VertexInput.__init__(self, shader)
         self.invert_v = invert_v
@@ -1438,13 +1438,13 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
             else:
                 code.append("model_texcoord%i = vec4(gl_TessCoord.x, gl_TessCoord.y, 0.0, 0.0);" % (i))
 
-class TesselationControl(ShaderComponent):
+class TessellationControl(ShaderComponent):
     pass
 
-class ConstantTesselationControl(TesselationControl):
+class ConstantTessellationControl(TessellationControl):
     def __init__(self, invert_v=True, shader=None):
-        TesselationControl.__init__(self, shader)
-        #invert_v is not used in TesselationControl but in QuadTesselationVertexInput
+        TessellationControl.__init__(self, shader)
+        #invert_v is not used in TessellationControl but in QuadTessellationVertexInput
         #It is configured here as this is the user class
         self.invert_v = invert_v
 
@@ -1472,8 +1472,8 @@ class ConstantTesselationControl(TesselationControl):
 ''']
 
     def update_shader_patch(self, shape, patch, appearance):
-        patch.instance.set_shader_input('TessLevelInner', patch.tesselation_inner_level)
-        patch.instance.set_shader_input('TessLevelOuter', *patch.tesselation_outer_level)
+        patch.instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
+        patch.instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
 
 class VertexControl(ShaderComponent):
     use_double = False

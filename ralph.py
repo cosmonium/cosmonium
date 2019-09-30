@@ -34,7 +34,7 @@ from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryD
 from cosmonium.procedural.shaders import DetailMap, DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, ConstantTesselationControl,\
+from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl,\
     ShaderShadowMap
 from cosmonium.shapes import InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
@@ -488,11 +488,11 @@ class RoamingRalphDemo(CosmoniumBase):
                        HeightmapDataSource(self.biome, PatchedGpuTextureSource),
                        TextureDictionaryDataSource(self.terrain_appearance)]
         if settings.hardware_tessellation:
-            tesselation_control = ConstantTesselationControl(invert_v=True)
+            tessellation_control = ConstantTessellationControl(invert_v=True)
         else:
-            tesselation_control = None
+            tessellation_control = None
         self.terrain_shader = BasicShader(appearance=appearance,
-                                          tesselation_control=tesselation_control,
+                                          tessellation_control=tessellation_control,
                                           vertex_control=DisplacementVertexControl(self.heightmap),
                                           data_source=data_source)
         self.terrain_shader.add_shadows(ShaderShadowMap())
