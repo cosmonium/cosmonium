@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -10,12 +29,14 @@ from ..textures import TexCoord
 from .. import settings
 
 import traceback
+import numpy
+import sys
 
 class ShaderHeightmap(Heightmap):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, median, noise, offset, scale, coord = TexCoord.Cylindrical):
-        Heightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median)
+    def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
+        Heightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
         self.noise = noise
         self.offset = offset
         self.scale = scale
@@ -60,28 +81,11 @@ class ShaderHeightmap(Heightmap):
             print("No peeker")
             traceback.print_stack()
             return 0.0
-        try:
-            color = LColor()
-            #pos = LVector2(x * self.texture_scale[0], ((self.height - 1) - y) * self.texture_scale[1]) + self.texture_offset
-            new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-            #new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #new_y = ((self.height - 1) - new_y)
-            new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #print(x, y, int(new_x), int(new_y), self.texture_scale, self.texture_offset)
-            self.texture_peeker.fetch_pixel(color, min(int(new_x), self.width - 1), min(int(new_y), self.height - 1))
-            #self.texture_peeker.fetch_pixel(color, x, y)
-            if settings.encode_float:
-                height = color[0] + color[1] / 255.0 + color[2] / 65025.0 + color[3] / 16581375.0
-            else:
-                height = color[0]
-        except AssertionError as e:
-            #traceback.print_stack()
-            #print(e)
-            print(x, y)
-            print(int(new_x), int(new_y))
-            print(((self.height - 1) - y), self.texture_scale[1], ((self.height - 1) - y) * self.texture_scale[1], self.texture_offset[1] * self.height)
-            height = 0.0
-        #print(height, self.parent.height_scale)
+        new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
+        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_x = min(new_x, self.width - 1)
+        new_y = min(new_y, self.height - 1)
+        height = self.interpolator.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale# + self.offset
 
     def heightmap_ready_cb(self, texture, callback, cb_args):
@@ -98,8 +102,7 @@ class ShaderHeightmap(Heightmap):
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.texture.setMinfilter(Texture.FT_linear)
-            self.texture.setMagfilter(Texture.FT_linear)
+            self.interpolator.configure_texture(self.texture)
             self._make_heightmap(callback, cb_args)
         else:
             if callback is not None:
@@ -121,6 +124,7 @@ class ShaderHeightmap(Heightmap):
                                       offset = self.offset,
                                       scale = self.scale)
             self.shader.global_frequency = self.global_frequency
+            self.shader.global_scale = self.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, 0, self.texture, self.heightmap_ready_cb, (callback, cb_args))
 
@@ -153,6 +157,9 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.cloned = False
         self.texture_offset = LVector2()
         self.texture_scale = LVector2(1, 1)
+        self.min_height = None
+        self.max_height = None
+        self.mean_height = None
 
     def copy_from(self, heightmap_patch):
         self.cloned = True
@@ -160,34 +167,20 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.texture = heightmap_patch.texture
         self.texture_peeker = heightmap_patch.texture_peeker
         self.heightmap_ready = heightmap_patch.heightmap_ready
+        self.min_height = heightmap_patch.min_height
+        self.max_height = heightmap_patch.max_height
+        self.mean_height = heightmap_patch.mean_height
 
     def get_height(self, x, y):
         if self.texture_peeker is None:
             print("No peeker", self.patch.str_id(), self.patch.instance_ready)
             traceback.print_stack()
             return 0.0
-        try:
-            color = LColor()
-            #pos = LVector2(x * self.texture_scale[0], ((self.height - 1) - y) * self.texture_scale[1]) + self.texture_offset
-            new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-            #new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #new_y = ((self.height - 1) - new_y)
-            new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
-            #print(x, y, int(new_x), int(new_y), self.texture_scale, self.texture_offset)
-            self.texture_peeker.fetch_pixel(color, min(int(new_x), self.width - 1), min(int(new_y), self.height - 1))
-            #self.texture_peeker.fetch_pixel(color, x, y)
-            if settings.encode_float:
-                height = color[0] + color[1] / 255.0 + color[2] / 65025.0 + color[3] / 16581375.0
-            else:
-                height = color[0]
-        except AssertionError as e:
-            #traceback.print_stack()
-            #print(e)
-            print(x, y)
-            print(int(new_x), int(new_y))
-            print(((self.height - 1) - y), self.texture_scale[1], ((self.height - 1) - y) * self.texture_scale[1], self.texture_offset[1] * self.height)
-            height = 0.0
-        #print(height, self.parent.height_scale)
+        new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
+        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_x = min(new_x, self.width - 1)
+        new_y = min(new_y, self.height - 1)
+        height = self.parent.interpolator.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale# + self.parent.offset
 
@@ -196,8 +189,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.texture.setMinfilter(Texture.FT_linear)
-            self.texture.setMagfilter(Texture.FT_linear)
+            self.parent.interpolator.configure_texture(self.texture)
             self._make_heightmap(callback, cb_args)
         else:
             if callback is not None:
@@ -209,6 +201,16 @@ class ShaderHeightmapPatch(HeightmapPatch):
 #         if self.texture_peeker is None:
 #             print("NOT READY !!!")
         self.heightmap_ready = True
+        data = self.texture.getRamImage()
+        if sys.version_info[0] < 3:
+            buf = data.getData()
+            np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
+        else:
+            np_buffer = numpy.frombuffer(data, numpy.float32)
+        np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
+        self.min_height = np_buffer.min()
+        self.max_height = np_buffer.max()
+        self.mean_height = np_buffer.mean()
         if callback is not None:
             callback(self, *cb_args)
 
@@ -228,5 +230,6 @@ class ShaderHeightmapPatch(HeightmapPatch):
                                       offset=(self.x0, self.y0, 0.0),
                                       scale=(self.lod_scale_x, self.lod_scale_y, 1.0))
             self.shader.global_frequency = self.parent.global_frequency
+            self.shader.global_scale = self.parent.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, self.face, self.texture, self.heightmap_ready_cb, (callback, cb_args))

@@ -42,33 +42,13 @@ License: BSD
 
 Reference: [Github](https://github.com/lepture/mistune)
 
-## support/conv3ds2egg
-
-3DS to EGG conversion tool.
-
-Copyright: Copyright (C) 2013 Treeform.
-
-License: WTFPL
-
-Reference: [Github](https://github.com/treeform/3ds2egg)
-
-## support/FilterManager
-
-Render to buffer helper class from Panda3D
-
-Copyright: Copyright (C) 2008, Carnegie Mellon University.
-
-License: BSD
-
-Reference: [Homepage](https://www.panda3d.org) [Github](https://github.com/panda3d/panda3d)
-
 ## ui/Menu
 
 Dropdown and popup menu for DirectGUI.
 
-Copyright: ynjh_jo <ynjh d0t jo At gmail.com>
+Copyright: Joni Hariyanto <ynjh d0t jo At gmail.com>
 
-License: Public domain ?
+License: WTFPL
 
 Reference: [Panda3D](https://discourse.panda3d.org/t/popup-menu-drop-down-menu-bar/4886) [Homepage](http://jon1.us/P3D/) [Source](http://jon1.us/P3D/other/)
 
@@ -100,9 +80,11 @@ License: BSD
 
 Reference: [Homepage](http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/)
 
-## celestia/atmosphere
+## celestia
 
-Atmosphere shader code from Celestia used for compatibility.
+atmosphere.py: Atmosphere shader code from Celestia used for compatibility.
+
+bigfix.py: 64.64 fixed precision code from Celestia used for compatibility with cel:// urls
 
 Copyright: Copyright (c) 2001-2017, Celestia Development Team
 

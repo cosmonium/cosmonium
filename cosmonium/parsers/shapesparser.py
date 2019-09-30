@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -5,6 +24,7 @@ from panda3d.core import LVector3d
 
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
+from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 
 from .yamlparser import YamlModuleParser
 
@@ -15,13 +35,15 @@ class MeshYamlParser(YamlModuleParser):
             data = {'model': data}
         model = data.get('model')
         create_uv = data.get('create-uv', False)
+        panda = data.get('panda', False)
         scale = data.get('scale', True)
         offset = data.get('offset', None)
         if offset is not None:
             offset = LVector3d(*offset)
         flatten = data.get('flatten', True)
-        shape = MeshShape(model, offset, scale, flatten, context=YamlModuleParser.context)
-        return (shape, {'create_uv': create_uv})
+        attribution = data.get('attribution', None)
+        shape = MeshShape(model, offset, scale, flatten, panda, attribution, context=YamlModuleParser.context)
+        return (shape, {'create-uv': create_uv})
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
@@ -40,6 +62,8 @@ class ShapeYamlParser(YamlModuleParser):
             shape = SquaredDistanceSquareShape()
         elif shape_type == 'cube-sphere':
             shape = NormalizedSquareShape()
+        elif shape_type == 'se-sphere':
+            shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':
             shape, extra = MeshYamlParser.decode(shape_data)
         else:

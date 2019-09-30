@@ -1,9 +1,28 @@
 # -*- coding: utf-8 -*-
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from ..bodies import StellarObject, StellarBody, Star
-from ..datasource import dataSourceDB
+from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit
 from ..astro.rotations import Rotation, UniformRotation
@@ -46,8 +65,8 @@ def orbit_info(orbit):
 
 def fixed_orbit_info(orbit):
     texts = []
-    texts.append(["Right Ascension", "%dh%dm%gs" % toHourMinSec(orbit.right_asc * 180 / pi) + "%g" % (orbit.right_asc * 180 / pi)])
-    texts.append(["Declination", "%d°%d'%g\"" % toDegMinSec(orbit.declination * 180 / pi)])
+    texts.append(["Right Ascension", "%dh%dm%gs" % toHourMinSec(orbit.get_right_asc() * 180 / pi)])
+    texts.append(["Declination", "%d°%d'%g\"" % toDegMinSec(orbit.get_declination() * 180 / pi)])
     return ["Position", texts]
 
 def elliptic_orbit_info(orbit):
@@ -82,8 +101,8 @@ def circular_rotation_info(rotation):
 def surface(surface):
     texts = []
     name = surface.get_name()
-    if name != '':
-        texts.append(["Name", ])
+    if name is not None and name != '':
+        texts.append(["Name", name])
     if surface.category is not None:
         texts.append(["Category", surface.category.name])
     if surface.resolution is not None:
@@ -91,16 +110,38 @@ def surface(surface):
             texts.append(["Resolution", "%dK" % surface.resolution])
         else:
             texts.append(["Resolution", "%s" % surface.resolution])
-    data_source = dataSourceDB.get_source(surface.source)
-    if data_source is not None:
-        texts.append(["Source", data_source.name])
-        if data_source.copyright is not None:
-            texts.append(["Copyright", data_source.copyright])
-        if data_source.license is not None:
-            texts.append(["License", data_source.license])
-        if data_source.url is not None:
-            texts.append(["URL", data_source.url])
-    return ["Surface", texts]
+    attributions = []
+    if surface.attribution is not None:
+        attributions.append(('Surface', surface.attribution))
+    else:
+        if surface.shape is not None and surface.shape.attribution is not None:
+            attributions.append(('Model', surface.shape.attribution))
+        if surface.appearance is not None:
+            if surface.appearance.attribution is not None:
+                attributions.append(('Textures', surface.appearance.attribution))
+            elif surface.appearance.texture is not None and surface.appearance.texture.source.attribution is not None:
+                attributions.append(('Texture', surface.appearance.texture.source.attribution))
+    for (name, attribution) in attributions:
+        if attribution is None: continue
+        texts.append([name, ''])
+        if not isinstance(attribution, list):
+            attribution = [attribution]
+        for entry in attribution:
+            data_attribution = dataAttributionDB.get_attribution(entry)
+            if data_attribution is not None:
+                texts.append(["Source", data_attribution.name])
+                if data_attribution.copyright is not None:
+                    texts.append(["Copyright", data_attribution.copyright])
+                if data_attribution.license is not None:
+                    texts.append(["License", data_attribution.license])
+                if data_attribution.url is not None:
+                    texts.append(["URL", data_attribution.url])
+            else:
+                texts.append(["Source", entry])
+    if len(texts) != 0:
+        return ["Surface", texts]
+    else:
+        return None
 
 def stellar_object(body):
     texts = []
@@ -141,7 +182,8 @@ def stellar_body(body):
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))
     texts.append(ObjectInfo.get_info_for(body.rotation))
-    texts.append(ObjectInfo.get_info_for(body.surface))
+    if body.surface is not None:
+        texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
 
 def star(body):
@@ -154,7 +196,7 @@ def star(body):
     general.append(["Radius", "%s (%s)" % (toUnit(body.get_apparent_radius(), units.lengths_scale), toUnit(body.get_apparent_radius(), units.diameter_scale))])
     general.append(["Spectral type", body.spectral_type.get_text() if body.spectral_type is not None else 'Unknown'])
     general.append(["Abs magnitude", "%g" % body.get_abs_magnitude()])
-    general.append(["Luminosity", "%g `W (%gx Sun)" % (body.get_luminosity() * units.L0,  body.get_luminosity())])
+    general.append(["Luminosity", "%g W (%gx Sun)" % (body.get_luminosity() * units.L0,  body.get_luminosity())])
     general.append(["Temperature", "%g K" % body.temperature if body.temperature is not None else 'Unknown'])
     if body.description != '':
         general.append(["Description", body.description])
@@ -163,7 +205,8 @@ def star(body):
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))
     texts.append(ObjectInfo.get_info_for(body.rotation))
-    texts.append(ObjectInfo.get_info_for(body.surface))
+    if body.surface is not None:
+        texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
 
 ObjectInfo.register(object, default_info)

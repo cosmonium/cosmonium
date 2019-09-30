@@ -1,117 +1,113 @@
 #!/usr/bin/env python
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
 
+# This demo is heavily based on the Ralph example of Panda3D
 # Author: Ryan Myers
 # Models: Jeff Styers, Reagan Heller
 #
-# Last Updated: 2015-03-13
-#
-# This tutorial provides an example of creating a character
-# and having it walk around on uneven terrain, as well
-# as implementing a fully rotatable camera.
 
 from __future__ import print_function
 
-from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LRGBColor, LQuaternion, LPoint3d,\
-    LColor
+from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
+from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
-from panda3d.core import CollisionTraverser, CollisionNode, CollideMask
-from panda3d.core import CollisionHandlerQueue, CollisionRay
 from direct.actor.Actor import Actor
 
 from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryDataSource
-from cosmonium.procedural.shaders import DetailMap, DisplacementGeometryControl
+from cosmonium.procedural.shaders import DetailMap, DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, GeometryControl, ConstantTesselationControl
-from cosmonium.shapes import MeshShape, InstanceShape
+from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl,\
+    ShaderShadowMap
+from cosmonium.shapes import InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.textures import PatchedGpuTextureSource
-from cosmonium.procedural.terrain import TerrainObject
-from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, RandomObjectPlacer, MultiTerrainPopulator, TerrainObjectFactory
 from cosmonium.procedural.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
-from cosmonium.shadows import ShadowCaster
-from cosmonium.parsers.yamlparser import YamlParser
+from cosmonium.shadows import ShadowMap
+from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
-from cosmonium.parsers.textureparser import TextureControlYamlParser, TextureDictionaryYamlParser
+from cosmonium.parsers.populatorsparser import PopulatorYamlParser
+from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
 from cosmonium import settings
 
 from math import pow, pi, sqrt
+import argparse
 import sys
-from cosmonium.procedural.shadernoise import NoiseMap
+
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase
-
-class TreeAnimControl(GeometryControl):
-    def get_id(self):
-        return "tree"
-
-    def vertex_uniforms(self, code):
-        code.append("uniform float osg_FrameTime;")
-
-    def update_vertex(self, code):
-        code.append("    float isBark = step(0.251, model_texcoord0.y);")
-        code.append("    float animation = sin(osg_FrameTime);")
-        code.append("    animation *= sin(0.5 * osg_FrameTime);")
-        code.append("    animation *= isBark;")
-        code.append("    animation *= distance(model_vertex4.xy, vec2(0.0,0.0)) * 0.04;")
-        code.append("    model_vertex4 = vec4(model_vertex4.xyz + animation, model_vertex4.w);")
-
-class RockFactory(TerrainObjectFactory):
-    def __init__(self, terrain):
-        self.terrain = terrain
-
-    def create_object(self):
-        rock_shape = MeshShape('ralph-data/models/rock1', panda=True, scale=False)
-        rock_appearance = ModelAppearance()
-        if self.terrain.fog is not None:
-            after_effects = [Fog(**self.terrain.fog)]
-        else:
-            after_effects = None
-        rock_shader = BasicShader(after_effects=after_effects)
-        rock = TerrainObject(shape=rock_shape, appearance=rock_appearance, shader=rock_shader)
-        rock.set_parent(self.terrain)
-        #bounds = self.rock.instance.getTightBounds()
-        #offset = (bounds[1] - bounds[0]) / 2
-        #offsets[count] = Vec4F(x, y, height - offset[2] * scale, scale)
-        return rock
-
-class TreeFactory(TerrainObjectFactory):
-    def __init__(self, terrain):
-        self.terrain = terrain
-
-    def create_object(self):
-        tree_shape = MeshShape('ralph-data/models/trees/tree1', panda=True, scale=False)
-        tree_appearance = ModelAppearance()
-        if self.terrain.fog is not None:
-            after_effects = [Fog(**self.terrain.fog)]
-        else:
-            after_effects = None
-        tree_shader = BasicShader(geometry_control=TreeAnimControl(), after_effects=after_effects)
-        tree = TerrainObject(shape=tree_shape, appearance = tree_appearance, shader=tree_shader)
-        tree.set_parent(self.terrain)
-        return tree
+from cosmonium.nav import NavBase
+from cosmonium.astro.frame import AbsoluteReferenceFrame
+from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
 
 class TileFactory(object):
-    def __init__(self, tile_density, size, has_water, water):
+    def __init__(self, heightmap, tile_density, size, height_scale, has_water, water):
+        self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
+        self.height_scale = height_scale
         self.has_water = has_water
         self.water = water
 
     def create_patch(self, parent, lod, x, y):
-        patch = Tile(parent, lod, x, y, self.tile_density, self.size)
-        #print("Create tile", lod, x, y, tile.size, tile.flat_coord)
-        if settings.allow_tesselation:
-            TerrainLayer = GpuPatchTerrainLayer
+        min_height = -self.height_scale
+        max_height = self.height_scale
+        if parent is not None:
+            heightmap_patch = self.heightmap.get_heightmap(parent)
+            if heightmap_patch is not None:
+                min_height = heightmap_patch.min_height * self.height_scale
+                max_height = heightmap_patch.max_height * self.height_scale
+        patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
+        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
+        if settings.hardware_tessellation:
+            terrain_layer = GpuPatchTerrainLayer()
         else:
-            TerrainLayer = MeshTerrainLayer
-        patch.add_layer(TerrainLayer())
+            terrain_layer = MeshTerrainLayer()
+        patch.add_layer(terrain_layer)
         if self.has_water:
             patch.add_layer(WaterLayer(self.water))
         return patch
+
+    def split_patch(self, parent):
+        lod = parent.lod + 1
+        delta = parent.half_size
+        x = parent.x
+        y = parent.y
+        self.create_patch(parent, lod, x, y)
+        self.create_patch(parent, lod, x + delta, y)
+        self.create_patch(parent, lod, x + delta, y + delta)
+        self.create_patch(parent, lod, x, y + delta)
+        parent.children_bb = []
+        parent.children_normal = []
+        parent.children_offset = []
+        for child in parent.children:
+            parent.children_bb.append(child.bounds.make_copy())
+            parent.children_normal.append(None)
+            parent.children_offset.append(None)
+            child.owner = parent.owner
+
+    def merge_patch(self, patch):
+        pass
 
 class WaterLayer(object):
     def __init__(self, config):
@@ -119,19 +115,24 @@ class WaterLayer(object):
         self.water = None
 
     def check_settings(self):
-        if self.water and self.water.waterNP:
+        if self.water is not None:
             if self.config.visible:
-                self.water.waterNP.unstash()
+                self.water.create_instance()
             else:
-                self.water.waterNP.stash()
+                self.water.remove_instance()
 
     def create_instance(self, patch):
         self.water = WaterNode(-0.5, -0.5, 0.5, 0.5, self.config.level, self.config.scale, patch)
-        if not self.config.visible and self.water.waterNP:
-            self.water.waterNP.stash()
+        if self.config.visible:
+            self.water.create_instance()
+
+    def update_instance(self, patch):
+        pass
 
     def remove_instance(self):
-        self.water.remove_instance()
+        if self.water is not None:
+            self.water.remove_instance()
+            self.water = None
 
 class WaterConfig():
     def __init__(self, level, visible, scale):
@@ -139,73 +140,337 @@ class WaterConfig():
         self.visible = visible
         self.scale = scale
 
-class RalphConfigParser(YamlParser):
+class RalphConfigParser(YamlModuleParser):
     def decode(self, data):
-        noise_parser = NoiseYamlParser()
-        heightmap = data.get('heightmap', None)
         biome = data.get('biome', None)
         control = data.get('control', None)
         appearance = data.get('appearance', None)
         water = data.get('water', None)
         fog = data.get('fog', None)
-        if  heightmap is not None:
-            heightmap = noise_parser.decode(heightmap)
+
+        terrain = data.get('terrain', {})
+        self.tile_size = terrain.get("tile-size", 1024)
+        self.tile_density = terrain.get('tile-density', 64)
+        self.max_vertex_size = terrain.get('max-vertex-size', 128)
+        self.max_lod = terrain.get('max-lod', 10)
+        self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
+        self.heightmap_size = terrain.get('heightmap-size', 512)
+        self.biome_size = terrain.get('biome-size', 128)
+
+        heightmap = data.get('heightmap', {})
+        raw_height_scale = heightmap.get('max-height', 1.0)
+        height_scale_units = heightmap.get('max-height-units', 1.0)
+        scale_length = heightmap.get('scale-length', 2.0)
+        noise = heightmap.get('noise')
+        median = heightmap.get('median', True)
+        self.height_scale = raw_height_scale * height_scale_units
+        self.noise_scale = raw_height_scale
+        #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
+        noise_parser = NoiseYamlParser(scale_length)
+        self.heightmap = noise_parser.decode(noise)
+        self.shadow_size = terrain.get('shadow-size', 16)
+        self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
+        self.interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
+        self.heightmap_max_lod = heightmap.get('max-lod', 100)
+
+        layers = data.get('layers', [])
+        self.layers = []
+        for layer in layers:
+            self.layers.append(PopulatorYamlParser.decode(layer))
+
         if biome is not None:
-            biome = noise_parser.decode(biome)
+            self.biome = noise_parser.decode(biome)
+        else:
+            self.biome = None
+
         if control is not None:
-            control_parser = TextureControlYamlParser()
-            control = control_parser.decode(control)
+            control_type = control.get('type', 'textures')
+            if control_type == 'textures':
+                control_parser = TextureControlYamlParser()
+                self.control = control_parser.decode(control)
+            elif control_type == 'colormap':
+                control_parser = HeightColorControlYamlParser()
+                self.control = control_parser.decode(control, self.height_scale)
+            else:
+                print("Unknown control type '%'" % control_type)
+                self.control = None
+        else:
+            self.control = None
+
         if appearance is not None:
             appearance_parser = TextureDictionaryYamlParser()
-            appearance = appearance_parser.decode(appearance)
+            self.appearance = appearance_parser.decode(appearance)
+        else:
+            self.appearance = None
+
         if water is not None:
             level = water.get('level', 0)
-            visible = water.get('visible', True)
+            visible = water.get('visible', False)
             scale = 8.0 #* self.size / self.default_size
-            water = WaterConfig(level, visible, scale)
+            self.water = WaterConfig(level, visible, scale)
         else:
-            water = WaterConfig(0, False, 1.0)
+            self.water = WaterConfig(0, False, 1.0)
         if fog is not None:
-            fog_parameters = {}
-            fog_parameters['fall_off'] = fog.get('falloff', 0.035)
-            fog_parameters['density'] = fog.get('density', 20)
-            fog_parameters['ground'] = fog.get('ground', -500)
+            self.fog_parameters = {}
+            self.fog_parameters['fall_off'] = fog.get('falloff', 0.035)
+            self.fog_parameters['density'] = fog.get('density', 20)
+            self.fog_parameters['ground'] = fog.get('ground', -500)
         else:
-            fog_parameters = None
-        return (heightmap, biome, control, appearance, water, fog_parameters)
+            self.fog_parameters = None
+        return True
+
+class NodePathHolder(object):
+    def __init__(self, instance):
+        self.instance = instance
+
+    def get_rel_position_to(self, position):
+        return LPoint3d(*self.instance.get_pos(render))
 
 class RalphCamera(CameraBase):
+    def __init__(self, cam, lens):
+        CameraBase.__init__(self, cam, lens)
+        self.camera_global_pos = LPoint3d()
+        self.camera_frame = AbsoluteReferenceFrame()
+
+    def get_frame_camera_pos(self):
+        return LPoint3d(*base.cam.get_pos())
+
+    def set_frame_camera_pos(self, position):
+        base.cam.set_pos(*position)
+
+    def get_frame_camera_rot(self):
+        return LQuaterniond(*base.cam.get_quat())
+
+    def set_frame_camera_rot(self, rot):
+        base.cam.set_quat(LQuaternion(*rot))
+
     def set_camera_pos(self, position):
-        base.camera.set_pos(*position)
+        base.cam.set_pos(*position)
 
     def get_camera_pos(self):
-        return LPoint3d(*base.camera.get_pos())
+        return LPoint3d(*base.cam.get_pos())
+
+    def set_camera_rot(self, rot):
+        base.cam.set_quat(LQuaternion(*rot))
+
+    def get_camera_rot(self):
+        return LQuaterniond(*base.cam.get_quat())
+
+class FollowCam(object):
+    def __init__(self, terrain, cam, target, floater):
+        self.terrain = terrain
+        self.cam = cam
+        self.target = target
+        self.floater = floater
+        self.height = 2.0
+        self.min_height = 1.0
+        self.max_dist = 10.0
+        self.min_dist = 5.0
+        self.cam.setPos(self.target.getX(), self.target.getY() + self.max_dist, self.height)
+
+    def set_limits(self, min_dist, max_dist):
+        self.min_dist = min_dist
+        self.max_dist = max_dist
+
+    def set_height(self, height):
+        self.height = max(height, self.min_height)
+
+    def scale_height(self, scale):
+        self.height = max(self.min_height, self.height * scale)
+
+    def update(self):
+        vec = self.target.getPos() - self.cam.getPos()
+        vec.setZ(0)
+        dist = vec.length()
+        vec.normalize()
+        if dist > self.max_dist:
+            self.cam.setPos(self.cam.getPos() + vec * (dist - self.max_dist))
+            dist = self.max_dist
+        if dist < self.min_dist:
+            self.cam.setPos(self.cam.getPos() - vec * (self.min_dist - dist))
+            dist = self.min_dist
+
+        # Keep the camera at min_height above the terrain,
+        # or camera_height above target, whichever is greater.
+        terrain_height = self.terrain.get_height(self.cam.getPos())
+        target_height = self.target.get_z()
+        if terrain_height + self.min_height < target_height + self.height:
+            new_camera_height = target_height + self.height
+        else:
+            new_camera_height = terrain_height + self.min_height
+        self.cam.setZ(new_camera_height)
+
+        # The camera should look in ralph's direction,
+        # but it should also try to stay horizontal, so look at
+        # a floater which hovers above ralph's head.
+        self.cam.lookAt(self.floater)
+
+class RalphNav(NavBase):
+    def __init__(self, ralph, target, cam, observer, sun, follow):
+        NavBase.__init__(self)
+        self.ralph = ralph
+        self.target = target
+        self.cam = cam
+        self.observer = observer
+        self.sun = sun
+        self.follow = follow
+        self.isMoving = False
+        self.mouseSelectClick = False
+
+    def register_events(self, event_ctrl):
+        self.keyMap = {
+            "left": 0, "right": 0, "forward": 0, "backward": 0,
+            "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
+            "sun-left": 0, "sun-right": 0,
+            "turbo": 0}
+        event_ctrl.accept("arrow_left", self.setKey, ["left", True])
+        event_ctrl.accept("arrow_right", self.setKey, ["right", True])
+        event_ctrl.accept("arrow_up", self.setKey, ["forward", True])
+        event_ctrl.accept("arrow_down", self.setKey, ["backward", True])
+        event_ctrl.accept("shift", self.setKey, ["turbo", True])
+        event_ctrl.accept("a", self.setKey, ["cam-left", True], direct=True)
+        event_ctrl.accept("s", self.setKey, ["cam-right", True], direct=True)
+        event_ctrl.accept("u", self.setKey, ["cam-up", True], direct=True)
+        event_ctrl.accept("u-up", self.setKey, ["cam-up", False])
+        event_ctrl.accept("d", self.setKey, ["cam-down", True], direct=True)
+        event_ctrl.accept("d-up", self.setKey, ["cam-down", False])
+        event_ctrl.accept("o", self.setKey, ["sun-left", True], direct=True)
+        event_ctrl.accept("o-up", self.setKey, ["sun-left", False])
+        event_ctrl.accept("p", self.setKey, ["sun-right", True], direct=True)
+        event_ctrl.accept("p-up", self.setKey, ["sun-right", False])
+        event_ctrl.accept("arrow_left-up", self.setKey, ["left", False])
+        event_ctrl.accept("arrow_right-up", self.setKey, ["right", False])
+        event_ctrl.accept("arrow_up-up", self.setKey, ["forward", False])
+        event_ctrl.accept("arrow_down-up", self.setKey, ["backward", False])
+        event_ctrl.accept("shift-up", self.setKey, ["turbo", False])
+        event_ctrl.accept("a-up", self.setKey, ["cam-left", False])
+        event_ctrl.accept("s-up", self.setKey, ["cam-right", False])
+
+        event_ctrl.accept("mouse1", self.OnSelectClick )
+        event_ctrl.accept("mouse1-up", self.OnSelectRelease )
+
+        if settings.invert_wheel:
+            event_ctrl.accept("wheel_up", self.change_distance, [0.1])
+            event_ctrl.accept("wheel_down", self.change_distance, [-0.1])
+        else:
+            event_ctrl.accept("wheel_up", self.change_distance, [-0.1])
+            event_ctrl.accept("wheel_down", self.change_distance, [0.1])
+
+    def remove_events(self, event_ctrl):
+        NavBase.remove_events(self, event_ctrl)
+
+    def OnSelectClick(self):
+        if base.mouseWatcherNode.hasMouse():
+            self.mouseSelectClick = True
+            mpos = base.mouseWatcherNode.getMouse()
+            self.startX = mpos.getX()
+            self.startY = mpos.getY()
+            self.dragAngleX = pi
+            self.dragAngleY = pi
+            self.create_drag_params(self.target)
+
+    def OnSelectRelease(self):
+        if base.mouseWatcherNode.hasMouse():
+            mpos = base.mouseWatcherNode.getMouse()
+            if self.startX == mpos.getX() and self.startY == mpos.getY():
+                pass
+        self.mouseSelectClick = False
+
+    def change_distance(self, step):
+        camvec = self.ralph.getPos() - self.cam.getPos()
+        camdist = camvec.length()
+        camvec /= camdist
+        new_dist = max(5.0, camdist * (1.0 + step))
+        new_pos = self.ralph.getPos() - camvec * new_dist
+        self.follow.set_limits(new_dist / 2.0, new_dist)
+        self.follow.set_height(new_pos.get_z() - self.ralph.get_z())
+        self.cam.set_pos(new_pos)
+
+    def update(self, dt):
+        if self.mouseSelectClick and base.mouseWatcherNode.hasMouse():
+            mpos = base.mouseWatcherNode.getMouse()
+            deltaX = mpos.getX() - self.startX
+            deltaY = mpos.getY() - self.startY
+            z_angle = -deltaX * self.dragAngleX
+            x_angle = deltaY * self.dragAngleY
+            self.do_drag(z_angle, x_angle, move=True, rotate=False)
+            camvec = self.ralph.getPos() - self.cam.getPos()
+            camdist = camvec.length()
+            self.follow.set_height(self.cam.get_z() - self.ralph.get_z())
+            self.follow.set_limits(camdist / 2.0, camdist)
+            return True
+
+        if self.keyMap["cam-left"]:
+            self.cam.setX(self.cam, -20 * dt)
+        if self.keyMap["cam-right"]:
+            self.cam.setX(self.cam, +20 * dt)
+        if self.keyMap["cam-up"]:
+            self.follow.scale_height(1 + 2 * dt)
+        if self.keyMap["cam-down"]:
+            self.follow.scale_height(1 - 2 * dt)
+
+        if self.keyMap["sun-left"]:
+            self.sun.set_light_angle(self.sun.light_angle + 30 * dt)
+        if self.keyMap["sun-right"]:
+            self.sun.set_light_angle(self.sun.light_angle - 30 * dt)
+
+        delta = 25
+        if self.keyMap["turbo"]:
+            delta *= 10
+        if self.keyMap["left"]:
+            self.ralph.setH(self.ralph.getH() + 300 * dt)
+        if self.keyMap["right"]:
+            self.ralph.setH(self.ralph.getH() - 300 * dt)
+        if self.keyMap["forward"]:
+            self.ralph.setY(self.ralph, -delta * dt)
+        if self.keyMap["backward"]:
+            self.ralph.setY(self.ralph, delta * dt)
+
+        if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
+            if self.isMoving is False:
+                self.ralph.loop("run")
+                self.isMoving = True
+        else:
+            if self.isMoving:
+                self.ralph.stop()
+                self.ralph.pose("walk", 5)
+                self.isMoving = False
+        return False
+
+class RalphSplash():
+    def set_text(self, text):
+        pass
 
 class RoamingRalphDemo(CosmoniumBase):
 
     def get_local_position(self):
-        return base.camera.get_pos()
+        return base.cam.get_pos()
 
     def create_terrain_appearance(self):
+        self.terrain_appearance = self.ralph_config.appearance
         self.terrain_appearance.set_shadow(self.shadow_caster)
 
     def create_terrain_heightmap(self):
         self.heightmap = PatchedHeightmap('heightmap',
-                                          self.noise_size,
-                                          self.height_scale,
-                                          self.size,
-                                          self.size,
+                                          self.ralph_config.heightmap_size,
+                                          self.ralph_config.height_scale,
+                                          self.ralph_config.tile_size,
+                                          self.ralph_config.tile_size,
                                           True,
-                                          ShaderHeightmapPatchFactory(self.noise))
+                                          ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
+                                          self.ralph_config.interpolator,
+                                          max_lod=self.ralph_config.heightmap_max_lod)
+        #TODO: should be set using a method or in constructor
+        self.heightmap.global_scale = 1.0 / self.ralph_config.noise_scale
 
     def create_terrain_biome(self):
         self.biome = PatchedHeightmap('biome',
-                                      self.biome_size,
+                                      self.ralph_config.biome_size,
                                       1.0,
-                                      self.size,
-                                      self.size,
+                                      self.ralph_config.tile_size,
+                                      self.ralph_config.tile_size,
                                       False,
-                                      ShaderHeightmapPatchFactory(self.biome_noise))
+                                      ShaderHeightmapPatchFactory(self.ralph_config.biome))
 
     def create_terrain_shader(self):
 #         control4 = HeightColorMap('colormap',
@@ -218,35 +483,35 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        appearance = DetailMap(self.terrain_control, self.heightmap, create_normals=True)
-        data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
-                       HeightmapDataSource(self.biome, PatchedGpuTextureSource, filtering=HeightmapDataSource.F_none),
-                       TextureDictionaryDataSource(self.terrain_appearance, TextureDictionaryDataSource.F_hash)]
-        if settings.allow_tesselation:
-            tesselation_control = ConstantTesselationControl(invert_v=False)
+        appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
+        data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource),
+                       HeightmapDataSource(self.biome, PatchedGpuTextureSource),
+                       TextureDictionaryDataSource(self.terrain_appearance)]
+        if settings.hardware_tessellation:
+            tessellation_control = ConstantTessellationControl(invert_v=True)
         else:
-            tesselation_control = None
-        if self.fog is not None:
-            after_effects = [Fog(**self.fog)]
-        else:
-            after_effects = None
+            tessellation_control = None
         self.terrain_shader = BasicShader(appearance=appearance,
-                                          tesselation_control=tesselation_control,
-                                          geometry_control=DisplacementGeometryControl(self.heightmap),
-                                          data_source=data_source,
-                                          after_effects=after_effects)
+                                          tessellation_control=tessellation_control,
+                                          vertex_control=DisplacementVertexControl(self.heightmap),
+                                          data_source=data_source)
+        self.terrain_shader.add_shadows(ShaderShadowMap())
 
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.tile_factory = TileFactory(self.tile_density, self.size, self.has_water, self.water)
-        self.terrain_shape = TiledShape(self.tile_factory, self.size, self.max_lod, lod_control=VertexSizeMaxDistancePatchLodControl(self.max_distance, self.max_vertex_size))
         self.create_terrain_heightmap()
         self.create_terrain_biome()
+        self.tile_factory = TileFactory(self.heightmap, self.ralph_config.tile_density, self.ralph_config.tile_size, self.ralph_config.height_scale, self.has_water, self.water)
+        self.terrain_shape = TiledShape(self.tile_factory,
+                                        self.ralph_config.tile_size,
+                                        VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
+                                                                             self.ralph_config.max_vertex_size,
+                                                                             max_lod=self.ralph_config.max_lod))
         self.create_terrain_appearance()
         self.create_terrain_shader()
-        self.terrain = HeightmapSurface(
+        self.terrain_object = HeightmapSurface(
                                'surface',
                                0,
                                self.terrain_shape,
@@ -254,26 +519,38 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.biome,
                                self.terrain_appearance,
                                self.terrain_shader,
-                               self.size,
+                               self.ralph_config.tile_size,
                                clickable=False,
                                average=True)
+        self.terrain = CompositeShapeObject()
+        self.terrain.add_component(self.terrain_object)
+        self.terrain_object.set_parent(self)
+        self.terrain.set_owner(self)
         self.terrain.set_parent(self)
+
+    def create_instance(self):
         self.terrain.create_instance()
+        if self.has_water:
+            WaterNode.create_cam()
 
     def toggle_water(self):
         if not self.has_water: return
         self.water.visible = not self.water.visible
+        if self.water.visible:
+            WaterNode.create_cam()
+        else:
+            WaterNode.remove_cam()
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
-        height = self.terrain.get_height(position)
+        height = self.terrain_object.get_height(position)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
 
     #Used by populator
     def get_height_patch(self, patch, u, v):
-        height = self.terrain.get_height_patch(patch, u, v)
+        height = self.terrain_object.get_height_patch(patch, u, v)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
@@ -287,7 +564,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.skybox.setShaderOff(1)
         self.skybox.setTwoSided(True)
         # make big enough to cover whole terrain, else there'll be problems with the water reflections
-        self.skybox.setScale(1.5* self.size)
+        self.skybox.setScale(1.5 * self.ralph_config.tile_size)
         self.skybox.setBin('background', 1)
         self.skybox.setDepthWrite(False)
         self.skybox.setDepthTest(False)
@@ -297,22 +574,8 @@ class RoamingRalphDemo(CosmoniumBase):
 
         #self.skybox.setColor(.55, .65, .95, 1.0)
         self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
+        self.sun_color = LColor(pow(1.0, 1/2.2), pow(0.9, 1/2.2), pow(0.7, 1/2.2), 1.0)
         self.skybox.setColor(self.skybox_color)
-
-    def objects_density_for_patch(self, patch):
-        scale = 1 << patch.lod
-        return int(self.objects_density / scale + 1.0)
-
-    def create_populator(self):
-        if settings.allow_instancing:
-            TerrainPopulator = GpuTerrainPopulator
-        else:
-            TerrainPopulator = CpuTerrainPopulator
-        self.rock_collection = TerrainPopulator(RockFactory(self), self.objects_density_for_patch, self.objects_density, RandomObjectPlacer(self))
-        self.tree_collection = TerrainPopulator(TreeFactory(self), self.objects_density_for_patch, self.objects_density, RandomObjectPlacer(self))
-        self.object_collection = MultiTerrainPopulator()
-        self.object_collection.add_populator(self.rock_collection)
-        self.object_collection.add_populator(self.tree_collection)
 
     def set_light_angle(self, angle):
         self.light_angle = angle
@@ -328,24 +591,46 @@ class RoamingRalphDemo(CosmoniumBase):
             coef = sqrt(cosA)
             self.light_color = (1, coef, coef, 1)
             self.directionalLight.setColor(self.light_color)
-            self.skybox.setColor(self.skybox_color * cosA)
+            new_sky_color = self.skybox_color * cosA
+            new_sky_color[3] = 1.0
+            self.skybox.setColor(new_sky_color)
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * cosA
+                self.fog.sun_color = self.sun_color * cosA
         else:
-            self.light_color = (1, 0, 0, 1)
+            self.light_color = (0, 0, 0, 1)
             self.directionalLight.setColor(self.light_color)
-            self.skybox.setColor(self.skybox_color * 0)
-        self.update()
+            self.skybox.setColor(self.light_color)
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * 0
+                self.fog.sun_color = self.sun_color * 0
+        self.terrain.update_shader()
+
+    def set_ambient(self, ambient):
+        settings.global_ambient = clamp(ambient, 0.0, 1.0)
+        if settings.srgb:
+            corrected_ambient = pow(settings.global_ambient, 2.2)
+        else:
+            corrected_ambient = settings.global_ambient
+        settings.corrected_global_ambient = corrected_ambient
+        print("Ambient light level:  %.2f" % settings.global_ambient)
+
+    def incr_ambient(self, ambient_incr):
+        self.set_ambient(settings.global_ambient + ambient_incr)
 
     def update(self):
-        self.object_collection.update_instance()
         self.terrain.update_instance(None, None)
 
     def apply_instance(self, instance):
         pass
 
-    def create_instance_delayed(self):
-        pass
-
     def get_apparent_radius(self):
+        return 0
+
+    def get_min_radius(self):
+        return 0
+
+    def get_max_radius(self):
         return 0
 
     def get_name(self):
@@ -354,25 +639,33 @@ class RoamingRalphDemo(CosmoniumBase):
     def is_emissive(self):
         return False
 
-    def __init__(self):
+    def toggle_lod_freeze(self):
+        settings.debug_lod_freeze = not settings.debug_lod_freeze
+
+    def toggle_split_merge_debug(self):
+        settings.debug_lod_split_merge = not settings.debug_lod_split_merge
+
+    def toggle_bb(self):
+        settings.debug_lod_show_bb = not settings.debug_lod_show_bb
+        self.trigger_check_settings = True
+
+    def toggle_frustum(self):
+        settings.debug_lod_frustum = not settings.debug_lod_frustum
+        self.trigger_check_settings = True
+
+    def __init__(self, args):
         CosmoniumBase.__init__(self)
 
-        config = RalphConfigParser()
-        (self.noise, self.biome_noise, self.terrain_control, self.terrain_appearance, self.water, self.fog) = config.load_and_parse('ralph-data/ralph.yaml')
+        if args.config is not None:
+            self.config_file = args.config
+        else:
+            self.config_file = 'ralph-data/ralph.yaml'
+        self.splash = RalphSplash()
+        self.ralph_config = RalphConfigParser()
+        if self.ralph_config.load_and_parse(self.config_file) is None:
+            sys.exit(1)
+        self.water = self.ralph_config.water
 
-        self.tile_density = 64
-        self.default_size = 128
-        self.max_vertex_size = 64
-        self.max_lod = 10
-
-        self.size = 128 * 8
-        self.max_distance = 1.001 * self.size * sqrt(2)
-        self.noise_size = 512
-        self.biome_size = 128
-        self.noise_scale = 0.5 * self.size / self.default_size
-        self.objects_density = int(25 * (1.0 * self.size / self.default_size) * (1.0 * self.size / self.default_size))
-        self.objects_density = 250
-        self.height_scale = 100 * 5.0
         self.has_water = True
         self.fullscreen = False
         self.shadow_caster = None
@@ -382,30 +675,27 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light_quat = LQuaternion()
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.directionalLight = None
-        self.shadow_size = self.default_size / 8
-        self.shadow_box_length = self.height_scale
 
         self.observer = RalphCamera(self.cam, self.camLens)
         self.observer.init()
 
-        self.distance_to_obs = float('inf')
+        self.distance_to_obs = 2.0 #Can not be 0 !
         self.height_under = 0.0
         self.scene_position = LVector3()
         self.scene_scale_factor = 1
+        self.scene_rel_position = LVector3()
         self.scene_orientation = LQuaternion()
+        self.model_body_center_offset = LVector3()
+        self.world_body_center_offset = LVector3()
+        self.context = self
+        self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
         #Size of an edge seen from 4 units above
-        self.edge_apparent_size = (1.0 * self.size / self.tile_density) / (4.0 * self.observer.pixel_size)
+        self.edge_apparent_size = (1.0 * self.ralph_config.tile_size / self.ralph_config.tile_density) / (4.0 * self.observer.pixel_size)
         print("Apparent size:", self.edge_apparent_size)
 
         self.win.setClearColor((135.0/255, 206.0/255, 235.0/255, 1))
 
-        # This is used to store which keys are currently pressed.
-        self.keyMap = {
-            "left": 0, "right": 0, "forward": 0, "backward": 0,
-            "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
-            "sun-left": 0, "sun-right": 0,
-            "turbo": 0}
 
         # Set up the environment
         #
@@ -413,10 +703,10 @@ class RoamingRalphDemo(CosmoniumBase):
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
         if True:
-            self.shadow_caster = ShadowCaster(1024)
+            self.shadow_caster = ShadowMap(1024)
             self.shadow_caster.create()
-            self.shadow_caster.set_lens(self.shadow_size, -self.shadow_box_length / 2.0, self.shadow_box_length / 2.0, -self.light_dir)
-            self.shadow_caster.set_pos(self.light_dir * self.shadow_box_length / 2.0)
+            self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.light_dir)
+            self.shadow_caster.set_pos(self.light_dir * self.ralph_config.shadow_box_length / 2.0)
             self.shadow_caster.bias = 0.1
         else:
             self.shadow_caster = None
@@ -434,8 +724,18 @@ class RoamingRalphDemo(CosmoniumBase):
         base.setFrameRateMeter(True)
 
         self.create_terrain()
-        self.create_populator()
-        self.terrain_shape.set_populator(self.object_collection)
+        for component in self.ralph_config.layers:
+            self.terrain.add_component(component)
+            self.terrain_shape.add_linked_object(component)
+
+        if self.ralph_config.fog_parameters is not None:
+            self.fog = Fog(**self.ralph_config.fog_parameters)
+            self.terrain.add_after_effect(self.fog)
+        else:
+            self.fog = None
+        self.surface = self.terrain_object
+
+        self.create_instance()
         self.create_tile(0, 0)
         self.skybox_init()
 
@@ -457,6 +757,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_appearance = ModelAppearance(self.ralph)
         self.ralph_appearance.set_shadow(self.shadow_caster)
         self.ralph_shader = BasicShader()
+        self.ralph_shader.add_shadows(ShaderShadowMap())
         self.ralph_appearance.bake()
         self.ralph_appearance.apply(self.ralph_shape, self.ralph_shader)
         self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)
@@ -469,206 +770,88 @@ class RoamingRalphDemo(CosmoniumBase):
         self.floater.reparentTo(self.ralph)
         self.floater.setZ(2.0)
 
-        # Accept the control keys for movement and rotation
+        self.ralph_body = NodePathHolder(self.ralph)
+        self.ralph_floater = NodePathHolder(self.floater)
+
+        self.follow_cam = FollowCam(self, self.cam, self.ralph, self.floater)
+
+        self.nav = RalphNav(self.ralph, self.ralph_floater, self.cam, self.observer, self, self.follow_cam)
+        self.nav.register_events(self)
 
         self.accept("escape", sys.exit)
         self.accept("control-q", sys.exit)
-        self.accept("arrow_left", self.setKey, ["left", True])
-        self.accept("arrow_right", self.setKey, ["right", True])
-        self.accept("arrow_up", self.setKey, ["forward", True])
-        self.accept("arrow_down", self.setKey, ["backward", True])
-        self.accept("shift", self.setKey, ["turbo", True])
-        self.accept("a", self.setKey, ["cam-left", True], direct=True)
-        self.accept("s", self.setKey, ["cam-right", True], direct=True)
-        self.accept("u", self.setKey, ["cam-up", True], direct=True)
-        self.accept("u-up", self.setKey, ["cam-up", False])
-        self.accept("d", self.setKey, ["cam-down", True], direct=True)
-        self.accept("d-up", self.setKey, ["cam-down", False])
-        self.accept("o", self.setKey, ["sun-left", True], direct=True)
-        self.accept("o-up", self.setKey, ["sun-left", False])
-        self.accept("p", self.setKey, ["sun-right", True], direct=True)
-        self.accept("p-up", self.setKey, ["sun-right", False])
-        self.accept("arrow_left-up", self.setKey, ["left", False])
-        self.accept("arrow_right-up", self.setKey, ["right", False])
-        self.accept("arrow_up-up", self.setKey, ["forward", False])
-        self.accept("arrow_down-up", self.setKey, ["backward", False])
-        self.accept("shift-up", self.setKey, ["turbo", False])
-        self.accept("a-up", self.setKey, ["cam-left", False])
-        self.accept("s-up", self.setKey, ["cam-right", False])
         self.accept("w", self.toggle_water)
         self.accept("h", self.print_debug)
         self.accept("f2", self.connect_pstats)
         self.accept("f3", self.toggle_filled_wireframe)
         self.accept("shift-f3", self.toggle_wireframe)
         self.accept("f5", self.bufferViewer.toggleEnable)
-        self.accept("f8", self.terrain_shape.dump_tree)
+        self.accept('f8', self.toggle_lod_freeze)
+        self.accept("shift-f8", self.terrain_shape.dump_tree)
+        self.accept('control-f8', self.toggle_split_merge_debug)
+        self.accept('shift-f9', self.toggle_bb)
+        self.accept('control-f9', self.toggle_frustum)
+        self.accept("f10", self.save_screenshot)
         self.accept('alt-enter', self.toggle_fullscreen)
+        self.accept('{', self.incr_ambient, [-0.05])
+        self.accept('}', self.incr_ambient, [+0.05])
 
         taskMgr.add(self.move, "moveTask")
 
-        # Game state variables
-        self.isMoving = False
-
         # Set up the camera
-        self.camera.setPos(self.ralph.getX(), self.ralph.getY() + 10, 2)
-        self.camera_height = 2.0
-        render.set_shader_input("camera", self.camera.get_pos())
+        self.follow_cam.update()
+        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
+        render.set_shader_input("camera", self.cam.get_pos())
 
-        self.cTrav = CollisionTraverser()
+        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
 
-        self.ralphGroundRay = CollisionRay()
-        self.ralphGroundRay.setOrigin(0, 0, 9)
-        self.ralphGroundRay.setDirection(0, 0, -1)
-        self.ralphGroundCol = CollisionNode('ralphRay')
-        self.ralphGroundCol.addSolid(self.ralphGroundRay)
-        self.ralphGroundCol.setFromCollideMask(CollideMask.bit(0))
-        self.ralphGroundCol.setIntoCollideMask(CollideMask.allOff())
-        self.ralphGroundColNp = self.ralph.attachNewNode(self.ralphGroundCol)
-        self.ralphGroundHandler = CollisionHandlerQueue()
-        self.cTrav.addCollider(self.ralphGroundColNp, self.ralphGroundHandler)
-
-        # Uncomment this line to see the collision rays
-        #self.ralphGroundColNp.show()
-
-        # Uncomment this line to show a visual representation of the
-        # collisions occuring
-        #self.cTrav.showCollisions(render)
-
-        #self.terrain_shape.test_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-        #self.terrain_shape.update_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-        #self.terrain.shape_updated()
-        self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
-
-    # Records the state of the arrow keys
-    def setKey(self, key, value):
-        self.keyMap[key] = value
-
-    # Accepts arrow keys to move either the player or the menu cursor,
-    # Also deals with grid checking and collision detection
     def move(self, task):
-
-        # Get the time that elapsed since last frame.  We multiply this with
-        # the desired speed in order to find out with which distance to move
-        # in order to achieve that desired speed.
         dt = globalClock.getDt()
 
-        # If the camera-left key is pressed, move camera left.
-        # If the camera-right key is pressed, move camera right.
+        if self.trigger_check_settings:
+            self.terrain.check_settings()
+            self.trigger_check_settings = False
 
-        if self.keyMap["cam-left"]:
-            self.camera.setX(self.camera, -20 * dt)
-        if self.keyMap["cam-right"]:
-            self.camera.setX(self.camera, +20 * dt)
-        if self.keyMap["cam-up"]:
-            self.camera_height *= (1 + 2 * dt)
-        if self.keyMap["cam-down"]:
-            self.camera_height *= (1 - 2 * dt)
-        if self.camera_height < 1.0:
-            self.camera_height = 1.0
+        control = self.nav.update(dt)
 
-        if self.keyMap["sun-left"]:
-            self.set_light_angle(self.light_angle + 30 * dt)
-        if self.keyMap["sun-right"]:
-            self.set_light_angle(self.light_angle - 30 * dt)
-
-        # save ralph's initial position so that we can restore it,
-        # in case he falls off the map or runs into something.
-
-        startpos = self.ralph.getPos()
-
-        # If a move-key is pressed, move ralph in the specified direction.
-
-        delta = 25
-        if self.keyMap["turbo"]:
-            delta *= 10
-        if self.keyMap["left"]:
-            self.ralph.setH(self.ralph.getH() + 300 * dt)
-        if self.keyMap["right"]:
-            self.ralph.setH(self.ralph.getH() - 300 * dt)
-        if self.keyMap["forward"]:
-            self.ralph.setY(self.ralph, -delta * dt)
-        if self.keyMap["backward"]:
-            self.ralph.setY(self.ralph, delta * dt)
-
-        #self.limit_pos(self.ralph)
-
-        # If ralph is moving, loop the run animation.
-        # If he is standing still, stop the animation.
-
-        if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
-            if self.isMoving is False:
-                self.ralph.loop("run")
-                self.isMoving = True
-        else:
-            if self.isMoving:
-                self.ralph.stop()
-                self.ralph.pose("walk", 5)
-                self.isMoving = False
-
-        # If the camera is too far from ralph, move it closer.
-        # If the camera is too close to ralph, move it farther.
-
-        camvec = self.ralph.getPos() - self.camera.getPos()
-        camvec.setZ(0)
-        camdist = camvec.length()
-        camvec.normalize()
-        if camdist > 10.0:
-            self.camera.setPos(self.camera.getPos() + camvec * (camdist - 10))
-            camdist = 10.0
-        if camdist < 5.0:
-            self.camera.setPos(self.camera.getPos() - camvec * (5 - camdist))
-            camdist = 5.0
-
-        # Normally, we would have to call traverse() to check for collisions.
-        # However, the class ShowBase that we inherit from has a task to do
-        # this for us, if we assign a CollisionTraverser to self.cTrav.
-        self.cTrav.traverse(render)
-
-        if False:
-            # Adjust ralph's Z coordinate.  If ralph's ray hit anything, put
-            # him back where he was last frame.
-
-            entries = list(self.ralphGroundHandler.getEntries())
-            entries.sort(key=lambda x: x.getSurfacePoint(render).getZ())
-
-            if len(entries) > 0:
-                self.ralph.setPos(startpos)
         ralph_height = self.get_height(self.ralph.getPos())
         self.ralph.setZ(ralph_height)
 
-        # Keep the camera at one foot above the terrain,
-        # or two feet above ralph, whichever is greater.
-
-        camera_height = self.get_height(self.camera.getPos()) + 1.0
-        if camera_height < ralph_height + self.camera_height:
-            self.camera.setZ(ralph_height + self.camera_height)
+        if not control:
+            self.follow_cam.update()
         else:
-            self.camera.setZ(camera_height)
-        #self.limit_pos(self.camera)
+            #TODO: Should have a FreeCam class for mouse orbit and this in update()
+            self.cam.lookAt(self.floater)
 
-        # The camera should look in ralph's direction,
-        # but it should also try to stay horizontal, so look at
-        # a floater which hovers above ralph's head.
-        self.camera.lookAt(self.floater)
+        if self.shadow_caster is not None:
+            vec = self.ralph.getPos() - self.cam.getPos()
+            vec.set_z(0)
+            dist = vec.length()
+            vec.normalize()
+            self.shadow_caster.set_pos(self.ralph.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
-        #self.shadow_caster.set_pos(self.ralph.get_pos())
-        self.shadow_caster.set_pos(self.ralph.get_pos() - camvec * camdist + camvec * self.shadow_size / 2)
-
-        render.set_shader_input("camera", self.camera.get_pos())
+        render.set_shader_input("camera", self.cam.get_pos())
         self.vector_to_obs = base.cam.get_pos()
         self.vector_to_obs.normalize()
+        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
+        self.scene_rel_position = -base.cam.get_pos()
 
-        if self.isMoving:
-            #self.terrain_shape.test_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-            pass#self.terrain_shape.update_lod(LPoint3d(*self.ralph.getPos()), self.distance_to_obs, self.pixel_size, self.terrain_appearance)
-
-        self.object_collection.update_instance()
-        self.terrain.update_instance(LPoint3d(*self.ralph.getPos()), None)
+        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
         return task.cont
 
     def print_debug(self):
-        print("Height:", self.get_height(self.ralph.getPos()), self.terrain.get_height(self.ralph.getPos()))
+        print("Height:", self.get_height(self.ralph.getPos()), self.terrain_object.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
-        print("Camera:", base.camera.get_pos())
-demo = RoamingRalphDemo()
+        print("Camera:", base.cam.get_pos(), self.follow_cam.height, self.distance_to_obs)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--config",
+                    help="Path to the file with the configuration",
+                    default=None)
+if sys.platform == "darwin":
+    #Ignore -psn_<app_id> from MacOS
+    parser.add_argument('-p', help=argparse.SUPPRESS)
+args = parser.parse_args()
+
+demo = RoamingRalphDemo(args)
 demo.run()

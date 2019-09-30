@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -8,10 +27,19 @@ from math import pi, exp
 import sys
 
 class NavBase(object):
+    wheel_event_duration = 0.1
+
     def __init__(self):
         self.base = None
         self.observer = None
         self.keyMap = {}
+        self.dragCenter = None
+        self.dragDir = None
+        self.dragOrientation = None
+        self.dragZAxis = None
+        self.dragXAxis = None
+        self.wheel_event_time = 0.0
+        self.wheel_direction = 0.0
 
     def init(self, base, camera, ui):
         self.base = base
@@ -29,6 +57,50 @@ class NavBase(object):
     def remove_events(self, event_ctrl):
         pass
 
+    def register_wheel_events(self, event_ctrl):
+        if settings.invert_wheel:
+            event_ctrl.accept("wheel_up", self.wheel_event, [1])
+            event_ctrl.accept("wheel_down", self.wheel_event, [-1])
+        else:
+            event_ctrl.accept("wheel_up", self.wheel_event, [-1])
+            event_ctrl.accept("wheel_down", self.wheel_event, [1])
+
+    def remove_wheel_events(self, event_ctrl):
+        event_ctrl.ignore("wheel_up")
+        event_ctrl.ignore("wheel_down")
+
+    def wheel_event(self, direction):
+        self.wheel_event_time = globalClock.getRealTime()
+        self.wheel_direction = direction
+
+    def stash_position(self):
+        self.dragCenter = self.observer.get_position_of(self.dragCenter)
+
+    def pop_position(self):
+        self.dragCenter = self.observer.get_rel_position_of(self.dragCenter, local=False)
+
+    def create_drag_params(self, target):
+        center = target.get_rel_position_to(self.observer.camera_global_pos)
+        self.dragCenter = self.observer.camera_frame.get_rel_position(center)
+        dragPosition = self.observer.get_frame_camera_pos()
+        self.dragDir = self.dragCenter - dragPosition
+        self.dragOrientation = self.observer.get_frame_camera_rot()
+        self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
+        self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
+
+    def do_drag(self, z_angle, x_angle, move=False, rotate=True):
+        zRotation = LQuaterniond()
+        zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
+        xRotation = LQuaterniond()
+        xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
+        combined = xRotation * zRotation
+        if move:
+            delta = combined.xform(-self.dragDir)
+            self.observer.set_frame_camera_pos(delta + self.dragCenter)
+            self.observer.set_frame_camera_rot(self.dragOrientation * combined)
+        else:
+            self.observer.set_camera_rot(self.dragOrientation * combined)
+
     def update(self, dt):
         pass
 
@@ -36,6 +108,7 @@ class FreeNav(NavBase):
     rot_step_per_sec = pi/2
     incr_speed_rot_step_per_sec = 0.7
     decr_speed_rot_step_per_sec = incr_speed_rot_step_per_sec * 2.0
+    distance_speed = 2.0
 
     def __init__(self):
         NavBase.__init__(self)
@@ -95,12 +168,7 @@ class FreeNav(NavBase):
         event_ctrl.accept("mouse3", self.OnTrackClick )
         event_ctrl.accept("mouse3-up", self.OnTrackRelease )
 
-        if settings.invert_wheel:
-            event_ctrl.accept("wheel_up", self.onChangeAltitude, [0.1])
-            event_ctrl.accept("wheel_down", self.onChangeAltitude, [-0.1])
-        else:
-            event_ctrl.accept("wheel_up", self.onChangeAltitude, [-0.1])
-            event_ctrl.accept("wheel_down", self.onChangeAltitude, [0.1])
+        self.register_wheel_events(event_ctrl)
 
     def remove_events(self, event_ctrl):
         event_ctrl.ignore("arrow_up")
@@ -137,8 +205,7 @@ class FreeNav(NavBase):
         event_ctrl.ignore("mouse3")
         event_ctrl.ignore("mouse3-up")
 
-        event_ctrl.ignore("wheel_up")
-        event_ctrl.ignore("wheel_down")
+        self.remove_wheel_events(event_ctrl)
 
     def select_target(self):
         if self.base.follow is not None:
@@ -156,34 +223,6 @@ class FreeNav(NavBase):
 
     def stop(self):
         self.speed = 0
-
-    def stash_position(self):
-        self.dragCenter = self.observer.get_position_of(self.dragCenter)
-
-    def pop_position(self):
-        self.dragCenter = self.observer.get_rel_position_of(self.dragCenter, local=False)
-
-    def create_drag_params(self, target):
-        center = target.get_rel_position_to(self.observer.camera_global_pos)
-        self.dragCenter = self.observer.camera_frame.get_rel_position(center)
-        dragPosition = self.observer.camera_pos#self.get_camera_pos()
-        self.dragDir = self.dragCenter - dragPosition
-        self.dragOrientation = self.observer.camera_rot#self.get_camera_rot()
-        self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
-        self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
-
-    def do_drag(self, z_angle, x_angle, move=False):
-        zRotation = LQuaterniond()
-        zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
-        xRotation = LQuaterniond()
-        xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
-        combined = xRotation * zRotation
-        if move:
-            delta = combined.xform(-self.dragDir)
-            self.observer.set_rel_camera_pos(delta + self.dragCenter)
-            self.observer.set_rel_camera_rot(self.dragOrientation * combined)
-        else:
-            self.observer.set_camera_rot(self.dragOrientation * combined)
 
     def OnSelectClick(self):
         if self.base.mouseWatcherNode.hasMouse():
@@ -229,9 +268,10 @@ class FreeNav(NavBase):
         self.mouseTrackClick = False
 
     def update(self, dt):
-        rot_x = 0
-        rot_y = 0
-        rot_z = 0
+        rot_x = 0.0
+        rot_y = 0.0
+        rot_z = 0.0
+        distance = 0.0
         if self.mouseTrackClick and self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
             deltaX = mpos.getX() - self.startX
@@ -268,11 +308,12 @@ class FreeNav(NavBase):
             rot_z = -1
 
         if self.keyMap['home']:
-            self.onChangeAltitude(0.1)
-
+            distance = 1
         if self.keyMap['end']:
-            self.onChangeAltitude(-0.1)
+            distance = -1
 
+        if self.wheel_event_time + self.wheel_event_duration > globalClock.getRealTime():
+            distance = self.wheel_direction
 
         if not self.keyboardTrack and (self.keyMap['shift-left'] or self.keyMap['shift-right'] or self.keyMap['shift-up'] or self.keyMap['shift-down']):
             target = self.select_target()
@@ -367,6 +408,7 @@ class FreeNav(NavBase):
         self.turn( LVector3d.right(), self.current_rot_x_speed * dt)
         self.turn( LVector3d.forward(), self.current_rot_y_speed * dt)
         self.turn( LVector3d.up(), self.current_rot_z_speed * dt)
+        self.change_altitude(distance * self.distance_speed * dt)
 
     def turn(self, axis, angle):
         rot=LQuaterniond()
@@ -375,10 +417,11 @@ class FreeNav(NavBase):
 
     def stepRelative(self, x = 0, y = 0, z = 0):
         direction=LVector3d(x,y,z)
-        delta = self.observer.get_rel_camera_rot().xform(direction)
+        delta = self.observer.get_frame_camera_rot().xform(direction)
         self.observer.step_camera(delta, absolute=False)
 
-    def onChangeAltitude(self, rate):
+    def change_altitude(self, rate):
+        if rate == 0.0: return
         target = self.select_target()
         if target is None: return
         direction=(target.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos())
@@ -394,6 +437,7 @@ class FreeNav(NavBase):
 class WalkNav(NavBase):
     rot_step_per_sec = pi/4
     speed = 10  * units.m
+    distance_speed = 2.0
 
     def __init__(self, body):
         NavBase.__init__(self)
@@ -430,12 +474,9 @@ class WalkNav(NavBase):
         event_ctrl.accept("home-up", self.setKey, ['home', 0])
         event_ctrl.accept("end", self.setKey, ['end', 1])
         event_ctrl.accept("end-up", self.setKey, ['end', 0])
-        if settings.invert_wheel:
-            event_ctrl.accept("wheel_up", self.onChangeAltitude, [0.1])
-            event_ctrl.accept("wheel_down", self.onChangeAltitude, [-0.1])
-        else:
-            event_ctrl.accept("wheel_up", self.onChangeAltitude, [-0.1])
-            event_ctrl.accept("wheel_down", self.onChangeAltitude, [0.1])
+
+        self.register_wheel_events(event_ctrl)
+
         event_ctrl.accept("a", self.fast)
         event_ctrl.accept("a-up", self.slow)
 
@@ -460,8 +501,9 @@ class WalkNav(NavBase):
             event_ctrl.ignore("alt-arrow_right")
         event_ctrl.ignore("home")
         event_ctrl.ignore("home-up")
-        event_ctrl.ignore("wheel_up")
-        event_ctrl.ignore("wheel_down")
+
+        self.remove_wheel_events(event_ctrl)
+
         event_ctrl.ignore("a")
         event_ctrl.ignore("a-up")
 
@@ -503,10 +545,14 @@ class WalkNav(NavBase):
             self.turn( LVector3d.forward(), -self.rot_step_per_sec * dt)
 
         if self.keyMap['home']:
-            self.onChangeAltitude(0.1)
+            self.change_altitude(self.distance_speed * dt)
 
         if self.keyMap['end']:
-            self.onChangeAltitude(-0.1)
+            self.change_altitude(-self.distance_speed * dt)
+
+        if self.wheel_event_time + self.wheel_event_duration > globalClock.getRealTime():
+            distance = self.wheel_direction
+            self.change_altitude(distance * self.distance_speed * dt)
 
     def step(self, distance):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
@@ -540,7 +586,8 @@ class WalkNav(NavBase):
         #self.observer.set_camera_rot(rot)
         #print(angle)
 
-    def onChangeAltitude(self, rate):
+    def change_altitude(self, rate):
+        if rate == 0.0: return
         direction=(self.body.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos())
         height = self.body.get_height_under(self.observer.get_camera_pos())
         altitude = direction.length() - height

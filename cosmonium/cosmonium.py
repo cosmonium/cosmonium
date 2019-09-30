@@ -1,10 +1,27 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, getModelPath, PandaSystem, PStatClient
+from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import DrawMask
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib
@@ -16,7 +33,7 @@ import logging
 from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
-from .opengl import request_opengl_config, check_opengl_config, check_and_create_rendering_buffers
+from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
 from .bodies import StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
@@ -25,6 +42,7 @@ from .pointsset import PointsSet
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
+from .celestia.cel_url import CelUrl
 
 #import orbits and rotations elements to add them to the DB
 from .astro.tables import kepler, ssd, uniform, vsop87, wgccre
@@ -58,12 +76,13 @@ class CosmoniumBase(ShowBase):
         self.observer = None #TODO: For window_event below
         self.wireframe = False
         self.wireframe_filled = False
+        self.trigger_check_settings = True
 
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
-        self.create_main_window()
-        check_opengl_config(self.win.gsg)
+        create_main_window(self)
+        check_opengl_config(self)
 
         BaseObject.context = self
 
@@ -82,10 +101,19 @@ class CosmoniumBase(ShowBase):
         self.world.setShaderAuto()
         self.annotation_shader.setShaderAuto()
 
+        workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
+        workers.syncTextureLoader = workers.SyncTextureLoader()
+
     def panda_config(self):
         data = []
         request_opengl_config(data)
         self.app_panda_config(data)
+        data.append("text-encoding utf8")
+        data.append("paste-emit-keystrokes #f")
+        #TODO: Still needed ?
+        data.append("bounds-type box")
+        data.append("screenshot-extension png")
+        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
         data.append("fullscreen %d" % settings.win_fullscreen)
         if settings.win_fullscreen:
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
@@ -106,21 +134,6 @@ class CosmoniumBase(ShowBase):
 
     def app_panda_config(self, data):
         pass
-
-    def create_main_window(self):
-        props = WindowProperties.get_default()
-        have_window = False
-        try:
-            self.open_default_window(props=props)
-            have_window = True
-        except Exception:
-            pass
-
-        if not have_window:
-            print("Failed to open window with OpenGL 3.2; falling back to older OpenGL.")
-            loadPrcFileData("", "gl-version")
-            self.open_default_window(props=props)
-        self.bufferViewer.win = self.win
 
     def print_info(self):
         print("Python version:", platform.python_version())
@@ -179,6 +192,8 @@ class CosmoniumBase(ShowBase):
         if settings.win_fullscreen:
             resolutions = self.get_fullscreen_sizes()
             wp.setSize(*resolutions[0])
+        else:
+            wp.setSize(settings.win_width, settings.win_height)
         self.win.requestProperties(wp)
         configParser.save()
 
@@ -222,15 +237,19 @@ class CosmoniumBase(ShowBase):
         if self.wireframe_filled:
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
+    def save_screenshot(self):
+        filename = self.screenshot()
+        if filename is not None:
+            print("Saving screenshot into", filename)
+        else:
+            print("Could not save filename")
+
 class Cosmonium(CosmoniumBase):
     def __init__(self):
         CosmoniumBase.__init__(self)
 
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
-
-        workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
-        workers.syncTextureLoader = workers.SyncTextureLoader()
 
         self.over = None
         self.patch = None
@@ -243,7 +262,6 @@ class Cosmonium(CosmoniumBase):
         self.gui = None
         self.last_visibles = []
         self.visibles = []
-        self.trigger_check_settings = True
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
@@ -256,7 +274,11 @@ class Cosmonium(CosmoniumBase):
         self.universe = Universe(self)
 
         self.splash = Splash()
-        self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
+        if not settings.debug_sync_load:
+            self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
+        else:
+            self.load_task()
+            self.configure_scene()
 
     def load_task(self):
         self.init_universe()
@@ -267,7 +289,7 @@ class Cosmonium(CosmoniumBase):
 
         self.splash.set_text("Building octree...")
         self.universe.create_octree()
-        #self.universe.octree.print()
+        #self.universe.octree.print_summary()
         self.universe.octree.print_stats()
 
         self.sun = self.universe.find_by_path('Sol')
@@ -325,8 +347,6 @@ class Cosmonium(CosmoniumBase):
         icon = defaultDirContext.find_texture('cosmonium.ico')
         data.append("icon-filename %s" % icon)
         data.append("window-title Cosmonium")
-        data.append("screenshot-extension png")
-        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
 
     def set_nav(self, nav):
         if self.nav is not None:
@@ -361,13 +381,6 @@ class Cosmonium(CosmoniumBase):
             self.world.setAttrib(LightRampAttrib.makeHdr1())
         elif self.hdr == 3:
             self.world.setAttrib(LightRampAttrib.makeHdr2())
-
-    def save_screenshot(self):
-        filename = self.screenshot()
-        if filename is not None:
-            print("Saving screenshot into", filename)
-        else:
-            print("Could not save filename")
 
     def save_screenshot_no_annotation(self):
         self.gui.hide()
@@ -424,6 +437,18 @@ class Cosmonium(CosmoniumBase):
             self.current_sequence.pause()
             self.current_sequence = None
 
+    def load_cel_url(self, url):
+        print("Loading", url)
+        state = None
+        cel_url = CelUrl()
+        if cel_url.parse(url):
+            state = cel_url.convert_to_state(self)
+        if state is not None:
+            state.apply_state(self)
+        else:
+            print("Invalid cel://")
+            self.gui.update_info("Invalid URL...")
+
     def reset_all(self):
         self.gui.update_info("Cancel", 0.5, 1.0)
         self.reset_nav()
@@ -431,6 +456,9 @@ class Cosmonium(CosmoniumBase):
 
     def update_settings(self):
         self.trigger_check_settings = True
+        self.save_settings()
+
+    def save_settings(self):
         configParser.save()
 
     def toggle_orbits(self):
@@ -441,6 +469,10 @@ class Cosmonium(CosmoniumBase):
         settings.show_clouds = not settings.show_clouds
         self.update_settings()
             
+    def toggle_atmosphere(self):
+        settings.show_atmospheres = not settings.show_atmospheres
+        self.update_settings()
+
     def toggle_rotation_axis(self):
         settings.show_rotation_axis = not settings.show_rotation_axis
         self.update_settings()
@@ -530,7 +562,7 @@ class Cosmonium(CosmoniumBase):
             self.world.clearLight(self.globalAmbientPath)
             self.globalAmbientPath.removeNode()
         self.globalAmbient=AmbientLight('globalAmbient')
-        if settings.use_srgb:
+        if settings.srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
             corrected_ambient = settings.global_ambient
@@ -546,11 +578,14 @@ class Cosmonium(CosmoniumBase):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
     def follow_selected(self):
-        self.follow = self.selected
+        self.follow_body(self.selected)
+
+    def follow_body(self, body):
+        self.follow = body
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.observer.set_camera_frame(RelativeReferenceFrame(self.selected, self.selected.orbit.frame))
+            self.observer.set_camera_frame(RelativeReferenceFrame(body, body.orbit.frame))
         else:
             self.observer.set_camera_frame(AbsoluteReferenceFrame())
         if self.fly:
@@ -558,11 +593,14 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def sync_selected(self):
-        self.sync = self.selected
+        self.sync_body(self.selected)
+
+    def sync_body(self, body):
+        self.sync = body
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.observer.set_camera_frame(SynchroneReferenceFrame(self.selected))
+            self.observer.set_camera_frame(SynchroneReferenceFrame(body))
         else:
             self.observer.set_camera_frame(AbsoluteReferenceFrame())
         if self.fly:
@@ -570,16 +608,18 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def track_selected(self):
-        if self.selected is not None:
-            print("Track", self.selected.get_name())
-            self.track = self.selected
+        self.track_body(self.selected)
+
+    def track_body(self, body):
+        self.track = body
+        if self.track is not None:
+            print("Track", body.get_name())
 
     def toggle_track_selected(self):
         if self.track is not None:
-            self.track = None
+            self.track_body(None)
         elif self.selected is not None:
-            print("Track", self.selected.get_name())
-            self.track = self.selected
+            self.track_body(self.selected)
 
     def reset_visibles(self):
         self.visibles = []
@@ -592,7 +632,6 @@ class Cosmonium(CosmoniumBase):
             print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
         self.last_visibles = self.visibles
 
-    @pstat
     def update_octree(self):
         self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
         self.universe.add_extra_to_list(self.selected, self.track)
@@ -603,7 +642,7 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_obs(self):
-        self.universe.update_obs(self.observer.get_camera_pos())
+        self.universe.update_obs(self.observer)
         if self.selected is not None:
             self.selected.calc_height_under(self.observer.get_camera_pos())
     @pstat
@@ -627,7 +666,6 @@ class Cosmonium(CosmoniumBase):
 
         self.time.update_time(dt)
         self.nav.update(dt)
-        self.observer.update_camera()
 
         self.update_octree()
 
@@ -636,6 +674,7 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.update_universe()
+        self.observer.update_camera()
         self.update_obs()
 
         if self.track != None:
@@ -711,14 +750,18 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(', self.selected.orbit_position, ')')
-            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected.orbit_rotation, ')')
-            print("\tOrientation", self.selected.orientation)
+            print("\tLocal position", self.selected.get_local_position(), '(', self.selected._orbit_position, ')')
+            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected._orbit_rotation, ')')
+            print("\tOrientation", self.selected._orientation)
             print("\tVector to obs", self.selected.vector_to_obs)
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
-            if isinstance(self.selected, ReflectiveBody):
-                print("\tCast shadow:", self.selected.cast_shadows, "Has shadows:", self.selected.has_shadows_persistent)
+            print("\tUpdate frozen:", self.selected.update_frozen)
+            if self.selected.label is not None:
+                print("\tLabel visible:", self.selected.label.visible)
+            if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
+                print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
+                print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(self.selected, StellarBody):
                 if self.selected.scene_scale_factor is not None:
                     print("Scene")
@@ -746,11 +789,12 @@ class Cosmonium(CosmoniumBase):
                     coord = self.selected.surface .global_to_shape_coord(x, y)
                     patch = self.selected.surface.shape.find_patch_at(coord)
                     if patch is not None:
+                        print("\tID:", patch.str_id())
                         print("\tLOD:", patch.lod)
                         print("\tView:", patch.patch_in_view)
-                        print("\tSize:", patch.apparent_size, "Length:", patch.get_patch_length(), "App:", patch.apparent_size)
+                        print("\tLength:", patch.get_patch_length(), "App:", patch.apparent_size)
                         print("\tCoord:", coord, "Distance:", patch.distance)
-                        print("\tCos:", patch.cos_angle, "Sin:", patch.sin_max_angle)
+                        print("\tMean:", patch.mean_radius)
                         print("\tflat:", patch.flat_coord)
                         if patch.instance is not None:
                             print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(self.world))
@@ -758,6 +802,12 @@ class Cosmonium(CosmoniumBase):
                             print("\tScale:", patch.instance.get_scale())
                             if patch.offset is not None:
                                 print("\tOffset:", patch.offset, patch.offset * self.selected.get_apparent_radius())
+            else:
+                if self.selected.scene_scale_factor is not None:
+                    print("Scene:")
+                    print("\tPosition:", self.selected.scene_position, self.selected.scene_distance)
+                    print("\tOrientation:", self.selected.scene_orientation)
+                    print("\tScale:", self.selected.scene_scale_factor)
 
     def init_universe(self):
         pass

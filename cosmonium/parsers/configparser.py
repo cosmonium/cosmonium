@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -9,7 +28,7 @@ from .. import settings
 import os
 
 class ConfigParser(YamlParser):
-    data_version = 0
+    data_version = 1
     def __init__(self, config_file):
         YamlParser.__init__(self)
         self.config_file = config_file
@@ -45,6 +64,7 @@ class ConfigParser(YamlParser):
     def decode_render(self, data):
         settings.show_orbits = data.get('orbits', settings.show_orbits)
         settings.show_clouds = data.get('clouds', settings.show_clouds)
+        settings.show_atmospheres = data.get('atmospheres', settings.show_atmospheres)
         settings.show_asterisms = data.get('asterisms', settings.show_asterisms)
         settings.show_boundaries = data.get('boundaries', settings.show_boundaries)
         settings.show_rotation_axis = data.get('rotation-axis', settings.show_rotation_axis)
@@ -57,6 +77,7 @@ class ConfigParser(YamlParser):
         data = {}
         data['orbits'] = settings.show_orbits
         data['clouds'] = settings.show_clouds
+        data['atmospheres'] = settings.show_atmospheres
         data['asterisms'] = settings.show_asterisms
         data['boundaries'] = settings.show_boundaries
         data['ecliptic-grid'] = settings.show_ecliptic_grid
@@ -67,16 +88,32 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_ui_hud(self, data):
+        settings.show_hud = data.get('visible', settings.show_hud)
         settings.hud_font = data.get('font', settings.hud_font)
         settings.hud_color = data.get('color', settings.hud_color)
+
+    def encode_ui_hud(self):
+        data = {}
+        data['visible'] = settings.show_hud
+        data['font'] = settings.hud_font
+        data['color'] = list(settings.hud_color)
+        return data
+
+    def decode_ui_menu(self, data):
+        settings.show_menubar = data.get('visible', settings.show_menubar)
+
+    def encode_ui_menu(self):
+        data = {}
+        data['visible'] = settings.show_menubar
+        return data
+
+    def decode_ui_nav(self, data):
         settings.invert_wheel = data.get('invert-wheel', settings.invert_wheel)
         settings.celestia_nav = data.get('celestia-nav', settings.celestia_nav)
         settings.damped_nav = data.get('damped-nav', settings.damped_nav)
 
-    def encode_ui_hud(self):
+    def encode_ui_nav(self):
         data = {}
-        data['font'] = settings.hud_font
-        data['color'] = list(settings.hud_color)
         data['invert-wheel'] = settings.invert_wheel
         data['celestia-nav'] = settings.celestia_nav
         data['damped-nav'] = settings.damped_nav
@@ -102,12 +139,16 @@ class ConfigParser(YamlParser):
 
     def decode_ui(self, data):
         self.decode_ui_hud(data.get('hud', {}))
+        self.decode_ui_menu(data.get('menu', {}))
+        self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
         self.decode_ui_constellations(data.get('constellations', {}))
 
     def encode_ui(self):
         data = {}
         data['hud'] = self.encode_ui_hud()
+        data['menu'] = self.encode_ui_menu()
+        data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()
         data['constellations'] = self.encode_ui_constellations()
         return data
@@ -132,26 +173,32 @@ class ConfigParser(YamlParser):
         settings.multisamples = data.get('multisamples', settings.multisamples)
         settings.use_srgb = data.get('srgb', settings.use_srgb)
         settings.use_hardware_srgb = data.get('hw-srgb', settings.use_hardware_srgb)
-        settings.allow_tesselation = data.get('hw-tesselation', settings.allow_tesselation)
-        settings.allow_instancing = data.get('hw-instancing', settings.allow_instancing)
-        settings.allow_floating_point_buffer = data.get('hw-fp-buffer', settings.allow_floating_point_buffer)
+        settings.use_hardware_tessellation = data.get('hw-tessellation', settings.use_hardware_tessellation)
+        settings.use_hardware_instancing = data.get('hw-instancing', settings.use_hardware_instancing)
+        settings.use_floating_point_buffer = data.get('hw-fp-buffer', settings.use_floating_point_buffer)
+        settings.use_core_profile_mac = data.get('core-profile-mac', settings.use_core_profile_mac)
+        settings.use_gl_version = data.get('gl-version', settings.use_gl_version)
 
     def encode_opengl(self):
         data = {}
         data['multisamples'] = settings.multisamples
         data['srgb'] = settings.use_srgb
         data['hw-srgb'] = settings.use_hardware_srgb
-        data['hw-tesselation'] = settings.allow_tesselation
-        data['hw-instancing'] = settings.allow_instancing
-        data['hw-fp-buffer'] = settings.allow_floating_point_buffer
+        data['hw-tessellation'] = settings.use_hardware_tessellation
+        data['hw-instancing'] = settings.use_hardware_instancing
+        data['hw-fp-buffer'] = settings.use_floating_point_buffer
+        data['core-profile-mac'] = settings.use_core_profile_mac
+        data['gl-version'] = settings.use_gl_version
         return data
 
     def decode_debug(self, data):
         settings.debug_jump = data.get('instant-jump', settings.debug_jump)
+        settings.debug_sync_load = data.get('sync-load', settings.debug_sync_load)
 
     def encode_debug(self):
         data = {}
         data['instant-jump'] = settings.debug_jump
+        data['sync-load'] = settings.debug_sync_load
         return data
 
     def decode(self, data):

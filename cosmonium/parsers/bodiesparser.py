@@ -1,12 +1,33 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LColor, LVector3
 
+from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..bodies import ReflectiveBody
-from ..surfaces import FlatSurface
+from ..surfaces import FlatSurface, surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..catalogs import objectsDB
+from .. import settings
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
@@ -46,17 +67,26 @@ class ReflectiveYamlParser(YamlModuleParser):
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
         if data.get('surfaces') is None:
-            surface_name = 'surface'
             shape, extra = ShapeYamlParser.decode(data.get('shape'))
-            appearance = AppearanceYamlParser.decode(data.get('appearance'), shape)
+            appearance = AppearanceYamlParser.decode(data.get('appearance'))
             lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
-            scattering = atmosphere.create_scattering_shader(atmosphere=False, calc_in_fragment=False, normalize=False)
+            if shape.patchable:
+                if appearance.texture is None or appearance.texture.source.procedural:
+                    shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+                else:
+                    shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
             shader = BasicShader(lighting_model=lighting_model,
-                                 scattering=scattering,
-                                 use_model_texcoord=not extra.get('create_uv', False))
-            surface = FlatSurface(surface_name, category='visible', resolution=None, source=None,
+                                 use_model_texcoord=not extra.get('create-uv', False))
+            category = surfaceCategoryDB.get('visible')
+            if category is None:
+                print("Category 'visible' unknown")
+                category = SurfaceCategory('visible')
+                surfaceCategoryDB.add(category)
+            surface = FlatSurface(name=None, category=category, resolution=None, attribution=None,
                                   shape=shape, appearance=appearance, shader=shader)
             surfaces = []
+            if atmosphere is not None:
+                atmosphere.add_shape_object(surface)
         else:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, data)
             surface = surfaces.pop(0)

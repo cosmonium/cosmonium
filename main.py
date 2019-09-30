@@ -1,4 +1,23 @@
 #!/usr/bin/env python
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -17,6 +36,7 @@ from cosmonium.dircontext import defaultDirContext
 
 #import textures to register celestia texture parser
 from cosmonium.celestia import textures
+from cosmonium.spaceengine import textures
 from cosmonium import settings
 
 import argparse
@@ -65,7 +85,7 @@ class CosmoniumConfig(object):
             self.celestia = True
         else:
             self.celestia = False
-        if self.celestia and self.script is None:
+        if self.celestia and self.script is None and self.default is None:
             self.script = self.celestia_start_script
 
 class CosmoniumConfigParser(YamlParser):
@@ -140,10 +160,11 @@ class CosmoniumApp(Cosmonium):
     def load_universe_celestia(self):
         self.find_celestia_data()
         names = star_parser.load_names(self.app_config.celestia_stars_names)
-        if self.app_config.celestia_stars_catalog.endswith('.dat'):
-            star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
-        else:
-            star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
+        if self.app_config.celestia_stars_catalog is not None:
+            if self.app_config.celestia_stars_catalog.endswith('.dat'):
+                star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
+            else:
+                star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
         stc_parser.load(self.app_config.celestia_stc, self.universe)
         ssc_parser.load(self.app_config.celestia_ssc, self.universe)
         asterisms_parser.load(self.app_config.celestia_asterisms, self.universe)
@@ -184,10 +205,14 @@ class CosmoniumApp(Cosmonium):
     def start_universe(self):
         running = False
         if self.app_config.script is not None:
-            settings.debug_jump = False
-            print("Running", self.app_config.script)
-            script = cel_parser.load(self.app_config.script)
-            running = self.run_script(cel_engine.build_sequence(self, script))
+            if self.app_config.script.startswith('cel://'):
+                self.load_cel_url(self.app_config.script)
+                running = True
+            else:
+                settings.debug_jump = False
+                print("Running", self.app_config.script)
+                script = cel_parser.load(self.app_config.script)
+                running = self.run_script(cel_engine.build_sequence(self, script))
         if not running:
             self.select_body(self.universe.find_by_name(self.app_config.default))
             self.autopilot.go_to_front(duration=0.0)

@@ -1,0 +1,50 @@
+terrain:
+    tile-size: 1024
+    max-distance: 1024
+heightmap:
+    max-height: 500
+    max-lod: 0
+    interpolator: bspline
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        fbm:
+          noise:
+            ridged:
+              noise: perlin
+              shift: False
+          octaves: 3
+          length: 64
+          scale: 50
+biome:
+    aliases:
+      perlin: gpunoise:perlin
+    noise:
+        fbm:
+            noise: perlin
+            octaves: 4
+            length: 16384
+
+appearance:
+    textures:
+      entries:
+        grass: data/procedural/textures/grass/GrassGreenTexture0003.jpg
+        snow: data/procedural/textures/snow/SnowIceTexture0007.jpg
+        rock: data/procedural/textures/rock/SeamlessMixedStone0009.jpg
+        gravel: data/procedural/textures/gravel/gravel_01.png
+        soil: data/procedural/textures/soil/dirt_02.png
+      scale: [0.5, 0.5]
+      tiling: hash
+control:
+    height:
+        - entry: rock
+          height: 0
+          height-units: km
+        - entry: grass
+          height: 200
+          height-units: km
+        - entry: snow
+          height: 500
+          height-units: km
+          blend: 10

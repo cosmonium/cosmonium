@@ -106,7 +106,7 @@ class BlockGrammar(object):
         r')'
     )
 
-    newline = re.compile(r'^\n+')
+    newline = re.compile(r'^(\n+)')
     block_code = re.compile(r'^( {4}[^\n]+\n*)+')
     fences = re.compile(
         r'^( *)(`{3,}|~{3,}) *([^`\s]+)? *\n'  # ```lang
@@ -142,7 +142,7 @@ class BlockGrammar(object):
     paragraph = re.compile(
         r'^((?:[^\n]+\n?(?!'
         r'%s|%s|%s|%s|%s|%s|%s|%s|%s'
-        r'))+)\n*' % (
+        r'))+)\n?' % (
             _pure_pattern(fences).replace(r'\2', r'\3').replace(r'\1', r'\2'),
             _pure_pattern(list_block).replace(r'\1', r'\3'),
             _pure_pattern(hrule),
@@ -236,7 +236,7 @@ class BlockLexer(object):
 
     def parse_newline(self, m):
         length = len(m.group(0))
-        if length > 1:
+        if length > 0:
             self.tokens.append({'type': 'newline'})
 
     def parse_block_code(self, m):

@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -12,13 +31,14 @@ from .shapes import Shape
 from .surfaces import FlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
+from .utils import TransparencyBlend
 
 from .bodies import DeepSpaceObject
 from .shaders import BasicShader, FlatLightingModel
 from .astro import units
 from . import settings
 
-from math import cos, sin, pi, log, tan, tanh
+from math import cos, sin, pi, log, tan, tanh, sqrt
 from random import random, gauss, choice
 from cosmonium.utils import mag_to_scale_nolimit
 
@@ -46,6 +66,7 @@ class Galaxy(DeepSpaceObject):
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude, body_class=body_class)
+        self._extend = self.radius
 
 class GalaxyAppearance(AppearanceBase):
     image = None
@@ -62,17 +83,17 @@ class GalaxyAppearance(AppearanceBase):
         self.texture_index = 0
         self.transparency = True
         self.background = True
-        self.correction = 0.4
+        self.min_coef = 0.2
 
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             axis = owner.scene_orientation.xform(LVector3d.up())
             cosa = abs(axis.dot(owner.vector_to_obs))
-            coef = cosa * self.correction + (1.0 - self.correction)
-            scale = float(self.color_scale) / 255 * coef * mag_to_scale_nolimit(app_magnitude)
+            coef = max(self.min_coef, sqrt(cosa))
+            scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
             size = owner.get_apparent_radius() / owner.distance_to_obs
             if size > 1.0:
-                scale = scale / size
+                scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
             shader.set_size_scale(size)
 
@@ -82,7 +103,7 @@ class GalaxyAppearance(AppearanceBase):
                 self.image = self.sprite.generate()
             texture = Texture()
             texture.load(self.image)
-            self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparentTexture.TB_PremultipliedAlpha)
+            self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha)
             self.texture.set_tex_matrix(False)
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         self.texture.apply(shape)
@@ -91,7 +112,6 @@ class GalaxyAppearance(AppearanceBase):
             shape.instance.setBin('background', settings.deep_space_depth)
         owner.shader.apply(shape, self)
         shape.instance_ready = True
-        shape.create_instance_delayed()
 
 class GalaxyShapeBase(Shape):
     templates = {}
@@ -221,7 +241,6 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         sizes = []
         nb_points = self.nb_points
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = [self.yellow_color, self.blue_color]
         spread = self.spread
         zspread = self.zspread
@@ -232,7 +251,7 @@ class IrregularGalaxyShape(GalaxyShapeBase):
             if value < 0.5:
                 points.append(p * radius)
                 colors.append(choice(color))
-                size = sprite_size + gauss(0, half_sprite_size)
+                size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
                 count += 1
         return (points, colors, sizes)
@@ -248,7 +267,6 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
 
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.yellow_color
         for i in range(count):
             x = gauss(0.0, spread)
@@ -256,18 +274,18 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
             z = gauss(0.0, zspread)
             points.append(LPoint3d(x * radius, y * radius, z * radius))
             colors.append(color)
-            size = sprite_size + gauss(0, half_sprite_size)
+            size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
     def create_spiral(self, count,radius, spread, zspread, points, colors, sizes):
         func = self.shape_func
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.blue_color
         distance = 0
         for i in (-1.0, 1.0):
             for c in range(count):
-                angle = random() * 2.0 * pi
+                t = sqrt(random())
+                angle = t * 2.0 * pi
                 shape = func(angle)
                 x = i * cos(angle) * shape + gauss(0.0, spread)
                 y = i * sin(angle) * shape + gauss(0.0, spread)
@@ -276,7 +294,7 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 points.append(point)
                 distance = max(distance, point.length())
                 colors.append(color)
-                size = sprite_size + gauss(0, half_sprite_size)
+                size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
         self.size = distance
 
@@ -353,7 +371,6 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
 
     def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        half_sprite_size = self.sprite_size / 2.0
         color = self.yellow_color
         for r in range(count * 2):
             distance = self.bulge_radius + abs(gauss(0, (1 - self.bulge_radius)))
@@ -363,5 +380,5 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             z = gauss(0.0, zspread)
             points.append(LPoint3d(x * radius, y * radius, z * radius))
             colors.append(color)
-            size = sprite_size + gauss(0, half_sprite_size)
+            size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)

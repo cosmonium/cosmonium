@@ -1,8 +1,28 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from .shapes import ShapeObject
 from panda3d.core import NodePath
+from cosmonium.shadows import SphereShadowCaster
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -21,13 +41,19 @@ class SurfaceCategoryDB(object):
 surfaceCategoryDB = SurfaceCategoryDB()
 
 class Surface(ShapeObject):
-    def __init__(self, name=None, category=None, resolution=None, source=None, shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(self, name=None, category=None, resolution=None, attribution=None, shape=None, appearance=None, shader=None, clickable=True):
         ShapeObject.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
-        self.source = source
+        self.attribution = attribution
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
+
+    def create_shadows(self):
+        if self.shape is not None and self.shape.is_spherical():
+            self.shadow_caster = SphereShadowCaster(self.owner)
+        else:
+            self.shadow_caster = None
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()
@@ -108,7 +134,6 @@ class ProceduralSurface(FlatSurface):
         FlatSurface.schedule_shape_jobs(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
-    has_heightmap = True
     def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, average=False):
         ProceduralSurface.__init__(self, name, shape, heightmap, appearance, shader, clickable)
         if radius != 0.0:
@@ -131,6 +156,7 @@ class HeightmapSurface(ProceduralSurface):
         self.average = average
         #TODO: Make a proper method for this...
         shape.face_unique = True
+        shape.set_heightmap(heightmap)
 
     def get_average_radius(self):
         return self.radius

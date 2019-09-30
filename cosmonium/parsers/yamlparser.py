@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -12,13 +31,16 @@ import pickle
 
 if sys.version_info[0] < 3:
     from ..support import yaml2 as yaml
+    try:
+        from ..support.yaml2 import CLoader as Loader
+    except ImportError:
+        from ..support.yaml2 import Loader
 else:
     from ..support import yaml
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
+    try:
+        from ..support.yaml import CLoader as Loader
+    except ImportError:
+        from ..support.yaml import Loader
 
 def yaml_include(loader, node):
     print("Loading", node.value)
@@ -80,7 +102,7 @@ class YamlParser(object):
         return data
 
     @classmethod
-    def get_type_and_data(cls, data, default=None):
+    def get_type_and_data(cls, data, default=None, detect_trivial=True):
         if data is None:
             object_type = default
             object_data = {}
@@ -88,11 +110,11 @@ class YamlParser(object):
             object_type = data
             object_data = {}
         else:
-            if len(data) == 1:
+            if detect_trivial and len(data) == 1 and data.get('type') is None:
                 object_type = list(data)[0]
                 object_data = data[object_type]
             else:
-                object_type = data.get('type', None)
+                object_type = data.get('type', default)
                 object_data = data
         return (object_type, object_data)
 

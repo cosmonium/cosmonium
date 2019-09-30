@@ -1,15 +1,36 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..shaders import DataSource, GeometryControl, ShaderAppearance
+from ..shaders import DataSource, VertexControl, ShaderAppearance
 from ..textures import DataTexture
 from .. import settings
 
-class DisplacementGeometryControl(GeometryControl):
+from .appearances import TextureTilingMode
+
+class DisplacementVertexControl(VertexControl):
     use_normal = True
 
     def __init__(self, heightmap, shader=None):
-        GeometryControl.__init__(self, shader)
+        VertexControl.__init__(self, shader)
         self.heightmap = heightmap
 
     def get_id(self):
@@ -21,22 +42,22 @@ class DisplacementGeometryControl(GeometryControl):
 
 class HeightmapDataSource(DataSource):
     F_none = 0
-    F_improved_linear = 1
+    F_improved_bilinear = 1
     F_quintic = 2
     F_bspline = 3
 
-    def __init__(self, heightmap, texture_class, normals=True, shader=None, filtering=F_none):
+    def __init__(self, heightmap, texture_class, normals=True, shader=None):
         DataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.name = self.heightmap.name
         self.texture_source = DataTexture(texture_class(heightmap))
         self.has_normal_texture = normals
-        self.filtering = filtering
+        self.filtering = heightmap.interpolator.get_data_source_filtering()
 
     def get_id(self):
         str_id = self.name
         config = ''
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             config = 'i'
         elif self.filtering == self.F_quintic:
             config = 'q'
@@ -73,10 +94,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     vec2 iuv = floor( st );
     vec2 fuv = fract( st );
 
-    vec4 a = texture( sam, (iuv+vec2(0.5,0.5))/res );
-    vec4 b = texture( sam, (iuv+vec2(1.5,0.5))/res );
-    vec4 c = texture( sam, (iuv+vec2(0.5,1.5))/res );
-    vec4 d = texture( sam, (iuv+vec2(1.5,1.5))/res );
+    vec4 a = texture2D( sam, (iuv+vec2(0.5,0.5))/res );
+    vec4 b = texture2D( sam, (iuv+vec2(1.5,0.5))/res );
+    vec4 c = texture2D( sam, (iuv+vec2(0.5,1.5))/res );
+    vec4 d = texture2D( sam, (iuv+vec2(1.5,1.5))/res );
 
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
@@ -95,7 +116,7 @@ vec4 textureInter( sampler2D sam, vec2 p )
     p = i + f;
 
     p = (p - 0.5)/res;
-    return texture( sam, p );
+    return texture2D( sam, p );
 }
 ''']
 
@@ -131,10 +152,10 @@ vec4 textureBSpline(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -172,10 +193,10 @@ float textureBSplineDerivX(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -201,10 +222,10 @@ float textureBSplineDerivY(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture(sam, offset.xz).x;
-    float p01 = texture(sam, offset.yz).x;
-    float p10 = texture(sam, offset.xw).x;
-    float p11 = texture(sam, offset.yw).x;
+    float p00 = texture2D(sam, offset.xz).x;
+    float p01 = texture2D(sam, offset.yz).x;
+    float p10 = texture2D(sam, offset.xw).x;
+    float p11 = texture2D(sam, offset.yw).x;
 
     float a = (p01 - p00) * sx;
     float b = (p11 - p10) * sx;
@@ -226,14 +247,14 @@ float decode_height(vec4 encoded) {
 }
 ''']
     def get_terrain_height(self, code):
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             sampler = 'textureGood'
         elif self.filtering == self.F_quintic:
             sampler = 'textureInter'
         elif self.filtering == self.F_bspline:
             sampler = 'textureBSpline'
         else:
-            sampler = 'texture'
+            sampler = 'texture2D'
         code += ['''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, float height_scale, vec2 offset, vec2 scale) {
     vec2 pos = texcoord * scale + offset;
@@ -272,7 +293,7 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         if settings.encode_float:
             self.shader.vertex_shader.add_decode_rgba(code)
         self.shader.vertex_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             self.shader.vertex_shader.add_function(code, 'textureGood', self.textureGood)
         elif self.filtering == self.F_quintic:
             self.shader.vertex_shader.add_function(code, 'textureInter', self.textureInter)
@@ -284,7 +305,7 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         if settings.encode_float:
             self.shader.fragment_shader.add_decode_rgba(code)
         self.shader.fragment_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_linear:
+        if self.filtering == self.F_improved_bilinear:
             self.shader.fragment_shader.add_function(code, 'textureGood', self.textureGood)
         elif self.filtering == self.F_quintic:
             self.shader.fragment_shader.add_function(code, 'textureInter', self.textureInter)
@@ -362,10 +383,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     vec2 iuv = floor( st );
     vec2 fuv = fract( st );
 
-    vec4 a = texture( sam, (iuv+vec2(0.5,0.5))/res );
-    vec4 b = texture( sam, (iuv+vec2(1.5,0.5))/res );
-    vec4 c = texture( sam, (iuv+vec2(0.5,1.5))/res );
-    vec4 d = texture( sam, (iuv+vec2(1.5,1.5))/res );
+    vec4 a = texture2D( sam, (iuv+vec2(0.5,0.5))/res );
+    vec4 b = texture2D( sam, (iuv+vec2(1.5,0.5))/res );
+    vec4 c = texture2D( sam, (iuv+vec2(0.5,1.5))/res );
+    vec4 d = texture2D( sam, (iuv+vec2(1.5,1.5))/res );
 
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
@@ -376,7 +397,7 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         code.append('float get_terrain_height_%s(vec2 texcoord) {' % self.name)
         code.append('float height = 0.0;')
         for heightmap in self.heightmap.heightmaps:
-            code.append("height += decode_height(texture(heightmap_%s, texcoord)) * heightmap_%s_height_scale;" % (heightmap.name, heightmap.name))
+            code.append("height += decode_height(texture2D(heightmap_%s, texcoord)) * heightmap_%s_height_scale;" % (heightmap.name, heightmap.name))
         code.append('return height;')
         code.append('}')
 
@@ -419,12 +440,10 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         patch.instance.set_shader_input("heightmap_%s_v_scale" % self.name, self.heightmap.get_v_scale(patch))
 
 class TextureDictionaryDataSource(DataSource):
-    F_none = 0
-    F_hash = 1
-    def __init__(self, dictionary, filtering=F_none, shader=None):
+    def __init__(self, dictionary, shader=None):
         DataSource.__init__(self, shader)
         self.dictionary = dictionary
-        self.filtering = filtering
+        self.tiling = dictionary.tiling
 
     def get_id(self):
         return 'dict' + str(id(self))
@@ -445,45 +464,45 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
 
     def textureNoTile(self, code):
         code.append('''
-vec4 textureNoTile( sampler2D samp, in vec2 uv )
+vec4 textureNoTile(sampler2D samp, in vec2 uv)
 {
-    ivec2 iuv = ivec2( floor( uv ) );
-     vec2 fuv = fract( uv );
+    vec2 iuv = floor(uv);
+    vec2 fuv = fract(uv);
 
     // generate per-tile transform
-    vec4 ofa = hash4( iuv + ivec2(0,0) );
-    vec4 ofb = hash4( iuv + ivec2(1,0) );
-    vec4 ofc = hash4( iuv + ivec2(0,1) );
-    vec4 ofd = hash4( iuv + ivec2(1,1) );
+    vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
+    vec4 ofb = hash4(iuv + vec2(1.0, 0.0));
+    vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
+    vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
 
-    vec2 ddx = dFdx( uv );
-    vec2 ddy = dFdy( uv );
+    vec2 ddx = dFdx(uv);
+    vec2 ddy = dFdy(uv);
 
     // transform per-tile uvs
-    ofa.zw = sign( ofa.zw-0.5 );
-    ofb.zw = sign( ofb.zw-0.5 );
-    ofc.zw = sign( ofc.zw-0.5 );
-    ofd.zw = sign( ofd.zw-0.5 );
+    ofa.zw = sign(ofa.zw - 0.5);
+    ofb.zw = sign(ofb.zw - 0.5);
+    ofc.zw = sign(ofc.zw - 0.5);
+    ofd.zw = sign(ofd.zw - 0.5);
 
-    // uv's, and derivatives (for correct mipmapping)
-    vec2 uva = uv*ofa.zw + ofa.xy, ddxa = ddx*ofa.zw, ddya = ddy*ofa.zw;
-    vec2 uvb = uv*ofb.zw + ofb.xy, ddxb = ddx*ofb.zw, ddyb = ddy*ofb.zw;
-    vec2 uvc = uv*ofc.zw + ofc.xy, ddxc = ddx*ofc.zw, ddyc = ddy*ofc.zw;
-    vec2 uvd = uv*ofd.zw + ofd.xy, ddxd = ddx*ofd.zw, ddyd = ddy*ofd.zw;
+    // uv's, and derivarives (for correct mipmapping)
+    vec2 uva = uv*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
+    vec2 uvb = uv*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
+    vec2 uvc = uv*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
+    vec2 uvd = uv*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
 
     // fetch and blend
-    vec2 b = smoothstep( 0.25,0.75, fuv );
+    vec2 b = smoothstep(0.25, 0.75, fuv);
 
-    return mix( mix( textureGrad( samp, uva, ddxa, ddya ),
-                     textureGrad( samp, uvb, ddxb, ddyb ), b.x ),
-                mix( textureGrad( samp, uvc, ddxc, ddyc ),
-                     textureGrad( samp, uvd, ddxd, ddyd ), b.x), b.y );
+    return mix( mix(textureGrad(samp, uva, ddxa, ddya),
+                    textureGrad(samp, uvb, ddxb, ddyb), b.x),
+                mix(textureGrad(samp, uvc, ddxc, ddyc),
+                    textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
 }
 ''')
 
     def fragment_extra(self, code):
         DataSource.fragment_extra(self, code)
-        if self.filtering == self.F_hash:
+        if self.tiling == TextureTilingMode.F_hash:
             self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
             self.shader.fragment_shader.add_function(code, 'textureNoTile', self.textureNoTile)
         for texture_id in self.dictionary.textures.keys():
@@ -496,10 +515,10 @@ vec4 textureNoTile( sampler2D samp, in vec2 uv )
         return ''
 
     def fragment_shader(self, code):
-        if self.filtering == self.F_hash:
+        if self.tiling == TextureTilingMode.F_hash:
             sampler = 'textureNoTile'
         else:
-            sampler = 'texture'
+            sampler = 'texture2D'
         for texture_id in self.dictionary.textures.keys():
             code.append("    tex_%s_color = %s(tex_%s, position.xy * detail_factor).xyz;" % (texture_id, sampler, texture_id))
 

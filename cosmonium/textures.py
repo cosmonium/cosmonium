@@ -1,12 +1,31 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
-from panda3d.core import ColorBlendAttrib, TransparencyAttrib
 
 from .dircontext import defaultDirContext
+from .shapes import RingShape #TODO: Workaround, see below !
+from .utils import TransparencyBlend
 from . import workers
-from . import utils
 from . import settings
 
 import os
@@ -53,10 +72,12 @@ class TextureBase(object):
 
 class TextureSource(object):
     cached = True
-    def __init__(self):
+    procedural = False
+    def __init__(self, attribution=None):
         self.loaded = False
         self.texture = None
         self.texture_size = 0
+        self.attribution = attribution
 
     def is_patched(self):
         return False
@@ -67,7 +88,7 @@ class TextureSource(object):
     def texture_name(self, patch):
         return None
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         pass
 
     def can_split(self, patch):
@@ -76,14 +97,17 @@ class TextureSource(object):
     def get_texture(self, patch):
         return (None, 0, 0)
 
+    def get_recommended_shape(self):
+        return None
+
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         callback(None, 0, 0, *cb_args)
 
 class AutoTextureSource(TextureSource):
     factories = []
-    def __init__(self, filename, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, filename, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.filename = filename
         self.context = context
         self.source = None
@@ -132,10 +156,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if self.source is None:
             self.create_source()
-        return self.source.load(patch, grayscale, color_space, sync, callback, cb_args)
+        return self.source.load(patch, color_space, sync, callback, cb_args)
 
     def can_split(self, patch):
         if self.source is None:
@@ -147,14 +171,19 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         return self.source.get_texture(patch)
 
+    def get_recommended_shape(self):
+        if self.source is None:
+            self.create_source()
+        return self.source.get_recommended_shape()
+
 class TextureSourceFactory(object):
     def create_source(self, filename, context=defaultDirContext):
         return None
 
 class TextureFileSource(TextureSource):
     cached = True
-    def __init__(self, filename, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, filename, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.filename = filename
         self.context = context
         self.loaded = False
@@ -168,7 +197,7 @@ class TextureFileSource(TextureSource):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
@@ -176,7 +205,7 @@ class TextureFileSource(TextureSource):
                     texture = workers.syncTextureLoader.load_texture(filename)
                     self.texture_loaded_cb(texture, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, self.texture_loaded_cb, (callback, cb_args))
+                    workers.asyncTextureLoader.load_texture(filename, None, self.texture_loaded_cb, (callback, cb_args))
             else:
                 print("File", self.filename, "not found")
                 self.texture_loaded_cb(None, callback, cb_args)
@@ -189,7 +218,7 @@ class TextureFileSource(TextureSource):
 
 class TextureFileSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
-        return TextureFileSource(filename, context)
+        return TextureFileSource(filename, None, context)
 
 #TODO: Should be done in cosmonium class
 #Priority is set to a high value (ie low priority) as this is the fallback factory
@@ -205,7 +234,7 @@ class DirectTextureSource(TextureSource):
     def replace(self, texture):
         self.texture = texture
 
-    def load(self, patch, grayscale, callback, cb_args):
+    def load(self, patch, callback, cb_args):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
@@ -213,14 +242,19 @@ class DirectTextureSource(TextureSource):
         return (self.texture, 0, 0)
 
 class SimpleTexture(TextureBase):
-    def __init__(self, source, grayscale=False, srgb=False, offset=0):
+    def __init__(self, source, srgb=False, offset=0):
         if source is not None and not isinstance(source, TextureSource):
-            source = AutoTextureSource(source)
-        self.grayscale = grayscale
+            source = AutoTextureSource(source, attribution=None)
         self.srgb = srgb
         self.source = source
         self.offset = offset
         self.tex_matrix= True
+        self.panda = True
+        self.input_name = None
+
+    def set_target(self, panda, input_name=None):
+        self.panda = panda
+        self.input_name = input_name
 
     def set_offset(self, offset):
         self.offset = offset
@@ -251,7 +285,7 @@ class SimpleTexture(TextureBase):
                 color_space=CS_linear
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            self.source.load(patch, grayscale=self.grayscale, color_space=color_space, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
+            self.source.load(patch, color_space=color_space, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
         else:
             if callback is not None:
                 callback(self, *cb_args)
@@ -260,14 +294,31 @@ class SimpleTexture(TextureBase):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             (texture, texture_size, texture_lod) = self.get_default_texture()
-        texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
-        self.init_texture_stage(texture_stage, texture)
         if self.source.is_patched():
             self.clamp(texture)
-        if not self.source.is_patched() or shape.lod == 0:
+        if not self.source.is_patched():
             self.mipmap(texture)
         else:
-            self.linear(texture)
+            if shape.lod == 0:
+                self.mipmap_min(texture)
+            else:
+                self.linear(texture)
+        #TODO: Remove this ugly workaround and create an actual RingTexture !
+        if isinstance(shape, RingShape):
+            texture.setWrapU(Texture.WM_border_color)
+            texture.setBorderColor(LColor(0, 0, 0, 0))
+        if self.panda:
+            self.apply_panda(shape, texture, texture_lod)
+        else:
+            self.apply_shader(shape, self.input_name, texture, texture_lod)
+        self.configure_instance(shape.instance)
+
+    def apply_shader(self, shape, input_name, texture, texture_lod):
+        shape.instance.set_shader_input(input_name, texture)
+
+    def apply_panda(self, shape, texture, texture_lod):
+        texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
+        self.init_texture_stage(texture_stage, texture)
         if self.tex_matrix:
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
             if shape.swap_uv:
@@ -292,7 +343,6 @@ class SimpleTexture(TextureBase):
             shape.instance.setTexScale(texture_stage, scale)
             shape.instance.setTexOffset(texture_stage, offset)
         shape.instance.setTexture(texture_stage, texture, 1)
-        self.configure_instance(shape.instance)
 
     def can_split(self, patch):
         return self.source.can_split(patch)
@@ -303,10 +353,14 @@ class SimpleTexture(TextureBase):
 
     def mipmap(self, texture):
         texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMagfilter(Texture.FT_linear_mipmap_linear)
+
+    def mipmap_min(self, texture):
+        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
         texture.setMagfilter(Texture.FT_linear)
 
     def linear(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMinfilter(Texture.FT_linear)
         texture.setMagfilter(Texture.FT_linear)
 
     def debug_borders(self, texture):
@@ -317,9 +371,10 @@ class SimpleTexture(TextureBase):
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
         if srgb is None:
-            srgb = settings.use_srgb
+            srgb = settings.srgb
         SimpleTexture.__init__(self, source, srgb=srgb)
         self.tint_color = tint
+        self.check_specular_mask = False
         self.has_specular_mask = False
         self.transparent = False
 
@@ -347,7 +402,6 @@ class VisibleTexture(SimpleTexture):
 class SurfaceTexture(VisibleTexture):
     def __init__(self, source, tint=None, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb=srgb)
-        self.check_specular_mask = False
         self.check_transparency = False
         self.transparent = False
 
@@ -355,11 +409,15 @@ class SurfaceTexture(VisibleTexture):
         texture_format = texture.get_format()
         return texture_format in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
 
+    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
+        if self.check_specular_mask and self.texture_has_transparency(texture):
+            self.has_specular_mask = True
+        VisibleTexture.texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args)
+
     def init_texture_stage(self, texture_stage, texture):
         VisibleTexture.init_texture_stage(self, texture_stage, texture)
-        if self.check_specular_mask and self.texture_has_transparency(texture):
+        if self.has_specular_mask:
             texture_stage.setMode(TextureStage.MModulateGloss)
-            self.has_specular_mask = True
         if self.check_transparency and self.texture_has_transparency(texture):
             self.transparent = True
 
@@ -371,49 +429,14 @@ class NightTexture(SurfaceTexture):
         return (0, 0, 0, 1)
 
 class TransparentTexture(VisibleTexture):
-    TB_None = 0
-    TB_Alpha = 1
-    TB_PremultipliedAlpha = 2
-    TB_Additive = 3
-    TB_AlphaAdditive = 4
-
-    def __init__(self, source, tint=None, level=0.0, blend=TB_Alpha, srgb=None):
+    def __init__(self, source, tint=None, level=0.0, blend=TransparencyBlend.TB_Alpha, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb)
         self.level = level
         self.transparent = True
         self.blend = blend
 
     def configure_instance(self, instance):
-        blendAttrib = None
-        translucid = False
-        if self.blend == TransparentTexture.TB_Alpha:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one_minus_incoming_alpha,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_PremultipliedAlpha:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one_minus_incoming_alpha,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_Additive:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        elif self.blend == TransparentTexture.TB_AlphaAdditive:
-            blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
-                                                ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one,
-                                                ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
-        if blendAttrib is not None:
-            instance.setAttrib(blendAttrib)
-        if translucid:
-            instance.setTransparency(TransparencyAttrib.MAlpha)
+        TransparencyBlend.apply(self.blend, instance)
 
     def get_default_color(self):
         return (1, 1, 1, 0)
@@ -426,9 +449,6 @@ class NormalMapTexture(SimpleTexture):
         return (.5, .5, 1, 1)
 
 class SpecularMapTexture(SimpleTexture):
-    def __init__(self, source):
-        SimpleTexture.__init__(self, source, grayscale=True)
-
     def init_texture_stage(self, texture_stage, texture):
         texture_stage.setMode(TextureStage.MGloss)
 
@@ -443,18 +463,17 @@ class BumpMapTexture(SimpleTexture):
         return (0, 0, 0, 0)
 
 class DataTexture(TextureBase):
-    def __init__(self, source, grayscale=False):
+    def __init__(self, source):
         if source is not None and not isinstance(source, TextureSource):
             source = TextureFileSource(source)
         self.source = source
-        self.grayscale = grayscale
         self.texture = None
         self.texture_size = 0
         self.texture_lod = 0
 
     def load(self, patch, callback=None):
         if not self.source.loaded or not self.source.cached:
-            (self.texture, self.texture_size, self.texture_lod) = self.source.load(patch, grayscale=self.grayscale)
+            (self.texture, self.texture_size, self.texture_lod) = self.source.load(patch)
         if callback is not None:
             callback(patch, self)
 
@@ -474,8 +493,8 @@ class DataTexture(TextureBase):
 
 class VirtualTextureSource(TextureSource):
     cached = False
-    def __init__(self, root, ext, size, context=defaultDirContext):
-        TextureSource.__init__(self)
+    def __init__(self, root, ext, size, attribution=None, context=defaultDirContext):
+        TextureSource.__init__(self, attribution)
         self.map_patch = {}
         self.root = root
         self.ext = ext
@@ -489,6 +508,9 @@ class VirtualTextureSource(TextureSource):
         return None
 
     def texture_name(self, patch):
+        return None
+
+    def alpha_texture_name(self, patch):
         return None
 
     def can_split(self, patch):
@@ -510,18 +532,20 @@ class VirtualTextureSource(TextureSource):
                     callback(*(self.map_patch[parent_patch] + cb_args))
             else:
                 if callback is not None:
-                    callback(None, None, self.texture_size, patch.lod, *cb_args)
+                    callback(None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
             tex_name = self.texture_name(patch)
             filename = self.context.find_texture(tex_name)
+            alpha_tex_name = self.alpha_texture_name(patch)
+            alpha_filename = self.context.find_texture(alpha_tex_name)
             if filename is not None:
                 if sync:
-                    texture = workers.syncTextureLoader.load_texture(filename)
+                    texture = workers.syncTextureLoader.load_texture(filename, alpha_filename)
                     self.texture_loaded_cb(texture, patch, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, self.texture_loaded_cb, (patch, callback, cb_args))
+                    workers.asyncTextureLoader.load_texture(filename, alpha_filename, self.texture_loaded_cb, (patch, callback, cb_args))
             else:
                 print("File", tex_name, "not found")
                 self.texture_loaded_cb(None, patch, callback, cb_args)
@@ -538,4 +562,4 @@ class VirtualTextureSource(TextureSource):
             if parent_patch is not None:
                 return self.map_patch[parent_patch]
             else:
-                return (None, None, self.texture_size, patch.lod)
+                return (None, self.texture_size, patch.lod)

@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 
 from panda3d.core import LVector3, LMatrix3, LMatrix4
@@ -42,29 +61,93 @@ class GpuNoiseLibPerlin3D(NoiseSource):
         return 'gnl-perlin3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
-        program.include(code, 'Interpolation', defaultDirContext.find_shader("gpu-noise-lib/Interpolation.glsl"))
-        program.include(code, 'Noise', defaultDirContext.find_shader("gpu-noise-lib/Perlin3D.glsl"))
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Interpolation', defaultDirContext.find_shader("gpu-noise-lib/Interpolation.glsl"))
+        program.include(code, 'gnl-Noise', defaultDirContext.find_shader("gpu-noise-lib/Perlin3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = Perlin3D(%s);' % (value, point))
+
+class GpuNoiseLibCellular3D(NoiseSource):
+    def get_id(self):
+        return 'gnl-cell3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Cellular', defaultDirContext.find_shader("gpu-noise-lib/Cellular.glsl"))
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = sqrt(Cellular3D(%s));' % (value, point))
+
+class GpuNoiseLibPolkaDot3D(NoiseSource):
+    def __init__(self, min_radius, max_radius):
+        NoiseSource.__init__(self)
+        self.min_radius = min_radius
+        self.max_radius = max_radius
+
+    def get_id(self):
+        return 'gnl-polkadot3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'gnl-FAST32_hash', defaultDirContext.find_shader("gpu-noise-lib/FAST32_hash.glsl"))
+        program.include(code, 'gnl-Falloff', defaultDirContext.find_shader("gpu-noise-lib/Falloff.glsl"))
+        program.include(code, 'gnl-PolkaDot', defaultDirContext.find_shader("gpu-noise-lib/PolkaDot.glsl"))
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = PolkaDot3D(%s, %g, %g);' % (value, point, self.min_radius, self.max_radius))
 
 class SteGuPerlin3D(NoiseSource):
     def get_id(self):
         return 'stegu-perlin3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'snoise', defaultDirContext.find_shader("stegu/noise3D.glsl"))
+        program.include(code, 'stegu-common', defaultDirContext.find_shader("stegu/common.glsl"))
+        program.include(code, 'stegu-snoise', defaultDirContext.find_shader("stegu/noise3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = snoise(%s);' % (value, point))
+
+class SteGuCellular3D(NoiseSource):
+    def __init__(self, fast):
+        NoiseSource.__init__(self)
+        self.fast = fast
+
+    def get_id(self):
+        if self.fast:
+            return 'stegu-cellular3d-fast'
+        else:
+            return 'stegu-cellular3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'stegu-common', defaultDirContext.find_shader("stegu/common.glsl"))
+        if self.fast:
+            program.include(code, 'stegu-cellular', defaultDirContext.find_shader("stegu/cellular2x2x2.glsl"))
+        else:
+            program.include(code, 'stegu-cellular', defaultDirContext.find_shader("stegu/cellular3D.glsl"))
+
+    def noise_value(self, code, value, point):
+        if self.fast:
+            code.append('        %s = cellular2x2x2(%s).x;' % (value, point))
+        else:
+            code.append('        %s = cellular(%s).x;' % (value, point))
+
+class SteGuCellularDiff3D(SteGuCellular3D):
+    def get_id(self):
+        return SteGuCellular3D.get_id(self) + '-diff'
+
+    def noise_value(self, code, value, point):
+        if self.fast:
+            code.append('        vec2 F = cellular2x2x2(%s);' % (point))
+        else:
+            code.append('        vec2 F = cellular(%s);' % (point))
+        code.append('        %s  = F.y - F.x;' % (value))
 
 class QuilezPerlin3D(NoiseSource):
     def get_id(self):
         return 'quilez-gradientnoise3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
+        program.include(code, 'quilez-noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = noise(%s);' % (value, point))
@@ -114,8 +197,10 @@ class AbsNoise(NoiseSource):
         code.append('        }')
 
 class RidgedNoise(NoiseSource):
-    def __init__(self, noise):
+    def __init__(self, noise, offset=0.33, shift=True):
         self.noise = noise
+        self.offset = offset
+        self.shift = shift
 
     def get_id(self):
         return 'ridged-' + self.noise.get_id()
@@ -132,7 +217,54 @@ class RidgedNoise(NoiseSource):
     def noise_value(self, code, value, point):
         code.append('        {')
         self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s  = (1.0 - abs(tmp) - 0.6) * 2.0 - 1.0;' % value)
+        if self.shift:
+            code.append('        %s  = (1.0 - abs(tmp) - %g) * 2.0 - 1.0;' % (value, self.offset))
+        else:
+            code.append('        %s  = (1.0 - abs(tmp) - %g);' % (value, self.offset))
+        code.append('        }')
+
+class SquareNoise(NoiseSource):
+    def __init__(self, noise):
+        self.noise = noise
+
+    def get_id(self):
+        return 'square-' + self.noise.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+
+    def noise_value(self, code, value, point):
+        code.append('        {')
+        self.noise.noise_value(code, 'float tmp', point)
+        code.append('        %s = tmp * tmp;' % value)
+        code.append('        }')
+
+class CubeNoise(NoiseSource):
+    def __init__(self, noise):
+        self.noise = noise
+
+    def get_id(self):
+        return 'cube-' + self.noise.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+
+    def noise_value(self, code, value, point):
+        code.append('        {')
+        self.noise.noise_value(code, 'float tmp', point)
+        code.append('        %s = tmp * tmp * tmp;' % value)
         code.append('        }')
 
 class NoiseSourceScale(NoiseSource):
@@ -156,6 +288,9 @@ class NoiseSourceScale(NoiseSource):
     def noise_value(self, code, value, point):
         self.noise.noise_value(code, value, '%s * %g' % (point, self.value))
 
+    def update(self, instance):
+        self.noise.update(instance)
+
 class NoiseOffset(NoiseSource):
     def __init__(self, noise, value):
         NoiseSource.__init__(self)
@@ -176,6 +311,9 @@ class NoiseOffset(NoiseSource):
 
     def noise_value(self, code, value, point):
         self.noise.noise_value(code, value, '%s + %g' % (point, self.value))
+
+    def update(self, instance):
+        self.noise.update(instance)
 
 class NoiseAdd(NoiseSource):
     fid = 0
@@ -627,12 +765,11 @@ class NoiseFragmentShader(ShaderProgram):
         self.noise_target = noise_target
 
     def create_uniforms(self, code):
-        code.append("precision highp float;")
-        code.append("#pragma optionNV(fastprecision off)")
         code.append("uniform vec3 noiseOffset;")
         code.append("uniform vec3 noiseScale;")
         code.append("uniform float global_frequency;")
         code.append("uniform vec3 global_offset;")
+        code.append("uniform float global_scale;")
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             code.append("uniform mat3 cube_rot;")
         self.noise_source.noise_uniforms(code)
@@ -642,7 +779,8 @@ class NoiseFragmentShader(ShaderProgram):
         code.append("in vec2 texcoord;")
 
     def create_outputs(self, code):
-        code.append("out vec4 frag_output;")
+        if self.version >= 130:
+            code.append("out vec4 frag_output;")
 
     def create_extra(self, code):
         self.pi(code)
@@ -684,17 +822,21 @@ class NoiseFragmentShader(ShaderProgram):
             code.append("position.z = p.z * sqrt(1.0 - p2.x * 0.5 - p2.y * 0.5 + p2.x * p2.y / 3.0);")
         else:
             code.append('position.x = noiseOffset.x + coord.x * noiseScale.x;')
-            code.append('position.y = noiseOffset.y + coord.y * noiseScale.y;')
+            code.append('position.y = noiseOffset.y + (1.0 - coord.y) * noiseScale.y;')
             code.append('position.z = noiseOffset.z;')
         code.append('position = position * global_frequency + global_offset;')
         code.append('float value;')
         self.noise_source.noise_value(code, 'value', 'position')
-        code.append('return value;')
+        code.append('return value * global_scale;')
         code.append('}')
 
     def create_body(self, code):
+        if self.version < 130:
+            code.append('vec4 frag_output;')
         code.append('float value = calc_noise_value(texcoord.xy);')
         self.noise_target.apply_noise(code)
+        if self.version < 130:
+            code.append('gl_FragColor = frag_output;')
 
 class NoiseShader(StructuredShader):
     coord_map = {TexCoord.Cylindrical: 'cyl',
@@ -714,6 +856,7 @@ class NoiseShader(StructuredShader):
         self.scale = scale
         self.global_frequency = 1.0
         self.global_offset = LVector3(0, 0, 0)
+        self.global_scale = 1.0
         self.vertex_shader = NoiseVertexShader()
         self.fragment_shader = NoiseFragmentShader(self.coord, self.noise_source, self.noise_target)
         #self.texture = loader.loadTexture('permtexture.png')
@@ -767,6 +910,7 @@ class NoiseShader(StructuredShader):
         instance.set_shader_input('noiseScale', self.scale)
         instance.set_shader_input('global_frequency', self.global_frequency)
         instance.set_shader_input('global_offset', self.global_offset)
+        instance.set_shader_input('global_scale', self.global_scale)
         #instance.set_shader_input('permTexture', self.texture)
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             mat = self.get_rot_for_face(face)

@@ -1,9 +1,30 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 
 from panda3d.core import LVector2
 
 from ..patchedshapes import PatchLodControl
 from ..textures import TexCoord
+
+from .interpolator import BilinearInterpolator
 
 from math import floor, ceil
 
@@ -39,7 +60,7 @@ class HeightmapPatch:
 
     @classmethod
     def create_from_patch(cls, noise, parent,
-                          x, y, lod, density,
+                          x, y, scale, lod, density,
                           coord=TexCoord.Cylindrical, face=-1):
         #TODO: Should be move to Patch/Tile
         if coord == TexCoord.Cylindrical:
@@ -62,20 +83,19 @@ class HeightmapPatch:
             r_div = div
             s_div = div
             size = 1.0 / (1 << lod)
-            half_size = size / 2.0
-            x0 = x - half_size
-            y0 = y - half_size
-            x1 = x + half_size
-            y1 = y + half_size
+            x0 = (x) * scale
+            y0 = (y) * scale
+            x1 = (x + size) * scale
+            y1 = (y + size) * scale
         patch = cls(noise, parent,
                     x0, y0, x1, y1,
                     width=density, height=density,
-                    scale=1.0,
+                    scale=scale,
                     coord=coord, face=face, border=1)
         patch.patch_lod = lod
         patch.lod = lod
-        patch.lod_scale_x = 1.0 / s_div
-        patch.lod_scale_y = 1.0 / r_div
+        patch.lod_scale_x = scale / s_div
+        patch.lod_scale_y = scale / r_div
         patch.density = density
         patch.x = x
         patch.y = y
@@ -121,7 +141,7 @@ class HeightmapPatchFactory(object):
 class Heightmap(object):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median):
+    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None):
         self.name = name
         self.width = width
         self.height = height
@@ -133,7 +153,11 @@ class Heightmap(object):
             self.offset = -0.5 * self.height_scale
         else:
             self.offset = 0.0
+        if interpolator is None:
+            interpolator = BilinearInterpolator()
+        self.interpolator = interpolator
         self.global_frequency = 1.0
+        self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
 
     def set_height_scale(self, height_scale):
@@ -192,8 +216,8 @@ class Heightmap(object):
         return None
 
 class PatchedHeightmap(Heightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, max_lod=100):
-        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median)
+    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, max_lod=100):
+        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median, interpolator)
         self.size = size
         self.patch_factory = patch_factory
         self.max_lod = max_lod
@@ -239,7 +263,7 @@ class PatchedHeightmap(Heightmap):
                 y = patch.y
                 face = patch.face
             #TODO: Should be done with a factory
-            heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, lod=patch.lod, density=self.size,
+            heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, scale=patch.scale, lod=patch.lod, density=self.size,
                                                        coord=patch.coord, face=face)
             self.map_patch[patch.str_id()] = heightmap
             #TODO: Should be linked properly
@@ -250,10 +274,16 @@ class PatchedHeightmap(Heightmap):
                 heightmap.copy_from(parent_heightmap)
                 delta = patch.lod - heightmap.lod
                 scale = 1 << delta
-                x_tex = int(x / scale) * scale
-                y_tex = int(y / scale) * scale
-                x_delta = float(x - x_tex) / scale
-                y_delta = float(y - y_tex) / scale
+                if patch.coord != TexCoord.Flat:
+                    x_tex = int(x / scale) * scale
+                    y_tex = int(y / scale) * scale
+                    x_delta = float(x - x_tex) / scale
+                    y_delta = float(y - y_tex) / scale
+                else:
+                    x_tex = int(x * scale) / scale
+                    y_tex = int(y * scale) / scale
+                    x_delta = float(x - x_tex)
+                    y_delta = float(y - y_tex)
                 #Y orientation is the opposite of the texture v axis
                 y_delta = 1.0 - y_delta - 1.0 / scale
                 if y_delta == 1.0: y_delta = 0.0

@@ -1,12 +1,31 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LColor
 
-from ..procedural.detailtextures import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
+from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
-from ..procedural.appearances import TexturesDictionary
+from ..procedural.appearances import TexturesDictionary, TextureTilingMode
 from ..astro import units
 
 from .utilsparser import DistanceUnitsYamlParser
@@ -46,7 +65,7 @@ class HeightColorControlYamlParser(YamlParser):
             entries.append(self.decode_height_layer(entry))
         return HeightColorMap('colormap_%d' % self.colormap_id, entries)
 
-    def decode(self, data, scale, radius, median):
+    def decode(self, data, scale = 1.0, radius=1.0, median=True):
         entries = data.get('entries', [])
         self.percentage = data.get('percentage', False)
         self.float_values = data.get('float', False)
@@ -129,6 +148,17 @@ class TextureControlYamlParser(YamlParser):
         self.height_scale = 1.0 / radius
         return self.decode_entry(data)
 
+class TextureTilingYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data):
+        (object_type, object_data) = cls.get_type_and_data(data, 'default')
+        if object_type == 'default':
+            return TextureTilingMode.F_none
+        elif object_type == 'hash':
+            return TextureTilingMode.F_hash
+        else:
+            return None
+
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
     def decode_textures_dictionary_entry(self, data):
@@ -138,7 +168,8 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     def decode_textures_dictionary(cls, data):
         entries = data.get('entries')
         scale = data.get('scale')
-        return TexturesDictionary(entries, scale, context=YamlModuleParser.context)
+        tiling = TextureTilingYamlParser.decode(data.get('tiling'))
+        return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
 
     @classmethod
     def decode(cls, data):

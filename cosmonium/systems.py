@@ -1,7 +1,26 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .bodies import StellarObject, StellarBodyLabel, Star
+from .bodies import StellarObject, Star
 from .catalogs import ObjectsDB, objectsDB
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
 
@@ -14,7 +33,6 @@ class StellarSystem(StellarObject):
         self.children_map = ObjectsDB()
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
-        self.extend = 0.0
         self.has_halo = False
 
     def apply_func(self, func):
@@ -48,9 +66,9 @@ class StellarSystem(StellarObject):
                     return child.primary
         return None
 
-    def find_by_path(self, path, return_system=False, first=True):
+    def find_by_path(self, path, return_system=False, first=True, separator='/'):
         if not isinstance(path, list):
-            path=path.split('/')
+            path=path.split(separator)
         if len(path) > 0:
             #print("Looking for", path, "in '" + self.get_name() + "'", "RS:", return_system)
             name = path[0]
@@ -116,8 +134,8 @@ class StellarSystem(StellarObject):
             old_parent.recalc_extend()
         if child.orbit is not None:
             orbit_size = child.orbit.get_apparent_radius()
-            if orbit_size > self.extend:
-                self.extend = orbit_size
+            if orbit_size > self._extend:
+                self._extend = orbit_size
         #TODO: Calc consolidated abs magnitude here
 
     def remove_child_fast(self, child):
@@ -139,7 +157,7 @@ class StellarSystem(StellarObject):
                 size += child.orbit.get_apparent_radius()
             if size > extend:
                 extend = size
-        self.extend = extend
+        self._extend = extend
 
     def recalc_recursive(self):
         for child in self.children:
@@ -154,15 +172,17 @@ class StellarSystem(StellarObject):
 
     def update(self, time):
         StellarObject.update(self, time)
+        #No need to update the children if not visible
+        if not self.visible or not self.resolved: return
         for child in self.children:
             child.update(time)
 
-    def update_obs(self, camera_pos):
-        StellarObject.update_obs(self, camera_pos)
+    def update_obs(self, observer):
+        StellarObject.update_obs(self, observer)
         #No need to check the children if not visible
         if not self.visible or not self.resolved: return
         for child in self.children:
-            child.update_obs(camera_pos)
+            child.update_obs(observer)
 
     def check_visibility(self, pixel_size):
         self.was_visible = self.visible and self.resolved
@@ -198,10 +218,9 @@ class StellarSystem(StellarObject):
             child.remove_instance()
 
     def get_extend(self):
-        return self.extend
+        return self._extend
 
 class SimpleSystem(StellarSystem):
-    label_class = StellarBodyLabel
     def __init__(self, names, primary=None, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
         self.set_primary(primary)
@@ -249,8 +268,27 @@ class SimpleSystem(StellarSystem):
     def get_abs_magnitude(self):
         return self.primary.get_abs_magnitude()
 
+    def update(self, time):
+        StellarSystem.update(self, time)
+        primary = self.primary
+        if primary is None or primary.is_emissive(): return
+        check_primary = primary.visible and primary.resolved and primary.in_view
+        for child in self.children:
+            child.start_shadows_update()
+        for child in self.children:
+            if child == primary: continue
+            if child.visible and child.resolved and child.in_view:
+                if primary.check_cast_shadow_on(child):
+                    #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())
+                    primary.add_shadow_target(child)
+            if check_primary:
+                if child.check_cast_shadow_on(primary):
+                    #print(child.get_friendly_name(), "casts shadow on", primary.get_friendly_name())
+                    child.add_shadow_target(primary)
+        for child in self.children:
+            child.end_shadows_update()
+
 class Barycenter(StellarSystem):
-    label_class = StellarBodyLabel
     has_halo = True
     
     def __init__(self, *args, **kwargs):

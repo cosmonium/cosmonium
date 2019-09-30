@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -87,7 +106,7 @@ class BaseObject(object):
     def update(self, time):
         pass
 
-    def update_obs(self, camera_pos):
+    def update_obs(self, observer):
         pass
 
     def check_visibility(self, pixel_size):
@@ -106,29 +125,7 @@ class BaseObject(object):
         pass
 
     def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        midPlane = self.context.observer.midPlane
-        distance_to_obs /= settings.scale 
-        if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = (abs_position - camera_pos) / settings.scale
-            distance = distance_to_obs
-            scale_factor = 1.0 / settings.scale
-        elif settings.use_inv_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - midPlane / distance_to_obs)
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        elif settings.use_log_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - log(midPlane / distance_to_obs + 1, 2))
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        return position, distance, scale_factor
+        return self.get_real_pos_rel(abs_position - camera_pos, distance_to_obs, vector_to_obs)
 
     def get_real_pos_rel(self, rel_position, distance_to_obs, vector_to_obs):
         midPlane = self.context.observer.midPlane
@@ -269,9 +266,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.update(time)
 
-    def update_obs(self, camera_pos):
+    def update_obs(self, observer):
         for component in self.components:
-            component.update_obs(camera_pos)
+            component.update_obs(observer)
 
     def check_visibility(self, pixel_size):
         for component in self.components:
@@ -358,15 +355,16 @@ class ObjectLabel(VisibleObject):
         self.look_at = self.instance.attachNewNode("dummy")
 
 class LabelledObject(CompositeObject):
-    label_class = None
-
     def __init__(self, names):
         CompositeObject.__init__(self, names)
         self.label = None
 
+    def create_label_instance(self):
+        return ObjectLabel(self.get_ascii_name() + '-label')
+
     def create_label(self):
-        if self.label is None and self.label_class is not None:
-            self.label = self.label_class(self.get_ascii_name() + '-label')
+        if self.label is None:
+            self.label = self.create_label_instance()
             self.add_component(self.label)
             self.label.check_settings()
 

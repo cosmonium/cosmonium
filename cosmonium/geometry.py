@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -7,6 +26,9 @@ from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
 from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
+
+from . import settings
+
 from math import sin, cos, pi, atan2, sqrt, asin
 
 def empty_node(prefix, color=False):
@@ -62,6 +84,29 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
     if nb_vertices != 0:
         prim.reserve_num_vertices(nb_vertices)
     return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom)
+
+def BoundingBoxGeom(box):
+    (path, node) = empty_node('bb')
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
+    node.add_geom(geom)
+    for i in range(8):
+        gvw.set_data3(box.get_point(i))
+
+    prim.add_vertices(0, 4, 5)
+    prim.add_vertices(0, 5, 1)
+    prim.add_vertices(4, 6, 7)
+    prim.add_vertices(4, 7, 5)
+    prim.add_vertices(6, 2, 3)
+    prim.add_vertices(6, 3, 7)
+    prim.add_vertices(2, 0, 1)
+    prim.add_vertices(2, 1, 3)
+    prim.add_vertices(1, 5, 7)
+    prim.add_vertices(1, 7, 3)
+    prim.add_vertices(2, 6, 4)
+    prim.add_vertices(2, 4, 0)
+
+    geom.add_primitive(prim)
+    return path
 
 def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=True):
     (path, node) = empty_node('uv')
@@ -195,14 +240,14 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     sin_s = sin(2*pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
-    x = cos_s * sin_r
-    y = sin_s * sin_r
-    z = cos_r
+    x = cos_s * sin_r * radius
+    y = sin_s * sin_r * radius
+    z = cos_r * radius
 
     if offset is not None:
-        x = (x - normal[0] * offset) * radius
-        y = (y - normal[1] * offset) * radius
-        z = (z - normal[2] * offset) * radius
+        x = x - normal[0] * offset
+        y = y - normal[1] * offset
+        z = z - normal[2] * offset
 
     return LVector3d(x, y, z)
 
@@ -247,7 +292,9 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
                     u = 1.0 - u
                 gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f((x - normal[0] * offset) * radius, (y - normal[1] * offset) * radius, (z - normal[2] * offset) * radius)
+                gvw.add_data3f(x * radius - normal[0] * offset,
+                               y * radius - normal[1] * offset,
+                               z * radius - normal[2] * offset)
             else:
                 gvw.add_data3f(x * radius, y * radius, z * radius)
             gnw.add_data3f(x, y, z)
@@ -285,19 +332,24 @@ def halfSphereAABB(height, positive, offset):
         max_points = LPoint3(1, offset, 1)
     return BoundingBox(min_points, max_points)
 
-def UVPatchAABB(radius, x0, y0, x1, y1, offset):
-    a = UVPatchPoint(radius, 0, 0, x0, y0, x1, y1, offset)
-    b = UVPatchPoint(radius, 1, 0, x0, y0, x1, y1, offset)
-    c = UVPatchPoint(radius, 1, 1, x0, y0, x1, y1, offset)
-    d = UVPatchPoint(radius, 0, 1, x0, y0, x1, y1, offset)
-    m = UVPatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+def UVPatchAABB(min_radius, max_radius, x0, y0, x1, y1, offset):
+    points = []
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(UVPatchPoint(radius, i, j, x0, y0, x1, y1, offset))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
 def UVPatchedSphere(radius=1, rings=8, sectors=16, lod=2):
     #LOD = 1 : Two half sphere
@@ -458,20 +510,198 @@ def IcoSphere(radius=1, subdivisions=1):
 
     return path
 
-def Tile(size, split, inv_u=False, inv_v=False, swap_uv=False):
-    r_split = split - 1
+def make_config(inner, outer):
+    nb_vertices = inner + 1
+    if outer is None:
+        outer = [inner, inner, inner, inner]
+    ratio = [inner // x if inner >= x else 1 for x in outer]
+    return (nb_vertices, inner, outer, ratio)
 
+def make_square_primitives(prim, inner, nb_vertices):
+    for x in range(0, inner):
+        for y in range(0, inner):
+            v = nb_vertices * y + x
+            prim.addVertices(v, v + nb_vertices, v + 1)
+            prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+
+def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
+    for x in range(0, inner):
+        for y in range(0, inner):
+#     for x in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
+#         for y in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
+#    for x in (0, inner - 1): #range(0, inner):
+#        for y in (0, inner - 1): #range(0, inner):
+            if x == 0:
+                if y == 0:
+                    i = 0
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+                    i = 1
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
+                elif y == inner - 1:
+                    i = 1
+                    v = nb_vertices * y + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    i = 2
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                else:
+                    i = 1
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
+            elif x == inner - 1:
+                if y == 0:
+                    i = 0
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+                elif y == inner - 1:
+                    i = 2
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                    prim.addVertices(v, vp + nb_vertices, v + 1)
+                    if (x % ratio[i]) == 0:
+                        prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+                else:
+                    i = 3
+                    v = nb_vertices * y + x
+                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
+                    prim.addVertices(v, v + nb_vertices, vp + 1)
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
+            elif y == 0:
+                i = 0
+                v = nb_vertices * y + x
+                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
+                prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
+            elif y == inner - 1:
+                i = 2
+                v = nb_vertices * y + x
+                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
+                prim.addVertices(v, vp + nb_vertices, v + 1)
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+            else:
+                v = nb_vertices * y + x
+                prim.addVertices(v, v + nb_vertices, v + 1)
+                prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+
+def make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio):
+    for a in range(0, 4):
+        start = nb_vertices * nb_vertices + a * nb_vertices
+        for b in range(0, inner):
+            skirt = start + b
+            if a == 0:
+                i = 1
+                x = 0
+                y = b
+            elif a == 1:
+                i = 3
+                x = inner - 1
+                y = b
+            elif a == 2:
+                i = 0
+                x = b
+                y = 0
+            elif a == 3:
+                i = 2
+                x = b
+                y = inner - 1
+            v = nb_vertices * x + y
+            if a == 0:
+                if (y % ratio[i]) == 0:
+                    prim.addVertices(v, v + ratio[i], skirt)
+                    prim.addVertices(skirt, v + ratio[i], skirt + ratio[i])
+            elif a == 1:
+                if (y % ratio[i]) == 0:
+                    prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + ratio[i])
+                    prim.addVertices(v + nb_vertices + ratio[i], skirt, skirt + ratio[i])
+            elif a == 2:
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(v, skirt, v + nb_vertices * ratio[i])
+                    prim.addVertices(v + nb_vertices * ratio[i], skirt, skirt + ratio[i])
+            elif a == 3:
+                if (x % ratio[i]) == 0:
+                    prim.addVertices(skirt + ratio[i], v + 1, v + nb_vertices * ratio[i] + 1)
+                    prim.addVertices(skirt, v + 1, skirt + ratio[i])
+
+def make_primitives_skirt(prim, inner, nb_vertices):
+    for a in range(0, 4):
+        start = nb_vertices * nb_vertices + a * nb_vertices
+        for b in range(0, inner):
+            skirt = start + b
+            if a == 0:
+                x = 0
+                y = b
+            elif a == 1:
+                x = inner - 1
+                y = b
+            elif a == 2:
+                x = b
+                y = 0
+            elif a == 3:
+                x = b
+                y = inner - 1
+            v = nb_vertices * x + y
+            if a == 0:
+                prim.addVertices(v, v + 1, skirt)
+                prim.addVertices(skirt, v + 1, skirt + 1)
+            elif a == 1:
+                prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + 1)
+                prim.addVertices(v + nb_vertices + 1, skirt, skirt + 1)
+            elif a == 2:
+                prim.addVertices(v, skirt, v + nb_vertices)
+                prim.addVertices(v + nb_vertices, skirt, skirt + 1)
+            elif a == 3:
+                prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
+                prim.addVertices(skirt, v + 1, skirt + 1)
+
+def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            u = float(i) / r_split
-            v = float(j) / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            u = float(i) / inner
+            v = float(j) / inner
 
-            x = 2.0 * u - 1.0
-            y = 2.0 * v - 1.0
+            x = u
+            y = v
 
             if inv_u:
                 u = 1.0 - u
@@ -486,27 +716,66 @@ def Tile(size, split, inv_u=False, inv_v=False, swap_uv=False):
             gtanw.add_data3f(1, 0, 0)
             gbiw.add_data3f(0, 1, 0)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
+    if settings.use_patch_skirts:
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                u = float(i) / inner
+                v = float(j) / inner
 
+                x = u
+                y = v
+
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                gvw.add_data3f(x * size, y * size, -size)
+                gnw.add_data3f(0, 0, 1.0)
+                gtanw.add_data3f(1, 0, 0)
+                gbiw.add_data3f(0, 1, 0)
+
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
     return path
+
+def TileAABB(size=1.0, height=1.0):
+    return BoundingBox(LPoint3(0, 0, -height ), LPoint3(size, size, height))
 
 def Patch(size=1.0):
     (path, node) = empty_node('patch')
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
-    vertexWriter = GeomVertexWriter(vdata, b"vertex")
-    vertexWriter.addData3f(-size, -size, 0)
-    vertexWriter.addData3f(size, -size, 0)
+    vertexWriter = GeomVertexWriter(vdata, "vertex")
+    vertexWriter.addData3f(0, 0, 0)
+    vertexWriter.addData3f(size, 0, 0)
     vertexWriter.addData3f(size, size, 0)
-    vertexWriter.addData3f(-size, size, 0)
+    vertexWriter.addData3f(0, size, 0)
     patches = GeomPatches(4, Geom.UHStatic)
 
     patches.addConsecutiveVertices(0, 4) #South, west, north, east
@@ -517,6 +786,9 @@ def Patch(size=1.0):
 
     node.addGeom(gm)
     return path
+
+def PatchAABB(size=1.0, min_height=-1.0, max_height=1.0):
+    return BoundingBox(LPoint3(0, 0, min_height), LPoint3(size, size, max_height))
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     if x_inverted:
@@ -544,7 +816,7 @@ def QuadPatch(x0, y0, x1, y1,
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
-    vertexWriter = GeomVertexWriter(vdata, b"vertex")
+    vertexWriter = GeomVertexWriter(vdata, "vertex")
     x0 = 2.0 * x0 - 1.0
     x1 = 2.0 * x1 - 1.0
     y0 = 2.0 * y0 - 1.0
@@ -564,14 +836,14 @@ def QuadPatch(x0, y0, x1, y1,
     node.addGeom(gm)
     return path
 
-def SquarePatch(height, split,
+def SquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=True, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -579,16 +851,16 @@ def SquarePatch(height, split,
     if offset is None:
         offset = height
 
-    for i in range(0, split):
-        for j in range(0, split):
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
 
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
 
-            u = float(i) / r_split
-            v = float(j) / r_split
+            u = float(i) / inner
+            v = float(j) / inner
 
             if inv_u:
                 u = 1.0 - u
@@ -603,25 +875,24 @@ def SquarePatch(height, split,
             gtanw.add_data3f(1, 0, 0)
             gbiw.add_data3f(0, 1, 0)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
-
+    make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
     return path
 
-def SquaredDistanceSquarePatch(height, split,
-                               x0, y0, x1, y1,
-                               inv_u=False, inv_v=True, swap_uv=False,
-                               x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
-
+def SquaredDistanceSquarePatch(height, inner, outer,
+                x0, y0, x1, y1,
+                inv_u=False, inv_v=True, swap_uv=False,
+                x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -629,12 +900,12 @@ def SquaredDistanceSquarePatch(height, split,
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            u = float(i) / r_split
-            v = float(j) / r_split
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            u = float(i) / inner
+            v = float(j) / inner
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
             z = 1.0
@@ -653,19 +924,72 @@ def SquaredDistanceSquarePatch(height, split,
             else:
                 gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f((x - normal[0] * offset) * height, (y - normal[1] * offset) * height, (z - normal[2] * offset) * height)
+                gvw.add_data3f(x * height - normal[0] * offset,
+                               y * height - normal[1] * offset,
+                               z * height - normal[2] * offset)
             else:
                 gvw.add_data3f(x * height, y * height, z * height)
             gnw.add_data3f(x, y, z)
             gtanw.add_data3f(z, y, -x)
             gbiw.add_data3f(x, z, -y)
 
-    for x in range(0, r_split):
-        for y in range(0, r_split):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
+    if settings.use_patch_skirts:
+        if offset is None:
+            offset = 0
+        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                u = float(i) / inner
+                v = float(j) / inner
+                x = x0 + i * dx / inner
+                y = y0 + j * dy / inner
+                x = 2.0 * x - 1.0
+                y = 2.0 * y - 1.0
+                z = 1.0
+                x2 = x * x
+                y2 = y * y
+                z2 = z * z
+                x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+                y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+                z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                if offset is not None:
+                    gvw.add_data3f(x * height - normal[0] * offset,
+                                   y * height - normal[1] * offset,
+                                   z * height - normal[2] * offset)
+                else:
+                    gvw.add_data3f(x * height, y * height, z * height)
+                gnw.add_data3f(x, y, z)
+                gtanw.add_data3f(z, y, -x)
+                gbiw.add_data3f(x, z, -y)
 
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -694,10 +1018,11 @@ def SquaredDistanceSquarePatchPoint(radius,
     y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
     z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
     vec = LVector3d(x, y, z)
+    vec *= radius
 
     if offset is not None:
         normal = SquaredDistanceSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-        vec = (vec - normal * offset) * radius
+        vec = vec - normal * offset
 
     return vec
 
@@ -706,29 +1031,39 @@ def SquaredDistanceSquarePatchNormal(x0, y0, x1, y1,
 
     return SquaredDistanceSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
-def SquaredDistanceSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
+def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
+                                   x0, y0, x1, y1, offset=None,
                                    x_inverted=False, y_inverted=False, xy_swap=False):
-    a = SquaredDistanceSquarePatchPoint(radius, 0, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    b = SquaredDistanceSquarePatchPoint(radius, 1, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    c = SquaredDistanceSquarePatchPoint(radius, 1, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    d = SquaredDistanceSquarePatchPoint(radius, 0, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    m = SquaredDistanceSquarePatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    points = []
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(SquaredDistanceSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
-def NormalizedSquarePatch(height, split,
+def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
                           global_texture=False, inv_u=False, inv_v=True, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    r_split = split - 1
-
+    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', split * split, r_split * r_split, tanbin=True)
+    nb_points = nb_vertices * nb_vertices
+    nb_primitives = inner * inner
+    if settings.use_patch_skirts:
+        nb_points += nb_vertices * 4
+        nb_primitives += inner * 4
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -736,14 +1071,14 @@ def NormalizedSquarePatch(height, split,
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
-    for i in range(0, split):
-        for j in range(0, split):
-            x = x0 + i * dx / r_split
-            y = y0 + j * dy / r_split
+    for i in range(0, nb_vertices):
+        for j in range(0, nb_vertices):
+            x = x0 + i * dx / inner
+            y = y0 + j * dy / inner
             vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
             vec.normalize()
-            u = float(i) / r_split
-            v = float(j) / r_split
+            u = float(i) / inner
+            v = float(j) / inner
             if inv_u:
                 u = 1.0 - u
             if inv_v:
@@ -752,21 +1087,68 @@ def NormalizedSquarePatch(height, split,
                 gtw.add_data2f(v, u)
             else:
                 gtw.add_data2f(u, v)
+            nvec = vec
+            vec = vec * height
             if offset is not None:
-                nvec = (vec - normal * offset)
-            gvw.add_data3f(*(nvec * height))
-            gnw.add_data3f(vec.x, vec.y, vec.z)
+                vec = vec - normal * offset
+            gvw.add_data3f(*vec)
+            gnw.add_data3f(nvec.x, nvec.y, nvec.z)
             gtanw.add_data3f(-(1.0 + y*y), x*y, x)
             gbiw.add_data3f(x * y, -(1.0 + x*x), y)
             #gtanw.add_data3f(vec.z, vec.y, -vec.x)
             #gbiw.add_data3f(vec.x, vec.z, -vec.y)
 
-    for x in range(0, split - 1):
-        for y in range(0, split - 1):
-            v = split * y + x
-            prim.addVertices(v, v + split, v + 1)
-            prim.addVertices(v + 1, v + split, v + split + 1)
+    if settings.use_patch_skirts:
+        if offset is None:
+            offset = 0
+        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        for a in range(0, 4):
+            for b in range(0, nb_vertices):
+                if a == 0:
+                    i = 0
+                    j = b
+                elif a == 1:
+                    i = inner
+                    j = b
+                elif a == 2:
+                    i = b
+                    j = 0
+                elif a == 3:
+                    i = b
+                    j = inner
+                x = x0 + i * dx / inner
+                y = y0 + j * dy / inner
+                vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+                vec.normalize()
+                u = float(i) / inner
+                v = float(j) / inner
+                if inv_u:
+                    u = 1.0 - u
+                if inv_v:
+                    v = 1.0 - v
+                if swap_uv:
+                    gtw.add_data2f(v, u)
+                else:
+                    gtw.add_data2f(u, v)
+                nvec = vec
+                vec = vec * height
+                if offset is not None:
+                    vec = vec - normal * offset
+                gvw.add_data3f(*vec)
+                gnw.add_data3f(nvec.x, nvec.y, nvec.z)
+                gtanw.add_data3f(-(1.0 + y*y), x*y, x)
+                gbiw.add_data3f(x * y, -(1.0 + x*x), y)
+                #gtanw.add_data3f(vec.z, vec.y, -vec.x)
+                #gbiw.add_data3f(vec.x, vec.z, -vec.y)
 
+    if settings.use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
+        if settings.use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    else:
+        make_square_primitives(prim, inner, nb_vertices)
+        if settings.use_patch_skirts:
+            make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -786,9 +1168,10 @@ def NormalizedSquarePatchPoint(radius,
     y = y0 + v * dy
     vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
     vec.normalize()
+    vec *= radius
 
     if offset is not None:
-        vec = (vec - normal * offset) * radius
+        vec = vec - normal * offset
 
     return vec
 
@@ -796,20 +1179,26 @@ def NormalizedSquarePatchNormal(x0, y0, x1, y1,
                                 x_inverted=False, y_inverted=False, xy_swap=False):
     return NormalizedSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
-def NormalizedSquarePatchAABB(radius, x0, y0, x1, y1, offset=None,
+def NormalizedSquarePatchAABB(min_radius, max_radius,
+                              x0, y0, x1, y1, offset=None,
                               x_inverted=False, y_inverted=False, xy_swap=False):
-    a = NormalizedSquarePatchPoint(radius, 0, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    b = NormalizedSquarePatchPoint(radius, 1, 0, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    c = NormalizedSquarePatchPoint(radius, 1, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    d = NormalizedSquarePatchPoint(radius, 0, 1, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    m = NormalizedSquarePatchPoint(radius, 0.5, 0.5, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap)
-    x_min = min(a[0], b[0], c[0], d[0], m[0])
-    y_min = min(a[1], b[1], c[1], d[1], m[1])
-    z_min = min(a[2], b[2], c[2], d[2], m[2])
-    x_max = max(a[0], b[0], c[0], d[0], m[0])
-    y_max = max(a[1], b[1], c[1], d[1], m[1])
-    z_max = max(a[2], b[2], c[2], d[2], m[2])
-    return BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    points = []
+    if min_radius != max_radius:
+        radii = (min_radius, max_radius)
+    else:
+        radii = (min_radius,)
+    for radius in radii:
+        for i in (0.0, 0.5, 1.0):
+            for j in (0.0, 0.5, 1.0):
+                points.append(NormalizedSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+    x_min = min(p.get_x() for p in points)
+    x_max = max(p.get_x() for p in points)
+    y_min = min(p.get_y() for p in points)
+    y_max = max(p.get_y() for p in points)
+    z_min = min(p.get_z() for p in points)
+    z_max = max(p.get_z() for p in points)
+    box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
+    return box
 
 def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
     format = GeomVertexFormat.getV3n3cpt2()

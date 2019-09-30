@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -24,9 +43,6 @@ class AutoPilot(object):
         self.fake = None
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
-
-    def toggle_jump(self):
-        settings.debug_jump = not settings.debug_jump
 
     def reset(self):
         if self.current_interval != None:
@@ -70,7 +86,7 @@ class AutoPilot(object):
 
     def do_camera_move(self, step):
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.camera.set_rel_camera_pos(position)
+        self.camera.set_frame_camera_pos(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -80,12 +96,12 @@ class AutoPilot(object):
             if absolute:
                 self.camera.set_camera_pos(new_pos)
             else:
-                self.camera.set_rel_camera_pos(new_pos)
+                self.camera.set_frame_camera_pos(new_pos)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             if absolute:
-                self.start_pos = self.camera.get_rel_camera_pos()
+                self.start_pos = self.camera.get_frame_camera_pos()
                 self.end_pos = self.camera.get_rel_position_of(new_pos)
             if ease:
                 blend_type = 'easeInOut'
@@ -127,7 +143,7 @@ class AutoPilot(object):
         rot.normalize()
         self.camera.set_camera_rot(rot)
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.camera.set_rel_camera_pos(position)
+        self.camera.set_frame_camera_pos(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -138,14 +154,14 @@ class AutoPilot(object):
                 self.camera.set_camera_pos(new_pos)
                 self.camera.set_camera_rot(new_rot)
             else:
-                self.camera.set_rel_camera_pos(new_pos)
-                self.camera.set_rel_camera_rot(new_rot)
+                self.camera.set_frame_camera_pos(new_pos)
+                self.camera.set_frame_camera_rot(new_rot)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             self.fake = NodePath('fake')
             if absolute:
-                self.start_pos = self.camera.get_rel_camera_pos()
+                self.start_pos = self.camera.get_frame_camera_pos()
                 self.end_pos = self.camera.get_rel_position_of(new_pos)
                 #TODO
                 #new_rot = self.camera.get_rel_rotation_of(new_pos)
@@ -385,13 +401,13 @@ class AutoPilot(object):
         target = self.ui.selected
         center = target.get_rel_position_to(self.camera.camera_global_pos)
         center = self.camera.get_rel_position_of(center)
-        relative_pos = self.camera.get_rel_camera_pos() - center
+        relative_pos = self.camera.get_frame_camera_pos() - center
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
         rot2 = self.camera.camera_rot.conjugate() * rot * self.camera.camera_rot
         rot2.normalize()
         new_pos = rot2.conjugate().xform(relative_pos)
-        self.camera.set_rel_camera_pos(new_pos + center)
+        self.camera.set_frame_camera_pos(new_pos + center)
         self.camera.turn_camera(self.camera.camera_rot * rot2, absolute=False)
 
     def orbit(self, axis, rate, duration=None):

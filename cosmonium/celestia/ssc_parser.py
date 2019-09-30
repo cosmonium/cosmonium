@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -8,6 +27,7 @@ from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orb
     instanciate_uniform_rotation, instanciate_precessing_rotation, instanciate_custom_rotation, \
     instanciate_reference_frame, \
     names_list, body_path
+from .shaders import LunarLambertLightingModel
 
 from ..celestia.atmosphere import CelestiaAtmosphere, CelestiaScattering
 from ..universe import Universe
@@ -17,7 +37,7 @@ from ..surfaces import FlatSurface
 from ..bodyelements import Ring, Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
-from ..shaders import BasicShader, LunarLambertLightingModel, LambertPhongLightingModel
+from ..shaders import BasicShader, LambertPhongLightingModel
 from ..astro.orbits import FixedOrbit
 from ..astro.rotations import FixedRotation, UniformRotation
 from ..astro import units
@@ -91,10 +111,7 @@ def instanciate_atmosphere(data):
                                     rayleigh_scale_height = rayleigh_scale_height,
                                     absorption_coef = absorption_coef)
     if clouds_height != 0:
-        if mie_phase_asymmetry != 0.0:
-            shader=BasicShader(scattering=CelestiaScattering(), lighting_model=LambertPhongLightingModel())
-        else:
-            shader=BasicShader(lighting_model=LambertPhongLightingModel())
+        shader=BasicShader(lighting_model=LambertPhongLightingModel())
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
 
@@ -126,7 +143,7 @@ def instanciate_body(universe, names, is_planet, data):
     oblateness=None
     scale=None
     lunar_lambert = 0.0
-    atmosphere=None
+    atmosphere = None
     clouds=None
     rings=None
     orbit=None
@@ -271,9 +288,6 @@ def instanciate_body(universe, names, is_planet, data):
     if bump_map is not None:
         appearance.set_bump_map(bump_map, bump_height)
     lighting_model = None
-    scattering = None
-    if atmosphere is not None:
-        scattering = CelestiaScattering()
     if lunar_lambert > 0.0:
         lighting_model = LunarLambertLightingModel()
     else:
@@ -281,7 +295,7 @@ def instanciate_body(universe, names, is_planet, data):
     surface = FlatSurface(
                           shape=shape,
                           appearance=appearance,
-                          shader=BasicShader(lighting_model=lighting_model, scattering=scattering))
+                          shader=BasicShader(lighting_model=lighting_model))
     body = ReflectiveBody(names=names,
                           radius=radius,
                           surface=surface,
@@ -292,6 +306,9 @@ def instanciate_body(universe, names, is_planet, data):
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
+    atmosphere.add_shape_object(surface)
+    if clouds is not None:
+        atmosphere.add_shape_object(clouds)
     body.albedo = albedo
     body.body_class = body_class
     return body

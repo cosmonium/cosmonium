@@ -1,0 +1,311 @@
+terrain:
+    tile-size: 16384
+    max-distance: 16384
+heightmap:
+    max-height: 500
+    noise:
+      aliases:
+        polkadot: gpunoise:polkadot
+      noise:
+        scale:
+            noise:
+               type: polkadot
+               min: 0.1
+               max: 0.5
+               scale: 100
+            scale: 0.1
+heightmap1:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        fbm:
+          noise:
+            ridged:
+              noise: perlin
+              shift: False
+          octaves: 1
+          length: 128
+          scale: 50
+heightmap2:
+    max-height: 500
+    noise:
+      aliases:
+        cellular: stegu:cellulardiff
+      noise:
+        fbm:
+          noise: cellular
+          octaves: 1
+          length: 256
+          max-height: 500
+heightmap3:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+          clamp:
+              noise:
+                fbm:
+                  noise: perlin
+                  octaves: 4
+                  length: 4096
+                  scale: 40
+              scale: 100.0
+heightmap4:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        mul:
+          - clamp:
+              noise:
+                fbm:
+                  noise: perlin
+                  octaves: 4
+                  length: 4096
+                  scale: 40
+          - fbm:
+              noise:
+                ridged: perlin
+              octaves: 8
+              length: 1024
+              max-height: 500
+heightmap5:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      noise:
+        add:
+          - fbm:
+                noise:
+                  ridged: perlin
+                octaves: 8
+                length: 256
+                scale: 50
+          - fbm:
+              noise:
+                square:
+                  type: cellular
+                  fast: false
+              octaves: 3
+              length: 192
+              scale: 250
+          - fbm:
+              noise:
+                ridged:
+                  noise: perlin
+                  shift: False
+              octaves: 8
+              length: 2048
+              scale: 250
+heightmap6:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      noise:
+        mul:
+          - clamp:
+              noise:
+                offset:
+                  offset: 1.0
+                  noise:
+                    fbm:
+                      noise:
+                        cube: perlin
+                      octaves: 4
+                      length: 4096
+                      scale: 40
+          - add:
+              - fbm:
+                  noise:
+                    ridged: perlin
+                  octaves: 8
+                  length: 256
+                  scale: 50
+              - fbm:
+                  noise:
+                    type: cellular
+                    fast: false
+                  octaves: 3
+                  length: 192
+                  scale: 250
+              - fbm:
+                  noise:
+                    ridged:
+                      noise: perlin
+                      shift: False
+                  octaves: 8
+                  length: 2048
+                  scale: 250
+heightmap7:
+    max-height: 500
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      noise:
+        add:
+          - 10.0
+          - mul:
+            - clamp:
+                noise:
+                  offset:
+                    offset: 1.0
+                    noise:
+                      fbm:
+                        noise:
+                          cube: perlin
+                        octaves: 4
+                        length: 4096
+                        scale: 40
+            - add:
+                - fbm:
+                    noise:
+                      ridged: perlin
+                    octaves: 8
+                    length: 256
+                    scale: 50
+                - fbm:
+                    noise:
+                      type: cellular
+                      fast: false
+                    octaves: 3
+                    length: 192
+                    scale: 250
+                - fbm:
+                    noise:
+                      ridged:
+                        noise: perlin
+                        shift: False
+                    octaves: 8
+                    length: 2048
+                    scale: 250
+          - mul:
+              - clamp:
+                  noise:
+                    offset:
+                      offset: -1.0
+                      noise:
+                        fbm:
+                          noise:
+                            cube: perlin
+                          octaves: 4
+                          length: 1280
+                          scale: 40
+              - -100.0
+biome:
+    aliases:
+      perlin: gpunoise:perlin
+    noise:
+        fbm:
+            noise: perlin
+            octaves: 4
+            length: 16384
+layers:
+  - shape:
+      type: mesh
+      model: 'ralph-data/models/trees/tree1'
+      panda: true
+      scale: false
+    placer: random
+    min-lod: 4
+    density: 250
+    vertex:
+      type: custom
+      vertex-uniforms: "uniform float osg_FrameTime;"
+      update-vertex: |
+            float isBark = step(0.251, model_texcoord0.y);
+            float animation = sin(osg_FrameTime);
+            animation *= sin(0.5 * osg_FrameTime);
+            animation *= isBark;
+            animation *= distance(model_vertex4.xy, vec2(0.0,0.0)) * 0.04;
+            model_vertex4 = vec4(model_vertex4.xyz + animation, model_vertex4.w);
+  - shape:
+      mesh:
+        model: 'ralph-data/models/rock1'
+        panda: true
+        scale: false
+    placer: random
+    min-lod: 4
+water:
+    level: 0
+
+fog2:
+    falloff: 0.035
+    density: 40
+    ground: -300
+
+appearance:
+    textures:
+      entries:
+        grass: data/procedural/textures/grass/GrassGreenTexture0003.jpg
+        snow: data/procedural/textures/snow/SnowIceTexture0007.jpg
+        rock: data/procedural/textures/rock/SeamlessMixedStone0009.jpg
+        gravel: data/procedural/textures/gravel/gravel_01.png
+        soil: data/procedural/textures/soil/dirt_02.png
+      scale: [0.5, 0.5]
+      tiling: hash
+
+control2:
+      type: colormap
+      percentage: true
+      entries:
+        - height: 0
+          bottom: [0, 0, 0] #black
+          top: [255, 120, 255] #Purple
+        - height: .2
+          top: [120, 120, 255] #Blue
+        - height: .4
+          top: [120, 255, 255] #Aqua
+        - height: .6
+          top: [120, 255, 1201] #Green
+        - height: .7
+          top: [255, 255, 120] #Yellow
+        - height: .9
+          top: [255, 120, 120] #Red
+        - height: 1.0
+          top: [255, 255, 255] #White
+        - height: 1.0
+          top: [0, 0, 0] #black
+control:
+    biome:
+        - entry:
+            slope:
+              - entry: gravel
+              - entry:
+                  height:
+                  - entry: soil
+                    height: 200
+                    height-units: km
+                  - entry: snow
+                    height: 500
+                    height-units: km
+                    blend: 10
+                angle: 5
+                blend: 5
+        - entry:
+            slope:
+                - entry: soil
+                - entry:
+                    height:
+                        - entry: grass
+                          height: 200
+                          height-units: km
+                        - entry: snow
+                          height: 500
+                          height-units: km
+                          blend: 10
+                  angle: 5
+                  blend: 5
+                - entry: rock
+                  angle: 35
+                  blend: 10
+          value: 0
+          blend: 0.1

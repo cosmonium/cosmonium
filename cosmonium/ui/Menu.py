@@ -1,3 +1,25 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#This code is copyright Joni Hariyanto <ynjh d0t jo At gmail.com> http://jon1.us/P3D/
+#The code is licensed under the WTFPL, see http://www.wtfpl.net/
+
 from __future__ import print_function
 __all__ = ['PopupMenu','DropDownMenu']
 
@@ -564,7 +586,7 @@ class PopupMenu(DirectObject):
              t,imgPath,f=item[:3]
              haveSubmenu=type(f) in SEQUENCE_TYPES
              anyArrow|=haveSubmenu
-             anyImage|=bool(imgPath)
+             anyImage|=isinstance(imgPath, bool) or bool(imgPath)
              disabled=not len(f) if haveSubmenu else not callable(f)
              args=item[3:]
              underlinePos=t.find('_')
@@ -632,25 +654,37 @@ class PopupMenu(DirectObject):
                        sct.setZ(arrowZpos)
                        shortcutTexts.append(sct)
                    shortcutText.removeNode()
-             if imgPath:
-                img=loader.loadTexture(imgPath)
-                if disabled:
-                   if imgPath in PopupMenu.grayImages:
-                      img=PopupMenu.grayImages[imgPath]
-                   else:
-                      pnm=PNMImage()
-                      img.store(pnm)
-                      pnm.makeGrayscale(.2,.2,.2)
-                      img=Texture()
-                      img.load(pnm)
-                      PopupMenu.grayImages[imgPath]=img
-                img.setMinfilter(Texture.FTLinearMipmapLinear)
-                img.setWrapU(Texture.WMClamp)
-                img.setWrapV(Texture.WMClamp)
-                CM=CardMaker('')
-                CM.setFrame(-2*imageHalfHeight-leftPad,-leftPad, itemZcenter-imageHalfHeight,itemZcenter+imageHalfHeight)
-                imgCard=b.attachNewNode(CM.generate())
-                imgCard.setTexture(img)
+             if isinstance(imgPath, bool):
+                 if imgPath:
+                    if disabled:
+                        fg=textColorDisabled
+                    else:
+                        fg=textColorReady
+                    tick=NodePath( OnscreenText(
+                         parent=b, text=u"\u2714", font=self.font,
+                         scale=1, fg=fg, align=TextNode.ALeft,
+                      ))
+                    tick.setX(-2*imageHalfHeight-leftPad)
+             elif imgPath:
+                img=loader.loadTexture(imgPath, okMissing=True)
+                if img is not None:
+                    if disabled:
+                       if imgPath in PopupMenu.grayImages:
+                          img=PopupMenu.grayImages[imgPath]
+                       else:
+                          pnm=PNMImage()
+                          img.store(pnm)
+                          pnm.makeGrayscale(.2,.2,.2)
+                          img=Texture()
+                          img.load(pnm)
+                          PopupMenu.grayImages[imgPath]=img
+                    img.setMinfilter(Texture.FTLinearMipmapLinear)
+                    img.setWrapU(Texture.WMClamp)
+                    img.setWrapV(Texture.WMClamp)
+                    CM=CardMaker('')
+                    CM.setFrame(-2*imageHalfHeight-leftPad,-leftPad, itemZcenter-imageHalfHeight,itemZcenter+imageHalfHeight)
+                    imgCard=b.attachNewNode(CM.generate())
+                    imgCard.setTexture(img)
              if underlinePos>-1:
                 oneLineText=t[:underlinePos+1]
                 oneLineText=oneLineText[oneLineText.rfind('\n')+1:]

@@ -1,9 +1,29 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import ColorBlendAttrib, LVector3d
+from panda3d.core import LVector3d
 
 from ..bodyelements import Atmosphere
+from ..utils import TransparencyBlend
 from ..shaders import AtmosphericScattering
 
 from math import log
@@ -15,8 +35,8 @@ class CelestiaAtmosphere(Atmosphere):
                  mie_coef=0.0, mie_scale_height=0.0, mie_phase_asymmetry=0.0,
                  rayleigh_coef=None, rayleigh_scale_height=0.0,
                  absorption_coef=None,
-                 appearance=None, shader=None):
-        Atmosphere.__init__(self, appearance=appearance, shader=shader)
+                 shape=None, appearance=None, shader=None):
+        Atmosphere.__init__(self, shape=shape, appearance=appearance, shader=shader)
         self.height = height
         self.mie_coef = mie_coef
         self.mie_scale_height = mie_scale_height
@@ -30,7 +50,7 @@ class CelestiaAtmosphere(Atmosphere):
             self.absorption_coef = LVector3d()
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
-        self.alpha_mode = ColorBlendAttrib.OIncomingAlpha
+        self.blend = TransparencyBlend.TB_AlphaAdditive
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -38,6 +58,9 @@ class CelestiaAtmosphere(Atmosphere):
             self.planet_radius = parent.get_apparent_radius()
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
+
+    def create_scattering_shader(self, atmosphere):
+        return CelestiaScattering(atmosphere)
 
 class CelestiaScattering(AtmosphericScattering):
     use_vertex = True
@@ -174,9 +197,9 @@ uniform vec3 v3LightDir;
     vec3 scatteredComponent = (phRayleigh * rayleighCoeff + phMie * mieCoeff) * invScatterCoeffSum * scatteredColor;
 ''']
         if self.atmosphere:
-            code.append("  total_diffuse_color = vec4(scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
+            code.append("  total_diffuse_color = vec4(shadow * scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
         else:
-            code.append("          total_diffuse_color = vec4(scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
+            code.append("          total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:

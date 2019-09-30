@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -11,12 +30,13 @@ from .layout import Layout
 from .window import Window
 
 class InfoPanel():
-    def __init__(self, scale, font_family, font_size = 14):
+    def __init__(self, scale, font_family, font_size = 14, owner=None):
         self.window = None
         self.layout = None
         self.last_pos = None
         self.scale = scale
         self.font_size = font_size
+        self.owner = owner
         self.font_normal = fontsManager.get_font(font_family, Font.STYLE_NORMAL)
         if self.font_normal is not None:
             self.font_normal = self.font_normal.load()
@@ -58,12 +78,18 @@ class InfoPanel():
                     titles.append(title)
                     infos.append('')
                     for entry in value:
+                        if len(entry) != 2:
+                            print("Invalid entry for", title, entry)
+                            continue
                         (title, value) = entry
                         titles.append(title)
                         infos.append(value)
         return (titles, infos)
 
     def show(self, body):
+        if self.shown():
+            print("Info panel already shown")
+            return
         (titles, infos) = self.get_info_for(body)
         self.create_layout(body, len(infos))
         for (i, (title, info)) in enumerate(zip(titles, infos)):
@@ -109,3 +135,5 @@ class InfoPanel():
             self.last_pos = self.window.getPos()
             self.window = None
             self.layout = None
+            if self.owner is not None:
+                self.owner.window_closed(self)

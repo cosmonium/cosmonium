@@ -1,39 +1,29 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Texture
-
 from ..shaders import ShaderComponent
-from ..textures import TextureBase
 from ..dircontext import defaultDirContext
 
 from math import cos, pi
-
-class DetailTexture(TextureBase):
-    def __init__(self, filename, context=defaultDirContext):
-        self.filename = filename
-        self.context = context
-        self.texture = None
-
-    def load(self, patch):
-        if self.texture is None:
-            filename=self.context.find_texture(self.filename)
-            if filename is not None:
-                try:
-                    self.texture = loader.loadTexture(filename)
-                    self.texture.set_format(Texture.F_srgb)
-                    self.texture.setMinfilter(Texture.FTLinearMipmapLinear)
-                    self.texture.setMagfilter(Texture.FTLinearMipmapLinear)
-                    self.texture.setAnisotropicDegree(2)
-                except IOError:
-                    print("Could not load texture", self.filename)
-            else:
-                print("File", self.filename, "not found")
-        return self.texture
-
-    def apply(self, shape, shader_name):
-        if self.texture is not None:
-            shape.instance.set_shader_input(shader_name, self.texture)
 
 class TextureControl(ShaderComponent):
     def __init__(self, name, heightmap=None, shader=None):

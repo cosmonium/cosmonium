@@ -1,10 +1,28 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import ColorBlendAttrib
-
 from .bodyelements import Atmosphere
 from .shaders import AtmosphericScattering
+from .utils import TransparencyBlend
 
 from math import pow, pi
 
@@ -17,39 +35,67 @@ class ONeilAtmosphere(Atmosphere):
                  mie_coef = 0.0015,
                  sun_power = 15.0,
                  wavelength = [0.650, 0.570, 0.465],
+                 exposure = 0.8,
+                 calc_in_fragment=False,
+                 normalize=False,
+                 hdr=False,
                  appearance=None, shader=None):
         Atmosphere.__init__(self, shape, appearance, shader)
-        self.alpha_mode = ColorBlendAttrib.OOne
-        #self.alpha_mode = ColorBlendAttrib.OIncomingAlpha
+        self.blend = TransparencyBlend.TB_Alpha
         self.G = mie_phase_asymmetry
         self.Kr = rayleigh_coef
         self.Km = mie_coef
         self.ESun = sun_power
         self.wavelength = wavelength
+        self.exposure = exposure,
+        self.calc_in_fragment = calc_in_fragment
+        self.normalize = normalize
+        self.hdr = hdr
+        self.inside = None
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
-            self.planet_radius = parent.get_apparent_radius()
+            self.planet_radius = parent.get_min_radius()
             self.radius = self.planet_radius * self.AtmosphereRatio
-            self.ratio = self.radius / self.planet_radius
+            self.ratio = self.AtmosphereRatio
 
-    def create_scattering_shader(self, atmosphere, calc_in_fragment, normalize):
-        return ONeilScattering(atmosphere=atmosphere, calc_in_fragment=calc_in_fragment, normalize=normalize)
+    def create_scattering_shader(self, atmosphere):
+        scattering = ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+        scattering.inside = self.inside
+        return scattering
+
+    def do_update_scattering(self, shape_object):
+        shape_object.shader.scattering.inside = self.inside
+
+    def update_instance(self, camera_pos, orientation):
+        planet_radius = self.owner.get_min_radius()
+        radius = planet_radius * self.AtmosphereRatio
+        inside = self.owner.distance_to_obs < radius
+        if self.inside != inside:
+            self.inside = inside
+            self.shader.scattering.inside = inside
+            self.update_shader()
+            self.update_scattering()
+        return Atmosphere.update_instance(self, camera_pos, orientation)
+
+    def remove_instance(self):
+        Atmosphere.remove_instance(self)
+        self.inside = None
 
 class ONeilScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True
-    dynamic_shader=True
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
 
-    def __init__(self, atmosphere=False, calc_in_fragment=False, normalize=False):
+    def __init__(self, atmosphere=False, calc_in_fragment=False, normalize=False, hdr=False):
         AtmosphericScattering.__init__(self)
         self.atmosphere = atmosphere
         self.calc_in_fragment = calc_in_fragment
         self.use_vertex_frag = calc_in_fragment
         self.normalize = normalize
+        self.hdr = hdr
         self.use_normal = False#not self.atmosphere
         self.inside = False
 
@@ -63,12 +109,11 @@ class ONeilScattering(AtmosphericScattering):
             name += '-inside'
         if self.calc_in_fragment:
             name += "-infrag"
+        if self.hdr:
+            name += "-hdr"
+        if self.hdr:
+            name += "-norm"
         return name
-
-    def define_shader(self, shape, appearance):
-        planet_radius = shape.owner.get_apparent_radius()
-        radius = planet_radius * self.AtmosphereRatio
-        self.inside = shape.owner.distance_to_obs < radius
 
     def uniforms_scattering(self, code):
         code.append("uniform vec3 v3OriginPos;")       # Center of the planet
@@ -99,6 +144,7 @@ class ONeilScattering(AtmosphericScattering):
         if self.atmosphere:
             code.append("uniform float fg;")
             code.append("uniform float fg2;")
+        code.append("uniform float fExposure;")
 
     def scale_func(self, code):
         code.append("float scale(float fCos)")
@@ -142,9 +188,11 @@ class ONeilScattering(AtmosphericScattering):
             if self.atmosphere:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
             else:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos);")
+                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
         else:
             code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
+        code.append("  float scaled_vertex_length = length(scaled_vertex);")
+        code.append("  vec3 scaled_vertex_dir = scaled_vertex / scaled_vertex_length;")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
         code.append("  float fFar = length(v3Ray);")
         code.append("  v3Ray /= fFar;")
@@ -178,8 +226,15 @@ class ONeilScattering(AtmosphericScattering):
                 code.append("  float fDepth = exp((fInnerRadius - fCameraHeight) / fScaleDepth);")
             else:
                 code.append("  float fDepth = exp((fInnerRadius - fOuterRadius) / fScaleDepth);")
-            code.append("  float fCameraAngle = dot(-v3Ray, scaled_vertex) / length(scaled_vertex);")
-            code.append("  float fLightAngle = dot(v3LightPos, scaled_vertex) / length(scaled_vertex);")
+            code.append("  float fCameraAngle;")
+            code.append("  if(fCameraHeight > scaled_vertex_length) {")
+            code.append("    fCameraAngle = dot(-v3Ray, scaled_vertex_dir);")
+            code.append("  } else {")
+            code.append("    fCameraAngle = dot(v3Ray, scaled_vertex_dir);")
+            code.append("  }")
+            #TODO: This is a crude workaround to avoid dark band on pixels at camera level
+            code.append("  fCameraAngle = clamp(fCameraAngle, 0.1, 1.0);")
+            code.append("  float fLightAngle = dot(v3LightPos, scaled_vertex_dir);")
             code.append("  float fCameraScale = scale(fCameraAngle);")
             code.append("  float fLightScale = scale(fLightAngle);")
             code.append("  float fCameraOffset = fDepth*fCameraScale;")
@@ -223,10 +278,14 @@ class ONeilScattering(AtmosphericScattering):
             code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
-            code.append("    total_diffuse_color = fRayleighPhase * primary_color + fMiePhase * secondary_color;")
-            code.append("    //total_color.a = max(total_color.r, max(total_color.g, total_color.b));")
+            code.append("    total_diffuse_color = shadow * (fRayleighPhase * primary_color + fMiePhase * secondary_color);")
+            if self.hdr:
+                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
+            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
         else:
-            code.append("  total_diffuse_color.rgb = primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
+            code.append("  total_diffuse_color.rgb = shadow * primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
+            if self.hdr:
+                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:
@@ -239,8 +298,9 @@ class ONeilScattering(AtmosphericScattering):
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = shape.owner.atmosphere
-        inner_radius = 1.0
-        outer_radius = self.AtmosphereRatio
+        planet_radius = shape.owner.get_min_radius()
+        inner_radius = planet_radius
+        outer_radius = planet_radius * self.AtmosphereRatio
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
@@ -261,7 +321,7 @@ class ONeilScattering(AtmosphericScattering):
         
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)
-        shape.instance.setShaderInput("fExposure", 2)
+        shape.instance.setShaderInput("fExposure", parameters.exposure)
 
         shape.instance.setShaderInput("fOuterRadius", outer_radius)
         shape.instance.setShaderInput("fInnerRadius", inner_radius)
@@ -273,16 +333,12 @@ class ONeilScattering(AtmosphericScattering):
         shape.instance.setShaderInput("fScaleOverScaleDepth", scale / self.ScaleDepth)
 
     def update_shader_shape(self, shape, appearance):
-        planet_radius = shape.owner.get_apparent_radius()
-        factor = 1.0 / (shape.owner.scene_scale_factor * planet_radius)
+        factor = 1.0 / shape.owner.scene_scale_factor
 
-        camera_height = max(shape.owner.distance_to_obs / planet_radius, 1.0)
+        camera_height = shape.owner.distance_to_obs
         light_dir = shape.owner.vector_to_star
 
-        pos = shape.owner.rel_position / planet_radius
-        distance = pos.length()
-        if distance < 1.0:
-            pos.normalize()
+        pos = shape.owner.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)
         shape.instance.setShaderInput("v3CameraPos", -pos)
 

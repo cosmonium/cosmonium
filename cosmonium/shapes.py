@@ -1,8 +1,27 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import GeomNode
-from panda3d.core import LVecBase3, LPoint3d, LVector3
+from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
@@ -13,6 +32,7 @@ from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from . import geometry
 from . import settings
+from cosmonium.shadows import MultiShadows
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -20,6 +40,7 @@ class Shape:
     offset = False
     use_collision_solid = False
     deferred_instance = False
+
     def __init__(self):
         self.instance = None
         self.collision_solid = None
@@ -33,9 +54,13 @@ class Shape:
         self.jobs_pending = 0
         self.jobs = 0
         self.clickable = False
-    
+        self.attribution = None
+
     def check_settings(self):
         pass
+
+    def is_spherical(self):
+        return True
 
     def create_instance(self):
         return None
@@ -45,12 +70,6 @@ class Shape:
             self.instance.detach_node()
             self.instance = None
         self.instance_ready = False
-
-    def create_instance_delayed(self):
-        pass
-
-    def create_patch_instance_delayed(self, patch):
-        pass
 
     def create_collision_solid(self, radius=1.0):
         cs = CollisionSphere(0, 0, 0, radius)
@@ -80,7 +99,7 @@ class Shape:
             self.instance.setPythonTag('owner', self.owner)
 
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
-        pass
+        return False
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         pass
@@ -126,9 +145,52 @@ class Shape:
             else:
                 self.instance.setCollideMask(BitMask32.all_off())
 
+class CompositeShapeObject(object):
+    def __init__(self):
+        self.components = []
+        self.owner = None
+        self.parent = None
+
+    def add_component(self, component):
+        self.components.append(component)
+        component.set_parent(self.parent)
+        component.set_owner(self.owner)
+
+    def set_parent(self, parent):
+        self.parent = parent
+        for component in self.components:
+            component.set_parent(self.parent)
+
+    def set_owner(self, owner):
+        self.owner = owner
+        for component in self.components:
+            component.set_owner(self.owner)
+
+    def check_settings(self):
+        for component in self.components:
+            component.check_settings()
+
+    def add_after_effect(self, after_effect):
+        for component in self.components:
+            component.add_after_effect(after_effect)
+
+    def create_instance(self):
+        for component in self.components:
+            component.create_instance()
+
+    def update_instance(self, camera_pos, orientation):
+        for component in self.components:
+            component.update_instance(camera_pos, orientation)
+
+    def update_shader(self):
+        for component in self.components:
+            component.update_shader()
+
+    def remove_instance(self):
+        for component in self.components:
+            component.remove_instance()
+
 class ShapeObject(VisibleObject):
-    #Temporary workaround until jobs are centralized
-    has_heightmap = False
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.shape = None
@@ -139,6 +201,10 @@ class ShapeObject(VisibleObject):
         self.shader = shader
         self.clickable = clickable
         self.instance_ready = False
+        self.owner = None
+        self.first_patch = True
+        self.shadows = MultiShadows(self)
+        self.shadow_caster = None
 
     def check_settings(self):
         self.shape.check_settings()
@@ -152,6 +218,9 @@ class ShapeObject(VisibleObject):
             self.shape.set_owner(self.parent)
             self.shape.parent = self
 
+    def set_owner(self, owner):
+        self.owner = owner
+
     def set_parent(self, parent):
         VisibleObject.set_parent(self, parent)
         if self.shape is not None:
@@ -163,14 +232,19 @@ class ShapeObject(VisibleObject):
     def set_shader(self, shader):
         self.shader = shader
 
+    def add_after_effect(self, after_effect):
+        if self.shader is not None:
+            self.shader.add_after_effect(after_effect)
+
     def set_scale(self, scale):
         self.shape.set_scale(scale)
 
     def get_scale(self):
         return self.shape.get_scale()
 
-    def create_instance(self):
-        print("Loading", self.parent.get_name())
+    def create_instance(self, callback=None, cb_args=()):
+        self.callback = callback
+        self.cb_args = cb_args
         self.instance = self.shape.create_instance()
         if not self.shape.deferred_instance:
             self.apply_instance(self.instance)
@@ -180,6 +254,7 @@ class ShapeObject(VisibleObject):
         return self.instance
 
     def apply_instance(self, instance):
+        #print("Apply", self.get_name())
         if instance != self.instance:
             if self.instance is not None:
                 self.instance.remove_node()
@@ -199,8 +274,20 @@ class ShapeObject(VisibleObject):
         self.instance.node().setFinal(True)
         self.schedule_jobs()
 
-    def create_instance_delayed(self):
+    def create_shadows(self):
         pass
+
+    def start_shadows_update(self):
+        self.shadows.start_update()
+
+    def end_shadows_update(self):
+        self.shadows.end_update()
+
+    def add_shadow_target(self, target):
+        if self.shadow_caster is None:
+            self.create_shadows()
+        if self.shadow_caster is not None:
+            self.shadow_caster.add_target(target)
 
     def schedule_patch_jobs(self, patch):
         if self.appearance is not None:
@@ -229,16 +316,17 @@ class ShapeObject(VisibleObject):
             patch.jobs_pending = 0
             patch.jobs = 0
             if patch.instance is not None:
+                if self.first_patch:
+                    if self.shader is not None:
+                        self.shader.apply(self.shape, self.appearance)
+                    self.first_patch = None
                 if self.appearance is not None:
                     self.appearance.apply_textures(patch)
                 if self.shader is not None:
                     self.shader.apply_patch(self.shape, patch, self.appearance)
-                    #HeightmapSurface called this too :
-                    #self.shader.update_shader_patch(self.shape, patch, self.appearance)
                 patch.instance_ready = True
-                patch.create_instance_delayed()
-                self.shape.create_patch_instance_delayed(patch)
-
+                if self.callback is not None:
+                    self.callback(self, patch, *self.cb_args)
         else:
             self.shape.jobs_pending -= 1
             if self.shape.jobs_pending > 0: return
@@ -249,12 +337,10 @@ class ShapeObject(VisibleObject):
                     self.appearance.apply_textures(self.shape)
                 if self.shader is not None:
                     self.shader.apply(self.shape, self.appearance)
-                    #HeightmapSurface called this too :
-                    #self.shader.update_shader_shape(self.shape, self.appearance)
                 self.shape.instance_ready = True
-                self.shape.create_instance_delayed()
                 self.instance_ready = True
-                self.create_instance_delayed()
+                if self.callback is not None:
+                    self.callback(self, *self.cb_args)
 
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
@@ -269,38 +355,54 @@ class ShapeObject(VisibleObject):
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
             self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))
+        if self.shape.patchable and settings.offset_body_center and self.parent is not None:
+            #In case of oblate shape, the offset can not be used directly to retrieve the body center
+            #The scale must be applied to the offset to retrieve the real center
+            offset = self.shape.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
+            self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
         if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.shape.patchable:
             self.shape.place_patches(self.parent)
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+        if self.shadows.update_needed:
+            self.update_shader()
+            self.shadows.update_needed = False
         if self.shader is not None:
             self.shader.update(self.shape, self.appearance)
 
     def remove_instance(self):
+        self.shadows.clear_shadows()
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, scale=True, flatten=True, panda=False, context=defaultDirContext):
+    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
+        self.attribution = attribution
         self.context = context
         self.scale_factor = 1.0
         if offset is None:
             offset = LPoint3d()
         self.offset = offset
-        self.scale = scale
+        self.scale_mesh = scale_mesh
         self.flatten = flatten
         self.panda = panda
         self.callback = None
+        self.cb_args = None
+
+    def is_spherical(self):
+        return False
 
     def create_instance_cb(self, mesh):
         if mesh is None: return
-        if self.scale:
+        #The shape has been removed from the view while the mesh was loaded
+        if self.instance is None: return
+        if self.scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             self.scale_factor = 1.0 / major
@@ -329,8 +431,12 @@ class InstanceShape(Shape):
     def __init__(self, instance):
         Shape.__init__(self)
         self.instance = instance
-        (l, r) = self.instance.getTightBounds()
-        self.radius = max(r - l) / 2
+        bounds = self.instance.getTightBounds()
+        if bounds is not None:
+            (l, r) = bounds
+            self.radius = max(r - l) / 2
+        else:
+            self.radius = 0
 
     def create_instance(self, callback=None):
         self.apply_owner()
@@ -409,6 +515,9 @@ class RingShape(Shape):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.nbOfPoints = 360
+
+    def is_spherical(self):
+        return False
 
     def create_instance(self):
         self.instance = NodePath("ring")

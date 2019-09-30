@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -10,7 +29,7 @@ from .foundation import VisibleObject, ObjectLabel, LabelledObject
 from .astro.orbits import FixedOrbit, InfinitePosition
 from .astro import units
 from .bodyclass import bodyClasses
-from .shaders import BasicShader, FlatLightingModel, LargeObjectGeometryControl
+from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
 from .appearances import ModelAppearance
 from .mesh import load_panda_model
 from . import settings
@@ -113,10 +132,11 @@ class Orbit(VisibleObject):
         self.instance.setAntialias(AntialiasAttrib.MMultisample)
         self.appearance = ModelAppearance(attribute_color=True)
         if settings.use_inv_scaling:
-            geometry_control = LargeObjectGeometryControl()
+            vertex_control = LargeObjectVertexControl()
         else:
-            geometry_control = None
-        self.shader = BasicShader(lighting_model=FlatLightingModel(), geometry_control=geometry_control)
+            vertex_control = None
+        self.instance_ready = True
+        self.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
 
@@ -326,7 +346,7 @@ class Asterism(VisibleObject):
                 decl += star.orbit.get_declination()
             ra = atan2(ra_sin, ra_cos)
             decl /= len(self.segments[0])
-        self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
+            self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
@@ -341,7 +361,7 @@ class Asterism(VisibleObject):
             for star in segment:
                 #TODO: Temporary workaround to have star pos
                 star.update(0)
-                star.update_obs(center)
+                star.update_obs(self.context.observer)
                 position, distance, scale_factor = self.get_real_pos_rel(star.rel_position, star.distance_to_obs, star.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4f(*self.color)
@@ -369,7 +389,6 @@ class Asterism(VisibleObject):
 class NamedAsterism(LabelledObject):
     ignore_light = True
     default_shown = True
-    label_class = BackgroundLabel
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
@@ -377,6 +396,9 @@ class NamedAsterism(LabelledObject):
         LabelledObject.__init__(self, name)
         self.visible = True
         self.create_components()
+
+    def create_label_instance(self):
+        return BackgroundLabel(self.get_ascii_name() + '-label')
 
     def create_components(self):
         self.create_label()
@@ -443,7 +465,6 @@ class Boundary(VisibleObject):
 class Constellation(LabelledObject):
     ignore_light = True
     default_shown = True
-    label_class = BackgroundLabel
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
@@ -453,6 +474,9 @@ class Constellation(LabelledObject):
         self.center = center
         self.boundary = boundary
         self.create_components()
+
+    def create_label_instance(self):
+        return BackgroundLabel(self.get_ascii_name() + '-label')
 
     def create_components(self):
         self.create_label()

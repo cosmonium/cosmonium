@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -11,23 +30,31 @@ from .support.appdirs.appdirs import AppDirs
 import os
 
 app_name = 'cosmonium'
+version = '0.1.1'
 
 use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
 
-use_inverse_z = False
-use_srgb = True
+#OpenGL user configuration
+use_core_profile_mac = True
+use_gl_version = None
 use_hardware_srgb = True
-use_hdr = False
-encode_float = False
-shader_min_version = 130
-allow_floating_point_buffer = True
-allow_tesselation = True
-allow_instancing = True
+use_multisampling = True
+multisamples = 2
+use_hardware_sprites = True
+use_floating_point_buffer = True
+force_power_of_two_textures = False
+use_hardware_tessellation = True
+use_hardware_instancing = True
+use_inverse_z = False
 instancing_use_tex = True
-floating_point_buffer = False
+
+#Settings
+use_hdr = False
+use_srgb = True
 use_assimp = True
+encode_float = False
 
 deferred=False
 deferred_split=False
@@ -43,8 +70,10 @@ global_ambient = 0.0
 corrected_global_ambient = global_ambient
 allow_shadows = True
 shadow_size = 1024
-multisamples = 2
 max_vertex_size_patch = 64
+max_sprite_size = 400
+use_patch_adaptation = True
+use_patch_skirts = True
 
 render_points = True
 render_sprite_points = True
@@ -80,15 +109,11 @@ min_fov = 0.001
 max_fov = 120.0
 
 if use_double:
-    standalone_patches = False
     offset_body_center = False
     shift_patch_origin = True
-    patch_scaling = False
 else:
-    standalone_patches = False
     offset_body_center = True
     shift_patch_origin = True
-    patch_scaling = False
 
 min_altitude = 2 * units.m
 
@@ -96,15 +121,14 @@ shader_noise=True
 c_noise=True
 
 debug_vt = False
-debug_lod_show_tb = False
 debug_lod_show_bb = False
 debug_lod_freeze = False
 debug_lod_split_merge = False
 debug_lod_frustum = False
-debug_lod_bb = False
 dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False
+debug_sync_load = False
 
 debug_jump = False
 
@@ -125,6 +149,7 @@ axis_fade = 20
 axis_thickness = 0.9
 
 show_clouds = True
+show_atmospheres = True
 show_asterisms = False
 show_boundaries = False
 show_ecliptic_grid = False
@@ -148,11 +173,15 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+show_hud = True
+show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
 help_background = LColor(0.5, 0.5, 0.5, 0.7)
 
 menu_text_size = 12
+
+query_delay = 0.333
 
 #These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
@@ -162,9 +191,21 @@ boundaries_depth = 20
 deep_space_depth = 50
 halo_depth = 100
 
+shader_version = None
+core_profile = None
 render_scene_to_buffer = False
 render_scene_to_float = False
-power_of_two_textures = False
+non_power_of_two_textures = False
+disable_multisampling = False
+floating_point_buffer = False
+buffer_texture = False
+hdr = False
+srgb = False
+srgb_buffer = False
+srgb_texture = False
+software_srgb = False
+hardware_tessellation = False
+hardware_instancing = False
 
 # Window configuration
 win_fullscreen = False

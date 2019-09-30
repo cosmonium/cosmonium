@@ -1,4 +1,23 @@
-#From http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# From http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
 # Start with a temperature, in Kelvin, somewhere between 1000 and 40000.  (Other values may work,
 # but I can't make any promises about the quality of the algorithm's estimates above 40000 K.)
 

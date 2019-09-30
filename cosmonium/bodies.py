@@ -1,7 +1,26 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3d, LVector3, LQuaternion, LQuaterniond, LColor, DrawMask, BitMask32
+from panda3d.core import LPoint3d, LVector3d, LVector3, LQuaternion, LQuaterniond, LColor, BitMask32
 from panda3d.core import DirectionalLight
 
 from .foundation import VisibleObject, CompositeObject, ObjectLabel, LabelledObject
@@ -17,7 +36,6 @@ from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
 from .astro.blackbody import temp_to_RGB
 from .astro import units
 from .shaders import BasicShader, FlatLightingModel
-from .shadows import ShadowCaster
 from .bodyclass import bodyClasses
 from .catalogs import objectsDB
 from . import settings
@@ -34,37 +52,34 @@ class StellarBodyLabel(ObjectLabel):
             body = self.parent.system
         else:
             body = self.parent
-        if not isinstance(body.orbit, FixedPosition):
-            if self.parent.visible and self.parent.resolved:
-                self.visible = True
-                self.fade = 1.0
-            else:
-                if body.distance_to_obs > 0.0:
-                    size = body.orbit.get_apparent_radius() / (body.distance_to_obs * pixel_size)
-                    self.visible = size > settings.label_fade
-                    self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
+        if self.parent.visible and self.parent.resolved:
+            self.visible = True
+            self.fade = 1.0
         else:
-            self.visible = self.parent.get_app_magnitude() < settings.label_lowest_app_magnitude
-            self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.parent.get_app_magnitude()) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
+            if body.distance_to_obs > 0.0:
+                size = body.orbit.get_apparent_radius() / (body.distance_to_obs * pixel_size)
+                self.visible = size > settings.label_fade
+                self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
         self.fade = clamp(self.fade, 0.0, 1.0)
 
     def update_instance(self, camera_pos, orientation):
-        if self.parent.is_emissive() and (not self.parent.resolved or isinstance(self.parent, DeepSpaceObject)):
-            if self.parent.scene_position != None:
-                self.instance.setPos(*self.parent.scene_position)
-                scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.parent.scene_distance)
+        body = self.parent
+        if body.is_emissive() and (not body.resolved or isinstance(body, DeepSpaceObject)):
+            if body.scene_position != None:
+                self.instance.setPos(*body.scene_position)
+                scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.scene_distance)
             else:
                 scale = 0.0
         else:
-            offset = self.parent.get_apparent_radius() * 1.01
-            front_pos = self.parent.get_local_position() - orientation.xform(LPoint3d(0, offset, 0))
-            vector_to_obs = LVector3d(camera_pos - front_pos)
+            offset = body.get_apparent_radius() * 1.01
+            rel_front_pos = body.rel_position - orientation.xform(LPoint3d(0, offset, 0))
+            vector_to_obs = LVector3d(-rel_front_pos)
             distance_to_obs = vector_to_obs.length()
             vector_to_obs /= distance_to_obs
-            position, distance, scale_factor = self.get_real_pos(front_pos, camera_pos, distance_to_obs, vector_to_obs)
+            position, distance, scale_factor = self.get_real_pos_rel(rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
-            scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * distance)
-        color = self.parent.get_label_color() * self.fade
+            scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
+        color = body.get_label_color() * self.fade
         self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
         color[3] = 1.0
@@ -73,6 +88,12 @@ class StellarBodyLabel(ObjectLabel):
             print("Label too far", self.get_name())
             scale = 1e-7
         self.instance.setScale(scale)
+
+class FixedOrbitLabel(StellarBodyLabel):
+    def check_visibility(self, pixel_size):
+        self.visible = self.parent._app_magnitude < settings.label_lowest_app_magnitude
+        self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.parent._app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
+        self.fade = clamp(self.fade, 0.0, 1.0)
 
 class StellarObject(LabelledObject):
     has_rotation_axis = False
@@ -88,9 +109,6 @@ class StellarObject(LabelledObject):
         self.description = description
         self.system = None
         self.body_class = body_class
-        self.visible = True
-        self.resolved = True
-        self.in_view = True
         if orbit is None:
             orbit = FixedOrbit()
         self.orbit = orbit
@@ -100,39 +118,49 @@ class StellarObject(LabelledObject):
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = point_color
-        self.position = LPoint3d()
-        self.orbit_position = LPoint3d()
-        self.orbit_rotation = LQuaterniond()
-        self.orientation = LQuaterniond()
-        self.equatorial = LQuaterniond()
         self.abs_magnitude = 99.0
-        self.cached_app_magnitude = None
+        #Flags
+        self.visible = True #TODO: Should be False at init
+        self.resolved = True #TODO: Should be False at init
+        self.in_view = False
+        self.selected = False
+        #Cached values
+        self._position = LPoint3d()
+        self._global_position = LPoint3d()
+        self._local_position = LPoint3d()
+        self._orbit_position = LPoint3d()
+        self._orbit_rotation = LQuaterniond()
+        self._orientation = LQuaterniond()
+        self._equatorial = LQuaterniond()
+        self._app_magnitude = None
+        self._extend = 0.0
+        #Scene parameters
         self.rel_position = None
         self.distance_to_obs = None
         self.vector_to_obs = None
         self.distance_to_star = None
         self.vector_to_star = None
         self.height_under = 0.0
+        self.star = None
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.visible_size = 0.0
         self.scene_position = None
         self.scene_orientation = None
         self.scene_scale_factor = None
+        self.world_body_center_offset = LVector3d()
+        self.model_body_center_offset = LVector3d()
+        self.projected_world_body_center_offset = LVector3d()
+        #Components
         self.orbit_object = None
         self.rotation_axis = None
         self.reference_axis = None
-        self.star = None
         self.init_annotations = False
         self.init_components = False
+        self.update_frozen = False
         #TODO: Should be done properly
         self.orbit.body = self
         self.rotation.body = self
-        self.selected = False
         objectsDB.add(self)
-        self.global_position = self.orbit.get_global_position_at(0)
-        self.cast_shadows = False
-        self.world_body_center_offset = LVector3d()
-        self.model_body_center_offset = LVector3d()
 
     def check_settings(self):
         LabelledObject.check_settings(self)
@@ -141,34 +169,54 @@ class StellarObject(LabelledObject):
             return
         self.set_shown(bodyClasses.get_show(self.body_class))
 
+    def get_fullname(self, separator='/'):
+        if hasattr(self, "primary") and self.primary is not None:
+            name = self.primary.get_friendly_name()
+        else:
+            name = self.get_friendly_name()
+        if not hasattr(self.parent, "primary") or self.parent.primary is not self:
+            fullname = self.parent.get_fullname(separator)
+        else:
+            fullname = self.parent.parent.get_fullname(separator)
+        if fullname != '':
+            return fullname + separator + name
+        else:
+            return name
+
+    def create_label_instance(self):
+        if isinstance(self.orbit, FixedPosition):
+            return FixedOrbitLabel(self.get_ascii_name() + '-label')
+        else:
+            return StellarBodyLabel(self.get_ascii_name() + '-label')
+
     def get_description(self):
         return self.description
 
     def create_annotations(self):
+        if self.has_orbit and self.orbit.dynamic:
+            self.create_orbit_object()
+        self.init_annotations = True
+
+    def create_components(self):
         if self.has_rotation_axis:
             self.rotation_axis = RotationAxis(self)
             self.add_component(self.rotation_axis)
         if self.has_reference_axis:
             self.reference_axis = ReferenceAxis(self)
             self.add_component(self.reference_axis)
-        if self.has_orbit:
-            self.create_orbit_object()
-        self.init_annotations = True
-
-    def create_components(self):
         self.init_components = True
 
     def update_components(self, camera_pos):
         pass
 
     def remove_components(self):
-        self.init_components = False
-
-    def remove_annotations(self):
         self.remove_component(self.rotation_axis)
         self.rotation_axis = None
         self.remove_component(self.reference_axis)
         self.reference_axis = None
+        self.init_components = False
+
+    def remove_annotations(self):
         self.remove_component(self.orbit_object)
         self.orbit_object = None
         self.init_annotations = False
@@ -269,7 +317,7 @@ class StellarObject(LabelledObject):
         return global_position
 
     def get_local_position(self):
-        return self.orbit.frame.get_local_position(self.orbit_rotation.xform(self.orbit_position))
+        return self.orbit.frame.get_local_position(self._orbit_rotation.xform(self._orbit_position))
 
     def get_position(self):
         return self.get_global_position() + self.get_local_position()
@@ -278,15 +326,13 @@ class StellarObject(LabelledObject):
         return (self.get_global_position() - position) + self.get_local_position()
 
     def get_abs_rotation(self):
-        return self.rotation.frame.get_abs_orientation(self.orientation)
+        return self.rotation.frame.get_abs_orientation(self._orientation)
 
     def get_equatorial_rotation(self):
-        #return self.equatorial * self.get_abs_rotation()
-        return self.rotation.frame.get_abs_orientation(self.equatorial)
+        return self.rotation.frame.get_abs_orientation(self._equatorial)
 
     def get_sync_rotation(self):
-        #return self.orientation * self.get_abs_rotation()
-        return self.rotation.frame.get_abs_orientation(self.orientation)
+        return self.rotation.frame.get_abs_orientation(self._orientation)
 
     def cartesian_to_spherical(self, position):
         sync_frame = SynchroneReferenceFrame(self)
@@ -347,28 +393,34 @@ class StellarObject(LabelledObject):
             return 0.0
 
     def update(self, time):
-        self.orbit_position = self.orbit.get_position_at(time)
-        self.orbit_rotation = self.orbit.get_rotation_at(time)
-        self.orientation = self.rotation.get_rotation_at(time)
-        self.equatorial = self.rotation.get_equatorial_rotation_at(time)
-        self.position = self.get_position()
+        self._orbit_position = self.orbit.get_position_at(time)
+        self._orbit_rotation = self.orbit.get_rotation_at(time)
+        self._orientation = self.rotation.get_rotation_at(time)
+        self._equatorial = self.rotation.get_equatorial_rotation_at(time)
+        self._local_position = self.orbit.frame.get_local_position(self._orbit_rotation.xform(self._orbit_position))
+        self._global_position = self.parent._global_position + self.orbit.get_global_position_at(time)
+        self._position = self._global_position + self._local_position
         if self.star:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
         CompositeObject.update(self, time)
+        self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
 
-    def update_obs(self, camera_pos):
-        global_delta = self.get_global_position() - self.context.observer.camera_global_pos
-        local_delta = self.get_local_position() - camera_pos
+    def update_obs(self, observer):
+        global_delta = self._global_position - observer.camera_global_pos
+        local_delta = self._local_position - observer._position
         self.rel_position = global_delta + local_delta
         length = self.rel_position.length()
         self.vector_to_obs = -self.rel_position / length
         self.distance_to_obs = length
-        self.cos_view_angle = self.context.observer.camera_vector.dot(-self.vector_to_obs)
-        CompositeObject.update_obs(self, camera_pos)
+        self.cos_view_angle = observer.camera_vector.dot(-self.vector_to_obs)
+        CompositeObject.update_obs(self, observer)
 
     def check_visibility(self, pixel_size):
-        self.visible_size = self.calc_visible_size(pixel_size)
-        self.cached_app_magnitude = self.get_app_magnitude()
+        if self.distance_to_obs > 0.0:
+            self.visible_size = self._extend / (self.distance_to_obs * pixel_size)
+        else:
+            self.visible_size = 0.0
+        self._app_magnitude = self.get_app_magnitude()
         self.resolved = self.visible_size > settings.min_body_size
         if self.resolved:
             radius = self.get_extend()
@@ -384,7 +436,7 @@ class StellarObject(LabelledObject):
         else:
             #Don't bother checking the visibility of a point
             self.in_view = True
-        self.visible = self.cast_shadows or (self.in_view and (self.visible_size > 1.0 or self.cached_app_magnitude < settings.lowest_app_magnitude))
+        self.visible = self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         if not self.virtual_object and self.resolved and self.in_view:
             self.context.add_visible(self)
         LabelledObject.check_visibility(self, pixel_size)
@@ -392,30 +444,30 @@ class StellarObject(LabelledObject):
     def check_and_update_instance(self, camera_pos, orientation, pointset):
         if self.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             height = self.get_height_under(camera_pos)
-            rel_position = self.rel_position + self.vector_to_obs * height
+            self.scene_rel_position = self.rel_position + self.vector_to_obs * height
             distance_to_obs = self.distance_to_obs - height
         else:
-            rel_position = self.rel_position
+            self.scene_rel_position = self.rel_position
             distance_to_obs = self.distance_to_obs
-        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(rel_position, distance_to_obs, self.vector_to_obs)
+        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self.get_abs_rotation()
         if self.label is None:
             self.create_label()
         if self.visible:
             if not self.init_annotations:
-                #Check again settings as they might have changed since object creation
-                self.check_settings()
                 self.create_annotations()
+                self.check_settings()
             if self.resolved:
                 if self.support_offset_body_center and settings.offset_body_center:
                     self.world_body_center_offset = -self.vector_to_obs * self.height_under * self.scene_scale_factor
                     self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self.height_under / self.get_apparent_radius()
                 if not self.init_components:
                     self.create_components()
+                    self.check_settings()
                 self.update_components(camera_pos)
                 if self.visible_size < settings.min_body_size * 2:
                     self.update_point(pointset)
-                if self.has_resolved_halo and self.cached_app_magnitude < smallest_glare_mag:
+                if self.has_resolved_halo and self._app_magnitude < smallest_glare_mag:
                     self.update_halo()
             else:
                 if self.init_components:
@@ -436,17 +488,17 @@ class StellarObject(LabelledObject):
         self.remove_label()
 
     def update_point(self, pointset):
-        scale = mag_to_scale(self.cached_app_magnitude)
+        scale = mag_to_scale(self._app_magnitude)
         if scale > 0:
             color = self.point_color * scale
             size = max(pointset.min_size, pointset.min_size + scale * settings.mag_pixel_scale)
             pointset.add_point(self.scene_position, color, size)
-            if self.has_halo and self.cached_app_magnitude < smallest_glare_mag:
+            if self.has_halo and self._app_magnitude < smallest_glare_mag:
                 self.update_halo()
 
     def update_halo(self):
         if not settings.show_halo: return
-        coef = smallest_glare_mag - self.cached_app_magnitude + 6.0
+        coef = smallest_glare_mag - self._app_magnitude + 6.0
         radius = self.visible_size
         if radius < 1.0:
             radius = 1.0
@@ -500,7 +552,6 @@ class SurfaceFactory(object):
 class StellarBody(StellarObject):
     has_rotation_axis = True
     has_reference_axis = True
-    label_class = StellarBodyLabel
 
     def __init__(self, names, radius, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
@@ -525,8 +576,11 @@ class StellarBody(StellarObject):
         self.height_under = radius
         self.oblateness = oblateness
         self.scale = scale
+        if self.clouds is not None:
+            self.clouds.owner = self
         if self.atmosphere is not None:
             self.atmosphere.owner = self
+        self._extend = self.get_extend()
 
     def create_surface(self):
         self.surface = self.surface_factory.create(self)
@@ -583,6 +637,24 @@ class StellarBody(StellarObject):
     def get_apparent_radius(self):
         return self.radius
 
+    def get_min_radius(self):
+        if self.surface is not None:
+            return self.surface.get_min_radius()
+        else:
+            return self.get_apparent_radius()
+
+    def get_average_radius(self):
+        if self.surface is not None:
+            return self.surface.get_average_radius()
+        else:
+            return self.get_apparent_radius()
+
+    def get_max_radius(self):
+        if self.surface is not None:
+            return self.surface.get_max_radius()
+        else:
+            return self.get_apparent_radius()
+
     def get_scale(self):
         if self.surface is not None:
             return self.surface.shape.get_scale()
@@ -630,28 +702,12 @@ class StellarBody(StellarObject):
 
 class ReflectiveBody(StellarBody):
     def __init__(self, *args, **kwargs):
-        shadow = kwargs.pop('shadow', True)
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
         self.sunLight = None
-        self.has_shadow_map = False
-        self.has_shadows = False
-        self.has_shadows_persistent = False
-        self.cast_shadows = False
-        self.custom_shadows = False
-        self.shadow_caster = None
-        self.shadow_camera = None
-        if (shadow or self.ring is not None) and settings.allow_shadows:
-            self.has_shadow_map = True
-            if self.surface is not None:
-                self.custom_shadows = self.surface.shader is not None
 
     def is_emissive(self):
         return False
-
-    def create_surface(self):
-        StellarBody.create_surface(self)
-        self.custom_shadows = self.surface.shader is not None
 
     def get_abs_magnitude(self):
         luminosity = self.get_luminosity() * self.get_phase()
@@ -684,81 +740,44 @@ class ReflectiveBody(StellarBody):
         position = self.get_local_position()
         body_position = body.get_local_position()
         pa = body_position - position
+        self_radius = self.get_apparent_radius()
+        #TODO: should be refactored somehow
+        self_ar = self.radius / pa.length()
+        star_ar = self.star.get_apparent_radius() / (self.star._local_position - body_position).length()
+        ar_ratio = star_ar / self_ar
+        #TODO: No longer valid if we are using HDR
+        if ar_ratio * ar_ratio > 255:
+            #the shadow coef is smaller than the min change in pixel color
+            #the umbra will have no visible impact
+            return False
         distance_vector = pa - self.vector_to_star * self.vector_to_star.dot(pa)
         distance = distance_vector.length()
         projected = self.vector_to_star * self.vector_to_star.dot(body_position)
         face = self.vector_to_star.dot(projected - position)
-        return face < 0.0 and distance < self.get_apparent_radius() + body.get_apparent_radius()
+        radius = (1 + ar_ratio) * self_radius + body.get_apparent_radius()
+        return face < 0.0 and distance < radius
 
-    def update(self, time):
-        StellarBody.update(self, time)
-        self.cast_shadows = False
-        if self.ring is not None and self.visible and self.resolved and self.in_view:
-            self.has_shadows = True
-            self.cast_shadows = True
-        #Only support shadows in a Simple System
-        primary = self.parent.primary
-        if primary is None:
-            return
-        if primary == self:
-            for child in self.parent.children:
-                if child != self and child.has_shadow_map and child.visible and child.resolved and child.in_view:
-                    if self.check_cast_shadow_on(child):
-                        child.has_shadows = True
-                        self.cast_shadows = True
-        else:
-            if isinstance(primary, ReflectiveBody) and primary.has_shadow_map and primary.visible and primary.resolved and primary.in_view:
-                if self.check_cast_shadow_on(primary):
-                    primary.has_shadows = True
-                    self.cast_shadows = True
+    def start_shadows_update(self):
+        self.surface.start_shadows_update()
+        #TODO: this should be done by looping over components
+        if self.clouds is not None:
+            self.clouds.start_shadows_update()
+        if self.atmosphere is not None:
+            self.atmosphere.start_shadows_update()
 
-    def create_shadow_caster(self):
-        if self.custom_shadows:
-            print("Create custom shadow caster for", self.get_name())
-            self.shadow_caster = ShadowCaster(settings.shadow_size)
-            self.shadow_caster.create()
-            self.shadow_camera = self.shadow_caster.node
-            #TODO: should be done in surface
-            self.surface.appearance.set_shadow(self.shadow_caster)
-            if self.surface.instance_ready:
-                self.surface.shader.apply(self.surface.shape, self.surface.appearance)
-            if self.ring is not None:
-                self.ring.appearance.set_shadow(self.shadow_caster)
-                if self.ring.instance_ready:
-                    self.ring.shader.apply(self.ring.shape, self.ring.appearance)
-        else:
-            print("Create Panda3D shadow caster")
-            self.dir_light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)
-            self.shadow_caster = self.dir_light
-            self.shadow_camera = self.dir_light
-        if settings.debug_shadow_frustum:
-            self.shadow_camera.showFrustum()
-        self.shadow_camera.set_camera_mask(DrawMask(1))
+    def add_shadow_target(self, target):
+        self.surface.add_shadow_target(target.surface)
+        if target.clouds is not None:
+            self.surface.add_shadow_target(target.clouds)
+        if target.atmosphere is not None:
+            self.surface.add_shadow_target(target.atmosphere)
 
-    def update_shadow_caster(self):
-        radius = self.get_extend() / settings.scale
-        self.shadow_caster.get_lens().set_film_size(radius * 2.1, radius * 2.1)
-        self.shadow_caster.get_lens().setNear(-self.context.observer.infinity)
-        self.shadow_caster.get_lens().setFar(self.context.observer.infinity)
-        self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.vector_to_star), LVector3.up())
-        if self.custom_shadows:
-            self.shadow_caster.set_pos(self.sunLight.getPos())
-
-    def remove_shadow_caster(self):
-        if self.custom_shadows:
-            if self.shadow_caster is not None:
-                print("Remove custom shadow caster", self.get_name())
-                self.shadow_caster.remove()
-                #TODO: Temporary until all dangling instance references have been removed
-                self.surface.appearance.set_shadow(None)
-                self.surface.shader.apply(self.surface.shape, self.surface.appearance)
-                if self.ring is not None:
-                    self.ring.appearance.set_shadow(None)
-                    self.ring.shader.apply(self.ring.shape, self.ring.appearance)
-        else:
-            self.dir_light.setShadowCaster(False)
-        self.shadow_caster = None
-        self.shadow_camera = None
+    def end_shadows_update(self):
+        self.surface.end_shadows_update()
+        if self.clouds is not None:
+            self.clouds.end_shadows_update()
+        if self.atmosphere is not None:
+            self.atmosphere.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())
@@ -778,6 +797,18 @@ class ReflectiveBody(StellarBody):
         self.sunLight = None
         self.dir_light = None
 
+    def configure_shape(self):
+        StellarBody.configure_shape(self)
+        self.surface.create_shadows()
+        if self.ring is not None and self.surface is not None:
+            #TODO: This should be in start_shadow_update...
+            self.ring.shadow_caster.add_target(self.surface)
+            if self.clouds is not None:
+                self.ring.shadow_caster.add_target(self.clouds)
+            self.ring.start_shadows_update()
+            self.surface.shadow_caster.add_target(self.ring)
+            self.ring.end_shadows_update()
+
     def create_components(self):
         StellarBody.create_components(self)
         if self.sunLight is None:
@@ -787,31 +818,12 @@ class ReflectiveBody(StellarBody):
     def update_components(self, camera_pos):
         if self.sunLight is not None:
             self.update_light(camera_pos)
-        if self.shadow_caster is not None:
-            self.update_shadow_caster()
 
     def remove_components(self):
-        if self.shadow_caster is not None:
-            self.remove_shadow_caster()
-            #TODO: Temporary until all dangling instance references have been removed
-            self.surface.appearance.set_shadow(None)
-            self.update_shader()
         if self.sunLight is not None:
             self.remove_light()
             self.update_shader()
         StellarBody.remove_components(self)
-
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
-        StellarBody.check_and_update_instance(self, camera_pos, orientation, pointset)
-        if self.visible and self.in_view and self.resolved:
-            if self.has_shadow_map and self.has_shadows and self.shadow_caster is None:
-                self.create_shadow_caster()
-                self.update_shader()
-            if self.has_shadow_map and not self.has_shadows and self.shadow_caster is not None:
-                self.remove_shadow_caster()
-                self.update_shader()
-        self.has_shadows_persistent = self.has_shadows
-        self.has_shadows = False
 
 class EmissiveBody(StellarBody):
     has_halo = True
@@ -871,6 +883,7 @@ class Star(EmissiveBody):
                 radius = 7000.0
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
+        self._extend = radius #TODO: Optim for octree
         EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness,
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,
@@ -925,9 +938,6 @@ class SkySphere(VisibleObject):
         if shader is None:
             shader = BasicShader(lighting_model=FlatLightingModel())
         self.shader = shader
-
-    def create_instance_delayed(self):
-        pass
 
     def create_instance(self):
         if not self.instance:

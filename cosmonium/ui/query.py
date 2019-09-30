@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -20,16 +39,22 @@ class Query:
         self.query = None
         self.suggestions = None
         self.owner = None
-        self.current_selection = -1
+        self.current_selection = None
         self.current_list = []
+        self.completion_task = None
         self.max_columns = 4
         self.max_lines = 3
         self.max_elems = self.max_columns * self.max_lines
 
     def do_query(self, text):
-        if self.current_selection >= 0 and self.current_selection < len(self.current_list):
-            body = self.current_list[self.current_selection][1]
-            self.owner.select_object(body)
+        body = None
+        if self.current_selection is not None:
+            if self.current_selection < len(self.current_list):
+                body = self.current_list[self.current_selection][1]
+        else:
+            text = self.query.get()
+            body = self.owner.get_object(text)
+        self.owner.select_object(body)
         self.close()
 
     def close(self):
@@ -41,14 +66,20 @@ class Query:
         self.query = None
         self.suggestions.destroy()
         self.suggestions = None
-        self.current_selection = -1
+        self.current_selection = None
         self.current_list = []
+        if self.completion_task is not None:
+            taskMgr.remove(self.completion_task)
+            self.completion_task = None
 
     def escape(self, event):
         self.close()
 
     def update_suggestions(self):
-        page = self.current_selection // self.max_elems
+        if self.current_selection is not None:
+            page = self.current_selection // self.max_elems
+        else:
+            page = 0
         start = page * self.max_elems
         end = min(start + self.max_elems - 1, len(self.current_list) - 1)
         suggestions = ""
@@ -68,8 +99,10 @@ class Query:
             self.current_list = self.owner.list_objects(text)
         else:
             self.current_list = []
-        self.current_selection = 0
-        self.update_suggestions()
+        self.current_selection = None
+        if self.completion_task is not None:
+            taskMgr.remove(self.completion_task)
+        self.completion_task = taskMgr.doMethodLater(settings.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
 
     def select(self, event):
         modifiers = event.getModifierButtons()
@@ -77,7 +110,10 @@ class Query:
             incr = -1
         else:
             incr = 1
-        new_selection = self.current_selection + incr
+        if self.current_selection is not None:
+            new_selection = self.current_selection + incr
+        else:
+            new_selection = 0
         if new_selection < 0:
             new_selection = len(self.current_list) - 1
         if new_selection >= len(self.current_list):

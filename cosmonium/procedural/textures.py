@@ -1,3 +1,22 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2019 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -11,6 +30,7 @@ from .. import settings
 class ProceduralTextureSource(TextureSource):
     cached = False
     patched = True
+    procedural = True
     def __init__(self, terrain):
         self.terrain = terrain
         self.loaded = False
@@ -18,11 +38,11 @@ class ProceduralTextureSource(TextureSource):
     def can_split(self, patch):
         return True
 
-    def load(self, patch, grayscale):
+    def load(self, patch):
         return None
 
 class GpuTextureSource(ProceduralTextureSource):
-    def load(self, patch, grayscale):
+    def load(self, patch):
         heightmap = self.terrain.get_heightmap(None)
         #TODO: heightmap has no size, but width and height
         data = (heightmap.texture, self.terrain.width, 0)
@@ -34,7 +54,7 @@ class PatchedGpuTextureSource(ProceduralTextureSource):
         ProceduralTextureSource.__init__(self, terrain)
         self.textures_map = {}
 
-    def load(self, patch, grayscale):
+    def load(self, patch):
         if patch not in self.textures_map:
             heightmap = self.terrain.get_heightmap(patch)
             if heightmap is None:
@@ -48,12 +68,14 @@ class PatchedGpuTextureSource(ProceduralTextureSource):
 class ProceduralVirtualTextureSource(TextureSource):
     tex_generators = {}
     cached = False
+    procedural = True
     def __init__(self, noise, size):
         TextureSource.__init__(self)
         self.noise = noise
         self.texture_size = size
         self.map_patch = {}
         self.global_frequency = 1.0
+        self.global_scale = 1.0
 
     def is_patched(self):
         return True
@@ -83,7 +105,7 @@ class ProceduralVirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, grayscale, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
             self._make_texture(patch, callback, cb_args)
         else:
@@ -107,6 +129,7 @@ class ProceduralVirtualTextureSource(TextureSource):
                                  offset=(patch.x0, patch.y0, 0.0),
                                  scale=(patch.lod_scale_x, patch.lod_scale_y, 1.0))
             shader.global_frequency = self.global_frequency
+            shader.global_scale = self.global_scale
             shader.create_and_register_shader(None, None)
         self.texture = Texture()
         self.texture.set_wrap_u(Texture.WMClamp)
