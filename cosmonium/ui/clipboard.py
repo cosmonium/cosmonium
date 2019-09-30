@@ -68,10 +68,14 @@ class TkClipboard(Clipboard):
 
 class WinClipboard(Clipboard):
     def __init__(self):
-        import win32clipboard
-        import win32con
-        self.w = win32clipboard
-        self.type = win32con.CF_UNICODETEXT
+        try:
+            import win32clipboard
+            import win32con
+            self.w = win32clipboard
+            self.type = win32con.CF_UNICODETEXT
+        except ImportError:
+            print("Could not import pywin32, no Windows copy&paste available")
+            self.w = None
 
     def copy_to(self, text):
         self.w.OpenClipboard()
@@ -135,6 +139,8 @@ def create_clipboard():
             clipboard = DarwinClipboard()
         elif sys.platform == 'win32':
             clipboard = WinClipboard()
+            if clipboard.w is None:
+                clipboard = Clipboard()
         elif sys.platform.startswith('linux'):
             clipboard = XClipboard() 
         else:
