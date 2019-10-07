@@ -35,7 +35,7 @@ class Octree(object):
         self.radius = self.half_width * self.coef
         self.center = center
         self.threshold = threshold
-        self.child_threshold = threshold + 0.5 #1.5 Correspond roughly to 1/4 less luminosity
+        self.child_threshold = threshold + 0.5 # + 1.5 #Correspond roughly to 1/4 less luminosity
         self.index = index
         self.has_children = False
         self.children = [None, None, None, None, None, None, None, None]

@@ -111,7 +111,6 @@ class Universe(StellarSystem):
         self.octree_points.add_point_scale(position + LPoint3d(cell.width, cell.width, cell.width), LColor(1, 1, 0, 1), 5)
 
     def _build_octree_leaves_list(self, octree, visible_leaf, invisible_leaf, limit, camera_pos):
-        scale = settings.scale
         distance = (octree.center - camera_pos).length() - octree.radius
         if distance > 0.0:
             dimmest = app_to_abs_mag(limit, distance)
@@ -130,9 +129,10 @@ class Universe(StellarSystem):
                 if app_magnitude > limit:
                     skip = True
                 else:
+                    extend = leaf._extend
                     for plane in self.planes:
-                        plane_dist = plane.distToPlane(vector / scale)
-                        if plane_dist > leaf._extend / scale:
+                        plane_dist = plane.distToPlane(vector)
+                        if plane_dist > extend:
                             skip = True
                             break
             if not skip:
@@ -169,15 +169,15 @@ class Universe(StellarSystem):
                         self.in_view += 1
                         skip = False
                         if True:
-                            rel_position = (child.center - camera_pos) / settings.scale
-                            radius = child.radius / settings.scale
+                            rel_position = child.center - camera_pos
+                            radius = child.radius
                             for plane in self.planes:
                                 plane_dist = plane.distToPlane(rel_position)
                                 if plane_dist > radius:
                                     skip = True
                                     #if self.dump_octree: print("skip", plane.getNormal(), plane_dist, child.center, child.width / settings.scale)
                                     break
-                        if not skip and abs_to_app_mag(child.max_magnitude, distance) < limit:
+                        if not skip and (distance < 0 or abs_to_app_mag(child.max_magnitude, distance) < limit):
                             self._build_octree_cells_list(child, limit, camera_pos)
 
     @pstat
