@@ -306,9 +306,10 @@ def instanciate_body(universe, names, is_planet, data):
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
-    atmosphere.add_shape_object(surface)
-    if clouds is not None:
-        atmosphere.add_shape_object(clouds)
+    if atmosphere is not None:
+        atmosphere.add_shape_object(surface)
+        if clouds is not None:
+            atmosphere.add_shape_object(clouds)
     body.albedo = albedo
     body.body_class = body_class
     return body
