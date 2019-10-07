@@ -632,6 +632,7 @@ class Cosmonium(CosmoniumBase):
             print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
         self.last_visibles = self.visibles
 
+    @pstat
     def update_octree(self):
         self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
         self.universe.add_extra_to_list(self.selected, self.track)
