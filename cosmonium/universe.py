@@ -71,6 +71,9 @@ class Universe(StellarSystem):
         return ''
 
     def dumpOctree(self):
+        self.octree.dump_octree()
+
+    def log_octree(self):
         self.dump_octree = True
 
     def dumpOctreeStats(self):
@@ -197,7 +200,6 @@ class Universe(StellarSystem):
         self.to_remove = []
         self.update_id += 1
         self.nb_cells = 1
-        self.nb_leaves = 0
         self.nb_leaves_in_cells = 0
         self.in_cells = 0
         self.in_view = 0
@@ -211,11 +213,13 @@ class Universe(StellarSystem):
         leaves_list_start = time()
         self.build_octree_leaves_list(self.to_update.append, self.to_remove.append, limit, camera_pos)
         leaves_list_end = time()
+        self.nb_leaves = len(self.to_update)
         if self.dump_octree_stats:
-            print(len(self.to_update), '(', self.nb_leaves, ',', self.nb_leaves_in_cells, ')', len(self.octree_cells), '(', self.nb_cells, ')')
-            print("Cells :", (cells_list_end - cells_list_start) * 1000, 'ms (',  (cells_list_end - cells_list_start) / self.nb_cells * 1000 * 1000, 'us)')
+            print("Cells:", self.nb_cells, "In:", self.in_cells, "View:", self.in_view, "Total:", len(self.octree_cells),
+                  'Time: ', (cells_list_end - cells_list_start) * 1000, 'ms (',  (cells_list_end - cells_list_start) / self.nb_cells * 1000 * 1000, 'us)')
             if self.nb_leaves > 0:
-                print("Leaves :", (leaves_list_end - leaves_list_start) * 1000, 'ms (', (leaves_list_end - leaves_list_start) / self.nb_leaves * 1000 * 1000, 'us)')
+                print("Leaves :", self.nb_leaves_in_cells, 'In:', self.nb_leaves,
+                      "Time:", (leaves_list_end - leaves_list_start) * 1000, 'ms (', (leaves_list_end - leaves_list_start) / self.nb_leaves_in_cells * 1000 * 1000, 'us)')
             print("To clean", len(self.octree_cells_to_clean))
             print()
         cells = pstats.levelpstat('cells')

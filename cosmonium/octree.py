@@ -90,20 +90,20 @@ class Octree(object):
         self.leaves = new_leaves
         self.has_children = True
 
-    def print_summary(self):
+    def dump_octree_summary(self):
         if len(self.leaves) > 0:
             print(' ' * self.level, self.level, self.index, self.width, self.threshold, len(self.leaves), self.center)
         for i in range(8):
             if self.children[i] is not None:
-                self.children[i].print_summary()
+                self.children[i].dump_octree_summary()
 
-    def print(self):
+    def dump_octree(self):
         if len(self.leaves) > 0:
             print(' ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children)
             print(' ' * self.level, '->', self.max_magnitude, ":", ', '.join(map(lambda x: x.get_name(), self.leaves)))
         for i in range(8):
             if self.children[i] is not None:
-                self.children[i].print()
+                self.children[i].dump_octree()
 
     def print_stats(self):
         print("Nb cells:", self.nb_cells)
