@@ -79,11 +79,9 @@ class StellarBodyLabel(ObjectLabel):
             position, distance, scale_factor = self.get_real_pos_rel(rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
-        color = body.get_label_color() * self.fade
         self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
-        color[3] = 1.0
-        self.label.setTextColor(color)
+        self.instance.set_color_scale(LColor(self.fade, self.fade, self.fade, 1.0))
         if scale < 1e-7:
             print("Label too far", self.get_name())
             scale = 1e-7

@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVecBase3, LQuaternion, NodePath
+from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor
 from panda3d.core import GeomNode, DecalEffect, TextNode, CardMaker, TransparencyAttrib
 
 from .bodyclass import bodyClasses
@@ -351,6 +351,7 @@ class ObjectLabel(VisibleObject):
         self.instance.reparentTo(self.context.annotation_shader)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.set_depth_write(False)
+        self.instance.set_color_scale(LColor(1, 1, 1, 1))
         card_node.setPythonTag('owner', self.parent)
         self.look_at = self.instance.attachNewNode("dummy")
 

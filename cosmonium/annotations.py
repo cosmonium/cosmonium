@@ -44,7 +44,6 @@ class AnnotationLabel(ObjectLabel):
             scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.context.observer.infinity)
         else:
             scale = 0.0
-        self.label.setTextColor(self.parent.get_label_color())
         if scale < 1e-7:
             print("Label too far", self.get_name())
             scale = 1e-7
