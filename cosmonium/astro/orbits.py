@@ -25,9 +25,9 @@ from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 from . import units
 from .frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .kepler import kepler_pos
+from .astro import calc_orientation
 
-from math import sqrt, pi, cos, sin, acos, asin, atan2
-import sys
+from math import pi, asin, atan2
 
 class Orbit(object):
     dynamic = False
@@ -76,13 +76,7 @@ class FixedPosition(Orbit):
             if not isinstance(position, LPoint3d):
                 position = LPoint3d(*position)
         if position is None:
-            inclination = pi / 2 - self.declination
-            ascending_node = self.right_asc + pi / 2
-            inclination_quat = LQuaterniond()
-            inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
-            ascending_node_quat = LQuaterniond()
-            ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
-            self.orientation = inclination_quat * ascending_node_quat * J2000EquatorialReferenceFrame.orientation
+            self.orientation = calc_orientation(self.right_asc, self.declination)
             position = self.orientation.xform(LVector3d(0, 0, distance))
         self.global_position = position
         self.position=LPoint3d()
@@ -131,13 +125,7 @@ class InfinitePosition(Orbit):
         Orbit.__init__(self, frame)
         self.right_asc = right_asc * right_asc_unit
         self.declination = declination * declination_unit
-        inclination = pi / 2 - self.declination
-        ascending_node = self.right_asc + pi / 2
-        inclination_quat = LQuaterniond()
-        inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
-        ascending_node_quat = LQuaterniond()
-        ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
-        self.orientation = inclination_quat * ascending_node_quat * J2000EquatorialReferenceFrame.orientation
+        self.orientation = calc_orientation(self.right_asc, self.declination)
         self.position=LPoint3d()
         self.rotation=LQuaterniond()
 

@@ -26,6 +26,7 @@ from .frame import J2000EquatorialReferenceFrame
 from . import units
 
 import math
+from cosmonium.astro.astro import calc_orientation_from_incl_an
 
 class Rotation(object):
     dynamic = False
@@ -56,21 +57,12 @@ class FixedRotation(Rotation):
             if right_asc is None:
                 self.inclination = inclination * math.pi / 180
                 self.ascending_node = ascending_node * math.pi / 180
-                inclination_quat = LQuaterniond()
-                inclination_quat.setFromAxisAngleRad(self.inclination, LVector3d.unitX())
-                ascending_node_quat = LQuaterniond()
-                ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
-                rotation = inclination_quat * ascending_node_quat
             else:
                 right_asc = right_asc * right_asc_unit
                 declination = declination * declination_unit
                 self.inclination = math.pi / 2 - declination
                 self.ascending_node = right_asc + math.pi / 2
-                inclination_quat = LQuaterniond()
-                inclination_quat.setFromAxisAngleRad(self.inclination, LVector3d.unitX())
-                ascending_node_quat = LQuaterniond()
-                ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
-                rotation = inclination_quat * ascending_node_quat
+            rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, False)
         self.axis_rotation = rotation
         self.rotation = LQuaterniond()
 

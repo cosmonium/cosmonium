@@ -20,8 +20,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from math import pow, log, log10, exp, sqrt, asin, pi
+from panda3d.core import LVector3d, LQuaterniond
+
+from .frame import J2000EquatorialReferenceFrame
 from . import units
+
+from math import pow, log, log10, exp, sqrt, asin, pi
 
 # Brightness increase factor for one magnitude
 magnitude_brightness_ratio = pow(10.0, 0.4)
@@ -65,3 +69,18 @@ def temp_to_radius(temperature, abs_magnitude):
     luminosity_ratio = pow(magnitude_brightness_ratio, units.sun_abs_magnitude - abs_magnitude)
     radius = temperature_ratio * temperature_ratio * sqrt(luminosity_ratio) * units.sun_radius
     return radius
+
+def calc_orientation_from_incl_an(inclination, ascending_node, equatorial=True):
+    inclination_quat = LQuaterniond()
+    inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
+    ascending_node_quat = LQuaterniond()
+    ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
+    orientation = inclination_quat * ascending_node_quat
+    if equatorial:
+        orientation = orientation * J2000EquatorialReferenceFrame.orientation
+    return orientation
+
+def calc_orientation(right_ascension, declination, equatorial=True):
+    inclination = pi / 2 - declination
+    ascending_node = right_ascension + pi / 2
+    return calc_orientation_from_incl_an(inclination, ascending_node, equatorial)
