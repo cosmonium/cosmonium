@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d
 
 from ..astro.elementsdb import orbit_elements_db
-from ..astro.orbits import FixedPosition, FixedOrbit, EllipticalOrbit
+from ..astro.orbits import FixedPosition, FixedOrbit, create_elliptical_orbit
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
@@ -50,7 +50,7 @@ class EllipticOrbitYamlParser(YamlModuleParser):
         mean_longitude = data.get('mean-longitude', 0.0)
         epoch = data.get('epoch', units.J2000)
         frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
-        return EllipticalOrbit(semi_major_axis,
+        return create_elliptical_orbit(semi_major_axis,
                               semi_major_axis_units,
                               pericenter_distance,
                               pericenter_distance_units,

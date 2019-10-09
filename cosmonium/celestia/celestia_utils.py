@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from ..astro import bayer
 from ..astro import units
-from ..astro.orbits import EllipticalOrbit
+from ..astro.orbits import create_elliptical_orbit
 from ..astro.rotations import FixedRotation, UniformRotation
 from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
@@ -88,7 +88,7 @@ def instanciate_elliptical_orbit(data, global_coord):
             mean_longitude = value
         else:
             print("Key of EllipticalOrbit", key, "not supported")
-    return EllipticalOrbit(semi_major_axis=semi_major_axis,
+    return create_elliptical_orbit(semi_major_axis=semi_major_axis,
         semi_major_axis_units=semi_major_axis_units,
         pericenter_distance=pericenter_distance,
         pericenter_distance_units=pericenter_distance_units,

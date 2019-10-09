@@ -162,101 +162,40 @@ class FixedOrbit(Orbit):
     def get_rotation_at(self, time):
         return self.rotation
 
-class CircularOrbit(Orbit):
+class EllipticalOrbit(Orbit):
     dynamic = True
     def __init__(self,
-                 radius,
-                 radius_units=units.AU,
-                 radial_speed=None,
-                 period=None,
-                 period_units=units.JYear,
-                 inclination=0,
-                 ascending_node=0.0,
-                 arg_of_periapsis=None,
-                 long_of_pericenter=None,
-                 mean_anomaly=None,
-                 mean_longitude=0.0,
-                 epoch=units.J2000,
-                 frame=None):
+             pericenter_distance,
+             period,
+             eccentricity,
+             inclination,
+             ascending_node,
+             arg_of_periapsis,
+             mean_anomaly,
+             epoch,
+             frame):
         Orbit.__init__(self, frame)
-        self.radius = radius * radius_units
-        if radial_speed is None:
-            if period is None:
-                self.mean_motion = 0.0
-                self.period = 0.0
-            else:
-                self.period = period * period_units
-                self.mean_motion = 2*pi/self.period
-        else:
-            self.mean_motion = radial_speed
-            self.period = 2*pi/self.mean_motion/period_units
-        if arg_of_periapsis is None:
-            if long_of_pericenter is None:
-                arg_of_periapsis = 0.0
-            else:
-                arg_of_periapsis = long_of_pericenter - ascending_node
-        if inclination == 0.0:
-            #Ascending node is undefined if there is no inclination
-            ascending_node = 0.0
-        if mean_anomaly is None:
-            mean_anomaly = mean_longitude - (arg_of_periapsis + ascending_node)
+        self.pericenter_distance = pericenter_distance
+        self.apocenter_distance = pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity)
+        self.period = period
+        self.mean_motion = 2 * pi / period
+        self.eccentricity = eccentricity
         self.inclination = inclination * pi / 180
         self.ascending_node = ascending_node * pi / 180
         self.arg_of_periapsis = arg_of_periapsis * pi / 180
         self.mean_anomaly = mean_anomaly * pi / 180
         self.epoch = epoch
+
         inclination_quat = LQuaterniond()
         inclination_quat.setFromAxisAngleRad(self.inclination, LVector3d.unitX())
         arg_of_periapsis_quat = LQuaterniond()
         arg_of_periapsis_quat.setFromAxisAngleRad(self.arg_of_periapsis, LVector3d.unitZ())
         ascending_node_quat = LQuaterniond()
         ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
-        #self.rotation = ascending_node_quat * inclination_quat * arg_of_periapsis_quat
         self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
-        
+
     def getPeriod(self):
         return self.period, self.mean_motion
-
-    def get_position_at(self, time):
-        angle = (time - self.epoch) * self.mean_motion + self.mean_anomaly
-        x=cos(angle) * self.radius
-        y=sin(angle) * self.radius
-        return LPoint3d(x, y, 0.0)
-
-    def get_rotation_at(self, time):
-        return self.rotation
-
-    def get_apparent_radius(self):
-        return self.radius
-
-class EllipticalOrbit(CircularOrbit):
-    def __init__(self,
-             semi_major_axis=None,
-             semi_major_axis_units=units.AU,
-             pericenter_distance=None,
-             pericenter_distance_units=units.AU,
-             radial_speed=None,
-             period=None,
-             period_units=units.JYear,
-             eccentricity=0.0,
-             inclination=0,
-             ascending_node=0.0,
-             arg_of_periapsis=None,
-             long_of_pericenter=None,
-             mean_anomaly=None,
-             mean_longitude=0.0,
-             epoch = units.J2000,
-             frame=None):
-        CircularOrbit.__init__(self, 0, 0, radial_speed, period, period_units, inclination, ascending_node, arg_of_periapsis, long_of_pericenter, mean_anomaly, mean_longitude, epoch, frame)
-        self.eccentricity = eccentricity
-        if pericenter_distance is None:
-            if semi_major_axis is None:
-                self.pericenter_distance = 1
-            else:
-                self.pericenter_distance = semi_major_axis  * semi_major_axis_units * (1.0 - self.eccentricity)
-        else:
-            self.pericenter_distance = pericenter_distance * pericenter_distance_units
-        self.apocenter_distance = self.pericenter_distance * (1.0 + self.eccentricity) / (1.0 - self.eccentricity)
 
     def get_apparent_radius(self):
         return self.apocenter_distance
@@ -264,3 +203,55 @@ class EllipticalOrbit(CircularOrbit):
     def get_position_at(self, time):
         mean_anomaly = (time - self.epoch) * self.mean_motion + self.mean_anomaly
         return kepler_pos(self.pericenter_distance, self.eccentricity, mean_anomaly)
+
+    def get_rotation_at(self, time):
+        return self.rotation
+
+def create_elliptical_orbit(semi_major_axis=None,
+                            semi_major_axis_units=units.AU,
+                            pericenter_distance=None,
+                            pericenter_distance_units=units.AU,
+                            radial_speed=None,
+                            period=None,
+                            period_units=units.JYear,
+                            eccentricity=0.0,
+                            inclination=0,
+                            ascending_node=0.0,
+                            arg_of_periapsis=None,
+                            long_of_pericenter=None,
+                            mean_anomaly=None,
+                            mean_longitude=0.0,
+                            epoch = units.J2000,
+                            frame=None):
+    if pericenter_distance is None:
+        if semi_major_axis is None:
+            #TODO: raise error
+            pericenter_distance = 1
+        else:
+            pericenter_distance = semi_major_axis  * semi_major_axis_units * (1.0 - eccentricity)
+    else:
+        pericenter_distance = pericenter_distance * pericenter_distance_units
+    if period is None:
+        #TODO: raise error
+        period = 0.0
+    else:
+        period = period * period_units
+    if arg_of_periapsis is None:
+        if long_of_pericenter is None:
+            arg_of_periapsis = 0.0
+        else:
+            arg_of_periapsis = long_of_pericenter - ascending_node
+    if inclination == 0.0:
+        #Ascending node is undefined if there is no inclination
+        ascending_node = 0.0
+    if mean_anomaly is None:
+        mean_anomaly = mean_longitude - (arg_of_periapsis + ascending_node)
+    return EllipticalOrbit(pericenter_distance,
+                           period,
+                           eccentricity,
+                           inclination,
+                           ascending_node,
+                           arg_of_periapsis,
+                           mean_anomaly,
+                           epoch,
+                           frame)
