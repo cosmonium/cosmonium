@@ -25,22 +25,10 @@ from ..cache import create_path_for
 from ..import settings
 
 import os
-import sys
 import hashlib
 import pickle
 
-if sys.version_info[0] < 3:
-    from ..support import yaml2 as yaml
-    try:
-        from ..support.yaml2 import CLoader as Loader
-    except ImportError:
-        from ..support.yaml2 import Loader
-else:
-    from ..support import yaml
-    try:
-        from ..support.yaml import CLoader as Loader
-    except ImportError:
-        from ..support.yaml import Loader
+import ruamel.yaml
 
 def yaml_include(loader, node):
     print("Loading", node.value)
@@ -53,7 +41,7 @@ def yaml_include(loader, node):
         print("File", node.value, "not found")
         return None
 
-yaml.add_constructor("!include", yaml_include)
+#yaml.add_constructor("!include", yaml_include)
 
 class YamlParser(object):
     def __init__(self):
@@ -68,25 +56,25 @@ class YamlParser(object):
     def parse(self, stream, stream_name=None):
         data = None
         try:
-            data = yaml.load(stream, Loader=Loader)
-        #TODO: Why these are not caught ?
-        #except (yaml.scanner.ScannerError, yaml.parser.ParserError) as e:
-        except Exception as e:
+            yaml = ruamel.yaml.YAML(typ='safe')
+            data = yaml.load(stream)
+        except ruamel.yaml.YAMLError as e:
             if stream_name is not None:
                 print("Syntax error in '%s' :" % stream_name, e)
             else:
                 print("Syntax error : ", e)
         return data
 
-    def store(self, data):
-        return yaml.dump(data, default_flow_style=False)
+    def store(self, data, stream):
+        yaml = ruamel.yaml.YAML(typ='safe')
+        yaml.default_flow_style = False
+        yaml.dump(data, stream)
 
     def encode_and_store(self, filename):
         try:
             stream = open(filename, 'w')
             data = self.encode()
-            data = self.store(data)
-            stream.write(data)
+            self.store(data, stream)
         except IOError as e:
             print("Could not write", filename, ':', e)
             return None

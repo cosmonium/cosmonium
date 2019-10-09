@@ -12,16 +12,6 @@ License: BSD
 
 Reference: [Homepage](http://dabeaz.com/ply/), [Github](https://github.com/dabeaz/ply)
 
-## support/yaml, support/yaml2
-
-PyYAML is a YAML parser and emitter for Python.
-
-Copyright: Copyright (c) 2017-2018 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov.
-
-License: MIT
-
-Reference: [Github](https://github.com/yaml/pyyaml)
-
 ## support/appdirs
 
 Utilities for determining application-specific dirs.
