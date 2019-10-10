@@ -20,7 +20,7 @@
 from setuptools import setup
 import sys
 
-version = '0.1.1'
+version = '0.1.2.dev0'
 
 if sys.version_info[0] < 3:
     excludes = ['cosmonium.support.yaml']
