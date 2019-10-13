@@ -25,14 +25,12 @@ from panda3d.core import LQuaterniond, LVector3d
 from .frame import J2000EquatorialReferenceFrame
 from . import units
 
-import math
+from math import asin, atan2, pi
 from cosmonium.astro.astro import calc_orientation_from_incl_an
 
 class Rotation(object):
     dynamic = False
-    def __init__(self, frame=None):
-        if frame is None:
-            frame = J2000EquatorialReferenceFrame()
+    def __init__(self, frame):
         self.frame = frame
 
     def set_frame(self, frame):
@@ -45,24 +43,8 @@ class Rotation(object):
         return None
 
 class FixedRotation(Rotation):
-    def __init__(self,
-                 rotation=None,
-                 inclination=0.0,
-                 ascending_node=0.0,
-                 right_asc=None, right_asc_unit=units.Deg,
-                 declination=None, declination_unit=units.Deg,
-                 frame=None):
+    def __init__(self, rotation, frame):
         Rotation.__init__(self, frame)
-        if rotation is None:
-            if right_asc is None:
-                self.inclination = inclination * math.pi / 180
-                self.ascending_node = ascending_node * math.pi / 180
-            else:
-                right_asc = right_asc * right_asc_unit
-                declination = declination * declination_unit
-                self.inclination = math.pi / 2 - declination
-                self.ascending_node = right_asc + math.pi / 2
-            rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, False)
         self.axis_rotation = rotation
         self.rotation = LQuaterniond()
 
@@ -71,47 +53,110 @@ class FixedRotation(Rotation):
 
     def get_rotation_at(self, time):
         return self.axis_rotation
-    
+
+    def calc_axis_ra_de(self, time):
+        rotation = self.get_equatorial_rotation_at(time)
+        axis = rotation.xform(LVector3d.up())
+        axis = self.frame.get_orientation().xform(axis)
+        projected = J2000EquatorialReferenceFrame.orientation.conjugate().xform(axis)
+        declination = asin(projected[2])
+        right_asc = atan2(projected[1], projected[0])
+        if right_asc < 0:
+            right_asc += 2 * pi
+        return (right_asc, declination)
+
+class UnknownRotation(FixedRotation):
+    def __init__(self):
+        FixedRotation.__init__(self, LQuaterniond(), J2000EquatorialReferenceFrame())
+
 class UniformRotation(FixedRotation):
     dynamic = True
     def __init__(self,
-                 radial_speed=None,
-                 period=None,
-                 period_units=units.Hour,
-                 sync=False,
-                 inclination=0.0,
-                 ascending_node=0.0,
-                 right_asc=None, right_asc_unit=units.Deg,
-                 declination=None, declination_unit=units.Deg,
-                 meridian_angle=0.0,
-                 epoch=units.J2000,
-                 frame=None):
-        FixedRotation.__init__(self, None, inclination, ascending_node,
-                               right_asc=right_asc, right_asc_unit=right_asc_unit, declination=declination, declination_unit=declination_unit,
-                               frame=frame)
-        if radial_speed is None:
-            if period is None:
-                self.mean_motion = 0.0
-                self.period = 0.0
-                self.sync = True
-            else:
-                self.period = period * period_units
-                self.mean_motion = 2 * math.pi / self.period
-                self.sync = False
+                 period,
+                 rotation,
+                 meridian_angle,
+                 epoch,
+                 frame):
+        FixedRotation.__init__(self, rotation, frame)
+        self.period = period
+        if period != 0:
+            self.mean_motion = 2 * pi / period
         else:
-            self.mean_motion = radial_speed
-            self.period = 2 * math.pi / self.mean_motion / period_units
-            self.sync = False
+            self.mean_motion = 0
         self.epoch = epoch
-        self.meridian_angle = meridian_angle * math.pi / 180
+        self.meridian_angle = meridian_angle
 
     def get_rotation_at(self, time):
-        if self.sync:
-            self.period, self.mean_motion = self.body.orbit.getPeriod()
-        if self.period == 0:
-            return LQuaterniond()
         angle = (time - self.epoch) * self.mean_motion + self.meridian_angle
         local = LQuaterniond()
         local.setFromAxisAngleRad(angle, LVector3d.unitZ())
         rotation = local * self.get_equatorial_rotation_at(time)
         return rotation
+
+class SynchronousRotation(FixedRotation):
+    def __init__(self,
+                 rotation,
+                 meridian_angle,
+                 epoch,
+                 frame=None):
+        FixedRotation.__init__(self, rotation, frame)
+        self.epoch = epoch
+        self.meridian_angle = meridian_angle * pi / 180
+
+    def get_rotation_at(self, time):
+        angle = (time - self.epoch) * self.body.orbit.get_mean_motion() + self.meridian_angle
+        local = LQuaterniond()
+        local.setFromAxisAngleRad(angle, LVector3d.unitZ())
+        rotation = local * self.get_equatorial_rotation_at(time)
+        return rotation
+
+def create_fixed_rotation(
+                 inclination=0.0,
+                 ascending_node=0.0,
+                 right_asc=None, right_asc_unit=units.Deg,
+                 declination=None, declination_unit=units.Deg,
+                 frame=None):
+    if right_asc is None:
+        inclination = inclination * pi / 180
+        ascending_node = ascending_node * pi / 180
+        rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+    else:
+        right_asc = right_asc * right_asc_unit
+        declination = declination * declination_unit
+        inclination = pi / 2 - declination
+        ascending_node = right_asc + pi / 2
+        rotation = calc_orientation_from_incl_an(inclination, ascending_node, True)
+    return FixedRotation(rotation, frame)
+
+def create_uniform_rotation(
+             period=None,
+             period_units=units.Hour,
+             sync=False,
+             inclination=0.0,
+             ascending_node=0.0,
+             right_asc=None, right_asc_unit=units.Deg,
+             declination=None, declination_unit=units.Deg,
+             meridian_angle=0.0,
+             epoch=units.J2000,
+             frame=None):
+
+    if right_asc is None:
+        inclination = inclination * pi / 180
+        ascending_node = ascending_node * pi / 180
+    else:
+        right_asc = right_asc * right_asc_unit
+        declination = declination * declination_unit
+        inclination = pi / 2 - declination
+        ascending_node = right_asc + pi / 2
+    rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+    meridian_angle = meridian_angle * pi / 180
+    if frame is None:
+        frame = J2000EquatorialReferenceFrame()
+    if sync:
+        return SynchronousRotation(rotation, meridian_angle, epoch, frame)
+    else:
+        if period is not None:
+            period = period * period_units
+        else:
+            period = 0.0
+        return UniformRotation(period, rotation, meridian_angle, epoch, frame)

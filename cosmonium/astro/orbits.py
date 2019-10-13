@@ -40,8 +40,11 @@ class Orbit(object):
     def set_frame(self, frame):
         self.frame = frame
 
-    def getPeriod(self):
-        return 0, 0
+    def get_period(self):
+        return 0.0
+
+    def get_mean_motion(self):
+        return 0.0
 
     def get_global_position_at(self, time):
         return self.origin
@@ -182,8 +185,11 @@ class EllipticalOrbit(Orbit):
         ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
         self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
 
-    def getPeriod(self):
-        return self.period, self.mean_motion
+    def get_period(self):
+        return self.period
+
+    def get_mean_motion(self):
+        return self.mean_motion
 
     def get_apparent_radius(self):
         return self.apocenter_distance

@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LQuaterniond, LVector3d
 
 from ..astro.elementsdb import rotation_elements_db
-from ..astro.rotations import FixedRotation, UniformRotation
+from ..astro.rotations import FixedRotation, UnknownRotation, create_uniform_rotation
 from ..astro import units
 from .. import utils
 
@@ -38,7 +38,6 @@ class UniformYamlParser(YamlModuleParser):
         synchronous = data.get('synchronous', False)
         period = data.get('period', None)
         period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
-        radial_speed = data.get('radial-speed', None)
         inclination = data.get('inclination', 0.0)
         ascending_node = data.get('ascending-node', 0.0)
         right_ascension = data.get('ra', None)
@@ -48,8 +47,7 @@ class UniformYamlParser(YamlModuleParser):
         meridian_angle = data.get('meridian', 0.0)
         epoch = data.get('epoch', units.J2000)
         frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
-        return UniformRotation(radial_speed,
-                                period,
+        return create_uniform_rotation(period,
                                 period_units,
                                 synchronous,
                                 inclination,
@@ -71,13 +69,14 @@ class FixedRotationYamlParser(YamlModuleParser):
             rot = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
         else:
             rot = LQuaterniond()
-        rotation = FixedRotation(rot)
+        frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
+        rotation = FixedRotation(rot, frame)
         return rotation
 
 class RotationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        if data is None: return FixedRotation()
+        if data is None: return UnknownRotation()
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'uniform':
             rotation = UniformYamlParser.decode(parameters)

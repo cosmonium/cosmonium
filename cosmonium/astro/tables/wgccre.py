@@ -22,13 +22,13 @@ from __future__ import absolute_import
 
 from ..frame import J2000EquatorialReferenceFrame
 
-from ..rotations import UniformRotation
+from ..rotations import create_uniform_rotation
 from ..elementsdb import rotation_elements_db
 
 from .. import units
 
 def WgccreSimpleRotation(ra, d, w, p):
-    return UniformRotation(
+    return create_uniform_rotation(
              period=360 / p,
              period_units=units.Day,
              right_asc=ra, right_asc_unit=units.Deg,

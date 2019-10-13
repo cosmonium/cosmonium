@@ -21,30 +21,29 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
-
-from ..rotations import UniformRotation
+from .. import units
+from ..rotations import create_uniform_rotation
 from ..elementsdb import rotation_elements_db
 
 uniform_rotations={}
-
-uniform_rotations['earth']=UniformRotation(
+uniform_rotations['earth']=create_uniform_rotation(
         period=23.93447117,
         inclination=-23.4392911,
         ascending_node=0,
         meridian_angle=280.147,
         frame=J2000EclipticReferenceFrame())
 
-uniform_rotations['moon']=UniformRotation(
+uniform_rotations['moon']=create_uniform_rotation(
         right_asc=269.9949,
         declination=66.5392,
         meridian_angle=38.3213)
 
-uniform_rotations['hyperion']=UniformRotation(
+uniform_rotations['hyperion']=create_uniform_rotation(
         inclination=61.0,
         period=120.0,
         ascending_node=145)
 
-uniform_rotations['eris']=UniformRotation(
+uniform_rotations['eris']=create_uniform_rotation(
         period=25.92,
         inclination=79.8,
         ascending_node=144)

@@ -25,7 +25,7 @@ from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit
-from ..astro.rotations import Rotation, UniformRotation
+from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
 from ..astro import bayer
 from ..astro import units
@@ -86,14 +86,20 @@ def elliptic_orbit_info(orbit):
 def rotation_info(orbit):
     return None
 
-def circular_rotation_info(rotation):
+def unknown_rotation_info(rotation):
+    texts = [["Unknown rotation", ""]]
+    return ["Rotation", texts]
+
+def uniform_rotation_info(rotation):
     texts = []
-    if rotation.sync:
+    #TODO: should give simulation time !
+    (ra, de) = rotation.calc_axis_ra_de(0)
+    if isinstance(rotation, SynchronousRotation):
         texts.append(["Period", "Synchronous"])
     else:
         texts.append(["Period", toUnit(abs(rotation.period), units.times_scale)])
-    texts.append(["Inclination", "%g°" % (rotation.inclination * 180 / pi)])
-    texts.append(["Ascending Node", "%g°" % (rotation.ascending_node * 180 / pi)])
+    texts.append(["Right Ascension", "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
+    texts.append(["Declination", "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
     date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(rotation.epoch)
     texts.append(["Epoch", "%s" % date])
     return ["Rotation", texts]
@@ -214,7 +220,9 @@ ObjectInfo.register(Orbit, orbit_info)
 ObjectInfo.register(FixedPosition, fixed_orbit_info)
 ObjectInfo.register(EllipticalOrbit, elliptic_orbit_info)
 ObjectInfo.register(Rotation, rotation_info)
-ObjectInfo.register(UniformRotation, circular_rotation_info)
+ObjectInfo.register(UniformRotation, uniform_rotation_info)
+ObjectInfo.register(SynchronousRotation, uniform_rotation_info)
+ObjectInfo.register(UnknownRotation, unknown_rotation_info)
 ObjectInfo.register(Surface, surface)
 ObjectInfo.register(StellarObject, stellar_object)
 ObjectInfo.register(StellarBody, stellar_body)

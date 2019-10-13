@@ -30,7 +30,7 @@ from .appearances import Appearance
 from .annotations import ReferenceAxis, RotationAxis, Orbit
 from .astro.frame import SynchroneReferenceFrame
 from .astro.orbits import FixedOrbit, FixedPosition
-from .astro.rotations import FixedRotation
+from .astro.rotations import UnknownRotation
 from .astro.astro import abs_to_app_mag, lum_to_abs_mag, abs_mag_to_lum, temp_to_radius
 from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
 from .astro.blackbody import temp_to_RGB
@@ -111,7 +111,7 @@ class StellarObject(LabelledObject):
             orbit = FixedOrbit()
         self.orbit = orbit
         if rotation is None:
-            rotation = FixedRotation()
+            rotation = UnknownRotation()
         self.rotation = rotation
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
@@ -922,10 +922,12 @@ class DeepSpaceObject(EmissiveBody):
         self.surface.appearance.set_magnitude(self, self.surface.shape, self.surface.shader, self.abs_magnitude, app_magnitude, self.visible_size)
 
 class SkySphere(VisibleObject):
-    def __init__(self, names, shape=None, appearance=None, shader=None, orientation=FixedRotation()):
+    def __init__(self, names, shape=None, appearance=None, shader=None, orientation=None):
         #TODO: should be a ShapeObject instead !
         VisibleObject.__init__(self, names)
         self.appearance = appearance
+        if orientation is None:
+            orientation = UnknownRotation()
         self.orientation = orientation
         if shape is None:
             shape = ScaledSphereShape(self.context.observer.infinity, inv_texture_u=True)

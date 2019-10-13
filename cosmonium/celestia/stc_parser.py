@@ -24,7 +24,7 @@ from ..universe import Universe
 from ..systems import Barycenter
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
-from ..astro.rotations import FixedRotation
+from ..astro.rotations import UnknownRotation
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -65,7 +65,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     app_magnitude = None
     temperature = None
     orbit = None
-    rotation = FixedRotation()
+    rotation = UnknownRotation()
     parent = None
     surface_factory = None
     texture = None
@@ -139,7 +139,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     decl = None
     distance = None
     orbit = None
-    rotation = FixedRotation()
+    rotation = UnknownRotation()
     parent = None
     for (key, value) in item_data.items():
         if key == 'RA':

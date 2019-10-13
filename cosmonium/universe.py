@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d
+from panda3d.core import LPoint3d, LQuaterniond
 
 from .astro.orbits import FixedOrbit
 from .astro.rotations import FixedRotation
@@ -40,7 +40,7 @@ class Universe(StellarSystem):
     def __init__(self, context):
         StellarSystem.__init__(self, 'Universe',
                                orbit=FixedOrbit(frame=AbsoluteReferenceFrame()),
-                               rotation=FixedRotation(frame=AbsoluteReferenceFrame()),
+                               rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
                                description='Universe')
         self.visible = True
         self.octree_width = 100000.0 * units.Ly

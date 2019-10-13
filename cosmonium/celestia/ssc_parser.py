@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LColor
+from panda3d.core import LColor, LQuaterniond
 
 from . import config_parser
 from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit, \
@@ -39,7 +39,7 @@ from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LambertPhongLightingModel
 from ..astro.orbits import FixedOrbit
-from ..astro.rotations import FixedRotation, UniformRotation
+from ..astro.rotations import FixedRotation, create_uniform_rotation
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, RelativeReferenceFrame, EquatorialReferenceFrame
 from ..dircontext import defaultDirContext
@@ -271,14 +271,14 @@ def instanciate_body(universe, names, is_planet, data):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = UniformRotation(period=rotation_period,
+        rotation = create_uniform_rotation(period=rotation_period,
                                         inclination=rotation_obliquity,
                                         ascending_node=rotation_ascending_node,
                                         meridian_angle=rotation_offset,
                                         epoch=rotation_epoch,
                                         frame=body_frame)
     elif rotation is None:
-        rotation = FixedRotation(frame=body_frame)
+        rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
     if model != None and not (model.endswith('.cmod') or model.endswith('.cms')):
@@ -384,14 +384,14 @@ def instanciate_reference_point(universe, names, is_planet, data):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = UniformRotation(period=rotation_period,
+        rotation = create_uniform_rotation(period=rotation_period,
                                         inclination=rotation_obliquity,
                                         ascending_node=rotation_ascending_node,
                                         meridian_angle=rotation_offset,
                                         epoch=rotation_epoch,
                                         frame=body_frame)
     elif rotation is None:
-        rotation = FixedRotation(frame=body_frame)
+        rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
     ref = ReferencePoint(names=names,

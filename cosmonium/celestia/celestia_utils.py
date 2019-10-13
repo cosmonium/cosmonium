@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from ..astro import bayer
 from ..astro import units
 from ..astro.orbits import create_elliptical_orbit
-from ..astro.rotations import FixedRotation, UniformRotation
+from ..astro.rotations import UnknownRotation, create_uniform_rotation
 from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 
@@ -148,7 +148,6 @@ def instanciate_custom_rotation(data):
     return rotation_elements_db.get(element_name)
 
 def instanciate_uniform_rotation(data, global_coord):
-    radial_speed=None
     period=None
     sync=True
     if global_coord:
@@ -172,7 +171,7 @@ def instanciate_uniform_rotation(data, global_coord):
             meridian_angle = value
         else:
             print("Key of UniformRotation", key, "not supported")
-    return UniformRotation(radial_speed=radial_speed,
+    return create_uniform_rotation(
                               period=period,
                               sync=sync,
                               period_units=period_units,
@@ -181,4 +180,4 @@ def instanciate_uniform_rotation(data, global_coord):
                               meridian_angle=meridian_angle)
 
 def instanciate_precessing_rotation(data):
-    return FixedRotation()
+    return UnknownRotation()
