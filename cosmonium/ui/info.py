@@ -123,7 +123,7 @@ def surface(surface):
                 attributions.append(('Texture', surface.appearance.texture.source.attribution))
     for (name, attribution) in attributions:
         if attribution is None: continue
-        texts.append([name, ''])
+        texts.append([name, None])
         if not isinstance(attribution, list):
             attribution = [attribution]
         for entry in attribution:

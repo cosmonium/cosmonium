@@ -67,9 +67,9 @@ class Layout(object):
         for x in range(self.width):
             pos_y = 0.0
             for y in range(self.height):
+                pos_y -= max_heights[y]
                 child = self.children[x][y]
                 if child is not None:
-                    pos_y -= max_heights[y]
                     child.setPos(pos_x, 0, pos_y)
             pos_x += max_widths[x]
         self.frame['frameSize']= [0, pos_x, 0, pos_y]
