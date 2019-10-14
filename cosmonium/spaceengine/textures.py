@@ -71,6 +71,7 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
         filename = context.find_texture(filename)
+        if filename is None: return None
         if os.path.isdir(filename):
             all_faces = True
             for face in SpaceEngineVirtualTextureSource.face_str:
