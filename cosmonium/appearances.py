@@ -30,6 +30,71 @@ from .dircontext import defaultDirContext
 
 from . import settings
 
+class TexturesBlock(object):
+    def __init__(self):
+        self.albedo = None
+        self.normal = None
+        self.bump = None
+        self.specular = None
+        self.occlusion = None
+        self.emission = None
+        self.albedo_alpha_specular = False
+        self.textures = []
+        self.textures_map = {}
+        self.nb_textures = 0
+
+    def set_target(self, panda, input_name=None):
+        if input_name is None:
+            for texture in self.textures:
+                texture.set_target(panda)
+        else:
+            for texture in self.textures:
+                texture_input_name = input_name + '_' + texture.category
+                texture.set_target(panda, texture_input_name)
+
+    def set_albedo(self, albedo):
+        self.albedo = albedo
+        self.textures.append(albedo)
+        self.nb_textures += 1
+        self.textures_map[albedo.category] = albedo
+
+    def set_transparent_albedo(self, albedo):
+        self.albedo = albedo
+        self.textures.append(albedo)
+        self.nb_textures += 1
+        self.textures_map[albedo.category] = albedo
+
+    def set_emission(self, emission):
+        self.emission = emission
+        self.textures.append(emission)
+        self.nb_textures += 1
+        self.textures_map[emission.category] = emission
+
+    def set_normal(self, normal):
+        self.normal = normal
+        self.textures.append(normal)
+        self.nb_textures += 1
+        self.textures_map[normal.category] = normal
+
+    def set_specular(self, specular):
+        self.specular = specular
+        self.textures.append(specular)
+        self.nb_textures += 1
+        self.textures_map[specular.category] = specular
+
+    def set_occlusion(self, occlusion):
+        self.occlusion = occlusion
+        self.textures.append(occlusion)
+        self.nb_textures += 1
+        self.textures_map[occlusion.category] = occlusion
+
+    def set_bump(self, bump, bump_height):
+        self.bump = bump
+        self.bump_height = bump_height
+        self.textures.append(bump)
+        self.nb_textures += 1
+        self.textures_map[bump.category] = bump
+
 class AppearanceBase:
     def __init__(self):
         self.tex_transform = False

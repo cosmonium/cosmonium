@@ -39,6 +39,15 @@ class TexCoord(object):
 class TextureBase(object):
     default_texture = None
 
+    def __init__(self):
+        self.panda = True
+        self.input_name = None
+
+    def set_target(self, panda, input_name=None):
+        self.panda = panda
+        self.input_name = input_name
+
+
     def set_offset(self, offset):
         pass
 
@@ -47,6 +56,9 @@ class TextureBase(object):
 
     def apply(self, shape):
         pass
+
+    def apply_shader(self, shape, input_name, texture, texture_lod):
+        shape.instance.set_shader_input(input_name, texture)
 
     def can_split(self, patch):
         return False
@@ -70,6 +82,27 @@ class TextureBase(object):
             self.default_texture = self.create_default_texture()
         return self.default_texture
 
+    def clamp(self, texture):
+        texture.setWrapU(Texture.WM_clamp)
+        texture.setWrapV(Texture.WM_clamp)
+
+    def mipmap(self, texture):
+        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMagfilter(Texture.FT_linear_mipmap_linear)
+
+    def mipmap_min(self, texture):
+        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
+        texture.setMagfilter(Texture.FT_linear)
+
+    def linear(self, texture):
+        texture.setMinfilter(Texture.FT_linear)
+        texture.setMagfilter(Texture.FT_linear)
+
+    def debug_borders(self, texture):
+        texture.setWrapU(Texture.WM_border_color)
+        texture.setWrapV(Texture.WM_border_color)
+        texture.setBorderColor(LColor(1, 0, 0, 1))
+
 class TextureSource(object):
     cached = True
     procedural = False
@@ -86,6 +119,9 @@ class TextureSource(object):
         pass
 
     def texture_name(self, patch):
+        return None
+
+    def texture_filename(self, patch):
         return None
 
     def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
@@ -151,6 +187,11 @@ class AutoTextureSource(TextureSource):
     def texture_name(self, patch):
         return self.filename
 
+    def texture_filename(self, patch):
+        if self.source is None:
+            self.create_source()
+        return self.source.texture_filename(patch)
+
     def set_offset(self, offset):
         if self.source is None:
             self.create_source()
@@ -190,6 +231,9 @@ class TextureFileSource(TextureSource):
 
     def texture_name(self, patch):
         return self.filename
+
+    def texture_filename(self, patch):
+        return self.context.find_texture(self.filename)
 
     def texture_loaded_cb(self, texture, callback, cb_args):
         self.texture = texture
@@ -243,18 +287,13 @@ class DirectTextureSource(TextureSource):
 
 class SimpleTexture(TextureBase):
     def __init__(self, source, srgb=False, offset=0):
+        TextureBase.__init__(self)
         if source is not None and not isinstance(source, TextureSource):
             source = AutoTextureSource(source, attribution=None)
         self.srgb = srgb
         self.source = source
         self.offset = offset
         self.tex_matrix= True
-        self.panda = True
-        self.input_name = None
-
-    def set_target(self, panda, input_name=None):
-        self.panda = panda
-        self.input_name = input_name
 
     def set_offset(self, offset):
         self.offset = offset
@@ -313,9 +352,6 @@ class SimpleTexture(TextureBase):
             self.apply_shader(shape, self.input_name, texture, texture_lod)
         self.configure_instance(shape.instance)
 
-    def apply_shader(self, shape, input_name, texture, texture_lod):
-        shape.instance.set_shader_input(input_name, texture)
-
     def apply_panda(self, shape, texture, texture_lod):
         texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
         self.init_texture_stage(texture_stage, texture)
@@ -346,27 +382,6 @@ class SimpleTexture(TextureBase):
 
     def can_split(self, patch):
         return self.source.can_split(patch)
-
-    def clamp(self, texture):
-        texture.setWrapU(Texture.WM_clamp)
-        texture.setWrapV(Texture.WM_clamp)
-
-    def mipmap(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
-        texture.setMagfilter(Texture.FT_linear_mipmap_linear)
-
-    def mipmap_min(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
-        texture.setMagfilter(Texture.FT_linear)
-
-    def linear(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
-
-    def debug_borders(self, texture):
-        texture.setWrapU(Texture.WM_border_color)
-        texture.setWrapV(Texture.WM_border_color)
-        texture.setBorderColor(LColor(1, 0, 0, 1))
 
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
@@ -400,6 +415,7 @@ class VisibleTexture(SimpleTexture):
                 texture.set_format(Texture.F_srgb_alpha)
 
 class SurfaceTexture(VisibleTexture):
+    category = 'albedo'
     def __init__(self, source, tint=None, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb=srgb)
         self.check_transparency = False
@@ -429,6 +445,7 @@ class NightTexture(SurfaceTexture):
         return (0, 0, 0, 1)
 
 class TransparentTexture(VisibleTexture):
+    category = 'albedo'
     def __init__(self, source, tint=None, level=0.0, blend=TransparencyBlend.TB_Alpha, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb)
         self.level = level
@@ -442,6 +459,7 @@ class TransparentTexture(VisibleTexture):
         return (1, 1, 1, 0)
 
 class NormalMapTexture(SimpleTexture):
+    category = 'normal'
     def init_texture_stage(self, texture_stage, texture):
         texture_stage.setMode(TextureStage.MNormal)
 
@@ -449,21 +467,89 @@ class NormalMapTexture(SimpleTexture):
         return (.5, .5, 1, 1)
 
 class SpecularMapTexture(SimpleTexture):
+    category = 'specular'
     def init_texture_stage(self, texture_stage, texture):
         texture_stage.setMode(TextureStage.MGloss)
 
     def get_default_color(self):
         return (1, 1, 1, 1)
 
+class OcclusionMapTexture(SimpleTexture):
+    category = 'occlusion'
+    def get_default_color(self):
+        return (1, 1, 1, 1)
+
 class BumpMapTexture(SimpleTexture):
+    category = 'bump'
     def init_texture_stage(self, texture_stage, texture):
         texture_stage.setMode(TextureStage.MHeight)
 
     def get_default_color(self):
         return (0, 0, 0, 0)
 
+class TextureArray(TextureBase):
+    def __init__(self, textures=None, srgb=False):
+        TextureBase.__init__(self)
+        if textures is None:
+            textures = []
+        self.textures = textures
+        if not settings.srgb:
+            srgb = False
+        self.srgb = srgb
+        for (i, texture) in enumerate(textures):
+            #TODO: should be done properly with an accessor or a map in this class
+            texture.array_id = i
+        self.texture = None
+        self.texture_size = 0
+        self.texture_lod = 0
+
+    def add_texture(self, texture):
+        self.textures.append(texture)
+        #TODO: should be done properly with an accessor or a map in this class
+        texture.array_id = len(self.textures) - 1
+
+    def set_target(self, panda, input_name=None):
+        self.panda = panda
+        self.input_name = input_name
+
+    def convert_texture(self, texture):
+        if self.srgb:
+            tex_format = texture.getFormat()
+            if tex_format == Texture.F_rgb:
+                texture.set_format(Texture.F_srgb)
+            elif tex_format == Texture.F_rgba:
+                texture.set_format(Texture.F_srgb_alpha)
+
+    #TODO: This code is from TextureSource, a TextureArraySource should be created
+    def texture_loaded_cb(self, texture, callback, cb_args):
+        if texture is not None:
+            self.convert_texture(texture)
+        self.texture = texture
+        if callback is not None:
+            callback(self, *cb_args)
+
+    def load(self, patch, callback=None, cb_args=None):
+        if self.texture is None:
+            sync = False
+            if sync:
+                texture = workers.syncTextureLoader.load_texture_array(self.textures)
+                self.texture_loaded_cb(texture, callback, cb_args)
+            else:
+                workers.asyncTextureLoader.load_texture_array(self.textures, self.texture_loaded_cb, (callback, cb_args))
+        else:
+            if callback is not None:
+                callback(self, *cb_args)
+
+    def apply(self, shape):
+        self.mipmap(self.texture)
+        self.apply_shader(shape, self.input_name, self.texture, None)
+
+    def can_split(self, patch):
+        return False
+
 class DataTexture(TextureBase):
     def __init__(self, source):
+        TextureBase.__init__(self)
         if source is not None and not isinstance(source, TextureSource):
             source = TextureFileSource(source)
         self.source = source

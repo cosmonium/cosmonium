@@ -21,43 +21,84 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..appearances import AppearanceBase, Appearance
-from ..textures import TextureBase, SurfaceTexture, AutoTextureSource
 from ..dircontext import defaultDirContext
 
 from .. import settings
+from cosmonium.appearances import TexturesBlock
+from cosmonium.textures import TextureArray
 
 class TextureTilingMode(object):
     F_none = 0
     F_hash = 1
 
 class TexturesDictionary(AppearanceBase):
-    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=TextureTilingMode.F_none, shadow=None, context=defaultDirContext):
+    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=TextureTilingMode.F_none, srgb=None, array=True, context=defaultDirContext):
         AppearanceBase.__init__(self)
-        self.textures = textures
         self.scale_factor = scale_factor
         self.tiling = tiling
-        self.shadow = shadow
-        self.srgb = settings.srgb
+        if srgb is None:
+            srgb = settings.srgb
+        self.srgb = srgb
         self.nb_textures = 0
-        for (name, texture) in self.textures.items():
-            if texture is not None and not isinstance(texture, TextureBase):
-                texture = SurfaceTexture(AutoTextureSource(texture, None, context), None, srgb=self.srgb)
-            self.textures[name] = texture
-            texture.set_target(False, "tex_" + name)
-            self.nb_textures += 1
+        self.nb_blocks = 0
+        self.nb_arrays = 0
+        self.blocks = {}
+        self.blocks_index = {}
+        if settings.use_texture_array and array:
+            self.texture_array = True
+        else:
+            self.texture_array = True
+        self.textures = []
+        self.texture_categories = {}
+        for (name, entry) in textures.items():
+            if not isinstance(entry, TexturesBlock):
+                albedo = entry
+                entry = TexturesBlock()
+                entry.set_albedo(albedo, context)
+            self.blocks[name] = entry
+            self.blocks_index[name] = self.nb_blocks
+            self.textures += entry.textures
+            if not self.texture_array:
+                entry.set_target(False, "tex_" + name)
+            self.nb_textures += entry.nb_textures
+            self.nb_blocks += 1
+        if self.texture_array:
+            self.texture_arrays = {}
+        for texture in self.textures:
+            if self.texture_array:
+                if texture.category not in self.texture_arrays:
+                    self.texture_arrays[texture.category] = TextureArray(srgb=texture.srgb)
+                    self.texture_arrays[texture.category].set_target(False, "tex_array_%s" % texture.category)
+                    self.nb_arrays += 1
+                self.texture_arrays[texture.category].add_texture(texture)
+            self.texture_categories[texture.category] = True
+
+    def get_tex_id_for(self, block_id, category):
+        block = self.blocks[block_id]
+        texture = block.textures_map[category]
+        return texture.array_id
 
     def set_shadow(self, shadow):
         self.shadow = shadow
 
     def apply_textures(self, shape):
-        for (name, texture) in self.textures.items():
+        for texture in self.texture_arrays.values():
             texture.apply(shape)
+        else:
+            for entry in self.blocks.values():
+                for texture in entry.textures:
+                    texture.apply(shape)
 
     def texture_loaded_cb(self, texture, patch, owner):
         owner.jobs_done_cb(None)
 
     def load_textures(self, shape, owner):
-        for (name, texture) in self.textures.items():
+        for entry in self.blocks.values():
+            for texture in entry.textures:
+                texture.load(shape, self.texture_loaded_cb, (shape, owner))
+
+    def load_texture_array(self, shape, owner):
+        for texture in self.texture_arrays.values():
             texture.load(shape, self.texture_loaded_cb, (shape, owner))
 
     def apply(self, shape, owner):
@@ -65,8 +106,12 @@ class TexturesDictionary(AppearanceBase):
             #print("APPLY", shape, self.nb_textures)
             if self.nb_textures > 0:
                 shape.jobs |= Appearance.JOB_TEXTURE_LOAD
-                shape.jobs_pending += self.nb_textures
-                self.load_textures(shape, owner)
+                if self.texture_array:
+                    shape.jobs_pending += self.nb_arrays
+                    self.load_texture_array(shape, owner)
+                else:
+                    shape.jobs_pending += self.nb_textures
+                    self.load_textures(shape, owner)
 
 class ProceduralAppearance(AppearanceBase):
     def __init__(self,

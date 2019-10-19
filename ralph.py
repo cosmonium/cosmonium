@@ -183,25 +183,17 @@ class RalphConfigParser(YamlModuleParser):
         else:
             self.biome = None
 
-        if control is not None:
-            control_type = control.get('type', 'textures')
-            if control_type == 'textures':
-                control_parser = TextureControlYamlParser()
-                self.control = control_parser.decode(control)
-            elif control_type == 'colormap':
-                control_parser = HeightColorControlYamlParser()
-                self.control = control_parser.decode(control, self.height_scale)
-            else:
-                print("Unknown control type '%'" % control_type)
-                self.control = None
-        else:
-            self.control = None
-
         if appearance is not None:
             appearance_parser = TextureDictionaryYamlParser()
             self.appearance = appearance_parser.decode(appearance)
         else:
             self.appearance = None
+
+        if control is not None:
+            control_parser = TextureControlYamlParser()
+            (self.control, appearance_source) = control_parser.decode(control, self.appearance, self.height_scale)
+        else:
+            self.control = None
 
         if water is not None:
             level = water.get('level', 0)

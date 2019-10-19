@@ -139,6 +139,7 @@ def check_opengl_config(base):
     settings.non_power_of_two_textures = not settings.force_power_of_two_textures and gsg.supports_tex_non_pow2
     settings.hardware_tessellation = settings.use_hardware_tessellation and gsg.supports_tessellation_shaders
     settings.hardware_instancing = settings.use_hardware_instancing and gsg.supports_geometry_instancing
+    settings.texture_array = settings.use_texture_array and gsg.supports_2d_texture_array
     check_floating_point_buffer(base)
     check_srgb_buffer(base)
     check_glsl_version(glsl_version)
@@ -169,6 +170,7 @@ def check_opengl_config(base):
     print("sRGB:", settings.srgb)
     print("Render to buffer:", settings.buffer_texture)
     print("Floating point buffer:", settings.floating_point_buffer)
+    print("Texture array:", settings.texture_array)
 
 def check_and_create_rendering_buffers(showbase):
     if not settings.render_scene_to_buffer:

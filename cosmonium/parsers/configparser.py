@@ -176,6 +176,7 @@ class ConfigParser(YamlParser):
         settings.use_hardware_tessellation = data.get('hw-tessellation', settings.use_hardware_tessellation)
         settings.use_hardware_instancing = data.get('hw-instancing', settings.use_hardware_instancing)
         settings.use_floating_point_buffer = data.get('hw-fp-buffer', settings.use_floating_point_buffer)
+        settings.use_texture_array = data.get('texture-array', settings.use_texture_array)
         settings.use_core_profile_mac = data.get('core-profile-mac', settings.use_core_profile_mac)
         settings.use_gl_version = data.get('gl-version', settings.use_gl_version)
 
@@ -187,6 +188,7 @@ class ConfigParser(YamlParser):
         data['hw-tessellation'] = settings.use_hardware_tessellation
         data['hw-instancing'] = settings.use_hardware_instancing
         data['hw-fp-buffer'] = settings.use_floating_point_buffer
+        data['texture-array'] = settings.use_texture_array
         data['core-profile-mac'] = settings.use_core_profile_mac
         data['gl-version'] = settings.use_gl_version
         return data

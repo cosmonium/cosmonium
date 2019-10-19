@@ -1239,6 +1239,7 @@ class ShaderAppearance(ShaderComponent):
 
     def fragment_shader_decl(self, code):
         code.append("vec4 surface_color;")
+        code.append("float surface_occlusion;")
         code.append("vec3 pixel_normal;")
         code.append("vec3 specular_factor;")
         code.append("vec3 night_color;")
@@ -1350,6 +1351,7 @@ class TextureAppearance(ShaderAppearance):
             code.append("specular_factor = vec3(1.0, 1.0, 1.0);")
         if self.has_night_texture:
             code.append("night_color = %s;" % self.data.get_source_for('night'))
+        code.append("surface_occlusion = 1.0;")
 
     def update_shader_shape_static(self, shape, appearance):
         if self.has_specular:
@@ -2156,7 +2158,7 @@ class LambertPhongLightingModel(LightingModel):
             code.append("diffuse_angle = diffuse_angle * smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
         code.append("float diffuse_coef = clamp(diffuse_angle, 0.0, 1.0);")
         code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
-        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient * surface_occlusion), 0.0, 1.0);")
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
         if self.appearance.has_material:

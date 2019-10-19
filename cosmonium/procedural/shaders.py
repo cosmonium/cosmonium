@@ -444,14 +444,22 @@ class TextureDictionaryDataSource(DataSource):
         DataSource.__init__(self, shader)
         self.dictionary = dictionary
         self.tiling = dictionary.tiling
+        self.nb_entries = self.dictionary.nb_blocks
+        self.nb_coefs = (self.nb_entries + 3) // 4
 
     def get_id(self):
         return 'dict' + str(id(self))
 
     def fragment_uniforms(self, code):
         DataSource.fragment_uniforms(self, code)
-        for texture_id in self.dictionary.textures.keys():
-            code.append("uniform sampler2D tex_%s;" % texture_id)
+        code.append("#define NB_COEFS_VEC %d" % self.nb_coefs)
+        if self.dictionary.texture_array:
+            for texture in self.dictionary.texture_arrays.values():
+                code.append("uniform sampler2DArray %s;" % texture.input_name)
+        else:
+            for (name, entry) in self.dictionary.blocks.items():
+                for texture in entry.textures:
+                    code.append("uniform sampler2D tex_%s_%s;" % (name, texture.category))
         code.append("uniform vec2 detail_factor;")
 
     def hash4(self, code):
@@ -463,11 +471,14 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
 ''')
 
     def textureNoTile(self, code):
-        code.append('''
-vec4 textureNoTile(sampler2D samp, in vec2 uv)
-{
-    vec2 iuv = floor(uv);
-    vec2 fuv = fract(uv);
+        if self.dictionary.texture_array:
+            code.append("vec4 textureNoTile(sampler2DArray samp, in vec3 uv)")
+        else:
+            code.append("vec4 textureNoTile(sampler2D samp, in vec2 uv)")
+        code.append(
+'''{
+    vec2 iuv = floor(uv.xy);
+    vec2 fuv = fract(uv.xy);
 
     // generate per-tile transform
     vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
@@ -475,8 +486,8 @@ vec4 textureNoTile(sampler2D samp, in vec2 uv)
     vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
     vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
 
-    vec2 ddx = dFdx(uv);
-    vec2 ddy = dFdy(uv);
+    vec2 ddx = dFdx(uv.xy);
+    vec2 ddy = dFdy(uv.xy);
 
     // transform per-tile uvs
     ofa.zw = sign(ofa.zw - 0.5);
@@ -485,42 +496,82 @@ vec4 textureNoTile(sampler2D samp, in vec2 uv)
     ofd.zw = sign(ofd.zw - 0.5);
 
     // uv's, and derivarives (for correct mipmapping)
-    vec2 uva = uv*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
-    vec2 uvb = uv*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
-    vec2 uvc = uv*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
-    vec2 uvd = uv*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
+    vec2 uva = uv.xy*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
+    vec2 uvb = uv.xy*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
+    vec2 uvc = uv.xy*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
+    vec2 uvd = uv.xy*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
 
     // fetch and blend
     vec2 b = smoothstep(0.25, 0.75, fuv);
-
+''')
+        if self.dictionary.texture_array:
+            code.append('''
+    return mix( mix(textureGrad(samp, vec3(uva, uv.z), ddxa, ddya),
+                    textureGrad(samp, vec3(uvb, uv.z), ddxb, ddyb), b.x),
+                mix(textureGrad(samp, vec3(uvc, uv.z), ddxc, ddyc),
+                    textureGrad(samp, vec3(uvd, uv.z), ddxd, ddyd), b.x), b.y);
+''')
+        else:
+            code.append('''
     return mix( mix(textureGrad(samp, uva, ddxa, ddya),
                     textureGrad(samp, uvb, ddxb, ddyb), b.x),
                 mix(textureGrad(samp, uvc, ddxc, ddyc),
                     textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
-}
 ''')
+        code.append("}")
+
+    def resolve_coefs(self, code, category):
+        code.append("vec4 resolve_%s(vec4 coefs[NB_COEFS_VEC], vec2 position) {" % category)
+        if self.tiling == TextureTilingMode.F_hash:
+            sampler = 'textureNoTile'
+        else:
+            if self.dictionary.texture_array:
+                sampler = 'texture'
+            else:
+                sampler = 'texture2D'
+        code.append("    float coef;")
+        code.append("    vec4 result;")
+        for (block_id, block) in self.dictionary.blocks.items():
+            index = self.dictionary.blocks_index[block_id]
+            major = index // 4
+            minor = index % 4
+            tex_id = self.dictionary.get_tex_id_for(block_id, category)
+            code.append("    coef = coefs[%d][%d];" % (major, minor))
+            code.append("    if (coef > 0) {")
+            if self.dictionary.texture_array:
+                dict_name = 'array_%s' % category
+                if category == 'normal':
+                    code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz * 2 - 1;" % (block_id, sampler, dict_name, tex_id))
+                else:
+                    code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz;" % (block_id, sampler, dict_name, tex_id))
+            else:
+                if category == 'normal':
+                    code.append("      vec3 tex_%s = %s(tex_%s_%s, position.xy * detail_factor).xyz * 2 - 1;" % (block_id, sampler, block_id, category))
+                else:
+                    code.append("      vec3 tex_%s = %s(tex_%s_%s, position.xy * detail_factor).xyz;" % (block_id, sampler, block_id, category))
+            code.append("      result.rgb = mix(result.rgb, tex_%s, coef);" % (block_id))
+            code.append("    }")
+        code.append("    result.w = 1.0;")
+        code.append("    return result;")
+        code.append("}")
 
     def fragment_extra(self, code):
         DataSource.fragment_extra(self, code)
         if self.tiling == TextureTilingMode.F_hash:
             self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
             self.shader.fragment_shader.add_function(code, 'textureNoTile', self.textureNoTile)
-        for texture_id in self.dictionary.textures.keys():
-            code.append("vec3 tex_%s_color;" % texture_id)
+        for category in self.dictionary.texture_categories.keys():
+            self.resolve_coefs(code, category)
 
     def get_source_for(self, source, param, error=True):
-        if source in self.dictionary.textures:
-            return "tex_%s_color" % source
+        for category in self.dictionary.texture_categories.keys():
+            if source == 'resolve_tex_dict_' + category:
+                return 'resolve_%s(%s)' % (category, ', '.join(param))
+        for (name, index) in self.dictionary.blocks_index.items():
+            if source == name + '_index':
+                return (index, self.nb_coefs)
         if error: print("Unknown source '%s' requested" % source)
-        return ''
-
-    def fragment_shader(self, code):
-        if self.tiling == TextureTilingMode.F_hash:
-            sampler = 'textureNoTile'
-        else:
-            sampler = 'texture2D'
-        for texture_id in self.dictionary.textures.keys():
-            code.append("    tex_%s_color = %s(tex_%s, position.xy * detail_factor).xyz;" % (texture_id, sampler, texture_id))
+        return 0
 
     def update_shader_shape_static(self, shape, appearance):
         DataSource.update_shader_shape_static(self, shape, appearance)
@@ -572,11 +623,14 @@ class DetailMap(ShaderAppearance):
         ShaderAppearance.__init__(self, shader)
         self.textures_control = textures_control
         self.heightmap = heightmap
+        self.textures_control.set_heightmap(self.heightmap)
         self.has_surface_texture = True
         self.has_normal_texture = create_normals
         self.normal_texture_tangent_space = True
         self.has_material = False
-        self.textures_control.set_heightmap(self.heightmap)
+
+    def create_shader_configuration(self, appearance):
+        self.textures_control.create_shader_configuration(appearance)
 
     def get_id(self):
         config = "dm"
@@ -617,13 +671,23 @@ class DetailMap(ShaderAppearance):
         code.append("float height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord0.xy'))
         code.append('vec2 uv = texcoord0.xy;')
         code.append('float angle = surface_normal.z;')
-        if True:
-            self.textures_control.color_func_call(code)
-            code.append("surface_color = vec4(%s_color, 1.0);" % self.textures_control.name)
-        else:
-            code += ['surface_color = vec4(surface_normal, 1.0);']
+        self.textures_control.color_func_call(code)
+        if self.textures_control.has_albedo:
+            self.textures_control.get_value(code, 'albedo')
+            code.append("surface_color = %s_albedo;" % self.textures_control.name)
         if self.has_normal_texture:
-            code += ['pixel_normal = surface_normal;']
+            if self.textures_control.has_normal:
+                self.textures_control.get_value(code, 'normal')
+                code.append("vec3 n1 = surface_normal + vec3(0, 0, 1);")
+                code.append("vec3 n2 = %s_normal.xyz * vec3(-1, -1, 1);" % self.textures_control.name)
+                code.append("pixel_normal = n1 * dot(n1, n2) / n1.z - n2;")
+            else:
+                code.append("pixel_normal = surface_normal;")
+        if self.textures_control.has_occlusion:
+            self.textures_control.get_value(code, 'occlusion')
+            code.append("surface_occlusion = %s_occlusion.x;" % self.textures_control.name)
+        else:
+            code.append('surface_occlusion = 1.0;')
 
     def update_shader_shape_static(self, shape, appearance):
         ShaderAppearance.update_shader_shape_static(self, shape, appearance)

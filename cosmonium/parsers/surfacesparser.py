@@ -39,7 +39,7 @@ from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser
 from .noiseparser import NoiseYamlParser
 from .heightmapsparser import InterpolatorYamlParser
-from .textureparser import TextureControlYamlParser, HeightColorControlYamlParser
+from .textureparser import TextureControlYamlParser
 
 from math import pi
 
@@ -132,18 +132,10 @@ class SurfaceYamlParser(YamlModuleParser):
                     heightmap_source_type = GpuTextureSource
             control = data.get('control', None)
             if control is not None:
-                control_type = control.get('type', 'textures')
-                if control_type == 'textures':
-                    control_parser = TextureControlYamlParser()
-                    control = control_parser.decode(control, height_scale, radius)
-                    appearance_source = TextureDictionaryDataSource(appearance)
-                elif control_type == 'colormap':
-                    control_parser = HeightColorControlYamlParser()
-                    control = control_parser.decode(control, height_scale, radius, median)
-                    appearance_source = None
-                else:
-                    print("Unknown control type '%'" % control_type)
-                shader_appearance = DetailMap(control, heightmap, create_normals=True)
+                control_parser = TextureControlYamlParser()
+                (control, appearance_source) = control_parser.decode(control, appearance, height_scale, radius, median)
+                if control is not None:
+                    shader_appearance = DetailMap(control, heightmap, create_normals=True)
             else:
                 shader_appearance = None
                 appearance_source = PandaTextureDataSource()

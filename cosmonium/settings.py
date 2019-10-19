@@ -49,6 +49,7 @@ use_hardware_tessellation = True
 use_hardware_instancing = True
 use_inverse_z = False
 instancing_use_tex = True
+use_texture_array = True
 
 #Settings
 use_hdr = False
@@ -206,6 +207,7 @@ srgb_texture = False
 software_srgb = False
 hardware_tessellation = False
 hardware_instancing = False
+texture_array = False
 
 # Window configuration
 win_fullscreen = False

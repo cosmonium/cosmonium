@@ -119,6 +119,9 @@ class AsyncTextureLoader(AsyncLoader):
     def load_texture(self, filename, alpha_filename, callback, args):
         self.add_job(self.do_load_texture, [filename, alpha_filename], callback, args)
 
+    def load_texture_array(self, textures, callback, args):
+        self.add_job(self.do_load_texture_array, [textures], callback, args)
+
     def do_load_texture(self, filename, alpha_filename):
         tex = Texture()
         panda_filename = Filename.from_os_specific(filename)
@@ -128,6 +131,20 @@ class AsyncTextureLoader(AsyncLoader):
             panda_alpha_filename = Filename('')
         tex.read(fullpath=panda_filename, alpha_fullpath=panda_alpha_filename,
                  primary_file_num_channels=0, alpha_file_channel=0)
+        return tex
+
+    def do_load_texture_array(self, textures):
+        tex = Texture()
+        tex.setup_2d_texture_array(len(textures))
+        for (page, texture) in enumerate(textures):
+            filename = texture.source.texture_filename(None)
+            if filename is not None:
+                panda_filename = Filename.from_os_specific(filename)
+                tex.read(fullpath=panda_filename, z=page, n=0, read_pages=False, read_mipmaps=False)
+            else:
+                print("Could not find", texture.source.texture_name(None))
+                image = texture.create_default_image()
+                tex.load(image, z=page, n=0)
         return tex
 
 class SyncTextureLoader():
