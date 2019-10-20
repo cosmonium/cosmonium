@@ -127,8 +127,6 @@ class StellarObject(LabelledObject):
         self._position = LPoint3d()
         self._global_position = LPoint3d()
         self._local_position = LPoint3d()
-        self._orbit_position = LPoint3d()
-        self._orbit_rotation = LQuaterniond()
         self._orientation = LQuaterniond()
         self._equatorial = LQuaterniond()
         self._app_magnitude = None
@@ -316,7 +314,7 @@ class StellarObject(LabelledObject):
         return global_position
 
     def get_local_position(self):
-        return self.orbit.frame.get_local_position(self._orbit_rotation.xform(self._orbit_position))
+        return self._local_position
 
     def get_position(self):
         return self.get_global_position() + self.get_local_position()
@@ -325,13 +323,13 @@ class StellarObject(LabelledObject):
         return (self.get_global_position() - position) + self.get_local_position()
 
     def get_abs_rotation(self):
-        return self.rotation.frame.get_abs_orientation(self._orientation)
+        return self._orientation
 
     def get_equatorial_rotation(self):
-        return self.rotation.frame.get_abs_orientation(self._equatorial)
+        return self._equatorial
 
     def get_sync_rotation(self):
-        return self.rotation.frame.get_abs_orientation(self._orientation)
+        return self._orientation
 
     def cartesian_to_spherical(self, position):
         sync_frame = SynchroneReferenceFrame(self)
@@ -392,14 +390,12 @@ class StellarObject(LabelledObject):
             return 0.0
 
     def update(self, time):
-        self._orbit_position = self.orbit.get_position_at(time)
-        self._orbit_rotation = self.orbit.get_rotation_at(time)
         self._orientation = self.rotation.get_rotation_at(time)
-        self._equatorial = self.rotation.get_equatorial_rotation_at(time)
-        self._local_position = self.orbit.frame.get_local_position(self._orbit_rotation.xform(self._orbit_position))
+        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
+        self._local_position = self.orbit.get_position_at(time)
         self._global_position = self.parent._global_position + self.orbit.get_global_position_at(time)
         self._position = self._global_position + self._local_position
-        if self.star:
+        if self.star is not None:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
         CompositeObject.update(self, time)
         self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)

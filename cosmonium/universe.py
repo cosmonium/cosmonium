@@ -174,9 +174,6 @@ class Universe(StellarSystem):
 
     def get_global_position(self):
         return LPoint3d()
-
-    def get_local_position(self):
-        return self._orbit_position
     
     def get_abs_rotation(self):
         return self._orientation

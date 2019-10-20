@@ -750,8 +750,8 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(', self.selected._orbit_position, ')')
-            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected._orbit_rotation, ')')
+            print("\tLocal position", self.selected.get_local_position())
+            print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected._orientation)
             print("\tVector to obs", self.selected.vector_to_obs)
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)

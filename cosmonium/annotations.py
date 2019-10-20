@@ -104,9 +104,7 @@ class Orbit(VisibleObject):
         delta = self.body.parent.get_local_position()
         for i in range(self.nbOfPoints):
             time = self.orbit.period / self.nbOfPoints * i
-            pos = self.orbit.get_position_at(time)
-            rot = self.orbit.get_rotation_at(time)
-            pos = self.orbit.frame.get_local_position(rot.xform(pos)) - delta
+            pos = self.orbit.get_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):

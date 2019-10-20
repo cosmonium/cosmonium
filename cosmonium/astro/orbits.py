@@ -49,11 +49,17 @@ class Orbit(object):
     def get_global_position_at(self, time):
         return self.origin
 
-    def get_position_at(self, time):
+    def get_frame_position_at(self, time):
         return None
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return None
+
+    def get_position_at(self, time):
+        return self.frame.get_local_position(self.get_frame_rotation_at(time).xform(self.get_frame_position_at(time)))
+
+    def get_rotation_at(self, time):
+        return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
 
     def project(self, time, center, radius):
         return None
@@ -114,10 +120,10 @@ class FixedPosition(Orbit):
     def get_global_position_at(self, time):
         return self.global_position
 
-    def get_position_at(self, time):
+    def get_frame_position_at(self, time):
         return self.position
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return self.rotation
     
 class InfinitePosition(Orbit):
@@ -135,10 +141,10 @@ class InfinitePosition(Orbit):
     def project(self, time, center, radius):
         return self.orientation.xform(LVector3d(0, 0, radius))
     
-    def get_position_at(self, time):
+    def get_frame_position_at(self, time):
         return self.position
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return self.rotation
     
 class FixedOrbit(Orbit):
@@ -147,10 +153,10 @@ class FixedOrbit(Orbit):
         self.position = position
         self.rotation = rotation
 
-    def get_position_at(self, time):
+    def get_frame_position_at(self, time):
         return self.position
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return self.rotation
 
 class EllipticalOrbit(Orbit):
@@ -194,11 +200,11 @@ class EllipticalOrbit(Orbit):
     def get_apparent_radius(self):
         return self.apocenter_distance
 
-    def get_position_at(self, time):
+    def get_frame_position_at(self, time):
         mean_anomaly = (time - self.epoch) * self.mean_motion + self.mean_anomaly
         return kepler_pos(self.pericenter_distance, self.eccentricity, mean_anomaly)
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return self.rotation
 
 def create_elliptical_orbit(semi_major_axis=None,

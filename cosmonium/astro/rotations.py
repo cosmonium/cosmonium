@@ -36,11 +36,17 @@ class Rotation(object):
     def set_frame(self, frame):
         self.frame = frame
 
-    def get_equatorial_rotation_at(self, time):
+    def get_frame_equatorial_orientation_at(self, time):
+        return None
+
+    def get_equatorial_orientation_at(self, time):
+        return self.frame.get_abs_orientation(self.get_frame_equatorial_orientation_at(time))
+
+    def get_frame_rotation_at(self, time):
         return None
 
     def get_rotation_at(self, time):
-        return None
+        return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
 
 class FixedRotation(Rotation):
     def __init__(self, rotation, frame):
@@ -48,14 +54,14 @@ class FixedRotation(Rotation):
         self.axis_rotation = rotation
         self.rotation = LQuaterniond()
 
-    def get_equatorial_rotation_at(self, time):
+    def get_frame_equatorial_orientation_at(self, time):
         return self.axis_rotation
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         return self.axis_rotation
 
     def calc_axis_ra_de(self, time):
-        rotation = self.get_equatorial_rotation_at(time)
+        rotation = self.get_equatorial_orientation_at(time)
         axis = rotation.xform(LVector3d.up())
         axis = self.frame.get_orientation().xform(axis)
         projected = J2000EquatorialReferenceFrame.orientation.conjugate().xform(axis)
@@ -86,11 +92,11 @@ class UniformRotation(FixedRotation):
         self.epoch = epoch
         self.meridian_angle = meridian_angle
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         angle = (time - self.epoch) * self.mean_motion + self.meridian_angle
         local = LQuaterniond()
         local.setFromAxisAngleRad(angle, LVector3d.unitZ())
-        rotation = local * self.get_equatorial_rotation_at(time)
+        rotation = local * self.get_frame_equatorial_orientation_at(time)
         return rotation
 
 class SynchronousRotation(FixedRotation):
@@ -103,11 +109,11 @@ class SynchronousRotation(FixedRotation):
         self.epoch = epoch
         self.meridian_angle = meridian_angle * pi / 180
 
-    def get_rotation_at(self, time):
+    def get_frame_rotation_at(self, time):
         angle = (time - self.epoch) * self.body.orbit.get_mean_motion() + self.meridian_angle
         local = LQuaterniond()
         local.setFromAxisAngleRad(angle, LVector3d.unitZ())
-        rotation = local * self.get_equatorial_rotation_at(time)
+        rotation = local * self.get_frame_equatorial_orientation_at(time)
         return rotation
 
 def create_fixed_rotation(
