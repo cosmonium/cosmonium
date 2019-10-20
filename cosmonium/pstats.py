@@ -35,8 +35,8 @@ def pstat(func):
         return returned
     return doPstat
 
-def levelpstat(name):
-    collectorName = "%s:%s" % ('Engine', name)
+def levelpstat(name, category='Engine'):
+    collectorName = category + ':' + name
     if not collectorName in custom_collectors.keys():
         custom_collectors[collectorName] = PStatCollector(collectorName)
     pstat = custom_collectors[collectorName]

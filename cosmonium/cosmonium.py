@@ -63,11 +63,13 @@ from . import workers
 from . import cache
 from . import mesh
 from . import settings
+from . import pstats
 
 from math import pi
 import platform
 import sys
 import os
+from cosmonium.bodies import StellarObject
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
@@ -668,6 +670,14 @@ class Cosmonium(CosmoniumBase):
         self.nav.update(dt)
 
         self.update_octree()
+        update = pstats.levelpstat('update', 'Bodies')
+        obs = pstats.levelpstat('obs', 'Bodies')
+        visibility = pstats.levelpstat('visibility', 'Bodies')
+        instance = pstats.levelpstat('instance', 'Bodies')
+        StellarObject.nb_update = 0
+        StellarObject.nb_obs = 0
+        StellarObject.nb_visibility = 0
+        StellarObject.nb_instance = 0
 
         if self.trigger_check_settings:
             self.universe.check_settings()
@@ -730,6 +740,11 @@ class Cosmonium(CosmoniumBase):
                 self.observer.update_near_plane(near_plane)
         self.update_visibility()
         self.update_instances()
+
+        update.set_level(StellarObject.nb_update)
+        obs.set_level(StellarObject.nb_obs)
+        visibility.set_level(StellarObject.nb_visibility)
+        instance.set_level(StellarObject.nb_instance)
 
         return Task.cont
 

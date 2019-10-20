@@ -101,6 +101,10 @@ class StellarObject(LabelledObject):
     has_resolved_halo = False
     virtual_object = False
     support_offset_body_center = True
+    nb_update = 0
+    nb_obs = 0
+    nb_visibility = 0
+    nb_instance = 0
 
     def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         LabelledObject.__init__(self, names)
@@ -390,6 +394,7 @@ class StellarObject(LabelledObject):
             return 0.0
 
     def update(self, time):
+        StellarObject.nb_update += 1
         self._orientation = self.rotation.get_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
         self._local_position = self.orbit.get_position_at(time)
@@ -401,6 +406,7 @@ class StellarObject(LabelledObject):
         self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
 
     def update_obs(self, observer):
+        StellarObject.nb_obs += 1
         global_delta = self._global_position - observer.camera_global_pos
         local_delta = self._local_position - observer._position
         self.rel_position = global_delta + local_delta
@@ -411,6 +417,7 @@ class StellarObject(LabelledObject):
         CompositeObject.update_obs(self, observer)
 
     def check_visibility(self, pixel_size):
+        StellarObject.nb_visibility += 1
         if self.distance_to_obs > 0.0:
             self.visible_size = self._extend / (self.distance_to_obs * pixel_size)
         else:
@@ -437,6 +444,7 @@ class StellarObject(LabelledObject):
         LabelledObject.check_visibility(self, pixel_size)
 
     def check_and_update_instance(self, camera_pos, orientation, pointset):
+        StellarObject.nb_instance += 1
         if self.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             height = self.get_height_under(camera_pos)
             self.scene_rel_position = self.rel_position + self.vector_to_obs * height
