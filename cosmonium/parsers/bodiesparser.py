@@ -67,26 +67,8 @@ class ReflectiveYamlParser(YamlModuleParser):
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
         if data.get('surfaces') is None:
-            shape, extra = ShapeYamlParser.decode(data.get('shape'))
-            appearance = AppearanceYamlParser.decode(data.get('appearance'))
-            lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
-            if shape.patchable:
-                if appearance.texture is None or appearance.texture.source.procedural:
-                    shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
-                else:
-                    shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
-            shader = BasicShader(lighting_model=lighting_model,
-                                 use_model_texcoord=not extra.get('create-uv', False))
-            category = surfaceCategoryDB.get('visible')
-            if category is None:
-                print("Category 'visible' unknown")
-                category = SurfaceCategory('visible')
-                surfaceCategoryDB.add(category)
-            surface = FlatSurface(name=None, category=category, resolution=None, attribution=None,
-                                  shape=shape, appearance=appearance, shader=shader)
             surfaces = []
-            if atmosphere is not None:
-                atmosphere.add_shape_object(surface)
+            surface = SurfaceYamlParser.decode_surface(data, atmosphere, {}, data)
         else:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, data)
             surface = surfaces.pop(0)

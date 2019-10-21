@@ -29,7 +29,6 @@ from ..universe import Universe
 from ..astro import units
 from ..astro import bayer
 from ..astro.units import toUnit
-from ..dircontext import defaultDirContext
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
 from ..bodyclass import bodyClasses
@@ -37,6 +36,8 @@ from ..appstate import AppState
 from ..celestia.cel_url import CelUrl
 from .. import utils
 from .. import settings
+#TODO: should only be used by Cosmonium main class
+from ..parsers.configparser import configParser
 
 from .hud import HUD
 from .query import Query
@@ -335,6 +336,31 @@ class Gui(object):
     def toggle_split_merge_debug(self):
         settings.debug_lod_split_merge = not settings.debug_lod_split_merge
 
+    def toggle_stereoscopic_framebuffer(self):
+        settings.stereoscopic_framebuffer = not settings.stereoscopic_framebuffer
+        if settings.stereoscopic_framebuffer:
+            settings.red_blue_stereo = False
+            settings.side_by_side_stereo = False
+        configParser.save()
+
+    def toggle_red_blue_stereo(self):
+        settings.red_blue_stereo = not settings.red_blue_stereo
+        if settings.red_blue_stereo:
+            settings.stereoscopic_framebuffer = False
+            settings.side_by_side_stereo = False
+        configParser.save()
+
+    def toggle_side_by_side_stereo(self):
+        settings.side_by_side_stereo = not settings.side_by_side_stereo
+        if settings.side_by_side_stereo:
+            settings.red_blue_stereo = False
+            settings.stereoscopic_framebuffer = False
+        configParser.save()
+
+    def toggle_swap_eyes(self):
+        settings.stereo_swap_eyes = not settings.stereo_swap_eyes
+        configParser.save()
+
     def create_main_menu_items(self):
         return (
                 ('_Find object>Enter', 0, self.open_find_object),
@@ -446,6 +472,13 @@ class Gui(object):
                  ('E_cliptic>:', settings.show_ecliptic_grid, self.cosmonium.toggle_grid_ecliptic),
                  )
 
+        stereo = (
+                    ('Hardware support', settings.stereoscopic_framebuffer, self.toggle_stereoscopic_framebuffer),
+                    ('Red-Blue', settings.red_blue_stereo, self.toggle_red_blue_stereo),
+                    ('Side by side', settings.side_by_side_stereo, self.toggle_side_by_side_stereo),
+                    ('Swap eyes', settings.stereo_swap_eyes, self.toggle_swap_eyes),
+                    )
+
         advanced = (
                     ('_Decrease ambient>{', 0, self.cosmonium.incr_ambient, -0.05),
                     ('_Increase ambient>}', 0, self.cosmonium.incr_ambient, +0.05),
@@ -461,6 +494,7 @@ class Gui(object):
             ('O_ptions', 0, options),
             ('_Grids', 0, grids),
             ('G_uides', 0, guides),
+            ('_3D', 0, stereo),
             ('_Advanced', 0, advanced),
         )
 

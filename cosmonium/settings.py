@@ -54,7 +54,7 @@ use_texture_array = True
 stereoscopic_framebuffer = False
 red_blue_stereo = False
 side_by_side_stereo = False
-crossed_side_by_side_stereo = True
+stereo_swap_eyes = False
 
 #Settings
 use_hdr = False

@@ -53,8 +53,8 @@ def request_opengl_config(data):
         data.append("red-blue-stereo #t")
     elif settings.side_by_side_stereo:
         data.append("side-by-side-stereo #t")
-        if settings.crossed_side_by_side_stereo:
-            data.append("swap-eyes #t")
+    if settings.stereo_swap_eyes:
+        data.append("swap-eyes #t")
     data.append("gl-coordinate-system default")
     data.append("gl-check-errors #t")
     if settings.dump_panda_shaders:

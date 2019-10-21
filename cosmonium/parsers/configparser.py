@@ -182,7 +182,7 @@ class ConfigParser(YamlParser):
         settings.stereoscopic_framebuffer = data.get('framebuffer-stereo', settings.stereoscopic_framebuffer)
         settings.red_blue_stereo = data.get('red-blue-stereo', settings.red_blue_stereo)
         settings.side_by_side_stereo = data.get('side-by-side-stereo', settings.side_by_side_stereo)
-        settings.crossed_side_by_side_stereo = data.get('swap-eyes', settings.crossed_side_by_side_stereo)
+        settings.stereo_swap_eyes = data.get('swap-eyes', settings.stereo_swap_eyes)
 
     def encode_opengl(self):
         data = {}
@@ -198,7 +198,7 @@ class ConfigParser(YamlParser):
         data['framebuffer-stereo'] = settings.stereoscopic_framebuffer
         data['red-blue-stereo'] = settings.red_blue_stereo
         data['side-by-side-stereo'] = settings.side_by_side_stereo
-        data['swap-eyes'] = settings.crossed_side_by_side_stereo
+        data['swap-eyes'] = settings.stereo_swap_eyes
         return data
 
     def decode_debug(self, data):
