@@ -57,6 +57,7 @@ class YamlParser(object):
         data = None
         try:
             yaml = ruamel.yaml.YAML(typ='safe')
+            yaml.allow_duplicate_keys = True
             data = yaml.load(stream)
         except ruamel.yaml.YAMLError as e:
             if stream_name is not None:
@@ -75,6 +76,7 @@ class YamlParser(object):
             stream = open(filename, 'w')
             data = self.encode()
             self.store(data, stream)
+            stream.close()
         except IOError as e:
             print("Could not write", filename, ':', e)
             return None
