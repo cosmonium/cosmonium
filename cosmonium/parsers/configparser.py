@@ -179,6 +179,10 @@ class ConfigParser(YamlParser):
         settings.use_texture_array = data.get('texture-array', settings.use_texture_array)
         settings.use_core_profile_mac = data.get('core-profile-mac', settings.use_core_profile_mac)
         settings.use_gl_version = data.get('gl-version', settings.use_gl_version)
+        settings.stereoscopic_framebuffer = data.get('framebuffer-stereo', settings.stereoscopic_framebuffer)
+        settings.red_blue_stereo = data.get('red-blue-stereo', settings.red_blue_stereo)
+        settings.side_by_side_stereo = data.get('side-by-side-stereo', settings.side_by_side_stereo)
+        settings.crossed_side_by_side_stereo = data.get('swap-eyes', settings.crossed_side_by_side_stereo)
 
     def encode_opengl(self):
         data = {}
@@ -191,6 +195,10 @@ class ConfigParser(YamlParser):
         data['texture-array'] = settings.use_texture_array
         data['core-profile-mac'] = settings.use_core_profile_mac
         data['gl-version'] = settings.use_gl_version
+        data['framebuffer-stereo'] = settings.stereoscopic_framebuffer
+        data['red-blue-stereo'] = settings.red_blue_stereo
+        data['side-by-side-stereo'] = settings.side_by_side_stereo
+        data['swap-eyes'] = settings.crossed_side_by_side_stereo
         return data
 
     def decode_debug(self, data):

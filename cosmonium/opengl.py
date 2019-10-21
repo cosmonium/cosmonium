@@ -47,6 +47,14 @@ def request_opengl_config(data):
         data.append("textures-power-2 none")
     if settings.use_hardware_sprites:
         data.append("hardware-point-sprites #t")
+    if settings.stereoscopic_framebuffer:
+        data.append("framebuffer-stereo #t")
+    elif settings.red_blue_stereo:
+        data.append("red-blue-stereo #t")
+    elif settings.side_by_side_stereo:
+        data.append("side-by-side-stereo #t")
+        if settings.crossed_side_by_side_stereo:
+            data.append("swap-eyes #t")
     data.append("gl-coordinate-system default")
     data.append("gl-check-errors #t")
     if settings.dump_panda_shaders:
@@ -72,11 +80,17 @@ def create_main_window(base):
     if _create_main_window(base):
         return
     #We could not open the window, try to fallback to a supported configuration
+    if settings.stereoscopic_framebuffer:
+        print("Failed to open a window, disabling stereoscopic framebuffer...")
+        loadPrcFileData("", "framebuffer-stereo #f")
+        settings.stereoscopic_framebuffer = False
+        if _create_main_window(base):
+            return
     if settings.multisamples > 0:
+        print("Failed to open a window, disabling multisampling...")
         loadPrcFileData("", "framebuffer-multisample #f")
         settings.disable_multisampling = True
         if _create_main_window(base):
-            print("Failed to open window with multisample, deactivating it")
             return
     #Can't create window even without multisampling
     print("Failed to open window with OpenGL Core; falling back to older OpenGL.")
