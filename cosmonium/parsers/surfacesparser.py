@@ -133,7 +133,7 @@ class SurfaceYamlParser(YamlModuleParser):
             control = data.get('control', None)
             if control is not None:
                 control_parser = TextureControlYamlParser()
-                (control, appearance_source) = control_parser.decode(control, appearance, height_scale, radius, median)
+                (control, appearance_source) = control_parser.decode(control, appearance, heightmap.height_scale, radius, heightmap.median)
                 if control is not None:
                     shader_appearance = DetailMap(control, heightmap, create_normals=True)
             else:
