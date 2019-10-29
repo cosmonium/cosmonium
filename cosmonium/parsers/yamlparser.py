@@ -27,6 +27,7 @@ from ..import settings
 import os
 import hashlib
 import pickle
+import io
 
 import ruamel.yaml
 
@@ -34,7 +35,7 @@ def yaml_include(loader, node):
     print("Loading", node.value)
     filepath = node.value
     if filepath is not None:
-        with file(filepath) as inputfile:
+        with io.open(filepath, encoding='utf8') as inputfile:
             data = yaml.load(inputfile)
             return data
     else:
@@ -162,7 +163,7 @@ class YamlModuleParser(YamlParser):
                 print("Loading %s" % filepath)
                 base.splash.set_text("Loading %s" % filepath)
                 try:
-                    text = open(filepath).read()
+                    text = io.open(filepath, encoding='utf8').read()
                     data = self.parse(text, filepath)
                 except IOError as e:
                     print("Could not read", filename, filepath, ':', e)
