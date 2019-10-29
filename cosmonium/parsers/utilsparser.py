@@ -22,6 +22,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame, EquatorialReferenceFrame
+from ..astro.frame import CelestialReferenceFrame
+from ..astro.frame import JupiterReferenceFrame, UranusReferenceFrame, PlutoReferenceFrame
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
@@ -92,14 +94,35 @@ class AngleUnitsYamlParser(YamlModuleParser):
 
 class FrameYamlParser(YamlModuleParser):
     @classmethod
+    def decode_equatorial(cls, data):
+        ra = data.get("ra", 0.0)
+        de = data.get("de", 0.0)
+        node = data.get("longitude", 0.0)
+        return CelestialReferenceFrame(right_asc=ra, declination=de, longitude_at_node=node)
+
+    @classmethod
+    def decode_mean_equatorial(cls, data):
+        return EquatorialReferenceFrame()
+
+    @classmethod
     def decode(self, data):
-        name = data.lower()
-        if name == 'j2000ecliptic':
+        if data is None: return J2000EclipticReferenceFrame()
+        (object_type, parameters) = self.get_type_and_data(data)
+        object_type = object_type.lower()
+        if object_type == 'j2000ecliptic':
             return J2000EclipticReferenceFrame()
-        elif name == 'j2000equatorial':
+        elif object_type == 'j2000equatorial':
             return J2000EquatorialReferenceFrame()
-        elif name == 'equatorial':
-            return EquatorialReferenceFrame()
+        elif object_type == 'equatorial':
+            return self.decode_equatorial(data)
+        elif object_type == 'mean-equatorial':
+            return self.decode_mean_equatorial(data)
+        elif object_type == 'iau:jupiter':
+            return JupiterReferenceFrame()
+        elif object_type == 'iau:uranus':
+            return UranusReferenceFrame()
+        elif object_type == 'iau:pluto':
+            return PlutoReferenceFrame()
         else:
             print("Unknown reference frame", data)
             return None

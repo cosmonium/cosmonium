@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from panda3d.core import LPoint3d
+
 from ..astro.elementsdb import orbit_elements_db
 from ..astro.orbits import FixedPosition, FixedOrbit, EllipticalOrbit
 from ..astro import units
@@ -83,6 +85,15 @@ class FixedPositionYamlParser(YamlModuleParser):
                              distance_unit=distance_units,
                              frame=frame)
 
+class GlobalPositionYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        position = LPoint3d(*data.get('position', [0, 0, 0]))
+        position_units = DistanceUnitsYamlParser.decode(data.get('position-units', 'pc'))
+        frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+        return FixedPosition(position=position * position_units,
+                             frame=frame)
+
 class OrbitYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
@@ -92,9 +103,19 @@ class OrbitYamlParser(YamlModuleParser):
             orbit = EllipticOrbitYamlParser.decode(parameters)
         elif object_type == 'fixed':
             orbit = FixedPositionYamlParser.decode(parameters)
+        elif object_type == 'global':
+            orbit = GlobalPositionYamlParser.decode(parameters)
         else:
             orbit = orbit_elements_db.get(data)
         return orbit
+
+class OrbitCategoryYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        name = data.get('name')
+        priority = data.get('priority')
+        orbit_elements_db.register_category(name, priority)
+        return None
 
 class NamedOrbitYamlParser(YamlModuleParser):
     @classmethod
@@ -107,3 +128,4 @@ class NamedOrbitYamlParser(YamlModuleParser):
         return None
 
 ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser())
+ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser())

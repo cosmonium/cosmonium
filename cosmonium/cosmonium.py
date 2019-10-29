@@ -45,7 +45,7 @@ from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, Relati
 from .celestia.cel_url import CelUrl
 
 #import orbits and rotations elements to add them to the DB
-from .astro.tables import kepler, ssd, uniform, vsop87, wgccre
+from .astro.tables import uniform, vsop87, wgccre
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot

@@ -151,3 +151,15 @@ class CelestiaBodyFixedReferenceFrame(RelativeReferenceFrame):
     def get_orientation(self):
         rot = self.body.get_sync_rotation()
         return rot
+
+class JupiterReferenceFrame(CelestialReferenceFrame):
+    def __init__(self):
+        CelestialReferenceFrame.__init__(self, right_asc=268.057, declination=64.495)
+
+class UranusReferenceFrame(CelestialReferenceFrame):
+    def __init__(self):
+        CelestialReferenceFrame.__init__(self, right_asc=257.311, declination=-15.175)
+
+class PlutoReferenceFrame(CelestialReferenceFrame):
+    def __init__(self):
+        CelestialReferenceFrame.__init__(self, right_asc=132.993, declination=-6.163)

@@ -57,6 +57,7 @@ class CosmoniumConfig(object):
             self.celestia_data_list.append("C:\\Program Files\\Celestia")
         else:
             self.celestia_data_list.append("/usr/share/celestia")
+        self.celestia_support = ['data/solar-system/ssd.yaml', 'data/solar-system/manual-orbits.yaml', 'data/solar-system/celestia.yaml']
         self.celestia_ssc = ["solarsys.ssc", "minormoons.ssc", "numberedmoons.ssc", "asteroids.ssc", "outersys.ssc"]#, "extrasolar.ssc"]
         self.celestia_stc = ["nearstars.stc", "revised.stc", "spectbins.stc", "visualbins.stc", "extrasolar.stc"]
         self.celestia_dsc = ["galaxies.dsc"]
@@ -101,6 +102,7 @@ class CosmoniumConfigParser(YamlParser):
         return self.config
 
     def decode_celestia(self, data):
+        self.config.celestia_support = data.get('support', self.config.celestia_support)
         self.config.celestia_ssc = data.get('ssc', self.config.celestia_ssc)
         self.config.celestia_stc = data.get('stc', self.config.celestia_stc)
         self.config.celestia_dsc = data.get('dsc', self.config.celestia_dsc)
@@ -159,6 +161,10 @@ class CosmoniumApp(Cosmonium):
 
     def load_universe_celestia(self):
         self.find_celestia_data()
+        if len(self.app_config.celestia_support) > 0:
+            parser = UniverseYamlParser(self.universe)
+            for support in self.app_config.celestia_support:
+                self.load_file(parser, support)
         names = star_parser.load_names(self.app_config.celestia_stars_names)
         if self.app_config.celestia_stars_catalog is not None:
             if self.app_config.celestia_stars_catalog.endswith('.dat'):

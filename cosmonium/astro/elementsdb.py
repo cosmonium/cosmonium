@@ -35,6 +35,7 @@ class ElementsDB(object):
         self.db_list = []
 
     def register_category(self, category_name, priority):
+        if category_name in self.db_map: return
         category = ElementCategory(category_name, priority)
         self.db_map[category_name] = category
         self.db_list.append(category)
@@ -60,6 +61,6 @@ class ElementsDB(object):
             if element_name in category.elements:
                 return deepcopy(category.elements[element_name])
         print("DB", self.name, ':', "Element", name, "not found")
-            
+
 orbit_elements_db = ElementsDB('orbits')
 rotation_elements_db = ElementsDB('rotations')
