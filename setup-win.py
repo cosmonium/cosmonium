@@ -23,10 +23,13 @@ from setup import config
 
 config['options']['build_apps']['platforms'] = ['win_amd64']
 config['options']['build_apps']['requirements_path'] = 'requirements-win.txt'
-config['options']['build_apps']['package_data_dirs'] = {'win32': [('pywin32_system32/*', '', {}),
-                                                                  ('win32/*.pyd', '', {}),
-                                                                  ('win32/lib/win32con.py', '', {})]}
-config['options']['build_apps']['include_modules'] = {'*': ['win32.*']}
+package_data_dirs = config['options']['build_apps'].setdefault('package_data_dirs', {})
+package_data_dirs['win32'] = [('pywin32_system32/*', '', {}),
+                              ('win32/*.pyd', '', {}),
+                              ('win32/lib/win32con.py', '', {})]
+include_modules = config['options']['build_apps'].setdefault('include_modules', {})
+all_modules = include_modules.setdefault('*', [])
+all_modules.append('win32.*')
 
 setup(**config)
 

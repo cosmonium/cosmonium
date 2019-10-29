@@ -56,7 +56,9 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
+            'include_modules': {'*': ['_ruamel_yaml']},
             'exclude_modules': {'*': excludes},
+            'package_data_dirs': {'ruamel': [('ruamel/*', 'ruamel', {})]},
             'gui_apps': {
                 'cosmonium': 'main.py',
                 'ralph': 'ralph.py',
