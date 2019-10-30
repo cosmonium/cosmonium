@@ -955,3 +955,10 @@ class GrayTarget(NoiseTarget):
 
     def apply_noise(self, code):
         code.append('frag_output = vec4(value, value, value, 1.0);')
+
+class AlphaTarget(NoiseTarget):
+    def get_id(self):
+        return 'alpha'
+
+    def apply_noise(self, code):
+        code.append('frag_output = vec4(1.0, 1.0, 1.0, value);')

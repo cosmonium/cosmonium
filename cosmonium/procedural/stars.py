@@ -28,19 +28,27 @@ from ..textures import SurfaceTexture
 from ..bodies import SurfaceFactory
 
 from .textures import ProceduralVirtualTextureSource
+from .shadernoise import GrayTarget
 
 class ProceduralStarSurfaceFactory(SurfaceFactory):
     def __init__(self, noise, size=256):
         SurfaceFactory.__init__(self)
         self.size = size
-        self .noise = noise
+        self.noise = noise
+        self.target = GrayTarget()
+        self.frequency = 1.0
+        self.scale = 1.0
 
     def create(self, body):
         shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=64),
                                            use_shader=False)
         shader = BasicShader(lighting_model=FlatLightingModel())
         surface = FlatSurface(appearance=Appearance(emissionColor=body.point_color,
-                                                    texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise, self.size))),
+                                                    texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
+                                                                                                          self.target,
+                                                                                                          self.size,
+                                                                                                          self.frequency,
+                                                                                                          self.scale))),
                               shape=shape,
                               shader=shader)
         return surface

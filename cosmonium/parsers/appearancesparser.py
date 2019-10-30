@@ -25,6 +25,7 @@ from panda3d.core import LColor
 from ..appearances import Appearance, ModelAppearance
 from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
+from ..procedural.shadernoise import GrayTarget, AlphaTarget
 #TODO: Should not be here but in respective packages
 from ..celestia.textures import CelestiaVirtualTextureSource
 from ..spaceengine.textures import SpaceEngineVirtualTextureSource
@@ -71,8 +72,18 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()
             noise = noise_parser.decode(data.get('noise'))
+            target = data.get('target', 'gray')
+            if target == 'gray':
+                target = GrayTarget()
+            elif target == 'alpha':
+                target = AlphaTarget()
+            else:
+                print("Unknown noise target", target)
+                target = None
             size = int(data.get('size', 256))
-            texture_source = ProceduralVirtualTextureSource(noise, size)
+            frequency = float(data.get('frequency', 1.0))
+            scale = float(data.get('scale', 1.0))
+            texture_source = ProceduralVirtualTextureSource(noise, target, size, frequency, scale)
             texture_offset = parameters.get('offset', 0)
         else:
             print("Unknown type", object_type)
