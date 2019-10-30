@@ -515,6 +515,14 @@ class RingShape(Shape):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.nbOfPoints = 360
+        #TODO: This is a big hack to make it work with ProceduralVirtualTextureSource
+        self.lod = 0
+        self.coord = 0 #TexCoord.Flat
+        self.x0 = 0
+        self.y0 = 0
+        self.lod_scale_x = 1
+        self.lod_scale_y = 1
+        self.face = -1
 
     def is_spherical(self):
         return False
