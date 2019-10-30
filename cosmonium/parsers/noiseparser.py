@@ -95,7 +95,7 @@ class NoiseYamlParser(YamlParser):
 from ..procedural.shadernoise import NoiseSourceScale, NoiseOffset, NoiseClamp
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, TurbulenceNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
-from ..procedural.shadernoise import NoiseWarp, Noise1D
+from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
 from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
 from ..procedural.shadernoise import QuilezPerlin3D
@@ -134,6 +134,15 @@ def create_clamp_noise(parser, data, length_scale):
 def create_const_noise(parser, data, length_scale):
     value = data.get('value')
     return NoiseConst(value)
+
+def create_x_noise(parser, data, length_scale):
+    return NoiseCoord('x')
+
+def create_y_noise(parser, data, length_scale):
+    return NoiseCoord('y')
+
+def create_z_noise(parser, data, length_scale):
+    return NoiseCoord('z')
 
 def create_gpunoise_perlin_noise(parser, data, length_scale):
     return GpuNoiseLibPerlin3D()
@@ -249,6 +258,9 @@ NoiseYamlParser.register_noise_parser('fbm', create_fbm_noise)
 NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
 
 NoiseYamlParser.register_noise_parser('const', create_const_noise)
+NoiseYamlParser.register_noise_parser('x', create_x_noise)
+NoiseYamlParser.register_noise_parser('y', create_y_noise)
+NoiseYamlParser.register_noise_parser('z', create_z_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:perlin', create_gpunoise_perlin_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:cellular', create_gpunoise_cellular_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:polkadot', create_gpunoise_polkadot_noise)

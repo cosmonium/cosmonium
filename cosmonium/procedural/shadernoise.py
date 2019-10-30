@@ -56,6 +56,17 @@ class NoiseConst(NoiseSource):
     def noise_value(self, code, value, point):
         code.append('        %s  = %g;' % (value, self.value))
 
+class NoiseCoord(NoiseSource):
+    def __init__(self, coord):
+        NoiseSource.__init__(self)
+        self.coord = coord
+
+    def get_id(self):
+        return '%s' % self.coord
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = %s.%s;' % (value, point, self.coord))
+
 class GpuNoiseLibPerlin3D(NoiseSource):
     def get_id(self):
         return 'gnl-perlin3d'
