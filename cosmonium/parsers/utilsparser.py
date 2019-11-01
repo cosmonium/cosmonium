@@ -88,3 +88,13 @@ class AngleUnitsYamlParser(YamlModuleParser):
             return default
         else:
             return AngleUnitsYamlParser.translation.get(data.lower(), default)
+
+class AngleSpeedUnitsYamlParser(YamlModuleParser):
+    translation = { 'deg/day': units.Deg_Per_Day
+                   }
+    @classmethod
+    def decode(self, data, default=None):
+        if data is None:
+            return default
+        else:
+            return AngleSpeedUnitsYamlParser.translation.get(data.lower(), default)

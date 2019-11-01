@@ -40,6 +40,9 @@ class Orbit(object):
     def set_frame(self, frame):
         self.frame = frame
 
+    def is_periodic(self):
+        return False
+
     def get_period(self):
         return 0.0
 
@@ -191,14 +194,20 @@ class EllipticalOrbit(Orbit):
         ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
         self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
 
+    def is_periodic(self):
+        return self.eccentricity < 1.0
+
     def get_period(self):
         return self.period
 
     def get_mean_motion(self):
         return self.mean_motion
 
+    def get_time_of_perihelion(self):
+        return self.epoch - self.mean_anomaly / self.mean_motion
+
     def get_apparent_radius(self):
-        return self.apocenter_distance
+        return abs(self.apocenter_distance)
 
     def get_frame_position_at(self, time):
         mean_anomaly = (time - self.epoch) * self.mean_motion + self.mean_anomaly
@@ -211,7 +220,8 @@ def create_elliptical_orbit(semi_major_axis=None,
                             semi_major_axis_units=units.AU,
                             pericenter_distance=None,
                             pericenter_distance_units=units.AU,
-                            radial_speed=None,
+                            mean_motion=None,
+                            mean_motion_units=units.Deg_Per_Day,
                             period=None,
                             period_units=units.JYear,
                             eccentricity=0.0,
@@ -232,8 +242,11 @@ def create_elliptical_orbit(semi_major_axis=None,
     else:
         pericenter_distance = pericenter_distance * pericenter_distance_units
     if period is None:
-        #TODO: raise error
-        period = 0.0
+        if mean_motion is None:
+            #TODO: raise error
+            period = 0.0
+        else:
+            period = 2 * pi / (mean_motion * mean_motion_units)
     else:
         period = period * period_units
     if arg_of_periapsis is None:

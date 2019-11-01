@@ -54,7 +54,6 @@ def instanciate_elliptical_orbit(data, global_coord):
         pericenter_distance_units=units.Km        
         period_units=units.Day
     pericenter_distance=None
-    radial_speed=None
     period=None
     eccentricity=0.0
     inclination=0
@@ -92,7 +91,6 @@ def instanciate_elliptical_orbit(data, global_coord):
         semi_major_axis_units=semi_major_axis_units,
         pericenter_distance=pericenter_distance,
         pericenter_distance_units=pericenter_distance_units,
-        radial_speed=radial_speed,
         period=period,
         period_units=period_units,
         eccentricity=eccentricity,

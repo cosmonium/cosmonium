@@ -102,18 +102,24 @@ class Orbit(VisibleObject):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         delta = self.body.parent.get_local_position()
+        if self.orbit.is_periodic():
+            epoch = self.context.time.time_full - self.orbit.period
+            step = self.orbit.period / (self.nbOfPoints - 1)
+        else:
+            #TODO: Properly calculate orbit start and end time
+            epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
+            step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
-            time = self.orbit.period / self.nbOfPoints * i
+            time = epoch + step * i
             pos = self.orbit.get_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):
             self.lines.addVertex(i)
             self.lines.addVertex(i+1)
-            self.lines.closePrimitive()
-        self.lines.addVertex(self.nbOfPoints-1)
-        self.lines.addVertex(0)
-        self.lines.closePrimitive()
+        if self.orbit.is_periodic():
+            self.lines.addVertex(self.nbOfPoints-1)
+            self.lines.addVertex(0)
         self.geom = Geom(self.vertexData)
         self.geom.addPrimitive(self.lines)
         self.node = GeomNode(self.body.get_ascii_name() + '-orbit')

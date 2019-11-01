@@ -28,7 +28,7 @@ from ..astro import units
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
-from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser
+from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser, AngleSpeedUnitsYamlParser
 from .framesparser import FrameYamlParser
 
 class EllipticOrbitYamlParser(YamlModuleParser):
@@ -40,7 +40,8 @@ class EllipticOrbitYamlParser(YamlModuleParser):
         pericenter_distance_units = DistanceUnitsYamlParser.decode(data.get('pericenter-distance-units', 'AU'))
         period = data.get('period', None)
         period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
-        radial_speed = data.get('radial-speed', None)
+        mean_motion = data.get('mean-motion', None)
+        mean_motion_units = AngleSpeedUnitsYamlParser.decode(data.get('mean-motion-units', 'deg/day'))
         eccentricity = data.get('eccentricity', 0.0)
         inclination = data.get('inclination', 0.0)
         ascending_node = data.get('ascending-node', 0.0)
@@ -54,7 +55,8 @@ class EllipticOrbitYamlParser(YamlModuleParser):
                               semi_major_axis_units,
                               pericenter_distance,
                               pericenter_distance_units,
-                              radial_speed,
+                              mean_motion,
+                              mean_motion_units,
                               period,
                               period_units,
                               eccentricity,
