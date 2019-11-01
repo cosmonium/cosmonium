@@ -71,7 +71,6 @@ class Orbit(VisibleObject):
         if not self.orbit:
             print("No orbit for", self.get_name())
             self.visible = False
-        self.check_settings()
 
     def check_settings(self):
         if self.body.body_class is None:
@@ -97,8 +96,6 @@ class Orbit(VisibleObject):
             self.instance.setColor(self.color * self.fade)
 
     def create_instance(self):
-        if not self.orbit:
-            return
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         delta = self.body.parent.get_local_position()

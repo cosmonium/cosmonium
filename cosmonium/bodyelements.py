@@ -52,7 +52,6 @@ class Atmosphere(ShapeObject):
         self.ratio = 0
         self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
-        self.check_settings()
 
     def check_settings(self):
         if settings.show_atmospheres != self.shown:
@@ -118,7 +117,6 @@ class Clouds(FlatSurface):
         if appearance is not None:
             #TODO: Disabled as it causes blinking
             pass#appearance.check_transparency()
-        self.check_settings()
  
     def set_scale(self, scale):
         factor = 1.0 + self.height/self.parent.get_apparent_radius()

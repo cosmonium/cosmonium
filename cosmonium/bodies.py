@@ -456,6 +456,7 @@ class StellarObject(LabelledObject):
         self.scene_orientation = self.get_abs_rotation()
         if self.label is None:
             self.create_label()
+            self.label.check_settings()
         if self.visible:
             if not self.init_annotations:
                 self.create_annotations()

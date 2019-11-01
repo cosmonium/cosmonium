@@ -194,7 +194,8 @@ class StellarSystem(StellarObject):
 
     def check_settings(self):
         StellarObject.check_settings(self)
-        #TODO: Propagate even if not visible ?
+        #No need to check the children if not visible
+        if not self.visible or not self.resolved: return
         for child in self.children:
             child.check_settings()
 

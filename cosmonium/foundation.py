@@ -367,7 +367,6 @@ class LabelledObject(CompositeObject):
         if self.label is None:
             self.label = self.create_label_instance()
             self.add_component(self.label)
-            self.label.check_settings()
 
     def remove_label(self):
         if self.label is not None:
