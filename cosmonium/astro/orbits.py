@@ -230,6 +230,7 @@ def create_elliptical_orbit(semi_major_axis=None,
                             arg_of_periapsis=None,
                             long_of_pericenter=None,
                             mean_anomaly=None,
+                            time_of_perihelion=None,
                             mean_longitude=0.0,
                             epoch = units.J2000,
                             frame=None):
@@ -258,7 +259,10 @@ def create_elliptical_orbit(semi_major_axis=None,
         #Ascending node is undefined if there is no inclination
         ascending_node = 0.0
     if mean_anomaly is None:
-        mean_anomaly = mean_longitude - (arg_of_periapsis + ascending_node)
+        if mean_longitude is None:
+            mean_anomaly = (epoch - time_of_perihelion) / period * 2 * pi
+        else:
+            mean_anomaly = mean_longitude - (arg_of_periapsis + ascending_node)
     return EllipticalOrbit(pericenter_distance,
                            period,
                            eccentricity,

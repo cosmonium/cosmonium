@@ -48,6 +48,7 @@ class EllipticOrbitYamlParser(YamlModuleParser):
         arg_of_periapsis = data.get('arg-of-periapsis', None)
         long_of_pericenter = data.get('long-of-pericenter', None)
         mean_anomaly = data.get('mean-anomaly', None)
+        time_of_perihelion = data.get('time-of-perihelion', None)
         mean_longitude = data.get('mean-longitude', 0.0)
         epoch = data.get('epoch', units.J2000)
         frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
@@ -65,6 +66,7 @@ class EllipticOrbitYamlParser(YamlModuleParser):
                               arg_of_periapsis,
                               long_of_pericenter,
                               mean_anomaly,
+                              time_of_perihelion,
                               mean_longitude,
                               epoch,
                               frame)
