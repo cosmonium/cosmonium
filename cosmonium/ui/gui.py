@@ -430,6 +430,7 @@ class Gui(object):
                   ('M_inor Moons>Shift-M', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
                   ('C_omets>Shift-W', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
                   ('_Asteroids>W', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
+                  ('I_nterstellars', bodyClasses.get_show_label('interstellar'), self.cosmonium.toggle_label, 'interstellar'),
                   ('S_pacecrafts>N', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
                   ('_Constellations>=', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
                   #('Locations>&', self.toggle_label, 'location'),
@@ -445,6 +446,7 @@ class Gui(object):
                   ('M_inor moons>Shift-Control-O', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
                   ('_Comets>Shift-Control-C', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
                   ('_Asteroids>Shift-Control-A', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
+                  ('Interstellars', bodyClasses.get_show_orbit('interstellar'), self.cosmonium.toggle_orbit, 'interstellar'),
                   ('S_pacecrafts>Shift-Control-S', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
                   )
 

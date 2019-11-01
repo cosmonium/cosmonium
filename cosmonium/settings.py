@@ -268,6 +268,10 @@ bodyClasses.register_class("asteroid", "asteroids",
                            BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
                                      orbit_color=LColor(0.58, 0.152, 0.08, 1),
                                      show_label=False))
+bodyClasses.register_class("interstellar", "interstellars",
+                           BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
+                                     orbit_color=LColor(0.58, 0.152, 0.08, 1),
+                                     show_label=False))
 bodyClasses.register_class("spacecraft", "spacecrafts",
                            BodyClass(label_color=LColor(0.93, 0.93, 0.93, 1),
                                      orbit_color=LColor(0.4, 0.4, 0.4, 1),
