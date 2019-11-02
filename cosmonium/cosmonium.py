@@ -338,6 +338,7 @@ class Cosmonium(CosmoniumBase):
 
         self.time.set_current_date()
         self.universe.first_update()
+        self.universe.first_update_obs(self.observer)
         self.window_event(None)
         self.time_task(None)
 

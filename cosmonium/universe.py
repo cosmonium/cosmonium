@@ -119,7 +119,11 @@ class Universe(StellarSystem):
 
     def first_update(self):
         for child in self.children:
-            child.update(0)
+            child.first_update(self.context.time.time_full)
+
+    def first_update_obs(self, observer):
+        for child in self.children:
+            child.first_update_obs(observer)
 
     def add_extra_to_list(self, *elems):
         for extra in elems:

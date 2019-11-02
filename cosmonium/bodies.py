@@ -122,8 +122,8 @@ class StellarObject(LabelledObject):
         self.point_color = point_color
         self.abs_magnitude = 99.0
         #Flags
-        self.visible = True #TODO: Should be False at init
-        self.resolved = True #TODO: Should be False at init
+        self.visible = False
+        self.resolved = False
         self.in_view = False
         self.selected = False
         self.update_id = 0
@@ -393,6 +393,9 @@ class StellarObject(LabelledObject):
         else:
             return 0.0
 
+    def first_update(self, time):
+        self.update(time)
+
     def update(self, time):
         StellarObject.nb_update += 1
         self._orientation = self.rotation.get_rotation_at(time)
@@ -404,6 +407,9 @@ class StellarObject(LabelledObject):
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
         CompositeObject.update(self, time)
         self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
+
+    def first_update_obs(self, observer):
+        self.update_obs(observer)
 
     def update_obs(self, observer):
         StellarObject.nb_obs += 1
@@ -478,9 +484,8 @@ class StellarObject(LabelledObject):
                     self.remove_components()
                 self.update_point(pointset)
         else:
-            if not self.resolved:
-                if self.init_components:
-                    self.remove_components()
+            if self.init_components:
+                self.remove_components()
         CompositeObject.check_and_update_instance(self, camera_pos, orientation, pointset)
 
     def remove_instance(self):

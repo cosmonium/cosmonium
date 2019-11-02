@@ -141,7 +141,7 @@ class Orbit(VisibleObject):
         self.shader.update(self, self.appearance)
 
     def check_visibility(self, pixel_size):
-        if self.parent.shown and self.orbit:
+        if self.parent.parent.visible and self.parent.shown and self.orbit:
             distance_to_obs = self.parent.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)

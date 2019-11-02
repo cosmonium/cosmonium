@@ -170,6 +170,7 @@ class Camera(CameraBase):
         self.camera_frame = AbsoluteReferenceFrame()
         #Direction of sight of the camera
         self.camera_vector = LVector3d.forward()
+        self.update_camera()
 
     def set_camera_frame(self, frame):
         #Get position and rotation in the absolute reference frame

@@ -34,6 +34,7 @@ class StellarSystem(StellarObject):
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
+        self.was_visible = True
 
     def apply_func(self, func):
         StellarObject.apply_func(self, func)
@@ -170,12 +171,22 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.set_star(star)
 
+    def first_update(self, time):
+        StellarObject.update(self, time)
+        for child in self.children:
+            child.first_update(time)
+
     def update(self, time):
         StellarObject.update(self, time)
         #No need to update the children if not visible
         if not self.visible or not self.resolved: return
         for child in self.children:
             child.update(time)
+
+    def first_update_obs(self, observer):
+        StellarObject.update_obs(self, observer)
+        for child in self.children:
+            child.first_update_obs(observer)
 
     def update_obs(self, observer):
         StellarObject.update_obs(self, observer)
