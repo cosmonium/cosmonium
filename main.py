@@ -21,6 +21,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+# Add source/ directory to import path to be able to load the c++ libraries
+import sys
+sys.path.insert(0, 'source')
+
 from cosmonium.cosmonium import Cosmonium
 
 from cosmonium.parsers.yamlparser import YamlParser
@@ -40,7 +44,7 @@ from cosmonium.spaceengine import textures
 from cosmonium import settings
 
 import argparse
-import os, sys
+import os
 
 class CosmoniumConfig(object):
     def __init__(self):

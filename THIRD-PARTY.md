@@ -1,6 +1,6 @@
 # Third-party code used in Cosmonium
 
-Cosmonium is used code or algorithm from third-parties, here is the (hopefully) exhaustive list with the acknowledgement and license.
+Cosmonium is used code or algorithm from third-parties, here is the (hopefully) exhaustive list with the acknowledgment and license.
 
 ## support/ply
 
@@ -50,17 +50,17 @@ License: BSD
 
 Reference: [Github](https://github.com/phn/jdcal)
 
-## astro/zeros
+## source/kepler.cpp astro/pyastro/pykepler.py
 
-Root finding library from SciPyLib.
+Kepler ephemerides calculation code from Project Pluto
 
-Copyright: Copyright (C) 2003-2013 SciPy Developers.
+Copyright: Copyright (C) 2010, Project Pluto, Bill Gray.
 
-License: BSD
+License: GPLv2 or later
 
-Reference: [Homepage](https://scipy.org/index.html)
+Reference: [GitHub](https://github.com/Bill-Gray/lunar) [Homepage](https://projectpluto.com/kepler.htm)
 
-## astro/blackbody
+## source/temperature.cpp astro/pyastro/pyblackbody.py
 
 Temperature to RGB conversion.
 

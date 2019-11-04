@@ -290,7 +290,7 @@ class Cosmonium(CosmoniumBase):
         self.splash.set_text("Building octree...")
         self.universe.create_octree()
         #self.universe.octree.print_summary()
-        self.universe.octree.print_stats()
+        #self.universe.octree.print_stats()
 
         self.sun = self.universe.find_by_path('Sol')
         if not self.sun:
@@ -657,7 +657,6 @@ class Cosmonium(CosmoniumBase):
         self.pointset.reset()
         self.haloset.reset()
         self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
-        self.universe.clean_octree_cells()
         self.pointset.update()
         self.haloset.update()
         self.gui.update_status()

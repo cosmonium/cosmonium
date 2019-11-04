@@ -24,8 +24,10 @@ from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
 from . import units
 from .frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from .kepler import kepler_pos
+
 from math import sqrt, pi, cos, sin, acos, asin, atan2
-from .zeros import newton
+import sys
 
 class Orbit(object):
     dynamic = False
@@ -261,24 +263,4 @@ class EllipticalOrbit(CircularOrbit):
 
     def get_position_at(self, time):
         mean_anomaly = (time - self.epoch) * self.mean_motion + self.mean_anomaly
-        def kepler_func(x):
-            return mean_anomaly + self.eccentricity * sin(x) - x
-        def kepler_func_prime(x):
-            return  self.eccentricity * cos(x) - 1
-        def solve_fixed(f, x0, maxiter):
-            x=0
-            res=x0
-            for i in range(0, maxiter):
-                x = res
-                res = f(x)
-            return res
-        try:
-            #eccentric_anomaly=solve_fixed(kepler_func, mean_anomaly, maxiter=5)
-            eccentric_anomaly=newton(kepler_func, mean_anomaly, kepler_func_prime, maxiter=10)
-        except RuntimeError:
-            print("Could not converge", self.body.get_name())
-            eccentric_anomaly = mean_anomaly
-        a = self.pericenter_distance / (1.0 - self.eccentricity)
-        x = a * (cos(eccentric_anomaly) - self.eccentricity)
-        y = a * sqrt(1 - self.eccentricity * self.eccentricity) * sin(eccentric_anomaly)
-        return LPoint3d(x, y, 0.0)
+        return kepler_pos(self.pericenter_distance, self.eccentricity, mean_anomaly)

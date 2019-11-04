@@ -1,9 +1,13 @@
 # Compilation artifacts
 *.pyc
+*.pyd
 *.so
 *.o
+*.pdb
 build/
 dist/
+source/interrogate*
+source/Interrogate*
 
 # Eclipse artifacts
 .project

@@ -20,24 +20,20 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import CollisionPlane, CollisionNode
-from panda3d.core import LPoint3d, LColor, LPlaned, LPlane
+from panda3d.core import LPoint3d
 
 from .astro.orbits import FixedOrbit
 from .astro.rotations import FixedRotation
-from .astro.astro import app_to_abs_mag, abs_to_app_mag
+from .astro.astro import app_to_abs_mag
 from .astro.frame import AbsoluteReferenceFrame
 from .astro import units
 
 from .foundation import CompositeObject
 from .systems import StellarSystem
-from .bodies import StellarObject
-from .octree import Octree
-from .pointsset import PointsSet
-from . import pstats
-from . import settings
+from .octree import OctreeNode, OctreeLeaf, InfiniteFrustum, VisibleObjectsTraverser, hasOctreeLeaf
 from .pstats import pstat
 
+from math import sqrt
 from time import time
 
 class Universe(StellarSystem):
@@ -48,24 +44,22 @@ class Universe(StellarSystem):
                                description='Universe')
         self.visible = True
         self.octree_width = 100000.0 * units.Ly
-        abs_mag = app_to_abs_mag(6.0, self.octree_width * Octree.coef)
-        self.octree = Octree(0,
+        abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
+        self.octree = OctreeNode(0,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
                              self.octree_width,
                              abs_mag)
-        self.octree_cells = []
-        self.octree_old_cells = None
-        self.octree_cells_to_clean = None
         self.update_id = 0
+        self.previous_leaves = []
+        self.to_update_leaves = []
         self.to_update = []
         self.to_update_extra = []
+        self.to_remove = []
         self.nb_cells = 0
         self.nb_leaves = 0
         self.nb_leaves_in_cells = 0
         self.dump_octree = False
         self.dump_octree_stats = False
-        self.octree_points = PointsSet(use_sprites=False, use_sizes=False, points_size=20)
-        self.octree_points.instance.reparentTo(self.context.annotation)
 
     def get_fullname(self, separator='/'):
         return ''
@@ -79,175 +73,53 @@ class Universe(StellarSystem):
     def dumpOctreeStats(self):
         self.dump_octree_stats = not self.dump_octree_stats
 
-    def addPlanes(self):
-        for plane in self.planes:
-            colPlane = CollisionPlane(LPlane(*plane))
-            planeNode = CollisionNode('planeNode')
-            planeNode.addSolid(colPlane)
-            planeNP = render.attachNewNode(planeNode)
-            planeNP.show()
-
     def create_octree(self):
         print("Creating octree...")
         start = time()
         for child in self.children:
-            self.octree.add(child, child.get_global_position(), child.get_abs_magnitude())
+            self.octree.add(OctreeLeaf(child, child.get_global_position(), child.get_abs_magnitude(), child.get_extend()))
         end = time()
         print("Creation time:", end - start)
 
-    def show_cell(self, cell):
-        print(cell.center, cell.width)
-        position = cell.center - self.context.observer.get_position()
-        self.octree_points.add_point_scale(position, LColor(1, 1, 1, 1), 5)
-
-        self.octree_points.add_point_scale(position + LPoint3d(-cell.width, -cell.width, -cell.width), LColor(1, 0, 1, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(cell.width, -cell.width, -cell.width), LColor(1, 0, 1, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(cell.width, -cell.width, cell.width), LColor(1, 0, 1, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(-cell.width, -cell.width, cell.width), LColor(1, 0, 1, 1), 5)
-
-        self.octree_points.add_point_scale(position + LPoint3d(cell.width, cell.width, -cell.width), LColor(1, 1, 0, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(-cell.width, cell.width, -cell.width), LColor(0, 1, 0, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(-cell.width, cell.width, cell.width), LColor(0, 1, 0, 1), 5)
-        self.octree_points.add_point_scale(position + LPoint3d(cell.width, cell.width, cell.width), LColor(1, 1, 0, 1), 5)
-
-    def _build_octree_leaves_list(self, octree, visible_leaf, invisible_leaf, limit, camera_pos):
-        distance = (octree.center - camera_pos).length() - octree.radius
-        if distance > 0.0:
-            dimmest = app_to_abs_mag(limit, distance)
-        else:
-            dimmest = 99.0
-        self.nb_leaves_in_cells += len(octree.leaves)
-        for leaf in octree.leaves:
-            skip = False
-            abs_mag = leaf.abs_magnitude
-            if abs_mag > dimmest:
-                skip = True
-            else:
-                vector = leaf._global_position - camera_pos
-                distance = vector.length()
-                app_magnitude = abs_to_app_mag(abs_mag, distance)
-                if app_magnitude > limit:
-                    skip = True
-                else:
-                    extend = leaf._extend
-                    for plane in self.planes:
-                        plane_dist = plane.distToPlane(vector)
-                        if plane_dist > extend:
-                            skip = True
-                            break
-            if not skip:
-                #if self.dump_octree: print("In view", leaf.names, app_magnitude, distance)
-                visible_leaf(leaf)
-            elif leaf.init_annotations:
-                #TODO: Should make a better test than just checking annotations...
-                invisible_leaf(leaf)
-
-    @pstat
-    def build_octree_leaves_list(self, visible_leaf, invisible_leaf, limit, camera_pos):
-        for octree in self.octree_cells:
-            if len(octree.leaves) > 0:
-                self._build_octree_leaves_list(octree, visible_leaf, invisible_leaf, limit, camera_pos)
-
-    def _build_octree_cells_list(self, octree, limit, camera_pos):
-        octree.update_id = self.update_id
-        self.octree_cells.append(octree)
-        for child in octree.children:
-            if child is not None:
-                self.nb_cells += 1
-                #if self.dump_octree: print("Checking", child.level, child.center)
-                #if self.dump_octree and len(child.leaves) > 0: self.show_cell(child)
-                vector = child.center - camera_pos
-                length = vector.length()
-                distance = length - child.radius
-                if distance <= 0.0:
-                    self.in_cells += 1
-                    self._build_octree_cells_list(child, limit, camera_pos)
-                else:
-                    vector /= length
-                    cosA = vector.dot(self.camera_vector)
-                    if cosA > 0.0:
-                        self.in_view += 1
-                        skip = False
-                        if True:
-                            rel_position = child.center - camera_pos
-                            radius = child.radius
-                            for plane in self.planes:
-                                plane_dist = plane.distToPlane(rel_position)
-                                if plane_dist > radius:
-                                    skip = True
-                                    #if self.dump_octree: print("skip", plane.getNormal(), plane_dist, child.center, child.width / settings.scale)
-                                    break
-                        if not skip and (distance < 0 or abs_to_app_mag(child.max_magnitude, distance) < limit):
-                            self._build_octree_cells_list(child, limit, camera_pos)
-
-    @pstat
-    def do_build_octree_cells_list(self, limit, camera_pos):
-        self._build_octree_cells_list(self.octree, limit, camera_pos)
-
     def build_octree_cells_list(self, limit):
-        if self.dump_octree: self.octree_points.reset()
-        camera_pos = self.context.observer.get_position()
-        frustum = self.context.observer.realCamLens.make_bounds()
-        self.planes = []
-        for i in range(1, 6):
-            plane = LPlaned(*(frustum.getPlane(i) * self.context.cam.getMat()))
-            self.planes.append(plane)
-        self.camera_vector = self.context.observer.get_camera_vector()
-        self.octree_old_cells = self.octree_cells
-        self.octree_cells = []
-        self.to_update = []
-        self.to_update_extra = []
-        self.to_remove = []
         self.update_id += 1
-        self.nb_cells = 1
-        self.nb_leaves_in_cells = 0
-        self.in_cells = 0
-        self.in_view = 0
-        cells_list_start = time()
-        self.do_build_octree_cells_list(limit, camera_pos)
+        self.previous_leaves = self.to_update_leaves
+        pos = self.context.observer.get_position()
+        mat = self.context.cam.getMat()
+        bh = self.context.observer.realCamLens.make_bounds()
+        f = InfiniteFrustum(bh, mat, pos)
+        t = VisibleObjectsTraverser(f, 6.0, self.update_id)
+        self.octree.traverse(t)
+        self.to_update_leaves = t.get_leaves()
+        self.to_remove = []
+        if hasOctreeLeaf:
+            self.to_update = list(map(lambda x: x.get_object(), self.to_update_leaves))
+            for old in self.previous_leaves:
+                if old.get_update_id() != self.update_id:
+                    self.to_remove.append(old.get_object())
+        else:
+            self.to_update = self.to_update_leaves
+            for old in self.previous_leaves:
+                if old.update_id != self.update_id:
+                    self.to_remove.append(old)
         self.octree_cells_to_clean = []
-        for cell in self.octree_old_cells:
-            if cell.update_id != self.update_id:
-                self.octree_cells_to_clean.append(cell)
-        cells_list_end = time()
-        leaves_list_start = time()
-        self.build_octree_leaves_list(self.to_update.append, self.to_remove.append, limit, camera_pos)
-        leaves_list_end = time()
-        self.nb_leaves = len(self.to_update)
-        if self.dump_octree_stats:
-            print("Cells:", self.nb_cells, "In:", self.in_cells, "View:", self.in_view, "Total:", len(self.octree_cells),
-                  'Time: ', (cells_list_end - cells_list_start) * 1000, 'ms (',  (cells_list_end - cells_list_start) / self.nb_cells * 1000 * 1000, 'us)')
-            if self.nb_leaves > 0:
-                print("Leaves :", self.nb_leaves_in_cells, 'In:', self.nb_leaves,
-                      "Time:", (leaves_list_end - leaves_list_start) * 1000, 'ms (', (leaves_list_end - leaves_list_start) / self.nb_leaves_in_cells * 1000 * 1000, 'us)')
-            print("To clean", len(self.octree_cells_to_clean))
-            print()
-        cells = pstats.levelpstat('cells')
-        leaves = pstats.levelpstat('leaves')
-        cleans = pstats.levelpstat('cleans')
-        visibles = pstats.levelpstat('visibles')
-        in_cells = pstats.levelpstat('in_cells')
-        in_view = pstats.levelpstat('in_view')
-        cells.set_level(self.nb_cells)
-        leaves.set_level(self.nb_leaves_in_cells)
-        cleans.set_level(len(self.octree_cells_to_clean))
-        visibles.set_level(len(self.to_update))
-        in_cells.set_level(self.in_cells)
-        in_view.set_level(self.in_view)
-        if self.dump_octree:
-            self.octree_points.update()
-            print(self.octree_points.points)
-        self.dump_octree = False
-
-    def _first_update(self, octree):
-        for child in octree.children:
-            if child is not None:
-                self._first_update(child)
-                for leaf in child.leaves:
-                    leaf.update(0)
+        self.to_update_extra = []
+#         cells = pstats.levelpstat('cells')
+#         leaves = pstats.levelpstat('leaves')
+#         cleans = pstats.levelpstat('cleans')
+#         visibles = pstats.levelpstat('visibles')
+#         in_cells = pstats.levelpstat('in_cells')
+#         in_view = pstats.levelpstat('in_view')
+#         cells.set_level(self.nb_cells)
+#         leaves.set_level(self.nb_leaves_in_cells)
+#         cleans.set_level(len(self.octree_cells_to_clean))
+#         visibles.set_level(len(self.to_update))
+#         in_cells.set_level(self.in_cells)
+#         in_view.set_level(self.in_view)
 
     def first_update(self):
-        self._first_update(self.octree)
+        for child in self.children:
+            child.update(0)
 
     def add_extra_to_list(self, *elems):
         for extra in elems:
@@ -296,11 +168,6 @@ class Universe(StellarSystem):
             leaf.check_and_update_instance(camera_pos, orientation, pointset)
         for leaf in self.to_remove:
             leaf.remove_instance()
-
-    def clean_octree_cells(self):
-        for cell in self.octree_cells_to_clean:
-            for leaf in cell.leaves:
-                leaf.remove_instance()
 
     def get_distance(self, time):
         return 0

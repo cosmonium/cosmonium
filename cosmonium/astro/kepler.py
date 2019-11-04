@@ -20,8 +20,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 try:
-    from cosmonium_engine import temp_to_RGB
+    from cosmonium_engine import kepler_pos
 except ImportError as e:
-    print("WARNING: Could not load Blackbody C implementation, fallback on python implementation")
+    print("WARNING: Could not load Kepler C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyastro.pyblackbody import temp_to_RGB
+    from .pyastro.pykepler import kepler_pos

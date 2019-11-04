@@ -122,6 +122,7 @@ class StellarObject(LabelledObject):
         self.resolved = True #TODO: Should be False at init
         self.in_view = False
         self.selected = False
+        self.update_id = 0
         #Cached values
         self._position = LPoint3d()
         self._global_position = LPoint3d()
