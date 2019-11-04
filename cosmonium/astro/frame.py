@@ -143,15 +143,6 @@ class SynchroneReferenceFrame(RelativeReferenceFrame):
         rot = self.body.get_sync_rotation()
         return rot
 
-class CelestiaBodyFixedReferenceFrame(RelativeReferenceFrame):
-    rotY180 = LQuaterniond()
-    rotY180.set_from_axis_angle(180, LVector3d(0, 1, 0))
-    rotZ90 = LQuaterniond()
-    rotZ90.set_from_axis_angle(-90, LVector3d(0, 0, 1))
-    def get_orientation(self):
-        rot = self.body.get_sync_rotation()
-        return rot
-
 class JupiterReferenceFrame(CelestialReferenceFrame):
     def __init__(self):
         CelestialReferenceFrame.__init__(self, right_asc=268.057, declination=64.495)

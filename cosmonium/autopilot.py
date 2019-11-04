@@ -27,7 +27,7 @@ from direct.interval.LerpInterval import LerpFunc, LerpQuatInterval
 from direct.interval.MetaInterval import Parallel
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-from .astro.frame import CelestiaBodyFixedReferenceFrame
+from .astro.frame import SynchroneReferenceFrame
 from .astro import units
 from .utils import isclose
 from .systems import SimpleSystem
@@ -218,7 +218,7 @@ class AutoPilot(object):
     def go_to(self, target, duration, position, direction, up):
         if up is None:
             up = LVector3d.up()
-        frame = CelestiaBodyFixedReferenceFrame(target)
+        frame = SynchroneReferenceFrame(target)
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")
