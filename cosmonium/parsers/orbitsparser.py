@@ -29,7 +29,7 @@ from ..astro import units
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser
-from .utilsparser import FrameYamlParser
+from .framesparser import FrameYamlParser
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod

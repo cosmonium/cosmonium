@@ -143,14 +143,17 @@ class SynchroneReferenceFrame(RelativeReferenceFrame):
         rot = self.body.get_sync_rotation()
         return rot
 
-class JupiterReferenceFrame(CelestialReferenceFrame):
+class FramesDB(object):
     def __init__(self):
-        CelestialReferenceFrame.__init__(self, right_asc=268.057, declination=64.495)
+        self.frames = {}
 
-class UranusReferenceFrame(CelestialReferenceFrame):
-    def __init__(self):
-        CelestialReferenceFrame.__init__(self, right_asc=257.311, declination=-15.175)
+    def register_frame(self, frame_name, frame):
+        self.frames[frame_name] = frame
 
-class PlutoReferenceFrame(CelestialReferenceFrame):
-    def __init__(self):
-        CelestialReferenceFrame.__init__(self, right_asc=132.993, declination=-6.163)
+    def get(self, name):
+        if name in self.frames:
+            return self.frames[name]
+        else:
+            print("DB frames:", "Frame", name, "not found")
+
+frames_db = FramesDB()

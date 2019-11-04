@@ -30,7 +30,7 @@ from .. import utils
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import TimeUnitsYamlParser, AngleUnitsYamlParser
-from .utilsparser import FrameYamlParser
+from .framesparser import FrameYamlParser
 
 class UniformYamlParser(YamlModuleParser):
     @classmethod
