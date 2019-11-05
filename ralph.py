@@ -791,7 +791,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.camera_controller.update(0, 0)
         self.mover.update()
         self.ralph.update_obs(self.observer)
-        self.ralph.check_visibility(self.observer.pixel_size)
+        self.ralph.check_visibility(self.observer.frustum, self.observer.pixel_size)
         self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
         self.ralph.create_light()
         if self.ralph_config.physics.enable:
@@ -859,7 +859,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.ralph.update_obs(self.observer)
         self.terrain.update_obs(self.observer)
-        self.ralph.check_visibility(self.observer.pixel_size)
+        self.ralph.check_visibility(self.observer.frustum, self.observer.pixel_size)
         self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
         self.terrain.update_instance(self.observer.get_camera_pos(), None)
 

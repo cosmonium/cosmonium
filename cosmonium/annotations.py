@@ -172,7 +172,7 @@ class Orbit(VisibleObject):
             pos = self.orbit.get_position_at(time) - delta
             vwriter.setData3f(*pos)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         if self.parent.parent.visible and self.parent.shown and self.orbit:
             distance_to_obs = self.parent.distance_to_obs
             if distance_to_obs > 0.0:
@@ -235,7 +235,7 @@ class RotationAxis(VisibleObject):
     def check_settings(self):
         self.set_shown(settings.show_rotation_axis)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         if self.parent.shown:
             distance_to_obs = self.parent.distance_to_obs
             if distance_to_obs > 0.0:
@@ -269,7 +269,7 @@ class ReferenceAxis(VisibleObject):
         self.instance.reparentTo(self.context.annotation)
         return self.instance
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         self.visible = self.parent is not None and self.parent.shown and self.parent.visible and self.parent.resolved
 
     def update_instance(self, camera_pos, camera_rot):

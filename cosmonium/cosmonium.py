@@ -976,7 +976,7 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_octree(self):
-        self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
+        self.universe.build_octree_cells_list(self.observer.frustum, settings.lowest_app_magnitude)
         self.universe.add_extra_to_list(self.selected, self.follow, self.sync, self.track)
 
     @pstat
@@ -997,9 +997,9 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_visibility(self):
         self.reset_visibles()
-        self.universe.check_visibility(self.observer.pixel_size)
+        self.universe.check_visibility(self.observer.rel_frustum, self.observer.pixel_size)
         for controller in self.controllers_to_update:
-            controller.check_visibility(self.observer.pixel_size)
+            controller.check_visibility(self.observer.rel_frustum, self.observer.pixel_size)
         self.print_visibles()
 
     @pstat

@@ -87,14 +87,10 @@ class Universe(StellarSystem):
         end = time()
         print("Creation time:", end - start)
 
-    def build_octree_cells_list(self, limit):
+    def build_octree_cells_list(self, frustum, limit):
         self.update_id += 1
         self.previous_leaves = self.to_update_leaves
-        pos = self.context.observer.get_position()
-        mat = self.context.camera.getMat()
-        bh = self.context.observer.realCamLens.make_bounds()
-        f = InfiniteFrustum(bh, mat, pos)
-        t = VisibleObjectsTraverser(f, limit, self.update_id)
+        t = VisibleObjectsTraverser(frustum, limit, self.update_id)
         self.octree.traverse(t)
         self.to_update_leaves = t.get_leaves()
         self.to_remove = []
@@ -161,10 +157,10 @@ class Universe(StellarSystem):
         for extra in self.to_update_extra:
             extra.update_obs(observer)
 
-    def check_visibility(self, pixel_size):
-        CompositeObject.check_visibility(self, pixel_size)
+    def check_visibility(self, frustum, pixel_size):
+        CompositeObject.check_visibility(self, frustum, pixel_size)
         for leaf in self.to_update:
-            leaf.check_visibility(pixel_size)
+            leaf.check_visibility(frustum, pixel_size)
         for extra in self.to_update_extra:
             pass#extra.check_visibility(pixel_size)
 

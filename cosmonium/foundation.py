@@ -137,7 +137,7 @@ class BaseObject(object):
     def update_obs(self, observer):
         pass
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         pass
 
     def check_settings(self):
@@ -237,7 +237,7 @@ class VisibleObject(BaseObject):
             self.instance.hide()
             self.instance.stash()
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         if self.parent != None:
             self.visible = self.parent.shown and self.parent.visible
 
@@ -320,9 +320,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.update_obs(observer)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         for component in self.components:
-            component.check_visibility(pixel_size)
+            component.check_visibility(frustum, pixel_size)
 
     def check_settings(self):
         for component in self.components:

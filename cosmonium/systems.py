@@ -208,13 +208,13 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.update_obs(observer)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         self.was_visible = self.visible and self.resolved
-        StellarObject.check_visibility(self, pixel_size)
+        StellarObject.check_visibility(self, frustum, pixel_size)
         #No need to check the children if not visible
         if (not self.visible or not self.resolved) and not self.was_visible: return
         for child in self.children:
-            child.check_visibility(pixel_size)
+            child.check_visibility(frustum, pixel_size)
 
     def check_settings(self):
         StellarObject.check_settings(self)

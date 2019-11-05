@@ -41,7 +41,7 @@ class StellarBodyLabel(ObjectLabel):
     def get_oid_color(self):
         return self.parent.oid_color
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         if hasattr(self.parent, "primary") and self.parent.resolved:
             self.visible = False
             return
@@ -85,7 +85,7 @@ class StellarBodyLabel(ObjectLabel):
         self.instance.setScale(scale)
 
 class FixedOrbitLabel(StellarBodyLabel):
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         #TODO: Should be refactored !
         if hasattr(self.parent, "primary") and self.parent.resolved and (self.parent.primary is None or (self.parent.primary.label is not None and self.parent.primary.label.visible)):
             self.visible = False
@@ -444,7 +444,7 @@ class StellarObject(LabelledObject):
             if self.system is not None:
                 self.system.set_visibility_override(override)
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
-            self.check_visibility(self.context.observer.pixel_size)
+            self.check_visibility(self.context.observer.frustum, self.context.observer.pixel_size)
 
     def first_update(self, time):
         self.update(time, 0)
@@ -484,7 +484,7 @@ class StellarObject(LabelledObject):
             self._height_under = self.get_apparent_radius()
         CompositeObject.update_obs(self, observer)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         StellarObject.nb_visibility += 1
         if self.distance_to_obs > 0.0:
             self.visible_size = self._extend / (self.distance_to_obs * pixel_size)
@@ -496,11 +496,7 @@ class StellarObject(LabelledObject):
             if self.resolved:
                 radius = self.get_extend()
                 if self.distance_to_obs > radius:
-                    D = self.rel_position + (self.context.observer.camera_vector * (radius * self.context.observer.inv_sin_dfov))
-                    len_squared = D.dot(D)
-                    e = D.dot(self.context.observer.camera_vector)
-                    self.in_view = e >= 0.0 and e*e > len_squared * self.context.observer.sqr_cos_dfov
-                    #TODO: add check if object is slightly behind the observer
+                    self.in_view = frustum.is_sphere_in(self.rel_position, radius)
                 else:
                     #We are in the object
                     self.in_view = True
@@ -512,7 +508,7 @@ class StellarObject(LabelledObject):
             self.visible = True
         if not self.virtual_object and self.resolved and self.in_view:
             self.context.add_visible(self)
-        LabelledObject.check_visibility(self, pixel_size)
+        LabelledObject.check_visibility(self, frustum, pixel_size)
 
     def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         StellarObject.nb_instance += 1

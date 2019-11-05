@@ -25,6 +25,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
 from .astro.frame import AbsoluteReferenceFrame
+from .octree import InfiniteFrustum #TODO: should not be in octree
 from . import settings
 from . import utils
 
@@ -35,6 +36,7 @@ class CameraBase(object):
         #Camera node
         self.cam = cam
         self.camLens = lens
+        self.realCamLens = None
         #Field of view (vertical)
         self.default_fov = None
         self.fov = None
@@ -352,6 +354,13 @@ class CameraHolder(CameraBase):
         if not settings.camera_at_origin:
             self.cam.setPos(*self.get_camera_pos())
         self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
+        if self.realCamLens is not None:
+            mat = self.cam.getMat()
+            bh = self.realCamLens.make_bounds()
+            self.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
+            mat = self.cam.getMat()
+            bh = self.realCamLens.make_bounds()
+            self.frustum = InfiniteFrustum(bh, mat, self.get_position())
 
 class EventsControllerBase(DirectObject):
     wheel_event_duration = 0.1

@@ -135,8 +135,8 @@ class Atmosphere(ShapeObject):
     def get_pixel_height(self):
         return self.parent.visible_size * (self.ratio - 1.0)
 
-    def check_visibility(self, pixel_size):
-        ShapeObject.check_visibility(self, pixel_size)
+    def check_visibility(self, frustum, pixel_size):
+        ShapeObject.check_visibility(self, frustum, pixel_size)
         if self.get_pixel_height() < 1.0:
             self.visible = False
 

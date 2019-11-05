@@ -398,7 +398,7 @@ class ShapeObject(VisibleObject):
                 if self.callback is not None:
                     self.callback(self, *self.cb_args)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
 
     def update_shape(self):

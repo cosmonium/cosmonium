@@ -196,7 +196,7 @@ class ShipBase(VisibleObject):
     def update_obs(self, observer):
         pass
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         pass
 
     def check_settings(self):
@@ -318,8 +318,8 @@ class VisibleShip(ShipBase):
                 self.remove_light()
         self.ship_object.update_obs(observer)
 
-    def check_visibility(self, pixel_size):
-        self.ship_object.check_visibility(pixel_size)
+    def check_visibility(self, frustum, pixel_size):
+        self.ship_object.check_visibility(frustum, pixel_size)
 
     def update_shader(self):
         ShipBase.update_shader(self)

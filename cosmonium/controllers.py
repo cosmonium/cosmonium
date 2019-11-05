@@ -83,21 +83,21 @@ class BodyController():
         """
         pass
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         """
         Method called each cycle to alter the visibility property of the object.
         The actual check_visibility() method of the body will be called before this method
+        :param frustum: Frustum of the current camera
         :param pixel_size: The size factor of a pixel on the screen.
         """
         pass
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot):
         """
         Method called each cycle, if the body is resolved, to alter the instance of the object in the scene
         The actual check_and_update_instance() method of the body will be called before this method
         :param camera_pos: Absolute position of the camera
         :param camera_rot: Absolute rotation of the camera.
-        :param pointset: Do not use.
         """
         pass
 
