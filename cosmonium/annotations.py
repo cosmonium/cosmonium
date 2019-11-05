@@ -37,11 +37,16 @@ from . import settings
 
 from math import sin, cos, atan2, pi
 
-class AnnotationLabel(ObjectLabel):
-    def update_instance(self, camera_pos, camera_rot):
-        position = self.parent.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
-        if position != None:
-            self.instance.setPos(*position)
+class BackgroundLabel(ObjectLabel):
+    def create_instance(self):
+        ObjectLabel.create_instance(self)
+        self.instance.setBin('background', self.parent.background_level)
+        if self.parent is not None:
+            self.rel_position = self.parent.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
+        else:
+            self.rel_position = None
+        if self.rel_position != None:
+            self.instance.setPos(*self.rel_position)
             scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.context.observer.infinity)
         else:
             scale = 0.0
@@ -49,13 +54,15 @@ class AnnotationLabel(ObjectLabel):
             print("Label too far", self.get_name())
             scale = 1e-7
         self.instance.setScale(scale)
-        self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
-        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
 
-class BackgroundLabel(AnnotationLabel):
-    def create_instance(self):
-        AnnotationLabel.create_instance(self)
-        self.instance.setBin('background', self.parent.background_level)
+    def check_visibility(self, frustum, pixel_size):
+        ObjectLabel.check_visibility(self, frustum, pixel_size)
+        if self.visible and self.instance is not None:
+            self.visible = frustum.is_sphere_in(self.rel_position, 0)
+
+    def update_instance(self, camera_pos, orientation):
+        self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
+        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
 
 class Orbit(VisibleObject):
     ignore_light = True
