@@ -41,7 +41,7 @@ from ..parsers.configparser import configParser
 
 from .hud import HUD
 from .query import Query
-from .Menu import DropDownMenu, PopupMenu
+from pandamenu.menu import DropDownMenu, PopupMenu
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
 from .clipboard import create_clipboard
