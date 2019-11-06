@@ -20,8 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..support.ply import lex
-from ..support.ply import yacc
+from ply import lex
+from ply import yacc
 from ..dircontext import defaultDirContext
 from .. import utils
 

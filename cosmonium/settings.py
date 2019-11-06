@@ -25,7 +25,7 @@ from panda3d.core import LPoint3, LPoint3d
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
-from .support.appdirs.appdirs import AppDirs
+from appdirs.appdirs import AppDirs
 
 import os
 

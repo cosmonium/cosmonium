@@ -21,9 +21,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-# Add source/ directory to import path to be able to load the c++ libraries
 import sys
+# Add source/ directory to import path to be able to load the c++ libraries
 sys.path.insert(0, 'source')
+# Add third-party/ directory to import path to be able to load the external libraries
+sys.path.insert(0, 'third-party')
 
 from cosmonium.cosmonium import Cosmonium
 
