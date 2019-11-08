@@ -6,3 +6,7 @@
 	path = tools/p3d_module_builder
 	url = https://github.com/cosmonium/P3DModuleBuilder.git
 	branch=cosmonium
+[submodule "third-party/cefpanda"]
+	path = third-party/cefpanda
+	url = https://github.com/cosmonium/cefpanda
+        branch=cosmonium

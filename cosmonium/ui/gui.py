@@ -22,6 +22,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LVector3, LVector2
+from pandamenu.menu import DropDownMenu, PopupMenu
 
 from ..bodies import Star, StellarBody
 from ..systems import SimpleSystem
@@ -33,6 +34,7 @@ from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
 from ..bodyclass import bodyClasses
 from ..appstate import AppState
+from ..extrainfo import extra_info
 from ..celestia.cel_url import CelUrl
 from .. import utils
 from .. import settings
@@ -41,10 +43,10 @@ from ..parsers.configparser import configParser
 
 from .hud import HUD
 from .query import Query
-from pandamenu.menu import DropDownMenu, PopupMenu
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
 from .clipboard import create_clipboard
+from .browser import Browser
 
 about_text = """# Cosmonium
 
@@ -98,6 +100,7 @@ class Gui(object):
         self.about = TextWindow('About', self.scale, settings.markdown_font, owner=self)
         self.about.set_text(about_text)
         self.create_menubar()
+        self.browser = Browser(self.scale, owner=self)
         if settings.show_hud:
             self.show_hud()
         else:
@@ -642,6 +645,14 @@ class Gui(object):
             subitems = self.create_orbits_menu_items(over)
             if len(subitems) > 0:
                 items.append(["Orbits", 0, subitems])
+        subitems = []
+        for info in extra_info:
+            name = info.get_name()
+            url = info.get_url_for(over)
+            if url is not None:
+                subitems.append([name, 0, self.browser.load, url])
+        if len(subitems) > 0:
+            items.append(["More info", 0, subitems])
         if not self.menubar_shown:
             if over is not None:
                 items.append(0)
@@ -798,6 +809,7 @@ class Gui(object):
         self.cosmonium.a2dTopRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dTop)
         self.cosmonium.a2dBottomLeft.setPos(self.cosmonium.a2dLeft, 0, self.cosmonium.a2dBottom)
         self.cosmonium.a2dBottomRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dBottom)
+        self.cosmonium.pixel2d.setScale(2.0 / width, 1.0, 2.0 / height)
 
     def hide(self):
         self.hud.hide()

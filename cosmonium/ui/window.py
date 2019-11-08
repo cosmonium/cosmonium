@@ -30,6 +30,7 @@ class Window():
     def __init__(self, title, scale, parent=None, child=None, transparent=False, owner=None):
         self.scale = scale
         self.owner = owner
+        self.child = None
         self.last_pos = None
         self.title_text = title
         self.title_color = (1, 1, 1, 1)
