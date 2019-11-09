@@ -20,12 +20,9 @@
 from setuptools import setup
 import sys
 
-version = '0.1.2.dev0'
+sys.path.insert(0, 'third-party')
 
-if sys.version_info[0] < 3:
-    excludes = ['cosmonium.support.yaml']
-else:
-    excludes = ['cosmonium.support.yaml2']
+version = '0.1.2.dev0'
 
 config = {
     'name': "cosmonium",
@@ -56,9 +53,23 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
-            'include_modules': {'*': ['_ruamel_yaml']},
-            'exclude_modules': {'*': excludes},
-            'package_data_dirs': {'ruamel': [('ruamel/*', 'ruamel', {})]},
+            'include_modules': {'*': ['_ruamel_yaml', 'ruamel.yaml', 'json']},
+            'package_data_dirs':
+            {
+             'ruamel.yaml': [('ruamel/*', 'ruamel', {})],
+             'cefpython3': [
+                            ('cefpython3/*.pak', '', {}),
+                            ('cefpython3/*.dat', '', {}),
+                            ('cefpython3/*.bin', '', {}),
+                            ('cefpython3/*.dll', '', {}),
+                            ('cefpython3/libcef.so', '', {}),
+                            ('cefpython3/LICENSE.txt', '', {}),
+                            ('cefpython3/License', '', {}),
+                            ('cefpython3/subprocess*', '', {'PKG_DATA_MAKE_EXECUTABLE'}),
+                            ('cefpython3/locals/*', 'locals', {}),
+                            ('cefpython3/Chromium Embedded Framework.framework/Resources', 'Chromium Embedded Framework.framework/Resources', {}),
+                            ],
+            },
             'gui_apps': {
                 'cosmonium': 'main.py',
                 'ralph': 'ralph.py',
