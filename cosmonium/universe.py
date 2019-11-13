@@ -133,7 +133,10 @@ class Universe(StellarSystem):
     def update(self, time):
         CompositeObject.update(self, time)
         for leaf in self.to_update:
-            if not leaf.update_frozen:
+            if isinstance(leaf, StellarSystem):
+                #print("Update system", leaf.get_name())
+                leaf.update(time)
+            elif not leaf.update_frozen:
                 #print("Update", leaf.get_name())
                 leaf.update(time)
         for extra in self.to_update_extra:
