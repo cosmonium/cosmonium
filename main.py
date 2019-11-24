@@ -26,6 +26,8 @@ import sys
 sys.path.insert(0, 'source')
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
+# CEFPanda module is not at top level
+sys.path.insert(0, 'third-party/cefpanda')
 
 from cosmonium.cosmonium import Cosmonium
 

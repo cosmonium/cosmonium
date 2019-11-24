@@ -25,6 +25,13 @@
 
 from __future__ import print_function
 
+import sys
+
+# Add third-party/ directory to import path to be able to load the external libraries
+sys.path.insert(0, 'third-party')
+# CEFPanda module is not at top level
+sys.path.insert(0, 'third-party/cefpanda')
+
 from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
 from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
@@ -52,7 +59,6 @@ from cosmonium import settings
 
 from math import pow, pi, sqrt
 import argparse
-import sys
 
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.camera import CameraBase

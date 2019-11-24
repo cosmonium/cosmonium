@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from .window import Window
 
-from cefpanda import cefpanda
+import cefpanda
 
 class Browser(object):
     def __init__(self, scale, owner=None):
