@@ -29,8 +29,9 @@ import sys
 
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
-# CEFPanda module is not at top level
+# CEFPanda and glTF modules aree not at top level
 sys.path.insert(0, 'third-party/cefpanda')
+sys.path.insert(0, 'third-party/gltf')
 
 from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
 from panda3d.core import LPoint3d, LQuaterniond

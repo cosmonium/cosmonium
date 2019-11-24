@@ -10,3 +10,7 @@
 	path = third-party/cefpanda
 	url = https://github.com/cosmonium/cefpanda
         branch=cosmonium
+[submodule "third-party/gltf"]
+	path = third-party/gltf
+	url = https://github.com/cosmonium/panda3d-gltf
+        branch=cosmonium

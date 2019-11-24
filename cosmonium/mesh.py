@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import loadPrcFileData, Filename
+import gltf
 
 from .dircontext import defaultDirContext
 from . import cache
@@ -32,6 +33,7 @@ def init_mesh_loader():
         loadPrcFileData("", "load-file-type p3assimp\n"
                             "assimp-gen-normals #t\n"
                             "assimp-smooth-normal-angle 90\n")
+    gltf.patch_loader(None)
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
 
