@@ -364,6 +364,18 @@ class Gui(object):
         settings.stereo_swap_eyes = not settings.stereo_swap_eyes
         configParser.save()
 
+    def set_render_fps(self):
+        settings.display_fps = True
+        settings.display_ms = False
+
+    def set_render_ms(self):
+        settings.display_fps = False
+        settings.display_ms = True
+
+    def set_render_none(self):
+        settings.display_fps = False
+        settings.display_ms = False
+
     def create_main_menu_items(self):
         return (
                 ('_Find object>Enter', 0, self.open_find_object),
@@ -514,6 +526,11 @@ class Gui(object):
                 )
 
     def create_debug_menu_items(self):
+        fps = (
+                ('Frame per second', settings.display_fps, self.set_render_fps),
+                ('Render time', settings.display_ms, self.set_render_ms),
+                ("None", not (settings.display_fps or settings.display_ms), self.set_render_none),
+                )
         return (
                 ('Toggle filled wireframe>F3', 0, self.cosmonium.toggle_filled_wireframe),
                 ('Toggle wireframe>Shift-F3', 0, self.cosmonium.toggle_wireframe),
@@ -521,6 +538,7 @@ class Gui(object):
                 0,
                 ('Instant movement>Control-J', settings.debug_jump, self.toggle_jump),
                 ('Connect pstats>F2', 0, self.cosmonium.connect_pstats),
+                ('Render info', 0, fps),
                 0,
                 ('Freeze LOD>F8', settings.debug_lod_freeze, self.toggle_lod_freeze),
                 ('Dump LOD tree>Shift-F8', 0, self.dump_object_info),
@@ -754,8 +772,14 @@ class Gui(object):
             self.hud.bottomLeft.set(1, "")
         current_time = globalClock.getRealTime()
         if current_time - self.last_fps >= 1.0:
-            fps = globalClock.getAverageFrameRate()
-            self.hud.topRight.set(0, "%.1f" % fps)
+            if settings.display_fps:
+                fps = globalClock.getAverageFrameRate()
+                self.hud.topRight.set(0, "%.1f fps" % fps)
+            elif settings.display_ms:
+                fps = globalClock.getDt() * 1000
+                self.hud.topRight.set(0, "%.1f ms" % fps)
+            else:
+                self.hud.topRight.set(0, "")
             self.last_fps = current_time
         if self.autopilot.current_interval is not None:
             self.hud.bottomRight.set(4, "Traveling (%d)" % (self.autopilot.current_interval.getDuration() - self.autopilot.current_interval.getT()))

@@ -184,6 +184,8 @@ show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
 help_background = LColor(0.5, 0.5, 0.5, 0.7)
+display_fps = True
+display_ms = False
 
 menu_text_size = 12
 
