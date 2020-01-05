@@ -45,6 +45,7 @@ from .hud import HUD
 from .query import Query
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
+from .preferences import Preferences
 from .clipboard import create_clipboard
 from .browser import Browser
 
@@ -93,6 +94,7 @@ class Gui(object):
         self.popup_menu = None
         self.opened_windows = []
         self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
+        self.preferences = Preferences(self.cosmonium, settings.markdown_font, owner=self)
         self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)
         self.help.load('control.md')
         self.license = TextWindow('License', self.scale, settings.markdown_font, owner=self)
@@ -125,6 +127,7 @@ class Gui(object):
         event_ctrl.accept('shift-z-repeat', self.camera.zoom, [1.0/1.05])
         event_ctrl.accept('control-r', self.camera.reset_zoom)
         event_ctrl.accept('control-m', self.toggle_menu)
+        event_ctrl.accept('control-p', self.show_preferences)
 
         event_ctrl.accept('f1', self.show_info)
         event_ctrl.accept('shift-f1', self.show_help)
@@ -384,6 +387,8 @@ class Gui(object):
                 ('_Load URL>Control-V', 0, self.load_celurl),
                 0,
                 ('Go to _home>H', 0, self.cosmonium.go_home),
+                0,
+                ('_Preferences', 0, self.show_preferences),
                 0,
                 ('_Quit>Control-Q', 0, self.cosmonium.exit),
                 )
@@ -897,3 +902,8 @@ class Gui(object):
             self.info.show(self.cosmonium.selected)
             if not self.info in self.opened_windows:
                 self.opened_windows.append(self.info)
+
+    def show_preferences(self):
+        self.preferences.show()
+        if not self.preferences in self.opened_windows:
+            self.opened_windows.append(self.preferences)

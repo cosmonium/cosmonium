@@ -41,7 +41,7 @@ class Window():
         if transparent:
             frameColor = (0, 0, 0, 0)
         else:
-            frameColor = (0, 0, 0, 1)
+            frameColor = (0.5, 0.5, 0.5, 1)
         self.pad = 0
 #         if Window.texture is None:
 #             Window.texture = loader.loadTexture('textures/futureui1.png')
@@ -89,7 +89,7 @@ class Window():
 
     def update(self):
         if self.child is not None:
-            frame_size = self.child.frame['frameSize']
+            frame_size = list(self.child.frame['frameSize'])
             if frame_size is not None:
                 frame_size[0] -= self.pad
                 frame_size[1] += self.pad

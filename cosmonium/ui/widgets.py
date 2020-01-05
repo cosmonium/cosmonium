@@ -25,6 +25,16 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 
+class DirectWidgetContainer():
+    def __init__(self, widget):
+        self.frame = widget
+
+    def destroy(self):
+        self.frame.destroy()
+
+    def reparent_to(self, parent):
+        self.frame.reparent_to(parent)
+
 class ScrollText():
     def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12, parent=None, frameColor=(0.33, 0.33, 0.33, .66)):
         if parent is None:
