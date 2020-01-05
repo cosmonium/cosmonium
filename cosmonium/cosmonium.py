@@ -177,15 +177,9 @@ class CosmoniumBase(ShowBase):
         sys.exit(1)
 
     def get_fullscreen_sizes(self):
-        info = self.pipe.getDisplayInformation()
-        resolutions = []
-        for idx in range(info.getTotalDisplayModes()):
-            width = info.getDisplayModeWidth(idx)
-            height = info.getDisplayModeHeight(idx)
-            bits = info.getDisplayModeBitsPerPixel(idx)
-            resolutions.append([width, height])
-        resolutions.sort(key=lambda x: x[0], reverse=True)
-        return resolutions
+        screen_width = base.pipe.getDisplayWidth()
+        screen_height = base.pipe.getDisplayHeight()
+        return (screen_width, screen_height)
 
     def toggle_fullscreen(self):
         settings.win_fullscreen = not settings.win_fullscreen
@@ -193,7 +187,7 @@ class CosmoniumBase(ShowBase):
         wp.setFullscreen(settings.win_fullscreen)
         if settings.win_fullscreen:
             resolutions = self.get_fullscreen_sizes()
-            wp.setSize(*resolutions[0])
+            wp.setSize(*resolutions)
         else:
             wp.setSize(settings.win_width, settings.win_height)
         self.win.requestProperties(wp)
