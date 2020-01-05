@@ -23,18 +23,19 @@ from __future__ import absolute_import
 from .bodyelements import Atmosphere
 from .shaders import AtmosphericScattering
 from .utils import TransparencyBlend
+from .parameters import AutoUserParameter
 
 from math import pow, pi
 
 class ONeilAtmosphere(Atmosphere):
     AtmosphereRatio = 1.025
+    wavelength = [0.650, 0.570, 0.465]
     def __init__(self,
                  shape=None,
                  mie_phase_asymmetry = -0.99,
                  rayleigh_coef = 0.0025,
                  mie_coef = 0.0015,
                  sun_power = 15.0,
-                 wavelength = [0.650, 0.570, 0.465],
                  exposure = 0.8,
                  calc_in_fragment=False,
                  normalize=False,
@@ -46,8 +47,7 @@ class ONeilAtmosphere(Atmosphere):
         self.Kr = rayleigh_coef
         self.Km = mie_coef
         self.ESun = sun_power
-        self.wavelength = wavelength
-        self.exposure = exposure,
+        self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
         self.normalize = normalize
         self.hdr = hdr
@@ -66,7 +66,8 @@ class ONeilAtmosphere(Atmosphere):
         return scattering
 
     def do_update_scattering(self, shape_object):
-        shape_object.shader.scattering.inside = self.inside
+        shape_object.shader.scattering.set_inside(self.inside)
+        shape_object.shader.scattering.set_hdr(self.hdr)
 
     def update_instance(self, camera_pos, orientation):
         planet_radius = self.owner.get_min_radius()
@@ -83,6 +84,18 @@ class ONeilAtmosphere(Atmosphere):
         Atmosphere.remove_instance(self)
         self.inside = None
 
+    def get_user_parameters(self):
+        group = Atmosphere.get_user_parameters(self)
+        group.add_parameters(
+                             AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [1e-6, 1.0], AutoUserParameter.SCALE_LOG_0),
+                             AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [1e-6, 1.0, AutoUserParameter.SCALE_LOG_0]),
+                             AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
+                             AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
+                             AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+                             AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                            )
+        return group
+
 class ONeilScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True
@@ -98,6 +111,12 @@ class ONeilScattering(AtmosphericScattering):
         self.hdr = hdr
         self.use_normal = False#not self.atmosphere
         self.inside = False
+
+    def set_inside(self, inside):
+        self.inside = inside
+
+    def set_hdr(self, hdr):
+        self.hdr = hdr
 
     def get_id(self):
         name = "oneil-"

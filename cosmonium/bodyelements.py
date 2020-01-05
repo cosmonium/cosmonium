@@ -29,6 +29,7 @@ from .surfaces import FlatSurface
 from .utils import TransparencyBlend
 from .shaders import AtmosphericScattering
 from .shadows import RingShadowCaster
+from .parameters import AutoUserParameter
 
 from . import settings
 
@@ -113,12 +114,17 @@ class Atmosphere(ShapeObject):
     def create_scattering_shader(self, atmosphere):
         return AtmosphericScattering()
 
+    def update_user_parameters(self):
+        ShapeObject.update_user_parameters(self)
+        self.update_scattering()
+
 class Clouds(FlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
         FlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
+        self.scale_base = None
         self.inside = None
         if appearance is not None:
             #TODO: Disabled as it causes blinking
@@ -128,6 +134,7 @@ class Clouds(FlatSurface):
         return 'Clouds'
 
     def set_scale(self, scale):
+        self.scale_base = scale
         factor = 1.0 + self.height/self.parent.get_apparent_radius()
         self.shape.set_scale(scale * factor)
 
@@ -156,3 +163,18 @@ class Clouds(FlatSurface):
     def remove_instance(self):
         FlatSurface.remove_instance(self)
         self.inside = None
+
+    def set_height(self, height):
+        self.height = height
+
+    def get_height(self):
+        return self.height
+
+    def get_user_parameters(self):
+        group = ShapeObject.get_user_parameters(self)
+        group.add_parameter(AutoUserParameter('Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.parent.get_apparent_radius() * 0.01]))
+        return group
+
+    def update_user_parameters(self):
+        ShapeObject.update_user_parameters(self)
+        self.set_scale(self.scale_base)

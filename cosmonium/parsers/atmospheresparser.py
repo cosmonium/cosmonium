@@ -61,7 +61,6 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         rayleigh_coef = data.get('rayleigh', 0.0025)
         mie_coef = data.get('mie', 0.0015)
         sun_power = data.get('power', 15.0)
-        wavelength = data.get('wavelength', [0.650, 0.570, 0.465])
         exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc-in-fragment', False)
         normalize = data.get('normalize', False)
@@ -77,7 +76,6 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         atmosphere = ONeilAtmosphere(shape=shape,
                                      mie_phase_asymmetry=mie_phase_asymmetry, mie_coef=mie_coef,
                                      rayleigh_coef=rayleigh_coef, sun_power=sun_power,
-                                     wavelength=wavelength,
                                      exposure=exposure,
                                      calc_in_fragment=calc_in_fragment,
                                      normalize=normalize,

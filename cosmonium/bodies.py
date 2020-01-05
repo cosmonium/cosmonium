@@ -618,7 +618,7 @@ class StellarBody(StellarObject):
         self.add_component(self.surface)
         self.add_component(self.ring)
         self.add_component(self.clouds)
-        self.add_component(self.atmosphere)        
+        self.add_component(self.atmosphere)
         self.configure_shape()
 
     def remove_components(self):
