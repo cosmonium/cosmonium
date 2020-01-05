@@ -58,18 +58,16 @@ class NavBase(object):
         pass
 
     def register_wheel_events(self, event_ctrl):
-        if settings.invert_wheel:
-            event_ctrl.accept("wheel_up", self.wheel_event, [1])
-            event_ctrl.accept("wheel_down", self.wheel_event, [-1])
-        else:
-            event_ctrl.accept("wheel_up", self.wheel_event, [-1])
-            event_ctrl.accept("wheel_down", self.wheel_event, [1])
+        event_ctrl.accept("wheel_up", self.wheel_event, [-1])
+        event_ctrl.accept("wheel_down", self.wheel_event, [1])
 
     def remove_wheel_events(self, event_ctrl):
         event_ctrl.ignore("wheel_up")
         event_ctrl.ignore("wheel_down")
 
     def wheel_event(self, direction):
+        if settings.invert_wheel:
+            direction = - direction
         self.wheel_event_time = globalClock.getRealTime()
         self.wheel_direction = direction
 
