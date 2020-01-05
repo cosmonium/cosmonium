@@ -24,11 +24,24 @@ from panda3d.core import LVector3, LMatrix3, LMatrix4
 from ..shaders import StructuredShader, ShaderProgram, ShaderComponent
 from ..dircontext import defaultDirContext
 from ..textures import TexCoord
+from ..parameters import ParametersGroup, AutoUserParameter
 from .. import settings
 
 class NoiseSource(object):
+    last_id = 0
+    def __init__(self, name, prefix):
+        NoiseSource.last_id += 1
+        self.num_id = NoiseSource.last_id
+        self.str_id = prefix + '_' + str(self.num_id)
+        if name is None:
+            name = self.str_id
+        self.name = name
+
     def get_id(self):
         return ''
+
+    def get_name(self):
+        return self.name
 
     def noise_uniforms(self, code):
         pass
@@ -45,9 +58,32 @@ class NoiseSource(object):
     def update(self, instance):
         pass
 
+    def get_user_parameters(self):
+        return None
+
+class BasicNoiseSource(NoiseSource):
+    def __init__(self, noise, name, prefix):
+        NoiseSource.__init__(self, name, prefix)
+        self.noise = noise
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+
+    def update(self, instance):
+        self.noise.update(instance)
+
+    def get_user_parameters(self):
+        return self.noise.get_user_parameters()
+
 class NoiseConst(NoiseSource):
-    def __init__(self, value):
-        NoiseSource.__init__(self)
+    def __init__(self, value, name=None):
+        NoiseSource.__init__(self, name, 'const')
         self.value = value
 
     def get_id(self):
@@ -68,6 +104,9 @@ class NoiseCoord(NoiseSource):
         code.append('        %s  = %s.%s;' % (value, point, self.coord))
 
 class GpuNoiseLibPerlin3D(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'gnl-perlin3d')
+
     def get_id(self):
         return 'gnl-perlin3d'
 
@@ -80,6 +119,9 @@ class GpuNoiseLibPerlin3D(NoiseSource):
         code.append('        %s  = Perlin3D(%s);' % (value, point))
 
 class GpuNoiseLibCellular3D(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'gnl-cell3d')
+
     def get_id(self):
         return 'gnl-cell3d'
 
@@ -91,6 +133,9 @@ class GpuNoiseLibCellular3D(NoiseSource):
         code.append('        %s  = sqrt(Cellular3D(%s));' % (value, point))
 
 class GpuNoiseLibPolkaDot3D(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'gnl-polkadot3d')
+
     def __init__(self, min_radius, max_radius):
         NoiseSource.__init__(self)
         self.min_radius = min_radius
@@ -108,6 +153,9 @@ class GpuNoiseLibPolkaDot3D(NoiseSource):
         code.append('        %s  = PolkaDot3D(%s, %g, %g);' % (value, point, self.min_radius, self.max_radius))
 
 class SteGuPerlin3D(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'stegu-perlin3d')
+
     def get_id(self):
         return 'stegu-perlin3d'
 
@@ -119,8 +167,8 @@ class SteGuPerlin3D(NoiseSource):
         code.append('        %s  = snoise(%s);' % (value, point))
 
 class SteGuCellular3D(NoiseSource):
-    def __init__(self, fast):
-        NoiseSource.__init__(self)
+    def __init__(self, fast, name=None, prefix='stegu-cellular3d'):
+        NoiseSource.__init__(self, name, prefix)
         self.fast = fast
 
     def get_id(self):
@@ -143,6 +191,9 @@ class SteGuCellular3D(NoiseSource):
             code.append('        %s = cellular(%s).x;' % (value, point))
 
 class SteGuCellularDiff3D(SteGuCellular3D):
+    def __init__(self, fast, name=None):
+        SteGuCellular3D.__init__(self, fast, name, 'stegu-cellular3d-diff')
+
     def get_id(self):
         return SteGuCellular3D.get_id(self) + '-diff'
 
@@ -154,6 +205,9 @@ class SteGuCellularDiff3D(SteGuCellular3D):
         code.append('        %s  = F.y - F.x;' % (value))
 
 class QuilezPerlin3D(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'quilez-gradientnoise3d')
+
     def get_id(self):
         return 'quilez-gradientnoise3d'
 
@@ -163,175 +217,134 @@ class QuilezPerlin3D(NoiseSource):
     def noise_value(self, code, value, point):
         code.append('        %s  = noise(%s);' % (value, point))
 
-class TurbulenceNoise(NoiseSource):
-    def __init__(self, noise):
-        self.noise = noise
+class SinCosNoise(NoiseSource):
+    def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'sincos')
 
     def get_id(self):
-        return 'turbulence-' + self.noise.get_id()
-
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
+        return 'sincos'
 
     def noise_value(self, code, value, point):
         code.append('        {')
-        self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s = abs(tmp);' % value)
+        code.append('        vec3 tmp_sincos = %s;' % point)
+        code.append('        %s = sin(tmp_sincos.y) + cos(tmp_sincos.x);' % value)
         code.append('        }')
 
-class AbsNoise(NoiseSource):
-    def __init__(self, noise):
-        self.noise = noise
+class AbsNoise(BasicNoiseSource):
+    def __init__(self, noise, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'abs')
 
     def get_id(self):
         return 'abs-' + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
+    def noise_value(self, code, value, point):
+        code.append('        {')
+        code.append('          float tmp_abs;')
+        self.noise.noise_value(code, 'tmp_abs', point)
+        code.append('          %s = abs(tmp_abs);' % value)
+        code.append('        }')
 
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
+class NegNoise(BasicNoiseSource):
+    def __init__(self, noise, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'neg')
 
-    def noise_func(self, code):
-        self.noise.noise_func(code)
+    def get_id(self):
+        return 'neg-' + self.noise.get_id()
 
     def noise_value(self, code, value, point):
         code.append('        {')
-        self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s = abs(tmp);' % value)
+        code.append('          float tmp_neg;')
+        self.noise.noise_value(code, 'tmp_neg', point)
+        code.append('          %s = -(tmp_neg);' % value)
         code.append('        }')
 
-class RidgedNoise(NoiseSource):
-    def __init__(self, noise, offset=0.33, shift=True):
-        self.noise = noise
+class RidgedNoise(BasicNoiseSource):
+    def __init__(self, noise, offset=0.33, shift=True, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'ridged')
         self.offset = offset
         self.shift = shift
 
     def get_id(self):
         return 'ridged-' + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
-
     def noise_value(self, code, value, point):
         code.append('        {')
-        self.noise.noise_value(code, 'float tmp', point)
+        code.append('          float tmp_ridged;')
+        self.noise.noise_value(code, 'tmp_ridged', point)
         if self.shift:
-            code.append('        %s  = (1.0 - abs(tmp) - %g) * 2.0 - 1.0;' % (value, self.offset))
+            code.append('        %s  = (1.0 - abs(tmp_ridged) - %g) * 2.0 - 1.0;' % (value, self.offset))
         else:
-            code.append('        %s  = (1.0 - abs(tmp) - %g);' % (value, self.offset))
+            code.append('        %s  = (1.0 - abs(tmp_ridged) - %g);' % (value, self.offset))
         code.append('        }')
 
-class SquareNoise(NoiseSource):
-    def __init__(self, noise):
-        self.noise = noise
+class SquareNoise(BasicNoiseSource):
+    def __init__(self, noise, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'square')
 
     def get_id(self):
         return 'square-' + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
-
     def noise_value(self, code, value, point):
         code.append('        {')
-        self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s = tmp * tmp;' % value)
+        code.append('          float tmp_square;')
+        self.noise.noise_value(code, 'tmp_square', point)
+        code.append('        %s = tmp_square * tmp_square;' % value)
         code.append('        }')
 
-class CubeNoise(NoiseSource):
-    def __init__(self, noise):
-        self.noise = noise
+class CubeNoise(BasicNoiseSource):
+    def __init__(self, noise, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'cube')
 
     def get_id(self):
         return 'cube-' + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
-
     def noise_value(self, code, value, point):
         code.append('        {')
-        self.noise.noise_value(code, 'float tmp', point)
-        code.append('        %s = tmp * tmp * tmp;' % value)
+        code.append('          float tmp_cube;')
+        self.noise.noise_value(code, 'tmp_cube', point)
+        code.append('        %s = tmp_cube * tmp_cube * tmp_cube;' % value)
         code.append('        }')
 
-class NoiseSourceScale(NoiseSource):
-    def __init__(self, noise, value):
-        NoiseSource.__init__(self)
-        self.noise = noise
-        self.value = value
+class PositionMap(BasicNoiseSource):
+    def __init__(self, noise, offset=0.0, scale=1.0, dynamic=True, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'pos')
+        self.offset = offset
+        self.scale = scale
+        self.dynamic = dynamic
 
     def get_id(self):
-        return ('scale-%g-' % self.value) + self.noise.get_id()
+        if self.dynamic:
+            return ('pos-%d-' % self.num_id) + self.noise.get_id()
+        else:
+            return ('pos-%g-%g-' % (self.offset, self.scale)) + self.noise.get_id()
 
     def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
+        BasicNoiseSource.noise_uniforms(self, code)
+        code.append("uniform vec2 %s_params;" % self.str_id)
 
     def noise_value(self, code, value, point):
-        self.noise.noise_value(code, value, '%s * %g' % (point, self.value))
+        if self.dynamic:
+            self.noise.noise_value(code, value, '(%s * %s_params.x + %s_params.y)' % (point, self.str_id, self.str_id))
+        else:
+            self.noise.noise_value(code, value, '(%s * %g + %g)' % (point, self.scale, self.offset))
 
     def update(self, instance):
-        self.noise.update(instance)
+        BasicNoiseSource.update(self, instance)
+        if self.dynamic:
+            instance.set_shader_input('%s_params' % self.str_id, (self.scale, self.offset))
 
-class NoiseOffset(NoiseSource):
-    def __init__(self, noise, value):
-        NoiseSource.__init__(self)
-        self.noise = noise
-        self.value = value
-
-    def get_id(self):
-        return ('offset-%g-' % self.value) + self.noise.get_id()
-
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
-    def noise_func(self, code):
-        self.noise.noise_func(code)
-
-    def noise_value(self, code, value, point):
-        self.noise.noise_value(code, value, '%s + %g' % (point, self.value))
-
-    def update(self, instance):
-        self.noise.update(instance)
+    def get_user_parameters(self):
+        group = BasicNoiseSource.get_user_parameters(self)
+        if group is None:
+            group = ParametersGroup(self.noise.name)
+        group.add_parameters(AutoUserParameter('Scale', 'scale', self, param_type=AutoUserParameter.TYPE_FLOAT),
+                             AutoUserParameter('Offset', 'offset', self, param_type=AutoUserParameter.TYPE_FLOAT))
+        return group
 
 class NoiseAdd(NoiseSource):
-    fid = 0
-    def __init__(self, noises):
+    def __init__(self, noises, name=None):
+        NoiseSource.__init__(self, name, 'add')
         self.noises = noises
-        NoiseAdd.fid += 1
-        self.id = NoiseAdd.fid
 
     def get_id(self):
         return "add-" + '-'.join(map(lambda x: x.get_id(), self.noises))
@@ -347,7 +360,7 @@ class NoiseAdd(NoiseSource):
     def noise_func(self, code):
         for noise in self.noises:
             noise.noise_func(code)
-        code.append('float noise_add_%d(vec3 point)' % self.id)
+        code.append('float noise_add_%d(vec3 point)' % self.num_id)
         code.append('{')
         for (i, noise) in enumerate(self.noises):
             noise.noise_value(code, 'float value_%d' % i, 'point')
@@ -356,19 +369,17 @@ class NoiseAdd(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_add_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_add_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         for noise in self.noises:
             noise.update(instance)
 
 class NoiseSub(NoiseSource):
-    fid = 0
-    def __init__(self, noise_a, noise_b):
+    def __init__(self, noise_a, noise_b, name=None):
+        NoiseSource.__init__(self, name, 'sub')
         self.noise_a = noise_a
         self.noise_b = noise_b
-        NoiseSub.fid += 1
-        self.id = NoiseSub.fid
 
     def get_id(self):
         return self.noise_a.get_id() + "-sub-" + self.noise_b.get_id()
@@ -384,7 +395,7 @@ class NoiseSub(NoiseSource):
     def noise_func(self, code):
         self.noise_a.noise_func(code)
         self.noise_b.noise_func(code)
-        code.append('float noise_sub_%d(vec3 point)' % self.id)
+        code.append('float noise_sub_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value_a;')
         code.append('  float value_b;')
@@ -394,18 +405,16 @@ class NoiseSub(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_sub_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_sub_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
 
 class NoiseMul(NoiseSource):
-    fid = 0
-    def __init__(self, noises):
+    def __init__(self, noises, name=None):
+        NoiseSource.__init__(self, name, 'mul')
         self.noises = noises
-        NoiseMul.fid += 1
-        self.id = NoiseMul.fid
 
     def get_id(self):
         return "mul-" + '-'.join(map(lambda x: x.get_id(), self.noises))
@@ -421,7 +430,7 @@ class NoiseMul(NoiseSource):
     def noise_func(self, code):
         for noise in self.noises:
             noise.noise_func(code)
-        code.append('float noise_mul_%d(vec3 point)' % self.id)
+        code.append('float noise_mul_%d(vec3 point)' % self.num_id)
         code.append('{')
         for (i, noise) in enumerate(self.noises):
             noise.noise_value(code, 'float value_%d' % i, 'point')
@@ -430,19 +439,17 @@ class NoiseMul(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_mul_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_mul_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         for noise in self.noises:
             noise.update(instance)
 
 class NoisePow(NoiseSource):
-    fid = 0
-    def __init__(self, noise_a, noise_b):
+    def __init__(self, noise_a, noise_b, name=None):
+        NoiseSource.__init__(self, name, 'mul')
         self.noise_a = noise_a
         self.noise_b = noise_b
-        NoisePow.fid += 1
-        self.id = NoisePow.fid
 
     def get_id(self):
         return self.noise_a.get_id() + "-pow-" + self.noise_b.get_id()
@@ -458,7 +465,7 @@ class NoisePow(NoiseSource):
     def noise_func(self, code):
         self.noise_a.noise_func(code)
         self.noise_b.noise_func(code)
-        code.append('float noise_pow_%d(vec3 point)' % self.id)
+        code.append('float noise_pow_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value_a;')
         code.append('  float value_b;')
@@ -468,19 +475,17 @@ class NoisePow(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_pow_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_pow_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
 
 class NoiseThreshold(NoiseSource):
-    fid = 0
-    def __init__(self, noise_a, noise_b):
+    def __init__(self, noise_a, noise_b, name=None):
+        NoiseSource.__init__(self, name, 'threshold')
         self.noise_a = noise_a
         self.noise_b = noise_b
-        NoiseThreshold.fid += 1
-        self.id = NoiseThreshold.fid
 
     def get_id(self):
         return self.noise_a.get_id() + "-threshold-" + self.noise_b.get_id()
@@ -496,7 +501,7 @@ class NoiseThreshold(NoiseSource):
     def noise_func(self, code):
         self.noise_a.noise_func(code)
         self.noise_b.noise_func(code)
-        code.append('float noise_threshold_%d(vec3 point)' % self.id)
+        code.append('float noise_threshold_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value_a;')
         code.append('  float value_b;')
@@ -506,21 +511,18 @@ class NoiseThreshold(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_threshold_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_threshold_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
 
 class NoiseClamp(NoiseSource):
-    fid = 0
-    def __init__(self, noise, min_value, max_value):
-        NoiseSource.__init__(self)
+    def __init__(self, noise, min_value, max_value, name=None):
+        NoiseSource.__init__(self, name, 'clamp')
         self.noise = noise
         self.min_value = min_value
         self.max_value = max_value
-        NoiseClamp.fid += 1
-        self.id = NoiseClamp.fid
 
     def get_id(self):
         return ('clamp-%g-%g-' % (self.min_value, self.max_value)) + self.noise.get_id()
@@ -533,7 +535,7 @@ class NoiseClamp(NoiseSource):
 
     def noise_func(self, code):
         self.noise.noise_func(code)
-        code.append('float noise_clamp_%d(vec3 point)' % self.id)
+        code.append('float noise_clamp_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value;')
         self.noise.noise_value(code, 'value', 'point')
@@ -541,15 +543,14 @@ class NoiseClamp(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_clamp_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_clamp_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         self.noise.update(instance)
 
-class NoiseMap(NoiseSource):
-    fid = 0
-    def __init__(self, noise, min_value=0.0, max_value=1.0, src_min_value=-1.0, src_max_value=1.0):
-        self.noise = noise
+class NoiseMap(BasicNoiseSource):
+    def __init__(self, noise, min_value=0.0, max_value=1.0, src_min_value=-1.0, src_max_value=1.0, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'map')
         self.min_value = min_value
         self.max_value = max_value
         self.src_min_value = src_min_value
@@ -557,21 +558,13 @@ class NoiseMap(NoiseSource):
         self.range = self.max_value - self.min_value
         self.src_range = self.src_max_value - self.src_min_value
         self.range_factor = self.range / self.src_range
-        NoiseMap.fid += 1
-        self.id = NoiseMap.fid
 
     def get_id(self):
         return 'map-%g-%g-' % (self.min_value, self.max_value) + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
     def noise_func(self, code):
         self.noise.noise_func(code)
-        code.append('float noise_map_%d(vec3 point)' % self.id)
+        code.append('float noise_map_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value;')
         self.noise.noise_value(code, 'value', 'point')
@@ -579,32 +572,19 @@ class NoiseMap(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_map_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_map_%d(%s);' % (value, self.num_id, point))
 
-    def update(self, instance):
-        self.noise.update(instance)
-
-class Noise1D(NoiseSource):
-    fid = 0
-    def __init__(self, noise, axis):
-        NoiseSource.__init__(self)
-        self.noise = noise
+class Noise1D(BasicNoiseSource):
+    def __init__(self, noise, axis, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'axis')
         self.axis = axis
-        Noise1D.fid += 1
-        self.id = Noise1D.fid
 
     def get_id(self):
         return ('axis-%s-' % (self.axis)) + self.noise.get_id()
 
-    def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
-
     def noise_func(self, code):
-        self.noise.noise_func(code)
-        code.append('float noise_axis_%d(vec3 point)' % self.id)
+        BasicNoiseSource.noise_func(self, code)
+        code.append('float noise_axis_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  float value;')
         code.append('  vec3 point_1d = vec3(0);')
@@ -614,19 +594,11 @@ class Noise1D(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_axis_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_axis_%d(%s);' % (value, self.num_id, point))
 
-    def update(self, instance):
-        self.noise.update(instance)
-
-class FbmNoise(NoiseSource):
-    fid = 0
-    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, geometric=True, h=0.25, gain=0.5):
-        NoiseSource.__init__(self)
-        FbmNoise.fid += 1
-        self.id = FbmNoise.fid
-        self.name = 'fbm_%d' % self.id
-        self.noise = noise
+class FbmNoise(BasicNoiseSource):
+    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, geometric=True, h=0.25, gain=0.5, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'fbm')
         self.octaves = octaves
         self.frequency = frequency
         self.lacunarity = lacunarity
@@ -639,84 +611,144 @@ class FbmNoise(NoiseSource):
             geom = '-g'
         else:
             geom = ''
-        return self.name + geom + '-' + self.noise.get_id()
+        return self.str_id + geom + '-' + self.noise.get_id()
 
     def noise_uniforms(self, code):
-        self.noise.noise_uniforms(code)
-        code += ["uniform float %s_octaves;" % self.name,
-                 "uniform float %s_frequency;" % self.name,
-                 "uniform float %s_lacunarity;" % self.name,
-                 "uniform float %s_amplitude;" % self.name
+        BasicNoiseSource.noise_uniforms(self, code)
+        code += ["uniform float %s_octaves;" % self.str_id,
+                 "uniform float %s_frequency;" % self.str_id,
+                 "uniform float %s_lacunarity;" % self.str_id,
+                 "uniform float %s_amplitude;" % self.str_id
                  ]
         if self.geometric:
-            code.append("uniform float %s_gain;" % self.name)
+            code.append("uniform float %s_gain;" % self.str_id)
         else:
-            code.append("uniform float %s_h;" % self.name)
-
-    def noise_extra(self, program, code):
-        self.noise.noise_extra(program, code)
+            code.append("uniform float %s_h;" % self.str_id)
 
     def noise_func(self, code):
         self.noise.noise_func(code)
-        code.append('float Fbm_%s(vec3 point)' % self.name)
+        code.append('float Fbm_%s(vec3 point)' % self.str_id)
         code.append('{')
-        code.append("float frequency = %s_frequency;" % self.name)
+        code.append("float frequency = %s_frequency;" % self.str_id)
         if self.geometric:
-            code.append("float gain = %s_gain;" % self.name)
+            code.append("float gain = %s_gain;" % self.str_id)
         else:
-            code.append("float gain = pow(%s_lacunarity, -%s_h);" % (self.name, self.name))
+            code.append("float gain = pow(%s_lacunarity, -%s_h);" % (self.str_id, self.str_id))
         code.append('    float result = 0.0;')
         code.append('    float amplitude = 1.0;')
         code.append('    float max_value = 0.0;')
-        code.append('    for (int i = 0; i < %s_octaves; ++i)' % self.name)
+        code.append('    for (int i = 0; i < %s_octaves; ++i)' % self.str_id)
         code.append('    {')
         code.append('        float value;')
         self.noise.noise_value(code, 'value', 'point * frequency')
         code.append('        result += value * amplitude;')
         code.append('        max_value += amplitude;')
         code.append('        amplitude *= gain;')
-        code.append('        frequency *= %s_lacunarity;' % self.name)
+        code.append('        frequency *= %s_lacunarity;' % self.str_id)
         code.append('    }')
         code.append('    return result / max_value;')
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = Fbm_%s(%s);' % (value, self.name, point))
-
-    def set(self, key, value):
-        if key == 'noiseOctaves':
-            self.octaves = value
-        elif key == 'noiseFrequency':
-            self.frequency = value
-        elif key == 'noiseLacunarity':
-            self.lacunarity = value
-        elif key == 'noiseAmplitude':
-            self.amplitude = value
-        elif key == 'noiseGain':
-            self.gain = value
-        elif key == 'noiseH':
-            self.h = value
-        else:
-            print("Unknown parameter", key)
+        code.append('%s = Fbm_%s(%s);' % (value, self.str_id, point))
 
     def update(self, instance):
         self.noise.update(instance)
-        instance.set_shader_input('%s_octaves' % self.name, self.octaves)
-        instance.set_shader_input('%s_frequency' % self.name, self.frequency)
-        instance.set_shader_input('%s_lacunarity' % self.name, self.lacunarity)
+        instance.set_shader_input('%s_octaves' % self.str_id, self.octaves)
+        instance.set_shader_input('%s_frequency' % self.str_id, self.frequency)
+        instance.set_shader_input('%s_lacunarity' % self.str_id, self.lacunarity)
         if self.geometric:
-            instance.set_shader_input('%s_gain' % self.name, self.gain)
+            instance.set_shader_input('%s_gain' % self.str_id, self.gain)
         else:
-            instance.set_shader_input('%s_h' % self.name, self.h)
+            instance.set_shader_input('%s_h' % self.str_id, self.h)
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name,
+                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=[1, 16]),
+                                AutoUserParameter('Frequency', 'frequency', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
+                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
+                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 1]),
+                                )
+        group.add_parameters(self.noise.get_user_parameters())
+        return group
+
+class SpiralNoise(BasicNoiseSource):
+    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, gain=0.5, nudge=0.5, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'spiral')
+        self.octaves = octaves
+        self.frequency = frequency
+        self.lacunarity = lacunarity
+        self.gain = gain
+        self.nudge = nudge
+
+    def get_id(self):
+        return self.str_id + '-' + self.noise.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise.noise_uniforms(code)
+        code += ["uniform float %s_octaves;" % self.str_id,
+                 "uniform float %s_frequency;" % self.str_id,
+                 "uniform float %s_lacunarity;" % self.str_id,
+                 "uniform float %s_amplitude;" % self.str_id,
+                 "uniform float %s_gain;" % self.str_id,
+                 "uniform float %s_nudge;" % self.str_id,
+                 ]
+
+    def noise_func(self, code):
+        self.noise.noise_func(code)
+        code.append('float Spiral_%s(vec3 point)' % self.str_id)
+        code.append('{')
+        code.append("    const float nudge = %s_nudge;" % self.str_id)
+        code.append("    float normalizer = 1.0 / sqrt(1.0 + nudge*nudge);")
+        code.append("    float frequency = %s_frequency;" % self.str_id)
+        code.append("    float lacunarity = %s_lacunarity;" % self.str_id)
+        code.append("    float gain = %s_gain;" % self.str_id)
+        code.append('    float result = 0.0;')
+        code.append('    float amplitude = 1.0;')
+        code.append('    float max_value = 0.0;')
+        code.append('    for (int i = 0; i < %s_octaves; ++i)' % self.str_id)
+        code.append('    {')
+        code.append('        float value;')
+        self.noise.noise_value(code, 'value', 'point * frequency')
+        code.append('        result += value * amplitude;')
+        code.append('        max_value += amplitude;')
+        code.append('        amplitude *= gain;')
+        code.append('        frequency *= lacunarity;')
+        code.append('        point.xy += vec2(point.y, -point.x) * nudge;')
+        code.append('        point.xy *= normalizer;')
+        code.append('        point.xz += vec2(point.z, -point.x) * nudge;')
+        code.append('        point.xz *= normalizer;')
+        code.append('    }')
+        code.append('    return result / max_value;')
+        code.append('}')
+
+    def noise_value(self, code, value, point):
+        code.append('%s = Spiral_%s(%s);' % (value, self.str_id, point))
+
+    def update(self, instance):
+        self.noise.update(instance)
+        instance.set_shader_input('%s_octaves' % self.str_id, self.octaves)
+        instance.set_shader_input('%s_frequency' % self.str_id, self.frequency)
+        instance.set_shader_input('%s_lacunarity' % self.str_id, self.lacunarity)
+        instance.set_shader_input('%s_gain' % self.str_id, self.gain)
+        instance.set_shader_input('%s_nudge' % self.str_id, self.nudge)
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name,
+                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=[1, 16]),
+                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
+                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 1]),
+                                AutoUserParameter('Nudge', 'nudge', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
+                  )
+        group.add_parameters(self.noise.get_user_parameters())
+        return group
 
 class NoiseWarp(NoiseSource):
-    fid = 0
-    def __init__(self, noise_main, noise_warp, scale=4.0):
+    def __init__(self, noise_main, noise_warp, scale=4.0, name=None):
+        NoiseSource.__init__(self, name, 'warp')
         self.noise_main = noise_main
         self.noise_warp = noise_warp
         self.scale = scale
-        NoiseWarp.fid += 1
-        self.id = NoiseWarp.fid
 
     def get_id(self):
         return self.noise_main.get_id() + "-warp-" + self.noise_warp.get_id()
@@ -732,7 +764,7 @@ class NoiseWarp(NoiseSource):
     def noise_func(self, code):
         self.noise_main.noise_func(code)
         self.noise_warp.noise_func(code)
-        code.append('float noise_warp_%d(vec3 point)' % self.id)
+        code.append('float noise_warp_%d(vec3 point)' % self.num_id)
         code.append('{')
         code.append('  vec3 warped_point;')
         code.append('  float value;')
@@ -744,7 +776,7 @@ class NoiseWarp(NoiseSource):
         code.append('}')
 
     def noise_value(self, code, value, point):
-        code.append('%s = noise_warp_%d(%s);' % (value, self.id, point))
+        code.append('%s = noise_warp_%d(%s);' % (value, self.num_id, point))
 
     def update(self, instance):
         self.noise_main.update(instance)
