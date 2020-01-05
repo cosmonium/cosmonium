@@ -40,6 +40,9 @@ class Ring(ShapeObject):
         self.set_shape(RingShape(inner_radius, outer_radius))
         self.shadow_caster = RingShadowCaster(self)
 
+    def get_component_name(self):
+        return 'Ring'
+
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
         if shape is None:
@@ -52,6 +55,9 @@ class Atmosphere(ShapeObject):
         self.ratio = 0
         self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
+
+    def get_component_name(self):
+        return 'Atmosphere'
 
     def check_settings(self):
         if settings.show_atmospheres != self.shown:
@@ -118,6 +124,9 @@ class Clouds(FlatSurface):
             #TODO: Disabled as it causes blinking
             pass#appearance.check_transparency()
  
+    def get_component_name(self):
+        return 'Clouds'
+
     def set_scale(self, scale):
         factor = 1.0 + self.height/self.parent.get_apparent_radius()
         self.shape.set_scale(scale * factor)

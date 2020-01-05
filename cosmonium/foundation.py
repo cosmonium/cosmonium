@@ -25,8 +25,10 @@ from panda3d.core import GeomNode, DecalEffect, TextNode, CardMaker, Transparenc
 
 from .bodyclass import bodyClasses
 from .fonts import fontsManager, Font
+from .parameters import ParametersGroup
 from .astro import bayer
 from . import settings
+
 from math import log
 
 class BaseObject(object):
@@ -65,6 +67,12 @@ class BaseObject(object):
                 result = name
                 break
         return result
+
+    def get_user_parameters(self):
+        return None
+
+    def update_user_parameters(self):
+        pass
 
     def apply_func(self, func, near_only=False):
         func(self)
@@ -248,6 +256,21 @@ class CompositeObject(BaseObject):
         if component.instance is not None:
             component.remove_instance()
         component.set_parent(None)
+
+    def get_user_parameters(self):
+        params = []
+        for component in self.components:
+            component_params = component.get_user_parameters()
+            if component_params is not None:
+                params.append(component_params)
+        if len(params) != 0:
+            return ParametersGroup(self.get_name(), params)
+        else:
+            return None
+
+    def update_user_parameters(self):
+        for component in self.components:
+            component.update_user_parameters()
 
     def apply_func_composite(self, func, near_only=False):
         BaseObject.apply_func(self, func, near_only)

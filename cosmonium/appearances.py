@@ -141,6 +141,9 @@ class AppearanceBase:
     def get_recommended_shape(self):
         return None
 
+    def get_user_parameters(self):
+        return None
+
 class Appearance(AppearanceBase):
     JOB_TEXTURE_LOAD = 0x0001
     def __init__(self,

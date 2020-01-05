@@ -30,9 +30,11 @@ from .foundation import VisibleObject
 from .shaders import AutoShader
 from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
+from .shadows import MultiShadows
+from .parameters import ParametersGroup
+
 from . import geometry
 from . import settings
-from cosmonium.shadows import MultiShadows
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -64,7 +66,10 @@ class Shape:
 
     def create_instance(self):
         return None
-    
+
+    def update_instance(self, camera_pos, orientation):
+        pass
+
     def remove_instance(self):
         if self.instance is not None:
             self.instance.detach_node()
@@ -209,6 +214,20 @@ class ShapeObject(VisibleObject):
     def check_settings(self):
         self.shape.check_settings()
 
+    def get_user_parameters(self):
+        group = ParametersGroup(self.get_component_name())
+        if self.appearance is not None:
+            group.add_parameters(self.appearance.get_user_parameters())
+        if self.shader is not None:
+            group.add_parameters(self.shader.get_user_parameters())
+        return group
+
+    def update_user_parameters(self):
+        self.update_shader()
+
+    def get_component_name(self):
+        return 'Unknown'
+
     def set_shape(self, shape):
         if self.shape is not None:
             self.shape.set_owner(None)
@@ -352,6 +371,7 @@ class ShapeObject(VisibleObject):
     def update_instance(self, camera_pos, orientation):
         if not self.instance_ready: return
         self.place_instance(self.instance, self.parent)
+        self.shape.update_instance(camera_pos, orientation)
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
             self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))

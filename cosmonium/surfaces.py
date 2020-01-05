@@ -49,6 +49,9 @@ class Surface(ShapeObject):
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
 
+    def get_component_name(self):
+        return 'Surface'
+
     def create_shadows(self):
         if self.shape is not None and self.shape.is_spherical():
             self.shadow_caster = SphereShadowCaster(self.owner)

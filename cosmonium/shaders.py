@@ -24,6 +24,7 @@ from panda3d.core import Shader, ShaderAttrib, LVector3d, LVector3
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
+from .parameters import ParametersGroup
 from . import settings
 
 from math import asin
@@ -103,6 +104,9 @@ class ShaderBase(object):
 
     def update_patch(self, shape, patch, appearance):
         self.update_shader_patch(shape, patch, appearance)
+
+    def get_user_parameters(self):
+        return None
 
 class AutoShader(ShaderBase):
     def set_instance_control(self, instance_control):
@@ -284,6 +288,9 @@ float DecodeFloatRGBA( vec4 rgba ) {
                 shader_file.write(shader)
         return shader
 
+    def get_user_parameters(self):
+        return None
+
 class StructuredShader(ShaderBase):
     def __init__(self):
         ShaderBase.__init__(self)
@@ -328,6 +335,20 @@ class StructuredShader(ShaderBase):
                            tess_evaluation=tess_evaluation,
                            geometry=geometry,
                            fragment=fragment)
+
+    def get_user_parameters(self):
+        params = []
+        if self.vertex_shader:
+            params += self.vertex_shader.get_user_parameters()
+        if self.tessellation_control_shader:
+            params += self.tessellation_control_shader.get_user_parameters()
+        if self.tessellation_eval_shader:
+            params += self.tessellation_eval_shader.get_user_parameters()
+        if self.geometry_shader:
+            params += self.geometry_shader.get_user_parameters()
+        if self.fragment_shader:
+            params += self.fragment_shader.get_user_parameters()
+        return params
 
 class PassThroughVertexShader(ShaderProgram):
     def __init__(self, config):
@@ -1077,6 +1098,19 @@ class BasicShader(StructuredShader):
         for effect in self.after_effects:
             effect.update_shader_patch(shape, patch, appearance)
 
+    def get_user_parameters(self):
+        group = ParametersGroup()
+        group.add_parameter(self.lighting_model.get_user_parameters())
+        group.add_parameter(self.appearance.get_user_parameters())
+        group.add_parameter(self.scattering.get_user_parameters())
+        group.add_parameter(self.vertex_control.get_user_parameters())
+        group.add_parameter(self.instance_control.get_user_parameters())
+        group.add_parameter(self.data_source.get_user_parameters())
+        for after_effect in self.after_effects:
+            group.add_parameter(after_effect.get_user_parameters())
+        group.add_parameter(self.tessellation_control.get_user_parameters())
+        return group
+
 class ShaderComponent(object):
     use_vertex = False
     use_vertex_frag = False
@@ -1101,6 +1135,9 @@ class ShaderComponent(object):
 
     def define_shader(self, shape, appearance):
         pass
+
+    def get_user_parameters(self):
+        return None
 
     def vertex_layout(self, code):
         pass

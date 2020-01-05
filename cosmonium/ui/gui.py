@@ -43,6 +43,7 @@ from ..parsers.configparser import configParser
 
 from .hud import HUD
 from .query import Query
+from .editor import ParamEditor
 from .textwindow import TextWindow
 from .infopanel import InfoPanel
 from .preferences import Preferences
@@ -93,6 +94,7 @@ class Gui(object):
         self.update_size(self.screen_width, self.screen_height)
         self.popup_menu = None
         self.opened_windows = []
+        self.editor = ParamEditor(settings.markdown_font, owner=self)
         self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, owner=self)
         self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)
@@ -128,6 +130,7 @@ class Gui(object):
         event_ctrl.accept('control-r', self.camera.reset_zoom)
         event_ctrl.accept('control-m', self.toggle_menu)
         event_ctrl.accept('control-p', self.show_preferences)
+        event_ctrl.accept('control-e', self.show_editor)
 
         event_ctrl.accept('f1', self.show_info)
         event_ctrl.accept('shift-f1', self.show_help)
@@ -413,6 +416,7 @@ class Gui(object):
         orbits = self.create_orbits_menu_items(self.cosmonium.selected)
         return (
             ('_Info>F1', 0, self.show_info if has_selected else 0),
+            ('_Edit>Control-E', 0, self.show_editor if has_selected else 0),
             0,
             ('_Go to>G', 0, self.autopilot.go_to_object if has_selected else 0),
             ('Go to f_ront>D', 0, self.autopilot.go_to_front if has_selected else 0),
@@ -668,6 +672,7 @@ class Gui(object):
             subitems = self.create_orbits_menu_items(over)
             if len(subitems) > 0:
                 items.append(["Orbits", 0, subitems])
+        items.append(['_Edit', 0, self.show_editor])
         subitems = []
         for info in extra_info:
             name = info.get_name()
@@ -902,6 +907,14 @@ class Gui(object):
             self.info.show(self.cosmonium.selected)
             if not self.info in self.opened_windows:
                 self.opened_windows.append(self.info)
+
+    def show_editor(self):
+        if self.cosmonium.selected is not None:
+            if self.editor.shown():
+                self.editor.hide()
+            self.editor.show(self.cosmonium.selected)
+            if not self.editor in self.opened_windows:
+                self.opened_windows.append(self.editor)
 
     def show_preferences(self):
         self.preferences.show()
