@@ -20,7 +20,13 @@
 from setuptools import setup
 import sys
 
+# Add source/ directory to import path to be able to load the c++ libraries
+sys.path.insert(0, 'source')
+# Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
+# CEFPanda and glTF modules aree not at top level
+sys.path.insert(0, 'third-party/cefpanda')
+sys.path.insert(0, 'third-party/gltf')
 
 version = '0.1.2.dev0'
 
