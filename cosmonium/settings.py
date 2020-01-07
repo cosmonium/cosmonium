@@ -224,8 +224,8 @@ texture_array = False
 win_fullscreen = False
 win_width = 1024
 win_height = 768
-win_fs_width = 1024
-win_fs_height = 768
+win_fs_width = 0
+win_fs_height = 0
 
 # Application paths and files
 appdirs = AppDirs(app_name)

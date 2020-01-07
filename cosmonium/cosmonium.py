@@ -79,6 +79,7 @@ class CosmoniumBase(ShowBase):
         self.wireframe = False
         self.wireframe_filled = False
         self.trigger_check_settings = True
+        self.request_fullscreen = False
 
         self.print_info()
         self.panda_config()
@@ -116,8 +117,9 @@ class CosmoniumBase(ShowBase):
         data.append("bounds-type box")
         data.append("screenshot-extension {}".format(settings.screenshot_format))
         data.append("screenshot-filename %~p/{}".format(settings.screenshot_filename))
-        data.append("fullscreen %d" % settings.win_fullscreen)
-        if settings.win_fullscreen:
+        if settings.win_fullscreen and settings.win_fs_width != 0 and settings.win_fs_height != 0:
+            self.request_fullscreen = True
+            data.append("fullscreen %d" % settings.win_fullscreen)
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
         else:
             data.append("win-size %d %d" % (settings.win_width, settings.win_height))
@@ -177,36 +179,59 @@ class CosmoniumBase(ShowBase):
         sys.exit(1)
 
     def get_fullscreen_sizes(self):
-        screen_width = base.pipe.getDisplayWidth()
-        screen_height = base.pipe.getDisplayHeight()
-        return (screen_width, screen_height)
+        info = self.pipe.getDisplayInformation()
+        resolutions = []
+        for idx in range(info.getTotalDisplayModes()):
+            width = info.getDisplayModeWidth(idx)
+            height = info.getDisplayModeHeight(idx)
+            bits = info.getDisplayModeBitsPerPixel(idx)
+            resolutions.append([width, height])
+        resolutions.sort(key=lambda x: x[0], reverse=True)
+        return resolutions
 
     def toggle_fullscreen(self):
         settings.win_fullscreen = not settings.win_fullscreen
         wp = WindowProperties(self.win.getProperties())
         wp.setFullscreen(settings.win_fullscreen)
         if settings.win_fullscreen:
-            resolutions = self.get_fullscreen_sizes()
-            wp.setSize(*resolutions)
-            self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", 0.5, 2.0)
+            if settings.win_fs_width != 0 and settings.win_fs_height != 0:
+                win_fs_width = settings.win_fs_width
+                win_fs_height = settings.win_fs_height
+            else:
+                win_fs_width = base.pipe.getDisplayWidth()
+                win_fs_height = base.pipe.getDisplayHeight()
+            wp.setSize(win_fs_width, win_fs_height)
+            # Defer config saving in case the switch fails
+            self.request_fullscreen = True
         else:
             wp.setSize(settings.win_width, settings.win_height)
+            configParser.save()
         self.win.requestProperties(wp)
-        configParser.save()
 
     def window_event(self, window):
         if self.win.is_closed():
             sys.exit(0)
-        width = self.win.getProperties().getXSize()
-        height = self.win.getProperties().getYSize()
-        if width != settings.win_width or height != settings.win_height:
-            if settings.win_fullscreen:
-                settings.win_fs_width = width
-                settings.win_fs_height = height
+        wp = self.win.getProperties()
+        width = wp.getXSize()
+        height = wp.getYSize()
+        if settings.win_fullscreen:
+            # Only save config is the switch to FS is successful
+            if wp.getFullscreen():
+                if self.request_fullscreen or width != settings.win_fs_width or height != settings.win_fs_height:
+                    settings.win_fs_width = width
+                    settings.win_fs_height = height
+                    configParser.save()
+                if self.request_fullscreen:
+                    if self.gui is not None: self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", 0.5, 2.0)
             else:
+                if self.gui is not None: self.gui.update_info("Could not switch to fullscreen mode", 0.5, 2.0)
+                settings.win_fullscreen = False
+            self.request_fullscreen = False
+        else:
+            if width != settings.win_width or height != settings.win_height:
                 settings.win_width = width
                 settings.win_height = height
-            configParser.save()
+                configParser.save()
         if self.observer is not None:
             self.observer.set_film_size(width, height)
             self.render.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
