@@ -95,6 +95,10 @@ label_size = 12
 constellations_label_size = 16
 convert_utf8 = True
 
+screenshot_path = "screenshots"
+screenshot_filename = "screenshot-%Y-%m-%d-%H-%M-%S-%~f.%~e"
+screenshot_format = "png"
+
 use_inv_scaling=True
 use_log_scaling=False
 use_depth_scaling = use_inv_scaling or use_log_scaling

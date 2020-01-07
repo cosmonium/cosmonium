@@ -211,6 +211,20 @@ class ConfigParser(YamlParser):
         data['sync-load'] = settings.debug_sync_load
         return data
 
+    def decode_screenshots(self, data):
+        settings.screenshot_path = data.get('path', settings.screenshot_path)
+        #TODO: improve data validation...
+        if settings.screenshot_path == '': settings.screenshot_path = '.'
+        settings.screenshot_filename = data.get('filename', settings.screenshot_filename)
+        settings.screenshot_format = data.get('format', settings.screenshot_format)
+
+    def encode_screenshots(self):
+        data = {}
+        data['path'] = settings.screenshot_path
+        data['filename'] = settings.screenshot_filename
+        data['format'] = settings.screenshot_format
+        return data
+
     def decode(self, data):
         if data is None: return
         if data.get('version', 0) != self.data_version:
@@ -222,6 +236,7 @@ class ConfigParser(YamlParser):
         self.decode_win(data.get('win', {}))
         self.decode_opengl(data.get('opengl', {}))
         self.decode_debug(data.get('debug', {}))
+        self.decode_screenshots(data.get('screenshots', {}))
 
     def encode(self):
         data = {}
@@ -231,7 +246,7 @@ class ConfigParser(YamlParser):
         data['ui'] = self.encode_ui()
         data['win'] = self.encode_win()
         data['opengl'] = self.encode_opengl()
-        data['debug'] = self.encode_debug()
+        data['screenshots'] = self.encode_screenshots()
         return data
 
 configParser = ConfigParser(settings.config_file)

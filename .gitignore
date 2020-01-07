@@ -22,7 +22,7 @@ parser.out
 genshader*
 
 #Screenshots
-screenshot-*
+screenshots/
 
 #OS Specific
 .DS_Store

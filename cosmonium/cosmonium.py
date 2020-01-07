@@ -114,8 +114,8 @@ class CosmoniumBase(ShowBase):
         data.append("paste-emit-keystrokes #f")
         #TODO: Still needed ?
         data.append("bounds-type box")
-        data.append("screenshot-extension png")
-        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
+        data.append("screenshot-extension {}".format(settings.screenshot_format))
+        data.append("screenshot-filename %~p/{}".format(settings.screenshot_filename))
         data.append("fullscreen %d" % settings.win_fullscreen)
         if settings.win_fullscreen:
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
@@ -235,7 +235,7 @@ class CosmoniumBase(ShowBase):
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
     def save_screenshot(self):
-        filename = self.screenshot()
+        filename = self.screenshot(namePrefix=settings.screenshot_path)
         if filename is not None:
             print("Saving screenshot into", filename)
         else:
@@ -385,7 +385,7 @@ class Cosmonium(CosmoniumBase):
         self.annotation.hide()
         self.annotation_shader.hide()
         base.graphicsEngine.renderFrame()
-        filename = self.screenshot()
+        filename = self.screenshot(namePrefix=settings.screenshot_path)
         self.gui.show()
         self.annotation.show()
         self.annotation_shader.show()
