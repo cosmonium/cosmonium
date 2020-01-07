@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from .window import Window
+from .. import settings
 
 import cefpanda
 
@@ -35,7 +36,7 @@ class Browser(object):
     def create_renderer(self):
         if self .renderer is None:
             self.layout = cefpanda.CefDirectFrameTarget(self.scale, 600, 800)
-            self.renderer = cefpanda.CEFPanda(self.layout)
+            self.renderer = cefpanda.CEFPanda(self.layout, settings.srgb)
             self.renderer.use_mouse = False
         self.layout.create()
         self.window = Window("Browser", scale=self.scale, child=None, owner=self, transparent=False)
