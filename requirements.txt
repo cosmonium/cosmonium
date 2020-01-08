@@ -1,4 +1,4 @@
-panda3d>=1.10.4.1
+panda3d>=1.10.5
 numpy
 pywin32 ; sys_platform == 'win32' or sys_platform == 'win_amd64'
 ruamel.yaml<0.16

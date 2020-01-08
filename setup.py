@@ -36,7 +36,7 @@ config = {
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
-            'platforms': ['manylinux1_x86_64', 'macosx_10_6_x86_64'],
+            'platforms': ['manylinux1_x86_64', 'macosx_10_9_x86_64'],
             'include_patterns': [
                 'shaders/**',
                 'data/**',
@@ -59,24 +59,6 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
-            'include_modules': {'*': ['_ruamel_yaml', 'ruamel.yaml', 'json']},
-            'package_data_dirs':
-            {
-             'ruamel.yaml': [('ruamel/*', 'ruamel', {})],
-             'cefpython3': [
-                            ('cefpython3/*.pak', '', {}),
-                            ('cefpython3/*.dat', '', {}),
-                            ('cefpython3/*.bin', '', {}),
-                            ('cefpython3/*.dll', '', {}),
-                            ('cefpython3/libcef.so', '', {}),
-                            ('cefpython3/LICENSE.txt', '', {}),
-                            ('cefpython3/License', '', {}),
-                            ('cefpython3/subprocess*', '', {'PKG_DATA_MAKE_EXECUTABLE'}),
-                            ('cefpython3/locals/*', 'locals', {}),
-                            ('cefpython3/Chromium Embedded Framework.framework/Resources', 'Chromium Embedded Framework.framework/Resources', {}),
-                            ('cefpython3/Chromium Embedded Framework.framework/Chromium Embedded Framework', '', {'PKG_DATA_MAKE_EXECUTABLE'}),
-                            ],
-            },
             'gui_apps': {
                 'cosmonium': 'main.py',
                 'ralph': 'ralph.py',
