@@ -1,0 +1,7 @@
+language: python
+dist: xenial
+python: 3.7
+install: pip install panda3d>=1.10.5
+script:
+ - python setup.py build_apps
+ - python setup-win.py build_apps
