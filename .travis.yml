@@ -5,3 +5,5 @@ install: pip install panda3d>=1.10.5
 script:
  - python setup.py build_apps
  - python setup-win.py build_apps
+ - cd build/manylinux1_x86_64 && ./cosmonium --test-start
+ - cat ~/.local/share/cosmonium/output.log
