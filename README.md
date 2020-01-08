@@ -1,5 +1,9 @@
 ![Cosmonium](textures/cosmonium-name.png)
 
+[![Build Status](https://travis-ci.com/cosmonium/cosmonium.svg?branch=develop)](https://travis-ci.com/cosmonium/cosmonium)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/wiki/Download)
+[![GitHub](https://img.shields.io/github/license/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/blob/master/COPYING.md)
+
 Cosmonium is a 3D astronomy and space exploration program. With Cosmonium you can navigate in our solar system and discover all the planets and their moons. You can also visit the neighboring stars and discover the true size of our galaxy and the Universe.
 
 Cosmonium also supports (or will support) the creation of fictional planets and stellar system using procedural generation.
