@@ -69,8 +69,12 @@ class CameraBase(object):
         render.setShaderInput("midPlane", self.midPlane)
 
     def init_fov(self):
-        screen_width = base.pipe.getDisplayWidth()
-        screen_height = base.pipe.getDisplayHeight()
+        if base.pipe is not None:
+            screen_width = base.pipe.getDisplayWidth()
+            screen_height = base.pipe.getDisplayHeight()
+        else:
+            screen_width = 1
+            screen_height = 1
         self.width = screen_width
         self.height = screen_height
         self.fov = settings.default_fov

@@ -77,6 +77,7 @@ class CosmoniumConfig(object):
         self.celestia_boundaries = 'boundaries.dat'
         self.celestia_start_script = 'start.cel'
         self.prc_file = 'config.prc'
+        self.test_start = False
 
     def update_from_args(self, args):
         #TODO: add input checking here
@@ -98,6 +99,7 @@ class CosmoniumConfig(object):
             self.celestia = False
         if self.celestia and self.script is None and self.default is None:
             self.script = self.celestia_start_script
+        self.test_start = args.test_start
 
 class CosmoniumConfigParser(YamlParser):
     def __init__(self, config_file):
@@ -257,6 +259,10 @@ parser.add_argument("--extra",
                     help="Extra configuration files or directories to load",
                     nargs='+',
                     default=None)
+parser.add_argument("--test-start",
+                    help=argparse.SUPPRESS,
+                    action='store_true',
+                    default=False)
 if sys.platform == "darwin":
     #Ignore -psn_<app_id> from MacOS
     parser.add_argument('-p', help=argparse.SUPPRESS)

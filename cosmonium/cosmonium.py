@@ -25,7 +25,7 @@ from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowPropertie
 from panda3d.core import DrawMask
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib
-from panda3d.core import LColor
+from panda3d.core import LColor, NodePath, PerspectiveLens
 
 from direct.task.Task import Task
 
@@ -53,7 +53,7 @@ from .camera import Camera
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
-from .ui.splash import Splash
+from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav
 from .astro import units
 from .fonts import fontsManager
@@ -84,9 +84,14 @@ class CosmoniumBase(ShowBase):
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
-        create_main_window(self)
-        check_opengl_config(self)
-
+        if not self.app_config.test_start:
+            create_main_window(self)
+            check_opengl_config(self)
+        else:
+            self.buttonThrowers = [NodePath('dummy')]
+            self.cam = NodePath('dummy')
+            self.camLens = PerspectiveLens()
+            settings.shader_version = 130
         BaseObject.context = self
 
         self.setBackgroundColor(0, 0, 0, 1)
@@ -169,9 +174,10 @@ class CosmoniumBase(ShowBase):
             ShowBase.ignore(self, event)
 
     def register_events(self):
-        self.buttonThrowers[0].node().setKeystrokeEvent('keystroke')
+        if not self.app_config.test_start:
+            self.buttonThrowers[0].node().setKeystrokeEvent('keystroke')
+            self.accept(self.win.getWindowEvent(), self.window_event)
         self.accept('keystroke', self.keystroke_event)
-        self.accept(self.win.getWindowEvent(), self.window_event)
         self.accept('panic-deactivate-gsg', self.gsg_failure)
 
     def gsg_failure(self, event):
@@ -209,6 +215,7 @@ class CosmoniumBase(ShowBase):
         self.win.requestProperties(wp)
 
     def window_event(self, window):
+        if self.win is None: return
         if self.win.is_closed():
             sys.exit(0)
         wp = self.win.getProperties()
@@ -295,7 +302,8 @@ class Cosmonium(CosmoniumBase):
 
         self.universe = Universe(self)
 
-        self.splash = Splash()
+        self.splash = Splash() if not self.app_config.test_start else NoSplash()
+
         if not settings.debug_sync_load:
             self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
         else:
@@ -365,6 +373,11 @@ class Cosmonium(CosmoniumBase):
         taskMgr.add(self.time_task, "time-task")
 
         self.start_universe()
+
+        if self.app_config.test_start:
+            #TODO: this is where the tests should be inserted
+            print("Tests done.")
+            self.exit()
 
     def app_panda_config(self, data):
         icon = defaultDirContext.find_texture('cosmonium.ico')

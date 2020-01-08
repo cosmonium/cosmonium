@@ -77,6 +77,12 @@ class Gui(object):
         self.mouse = mouse
         self.nav = nav
         self.autopilot = autopilot
+        if base.pipe is not None:
+            self.screen_width = base.pipe.getDisplayWidth()
+            self.screen_height = base.pipe.getDisplayHeight()
+        else:
+            self.screen_width = 1
+            self.screen_height = 1
         self.calc_scale()
         font = fontsManager.get_font(settings.hud_font, Font.STYLE_NORMAL)
         if font is not None:
@@ -87,8 +93,6 @@ class Gui(object):
         self.hud = HUD(self.scale, self.font)
         self.query = Query(self.scale, self.font)
         self.last_fps = globalClock.getRealTime()
-        self.screen_width = base.pipe.getDisplayWidth()
-        self.screen_height = base.pipe.getDisplayHeight()
         self.width = 0
         self.height = 0
         self.update_size(self.screen_width, self.screen_height)
@@ -115,9 +119,7 @@ class Gui(object):
             self.hide_menu()
 
     def calc_scale(self):
-        screen_width = base.pipe.getDisplayWidth()
-        screen_height = base.pipe.getDisplayHeight()
-        self.scale = LVector2(1.0 / screen_width * 2.0, 1.0 / screen_height * 2.0)
+        self.scale = LVector2(1.0 / self.screen_width * 2.0, 1.0 / self.screen_height * 2.0)
 
     def register_events(self, event_ctrl):
         event_ctrl.accept('control-q', self.cosmonium.exit)
