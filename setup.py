@@ -51,6 +51,7 @@ config = {
                 'ralph-data/**',
                 'textures/**',
                 '*.md',
+                'lib/dummypy/*',
             ],
             'exclude_patterns': [
                 'data/**/level1/**',
@@ -65,6 +66,7 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
+            'rename_paths': {'lib/dummypy/': ''},
             'gui_apps': {
                 'cosmonium': 'main.py',
                 'ralph': 'ralph.py',
