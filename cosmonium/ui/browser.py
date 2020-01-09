@@ -22,8 +22,15 @@ from __future__ import absolute_import
 
 from .window import Window
 from .. import settings
+import traceback
 
-import cefpanda
+cefpanda_valid = False
+try:
+    import cefpanda
+    cefpanda_valid = True
+except ImportError:
+    print("ERROR: Could not load cefpanda")
+    traceback.print_exc()
 
 class Browser(object):
     def __init__(self, scale, owner=None):
@@ -42,11 +49,16 @@ class Browser(object):
         self.window = Window("Browser", scale=self.scale, child=None, owner=self, transparent=False)
 
     def load(self, url):
+        if not cefpanda_valid:
+            print("CEFPanda not loaded, ignoring load url")
+            return
         self.show()
         self.renderer.load_url(url)
         self.renderer.use_mouse = True
 
     def show(self):
+        if not cefpanda_valid:
+            return
         if self.shown():
             return
         self.create_renderer()
