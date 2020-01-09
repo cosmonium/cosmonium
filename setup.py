@@ -30,6 +30,12 @@ sys.path.insert(0, 'third-party/gltf')
 
 version = '0.1.2.dev0'
 
+log_filename = '$USER_APPDATA/cosmonium/output.log'
+
+if '--cosmonium-test' in sys.argv:
+    sys.argv.remove('--cosmonium-test')
+    log_filename = None
+
 config = {
     'name': "cosmonium",
     'version': version,
@@ -64,7 +70,7 @@ config = {
                 'ralph': 'ralph.py',
             },
             'macos_main_app': 'cosmonium',
-            'log_filename': '$USER_APPDATA/cosmonium/output.log',
+            'log_filename': log_filename,
             'log_append': False,
             'plugins': [
                 'pandagl',
