@@ -1,8 +1,11 @@
-name: Continuous Integration
+name: build
 on: [push, pull_request]
 jobs:
   build:
-    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -18,10 +21,30 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install panda3d==1.10.5
-    - name: Build binary
+    - name: Build binary (Ubuntu)
+      if: runner.os == 'Linux'
       run: |
         python setup.py build_apps -p manylinux1_x86_64 --cosmonium-test
-    - name: Test binary
+    - name: Test binary (Ubuntu)
+      if: runner.os == 'Linux'
       run: |
         cd build/manylinux1_x86_64
         ./cosmonium --test-start
+    - name: Build binary (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        python setup.py build_apps -p macosx_10_9_x86_64 --cosmonium-test
+    - name: Test binary (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        cd build/macosx_10_9_x86_64/cosmonium.app/Contents/MacOS
+        ./cosmonium --test-start
+    - name: Build binary (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        python setup.py build_apps -p win_amd64 --cosmonium-test
+    - name: Test binary (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build/win_amd64
+        & ./cosmonium.exe --% --test-start

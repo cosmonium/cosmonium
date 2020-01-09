@@ -1,6 +1,6 @@
 ![Cosmonium](textures/cosmonium-name.png)
 
-[![Build Status](https://travis-ci.com/cosmonium/cosmonium.svg?branch=develop)](https://travis-ci.com/cosmonium/cosmonium)
+[![Build Status](https://github.com/cosmonium/cosmonium/workflows/build/badge.svg)](https://github.com/cosmonium/cosmonium/actions)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/wiki/Download)
 [![GitHub](https://img.shields.io/github/license/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/blob/master/COPYING.md)
 
