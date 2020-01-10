@@ -35,6 +35,68 @@ class SpectralType(object):
                     'R': [3500,   5560],
                     'N': [2000,   3700],}
 
+    spectral_groups = {
+        "0": 0, "Ia+": 0, "Ia0": 0, "Ia": 0, "Iab": 0, "Ib":0, "I": 0,
+        "II": 1, "III": 1,
+        "IV": 2, "V": 2, "VI": 2}
+    spectral_temps = {
+    "O": [
+          [50000, 47600, 45200, 42800, 40400, 38000, 35400, 32800, 30200, 27600, 25000],
+          [50000, 47800, 45600, 43400, 41200, 39000, 36800, 34600, 32400, 30200, 28000],
+          [50000, 47800, 45600, 43400, 41200, 39000, 36800, 34600, 32400, 30200, 28000],
+         ],
+    "B": [
+          [25000, 23790, 22580, 21370, 20160, 18950, 17140, 15330, 13520, 11710],
+          [28000, 26190, 24380, 22570, 20760, 18950, 17140, 13520, 13520, 11710],
+          [28000, 26190, 24380, 22570, 20760, 18950, 17140, 13520, 13520, 11710],
+         ],
+    "A": [
+          [9900, 9707, 9513, 9320, 9127, 8933, 8740, 8547, 8353, 8160],
+          [9900, 9650, 9400, 9150, 8900, 8650, 8400, 8150, 7900, 7650],
+          [9900, 9650, 9400, 9150, 8900, 8650, 8400, 8150, 7900, 7650],
+         ],
+    "F": [
+          [7967, 7773, 7580, 7387, 7193, 7000, 6760, 6520, 6280, 6011],
+          [7400, 7260, 7120, 6980, 6840, 6700, 6560, 6420, 6280, 6140],
+          [7400, 7260, 7120, 6980, 6840, 6700, 6560, 6420, 6280, 6140],
+         ],
+    "G": [
+          [5743, 5474, 5206, 4937, 4669, 4400, 4343, 4286, 4229, 4171],
+          [5743, 5474, 5206, 4937, 4669, 4400, 4343, 4286, 4229, 4171],
+          [6000, 5890, 5780, 5670, 5560, 5450, 5340, 5230, 5120, 5010],
+         ],
+    "K": [
+          [4114, 4057, 4000, 3900, 3800, 3700, 3717, 3733, 3750, 3725],
+          [4114, 4057, 4000, 3900, 3800, 3700, 3717, 3733, 3750, 3725],
+          [4900, 4760, 4620, 4480, 4340, 4200, 4060, 3920, 3780, 3640],
+         ],
+    "M": [
+          [3700, 3510, 3320, 3130, 2940, 2750, 2560, 2370, 2180, 1990],
+          [3700, 3510, 3320, 3130, 2940, 2750, 2560, 2370, 2180, 1990],
+          [3500, 3333, 3167, 3000, 2833, 2667, 2500, 2333, 2167, 2000],
+         ],
+    "C": [
+          [4669, 4371, 4073, 3776, 3478, 3180, 2883, 2585, 2288, 1990],
+          [4669, 4371, 4073, 3776, 3478, 3180, 2883, 2585, 2288, 1990],
+          [5560, 5164, 4769, 4373, 3978, 3582, 3187, 2791, 2396, 2000],
+         ],
+    "L": [
+          [2600, 2480, 2355, 2235, 2110, 1990, 1865, 1745, 1620, 1500],
+          [2600, 2480, 2355, 2235, 2110, 1990, 1865, 1745, 1620, 1500],
+          [2600, 2480, 2355, 2235, 2110, 1990, 1865, 1745, 1620, 1500],
+         ],
+    "T": [
+          [1500, 1420, 1340, 1265, 1185, 1110, 1030, 955, 875, 800],
+          [1500, 1420, 1340, 1265, 1185, 1110, 1030, 955, 875, 800],
+          [1500, 1420, 1340, 1265, 1185, 1110, 1030, 955, 875, 800],
+         ],
+    }
+    spectral_temps['N'] = spectral_temps['M']
+    spectral_temps['S'] = spectral_temps['M']
+    spectral_temps['WC'] = spectral_temps['O']
+    spectral_temps['WN'] = spectral_temps['O']
+    spectral_temps['WO'] = spectral_temps['O']
+
     def __init__(self):
         self.main = False
         self.white_dwarf = False
@@ -70,20 +132,30 @@ class SpectralType(object):
         klass = None
         if self.main or self.carbon or self.wolf_rayet:
             if self.wolf_rayet:
-                klass = self.global_class['W']
-            elif self.spectral_class in self.global_class:
-                klass = self.global_class[self.spectral_class]
-            if klass is not None:
+                klass = 'W' + self.spectral_class
+            else:
+                klass = self.spectral_class
+            klass_temps = self.spectral_temps.get(klass)
+            luminosity = self.luminosity
+            if luminosity is None: luminosity = 'V'
+            lum_group = self.spectral_groups.get(luminosity)
+            if klass_temps is not None and lum_group is not None:
+                temps = klass_temps[lum_group]
+            else:
+                temps = None
+            if temps is not None:
                 if self.subclass is not None and isinstance(self.subclass, float):
-                    ratio = self.subclass / 9
+                    self.temperature = temps[int(self.subclass)]
                 else:
-                    ratio = 1.0
-                self.temperature = (klass[1] * (1 - ratio) + klass[0] * ratio)
+                    self.temperature = temps[4]
             else:
                 self.temperature = 1000.0
         elif self.white_dwarf:
             if self.subclass is not None and isinstance(self.subclass, float):
-                self.temperature = 50400.0 / self.subclass
+                if self.subclass != 0:
+                    self.temperature = 50400.0 / self.subclass
+                else:
+                    self.temperature = 100000.0
             else:
                 self.temperature = 50400.0
         else:
@@ -113,7 +185,7 @@ class SpectralTypeStringDecoder(object):
     luminosities = ["0", "Ia+", "Ia0", "Ia", "Iab", "Ib", "I", "II", "III", "IV", "V", "VI", "VII"]
     luminosities.sort(key=len, reverse=True)
     luminosities_first_char = ['I', 'V']
-    sub_luminosities = ['a0', 'a', 'ab', 'b']
+    sub_luminosities = []#'a0', 'a', 'ab', 'b']
     sub_luminosities.sort(key=len, reverse=True)
     peculiarity_types = [
                      #Ambiguous features
