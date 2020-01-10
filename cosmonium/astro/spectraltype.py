@@ -48,6 +48,7 @@ class SpectralType(object):
         self.luminosity = None
         self.second_luminosity = None
         self.peculiarities = []
+        self.temperature = None
 
     def get_text(self):
         text = ""
@@ -65,7 +66,7 @@ class SpectralType(object):
             text += peculiarity
         return text
 
-    def get_eff_temperature(self):
+    def calc_eff_temperature(self):
         klass = None
         if self.main or self.carbon or self.wolf_rayet:
             if self.wolf_rayet:
@@ -77,16 +78,16 @@ class SpectralType(object):
                     ratio = self.subclass / 9
                 else:
                     ratio = 1.0
-                return (klass[1] * (1 - ratio) + klass[0] * ratio)
+                self.temperature = (klass[1] * (1 - ratio) + klass[0] * ratio)
             else:
-                return 1000
+                self.temperature = 1000.0
         elif self.white_dwarf:
             if self.subclass is not None and isinstance(self.subclass, float):
-                return 50400.0 / self.subclass
+                self.temperature = 50400.0 / self.subclass
             else:
-                return 50400.0
+                self.temperature = 50400.0
         else:
-            return 1000
+            self.temperature = 1000.0
 
 class SpectralTypeStringDecoder(object):
     main_spectral_classes = ['Y', 'T', 'L', 'M', 'K', 'G', 'F', 'A', 'B', 'O']
@@ -312,6 +313,7 @@ class SpectralTypeStringDecoder(object):
         if not name in self.cache:
             spectral_type = SpectralType()
             self.do_decode(spectral_type, name)
+            spectral_type.calc_eff_temperature()
             self.cache[name] = spectral_type
         return self.cache[name]
 
@@ -358,6 +360,7 @@ class SpectralTypeIntDecoder(object):
                 spectral_type.spectral_class = "?"
                 spectral_type.subclass = 0
                 spectral_type.luminosity = ""
+            spectral_type.calc_eff_temperature()
             self.cache[value] = spectral_type
         return self.cache[value]
 

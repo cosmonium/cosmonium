@@ -881,7 +881,7 @@ class Star(EmissiveBody):
             if spectral_type is None:
                 self.temperature = units.sun_temperature
             else:
-                self.temperature = self.spectral_type.get_eff_temperature()
+                self.temperature = self.spectral_type.temperature
         else:
             self.temperature = temperature
         if point_color is None:
