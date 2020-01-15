@@ -2182,9 +2182,11 @@ class FlatLightingModel(LightingModel):
         code.append("total_emission_color *= surface_color * p3d_ColorScale;")
 
 class LambertPhongLightingModel(LightingModel):
+    use_vertex = True
+    world_vertex = True
+    use_vertex_frag = True
     use_normal = True
     world_normal = True
-    use_tangent = False
 
     def get_id(self):
         return "lambert"
@@ -2195,12 +2197,12 @@ class LambertPhongLightingModel(LightingModel):
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")
         code.append("uniform vec4 light_color;")
-        if self.appearance.has_specular:
-            code.append("uniform vec3 half_vec;")
 
     def fragment_shader(self, code):
         #TODO: should be done only using .rgb (or vec3) and apply alpha channel in the end
         if self.appearance.has_specular:
+            code.append("vec3 obs_dir = normalize(-world_vertex);")
+            code.append("vec3 half_vec = normalize(light_dir + obs_dir);")
             code.append("float spec_angle = clamp(dot(normal, half_vec), 0.0, 1.0);")
             code.append("vec4 specular = light_color * pow(spec_angle, shininess);")
         code.append("vec4 ambient = ambient_color * ambient_coef;")
@@ -2233,15 +2235,13 @@ class LambertPhongLightingModel(LightingModel):
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
         shape.instance.setShaderInput("backlit", appearance.backlit)
-        if self.appearance.has_specular:
-            half_vec = shape.owner.vector_to_star + shape.owner.vector_to_obs
-            half_vec.normalize()
-            shape.instance.setShaderInput("half_vec", *half_vec)
 
 class OrenNayarPhongLightingModel(LightingModel):
+    use_vertex = True
+    world_vertex = True
+    use_vertex_frag = True
     use_normal = True
     world_normal = True
-    use_tangent = False
 
     def get_id(self):
         return "oren-nayar"
@@ -2249,16 +2249,15 @@ class OrenNayarPhongLightingModel(LightingModel):
     def fragment_uniforms(self, code):
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 light_dir;")
-        code.append("uniform vec3 obs_dir;")
         code.append("uniform vec4 ambient_color;")
         code.append("uniform vec4 light_color;")
         code.append("uniform float backlit;")
         code.append("uniform float roughness_squared;")
-        if self.appearance.has_specular:
-            code.append("uniform vec3 half_vec;")
 
     def fragment_shader(self, code):
+        code.append("vec3 obs_dir = normalize(-world_vertex);")
         if self.appearance.has_specular:
+            code.append("vec3 half_vec = normalize(light_dir + obs_dir);")
             code.append("float spec_angle = clamp(dot(normal, half_vec), 0.0, 1.0);")
             code.append("vec4 specular = light_color * pow(spec_angle, shininess);")
         code.append("vec4 ambient = ambient_color * ambient_coef;")
@@ -2295,16 +2294,11 @@ class OrenNayarPhongLightingModel(LightingModel):
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
-        shape.instance.setShaderInput("obs_dir", *shape.owner.vector_to_obs)
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
         shape.instance.setShaderInput("backlit", appearance.backlit)
         shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
-        if self.appearance.has_specular:
-            half_vec = shape.owner.vector_to_star + shape.owner.vector_to_obs
-            half_vec.normalize()
-            shape.instance.setShaderInput("half_vec", *half_vec)
 
 class AtmosphericScattering(ShaderComponent):
     pass
