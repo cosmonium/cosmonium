@@ -13,15 +13,13 @@ heightmap:
           - mul:
             - clamp:
                 noise:
-                  offset:
-                    offset: 50000.0
+                    type: fbm
                     noise:
-                      fbm:
-                        noise:
-                          cube: perlin
-                        octaves: 4
-                        length: 4096
-                        scale: 40
+                      cube: perlin
+                    src-offset: 50000.0
+                    octaves: 4
+                    length: 4096
+                    scale: 40
             - add:
                 - fbm:
                     noise:
@@ -47,15 +45,13 @@ heightmap:
           - mul:
               - clamp:
                   noise:
-                    offset:
-                      offset: -2.0
+                      type: fbm
                       noise:
-                        fbm:
-                          noise:
-                            cube: perlin
-                          octaves: 4
-                          length: 1280
-                          scale: 40
+                        cube: perlin
+                      src-offset: -2.0
+                      octaves: 4
+                      length: 1280
+                      scale: 40
               - -100.0
 biome:
     aliases:

@@ -56,6 +56,7 @@ from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
+from cosmonium.ui.splash import NoSplash
 from cosmonium import settings
 
 from math import pow, pi, sqrt
@@ -436,9 +437,9 @@ class RalphNav(NavBase):
                 self.isMoving = False
         return False
 
-class RalphSplash():
-    def set_text(self, text):
-        pass
+class RalphAppConfig:
+    def __init__(self):
+        self.test_start = False
 
 class RoamingRalphDemo(CosmoniumBase):
 
@@ -653,13 +654,14 @@ class RoamingRalphDemo(CosmoniumBase):
         self.trigger_check_settings = True
 
     def __init__(self, args):
+        self.app_config = RalphAppConfig()
         CosmoniumBase.__init__(self)
 
         if args.config is not None:
             self.config_file = args.config
         else:
             self.config_file = 'ralph-data/ralph.yaml'
-        self.splash = RalphSplash()
+        self.splash = NoSplash()
         self.ralph_config = RalphConfigParser()
         if self.ralph_config.load_and_parse(self.config_file) is None:
             sys.exit(1)
