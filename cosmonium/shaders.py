@@ -1281,6 +1281,9 @@ class ShaderAppearance(ShaderComponent):
         code.append("vec3 pixel_normal;")
         code.append("vec3 specular_factor;")
         code.append("vec3 night_color;")
+        if self.has_gloss_map:
+            code.append("float metallic;")
+            code.append("float perceptual_roughness;")
 
     def fragment_uniforms(self, code):
         code.append("uniform vec4 p3d_ColorScale;")
@@ -1394,6 +1397,9 @@ class TextureAppearance(ShaderAppearance):
         if self.has_night_texture:
             code.append("night_color = %s;" % self.data.get_source_for('night'))
         code.append("surface_occlusion = 1.0;")
+        if self.has_gloss_map:
+            code.append("metallic = %s;" % self.data.get_source_for('metallic'))
+            code.append("perceptual_roughness = %s;" % self.data.get_source_for('roughness'))
 
     def update_shader_shape_static(self, shape, appearance):
         if self.has_specular:
@@ -1900,6 +1906,10 @@ class PandaTextureDataSource(DataSource):
                 return "tex%i.aaa" % self.texture_index
         if source == 'night':
             return "tex%i.rgb * nightscale" % self.night_texture_index
+        if source == 'metallic':
+            return "tex%i.b" % self.gloss_map_texture_index
+        if source == 'roughness':
+            return "tex%i.g" % self.gloss_map_texture_index
         if error: print("Unknown source '%s' requested" % source)
         return ''
 

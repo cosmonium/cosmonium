@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LColor
 
 from ..shaders import FlatLightingModel, LambertPhongLightingModel, OrenNayarPhongLightingModel, CustomShaderComponent
+from ..pbr import PbrLightingModel
 from ..celestia.shaders import LunarLambertLightingModel
 
 from .yamlparser import YamlModuleParser
@@ -72,6 +73,8 @@ class LightingModelYamlParser(YamlModuleParser):
                 appearance.roughness = 0.9
         elif object_type == 'lunar-lambert':
             model = LunarLambertLightingModel()
+        elif object_type == 'pbr':
+            model = PbrLightingModel()
         elif object_type == 'flat':
             model = FlatLightingModel()
             #TODO: This should be done a better way...
