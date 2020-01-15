@@ -1267,6 +1267,7 @@ class ShaderAppearance(ShaderComponent):
         self.has_normal_texture = False
         self.normal_texture_tangent_space = False
         self.has_bump_texture = False
+        self.has_gloss_map = False
 
         self.has_specular = False
         self.has_specular_texture = False
@@ -1309,9 +1310,12 @@ class TextureAppearance(ShaderAppearance):
             config += 'a'
         if self.has_material:
             config += 'm'
+        if self.has_gloss_map:
+            config += 'g'
         return config
 
     def create_shader_configuration(self, appearance):
+        #TODO: This should use the shader data source inso appearance!
         self.has_surface_texture = appearance.texture is not None
         self.has_normal_texture = appearance.normal_map is not None
         self.normal_texture_tangent_space = appearance.normal_map_tangent_space
@@ -1321,6 +1325,7 @@ class TextureAppearance(ShaderAppearance):
         self.has_specular_texture = appearance.specular_map is not None or appearance.has_specular_mask
         self.has_night_texture = appearance.night_texture is not None
 
+        self.has_gloss_map = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
         self.transparency_blend = appearance.transparency_blend
         #TODO: should be in ShaderAppearance
@@ -1786,6 +1791,7 @@ class PandaTextureDataSource(DataSource):
         self.has_specular_mask = False
         self.has_night_texture = False
         self.has_transparency = False
+        self.has_gloss_map_texture = False
 
     def get_id(self):
         config = ""
@@ -1803,6 +1809,8 @@ class PandaTextureDataSource(DataSource):
             config += "i"
         if self.tex_transform:
             config += "r"
+        if self.has_gloss_map_texture:
+            config += "g"
         return config
 
     def create_shader_configuration(self, appearance):
@@ -1812,6 +1820,7 @@ class PandaTextureDataSource(DataSource):
         self.bump_map_index = appearance.bump_map_index
         self.specular_map_index = appearance.specular_map_index
         self.night_texture_index = appearance.night_texture_index
+        self.gloss_map_texture_index = appearance.gloss_map_texture_index
         self.nb_textures = appearance.nb_textures
         self.has_surface_texture = appearance.texture is not None
         self.has_normal_texture = appearance.normal_map is not None
@@ -1819,6 +1828,7 @@ class PandaTextureDataSource(DataSource):
         self.has_specular_texture = appearance.specular_map is not None
         self.has_specular_mask = appearance.has_specular_mask
         self.has_night_texture = appearance.night_texture
+        self.has_gloss_map_texture = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
 
     def create_tex_coord(self, texture_id, texture_coord):
@@ -1869,6 +1879,8 @@ class PandaTextureDataSource(DataSource):
             code += self.create_tex_coord(self.specular_map_index, texture_coord)
         if self.has_night_texture:
             code += self.create_tex_coord(self.night_texture_index, texture_coord)
+        if self.has_gloss_map_texture:
+            code += self.create_tex_coord(self.gloss_map_texture_index, texture_coord)
 
     def bump_sample(self, code):
         pass
@@ -1900,6 +1912,8 @@ class PandaTextureDataSource(DataSource):
             code += self.create_sample_texture(self.specular_map_index)
         if self.has_night_texture:
             code += self.create_sample_texture(self.night_texture_index)
+        if self.has_gloss_map_texture:
+            code += self.create_sample_texture(self.gloss_map_texture_index)
 
     def update_shader_patch_static(self, shape, patch, appearance):
         if self.tex_transform:
@@ -1915,6 +1929,8 @@ class PandaTextureDataSource(DataSource):
                     patch.instance.setShaderInput("texmat_%d" % self.specular_map_index, patch.instance.getTexTransform(stage).getMat())
                 elif 'Night' in stage.getName():
                     patch.instance.setShaderInput("texmat_%d" % self.night_texture_index, patch.instance.getTexTransform(stage).getMat())
+                elif 'Gloss' in stage.getName():
+                    patch.instance.setShaderInput("texmat_%d" % self.gloss_map_texture_index, patch.instance.getTexTransform(stage).getMat())
                 else:
                     print("Unknown stage", stage)
 

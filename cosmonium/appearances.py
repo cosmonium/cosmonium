@@ -104,11 +104,13 @@ class AppearanceBase:
         self.bump_map_index = 0
         self.specular_map_index = 0
         self.night_texture_index = 0
+        self.gloss_map_texture_index = 0
         self.texture = None
         self.normal_map = None
         self.bump_map = None
         self.specular_map = None
         self.night_texture = None
+        self.gloss_map = None
         self.has_specular_mask = False
         self.normal_map_tangent_space = False
         self.specularColor = None
@@ -356,7 +358,7 @@ class ModelAppearance(AppearanceBase):
         #TODO: Should be inferred from model
         self.has_vertex_color = vertex_color
         self.has_attribute_color = attribute_color
-        self.has_material = False
+        self.has_material = True
         self.offsets = None
         #TODO: This should be factored out...
         self.normal_map_tangent_space = True
@@ -372,6 +374,8 @@ class ModelAppearance(AppearanceBase):
         self.specular_map_index = 0
         self.night_texture = None
         self.night_texture_index = 0
+        self.gloss_map = None
+        self.gloss_map_texture_index = 0
         self.has_specular_mask = False
         self.transparency = False
         self.transparency_blend = TransparencyBlend.TB_None
@@ -386,6 +390,7 @@ class ModelAppearance(AppearanceBase):
         #Should be done like transparency for all the geoms and create a shader per geom...
         has_surface = False
         has_normal = False
+        has_gloss = False
         for stage in stages:
             tex = instance.find_texture(stage)
             if tex:
@@ -409,6 +414,12 @@ class ModelAppearance(AppearanceBase):
                         self.normal_map_index = self.nb_textures
                         self.nb_textures += 1
                         has_normal = True
+                elif mode in (TextureStage.M_gloss, ):
+                    if not has_gloss:
+                        self.gloss_map = tex
+                        self.gloss_map_texture_index = self.nb_textures
+                        self.nb_textures += 1
+                        has_gloss = True
                 else:
                     print("Unsupported mode %d" % mode)
         transparency_mode = TransparencyAttrib.M_none
