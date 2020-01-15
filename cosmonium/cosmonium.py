@@ -272,6 +272,8 @@ class CosmoniumBase(ShowBase):
             print("Saving screenshot into", filename)
         else:
             print("Could not save filename")
+            if self.gui is not None:
+                self.gui.update_info("Could not save filename", 1.0, 1.0)
 
 class Cosmonium(CosmoniumBase):
     def __init__(self):
