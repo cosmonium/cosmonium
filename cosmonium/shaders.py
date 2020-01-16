@@ -447,6 +447,8 @@ class VertexShader(ShaderProgram):
     def create_uniforms(self, code):
         code.append("uniform mat4 p3d_ProjectionMatrix;")
         code.append("uniform mat4 p3d_ModelMatrix;")
+        if settings.use_double:
+            code.append("uniform mat4 p3d_ModelMatrixInverseTranspose;")
         code.append("uniform mat4 p3d_ViewMatrix;")
         code.append("uniform mat4 p3d_ModelViewMatrix;")
         if self.config.point_shader:
@@ -556,7 +558,10 @@ class VertexShader(ShaderProgram):
             if self.config.model_normal:
                 code.append("model_normal = model_normal4.xyz;")
             if self.config.world_normal:
-                code.append("world_normal = vec3(normalize(p3d_ModelMatrix * model_normal4));")
+                if settings.use_double:
+                    code.append("world_normal = vec3(normalize(p3d_ModelMatrixInverseTranspose * model_normal4));")
+                else:
+                    code.append("world_normal = vec3(normalize(p3d_ModelMatrix * model_normal4));")
         if self.config.use_tangent or self.config.fragment_uses_tangent:
             code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
             code.append("binormal = vec3(normalize(p3d_ModelMatrix * model_binormal4));")
