@@ -422,15 +422,15 @@ class FreeNav(NavBase):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        direction=(target.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos())
+        direction = target.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos()
         height = target.get_height_under(self.observer.get_camera_pos())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
-        if altitude < settings.min_altitude:
-            altitude = altitude - settings.min_altitude
-            rate = 1.0
         direction.normalize()
-        self.observer.step_camera(direction*altitude*rate, absolute=True)
+        if rate < 0 or altitude >= settings.min_altitude:
+            self.observer.step_camera(direction*altitude*rate, absolute=True)
+        else:
+            self.observer.set_camera_pos(target.get_position() - direction * (height + settings.min_altitude))
 
 class WalkNav(NavBase):
     rot_step_per_sec = pi/4
