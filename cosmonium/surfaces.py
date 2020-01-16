@@ -52,6 +52,9 @@ class Surface(ShapeObject):
     def get_component_name(self):
         return 'Surface'
 
+    def is_flat(self):
+        return False
+
     def create_shadows(self):
         if self.shape is not None and self.shape.is_spherical():
             self.shadow_caster = SphereShadowCaster(self.owner)
@@ -81,6 +84,9 @@ class Surface(ShapeObject):
         return self.shape.get_normals_at(coord)
 
 class FlatSurface(Surface):
+    def is_flat(self):
+        return True
+
     def get_height_at(self, x, y):
         return self.owner.get_apparent_radius()
 

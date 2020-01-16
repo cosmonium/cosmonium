@@ -743,9 +743,13 @@ class Gui(object):
             if selected.distance_to_obs > 10 * radius:
                 self.hud.topLeft.set(0, "Distance: " + toUnit(selected.distance_to_obs, units.lengths_scale))
             else:
-                distance = selected.distance_to_obs - selected.height_under
-                altitude = selected.distance_to_obs - radius
-                self.hud.topLeft.set(0, "Altitude: " + toUnit(altitude, units.lengths_scale) + " (Ground: " + toUnit(distance, units.lengths_scale)+")")
+                if selected.surface is not None and not selected.surface.is_flat():
+                    distance = selected.distance_to_obs - selected.height_under
+                    altitude = selected.distance_to_obs - radius
+                    self.hud.topLeft.set(0, "Altitude: " + toUnit(altitude, units.lengths_scale) + " (Ground: " + toUnit(distance, units.lengths_scale)+")")
+                else:
+                    altitude = selected.distance_to_obs - radius
+                    self.hud.topLeft.set(0, "Altitude: " + toUnit(altitude, units.lengths_scale))
             if not selected.virtual_object:
                 self.hud.topLeft.set(1, "Radius: %s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))
                 self.hud.topLeft.set(2, "Abs (app) magnitude: %g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
