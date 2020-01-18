@@ -1137,12 +1137,6 @@ class PatchedShape(PatchedShapeBase):
                 patch.instance.setPos(*patch_offset)
                 if patch.bounds_shape.instance is not None:
                     patch.bounds_shape.instance.setPos(*patch_offset)
-                if False and self.parent.appearance.tex_transform:
-                    for i in range(self.parent.appearance.nb_textures):
-                        name = 'texmat_%d' % i
-                        shader_input = patch.instance.get_shader_input(name)
-                        if shader_input.getValueType() == 0:
-                            print("WARNING", self.parent.get_name(), patch.str_id(), ":", name, "not found", patch.shown, patch.instance.isStashed())
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         offset = LVector3d()

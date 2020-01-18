@@ -1895,7 +1895,7 @@ class PandaTextureDataSource(DataSource):
         code = []
         if self.shader.use_model_texcoord:
             if self.tex_transform:
-                code.append("vec4 texcoord_tex%d = texmat_%d * texcoord%d;" % (texture_id, texture_id, texture_coord))
+                code.append("vec4 texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord%d;" % (texture_id, texture_id, texture_coord))
             else:
                 code.append("vec4 texcoord_tex%d = texcoord%d;" % (texture_id, texture_coord))
         else:
@@ -1910,7 +1910,7 @@ class PandaTextureDataSource(DataSource):
             code.append("  texcoord_tex%d =  texcoord0p;" % (texture_id))
             code.append("}")
             if self.tex_transform:
-                code.append("  texcoord_tex%d = texmat_%d * texcoord_tex%d;" % (texture_id, texture_id, texture_id))
+                code.append("  texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord_tex%d;" % (texture_id, texture_id, texture_id))
             code.append("texcoord_tex%d.xyz /= texcoord_tex%d.w;" % (texture_id, texture_id))
         return code
 
@@ -1922,10 +1922,10 @@ class PandaTextureDataSource(DataSource):
     def fragment_uniforms(self, code):
         for i in range(self.nb_textures):
             code.append("uniform sampler2D p3d_Texture%i;" % i)
-            if self.tex_transform:
-                code.append("uniform mat4 texmat_%i;" % i)
         if self.has_night_texture:
             code.append("uniform float nightscale;")
+        if self.nb_textures > 0:
+            code.append("uniform mat4 p3d_TextureMatrix[%d];" % (self.nb_textures))
 
     def fragment_shader_decl(self, code):
         texture_coord = 0
@@ -1985,25 +1985,6 @@ class PandaTextureDataSource(DataSource):
             code += self.create_sample_texture(self.night_texture_index)
         if self.has_gloss_map_texture:
             code += self.create_sample_texture(self.gloss_map_texture_index)
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        if self.tex_transform:
-            #print("TEXMAT APPLY", patch.str_id())
-            for stage in patch.instance.findAllTextureStages():
-                if 'Normal' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.normal_map_index, patch.instance.getTexTransform(stage).getMat())
-                elif 'Bump' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.bump_map_index, patch.instance.getTexTransform(stage).getMat())
-                elif 'Surface' in stage.getName() or 'Transparent' in stage.getName() or 'Ring' in stage.getName() or 'default' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.texture_index, patch.instance.getTexTransform(stage).getMat())
-                elif 'Specular' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.specular_map_index, patch.instance.getTexTransform(stage).getMat())
-                elif 'Night' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.night_texture_index, patch.instance.getTexTransform(stage).getMat())
-                elif 'Gloss' in stage.getName():
-                    patch.instance.setShaderInput("texmat_%d" % self.gloss_map_texture_index, patch.instance.getTexTransform(stage).getMat())
-                else:
-                    print("Unknown stage", stage)
 
     def update_shader_shape_static(self, shape, appearance):
         if self.has_night_texture:
