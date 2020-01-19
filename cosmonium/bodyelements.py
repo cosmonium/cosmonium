@@ -76,6 +76,7 @@ class Atmosphere(ShapeObject):
             shape_object.update_shader()
 
     def update_scattering(self):
+        if not settings.show_atmospheres: return
         for shape_object in self.shape_objects:
             self.do_update_scattering(shape_object)
             shape_object.update_shader()
