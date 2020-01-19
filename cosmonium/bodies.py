@@ -38,6 +38,7 @@ from .astro import units
 from .shaders import BasicShader, FlatLightingModel
 from .bodyclass import bodyClasses
 from .catalogs import objectsDB
+from .parameters import ParametersGroup
 from . import settings
 from .settings import smallest_glare_mag
 from .utils import mag_to_scale
@@ -169,6 +170,19 @@ class StellarObject(LabelledObject):
             print("No class for", self.get_name())
             return
         self.set_shown(bodyClasses.get_show(self.body_class))
+
+    def get_user_parameters(self):
+        group = LabelledObject.get_user_parameters(self)
+        if isinstance(self.orbit, FixedOrbit) and self.system is not None:
+            orbit = self.system.orbit
+        else:
+            orbit = self.orbit
+        general_group = ParametersGroup('General', [orbit.get_user_parameters(),
+                                                    self.rotation.get_user_parameters()])
+        if group is None:
+            group = ParametersGroup(self.get_name(), [])
+        group.prepend_parameters(general_group)
+        return group
 
     def get_fullname(self, separator='/'):
         if hasattr(self, "primary") and self.primary is not None:

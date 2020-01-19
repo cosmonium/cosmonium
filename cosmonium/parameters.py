@@ -33,6 +33,12 @@ class ParametersGroup(object):
         else:
             self.parameters += parameters
 
+    def prepend_parameters(self, *parameters):
+        if len(parameters) == 1 and isinstance(parameters[0], Iterable):
+            self.parameters = parameters[0] + self.parameters
+        else:
+            self.parameters = list(parameters) + self.parameters
+
     def is_group(self):
         return True
 

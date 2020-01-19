@@ -33,6 +33,9 @@ class Rotation(object):
     def __init__(self, frame):
         self.frame = frame
 
+    def get_user_parameters(self):
+        return None
+
     def set_frame(self, frame):
         self.frame = frame
 

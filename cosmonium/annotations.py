@@ -108,7 +108,7 @@ class Orbit(VisibleObject):
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
             time = epoch + step * i
-            pos = self.orbit.get_position_at(time) - delta
+            pos = self.orbit.get_frame_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):
@@ -159,7 +159,7 @@ class Orbit(VisibleObject):
             self.place_instance_params(self.instance,
                                        self.body.parent.scene_position,
                                        self.body.parent.scene_scale_factor,
-                                       LQuaternion())
+                                       self.orbit.get_rotation_at(0))
             self.shader.update(self, self.appearance)
 
 class RotationAxis(VisibleObject):
