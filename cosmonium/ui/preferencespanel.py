@@ -32,7 +32,11 @@ from directguilayout.gui import Widget as SizerWidget
 from .widgets import DirectWidgetContainer
 from .window import Window
 
-from collections.abc import Iterable
+import sys
+if sys.version_info[0] >= 3:
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
 class PreferencesPanel():
     def __init__(self, font_family, font_size = 14, owner=None):

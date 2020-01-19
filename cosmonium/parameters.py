@@ -1,5 +1,10 @@
+import sys
 from math import log, exp
-from collections.abc import Iterable
+
+if sys.version_info[0] >= 3:
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
