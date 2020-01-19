@@ -95,7 +95,7 @@ class EquatorialReferenceAxis(ReferenceAxisBase):
         self.declination = declination * pi / 180
         self.update_rotation()
 
-    def set_declination(self):
+    def get_declination(self):
         return self.declination / pi * 180
 
     def set_right_ascension(self, right_ascension):
@@ -137,6 +137,8 @@ class Rotation(object):
 class FixedRotation(Rotation):
     def __init__(self, reference_axis, frame):
         Rotation.__init__(self, frame)
+        if isinstance(reference_axis, LQuaterniond):
+            reference_axis = ReferenceAxis(reference_axis)
         self.reference_axis = reference_axis
 
     def get_frame_equatorial_orientation_at(self, time):
