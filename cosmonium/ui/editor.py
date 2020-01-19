@@ -89,7 +89,7 @@ class ParamEditor():
             entry = DirectEntry(parent=frame,
                                 initialText=str(param.get_param()),
                                 numLines = 1,
-                                width = 16,
+                                width = 10,
                                 command=self.do_update,
                                 extraArgs=[None, param],
                                 text_scale=self.font_size,
@@ -117,7 +117,7 @@ class ParamEditor():
             entry = DirectEntry(parent=frame,
                                 initialText=str(param.get_param()),
                                 numLines = 1,
-                                width = 16,
+                                width = 10,
                                 command=self.do_update,
                                 extraArgs=[slider, param],
                                 text_scale=self.font_size,
@@ -150,7 +150,7 @@ class ParamEditor():
                 entry = DirectEntry(parent=frame,
                                     initialText=str(param.get_param_component(component)),
                                     numLines = 1,
-                                    width = 16,
+                                    width = 10,
                                     command=self.do_update,
                                     extraArgs=[slider, param, component],
                                     text_scale=self.font_size,
@@ -159,7 +159,7 @@ class ParamEditor():
                 widget = SizerWidget(entry)
                 hsizer2.add(widget, expand=True, borders=borders)
                 slider['extraArgs'] = [slider, entry, param, component]
-                vsizer.add(hsizer2, expand=True, borders=borders)
+                vsizer.add(hsizer2, borders=borders)
             hsizer.add(vsizer, borders=borders, alignment="center_v")
             sizer.add(hsizer, expand=True, borders=borders)
         else:
@@ -177,7 +177,7 @@ class ParamEditor():
                                         text_scale=self.font_size,
                                         text_align=TextNode.A_left)
                     widget = SizerWidget(label)
-                    sizer.add(widget, expand=True, borders=borders)
+                    sizer.add(widget, borders=borders)
                 self.add_parameters(frame, sizer, param.parameters)
             else:
                 self.add_parameter(frame, sizer, param)
@@ -190,13 +190,16 @@ class ParamEditor():
                                                         tab_scale=scale3 * self.font_size,
                                                         tab_text_align = TextNode.ALeft,
                                                         tab_text_pos = (0.2, 0.6),
-                                                        tabSelectedColor = (0.7, 0.7, 0.7, 1)))
+                                                        tabSelectedColor = (0.7, 0.7, 0.7, 1),
+                                                        scroll_scrollBarWidth=16))
         self.layout.frame.setPos(0, 0, -buttonSize)
         for group in parameters.parameters:
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DirectGuiGlobals.NORMAL, frameColor=(1, 0, 0, 1))
             self.add_parameters(frame, sizer, group.parameters)
             sizer.update((800, 600))
+            size = sizer.min_size
+            frame['frameSize'] = (0, size[0], -size[1], 0)
             self.layout.frame.addPage(frame, group.name)
         title = "Editor"
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
