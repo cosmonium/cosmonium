@@ -46,124 +46,98 @@ class ParamEditor():
         self.owner = owner
         self.scale = LVector2(1, 1)
         self.body = None
+        self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
 
-    def add_parameter(self, frame, sizer, param):
-        borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
-        if param.param_type == UserParameter.TYPE_BOOL:
-            hsizer = Sizer("horizontal")
-            label = DirectLabel(parent=frame,
-                                text=param.name,
-                                textMayChange=True,
+    def create_text_entry(self, frame, param):
+        entry = DirectEntry(parent=frame,
+                            initialText=str(param.get_param()),
+                            numLines = 1,
+                            width = 10,
+                            command=self.do_update,
+                            extraArgs=[None, param],
+                            text_scale=self.font_size,
+                            text_align=TextNode.A_left,
+                            suppressKeys=1)
+        widget = SizerWidget(entry)
+        return widget
+
+    def create_bool_entry(self, frame, param):
+        btn = DirectCheckButton(parent=frame,
+                                text="",
                                 text_scale=self.font_size,
-                                text_align=TextNode.A_left)
-            widget = SizerWidget(label)
-            hsizer.add(widget, expand=True, borders=borders)
-            btn = DirectCheckButton(parent=frame,
-                                    text="",
-                                    text_scale=self.font_size,
-                                    text_align=TextNode.A_left,
-                                    boxPlacement="left",
-                                    #borderWidth=(2, 2),
-                                    indicator_text_scale=self.font_size,
-                                    indicator_text='A',
-                                    indicator_text_pos=(0, 4),
-                                    indicator_borderWidth=(2, 2),
-                                    #boxBorder=1
-                                    pressEffect=False,
-                                    command=self.do_update,
-                                    extraArgs=[None, param],
-                                    )
-            btn['indicatorValue'] = param.get_param()
-            widget = SizerWidget(btn)
-            hsizer.add(widget, expand=True, borders=borders)
-            sizer.add(hsizer, expand=True, borders=borders)
-        elif param.param_type == UserParameter.TYPE_STRING or param.value_range is None:
-            hsizer = Sizer("horizontal")
-            label = DirectLabel(parent=frame,
-                                text=param.name,
-                                textMayChange=True,
-                                text_scale=self.font_size,
-                                text_align=TextNode.A_left)
-            widget = SizerWidget(label)
-            hsizer.add(widget, expand=True, borders=borders)
-            entry = DirectEntry(parent=frame,
-                                initialText=str(param.get_param()),
-                                numLines = 1,
-                                width = 10,
+                                text_align=TextNode.A_left,
+                                boxPlacement="left",
+                                #borderWidth=(2, 2),
+                                indicator_text_scale=self.font_size,
+                                indicator_text='A',
+                                indicator_text_pos=(0, 4),
+                                indicator_borderWidth=(2, 2),
+                                #boxBorder=1
+                                pressEffect=False,
                                 command=self.do_update,
                                 extraArgs=[None, param],
-                                text_scale=self.font_size,
-                                text_align=TextNode.A_left,
-                                suppressKeys=1)
-            widget = SizerWidget(entry)
-            hsizer.add(widget, expand=True, borders=borders)
-            sizer.add(hsizer, expand=True, borders=borders)
+                                )
+        btn['indicatorValue'] = param.get_param()
+        widget = SizerWidget(btn)
+        return widget
+
+    def create_slider_entry(self, frame, param, component=None):
+        if component is not None:
+            value = param.get_param_component(component)
+            scaled_value = param.get_param_component(component, scale=True)
+        else:
+            value = param.get_param()
+            scaled_value = param.get_param(scale=True)
+        hsizer = Sizer("horizontal")
+        slider = DirectSlider(parent=frame,
+                              scale=(self.font_size * 16, 1, self.font_size * 2),
+                              value=scaled_value,
+                              range=param.get_range(scale=True),
+                              command=self.do_update_slider
+                              )
+        widget = SizerWidget(slider)
+        hsizer.add(widget, expand=True, borders=self.borders)
+        entry = DirectEntry(parent=frame,
+                            initialText=str(value),
+                            numLines = 1,
+                            width = 10,
+                            command=self.do_update,
+                            extraArgs=[slider, param, component],
+                            text_scale=self.font_size,
+                            text_align=TextNode.A_left,
+                            suppressKeys=1)
+        widget = SizerWidget(entry)
+        hsizer.add(widget, expand=True, borders=self.borders)
+        slider['extraArgs'] = [slider, entry, param, component]
+        return hsizer
+
+    def add_parameter(self, frame, sizer, param):
+        hsizer = Sizer("horizontal")
+        label = DirectLabel(parent=frame,
+                            text=param.name,
+                            textMayChange=True,
+                            text_scale=self.font_size,
+                            text_align=TextNode.A_left)
+        widget = SizerWidget(label)
+        hsizer.add(widget, borders=self.borders, alignment="center_v")
+        if param.param_type == UserParameter.TYPE_BOOL:
+            widget = self.create_bool_entry(frame, param)
+            hsizer.add(widget, expand=True, borders=self.borders)
+        elif param.param_type == UserParameter.TYPE_STRING or param.value_range is None:
+            widget = self.create_text_entry(frame, param)
+            hsizer.add(widget, expand=True, borders=self.borders)
         elif param.param_type in (UserParameter.TYPE_INT, UserParameter.TYPE_FLOAT):
-            hsizer = Sizer("horizontal")
-            label = DirectLabel(parent=frame,
-                                text=param.name,
-                                textMayChange=True,
-                                text_scale=self.font_size,
-                                text_align=TextNode.A_left)
-            widget = SizerWidget(label)
-            hsizer.add(widget, expand=True, borders=borders)
-            slider = DirectSlider(parent=frame,
-                                  scale=(self.font_size * 16, 1, self.font_size * 2),
-                                  value=param.get_param(scale=True),
-                                  range=param.get_range(scale=True),
-                                  command=self.do_update_slider)
-            widget = SizerWidget(slider)
-            hsizer.add(widget, expand=True, borders=borders)
-            entry = DirectEntry(parent=frame,
-                                initialText=str(param.get_param()),
-                                numLines = 1,
-                                width = 10,
-                                command=self.do_update,
-                                extraArgs=[slider, param],
-                                text_scale=self.font_size,
-                                text_align=TextNode.A_left,
-                                suppressKeys=1)
-            widget = SizerWidget(entry)
-            hsizer.add(widget, expand=True, borders=borders)
-            slider['extraArgs'] = [slider, entry, param]
-            sizer.add(hsizer, expand=True, borders=borders)
+            widget = self.create_slider_entry(frame, param)
+            hsizer.add(widget, expand=True, borders=self.borders)
         elif param.param_type == UserParameter.TYPE_VEC:
-            hsizer = Sizer("horizontal")
-            label = DirectLabel(parent=frame,
-                                text=param.name,
-                                textMayChange=True,
-                                text_scale=self.font_size,
-                                text_align=TextNode.A_left)
-            widget = SizerWidget(label)
-            hsizer.add(widget, borders=borders, alignment="center_v")
             vsizer = Sizer("vertical")
             for component in range(param.nb_components):
-                hsizer2 = Sizer("horizontal")
-                slider = DirectSlider(parent=frame,
-                                      scale=(self.font_size * 16, 1, self.font_size * 2),
-                                      value=param.get_param_component(component, scale=True),
-                                      range=param.get_range(scale=True),
-                                      command=self.do_update_slider
-                                      )
-                widget = SizerWidget(slider)
-                hsizer2.add(widget, expand=True, borders=borders)
-                entry = DirectEntry(parent=frame,
-                                    initialText=str(param.get_param_component(component)),
-                                    numLines = 1,
-                                    width = 10,
-                                    command=self.do_update,
-                                    extraArgs=[slider, param, component],
-                                    text_scale=self.font_size,
-                                    text_align=TextNode.A_left,
-                                    suppressKeys=1)
-                widget = SizerWidget(entry)
-                hsizer2.add(widget, expand=True, borders=borders)
-                slider['extraArgs'] = [slider, entry, param, component]
-                vsizer.add(hsizer2, borders=borders)
-            hsizer.add(vsizer, borders=borders, alignment="center_v")
-            sizer.add(hsizer, expand=True, borders=borders)
+                widget = self.create_slider_entry(frame, param, component)
+                vsizer.add(widget, borders=self.borders)
+            hsizer.add(vsizer, borders=self.borders, alignment="center_v")
         else:
             print("Unknown entry type", param.param_type)
+        sizer.add(hsizer, expand=True, borders=self.borders)
 
     def add_parameters(self, frame, sizer, parameters):
         for param in parameters:
