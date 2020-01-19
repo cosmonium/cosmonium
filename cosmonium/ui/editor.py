@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import TextNode, NodePath, LVector3, LVector2
 from direct.gui.DirectFrame import DirectFrame
-from direct.gui import DirectGuiGlobals
+from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectGui import DirectEntry, DirectSlider
@@ -33,6 +33,7 @@ from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 
 from ..parameters import UserParameter
+from .. import settings
 
 from .widgets import DirectWidgetContainer
 from .window import Window
@@ -120,6 +121,7 @@ class ParamEditor():
                               extraArgs=[slider, param, component],
                               valueEntry_width = 10,
                               valueEntry_text_align=TextNode.A_left,
+                              valueEntry_frameColor=settings.entry_background,
                               scale=self.font_size)
         widget = SizerWidget(entry)
         return widget
@@ -181,19 +183,20 @@ class ParamEditor():
     def create_layout(self, parameters):
         scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
         buttonSize = self.font_size * 2
-        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, 800, -600, 0),
+        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, settings.panel_width, -settings.panel_height, 0),
                                                         tab_frameSize = (0, 7, 0, 2),
                                                         tab_scale=scale3 * self.font_size,
                                                         tab_text_align = TextNode.ALeft,
                                                         tab_text_pos = (0.2, 0.6),
-                                                        tabSelectedColor = (0.7, 0.7, 0.7, 1),
-                                                        scroll_scrollBarWidth=16))
+                                                        tabUnselectedColor = settings.tab_background,
+                                                        tabSelectedColor = settings.panel_background,
+                                                        scroll_scrollBarWidth=self.font_size))
         self.layout.frame.setPos(0, 0, -buttonSize)
         for group in parameters.parameters:
             sizer = Sizer("vertical")
-            frame = DirectFrame(state=DirectGuiGlobals.NORMAL, frameColor=(1, 0, 0, 1))
+            frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
             self.add_parameters(frame, sizer, group.parameters)
-            sizer.update((800, 600))
+            sizer.update((settings.panel_width, settings.panel_height))
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
             self.layout.frame.addPage(frame, group.name)

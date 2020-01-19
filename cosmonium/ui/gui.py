@@ -98,7 +98,7 @@ class Gui(object):
         self.update_size(self.screen_width, self.screen_height)
         self.popup_menu = None
         self.opened_windows = []
-        self.editor = ParamEditor(settings.markdown_font, owner=self)
+        self.editor = ParamEditor(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, owner=self)
         self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)

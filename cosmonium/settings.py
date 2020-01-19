@@ -190,6 +190,12 @@ help_color = LColor(1.0, 1.0, 1.0, 1.0)
 help_background = LColor(0.5, 0.5, 0.5, 0.7)
 display_fps = True
 display_ms = False
+ui_font_size = 12
+panel_width = 800
+panel_height = 600
+panel_background = LColor(0.8, 0.8, 0.8, 1)
+tab_background = LColor(0.7, 0.7, 0.7, 1)
+entry_background = LColor(0.9, 0.9, 0.9, 1)
 
 menu_text_size = 12
 
