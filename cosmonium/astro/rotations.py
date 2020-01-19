@@ -199,6 +199,11 @@ class SynchronousRotation(FixedRotation):
         self.epoch = epoch
         self.meridian_angle = meridian_angle * pi / 180
 
+    def get_user_parameters(self):
+        parameters = self.reference_axis.get_user_parameters()
+        group = ParametersGroup('Rotation', parameters)
+        return group
+
     def get_frame_rotation_at(self, time):
         angle = (time - self.epoch) * self.body.orbit.get_mean_motion() + self.meridian_angle
         local = LQuaterniond()

@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import GeomNode
+from panda3d.core import GeomNode, LQuaternion, LQuaterniond
 from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
@@ -31,7 +31,7 @@ from .shaders import AutoShader
 from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from .shadows import MultiShadows
-from .parameters import ParametersGroup
+from .parameters import ParametersGroup, AutoUserParameter, UserParameter
 
 from . import geometry
 from . import settings
@@ -58,11 +58,17 @@ class Shape:
         self.clickable = False
         self.attribution = None
 
+    def get_user_parameters(self):
+        return None
+
     def check_settings(self):
         pass
 
     def is_spherical(self):
         return True
+
+    def update_shape(self):
+        pass
 
     def create_instance(self):
         return None
@@ -216,6 +222,8 @@ class ShapeObject(VisibleObject):
 
     def get_user_parameters(self):
         group = ParametersGroup(self.get_component_name())
+        if self.shape is not None:
+            group.add_parameters(self.shape.get_user_parameters())
         if self.appearance is not None:
             group.add_parameters(self.appearance.get_user_parameters())
         if self.shader is not None:
@@ -223,6 +231,7 @@ class ShapeObject(VisibleObject):
         return group
 
     def update_user_parameters(self):
+        self.update_shape()
         self.update_shader()
 
     def get_component_name(self):
@@ -364,6 +373,10 @@ class ShapeObject(VisibleObject):
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
 
+    def update_shape(self):
+        if self.instance is not None and self.shape is not None and self.instance_ready:
+            self.shape.update_shape()
+
     def update_shader(self):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.apply(self.shape, self.appearance)
@@ -400,7 +413,7 @@ class ShapeObject(VisibleObject):
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
+    def __init__(self, model, offset=None, rotation=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
         self.attribution = attribution
@@ -409,11 +422,31 @@ class MeshShape(Shape):
         if offset is None:
             offset = LPoint3d()
         self.offset = offset
+        if rotation is None:
+            rotation= LQuaterniond()
+        self.rotation = rotation
         self.scale_mesh = scale_mesh
         self.flatten = flatten
         self.panda = panda
+        self.mesh = None
         self.callback = None
         self.cb_args = None
+
+    def update_shape(self):
+        self.mesh.set_pos(*self.offset)
+        self.mesh.set_quat(LQuaternion(*self.rotation))
+        self.mesh.set_scale(self.scale_factor, self.scale_factor, self.scale_factor)
+
+    def get_rotation(self):
+        return self.rotation.get_hpr()
+
+    def set_rotation(self, rotation):
+        self.rotation.set_hpr(rotation)
+
+    def get_user_parameters(self):
+        return [AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3),
+                UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3)
+               ]
 
     def is_spherical(self):
         return False
@@ -422,16 +455,16 @@ class MeshShape(Shape):
         if mesh is None: return
         #The shape has been removed from the view while the mesh was loaded
         if self.instance is None: return
+        self.mesh = mesh
         if self.scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             self.scale_factor = 1.0 / major
         if self.flatten:
-            mesh.flattenStrong()
+            self.mesh.flattenStrong()
+        self.update_shape()
         self.apply_owner()
-        mesh.set_pos(*self.offset)
-        mesh.set_scale(self.scale_factor, self.scale_factor, self.scale_factor)
-        mesh.reparent_to(self.instance)
+        self.mesh.reparent_to(self.instance)
         self.parent.apply_instance(self.instance)
         if self.callback is not None:
             self.callback(self, *self.cb_args)
