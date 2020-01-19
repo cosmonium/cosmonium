@@ -23,10 +23,93 @@ from __future__ import absolute_import
 from panda3d.core import LQuaterniond, LVector3d
 
 from .frame import J2000EquatorialReferenceFrame
+from .astro import calc_orientation_from_incl_an
+from ..parameters import ParametersGroup, UserParameter
 from . import units
 
 from math import asin, atan2, pi
-from cosmonium.astro.astro import calc_orientation_from_incl_an
+
+class ReferenceAxisBase(object):
+    def get_user_parameters(self):
+        return None
+
+    def get_rotation_at(self, time):
+        return None
+
+class ReferenceAxis(ReferenceAxisBase):
+    def __init__(self, rotation):
+        self.rotation = rotation
+
+    def get_rotation_at(self, time):
+        return self.rotation
+
+class PlaneReferenceAxis(ReferenceAxisBase):
+    def __init__(self, inclination, ascending_node):
+        self.inclination = inclination * pi / 180
+        self.ascending_node = ascending_node * pi / 180
+        self.rotation = None
+        self.update_rotation()
+
+    def get_rotation_at(self, time):
+        return self.rotation
+
+    def update_rotation(self):
+        self.rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, False)
+
+    def set_inclination(self, inclination):
+        self.inclination = inclination * pi / 180
+        self.update_rotation()
+
+    def get_inclination(self):
+        return self.inclination / pi * 180
+
+    def set_ascending_node(self, ascending_node):
+        self.ascending_node = ascending_node * pi / 180
+        self.update_rotation()
+
+    def get_ascending_node(self):
+        return self.ascending_node / pi * 180
+
+    def get_user_parameters(self):
+        parameters = [UserParameter("Inclination", self.set_inclination, self.get_inclination, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+                      UserParameter("Ascending node", self.set_ascending_node, self.get_ascending_node, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+                     ]
+        return parameters
+
+class EquatorialReferenceAxis(ReferenceAxisBase):
+    def __init__(self, right_ascension, declination):
+        self.right_ascension = right_ascension * pi / 180
+        self.declination = declination * pi / 180
+        self.rotation = None
+        self.update_rotation()
+
+    def get_rotation_at(self, time):
+        return self.rotation
+
+    def update_rotation(self):
+        inclination = pi / 2 - self.declination
+        ascending_node = self.right_ascension + pi / 2
+        self.rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+
+    def set_declination(self, declination):
+        self.declination = declination * pi / 180
+        self.update_rotation()
+
+    def set_declination(self):
+        return self.declination / pi * 180
+
+    def set_right_ascension(self, right_ascension):
+        self.right_ascension = right_ascension * pi / 180
+        self.update_rotation()
+
+    def get_right_ascension(self):
+        return self.right_ascension / pi * 180
+
+    def get_user_parameters(self):
+        parameters = [UserParameter("Declination", self.set_declination, self.set_declination, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+                      UserParameter("Right ascension", self.set_right_ascension, self.get_right_ascension, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+                     ]
+        return parameters
 
 class Rotation(object):
     dynamic = False
@@ -52,16 +135,15 @@ class Rotation(object):
         return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
 
 class FixedRotation(Rotation):
-    def __init__(self, rotation, frame):
+    def __init__(self, reference_axis, frame):
         Rotation.__init__(self, frame)
-        self.axis_rotation = rotation
-        self.rotation = LQuaterniond()
+        self.reference_axis = reference_axis
 
     def get_frame_equatorial_orientation_at(self, time):
-        return self.axis_rotation
+        return self.reference_axis.get_rotation_at(time)
 
     def get_frame_rotation_at(self, time):
-        return self.axis_rotation
+        return self.reference_axis.get_rotation_at(time)
 
     def calc_axis_ra_de(self, time):
         rotation = self.get_equatorial_orientation_at(time)
@@ -76,17 +158,17 @@ class FixedRotation(Rotation):
 
 class UnknownRotation(FixedRotation):
     def __init__(self):
-        FixedRotation.__init__(self, LQuaterniond(), J2000EquatorialReferenceFrame())
+        FixedRotation.__init__(self, ReferenceAxis(LQuaterniond()), J2000EquatorialReferenceFrame())
 
 class UniformRotation(FixedRotation):
     dynamic = True
     def __init__(self,
                  period,
-                 rotation,
+                 reference_axis,
                  meridian_angle,
                  epoch,
                  frame):
-        FixedRotation.__init__(self, rotation, frame)
+        FixedRotation.__init__(self, reference_axis, frame)
         self.period = period
         if period != 0:
             self.mean_motion = 2 * pi / period
@@ -94,6 +176,11 @@ class UniformRotation(FixedRotation):
             self.mean_motion = 0
         self.epoch = epoch
         self.meridian_angle = meridian_angle
+
+    def get_user_parameters(self):
+        parameters = self.reference_axis.get_user_parameters()
+        group = ParametersGroup('Rotation', parameters)
+        return group
 
     def get_frame_rotation_at(self, time):
         angle = (time - self.epoch) * self.mean_motion + self.meridian_angle
@@ -104,11 +191,11 @@ class UniformRotation(FixedRotation):
 
 class SynchronousRotation(FixedRotation):
     def __init__(self,
-                 rotation,
+                 reference_axis,
                  meridian_angle,
                  epoch,
                  frame=None):
-        FixedRotation.__init__(self, rotation, frame)
+        FixedRotation.__init__(self, reference_axis, frame)
         self.epoch = epoch
         self.meridian_angle = meridian_angle * pi / 180
 
@@ -126,16 +213,12 @@ def create_fixed_rotation(
                  declination=None, declination_unit=units.Deg,
                  frame=None):
     if right_asc is None:
-        inclination = inclination * pi / 180
-        ascending_node = ascending_node * pi / 180
-        rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+        reference_axis = PlaneReferenceAxis(inclination, ascending_node)
     else:
-        right_asc = right_asc * right_asc_unit
-        declination = declination * declination_unit
-        inclination = pi / 2 - declination
-        ascending_node = right_asc + pi / 2
-        rotation = calc_orientation_from_incl_an(inclination, ascending_node, True)
-    return FixedRotation(rotation, frame)
+        reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit)
+    if frame is None:
+        frame = J2000EquatorialReferenceFrame()
+    return FixedRotation(reference_axis, frame)
 
 def create_uniform_rotation(
              period=None,
@@ -150,22 +233,17 @@ def create_uniform_rotation(
              frame=None):
 
     if right_asc is None:
-        inclination = inclination * pi / 180
-        ascending_node = ascending_node * pi / 180
+        reference_axis = PlaneReferenceAxis(inclination, ascending_node)
     else:
-        right_asc = right_asc * right_asc_unit
-        declination = declination * declination_unit
-        inclination = pi / 2 - declination
-        ascending_node = right_asc + pi / 2
-    rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+        reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit)
     meridian_angle = meridian_angle * pi / 180
     if frame is None:
         frame = J2000EquatorialReferenceFrame()
     if sync:
-        return SynchronousRotation(rotation, meridian_angle, epoch, frame)
+        return SynchronousRotation(reference_axis, meridian_angle, epoch, frame)
     else:
         if period is not None:
             period = period * period_units
         else:
             period = 0.0
-        return UniformRotation(period, rotation, meridian_angle, epoch, frame)
+        return UniformRotation(period, reference_axis, meridian_angle, epoch, frame)
