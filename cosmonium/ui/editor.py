@@ -26,6 +26,7 @@ from direct.gui import DirectGuiGlobals
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectGui import DirectEntry, DirectSlider
+from directspinbox.DirectSpinBox import DirectSpinBox
 
 from tabbedframe.TabbedFrame import TabbedFrame
 from directguilayout.gui import Sizer
@@ -83,10 +84,8 @@ class ParamEditor():
 
     def create_slider_entry(self, frame, param, component=None):
         if component is not None:
-            value = param.get_param_component(component)
             scaled_value = param.get_param_component(component, scale=True)
         else:
-            value = param.get_param()
             scaled_value = param.get_param(scale=True)
         hsizer = Sizer("horizontal")
         slider = DirectSlider(parent=frame,
@@ -97,19 +96,33 @@ class ParamEditor():
                               )
         widget = SizerWidget(slider)
         hsizer.add(widget, expand=True, borders=self.borders)
-        entry = DirectEntry(parent=frame,
-                            initialText=str(value),
-                            numLines = 1,
-                            width = 10,
-                            command=self.do_update,
-                            extraArgs=[slider, param, component],
-                            text_scale=self.font_size,
-                            text_align=TextNode.A_left,
-                            suppressKeys=1)
-        widget = SizerWidget(entry)
+        widget = self.create_spin_entry(frame, param, slider, component)
         hsizer.add(widget, expand=True, borders=self.borders)
-        slider['extraArgs'] = [slider, entry, param, component]
+        slider['extraArgs'] = [slider, widget.dgui_obj, param, component]
         return hsizer
+
+    def create_spin_entry(self, frame, param, slider=None, component=None):
+        value_range = param.get_range()
+        value_type = param.get_type()
+        if value_range is None:
+            value_range=(value_type(float("-inf")), value_type(float("inf")))
+        if component is not None:
+            value = param.get_param_component(component)
+        else:
+            value = param.get_param()
+        entry = DirectSpinBox(parent=frame,
+                              value=value,
+                              valueType=value_type,
+                              textFormat='{}',
+                              minValue=value_range[0],
+                              maxValue=value_range[1],
+                              command=self.do_update,
+                              extraArgs=[slider, param, component],
+                              valueEntry_width = 10,
+                              valueEntry_text_align=TextNode.A_left,
+                              scale=self.font_size)
+        widget = SizerWidget(entry)
+        return widget
 
     def add_parameter(self, frame, sizer, param):
         hsizer = Sizer("horizontal")
@@ -123,11 +136,20 @@ class ParamEditor():
         if param.param_type == UserParameter.TYPE_BOOL:
             widget = self.create_bool_entry(frame, param)
             hsizer.add(widget, expand=True, borders=self.borders)
-        elif param.param_type == UserParameter.TYPE_STRING or param.value_range is None:
+        elif param.param_type == UserParameter.TYPE_STRING:
             widget = self.create_text_entry(frame, param)
             hsizer.add(widget, expand=True, borders=self.borders)
-        elif param.param_type in (UserParameter.TYPE_INT, UserParameter.TYPE_FLOAT):
-            widget = self.create_slider_entry(frame, param)
+        elif param.param_type == UserParameter.TYPE_INT:
+            if param.value_range is not None:
+                widget = self.create_slider_entry(frame, param)
+            else:
+                widget = self.create_spin_entry(frame, param, int)
+            hsizer.add(widget, expand=True, borders=self.borders)
+        elif param.param_type == UserParameter.TYPE_FLOAT:
+            if param.value_range is not None:
+                widget = self.create_slider_entry(frame, param)
+            else:
+                widget = self.create_spin_entry(frame, param, float)
             hsizer.add(widget, expand=True, borders=self.borders)
         elif param.param_type == UserParameter.TYPE_VEC:
             vsizer = Sizer("vertical")
@@ -184,11 +206,15 @@ class ParamEditor():
         if component is None:
             param.set_param(value)
             if slider is not None:
-                slider['value'] = param.get_param(scale=True)
+                new_value = param.get_param(scale=True)
+                if slider['value'] != new_value:
+                    slider['value'] = new_value
         else:
             param.set_param_component(component, value)
             if slider is not None:
-                slider['value'] = param.get_param_component(component, scale=True)
+                new_value = param.get_param_component(component, scale=True)
+                if slider['value'] != new_value:
+                    slider['value'] = new_value
         self.body.update_user_parameters()
 
     def do_update_slider(self, slider, entry, param, component=None):
@@ -197,11 +223,15 @@ class ParamEditor():
         if component is None:
             param.set_param(value, scale=True)
             if entry is not None:
-                entry.enterText(str(param.get_param()))
+                new_value = param.get_param()
+                if new_value != entry.getValue():
+                    entry.setValue(new_value)
         else:
             param.set_param_component(component, value, scale=True)
             if entry is not None:
-                entry.enterText(str(param.get_param_component(component)))
+                new_value = param.get_param_component(component)
+                if new_value != entry.getValue():
+                    entry.setValue(new_value)
         self.body.update_user_parameters()
 
     def show(self, body):

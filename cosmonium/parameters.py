@@ -71,6 +71,20 @@ class UserParameterBase(object):
         else:
             return self.value_range
 
+    def get_type(self):
+        if self.param_type == self.TYPE_STRING:
+            return str
+        elif self.param_type == self.TYPE_INT:
+            return int
+        elif self.param_type == self.TYPE_FLOAT:
+            return float
+        elif self.param_type == self.TYPE_BOOL:
+            return bool
+        elif self.param_type == self.TYPE_VEC:
+            return float
+        else:
+            return None
+
     def convert_to_type(self, value):
         if self.param_type == self.TYPE_STRING:
             return value
