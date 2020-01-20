@@ -16,8 +16,8 @@
         branch = cosmonium
 [submodule "third-party/tabbedframe"]
 	path = third-party/tabbedframe
-	url = https://github.com/ArsThaumaturgis/TabbedFrame
-	branch = master
+	url = https://github.com/cosmonium/TabbedFrame
+	branch = cosmonium
 [submodule "third-party/directguilayout"]
 	path = third-party/directguilayout
 	url = https://github.com/Epihaius/DirectGui-layout-system
