@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import TextureStage, Texture, TexGenAttrib
+from panda3d.core import TextureStage, Texture, TexGenAttrib, GeomVertexRewriter
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, OmniBoundingVolume
 from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
@@ -32,15 +32,16 @@ from .surfaces import FlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
 from .utils import TransparencyBlend
+from .parameters import AutoUserParameter, UserParameter
 
 from .bodies import DeepSpaceObject
 from .shaders import BasicShader, FlatLightingModel
+from .utils import mag_to_scale_nolimit
 from .astro import units
 from . import settings
 
 from math import cos, sin, pi, log, tan, tanh, sqrt
-from random import random, gauss, choice
-from cosmonium.utils import mag_to_scale_nolimit
+from random import random, gauss, choice, seed
 
 class Galaxy(DeepSpaceObject):
     has_rotation_axis = False
@@ -118,6 +119,7 @@ class GalaxyShapeBase(Shape):
     def __init__(self, radius=1.0, scale=None):
         Shape.__init__(self)
         self.radius = radius
+        self.seed = random()
         if scale is None:
             self.radius = radius
             self.scale = LVecBase3(self.radius, self.radius, self.radius)
@@ -150,15 +152,22 @@ class GalaxyShapeBase(Shape):
         if shape_id in GalaxyShapeBase.templates:
             template =  GalaxyShapeBase.templates[shape_id]
         else:
+            seed(self.seed)
             self.gnode = GeomNode('galaxy')
             self.geom = self.makeGeom(*self.create_points())
             self.gnode.addGeom(self.geom)
             template = NodePath(self.gnode)
-            GalaxyShapeBase.templates[shape_id] = template
+            # Disable caching
+            #GalaxyShapeBase.templates[shape_id] = template
         self.instance = NodePath('galaxy')
         template.instanceTo(self.instance)
         self.apply()
+        self.update_geom(*self.create_points())
         return self.instance
+
+    def update_shape(self):
+        seed(self.seed)
+        self.update_geom(*self.create_points())
 
     def makeGeom(self, points, colors, sizes):
         #format = GeomVertexFormat.getV3c4()
@@ -182,11 +191,23 @@ class GalaxyShapeBase(Shape):
             self.colorwriter.addData4f(*color)
             self.sizewriter.addData1f(size)
             geompoints.addVertex(index)
-            geompoints.closePrimitive()
+            #geompoints.closePrimitive()
             index += 1
         geom = Geom(vdata)
         geom.addPrimitive(geompoints)
         return geom
+
+    def update_geom(self, points, colors, sizes):
+        geom = self.instance.children[0].node().modify_geom(0)
+        vdata = geom.modify_vertex_data()
+        vdata.unclean_set_num_rows(len(points))
+        vwriter = GeomVertexRewriter(vdata, InternalName.make('vertex'))
+        colorwriter = GeomVertexWriter(vdata, InternalName.make('color'))
+        sizewriter = GeomVertexWriter(vdata, InternalName.make('size'))
+        for (point, color, size) in zip(points, colors, sizes):
+            vwriter.addData3f(*point)
+            colorwriter.addData4f(*color)
+            sizewriter.addData1f(size)
 
 class EllipticalGalaxyShape(GalaxyShapeBase):
     def __init__(self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400):
@@ -196,6 +217,7 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
         self.spread = spread
         self.zspread = zspread
         self.sprite_size = sprite_size
+        self.color = self.yellow_color
 
     def shape_id(self):
         return 'elliptical-%g' % self.factor
@@ -207,7 +229,7 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
         nb_points = self.nb_points
         sprite_size = self.sprite_size
         half_sprite_size = self.sprite_size / 2.0
-        color = self.yellow_color
+        color = self.color
         spread = self.spread
         spreadf = self.spread * self.factor
         zspreadf = self.zspread * self.factor
@@ -221,6 +243,14 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
             sizes.append(size)
         return (points, colors, sizes)
 
+    def get_user_parameters(self):
+        return [
+                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+                AutoUserParameter("Color", "color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
+                ]
+
 class IrregularGalaxyShape(GalaxyShapeBase):
     noise = None
     def __init__(self, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400):
@@ -229,6 +259,8 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         self.spread = spread
         self.zspread = zspread
         self.sprite_size = sprite_size
+        self.color1 = self.yellow_color
+        self.color2 = self.blue_color
 
     def shape_id(self):
         return 'irregular'
@@ -241,7 +273,7 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         sizes = []
         nb_points = self.nb_points
         sprite_size = self.sprite_size
-        color = [self.yellow_color, self.blue_color]
+        color = [self.color1, self.color2]
         spread = self.spread
         zspread = self.zspread
         count = 0
@@ -256,18 +288,30 @@ class IrregularGalaxyShape(GalaxyShapeBase):
                 count += 1
         return (points, colors, sizes)
 
+    def get_user_parameters(self):
+        return [
+                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+                AutoUserParameter("Color 1", "color1", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                AutoUserParameter("Color 2", "color2", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
+                ]
+
 class SpiralGalaxyShapeBase(GalaxyShapeBase):
-    def __init__(self, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.01, sprite_size=400):
+    def __init__(self, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.01, sprite_size=400, max_angle=2 * pi):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.nb_points_bulge = nb_points_bulge
         self.nb_points_arms = nb_points_arms
         self.spread = spread
         self.zspread = zspread
         self.sprite_size = sprite_size
+        self.max_angle = 2 * pi
+        self.bulge_color = self.yellow_color
+        self.arms_color = self.blue_color
 
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        color = self.yellow_color
+        color = self.bulge_color
         for i in range(count):
             x = gauss(0.0, spread)
             y = gauss(0.0, spread)
@@ -280,12 +324,12 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
     def create_spiral(self, count,radius, spread, zspread, points, colors, sizes):
         func = self.shape_func
         sprite_size = self.sprite_size
-        color = self.blue_color
+        color = self.arms_color
         distance = 0
         for i in (-1.0, 1.0):
             for c in range(count):
                 t = sqrt(random())
-                angle = t * 2.0 * pi
+                angle = t * self.max_angle
                 shape = func(angle)
                 x = i * cos(angle) * shape + gauss(0.0, spread)
                 y = i * sin(angle) * shape + gauss(0.0, spread)
@@ -311,9 +355,18 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
         self.nb_points = nb_points_bulge + nb_points_arms
         return (points, colors, sizes)
 
+    def get_user_parameters(self):
+        return [
+                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+                AutoUserParameter("Bulge color", "bulge_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                AutoUserParameter("Arms color", "arms_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
+                ]
+
 class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size)
+    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
         self.N = N
         self.B = B
 
@@ -326,9 +379,16 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
     def shape_func(self, angle):
         return 1.0 / log(self.B * max(0.00001, tan(angle / (2 * self.N))))
 
+    def get_user_parameters(self):
+        params = SpiralGalaxyShapeBase.get_user_parameters(self)
+        params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
+                   AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
+                   ]
+        return params
+
 class FullRingGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size)
+    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
         self.N = N
         self.B = B
 
@@ -341,11 +401,30 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
     def shape_func(self, angle):
         return 1.0 / log(self.B * max(0.00001, tanh(angle / (2 * self.N))))
 
+    def get_user_parameters(self):
+        params = SpiralGalaxyShapeBase.get_user_parameters(self)
+        params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
+                   AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
+                   ]
+        return params
+
 class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     bar_radius = 0.5
-    def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size)
+    def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
         self.pitch = pitch
+
+    def set_pitch(self, pitch):
+        self.pitch = pitch / 180 * pi
+
+    def get_pitch(self):
+        return self.pitch * 180 / pi
+
+    def set_max_angle(self, max_angle):
+        self.max_angle = max_angle / 180 * pi
+
+    def get_max_angle(self):
+        return self.max_angle * 180 / pi
 
     def shape_id(self):
         return 'spiral-%g' % self.pitch
@@ -357,6 +436,13 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
         pitch = self.pitch
         return self.bar_radius / (1 - pitch * tan(pitch) * log(max(0.00001, (angle / pitch))))
 
+    def get_user_parameters(self):
+        params = SpiralGalaxyShapeBase.get_user_parameters(self)
+        params += [UserParameter("Pitch", self.set_pitch, self.get_pitch, UserParameter.TYPE_FLOAT, [20, 35]),
+                   UserParameter("Winding", self.set_max_angle, self.get_max_angle, UserParameter.TYPE_FLOAT, [0, 720]),
+                   ]
+        return params
+
 class LenticularGalaxyShape(SpiralGalaxyShapeBase):
     bulge_radius = 0.2
 
@@ -365,9 +451,6 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
 
     def bulge_size(self):
         return self.bulge_radius
-
-    def spread(self):
-        return 0.1
 
     def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size

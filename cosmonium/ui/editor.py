@@ -204,7 +204,6 @@ class ParamEditor():
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
 
     def do_update(self, value, slider, param, component=None):
-        print("Update", param.name, value)
         value = param.convert_to_type(value)
         if component is None:
             param.set_param(value)
