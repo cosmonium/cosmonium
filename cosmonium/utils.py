@@ -76,7 +76,9 @@ class TransparencyBlend:
     def apply(blend, instance):
         blendAttrib = None
         translucid = False
-        if blend == TransparencyBlend.TB_Alpha:
+        if blend == TransparencyBlend.TB_None:
+            pass
+        elif blend == TransparencyBlend.TB_Alpha:
             blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
                                                 ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one_minus_incoming_alpha,
                                                 ColorBlendAttrib.M_add,
@@ -93,20 +95,22 @@ class TransparencyBlend:
                                                 ColorBlendAttrib.O_one, ColorBlendAttrib.O_one,
                                                 ColorBlendAttrib.M_add,
                                                 ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
-            translucid = True
+            translucid = False
         elif blend == TransparencyBlend.TB_AlphaAdditive:
             blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
                                                 ColorBlendAttrib.O_one, ColorBlendAttrib.O_incoming_alpha,
                                                 ColorBlendAttrib.M_add,
                                                 ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
             translucid = True
-        elif blend == TransparencyBlend.TB_Saturare:
+        elif blend == TransparencyBlend.TB_Saturate:
             blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
                                                 ColorBlendAttrib.O_one_minus_fbuffer_color, ColorBlendAttrib.O_one,
                                                 ColorBlendAttrib.M_add,
                                                 ColorBlendAttrib.O_one, ColorBlendAttrib.O_one)
             translucid = True
+        else:
+            print("Unknown blend mode", blend)
         if blendAttrib is not None:
             instance.setAttrib(blendAttrib)
         if translucid:
-            instance.setTransparency(TransparencyAttrib.MAlpha)
+            instance.set_bin('transparent', 0)
