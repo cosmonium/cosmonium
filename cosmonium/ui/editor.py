@@ -33,11 +33,11 @@ from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 
 from ..parameters import UserParameter
+from ..utils import isclose
 from .. import settings
 
 from .widgets import DirectWidgetContainer
 from .window import Window
-
 
 class ParamEditor():
     def __init__(self, font_family, font_size = 14, owner=None):
@@ -145,13 +145,13 @@ class ParamEditor():
             if param.value_range is not None:
                 widget = self.create_slider_entry(frame, param)
             else:
-                widget = self.create_spin_entry(frame, param, int)
+                widget = self.create_spin_entry(frame, param)
             hsizer.add(widget, expand=True, borders=self.borders)
         elif param.param_type == UserParameter.TYPE_FLOAT:
             if param.value_range is not None:
                 widget = self.create_slider_entry(frame, param)
             else:
-                widget = self.create_spin_entry(frame, param, float)
+                widget = self.create_spin_entry(frame, param)
             hsizer.add(widget, expand=True, borders=self.borders)
         elif param.param_type == UserParameter.TYPE_VEC:
             vsizer = Sizer("vertical")
@@ -210,13 +210,13 @@ class ParamEditor():
             param.set_param(value)
             if slider is not None:
                 new_value = param.get_param(scale=True)
-                if slider['value'] != new_value:
+                if not isclose(slider['value'], new_value, rel_tol=1e-6):
                     slider['value'] = new_value
         else:
             param.set_param_component(component, value)
             if slider is not None:
                 new_value = param.get_param_component(component, scale=True)
-                if slider['value'] != new_value:
+                if not isclose(slider['value'], new_value, rel_tol=1e-6):
                     slider['value'] = new_value
         self.body.update_user_parameters()
 
@@ -227,13 +227,13 @@ class ParamEditor():
             param.set_param(value, scale=True)
             if entry is not None:
                 new_value = param.get_param()
-                if new_value != entry.getValue():
+                if not isclose(entry.getValue(), new_value, rel_tol=1e-6):
                     entry.setValue(new_value)
         else:
             param.set_param_component(component, value, scale=True)
             if entry is not None:
                 new_value = param.get_param_component(component)
-                if new_value != entry.getValue():
+                if not isclose(entry.getValue(), new_value, rel_tol=1e-6):
                     entry.setValue(new_value)
         self.body.update_user_parameters()
 

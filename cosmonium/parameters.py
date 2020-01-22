@@ -1,15 +1,15 @@
 import sys
 from math import log, exp
+
 from panda3d.core import LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d
 if sys.version_info[0] >= 3:
     from collections.abc import Iterable
 else:
     from collections import Iterable
 
-vector_types = (Iterable, LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d)
+from .utils import isclose
 
-def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+vector_types = (Iterable, LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d)
 
 class ParametersGroup(object):
     def __init__(self, name=None, *parameters):
