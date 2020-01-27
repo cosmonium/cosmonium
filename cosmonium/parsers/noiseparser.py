@@ -108,7 +108,7 @@ from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNois
 from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
 from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
-from ..procedural.shadernoise import QuilezPerlin3D
+from ..procedural.shadernoise import QuilezPerlin3D, QuilezGradientNoise3D
 from ..procedural.shadernoise import SinCosNoise
 
 def create_add_noise(parser, data, length_scale):
@@ -224,6 +224,12 @@ def create_iq_perlin_noise(parser, data, length_scale):
         data = {}
     name = data.get('name', None)
     return QuilezPerlin3D(name)
+
+def create_iq_gradient_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return QuilezGradientNoise3D(name)
 
 def create_sincos_noise(parser, data, length_scale):
     if not isinstance(data, dict):
@@ -348,4 +354,5 @@ NoiseYamlParser.register_noise_parser('stegu:perlin', create_stegu_perlin_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellular', create_stegu_cellular_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellulardiff', create_stegu_cellulardiff_noise)
 NoiseYamlParser.register_noise_parser('iq:perlin', create_iq_perlin_noise)
+NoiseYamlParser.register_noise_parser('iq:gradient', create_iq_gradient_noise)
 NoiseYamlParser.register_noise_parser('sincos', create_sincos_noise)

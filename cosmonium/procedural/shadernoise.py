@@ -227,13 +227,26 @@ class SteGuCellularDiff3D(SteGuCellular3D):
 
 class QuilezPerlin3D(NoiseSource):
     def __init__(self, name=None):
+        NoiseSource.__init__(self, name, 'quilez-perlin3d')
+
+    def get_id(self):
+        return 'quilez-perlin3d'
+
+    def noise_extra(self, program, code):
+        program.include(code, 'quilez-noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
+
+    def noise_value(self, code, value, point):
+        code.append('        %s  = noise(%s);' % (value, point))
+
+class QuilezGradientNoise3D(NoiseSource):
+    def __init__(self, name=None):
         NoiseSource.__init__(self, name, 'quilez-gradientnoise3d')
 
     def get_id(self):
         return 'quilez-gradientnoise3d'
 
     def noise_extra(self, program, code):
-        program.include(code, 'quilez-noise', defaultDirContext.find_shader("quilez/GradientNoise3D.glsl"))
+        program.include(code, 'quilez-noise', defaultDirContext.find_shader("quilez/GradientNoise.glsl"))
 
     def noise_value(self, code, value, point):
         code.append('        %s  = noise(%s);' % (value, point))
