@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Shader, ShaderAttrib, LVector3d, LVector3
+from panda3d.core import Shader, ShaderAttrib, LVector3d, DepthTestAttrib
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
@@ -426,6 +426,7 @@ class VertexShader(ShaderProgram):
                  data_source,
                  appearance,
                  vertex_control,
+                 point_control,
                  instance_control,
                  shadows,
                  lighting_model,
@@ -436,6 +437,7 @@ class VertexShader(ShaderProgram):
         self.data_source = data_source
         self.appearance = appearance
         self.vertex_control = vertex_control
+        self.point_control = point_control
         self.instance_control = instance_control
         self.shadows = shadows
         self.lighting_model = lighting_model
@@ -451,11 +453,8 @@ class VertexShader(ShaderProgram):
             code.append("uniform mat4 p3d_ModelMatrixInverseTranspose;")
         code.append("uniform mat4 p3d_ViewMatrix;")
         code.append("uniform mat4 p3d_ModelViewMatrix;")
-        if self.config.point_shader:
-            code.append("uniform float near_plane_height;")
-            if self.config.scale_point_static:
-                code.append("uniform float size_scale;")
         self.vertex_control.vertex_uniforms(code)
+        self.point_control.vertex_uniforms(code)
         self.instance_control.vertex_uniforms(code)
         for shadow in self.shadows:
             shadow.vertex_uniforms(code)
@@ -470,6 +469,7 @@ class VertexShader(ShaderProgram):
             shadow.vertex_inputs(code)
         self.lighting_model.vertex_inputs(code)
         self.scattering.vertex_inputs(code)
+        self.point_control.vertex_inputs(code)
         self.instance_control.vertex_inputs(code)
         self.data_source.vertex_inputs(code)
         self.appearance.vertex_inputs(code)
@@ -495,6 +495,7 @@ class VertexShader(ShaderProgram):
         if not self.config.use_model_texcoord:
             code.append("out vec4 texcoord0p;")
         self.vertex_control.vertex_outputs(code)
+        self.point_control.vertex_outputs(code)
         for shadow in self.shadows:
             shadow.vertex_outputs(code)
         self.lighting_model.vertex_outputs(code)
@@ -507,6 +508,7 @@ class VertexShader(ShaderProgram):
         self.data_source.vertex_extra(code)
         self.vertex_source.vertex_extra(code)
         self.vertex_control.vertex_extra(code)
+        self.point_control.vertex_extra(code)
 
     def create_body(self, code):
         code.append("vec4 model_vertex4;")
@@ -583,18 +585,9 @@ class VertexShader(ShaderProgram):
                 code.append("world_vertex = world_vertex4.xyz / world_vertex4.w;")
             if self.config.eye_vertex:
                 code.append("eye_vertex = eye_vertex4.xyz / eye_vertex4.w;")
-        if self.config.point_shader:
-            if self.config.scale_point:
-                code.append("gl_PointSize = (size * near_plane_height) / gl_Position.w;")
-            elif self.config.scale_point_static:
-                code.append("gl_PointSize = size * size_scale;")
-            else:
-                code.append("gl_PointSize = size;")
-            #TODO: crude workaround to avoid sprite overdrawn
-            if settings.max_sprite_size != 0:
-                code.append("if (gl_PointSize > %d) gl_PointSize = 0;" % settings.max_sprite_size)
         for shadow in self.shadows:
             shadow.vertex_shader(code)
+        self.point_control.vertex_shader(code)
         self.lighting_model.vertex_shader(code)
         self.scattering.vertex_shader(code)
         self.data_source.vertex_shader(code)
@@ -636,6 +629,7 @@ class FragmentShader(ShaderProgram):
                  shadows,
                  lighting_model,
                  scattering,
+                 point_control,
                  after_effects):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -644,6 +638,7 @@ class FragmentShader(ShaderProgram):
         self.shadows = shadows
         self.lighting_model = lighting_model
         self.scattering = scattering
+        self.point_control = point_control
         self.after_effects = after_effects
 
     def create_uniforms(self, code):
@@ -655,6 +650,7 @@ class FragmentShader(ShaderProgram):
             shadow.fragment_uniforms(code)
         self.lighting_model.fragment_uniforms(code)
         self.scattering.fragment_uniforms(code)
+        self.point_control.fragment_uniforms(code)
         for effect in self.after_effects:
             effect.fragment_uniforms(code)
 
@@ -674,9 +670,8 @@ class FragmentShader(ShaderProgram):
             code.append("in vec3 tangent;")
         if self.config.relative_vector_to_obs:
             code.append("in vec3 relative_vector_to_obs;")
-        if not self.config.point_shader:
-            for i in range(self.config.nb_textures_coord):
-                code.append("in vec4 texcoord%i;" % i)
+        for i in range(self.config.nb_textures_coord):
+            code.append("in vec4 texcoord%i;" % i)
         if not self.config.use_model_texcoord:
             code.append("in vec4 texcoord0p;")
         self.appearance.fragment_inputs(code)
@@ -685,6 +680,7 @@ class FragmentShader(ShaderProgram):
             shadow.fragment_inputs(code)
         self.lighting_model.fragment_inputs(code)
         self.scattering.fragment_inputs(code)
+        self.point_control.fragment_inputs(code)
 
     def create_outputs(self, code):
         if self.version >= 130:
@@ -698,15 +694,14 @@ class FragmentShader(ShaderProgram):
             shadow.fragment_extra(code)
         self.lighting_model.fragment_extra(code)
         self.scattering.fragment_extra(code)
+        self.point_control.fragment_extra(code)
         for effect in self.after_effects:
             effect.fragment_extra(code)
 
     def create_body(self, code):
         if self.version < 130:
             code.append("vec4 frag_color;")
-        if self.config.point_shader:
-            for i in range(self.config.nb_textures_coord):
-                code.append("vec4 texcoord%i = vec4(gl_PointCoord, 0, 0);" % i)
+        self.point_control.fragment_shader_decl(code)
         self.appearance.fragment_shader_decl(code)
         self.data_source.fragment_shader_decl(code)
         if self.config.relative_vector_to_obs:
@@ -741,6 +736,7 @@ class FragmentShader(ShaderProgram):
             shadow.fragment_shader(code)
         self.lighting_model.fragment_shader(code)
         self.scattering.fragment_shader(code)
+        self.point_control.fragment_shader(code)
         code.append("vec4 total_color = total_diffuse_color + total_emission_color;")
         for effect in self.after_effects:
             effect.fragment_shader(code)
@@ -756,11 +752,11 @@ class BasicShader(StructuredShader):
                  scattering=None,
                  tessellation_control=None,
                  vertex_control=None,
+                 point_control=None,
                  instance_control=None,
                  data_source=None,
                  after_effects=None,
                  use_model_texcoord=True,
-                 point_shader=False,
                  scale_point=False,
                  scale_point_static=False):
         StructuredShader.__init__(self)
@@ -776,6 +772,8 @@ class BasicShader(StructuredShader):
         lighting_model.set_shader(self)
         if vertex_control is None:
             vertex_control = DefaultVertexControl()
+        if point_control is None:
+            point_control = NoPointControl()
         if instance_control is None:
             instance_control = NoInstanceControl()
         if tessellation_control is not None:
@@ -798,6 +796,8 @@ class BasicShader(StructuredShader):
         self.scattering.shader = self
         self.vertex_control = vertex_control
         self.vertex_control.shader = self
+        self.point_control = point_control
+        self.point_control.shader = self
         self.instance_control = instance_control
         self.instance_control.shader = self
         self.data_source = data_source
@@ -816,6 +816,7 @@ class BasicShader(StructuredShader):
                                                         data_source=self.data_source,
                                                         appearance=self.appearance,
                                                         vertex_control=self.vertex_control,
+                                                        point_control=self.point_control,
                                                         instance_control=self.instance_control,
                                                         shadows=self.shadows,
                                                         lighting_model=self.lighting_model,
@@ -829,6 +830,7 @@ class BasicShader(StructuredShader):
                                               data_source=self.data_source,
                                               appearance=self.appearance,
                                               vertex_control=self.vertex_control,
+                                              point_control=self.point_control,
                                               instance_control=self.instance_control,
                                               shadows=self.shadows,
                                               lighting_model=self.lighting_model,
@@ -839,6 +841,7 @@ class BasicShader(StructuredShader):
                                               shadows=self.shadows,
                                               lighting_model=self.lighting_model,
                                               scattering=self.scattering,
+                                              point_control=self.point_control,
                                               after_effects=self.after_effects)
 
         self.nb_textures_coord = 0
@@ -856,11 +859,6 @@ class BasicShader(StructuredShader):
         self.use_tangent = False
         self.fragment_uses_tangent = False
         self.use_model_texcoord = use_model_texcoord
-        #TODO: Should be moved to a Point Shader
-        self.point_shader = point_shader
-        self.scale_point = scale_point
-        self.scale_point_static = scale_point_static
-        self.size_scale = 1.0
 
     def set_instance_control(self, instance_control):
         self.instance_control = instance_control
@@ -940,6 +938,13 @@ class BasicShader(StructuredShader):
             if self.vertex_control.world_vertex:
                 self.world_vertex = True
 
+        if self.point_control.use_vertex:
+            self.use_vertex = True
+            if self.point_control.model_vertex:
+                self.model_vertex = True
+            if self.point_control.world_vertex:
+                self.world_vertex = True
+
         if self.instance_control.use_vertex:
             self.use_vertex = True
             if self.instance_control.model_vertex:
@@ -996,19 +1001,8 @@ class BasicShader(StructuredShader):
                 if shadow.world_normal:
                     self.world_normal = True
 
-        if self.point_shader:
-            pass
-            #self.use_vertex = True
-            #self.eye_vertex = True
-
     def get_shader_id(self):
-        if self.point_shader:
-            name = "point"
-        else:
-            name = "basic"
-        if self.point_shader:
-            if self.scale_point:
-                name += "-s"
+        name = "basic"
         ap_id = self.appearance.get_id()
         if ap_id:
             name += "-" + ap_id
@@ -1022,9 +1016,12 @@ class BasicShader(StructuredShader):
         sc_id = self.scattering.get_id()
         if sc_id:
             name += "-" + sc_id
-        gc_id = self.vertex_control.get_id()
-        if gc_id:
-            name += "-" + gc_id
+        vc_id = self.vertex_control.get_id()
+        if vc_id:
+            name += "-" + vc_id
+        pc_id = self.point_control.get_id()
+        if pc_id:
+            name += "-" + pc_id
         ic_id = self.instance_control.get_id()
         if ic_id:
             name += "-" + ic_id
@@ -1053,19 +1050,13 @@ class BasicShader(StructuredShader):
         self.lighting_model.update_shader_shape_static(shape, appearance)
         self.scattering.update_shader_shape_static(shape, appearance)
         self.vertex_control.update_shader_shape_static(shape, appearance)
+        self.point_control.update_shader_shape_static(shape, appearance)
         self.instance_control.update_shader_shape_static(shape, appearance)
         self.data_source.update_shader_shape_static(shape, appearance)
         for effect in self.after_effects:
             effect.update_shader_shape_static(shape, appearance)
 #         if self.has_bump_texture:
 #             shape.instance.setShaderInput("bump_height", appearance.bump_height / settings.scale)
-        if self.point_shader:
-            attrib = shape.instance.getAttrib(ShaderAttrib)
-            attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
-            shape.instance.setAttrib(attrib2)
-
-    def set_size_scale(self, size_scale):
-        self.size_scale = size_scale
 
     def update_shader_shape(self, shape, appearance):
         self.appearance.update_shader_shape(shape, appearance)
@@ -1075,11 +1066,10 @@ class BasicShader(StructuredShader):
         self.lighting_model.update_shader_shape(shape, appearance)
         self.scattering.update_shader_shape(shape, appearance)
         self.vertex_control.update_shader_shape(shape, appearance)
+        self.point_control.update_shader_shape(shape, appearance)
         self.data_source.update_shader_shape(shape, appearance)
         for effect in self.after_effects:
             effect.update_shader_shape(shape, appearance)
-        if self.point_shader and self.scale_point_static:
-            shape.instance.setShaderInput("size_scale", self.size_scale)
 
     def update_shader_patch_static(self, shape, patch, appearance):
         self.appearance.update_shader_patch_static(shape, patch, appearance)
@@ -1109,6 +1099,7 @@ class BasicShader(StructuredShader):
         group.add_parameter(self.appearance.get_user_parameters())
         group.add_parameter(self.scattering.get_user_parameters())
         group.add_parameter(self.vertex_control.get_user_parameters())
+        group.add_parameter(self.point_control.get_user_parameters())
         group.add_parameter(self.instance_control.get_user_parameters())
         group.add_parameter(self.data_source.get_user_parameters())
         for after_effect in self.after_effects:
@@ -1421,8 +1412,6 @@ class VertexInput(ShaderComponent):
 class DirectVertexInput(VertexInput):
     def vertex_inputs(self, code):
         code.append("in vec4 p3d_Vertex;")
-        if self.config.point_shader:
-            code.append("in float size;")
         if self.config.use_normal or self.config.vertex_control.use_normal:
             code.append("in vec3 p3d_Normal;")
         if self.config.use_tangent:
@@ -1640,6 +1629,50 @@ class DoubleSquaredDistanceCubeVertexControl(VertexControl):
 
     def update_shader_patch_static(self, shape, patch, appearance):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
+
+class PointControl(ShaderComponent):
+    def fragment_shader_decl(self, code):
+        for i in range(self.shader.nb_textures_coord):
+            code.append("vec4 texcoord%i = vec4(gl_PointCoord, 0, 0);" % i)
+
+    def update_shader_shape_static(self, shape, appearance):
+        #TODO: This should definitively not be here
+        attrib = shape.instance.getAttrib(ShaderAttrib)
+        attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
+        shape.instance.setAttrib(attrib2)
+        shape.instance.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
+
+class NoPointControl(ShaderComponent):
+    pass
+
+class StaticSizePointControl(PointControl):
+    def get_id(self):
+        return "pt-sta"
+
+    def vertex_uniforms(self, code):
+        code.append("uniform float size_scale;")
+
+    def vertex_inputs(self, code):
+        code.append("in float size;")
+
+    def vertex_shader(self, code):
+        code.append("gl_PointSize = size * size_scale;")
+
+    def update_shader_shape(self, shape, appearance):
+        shape.instance.setShaderInput("size_scale", shape.size_scale)
+
+class DistanceSizePointControl(PointControl):
+    def get_id(self):
+        return "pt-dist"
+
+    def vertex_uniforms(self, code):
+        code.append("uniform float near_plane_height;")
+
+    def vertex_inputs(self, code):
+        code.append("in float size;")
+
+    def vertex_shader(self, code):
+        code.append("gl_PointSize = (size * near_plane_height) / gl_Position.w;")
 
 class InstanceControl(ShaderComponent):
     def __init__(self, max_instances):

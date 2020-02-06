@@ -36,7 +36,7 @@ class PointsSet(VisibleObject):
         self.use_sizes = use_sizes
         self.background = background
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), point_shader=False)
+            shader = BasicShader(lighting_model=FlatLightingModel())
         self.shader = shader
 
         self.reset()

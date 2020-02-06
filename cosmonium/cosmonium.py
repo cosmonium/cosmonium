@@ -242,6 +242,7 @@ class CosmoniumBase(ShowBase):
         if self.observer is not None:
             self.observer.set_film_size(width, height)
             self.render.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
+            self.render.setShaderInput("pixel_size", self.observer.pixel_size)
         if self.gui is not None:
             self.gui.update_size(width, height)
 

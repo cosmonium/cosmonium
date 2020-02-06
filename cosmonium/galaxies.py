@@ -31,6 +31,7 @@ from .shapes import Shape
 from .surfaces import FlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
+from .shaders import PointControl
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
 
@@ -59,7 +60,7 @@ class Galaxy(DeepSpaceObject):
         self.shape_type = shape_type
         shader = None
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), point_shader=True, scale_point_static=True)
+            shader = BasicShader(lighting_model=FlatLightingModel(), point_control=GalaxyPointControl())
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = FlatSurface(shape=shape, appearance=appearance, shader=shader)
@@ -96,7 +97,6 @@ class GalaxyAppearance(AppearanceBase):
             if size > 1.0:
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
-            shader.set_size_scale(size)
 
     def apply(self, shape, owner):
         if self.texture is None:
@@ -465,3 +465,41 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             colors.append(color)
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
+
+class GalaxyPointControl(PointControl):
+    use_vertex = True
+    world_vertex = True
+    def get_id(self):
+        return "pt-galaxy"
+
+    def vertex_uniforms(self, code):
+        code.append("uniform float max_sprite_size;")
+        code.append("uniform float scale_factor;")
+        code.append("uniform float apparent_radius;")
+        code.append("uniform float pixel_size;")
+
+    def vertex_inputs(self, code):
+        code.append("in float size;")
+
+    def vertex_outputs(self, code):
+        code.append("out float attenuation;")
+
+    def fragment_inputs(self, code):
+        code.append("in float attenuation;")
+
+    def vertex_shader(self, code):
+        code.append("float distance = length(world_vertex) / scale_factor;")
+        code.append("gl_PointSize = size / 1000. * apparent_radius / (distance * pixel_size);")
+        code.append("attenuation = (max_sprite_size - gl_PointSize) / max_sprite_size;")
+        code.append("if (gl_PointSize > max_sprite_size) gl_PointSize = 0;")
+
+    def fragment_shader(self, code):
+        code.append("total_emission_color *= attenuation;")
+
+    def update_shader_shape_static(self, shape, appearance):
+        PointControl.update_shader_shape_static(self, shape, appearance)
+        shape.instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
+        shape.instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
+
+    def update_shader_shape(self, shape, appearance):
+        shape.instance.setShaderInput("scale_factor", shape.owner.scene_scale_factor)
