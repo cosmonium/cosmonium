@@ -41,7 +41,7 @@ from .utils import mag_to_scale_nolimit
 from .astro import units
 from . import settings
 
-from math import cos, sin, pi, log, tan, tanh, sqrt
+from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from random import random, gauss, choice, seed
 from cosmonium.utils import srgb_to_linear
 
@@ -368,16 +368,51 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 sizes.append(size)
         self.size = distance
 
+    def create_spiral_distance(self, count, radius, spread, zspread, points, colors, sizes):
+        sprite_size = self.sprite_size
+        arm_color = self.arms_color
+        disk_color = self.bulge_color
+        bulge_size = self.bulge_size()
+        sersic_inv = 1. / self.sersic_disk
+        distance = 0
+        for c in range(count * 2):
+            r = sqrt(random() + bulge_size*bulge_size)
+            theta = random() * 2 * pi
+            x = r * cos(theta)
+            y = r * sin(theta)
+            z = gauss(0.0, zspread)
+            coef = 0.0
+            for c in (0, 1.):
+                arm_angle = self.inv_shape_func(r) * max(self.max_angle, 0.001) / (2 * pi)
+                mtheta = c * pi + theta
+                delta = abs(mtheta - arm_angle)
+                for i in range(int(self.max_angle / (2 * pi)) + 1):
+                    delta = min(delta, abs(mtheta - arm_angle - (i + 1) * 2 * pi), abs(mtheta - arm_angle + (i  + 1) * 2 * pi))
+                coef = max(pow(max(1 - delta / pi, 0.0), self.arm_spread), coef)
+            point = LPoint3d(x * radius, y * radius, z * radius)
+            points.append(point)
+            distance = max(distance, point.length())
+            color = disk_color * (1 - coef) + arm_color * coef
+            color = color * (1 - 0.9 * pow(r, sersic_inv))
+            color[3] = 1.0
+            colors.append(color)
+            size = sprite_size + gauss(0, sprite_size)
+            sizes.append(size)
+        self.size = distance
+
     def create_points(self, radius=1.0):
         points = []
         colors = []
         sizes = []
         nb_points_bulge = self.nb_points_bulge
         nb_points_arms = self.nb_points_arms
-        spread = self.bulge_size()
+        spread = self.bulge_size() / 2
         zspread = spread / 2.0
         self.create_bulge(nb_points_bulge, radius, spread, zspread, points, colors, sizes)
-        self.create_spiral(nb_points_arms, radius, self.spread, self.zspread, points, colors, sizes)
+        if True:
+            self.create_spiral_distance(nb_points_arms, radius, self.spread, self.zspread, points, colors, sizes)
+        else:
+            self.create_spiral(nb_points_arms, radius, self.spread, self.zspread, points, colors, sizes)
         self.nb_points = nb_points_bulge + nb_points_arms
         return (points, colors, sizes)
 
@@ -407,6 +442,9 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
     def shape_func(self, angle):
         return 1.0 / log(self.B * max(0.00001, tan(angle / (2 * self.N))))
 
+    def inv_shape_func(self, distance):
+        return atan(exp(1.0 / distance) / self.B) * 2 * self.N
+
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
         params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
@@ -429,6 +467,9 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
     def shape_func(self, angle):
         return 1.0 / log(self.B * max(0.00001, tanh(angle / (2 * self.N))))
 
+    def inv_shape_func(self, distance):
+        return atanh(exp(1.0 / distance) / self.B) * 2 * self.N
+
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
         params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
@@ -441,6 +482,7 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
         SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
         self.pitch = pitch
+        self.arm_spread = 5
 
     def set_pitch(self, pitch):
         self.pitch = pitch / 180 * pi
@@ -464,10 +506,15 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
         pitch = self.pitch
         return self.bar_radius / (1 - pitch * tan(pitch) * log(max(0.00001, (angle / pitch))))
 
+    def inv_shape_func(self, distance):
+        pitch = self.pitch
+        return pitch * exp((1 - self.bar_radius / distance) / (pitch * tan(pitch)))
+
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
         params += [UserParameter("Pitch", self.set_pitch, self.get_pitch, UserParameter.TYPE_FLOAT, [20, 35]),
                    UserParameter("Winding", self.set_max_angle, self.get_max_angle, UserParameter.TYPE_FLOAT, [0, 720]),
+                   AutoUserParameter("Spread", 'arm_spread', self, UserParameter.TYPE_FLOAT, [0, 20]),
                    ]
         return params
 
