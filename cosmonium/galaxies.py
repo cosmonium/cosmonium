@@ -210,13 +210,14 @@ class GalaxyShapeBase(Shape):
             sizewriter.addData1f(size)
 
 class EllipticalGalaxyShape(GalaxyShapeBase):
-    def __init__(self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400):
+    def __init__(self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.factor = factor
         self.nb_points = nb_points
         self.spread = spread
         self.zspread = zspread
         self.sprite_size = sprite_size
+        self.sersic = sersic
         self.color = self.yellow_color
 
     def shape_id(self):
@@ -233,18 +234,21 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
         spread = self.spread
         spreadf = self.spread * self.factor
         zspreadf = self.zspread * self.factor
+        sersic_inv = 1. / self.sersic
         for i in range(nb_points):
             x = gauss(0.0, spread)
             y = gauss(0.0, spreadf)
             z = gauss(0.0, zspreadf)
-            points.append(LPoint3d(x * radius, y * radius, z * radius))
-            colors.append(color)
+            point = LPoint3d(x * radius, y * radius, z * radius)
+            points.append(point)
+            colors.append(color * (0.9 - pow(point.length(), sersic_inv)))
             size = sprite_size + gauss(0, half_sprite_size)
             sizes.append(size)
         return (points, colors, sizes)
 
     def get_user_parameters(self):
         return [
+                AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
                 AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
@@ -253,12 +257,13 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
 
 class IrregularGalaxyShape(GalaxyShapeBase):
     noise = None
-    def __init__(self, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400):
+    def __init__(self, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.nb_points = nb_points
         self.spread = spread
         self.zspread = zspread
         self.sprite_size = sprite_size
+        self.sersic = sersic
         self.color1 = self.yellow_color
         self.color2 = self.blue_color
 
@@ -273,16 +278,20 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         sizes = []
         nb_points = self.nb_points
         sprite_size = self.sprite_size
-        color = [self.color1, self.color2]
+        colors_list = [self.color1, self.color2]
         spread = self.spread
         zspread = self.zspread
+        sersic_inv = 1. / self.sersic
         count = 0
         while count < nb_points:
             p = LPoint3(gauss(0.0, spread), gauss(0.0, spread), gauss(0.0, zspread))
             value = self.noise(p) * 0.5 + 0.5
             if value < 0.5:
                 points.append(p * radius)
-                colors.append(choice(color))
+                color = choice(colors_list)
+                color = color * (1 - 0.9 * pow(p.length(), sersic_inv))
+                color[3] = 1.0
+                colors.append(color)
                 size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
                 count += 1
@@ -290,6 +299,7 @@ class IrregularGalaxyShape(GalaxyShapeBase):
 
     def get_user_parameters(self):
         return [
+                AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
                 AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
@@ -298,25 +308,31 @@ class IrregularGalaxyShape(GalaxyShapeBase):
                 ]
 
 class SpiralGalaxyShapeBase(GalaxyShapeBase):
-    def __init__(self, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.01, sprite_size=400, max_angle=2 * pi):
+    def __init__(self, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.01, sprite_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.nb_points_bulge = nb_points_bulge
         self.nb_points_arms = nb_points_arms
         self.spread = spread
         self.zspread = zspread
+        self.max_angle = max_angle
         self.sprite_size = sprite_size
-        self.max_angle = 2 * pi
+        self.sersic_bulge = sersic_bulge
+        self.sersic_disk = sersic_disk
         self.bulge_color = self.yellow_color
         self.arms_color = self.blue_color
 
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        color = self.bulge_color
+        bulge_color = self.bulge_color
+        sersic_inv = 1. / self.sersic_bulge
         for i in range(count):
             x = gauss(0.0, spread)
             y = gauss(0.0, spread)
             z = gauss(0.0, zspread)
-            points.append(LPoint3d(x * radius, y * radius, z * radius))
+            point = LPoint3d(x * radius, y * radius, z * radius)
+            points.append(point)
+            color = bulge_color * (1 - pow(point.length(), sersic_inv)) * 2
+            color[3] = 1.0
             colors.append(color)
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
@@ -324,7 +340,8 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
     def create_spiral(self, count,radius, spread, zspread, points, colors, sizes):
         func = self.shape_func
         sprite_size = self.sprite_size
-        color = self.arms_color
+        arm_color = self.arms_color
+        sersic_inv = 1. / self.sersic_disk
         distance = 0
         for i in (-1.0, 1.0):
             for c in range(count):
@@ -337,6 +354,8 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 point = LPoint3d(x * radius, y * radius, z * radius)
                 points.append(point)
                 distance = max(distance, point.length())
+                color = arm_color * (1 - 0.9 * pow(distance, sersic_inv))
+                color[3] = 1.0
                 colors.append(color)
                 size = sprite_size + gauss(0, sprite_size)
                 sizes.append(size)
@@ -357,6 +376,8 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
 
     def get_user_parameters(self):
         return [
+                AutoUserParameter("Bulge sersic index", "sersic_bulge", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
+                AutoUserParameter("Sersic index", "sersic_disk", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
                 AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
                 AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
@@ -365,8 +386,8 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
                 ]
 
 class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
+    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
         self.N = N
         self.B = B
 
@@ -387,8 +408,8 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
         return params
 
 class FullRingGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
+    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
         self.N = N
         self.B = B
 
@@ -410,8 +431,8 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
 
 class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     bar_radius = 0.5
-    def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle)
+    def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
+        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
         self.pitch = pitch
 
     def set_pitch(self, pitch):
@@ -454,14 +475,18 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
 
     def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
-        color = self.yellow_color
+        disk_color = self.yellow_color
+        sersic_inv = 1. / self.sersic_disk
         for r in range(count * 2):
             distance = self.bulge_radius + abs(gauss(0, (1 - self.bulge_radius)))
             angle = random() * 2.0 * pi
             x = distance * cos(angle) + gauss(0.0, spread)
             y = distance * sin(angle) + gauss(0.0, spread)
             z = gauss(0.0, zspread)
-            points.append(LPoint3d(x * radius, y * radius, z * radius))
+            point = LPoint3d(x * radius, y * radius, z * radius)
+            points.append(point)
+            color = disk_color * (1 - 0.9 * pow(point, sersic_inv))
+            color[3] = 1.0
             colors.append(color)
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)

@@ -65,24 +65,29 @@ class GalaxyShapeYamlParser(YamlModuleParser):
             if shape == 'lenticular':
                 nb_points_bulge = data.get("nb-points-bulge", 200)
                 nb_points_arms = data.get("nb-points-arms", 1000)
+                sersic_bulge = data.get("sersic-bulge", 4.0)
+                sersic_disk = data.get("sersic", 1.0)
+                winding = data.get("winding", 360) * pi / 180
                 spread = data.get("spread", 0.4)
                 zspread = data.get("zspread", 0.1)
                 point_size = data.get("size", 200)
-                return LenticularGalaxyShape(radius, None, nb_points_bulge, nb_points_arms, spread, zspread, point_size)
+                return LenticularGalaxyShape(radius, None, nb_points_bulge, nb_points_arms, spread, zspread, point_size, winding, sersic_bulge, sersic_disk)
             elif shape == 'elliptical':
                 factor = data.get('factor', 0)
                 factor = 1.0 - factor / 10.0
                 nb_points = data.get("nb-points", 1000)
+                sersic = data.get("sersic", 4.0)
                 spread = data.get("spread", 0.4)
                 zspread = data.get("zspread", 0.2)
                 point_size = data.get("size", 200)
-                return EllipticalGalaxyShape(factor, radius, None, nb_points, spread, zspread, point_size)
+                return EllipticalGalaxyShape(factor, radius, None, nb_points, spread, zspread, point_size, sersic)
             elif shape == 'irregular':
                 nb_points = data.get("nb-points", 1000)
+                sersic = data.get("sersic", 4.0)
                 spread = data.get("spread", 0.2)
                 zspread = data.get("zspread", 0.1)
                 point_size = data.get("size", 200)
-                return IrregularGalaxyShape(radius, None, nb_points, spread, zspread, point_size)
+                return IrregularGalaxyShape(radius, None, nb_points, spread, zspread, point_size, sersic)
             elif shape == "spiral":
                 pitch = data.get('pitch')
                 if pitch is not None:
@@ -91,19 +96,22 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                     default_spread = 0.1
                 nb_points_bulge = data.get("nb-points-bulge", 400)
                 nb_points_arms = data.get("nb-points-arms", 1000)
+                sersic_bulge = data.get("sersic-bulge", 4.0)
+                sersic_disk = data.get("sersic", 1.0)
+                winding = data.get("winding", 360) * pi / 180
                 spread = data.get("spread", default_spread)
                 zspread = data.get("zspread", 0.02)
                 sprite_size = data.get("size", 200)
                 if pitch is not None:
-                    return SpiralGalaxyShape(pitch, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size)
+                    return SpiralGalaxyShape(pitch, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size, winding, sersic_bulge, sersic_disk)
                 else:
                     N = data.get("N", 1.0)
                     B = data.get("B", 1.0)
                     ring = data.get("ring", False)
                     if ring:
-                        return FullRingGalaxyShape(N, B, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size)
+                        return FullRingGalaxyShape(N, B, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size, winding, sersic_bulge, sersic_disk)
                     else:
-                        return FullSpiralGalaxyShape(N, B, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size)
+                        return FullSpiralGalaxyShape(N, B, radius, None, nb_points_bulge, nb_points_arms, spread, zspread, sprite_size, winding, sersic_bulge, sersic_disk)
             else:
                 print("Unknown shape '%s'", shape)
                 shape = None
