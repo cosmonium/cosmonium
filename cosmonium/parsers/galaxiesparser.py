@@ -35,12 +35,12 @@ from math import pi
 class GalaxyAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode_appearance(cls, data):
-        sprite = data.get('sprite', 'gaussian')
+        sprite = data.get('sprite', 'exp')
         if sprite is not None:
             if sprite == 'gaussian':
                 sprite = GaussianPointSprite()
             elif sprite == 'exp':
-                sprite = ExpPointSprite()
+                sprite = ExpPointSprite(factor=1./256)
             elif sprite == 'round':
                 sprite = RoundDiskPointSprite()
             else:

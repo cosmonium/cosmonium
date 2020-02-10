@@ -77,7 +77,7 @@ corrected_global_ambient = global_ambient
 allow_shadows = True
 shadow_size = 1024
 max_vertex_size_patch = 64
-max_sprite_size = 400
+max_sprite_size = 800
 use_patch_adaptation = True
 use_patch_skirts = True
 

@@ -85,6 +85,7 @@ class GalaxyAppearance(AppearanceBase):
         self.nb_textures = 1
         self.texture_index = 0
         self.transparency = True
+        self.transparency_blend = TransparencyBlend.TB_Additive
         self.background = True
         self.min_coef = 0.2
 
@@ -114,6 +115,11 @@ class GalaxyAppearance(AppearanceBase):
             shape.instance.setBin('background', settings.deep_space_depth)
         owner.shader.apply(shape, self)
         shape.instance_ready = True
+
+    def get_user_parameters(self):
+        return [
+                AutoUserParameter("Color scale", "color_scale", self, UserParameter.TYPE_FLOAT, [0, 255]),
+                ]
 
 class GalaxyShapeBase(Shape):
     templates = {}
