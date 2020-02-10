@@ -43,6 +43,7 @@ from . import settings
 
 from math import cos, sin, pi, log, tan, tanh, sqrt
 from random import random, gauss, choice, seed
+from cosmonium.utils import srgb_to_linear
 
 class Galaxy(DeepSpaceObject):
     has_rotation_axis = False
@@ -128,8 +129,8 @@ class GalaxyShapeBase(Shape):
             self.radius = max(scale) * radius
         self.nb_points = 1
         self.size = 1.0
-        self.yellow_color = LColor(255.0 / 255, 248.0 / 255, 231.0 / 255, 1.0)
-        self.blue_color = LColor(102.0 / 255, 153.0 / 255, 255.0 / 255, 1.0)
+        self.yellow_color = srgb_to_linear((255.0 / 255, 248.0 / 255, 231.0 / 255, 1.0))
+        self.blue_color = srgb_to_linear((102.0 / 255, 153.0 / 255, 255.0 / 255, 1.0))
 
     def shape_id(self):
         return ''

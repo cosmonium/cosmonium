@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LQuaterniond, LVector3d
+from panda3d.core import LQuaterniond, LVector3d, LColor
 from panda3d.core import ColorBlendAttrib, TransparencyAttrib
 
 from . import settings
@@ -114,3 +114,15 @@ class TransparencyBlend:
             instance.setAttrib(blendAttrib)
         if translucid:
             instance.set_bin('transparent', 0)
+
+def srgb_to_linear_channel(color):
+    return pow(((color + 0.055) / 1.055), 2.4) if color > 0.0404482362771082 else color / 12.92
+
+def srgb_to_linear(color):
+    if settings.srgb:
+        return LColor(srgb_to_linear_channel(color[0]),
+                      srgb_to_linear_channel(color[1]),
+                      srgb_to_linear_channel(color[2]),
+                      color[3])
+    else:
+        return color

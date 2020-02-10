@@ -41,7 +41,8 @@ from .catalogs import objectsDB
 from .parameters import ParametersGroup
 from . import settings
 from .settings import smallest_glare_mag
-from .utils import mag_to_scale
+from .utils import mag_to_scale, srgb_to_linear
+
 from math import pi, asin, atan2, sin, cos
 
 class StellarBodyLabel(ObjectLabel):
@@ -120,7 +121,7 @@ class StellarObject(LabelledObject):
         self.rotation = rotation
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
-        self.point_color = point_color
+        self.point_color = srgb_to_linear(point_color)
         self.abs_magnitude = 99.0
         #Flags
         self.visible = False
