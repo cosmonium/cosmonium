@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
+from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath, AntialiasAttrib
 
@@ -108,7 +108,7 @@ class Orbit(VisibleObject):
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
             time = epoch + step * i
-            pos = self.orbit.get_frame_position_at(time) - delta
+            pos = self.orbit.get_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):
@@ -140,6 +140,24 @@ class Orbit(VisibleObject):
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
 
+    def update_geom(self):
+        geom = self.node.modify_geom(0)
+        vdata = geom.modify_vertex_data()
+        vwriter = GeomVertexRewriter(vdata, InternalName.make('vertex'))
+        #TODO: refactor with above code !!!
+        delta = self.body.parent.get_local_position()
+        if self.orbit.is_periodic():
+            epoch = self.context.time.time_full - self.orbit.period
+            step = self.orbit.period / (self.nbOfPoints - 1)
+        else:
+            #TODO: Properly calculate orbit start and end time
+            epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
+            step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
+        for i in range(self.nbOfPoints):
+            time = epoch + step * i
+            pos = self.orbit.get_position_at(time) - delta
+            vwriter.setData3f(*pos)
+
     def check_visibility(self, pixel_size):
         if self.parent.parent.visible and self.parent.shown and self.orbit:
             distance_to_obs = self.parent.distance_to_obs
@@ -159,8 +177,11 @@ class Orbit(VisibleObject):
             self.place_instance_params(self.instance,
                                        self.body.parent.scene_position,
                                        self.body.parent.scene_scale_factor,
-                                       self.orbit.get_rotation_at(0))
+                                       LQuaternion())
             self.shader.update(self, self.appearance)
+
+    def update_user_parameters(self):
+        self.update_geom()
 
 class RotationAxis(VisibleObject):
     default_shown = False
