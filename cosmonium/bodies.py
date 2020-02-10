@@ -934,12 +934,6 @@ class DeepSpaceObject(EmissiveBody):
                               body_class=body_class, point_color=point_color,
                               description=description)
 
-    def get_apparent_radius(self):
-        return self.radius
-
-    def get_height_under(self, position):
-        return 0.0
-
     def check_and_update_instance(self, camera_pos, orientation, pointset):
         EmissiveBody.check_and_update_instance(self, camera_pos, orientation, pointset)
         app_magnitude = self.get_app_magnitude()

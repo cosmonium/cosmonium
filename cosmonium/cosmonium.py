@@ -791,8 +791,8 @@ class Cosmonium(CosmoniumBase):
         print("\tPlanes", self.camLens.getNear(), self.camLens.getFar())
         print("Camera:")
         print("\tGlobal position", self.observer.camera_global_pos)
-        print("\tLocal position", self.observer.get_camera_pos(), '(', self.observer.camera_pos, ')')
-        print("\tRotation", self.observer.get_camera_rot(), '(', self.observer.camera_rot, ')')
+        print("\tLocal position", self.observer.get_camera_pos(), '(Frame:', self.observer.camera_pos, ')')
+        print("\tRotation", self.observer.get_camera_rot(), '(Frame:', self.observer.camera_rot, ')')
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
@@ -817,7 +817,7 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 if self.selected.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.scene_position, '(', self.selected.world_body_center_offset, ')', self.selected.scene_distance)
+                    print("\tPosition", self.selected.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.scene_distance)
                     print("\tOrientation", self.selected.scene_orientation)
                     print("\tScale", self.selected.scene_scale_factor, '(', self.selected.get_scale() * self.selected.scene_scale_factor, ')')
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
