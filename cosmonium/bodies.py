@@ -188,7 +188,12 @@ class StellarObject(LabelledObject):
     def update_user_parameters(self):
         LabelledObject.update_user_parameters(self)
         if isinstance(self.orbit, FixedOrbit) and self.system is not None and self.system.orbit_object is not None:
+            self.system.orbit.update_user_parameters()
             self.system.orbit_object.update_user_parameters()
+        else:
+            self.system.orbit.update_user_parameters()
+            self.system.orbit_object.update_user_parameters()
+        self.rotation.update_user_parameters()
 
     def get_fullname(self, separator='/'):
         if hasattr(self, "primary") and self.primary is not None:

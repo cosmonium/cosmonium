@@ -22,9 +22,10 @@ from __future__ import absolute_import
 
 from panda3d.core import LQuaterniond, LVector3d
 
+from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
+
 from .frame import J2000EquatorialReferenceFrame
 from .astro import calc_orientation_from_incl_an
-from ..parameters import ParametersGroup, UserParameter
 from . import units
 
 from math import asin, atan2, pi
@@ -32,6 +33,9 @@ from math import asin, atan2, pi
 class ReferenceAxisBase(object):
     def get_user_parameters(self):
         return None
+
+    def update_user_parameters(self):
+        pass
 
     def get_rotation_at(self, time):
         return None
@@ -56,25 +60,14 @@ class PlaneReferenceAxis(ReferenceAxisBase):
     def update_rotation(self):
         self.rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, False)
 
-    def set_inclination(self, inclination):
-        self.inclination = inclination * pi / 180
-        self.update_rotation()
-
-    def get_inclination(self):
-        return self.inclination / pi * 180
-
-    def set_ascending_node(self, ascending_node):
-        self.ascending_node = ascending_node * pi / 180
-        self.update_rotation()
-
-    def get_ascending_node(self):
-        return self.ascending_node / pi * 180
-
     def get_user_parameters(self):
-        parameters = [UserParameter("Inclination", self.set_inclination, self.get_inclination, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
-                      UserParameter("Ascending node", self.set_ascending_node, self.get_ascending_node, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+        parameters = [AutoUserParameter("Inclination", 'inclination', self, AutoUserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Ascending node", 'ascending_node', self, AutoUserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
                      ]
         return parameters
+
+    def update_user_parameters(self):
+        self.update_rotation()
 
 class EquatorialReferenceAxis(ReferenceAxisBase):
     def __init__(self, right_ascension, declination):
@@ -91,25 +84,14 @@ class EquatorialReferenceAxis(ReferenceAxisBase):
         ascending_node = self.right_ascension + pi / 2
         self.rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
 
-    def set_declination(self, declination):
-        self.declination = declination * pi / 180
-        self.update_rotation()
-
-    def get_declination(self):
-        return self.declination / pi * 180
-
-    def set_right_ascension(self, right_ascension):
-        self.right_ascension = right_ascension * pi / 180
-        self.update_rotation()
-
-    def get_right_ascension(self):
-        return self.right_ascension / pi * 180
-
     def get_user_parameters(self):
-        parameters = [UserParameter("Declination", self.set_declination, self.set_declination, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
-                      UserParameter("Right ascension", self.set_right_ascension, self.get_right_ascension, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
+        parameters = [AutoUserParameter("Declination", 'declination', self, AutoUserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Right ascension", 'right_ascension', self, AutoUserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
                      ]
         return parameters
+
+    def update_user_parameters(self):
+        self.update_rotation()
 
 class Rotation(object):
     dynamic = False
@@ -118,6 +100,9 @@ class Rotation(object):
 
     def get_user_parameters(self):
         return None
+
+    def update_user_parameters(self):
+        pass
 
     def set_frame(self, frame):
         self.frame = frame
@@ -140,6 +125,14 @@ class FixedRotation(Rotation):
         if isinstance(reference_axis, LQuaterniond):
             reference_axis = ReferenceAxis(reference_axis)
         self.reference_axis = reference_axis
+
+    def get_user_parameters(self):
+        group = ParametersGroup('Rotation')
+        group.add_parameters(self.reference_axis.get_user_parameters())
+        return group
+
+    def update_user_parameters(self):
+        self.reference_axis.update_user_parameters()
 
     def get_frame_equatorial_orientation_at(self, time):
         return self.reference_axis.get_rotation_at(time)
@@ -171,17 +164,25 @@ class UniformRotation(FixedRotation):
                  epoch,
                  frame):
         FixedRotation.__init__(self, reference_axis, frame)
+        self.set_period(period)
+        self.epoch = epoch
+        self.meridian_angle = meridian_angle
+
+    def set_period(self, period):
         self.period = period
         if period != 0:
             self.mean_motion = 2 * pi / period
         else:
             self.mean_motion = 0
-        self.epoch = epoch
-        self.meridian_angle = meridian_angle
+
+    def get_period(self):
+        return self.period
 
     def get_user_parameters(self):
-        parameters = self.reference_axis.get_user_parameters()
-        group = ParametersGroup('Rotation', parameters)
+        group = FixedRotation.get_user_parameters(self)
+        group.add_parameter(UserParameter("Period", self.set_period, self.get_period, UserParameter.TYPE_FLOAT))
+        group.add_parameter(AutoUserParameter("Meridian angle", 'meridian_angle', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180))
+        group.add_parameter(AutoUserParameter("Epoch", 'epoch', self, UserParameter.TYPE_FLOAT))
         return group
 
     def get_frame_rotation_at(self, time):
@@ -202,8 +203,9 @@ class SynchronousRotation(FixedRotation):
         self.meridian_angle = meridian_angle * pi / 180
 
     def get_user_parameters(self):
-        parameters = self.reference_axis.get_user_parameters()
-        group = ParametersGroup('Rotation', parameters)
+        group = FixedRotation.get_user_parameters(self)
+        group.add_parameter(AutoUserParameter("Meridian angle", 'meridian_angle', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180))
+        group.add_parameter(AutoUserParameter("Epoch", 'epoch', self, UserParameter.TYPE_FLOAT))
         return group
 
     def get_frame_rotation_at(self, time):

@@ -22,13 +22,14 @@ from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
+from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
+
 from . import units
 from .frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .kepler import kepler_pos
 from .astro import calc_orientation
 
 from math import pi, asin, atan2
-from cosmonium.parameters import ParametersGroup, UserParameter
 
 class Orbit(object):
     dynamic = False
@@ -191,6 +192,16 @@ class EllipticalOrbit(Orbit):
         self.epoch = epoch
         self.update_rotation()
 
+    def set_period(self, period):
+        self.period = period
+        if period != 0:
+            self.mean_motion = 2 * pi / period
+        else:
+            self.mean_motion = 0
+
+    def get_period(self):
+        return self.period
+
     def update_rotation(self):
         inclination_quat = LQuaterniond()
         inclination_quat.setFromAxisAngleRad(self.inclination, LVector3d.unitX())
@@ -200,40 +211,24 @@ class EllipticalOrbit(Orbit):
         ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
         self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
 
-    def set_inclination(self, inclination):
-        self.inclination = inclination * pi / 180
-        self.update_rotation()
-
-    def get_inclination(self):
-        return self.inclination / pi * 180
-
-    def set_arg_of_periapsis(self, arg_of_periapsis):
-        self.arg_of_periapsis = arg_of_periapsis * pi / 180
-        self.update_rotation()
-
-    def get_arg_of_periapsis(self):
-        return self.arg_of_periapsis / pi * 180
-
-    def set_ascending_node(self, ascending_node):
-        self.ascending_node = ascending_node * pi / 180
-        self.update_rotation()
-
-    def get_ascending_node(self):
-        return self.ascending_node / pi * 180
-
     def get_user_parameters(self):
-        parameters = [UserParameter("Inclination", self.set_inclination, self.get_inclination, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
-                      UserParameter("Argument of periapsis", self.set_arg_of_periapsis, self.get_arg_of_periapsis, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
-                      UserParameter("Ascending node", self.set_ascending_node, self.get_ascending_node, UserParameter.TYPE_FLOAT, value_range=[0, 360]),
-                     ]
-        group = ParametersGroup('Orbit', parameters)
+        group = ParametersGroup('Orbit')
+        group.add_parameters(
+                      UserParameter("Period", self.set_period, self.get_period, UserParameter.TYPE_FLOAT),
+                      AutoUserParameter("Eccentricity", "eccentricity", self, UserParameter.TYPE_FLOAT, value_range=[0, 10]),
+                      AutoUserParameter("Inclination", "inclination", self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Argument of periapsis", 'arg_of_periapsis', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Ascending node", 'ascending_node', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Mean anomaly", 'mean_anomaly', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Epoch", 'epoch', self, UserParameter.TYPE_FLOAT),
+                     )
         return group
+
+    def update_user_parameters(self):
+        self.update_rotation()
 
     def is_periodic(self):
         return self.eccentricity < 1.0
-
-    def get_period(self):
-        return self.period
 
     def get_mean_motion(self):
         return self.mean_motion
