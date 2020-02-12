@@ -49,8 +49,8 @@ class ReferenceAxis(ReferenceAxisBase):
 
 class PlaneReferenceAxis(ReferenceAxisBase):
     def __init__(self, inclination, ascending_node):
-        self.inclination = inclination * pi / 180
-        self.ascending_node = ascending_node * pi / 180
+        self.inclination = inclination
+        self.ascending_node = ascending_node
         self.rotation = None
         self.update_rotation()
 
@@ -71,8 +71,8 @@ class PlaneReferenceAxis(ReferenceAxisBase):
 
 class EquatorialReferenceAxis(ReferenceAxisBase):
     def __init__(self, right_ascension, declination):
-        self.right_ascension = right_ascension * pi / 180
-        self.declination = declination * pi / 180
+        self.right_ascension = right_ascension
+        self.declination = declination
         self.rotation = None
         self.update_rotation()
 
@@ -216,15 +216,16 @@ class SynchronousRotation(FixedRotation):
         return rotation
 
 def create_fixed_rotation(
-                 inclination=0.0,
-                 ascending_node=0.0,
+             inclination=0.0, inclination_units=units.Deg,
+             ascending_node=0.0, ascending_node_units=units.Deg,
                  right_asc=None, right_asc_unit=units.Deg,
                  declination=None, declination_unit=units.Deg,
                  frame=None):
-    if right_asc is None:
-        reference_axis = PlaneReferenceAxis(inclination, ascending_node)
-    else:
+    if right_asc is not None:
         reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit)
+        frame = J2000EquatorialReferenceFrame()
+    else:
+        reference_axis = PlaneReferenceAxis(inclination * inclination_units, ascending_node * ascending_node_units)
     if frame is None:
         frame = J2000EquatorialReferenceFrame()
     return FixedRotation(reference_axis, frame)
@@ -233,21 +234,21 @@ def create_uniform_rotation(
              period=None,
              period_units=units.Hour,
              sync=False,
-             inclination=0.0,
-             ascending_node=0.0,
+             inclination=0.0, inclination_units=units.Deg,
+             ascending_node=0.0, ascending_node_units=units.Deg,
              right_asc=None, right_asc_unit=units.Deg,
              declination=None, declination_unit=units.Deg,
              meridian_angle=0.0,
              epoch=units.J2000,
              frame=None):
-
-    if right_asc is None:
-        reference_axis = PlaneReferenceAxis(inclination, ascending_node)
-    else:
+    if right_asc is not None:
         reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit)
-    meridian_angle = meridian_angle * pi / 180
+        frame = J2000EquatorialReferenceFrame()
+    else:
+        reference_axis = PlaneReferenceAxis(inclination * inclination_units, ascending_node * ascending_node_units)
     if frame is None:
         frame = J2000EquatorialReferenceFrame()
+    meridian_angle = meridian_angle * pi / 180
     if sync:
         return SynchronousRotation(reference_axis, meridian_angle, epoch, frame)
     else:

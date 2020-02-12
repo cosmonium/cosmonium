@@ -39,7 +39,9 @@ class UniformYamlParser(YamlModuleParser):
         period = data.get('period', None)
         period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
         inclination = data.get('inclination', 0.0)
+        inclination_units = AngleUnitsYamlParser.decode(data.get('inclination-units', 'Deg'))
         ascending_node = data.get('ascending-node', 0.0)
+        ascending_node_units = AngleUnitsYamlParser.decode(data.get('ascending-node-units', 'Deg'))
         right_ascension = data.get('ra', None)
         ra_units = AngleUnitsYamlParser.decode(data.get('ra-units', 'Deg'))
         declination = data.get('de', 0.0)
@@ -51,7 +53,9 @@ class UniformYamlParser(YamlModuleParser):
                                 period_units,
                                 synchronous,
                                 inclination,
+                                inclination_units,
                                 ascending_node,
+                                ascending_node_units,
                                 right_ascension,
                                 ra_units,
                                 declination,
