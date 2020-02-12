@@ -25,7 +25,7 @@ from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowPropertie
 from panda3d.core import DrawMask
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib
-from panda3d.core import LColor, NodePath, PerspectiveLens
+from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
 
 from direct.task.Task import Task
 
@@ -358,7 +358,8 @@ class Cosmonium(CosmoniumBase):
         
         #render.setAntialias(AntialiasAttrib.MAuto)#MMultisample)
         self.setFrameRateMeter(False)
-        
+        self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
+
         self.set_ambient(settings.global_ambient)
         
         self.equatorial_grid = Grid("Equatorial", J2000EquatorialReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))

@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Shader, ShaderAttrib, LVector3d, DepthTestAttrib
+from panda3d.core import Shader, ShaderAttrib, LVector3d
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
@@ -1640,7 +1640,6 @@ class PointControl(ShaderComponent):
         attrib = shape.instance.getAttrib(ShaderAttrib)
         attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
         shape.instance.setAttrib(attrib2)
-        shape.instance.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 
 class NoPointControl(ShaderComponent):
     pass
