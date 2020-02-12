@@ -167,6 +167,7 @@ class ParamEditor():
         for param in parameters:
             if param is None: continue
             if param.is_group():
+                if param.is_empty(): continue
                 borders = (self.font_size / 2, 0, self.font_size / 4.0, self.font_size / 4.0)
                 if param.name is not None:
                     label = DirectLabel(parent=frame,

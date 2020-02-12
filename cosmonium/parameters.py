@@ -19,6 +19,9 @@ class ParametersGroup(object):
         else:
             self.parameters = list(parameters)
 
+    def is_empty(self):
+        return len(self.parameters) == 0
+
     def set_parameters(self, parameters):
         self.parameters = parameters
 
