@@ -42,6 +42,9 @@ class Orbit(object):
     def get_user_parameters(self):
         return None
 
+    def update_user_parameters(self):
+        pass
+
     def set_frame(self, frame):
         self.frame = frame
 

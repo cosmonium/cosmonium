@@ -181,7 +181,8 @@ class Orbit(VisibleObject):
             self.shader.update(self, self.appearance)
 
     def update_user_parameters(self):
-        self.update_geom()
+        if self.instance is not None:
+            self.update_geom()
 
 class RotationAxis(VisibleObject):
     default_shown = False
