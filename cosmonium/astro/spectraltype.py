@@ -403,10 +403,12 @@ class SpectralTypeIntDecoder(object):
             if star_type == 0:
                 # Normal star
                 stellar_class_map = ["O", "B", "A", "F", "G", "K", "M", "R", "S", "N", "W", "W", "?", "L", "T", "C"]
-                luminosity_map = ["I-a0", "I-a", "I-b", "II", "III", "IV", "V", "VI", ""]
+                luminosity_map = ["I-a0", "I-a", "I-b", "II", "III", "IV", "V", "VI", None]
                 spectral_type.spectral_class = stellar_class_map[stellar_class]
                 spectral_type.subclass = float(sub_class)
                 spectral_type.luminosity = luminosity_map[luminosity]
+                if spectral_type.subclass > 9:
+                    spectral_type.subclass = None
                 if stellar_class <= 6:
                     spectral_type.main = True
                 elif stellar_class <= 9:
