@@ -32,6 +32,7 @@ from .bodyclass import bodyClasses
 from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
 from .appearances import ModelAppearance
 from .mesh import load_panda_model
+from .utils import srgb_to_linear
 from . import settings
 
 from math import sin, cos, atan2, pi
@@ -93,7 +94,7 @@ class Orbit(VisibleObject):
         else:
             self.color = self.parent.get_orbit_color()
         if self.instance:
-            self.instance.setColor(self.color * self.fade)
+            self.instance.setColor(srgb_to_linear(self.color * self.fade))
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
@@ -128,7 +129,7 @@ class Orbit(VisibleObject):
         self.instance.reparentTo(self.context.annotation_shader)
         if self.color is None:
             self.color = self.parent.get_orbit_color()
-        self.instance.setColor(self.color * self.fade)
+        self.instance.setColor(srgb_to_linear(self.color * self.fade))
         self.instance.setAntialias(AntialiasAttrib.MMultisample)
         self.appearance = ModelAppearance(attribute_color=True)
         if settings.use_inv_scaling:
@@ -168,7 +169,7 @@ class Orbit(VisibleObject):
             self.visible = size > settings.orbit_fade
             self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
             if self.color is not None and self.instance is not None:
-                self.instance.setColor(self.color * self.fade)
+                self.instance.setColor(srgb_to_linear(self.color * self.fade))
         else:
             self.visible = False
 
@@ -215,7 +216,7 @@ class RotationAxis(VisibleObject):
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
-        self.instance.setColor(self.parent.get_orbit_color())
+        self.instance.setColor(srgb_to_linear(self.parent.get_orbit_color()))
         self.instance.setAntialias(AntialiasAttrib.MMultisample)
         self.instance.reparentTo(self.context.annotation)
 
@@ -292,9 +293,9 @@ class Grid(VisibleObject):
 
                 self.vertexWriter.addData3f((self.context.observer.infinity * x, self.context.observer.infinity * y, self.context.observer.infinity * z))
                 if r == self.nbOfRings / 2 + 1:
-                    self.colorwriter.addData4f(self.color.x * 1.5, 0, 0, 1)
+                    self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
-                    self.colorwriter.addData4f(*self.color)
+                    self.colorwriter.addData4(srgb_to_linear(self.color))
         for s in range(self.nbOfSectors):
             for i in range(self.points_to_remove, self.nbOfPoints // 2 - self.points_to_remove + 1):
                 angle = 2 * pi / self.nbOfPoints * i
@@ -304,9 +305,9 @@ class Grid(VisibleObject):
 
                 self.vertexWriter.addData3f((self.context.observer.infinity * x , self.context.observer.infinity * y, self.context.observer.infinity * z))
                 if s == 0:
-                    self.colorwriter.addData4f(self.color.x * 1.5, 0, 0, 1)
+                    self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
-                    self.colorwriter.addData4f(*self.color)
+                    self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for r in range(self.nbOfRings):
@@ -386,7 +387,7 @@ class Asterism(VisibleObject):
                 star.update_obs(self.context.observer)
                 position, distance, scale_factor = self.get_real_pos_rel(star.rel_position, star.distance_to_obs, star.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
-                self.colorwriter.addData4f(*self.color)
+                self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.camera_global_pos = old_cam_pos
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
@@ -466,7 +467,7 @@ class Boundary(VisibleObject):
         for point in self.points:
             position = point.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
             self.vertexWriter.addData3f(*position)
-            self.colorwriter.addData4f(*self.color)
+            self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for i in range(len(self.points)-1):

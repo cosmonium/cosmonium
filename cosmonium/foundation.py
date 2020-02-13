@@ -26,6 +26,7 @@ from panda3d.core import GeomNode, DecalEffect, TextNode, CardMaker, Transparenc
 from .bodyclass import bodyClasses
 from .fonts import fontsManager, Font
 from .parameters import ParametersGroup
+from .utils import srgb_to_linear
 from .astro import bayer
 from . import settings
 
@@ -352,7 +353,7 @@ class ObjectLabel(VisibleObject):
             self.label.set_font(self.font)
         name = bayer.decode_name(self.parent.get_label_text())
         self.label.setText(name)
-        self.label.setTextColor(*self.parent.get_label_color())
+        self.label.setTextColor(*srgb_to_linear(self.parent.get_label_color()))
         #node=label.generate()
         #self.instance = self.context.annotation.attachNewNode(node)
         #self.instance.setBillboardPointEye()

@@ -25,7 +25,7 @@ from panda3d.core import TransparencyAttrib
 
 from .textures import TextureBase, SurfaceTexture, TransparentTexture, NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from .textures import AutoTextureSource
-from .utils import TransparencyBlend
+from .utils import TransparencyBlend, srgb_to_linear
 from .dircontext import defaultDirContext
 
 from . import settings
@@ -216,13 +216,13 @@ class Appearance(AppearanceBase):
     def bake(self):
         self.material=Material()
         if self.emissionColor != None:
-            self.material.setEmission(self.emissionColor)
+            self.material.setEmission(srgb_to_linear(self.emissionColor))
         if self.diffuseColor != None:
-            self.material.setDiffuse(self.diffuseColor)
+            self.material.setDiffuse(srgb_to_linear(self.diffuseColor))
         if self.ambientColor != None:
-            self.material.setAmbient(self.ambientColor)
+            self.material.setAmbient(srgb_to_linear(self.ambientColor))
         if self.specularColor != None:
-            self.material.setSpecular(self.specularColor)
+            self.material.setSpecular(srgb_to_linear(self.specularColor))
         if self.shininess != None:
             self.material.setShininess(self.shininess)
         self.check_specular_mask()

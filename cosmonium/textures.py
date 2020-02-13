@@ -24,7 +24,7 @@ from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_
 
 from .dircontext import defaultDirContext
 from .shapes import RingShape #TODO: Workaround, see below !
-from .utils import TransparencyBlend
+from .utils import TransparencyBlend, srgb_to_linear
 from . import workers
 from . import settings
 
@@ -396,7 +396,7 @@ class VisibleTexture(SimpleTexture):
     def init_texture_stage(self, texture_stage, texture):
         if self.tint_color is not None:
             if settings.disable_tint: return
-            texture_stage.setColor(self.tint_color)
+            texture_stage.setColor(srgb_to_linear(self.tint_color))
             texture_stage.setCombineRgb(TextureStage.CMModulate,
                                         TextureStage.CSTexture, TextureStage.COSrcColor,
                                         TextureStage.CSConstant, TextureStage.COSrcColor)
