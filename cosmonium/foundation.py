@@ -21,13 +21,16 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor
-from panda3d.core import GeomNode, DecalEffect, TextNode, CardMaker, TransparencyAttrib
+from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
 from .fonts import fontsManager, Font
 from .parameters import ParametersGroup
 from .utils import srgb_to_linear
 from .astro import bayer
+from .appearances import ModelAppearance
+from .shaders import FlatLightingModel, BasicShader
+from .utils import TransparencyBlend
 from . import settings
 
 from math import log
@@ -324,10 +327,25 @@ class ObjectLabel(VisibleObject):
     ignore_light = True
     font_init = False
     font = None
+    appearance = None
+    shader = None
 
     def __init__(self, names):
         VisibleObject.__init__(self, names)
         self.fade = 1.0
+
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance()
+        cls.appearance.has_attribute_color = True
+        cls.appearance.has_material = False
+        cls.appearance.texture = True
+        cls.appearance.texture_index = 0
+        cls.appearance.nb_textures = 1
+        cls.appearance.transparency = True
+        cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
+        cls.appearance.alpha_mask = True
+        cls.shader = BasicShader(lighting_model=FlatLightingModel())
 
     def check_settings(self):
         if self.parent.body_class is None:
@@ -365,7 +383,7 @@ class ObjectLabel(VisibleObject):
         card_node = cardMaker.generate()
         self.label_instance = NodePath(card_node)
         tnp = self.label_instance.attachNewNode(self.label)
-        self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
+        #self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
         #card.setEffect(DecalEffect.make())
         #Using look_at() instead of billboard effect to also rotate the collision solid
         #card.setBillboardPointEye()
@@ -373,6 +391,14 @@ class ObjectLabel(VisibleObject):
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
         self.instance.reparentTo(self.context.annotation_shader)
+        self.instance_ready = True
+
+        if self.shader is None:
+            self.create_shader()
+        self.shader.apply(self, self.appearance)
+        self.shader.update(self, self.appearance)
+        TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
+
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.set_depth_write(False)
         self.instance.set_color_scale(LColor(1, 1, 1, 1))
