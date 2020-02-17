@@ -24,7 +24,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import DrawMask
 from panda3d.core import AmbientLight
-from panda3d.core import LightRampAttrib
+from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
 
 from direct.task.Task import Task
@@ -356,7 +356,7 @@ class Cosmonium(CosmoniumBase):
         if settings.render_sprite_points:
             self.haloset.instance.reparentTo(self.world)
         
-        #render.setAntialias(AntialiasAttrib.MAuto)#MMultisample)
+        render.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
         self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 

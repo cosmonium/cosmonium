@@ -215,6 +215,7 @@ render_scene_to_buffer = False
 render_scene_to_float = False
 non_power_of_two_textures = False
 disable_multisampling = False
+framebuffer_multisampling = False
 floating_point_buffer = False
 buffer_texture = False
 hdr = False

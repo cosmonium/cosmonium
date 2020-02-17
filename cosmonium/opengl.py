@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import loadPrcFileData
+from panda3d.core import load_prc_file_data
 from panda3d.core import DepthTestAttrib, Texture
 from panda3d.core import WindowProperties, FrameBufferProperties
 from direct.filter.FilterManager import FilterManager
@@ -59,10 +59,22 @@ def request_opengl_config(data):
     data.append("gl-check-errors #t")
     if settings.dump_panda_shaders:
         data.append("dump-generated-shaders #t")
-    if settings.multisamples > 0 and not settings.render_scene_to_buffer:
-        data.append("framebuffer-multisample 1")
-        data.append("multisamples %d" % settings.multisamples)
     data.append("driver-generate-mipmaps #t")
+
+    render_scene_to_buffer = False
+    if settings.use_srgb and not settings.use_hardware_srgb:
+        render_scene_to_buffer = True
+
+    if settings.use_hdr:
+        render_scene_to_buffer = True
+
+    if settings.use_inverse_z:
+        render_scene_to_buffer = True
+
+    if not render_scene_to_buffer and settings.multisamples > 0:
+        settings.framebuffer_multisampling = True
+        load_prc_file_data("", "framebuffer-multisample 1")
+        load_prc_file_data("", "multisamples %d" % settings.multisamples)
 
 def _create_main_window(base):
     props = WindowProperties.get_default()
@@ -82,21 +94,23 @@ def create_main_window(base):
     #We could not open the window, try to fallback to a supported configuration
     if settings.stereoscopic_framebuffer:
         print("Failed to open a window, disabling stereoscopic framebuffer...")
-        loadPrcFileData("", "framebuffer-stereo #f")
+        load_prc_file_data("", "framebuffer-stereo #f")
         settings.stereoscopic_framebuffer = False
         if _create_main_window(base):
             return
-    if settings.multisamples > 0:
+    if settings.framebuffer_multisampling:
         print("Failed to open a window, disabling multisampling...")
-        loadPrcFileData("", "framebuffer-multisample #f")
+        load_prc_file_data("", "framebuffer-multisample #f")
         settings.disable_multisampling = True
+        settings.framebuffer_multisampling = False
         if _create_main_window(base):
             return
     #Can't create window even without multisampling
-    print("Failed to open window with OpenGL Core; falling back to older OpenGL.")
-    loadPrcFileData("", "gl-version")
-    if _create_main_window(base):
-        return
+    if settings.use_gl_version is not None:
+        print("Failed to open window with OpenGL Core; falling back to older OpenGL.")
+        load_prc_file_data("", "gl-version")
+        if _create_main_window(base):
+            return
     print("Could not open any window")
     sys.exit(1)
 
@@ -230,7 +244,8 @@ def check_and_create_rendering_buffers(showbase):
     fbprops.setSrgbColor(settings.srgb_buffer)
     fbprops.setDepthBits(depth_bits)
     fbprops.setFloatDepth(float_depth)
-    fbprops.setMultisamples(buffer_multisamples)
+    if not settings.framebuffer_multisampling:
+        fbprops.setMultisamples(buffer_multisamples)
     final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
     final_quad_shader = PostProcessShader(gamma_correction=settings.software_srgb, hdr=settings.use_hdr).create_shader()
     final_quad.set_shader(final_quad_shader)
