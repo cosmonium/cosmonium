@@ -61,6 +61,8 @@ class Orbit(VisibleObject):
     ignore_light = True
     default_shown = False
     selected_color = LColor(1.0, 0.0, 0.0, 1.0)
+    appearance = None
+    shader = None
 
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
@@ -72,6 +74,15 @@ class Orbit(VisibleObject):
         if not self.orbit:
             print("No orbit for", self.get_name())
             self.visible = False
+
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance(attribute_color=True)
+        if settings.use_inv_scaling:
+            vertex_control = LargeObjectVertexControl()
+        else:
+            vertex_control = None
+        cls.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
 
     def check_settings(self):
         if self.body.body_class is None:
@@ -130,14 +141,9 @@ class Orbit(VisibleObject):
         if self.color is None:
             self.color = self.parent.get_orbit_color()
         self.instance.setColor(srgb_to_linear(self.color * self.fade))
-        self.instance.setAntialias(AntialiasAttrib.MMultisample)
-        self.appearance = ModelAppearance(attribute_color=True)
-        if settings.use_inv_scaling:
-            vertex_control = LargeObjectVertexControl()
-        else:
-            vertex_control = None
         self.instance_ready = True
-        self.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
+        if self.shader is None:
+            self.create_shader()
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
 
