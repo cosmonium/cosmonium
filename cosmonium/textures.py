@@ -23,7 +23,6 @@ from __future__ import absolute_import
 from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
 
 from .dircontext import defaultDirContext
-from .shapes import RingShape #TODO: Workaround, see below !
 from .utils import TransparencyBlend, srgb_to_linear
 from . import workers
 from . import settings
@@ -85,6 +84,10 @@ class TextureBase(object):
     def clamp(self, texture):
         texture.setWrapU(Texture.WM_clamp)
         texture.setWrapV(Texture.WM_clamp)
+
+    def vanish(self, texture):
+        texture.setWrapU(Texture.WM_border_color)
+        texture.setBorderColor(LColor(0, 0, 0, 0))
 
     def mipmap(self, texture):
         texture.setMinfilter(Texture.FT_linear_mipmap_linear)
@@ -342,10 +345,8 @@ class SimpleTexture(TextureBase):
                 self.mipmap_min(texture)
             else:
                 self.linear(texture)
-        #TODO: Remove this ugly workaround and create an actual RingTexture !
-        if isinstance(shape, RingShape):
-            texture.setWrapU(Texture.WM_border_color)
-            texture.setBorderColor(LColor(0, 0, 0, 0))
+        if shape.vanish_borders:
+            self.vanish(texture)
         if self.panda:
             self.apply_panda(shape, texture, texture_lod)
         else:

@@ -40,6 +40,7 @@ class Ring(ShapeObject):
         self.outer_radius = outer_radius
         self.set_shape(RingShape(inner_radius, outer_radius))
         self.shadow_caster = RingShadowCaster(self)
+        self.vanish_borders = True
 
     def get_component_name(self):
         return 'Ring'

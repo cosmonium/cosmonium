@@ -57,6 +57,8 @@ class Shape:
         self.jobs = 0
         self.clickable = False
         self.attribution = None
+        #TODO: Used to fix ring textures
+        self.vanish_borders = False
 
     def get_user_parameters(self):
         return None
