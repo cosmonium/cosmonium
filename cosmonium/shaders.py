@@ -1848,6 +1848,8 @@ class PandaTextureDataSource(DataSource):
             config += "s"
         if self.has_specular_mask:
             config += "m"
+        if self.has_alpha_mask:
+            config += "l"
         if self.has_night_texture:
             config += "i"
         if self.tex_transform:
@@ -1873,6 +1875,7 @@ class PandaTextureDataSource(DataSource):
         self.has_night_texture = appearance.night_texture
         self.has_gloss_map_texture = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
+        self.has_alpha_mask = appearance.alpha_mask
 
     def create_tex_coord(self, texture_id, texture_coord):
         code = []
@@ -1930,10 +1933,17 @@ class PandaTextureDataSource(DataSource):
 
     def get_source_for(self, source, params=None, error=True):
         if source == 'surface':
-            if self.has_transparency:
+            if self.has_alpha_mask:
+                return "vec4(1.0);"
+            elif self.has_transparency:
                 return "tex%i" % self.texture_index
             else:
                 return "vec4(tex%i.rgb, 1.0)" % self.texture_index
+        if source == 'alpha':
+            if self.has_transparency:
+                return "tex%i.a" % self.texture_index
+            else:
+                return "1.0"
         if source == 'normal':
             return "(vec3(tex%i) * 2.0) - 1.0" % self.normal_map_index
         if source == 'specular':
@@ -2227,6 +2237,10 @@ class FlatLightingModel(LightingModel):
         else:
             code.append("total_emission_color = vec4(1, 1, 1, 1);")
         code.append("total_emission_color *= surface_color * p3d_ColorScale;")
+        if self.appearance.has_transparency:
+            #TODO: This should not be here!
+            code.append("float alpha =  %s;" % self.shader.data_source.get_source_for('alpha'))
+            code.append("total_emission_color.a *= alpha;")
 
 class LambertPhongLightingModel(LightingModel):
     use_vertex = True

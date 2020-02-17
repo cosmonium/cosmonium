@@ -117,6 +117,7 @@ class AppearanceBase:
         self.transparency = False
         self.transparency_level = 0.0
         self.transparency_blend = TransparencyBlend.TB_None
+        self.alpha_mask = False
         self.has_vertex_color = False
         self.has_attribute_color = False
         self.has_material = False
