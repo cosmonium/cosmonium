@@ -91,9 +91,12 @@ class GalaxyAppearance(AppearanceBase):
 
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
-            axis = owner.scene_orientation.xform(LVector3d.up())
-            cosa = abs(axis.dot(owner.vector_to_obs))
-            coef = max(self.min_coef, sqrt(cosa))
+            if shape.is_flat():
+                axis = owner.scene_orientation.xform(LVector3d.up())
+                cosa = abs(axis.dot(owner.vector_to_obs))
+                coef = max(self.min_coef, sqrt(cosa))
+            else:
+                coef = 1.0
             scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
             size = owner.get_apparent_radius() / owner.distance_to_obs
             if size > 1.0:
@@ -146,6 +149,9 @@ class GalaxyShapeBase(Shape):
 
     def get_scale(self):
         return self.scale / self.size
+
+    def is_flat(self):
+        return False
 
     def create_points(self, radius=1.0):
         return None
@@ -327,6 +333,9 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
         self.sersic_disk = sersic_disk
         self.bulge_color = self.yellow_color
         self.arms_color = self.blue_color
+
+    def is_flat(self):
+        return True
 
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
