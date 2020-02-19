@@ -698,7 +698,7 @@ class SpiralNoise(BasicNoiseSource):
         self.noise.noise_func(code)
         code.append('float Spiral_%s(vec3 point)' % self.str_id)
         code.append('{')
-        code.append("    const float nudge = %s_nudge;" % self.str_id)
+        code.append("    float nudge = %s_nudge;" % self.str_id)
         code.append("    float normalizer = 1.0 / sqrt(1.0 + nudge*nudge);")
         code.append("    float frequency = %s_frequency;" % self.str_id)
         code.append("    float lacunarity = %s_lacunarity;" % self.str_id)
