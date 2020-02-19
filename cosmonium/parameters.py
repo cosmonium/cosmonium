@@ -58,10 +58,11 @@ class UserParameterBase(object):
     SCALE_LOG = 1
     SCALE_LOG_0 = 2
 
-    def __init__(self, name, param_type, value_range, scale, units, nb_components):
+    def __init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0=None):
         self.name = name
         self.param_type = param_type
         self.value_range = value_range
+        self.value_range_0 = value_range_0
         self.scale = scale
         self.units = units
         self.nb_components = nb_components
@@ -70,10 +71,12 @@ class UserParameterBase(object):
         return False
 
     def get_range(self, scale=False):
-        if scale and self.scale in (self.SCALE_LOG, self.SCALE_LOG_0):
-            return [log(self.value_range[0]), log(self.value_range[1])]
-        else:
+        if not scale or self.scale == self.SCALE_LINEAR:
             return self.value_range
+        if self.scale == self.SCALE_LOG:
+            return [log(self.value_range[0]), log(self.value_range[1])]
+        elif self.scale == self.SCALE_LOG_0:
+            return [log(self.value_range_0), log(self.value_range[1])]
 
     def get_type(self):
         if self.param_type == self.TYPE_STRING:
@@ -119,7 +122,7 @@ class UserParameterBase(object):
             value = log(value)
         elif self.scale == self.SCALE_LOG_0:
             if value == 0:
-                value = log(self.value_range[0])
+                value = log(self.value_range_0)
             else:
                 value = log(value)
         else:
@@ -132,7 +135,7 @@ class UserParameterBase(object):
         if self.scale == self.SCALE_LOG:
             value = exp(value)
         elif self.scale == self.SCALE_LOG_0:
-            if isclose(value, log(self.value_range[0]), rel_tol=1e-6):
+            if isclose(value, log(self.value_range_0), rel_tol=1e-6):
                 value = 0
             else:
                 value = exp(value)
@@ -158,8 +161,8 @@ class UserParameterBase(object):
         self.do_set_param(param)
 
 class UserParameter(UserParameterBase):
-    def __init__(self, name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1):
-        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components)
+    def __init__(self, name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.setter = setter
         self.getter = getter
 
@@ -170,8 +173,8 @@ class UserParameter(UserParameterBase):
         self.setter(value)
 
 class AutoUserParameter(UserParameterBase):
-    def __init__(self, name, attribute, instance, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1):
-        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components)
+    def __init__(self, name, attribute, instance, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.attribute = attribute
         self.instance = instance
 

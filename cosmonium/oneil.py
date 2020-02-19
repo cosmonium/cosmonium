@@ -87,8 +87,8 @@ class ONeilAtmosphere(Atmosphere):
     def get_user_parameters(self):
         group = Atmosphere.get_user_parameters(self)
         group.add_parameters(
-                             AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [1e-6, 1.0], AutoUserParameter.SCALE_LOG_0),
-                             AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [1e-6, 1.0, AutoUserParameter.SCALE_LOG_0]),
+                             AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
+                             AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
                              AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
                              AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
                              AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
