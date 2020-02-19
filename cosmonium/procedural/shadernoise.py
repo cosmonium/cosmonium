@@ -82,19 +82,40 @@ class BasicNoiseSource(NoiseSource):
         return self.noise.get_user_parameters()
 
 class NoiseConst(NoiseSource):
-    def __init__(self, value, name=None):
+    def __init__(self, value, dynamic=True, name=None):
         NoiseSource.__init__(self, name, 'const')
         self.value = value
+        self.dynamic = dynamic
 
     def get_id(self):
-        return '%g' % self.value
+        if self.dynamic:
+            return 'const'
+        else:
+            return '%g' % self.value
+
+    def noise_uniforms(self, code):
+        if self.dynamic:
+            code.append("uniform float %s;" % self.str_id)
 
     def noise_value(self, code, value, point):
-        code.append('        %s  = %g;' % (value, self.value))
+        if self.dynamic:
+            code.append('        %s  = %s;' % (value, self.str_id))
+        else:
+            code.append('        %s  = %g;' % (value, self.value))
+
+    def update(self, instance):
+        if self.dynamic:
+            instance.set_shader_input('%s' % self.str_id, self.value)
+
+    def get_user_parameters(self):
+        if not self.dynamic: return None
+        group = ParametersGroup(self.name)
+        group.add_parameters(AutoUserParameter('value', 'value', self, param_type=AutoUserParameter.TYPE_FLOAT))
+        return group
 
 class NoiseCoord(NoiseSource):
-    def __init__(self, coord):
-        NoiseSource.__init__(self)
+    def __init__(self, coord, name=None):
+        NoiseSource.__init__(self, name, 'coord')
         self.coord = coord
 
     def get_id(self):
@@ -320,7 +341,8 @@ class PositionMap(BasicNoiseSource):
 
     def noise_uniforms(self, code):
         BasicNoiseSource.noise_uniforms(self, code)
-        code.append("uniform vec2 %s_params;" % self.str_id)
+        if self.dynamic:
+            code.append("uniform vec2 %s_params;" % self.str_id)
 
     def noise_value(self, code, value, point):
         if self.dynamic:
@@ -375,6 +397,12 @@ class NoiseAdd(NoiseSource):
         for noise in self.noises:
             noise.update(instance)
 
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name)
+        for noise in self.noises:
+            group.add_parameters(noise.get_user_parameters())
+        return group
+
 class NoiseSub(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
         NoiseSource.__init__(self, name, 'sub')
@@ -411,6 +439,12 @@ class NoiseSub(NoiseSource):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
 
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name)
+        group.add_parameters(self.noise_a.get_user_parameters())
+        group.add_parameters(self.noise_b.get_user_parameters())
+        return group
+
 class NoiseMul(NoiseSource):
     def __init__(self, noises, name=None):
         NoiseSource.__init__(self, name, 'mul')
@@ -444,6 +478,12 @@ class NoiseMul(NoiseSource):
     def update(self, instance):
         for noise in self.noises:
             noise.update(instance)
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name)
+        for noise in self.noises:
+            group.add_parameters(noise.get_user_parameters())
+        return group
 
 class NoisePow(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
@@ -481,6 +521,12 @@ class NoisePow(NoiseSource):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
 
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name)
+        group.add_parameters(self.noise_a.get_user_parameters())
+        group.add_parameters(self.noise_b.get_user_parameters())
+        return group
+
 class NoiseThreshold(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
         NoiseSource.__init__(self, name, 'threshold')
@@ -516,6 +562,12 @@ class NoiseThreshold(NoiseSource):
     def update(self, instance):
         self.noise_a.update(instance)
         self.noise_b.update(instance)
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name)
+        group.add_parameters(self.noise_a.get_user_parameters())
+        group.add_parameters(self.noise_b.get_user_parameters())
+        return group
 
 class NoiseClamp(NoiseSource):
     def __init__(self, noise, min_value, max_value, name=None):
@@ -781,6 +833,14 @@ class NoiseWarp(NoiseSource):
     def update(self, instance):
         self.noise_main.update(instance)
         self.noise_warp.update(instance)
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.name,
+                                AutoUserParameter('scale', 'scale', self, AutoUserParameter.TYPE_FLOAT),
+                                )
+        group.add_parameters(self.noise_main.get_user_parameters())
+        group.add_parameters(self.noise_wrap.get_user_parameters())
+        return group
 
 class NoiseVertexShader(ShaderProgram):
     def __init__(self):

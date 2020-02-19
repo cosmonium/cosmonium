@@ -163,7 +163,7 @@ def create_clamp_noise(parser, data, length_scale):
 def create_const_noise(parser, data, length_scale):
     name = data.get('name', None)
     value = data.get('value')
-    return NoiseConst(value, name=name)
+    return NoiseConst(value, dynamic=name is not None, name=name)
 
 def create_x_noise(parser, data, length_scale):
     if not isinstance(data, dict):
