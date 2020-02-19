@@ -219,10 +219,10 @@ class EllipticalOrbit(Orbit):
         group.add_parameters(
                       UserParameter("Period", self.set_period, self.get_period, UserParameter.TYPE_FLOAT),
                       AutoUserParameter("Eccentricity", "eccentricity", self, UserParameter.TYPE_FLOAT, value_range=[0, 10]),
-                      AutoUserParameter("Inclination", "inclination", self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Inclination", "inclination", self, UserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
                       AutoUserParameter("Argument of periapsis", 'arg_of_periapsis', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
                       AutoUserParameter("Ascending node", 'ascending_node', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
-                      AutoUserParameter("Mean anomaly", 'mean_anomaly', self, UserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Mean anomaly", 'mean_anomaly', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
                       AutoUserParameter("Epoch", 'epoch', self, UserParameter.TYPE_FLOAT),
                      )
         return group
