@@ -105,7 +105,7 @@ class NoiseYamlParser(YamlParser):
 from ..procedural.shadernoise import NoiseClamp, NegNoise
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
-from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise
+from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
 from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
 from ..procedural.shadernoise import QuilezPerlin3D
@@ -311,6 +311,13 @@ def create_warp_noise(parser, data, length_scale):
     scale = float(data.get('strength', 4.0))
     return NoiseWarp(main, warp, scale, name=name)
 
+def create_rotate_noise(parser, data, length_scale):
+    name = data.get('name', None)
+    main = parser.decode_noise_dict(data.get('noise'))
+    angle = parser.decode_noise_dict(data.get('angle'))
+    axis = data.get('axis', 'x')
+    return NoiseRotate(main, angle, axis, name=name)
+
 NoiseYamlParser.register_noise_parser('add', create_add_noise)
 NoiseYamlParser.register_noise_parser('sub', create_sub_noise)
 NoiseYamlParser.register_noise_parser('mul', create_mul_noise)
@@ -328,6 +335,7 @@ NoiseYamlParser.register_noise_parser('turbulence', create_abs_noise)
 NoiseYamlParser.register_noise_parser('fbm', create_fbm_noise)
 NoiseYamlParser.register_noise_parser('spiral', create_spiral_noise)
 NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
+NoiseYamlParser.register_noise_parser('rot', create_rotate_noise)
 
 NoiseYamlParser.register_noise_parser('const', create_const_noise)
 NoiseYamlParser.register_noise_parser('x', create_x_noise)
