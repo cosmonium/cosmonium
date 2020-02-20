@@ -273,6 +273,11 @@ bodyClasses.register_class("minormoon", "minormoons",
                            BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
                                      orbit_color=LColor(0.08, 0.407, 0.392, 1),
                                      show_label=False))
+bodyClasses.register_class("lostmoon", "lostmoons",
+                           BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
+                                     orbit_color=LColor(0.08, 0.407, 0.392, 1),
+                                     show=False,
+                                     show_label=False))
 bodyClasses.register_class("comet", "comets",
                            BodyClass(label_color=LColor(0.768, 0.607, 0.227, 1),
                                      orbit_color=LColor(0.639, 0.487, 0.168, 1),

@@ -454,13 +454,14 @@ class Gui(object):
                   ('_Dwarf planets>Shift-P', bodyClasses.get_show_label('dwarfplanet'), self.cosmonium.toggle_label, 'dwarfplanet'),
                   ('_Moons>M', bodyClasses.get_show_label('moon'), self.cosmonium.toggle_label, 'moon'),
                   ('M_inor Moons>Shift-M', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
+                  ('L_ost Moons', bodyClasses.get_show_label('lostmoon'), self.cosmonium.toggle_label, 'lostmoon'),
                   ('C_omets>Shift-W', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
                   ('_Asteroids>W', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
                   ('I_nterstellars', bodyClasses.get_show_label('interstellar'), self.cosmonium.toggle_label, 'interstellar'),
                   ('S_pacecrafts>N', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
                   ('_Constellations>=', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
                   #('Locations>&', self.toggle_label, 'location'),
-        )
+                  )
 
         orbits = (
                   ('All _orbits>O', settings.show_orbits, self.cosmonium.toggle_orbits),
@@ -470,9 +471,10 @@ class Gui(object):
                   ('_Dwarf planets>Shift-Control-D', bodyClasses.get_show_orbit('dwarfplanet'), self.cosmonium.toggle_orbit, 'dwarfplanet'),
                   ('_Moons>Shift-control-M', bodyClasses.get_show_orbit('moon'), self.cosmonium.toggle_orbit, 'moon'),
                   ('M_inor moons>Shift-Control-O', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
+                  ('L_ost moons', bodyClasses.get_show_orbit('lostmoon'), self.cosmonium.toggle_orbit, 'lostmoon'),
                   ('_Comets>Shift-Control-C', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
                   ('_Asteroids>Shift-Control-A', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
-                  ('Interstellars', bodyClasses.get_show_orbit('interstellar'), self.cosmonium.toggle_orbit, 'interstellar'),
+                  ('I_nterstellars', bodyClasses.get_show_orbit('interstellar'), self.cosmonium.toggle_orbit, 'interstellar'),
                   ('S_pacecrafts>Shift-Control-S', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
                   )
 

@@ -23,13 +23,13 @@ from __future__ import absolute_import
 from panda3d.core import LColor
 
 class BodyClass(object):
-    def __init__(self, label_color=LColor(), orbit_color=LColor(), show_label=False, show_orbit=True):
+    def __init__(self, name=None, show=True, label_color=LColor(), orbit_color=LColor(), show_label=False, show_orbit=True):
         self.label_color = label_color
         self.orbit_color = orbit_color
         self.show_label = show_label
         self.show_orbit = show_orbit
-        self.show = True
-        self.name = None
+        self.show = show
+        self.name = name
 
 class BodyClasses(object):
     def __init__(self):
