@@ -137,7 +137,7 @@ class Orbit(VisibleObject):
         self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.node().setPythonTag('owner', self)
-        self.instance.reparentTo(self.context.annotation_shader)
+        self.instance.reparentTo(self.context.annotation)
         if self.color is None:
             self.color = self.parent.get_orbit_color()
         self.instance.setColor(srgb_to_linear(self.color * self.fade))

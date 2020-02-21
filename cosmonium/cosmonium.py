@@ -102,12 +102,10 @@ class CosmoniumBase(ShowBase):
 
         self.world = self.render.attachNewNode("world")
         self.annotation = self.render.attachNewNode("annotation")
-        self.annotation_shader = self.annotation.attachNewNode("annotation_shader")
         self.annotation.node().adjust_draw_mask(DrawMask(0), DrawMask(1), DrawMask(0))
-        self.annotation_shader.node().adjust_draw_mask(DrawMask(0), DrawMask(1), DrawMask(0))
 
         self.world.setShaderAuto()
-        self.annotation_shader.setShaderAuto()
+        self.annotation.setShaderAuto()
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
@@ -425,12 +423,10 @@ class Cosmonium(CosmoniumBase):
     def save_screenshot_no_annotation(self):
         self.gui.hide()
         self.annotation.hide()
-        self.annotation_shader.hide()
         base.graphicsEngine.renderFrame()
         filename = self.screenshot(namePrefix=settings.screenshot_path)
         self.gui.show()
         self.annotation.show()
-        self.annotation_shader.show()
         if filename is not None:
             print("Saving screenshot without annotation into", filename)
         else:

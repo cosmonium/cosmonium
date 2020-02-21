@@ -390,7 +390,7 @@ class ObjectLabel(VisibleObject):
         #Using a card holder as look_at() is changing the hpr parameters
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
-        self.instance.reparentTo(self.context.annotation_shader)
+        self.instance.reparentTo(self.context.annotation)
         self.instance_ready = True
 
         if self.shader is None:
