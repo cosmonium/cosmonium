@@ -40,7 +40,7 @@ class GalaxyAppearanceYamlParser(YamlModuleParser):
             if sprite == 'gaussian':
                 sprite = GaussianPointSprite()
             elif sprite == 'exp':
-                sprite = ExpPointSprite(factor=1./256)
+                sprite = ExpPointSprite()
             elif sprite == 'round':
                 sprite = RoundDiskPointSprite()
             else:

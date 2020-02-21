@@ -541,7 +541,7 @@ class StellarObject(LabelledObject):
             radius = 1.0
         size = radius * coef * 2.0
         position = self.scene_position
-        self.context.haloset.add_point(LVector3(*position), self.point_color, size * 2)
+        self.context.haloset.add_point(LVector3(*position), self.point_color, size)
 
     def show_rotation_axis(self):
         if self.rotation_axis:

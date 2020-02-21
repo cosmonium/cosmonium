@@ -113,7 +113,7 @@ class GaussianPointSprite(GenPointSprite):
         return p
 
 class ExpPointSprite(GenPointSprite):
-    def __init__(self, size=64, factor=1.0/(256*256*256), max_value=1.0):
+    def __init__(self, size=64, factor=1.0/256, max_value=1.0):
         GenPointSprite.__init__(self, size)
         self.factor = factor
         self.max_value = max_value
