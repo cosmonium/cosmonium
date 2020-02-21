@@ -147,6 +147,7 @@ use_vertex_shader = False
 min_mag_scale = 0.1
 lowest_app_magnitude = 6.0
 max_app_magnitude = 0.0
+min_point_size = 4
 mag_pixel_scale = 2
 min_body_size = 2
 

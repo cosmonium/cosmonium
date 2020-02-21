@@ -528,7 +528,7 @@ class StellarObject(LabelledObject):
         scale = mag_to_scale(self._app_magnitude)
         if scale > 0:
             color = self.point_color * scale
-            size = max(pointset.min_size, pointset.min_size + scale * settings.mag_pixel_scale)
+            size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
             pointset.add_point(self.scene_position, color, size)
             if self.has_halo and self._app_magnitude < smallest_glare_mag:
                 self.update_halo()

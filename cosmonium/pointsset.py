@@ -50,7 +50,6 @@ class PointsSet(VisibleObject):
             self.sprite = sprite
         else:
             self.sprite = SimplePoint(points_size)
-        self.min_size = self.sprite.get_min_size()
         self.sprite.apply(self.instance)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.node().setPythonTag('owner', self)
