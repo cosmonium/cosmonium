@@ -346,7 +346,7 @@ class Cosmonium(CosmoniumBase):
 
         self.observer.init()
 
-        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16))
+        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
         if settings.render_sprite_points:
             self.pointset.instance.reparentTo(self.world)
         
