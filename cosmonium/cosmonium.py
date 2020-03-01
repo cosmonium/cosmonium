@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
-from panda3d.core import DrawMask
+from panda3d.core import DrawMask, Texture, CardMaker
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
@@ -96,7 +96,7 @@ class CosmoniumBase(ShowBase):
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
-        check_and_create_rendering_buffers(self)
+        self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
 
@@ -243,6 +243,10 @@ class CosmoniumBase(ShowBase):
             self.render.setShaderInput("pixel_size", self.observer.pixel_size)
         if self.gui is not None:
             self.gui.update_size(width, height)
+        if settings.color_picking and self.oid_texture is not None:
+            self.oid_texture.clear()
+            self.oid_texture.setup_2d_texture(width, height, Texture.T_unsigned_byte, Texture.F_rgba8)
+            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
 
     def connect_pstats(self):
         PStatClient.connect()
@@ -300,6 +304,7 @@ class Cosmonium(CosmoniumBase):
         self.current_sequence = None
         self.autopilot = None
         self.globalAmbient = None
+        self.oid_texture = None
 
         self.universe = Universe(self)
 
@@ -332,9 +337,16 @@ class Cosmonium(CosmoniumBase):
         #Force frame update to render the last status of the splash screen
         base.graphicsEngine.renderFrame()
         self.splash.close()
+        if settings.color_picking:
+            self.oid_texture = Texture()
+            self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
+            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
+            self.render.set_shader_input("oid_store", self.oid_texture)
+        else:
+            self.oid_texture = None
         self.observer = Camera(self.cam, self.camLens)
         self.autopilot = AutoPilot(self.observer, self)
-        self.mouse = Mouse(self)
+        self.mouse = Mouse(self, self.oid_texture)
         if self.nav is None:
             self.nav = FreeNav()
         if self.gui is None:
@@ -779,6 +791,9 @@ class Cosmonium(CosmoniumBase):
         obs.set_level(StellarObject.nb_obs)
         visibility.set_level(StellarObject.nb_visibility)
         instance.set_level(StellarObject.nb_instance)
+
+        if settings.color_picking:
+            self.oid_texture.clear_image()
 
         return Task.cont
 

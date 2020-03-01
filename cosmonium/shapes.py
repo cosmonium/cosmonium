@@ -60,6 +60,9 @@ class Shape:
         #TODO: Used to fix ring textures
         self.vanish_borders = False
 
+    def get_oid_color(self):
+        return self.owner.oid_color
+
     def get_user_parameters(self):
         return None
 

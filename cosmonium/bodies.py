@@ -46,6 +46,9 @@ from .utils import mag_to_scale, srgb_to_linear
 from math import pi, asin, atan2, sin, cos
 
 class StellarBodyLabel(ObjectLabel):
+    def get_oid_color(self):
+        return self.parent.oid_color
+
     def check_visibility(self, pixel_size):
         if hasattr(self.parent, "primary") and self.parent.resolved:
             self.visible = False
@@ -123,6 +126,8 @@ class StellarObject(LabelledObject):
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = srgb_to_linear(point_color)
         self.abs_magnitude = 99.0
+        self.oid = None
+        self.oid_color = None
         #Flags
         self.visible = False
         self.resolved = False
@@ -529,7 +534,7 @@ class StellarObject(LabelledObject):
         if scale > 0:
             color = self.point_color * scale
             size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
-            pointset.add_point(self.scene_position, color, size)
+            pointset.add_point(self.scene_position, color, size, self.oid_color)
             if self.has_halo and self._app_magnitude < smallest_glare_mag:
                 self.update_halo()
 
@@ -541,7 +546,7 @@ class StellarObject(LabelledObject):
             radius = 1.0
         size = radius * coef * 2.0
         position = self.scene_position
-        self.context.haloset.add_point(LVector3(*position), self.point_color, size)
+        self.context.haloset.add_point(LVector3(*position), self.point_color, size, self.oid_color)
 
     def show_rotation_axis(self):
         if self.rotation_axis:

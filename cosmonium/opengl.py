@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import load_prc_file_data
 from panda3d.core import DepthTestAttrib, Texture
-from panda3d.core import WindowProperties, FrameBufferProperties
+from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsOutput
 from direct.filter.FilterManager import FilterManager
 
 from .shaders import PostProcessShader
@@ -60,6 +60,7 @@ def request_opengl_config(data):
     if settings.dump_panda_shaders:
         data.append("dump-generated-shaders #t")
     data.append("driver-generate-mipmaps #t")
+    data.append("gl-immutable-texture-storage true")
 
     render_scene_to_buffer = False
     if settings.use_srgb and not settings.use_hardware_srgb:
@@ -131,6 +132,19 @@ def test_floating_point_buffer(base, rgba_bits):
         supported = False
     return supported
 
+def test_aux_buffer(base):
+    props = FrameBufferProperties()
+    props.set_aux_rgba(1)
+    buffer = base.win.make_texture_buffer("testBuffer", 256, 256, to_ram=False, fbp=props)
+    if buffer is not None:
+        supported = True
+        buffer.set_active(False)
+        base.graphicsEngine.removeWindow(buffer)
+    else:
+        supported = False
+    return supported
+
+
 def check_floating_point_buffer(base):
     if settings.use_floating_point_buffer:
         settings.floating_point_buffer = True
@@ -159,6 +173,18 @@ def check_srgb_buffer(base):
         else:
             settings.srgb_buffer = True
 
+def check_aux_buffer(base):
+    if settings.use_aux_buffer:
+        settings.aux_buffer = True
+        if not test_aux_buffer(base):
+            print("Auxiliary buffer not supported")
+            settings.aux_buffer = False
+    else:
+        settings.aux_buffer = False
+
+    if settings.aux_buffer:
+        print("Using aux buffer")
+
 def check_opengl_config(base):
     gsg = base.win.gsg
     glsl_version = gsg.getDriverShaderVersionMajor() * 100 + gsg.getDriverShaderVersionMinor()
@@ -185,6 +211,9 @@ def check_opengl_config(base):
 
     if settings.use_inverse_z and settings.buffer_texture and settings.non_power_of_two_textures:
         settings.render_scene_to_buffer = True
+
+    if settings.use_color_picking and settings.non_power_of_two_textures and glsl_version >= 420:
+        settings.color_picking = True
 
     print("Hardware Vendor:", gsg.driver_vendor)
     print("Driver Renderer: %s (%s)" % (gsg.driver_renderer, gsg.driver_version))
@@ -216,6 +245,8 @@ def check_and_create_rendering_buffers(showbase):
 
     manager = FilterManager(showbase.win, showbase.cam)
     color_buffer = Texture()
+    depth_buffer = None
+    aux_buffer = None
     if settings.use_inverse_z:
         render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
         depth_buffer = Texture()
@@ -223,7 +254,6 @@ def check_and_create_rendering_buffers(showbase):
         float_depth = True
         depth_bits = 24
     else:
-        depth_buffer = None
         float_depth = False
         depth_bits = 1
     if settings.render_scene_to_float:
@@ -237,7 +267,9 @@ def check_and_create_rendering_buffers(showbase):
     else:
         rgba_bits = (1, 1, 1, 1)
         float_colors = False
-    textures = {'color': color_buffer, 'depth': depth_buffer}
+    if settings.aux_buffer:
+        aux_buffer = Texture()
+    textures = {'color': color_buffer, 'depth': depth_buffer, 'aux0': aux_buffer}
     fbprops = FrameBufferProperties()
     fbprops.setFloatColor(float_colors)
     fbprops.setRgbaBits(*rgba_bits)
@@ -247,7 +279,11 @@ def check_and_create_rendering_buffers(showbase):
     if not settings.framebuffer_multisampling:
         fbprops.setMultisamples(buffer_multisamples)
     final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
+    final_quad.clear_color()
+    if aux_buffer is not None:
+        manager.buffers[-1].setClearValue(GraphicsOutput.RTPAuxRgba0, (0.0, 0.0, 0.0, 0.0))
     final_quad_shader = PostProcessShader(gamma_correction=settings.software_srgb, hdr=settings.use_hdr).create_shader()
     final_quad.set_shader(final_quad_shader)
     final_quad.set_shader_input("color_buffer", color_buffer)
     final_quad.set_shader_input("exposure", 2)
+    return textures

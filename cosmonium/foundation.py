@@ -239,6 +239,9 @@ class VisibleObject(BaseObject):
         if self.instance and not self.ignore_light:
             self.instance.setLight(self.light)
 
+    def get_oid_color(self):
+        return LColor()
+
 class CompositeObject(BaseObject):
     def __init__(self, names):
         BaseObject.__init__(self, names)

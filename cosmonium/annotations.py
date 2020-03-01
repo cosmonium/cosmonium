@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName
 from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath, AntialiasAttrib
+from panda3d.core import NodePath
 
 from .foundation import VisibleObject, ObjectLabel, LabelledObject
 from .astro.orbits import FixedOrbit, InfinitePosition
@@ -67,6 +67,7 @@ class Orbit(VisibleObject):
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
         self.body = body
+        self.owner = body
         self.nbOfPoints = 360
         self.orbit = self.find_orbit(self.body)
         self.color = None
@@ -74,6 +75,12 @@ class Orbit(VisibleObject):
         if not self.orbit:
             print("No orbit for", self.get_name())
             self.visible = False
+
+    def get_oid_color(self):
+        if self.body is not None:
+            return self.body.oid_color
+        else:
+            return LColor()
 
     @classmethod
     def create_shader(cls):
@@ -223,7 +230,6 @@ class RotationAxis(VisibleObject):
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
         self.instance.setColor(srgb_to_linear(self.parent.get_orbit_color()))
-        self.instance.setAntialias(AntialiasAttrib.MMultisample)
         self.instance.reparentTo(self.context.annotation)
 
     def check_settings(self):

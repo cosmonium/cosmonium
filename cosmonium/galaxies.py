@@ -62,6 +62,8 @@ class Galaxy(DeepSpaceObject):
         shader = None
         if shader is None:
             shader = BasicShader(lighting_model=FlatLightingModel(), point_control=GalaxyPointControl())
+        #Disable color picking as it has huge impact on performance
+        shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = FlatSurface(shape=shape, appearance=appearance, shader=shader)

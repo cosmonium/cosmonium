@@ -50,6 +50,7 @@ use_hardware_instancing = True
 use_inverse_z = False
 instancing_use_tex = True
 use_texture_array = True
+use_aux_buffer = False
 
 stereoscopic_framebuffer = False
 red_blue_stereo = False
@@ -68,6 +69,7 @@ deferred_load=True
 patch_pool_size = 4
 
 mouse_over = False
+use_color_picking = True
 celestia_nav = True
 invert_wheel = False
 damped_nav = True
@@ -227,6 +229,8 @@ software_srgb = False
 hardware_tessellation = False
 hardware_instancing = False
 texture_array = False
+aux_buffer = False
+color_picking = False
 
 # Window configuration
 win_fullscreen = False

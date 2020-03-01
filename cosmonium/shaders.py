@@ -473,6 +473,8 @@ class VertexShader(ShaderProgram):
         self.instance_control.vertex_inputs(code)
         self.data_source.vertex_inputs(code)
         self.appearance.vertex_inputs(code)
+        if self.config.color_picking and self.config.vertex_oids:
+            code.append("in vec4 oid;")
 
     def create_outputs(self, code):
         if self.config.fragment_uses_vertex:
@@ -502,6 +504,8 @@ class VertexShader(ShaderProgram):
         self.scattering.vertex_outputs(code)
         self.data_source.vertex_outputs(code)
         self.appearance.vertex_outputs(code)
+        if self.config.color_picking and self.config.vertex_oids:
+            code.append("out vec4 color_picking;")
 
     def create_extra(self, code):
         ShaderProgram.create_extra(self, code)
@@ -592,6 +596,8 @@ class VertexShader(ShaderProgram):
         self.scattering.vertex_shader(code)
         self.data_source.vertex_shader(code)
         self.appearance.vertex_shader(code)
+        if self.config.color_picking and self.config.vertex_oids:
+            code.append("color_picking = oid;")
 
 class TessellationShader(ShaderProgram):
     def __init__(self, config, tessellation_control):
@@ -640,6 +646,7 @@ class FragmentShader(ShaderProgram):
         self.scattering = scattering
         self.point_control = point_control
         self.after_effects = after_effects
+        self.nb_outputs = 1
 
     def create_uniforms(self, code):
         self.appearance.fragment_uniforms(code)
@@ -653,6 +660,10 @@ class FragmentShader(ShaderProgram):
         self.point_control.fragment_uniforms(code)
         for effect in self.after_effects:
             effect.fragment_uniforms(code)
+        if self.config.color_picking and not self.config.vertex_oids:
+            code.append("uniform vec4 color_picking;")
+        if self.config.color_picking:
+            code.append("layout (binding=0, rgba8) uniform writeonly image2D oid_store;")
 
     def create_inputs(self, code):
         if self.config.fragment_uses_vertex:
@@ -681,10 +692,12 @@ class FragmentShader(ShaderProgram):
         self.lighting_model.fragment_inputs(code)
         self.scattering.fragment_inputs(code)
         self.point_control.fragment_inputs(code)
+        if self.config.color_picking and self.config.vertex_oids:
+            code.append("in vec4 color_picking;")
 
     def create_outputs(self, code):
         if self.version >= 130:
-            code.append("out vec4 frag_color;")
+            code.append("out vec4 frag_color[%d];" % self.nb_outputs)
 
     def create_extra(self, code):
         ShaderProgram.create_extra(self, code)
@@ -700,7 +713,7 @@ class FragmentShader(ShaderProgram):
 
     def create_body(self, code):
         if self.version < 130:
-            code.append("vec4 frag_color;")
+            code.append("vec4 frag_color[%d];" % self.nb_outputs)
         self.point_control.fragment_shader_decl(code)
         self.appearance.fragment_shader_decl(code)
         self.data_source.fragment_shader_decl(code)
@@ -740,9 +753,11 @@ class FragmentShader(ShaderProgram):
         code.append("vec4 total_color = total_diffuse_color + total_emission_color;")
         for effect in self.after_effects:
             effect.fragment_shader(code)
-        code.append("frag_color = clamp(total_color, 0.0, 1.0);")
+        code.append("frag_color[0] = clamp(total_color, 0.0, 1.0);")
         if self.version < 130:
-            code.append("gl_FragColor = frag_color;")
+            code.append("gl_FragColor = frag_color[0];")
+        if self.config.color_picking:
+            code.append("imageStore(oid_store, ivec2(gl_FragCoord.xy), color_picking);")
 
 class BasicShader(StructuredShader):
     def __init__(self,
@@ -757,8 +772,7 @@ class BasicShader(StructuredShader):
                  data_source=None,
                  after_effects=None,
                  use_model_texcoord=True,
-                 scale_point=False,
-                 scale_point_static=False):
+                 vertex_oids=False):
         StructuredShader.__init__(self)
         if appearance is None:
             appearance = TextureAppearance()
@@ -805,6 +819,7 @@ class BasicShader(StructuredShader):
         self.after_effects = after_effects
         self.appearance.data = self.data_source
         self.lighting_model.appearance = self.appearance
+        self.vertex_oids = vertex_oids
         if tessellation_control is not None:
             self.tessellation_control = tessellation_control
             self.tessellation_control.shader = self
@@ -859,6 +874,7 @@ class BasicShader(StructuredShader):
         self.use_tangent = False
         self.fragment_uses_tangent = False
         self.use_model_texcoord = use_model_texcoord
+        self.color_picking = settings.color_picking
 
     def set_instance_control(self, instance_control):
         self.instance_control = instance_control
@@ -1036,6 +1052,8 @@ class BasicShader(StructuredShader):
         tc_id = self.tessellation_control.get_id()
         if tc_id:
             name += '-' + tc_id
+        if not self.color_picking:
+            name += "-ncp"
         return name
 
     def define_shader(self, shape, appearance):
@@ -1043,6 +1061,8 @@ class BasicShader(StructuredShader):
         self.scattering.define_shader(shape, appearance)
 
     def update_shader_shape_static(self, shape, appearance):
+        if self.color_picking and not self.vertex_oids:
+            shape.instance.set_shader_input("color_picking", shape.get_oid_color())
         self.appearance.update_shader_shape_static(shape, appearance)
         self.tessellation_control.update_shader_shape_static(shape, appearance)
         for shadow in self.shadows:
@@ -1648,17 +1668,11 @@ class StaticSizePointControl(PointControl):
     def get_id(self):
         return "pt-sta"
 
-    def vertex_uniforms(self, code):
-        code.append("uniform float size_scale;")
-
     def vertex_inputs(self, code):
         code.append("in float size;")
 
     def vertex_shader(self, code):
-        code.append("gl_PointSize = size * size_scale;")
-
-    def update_shader_shape(self, shape, appearance):
-        shape.instance.setShaderInput("size_scale", shape.size_scale)
+        code.append("gl_PointSize = size;")
 
 class DistanceSizePointControl(PointControl):
     def get_id(self):
@@ -2193,7 +2207,7 @@ class ShaderRingShadow(ShaderShadow):
         code.append("float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot(light_dir, ring_normal.xyz);")
         code.append("if (ring_intersection_param > 0.0) {")
         code.append("  vec3 ring_intersection = new_pos + light_dir * ring_intersection_param;")
-        code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
+        code.append('  float ring_shadofragw_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
         code.append("  shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
         code.append("} else {")
         code.append("  //Not in shadow")

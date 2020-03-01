@@ -126,3 +126,17 @@ def srgb_to_linear(color):
                       color[3])
     else:
         return color
+
+def int_to_color(value):
+    r = value & 0xFF
+    g = (value >> 8) & 0xFF
+    b = (value >> 16) & 0xFF
+    #a = (value >> 24) & 0xFF
+    return LColor(r / 255.0, g / 255.0, b / 255.0, 1.0)
+
+def color_to_int(color):
+    value = round(color[0] * 255)
+    value += round(color[1] * 255) << 8
+    value += round(color[2] * 255) << 16
+    #value += round(color[3] * 255) << 24
+    return value
