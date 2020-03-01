@@ -33,18 +33,16 @@ from cosmonium.catalogs import objectsDB
 class Mouse(object):
     def __init__(self, base, oid_texture):
         self.base = base
-        if settings.color_picking:
-            self.picking_texture = oid_texture
-        else:
-            self.picker = CollisionTraverser()
-            self.pq = CollisionHandlerQueue()
-            self.pickerNode = CollisionNode('mouseRay')
-            self.pickerNP = self.base.cam.attachNewNode(self.pickerNode)
-            self.pickerNode.setFromCollideMask(CollisionNode.getDefaultCollideMask() | GeomNode.getDefaultCollideMask())
-            self.pickerRay = CollisionRay()
-            self.pickerNode.addSolid(self.pickerRay)
-            self.picker.addCollider(self.pickerNP, self.pq)
-            #self.picker.showCollisions(render)
+        self.picking_texture = oid_texture
+        self.picker = CollisionTraverser()
+        self.pq = CollisionHandlerQueue()
+        self.pickerNode = CollisionNode('mouseRay')
+        self.pickerNP = self.base.cam.attachNewNode(self.pickerNode)
+        self.pickerNode.setFromCollideMask(CollisionNode.getDefaultCollideMask() | GeomNode.getDefaultCollideMask())
+        self.pickerRay = CollisionRay()
+        self.pickerNode.addSolid(self.pickerRay)
+        self.picker.addCollider(self.pickerNP, self.pq)
+        #self.picker.showCollisions(render)
         if settings.mouse_over:
             taskMgr.add(self.mouse_task, 'mouse-task')
         self.over = None
@@ -87,9 +85,15 @@ class Mouse(object):
 
     def find_over(self):
         if settings.color_picking:
-            return self.find_over_color()
+            over_color = self.find_over_color()
         else:
-            return self.find_over_ray()
+            over_color = None
+        over_ray = self.find_over_ray()
+        over = over_color
+        if over_ray is not None:
+            if over is None or over.distance_to_obs > over_ray.distance_to_obs:
+                over = over_ray
+        return over
 
     def get_over(self):
         if settings.mouse_over:
