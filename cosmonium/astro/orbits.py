@@ -80,7 +80,7 @@ class Orbit(object):
 
 class FixedPosition(Orbit):
     #TODO: Rename into something like GlobalFixedPosition
-    def __init__(self, position=None,
+    def __init__(self, position=None, global_position=True,
                  right_asc=0.0, right_asc_unit=units.Deg,
                  declination=0.0, declination_unit=units.Deg,
                  distance=0.0, distance_unit=units.Ly,
@@ -98,8 +98,12 @@ class FixedPosition(Orbit):
         if position is None:
             self.orientation = calc_orientation(self.right_asc, self.declination)
             position = self.orientation.xform(LVector3d(0, 0, distance))
-        self.global_position = position
-        self.position=LPoint3d()
+        if global_position:
+            self.global_position = position
+            self.position = LPoint3d()
+        else:
+            self.global_position = LPoint3d()
+            self.position = position
         self.rotation=LQuaterniond()
 
     def calc_asc_decl(self):
@@ -116,18 +120,21 @@ class FixedPosition(Orbit):
         if self.right_asc is None:
             self.calc_asc_decl()
         return self.right_asc
-    
+
     def get_declination(self):
         if self.declination is None:
             self.calc_asc_decl()
         return self.declination
-    
+
     def project(self, time, center, radius):
         vector = self.global_position - center
         vector /= vector.length()
         vector *= radius
         return vector
-    
+
+    def get_apparent_radius(self):
+        return self.position.length()
+
     def get_global_position_at(self, time):
         return self.global_position
 

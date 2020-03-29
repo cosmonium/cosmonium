@@ -74,14 +74,28 @@ class EllipticOrbitYamlParser(YamlModuleParser):
 class FixedPositionYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
-        ra = data.get('ra', 0.0)
-        ra_units = AngleUnitsYamlParser.decode(data.get('ra-units', 'Deg'))
-        decl = data.get('de', 0.0)
-        decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
-        distance = data.get('distance', 0.0)
-        distance_units = DistanceUnitsYamlParser.decode(data.get('distance-units', 'pc'))
-        frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
-        return FixedPosition(right_asc=ra,
+        position = data.get('position', None)
+        if position is None:
+            ra = data.get('ra', 0.0)
+            ra_units = AngleUnitsYamlParser.decode(data.get('ra-units', 'Deg'))
+            decl = data.get('de', 0.0)
+            decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
+            distance = data.get('distance', 0.0)
+            distance_units = DistanceUnitsYamlParser.decode(data.get('distance-units', 'pc'))
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
+            global_pos = True
+        else:
+            ra = None
+            ra_units = None
+            decl = None
+            decl_units = None
+            distance = None
+            distance_units = None
+            global_pos = data.get("global", True)
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+        return FixedPosition(position=position,
+                             global_position=global_pos,
+                             right_asc=ra,
                              right_asc_unit=ra_units,
                              declination=decl,
                              declination_unit=decl_units,
