@@ -94,6 +94,9 @@ class StellarBodyLabel(ObjectLabel):
 
 class FixedOrbitLabel(StellarBodyLabel):
     def check_visibility(self, pixel_size):
+        if hasattr(self.parent, "primary") and self.parent.resolved:
+            self.visible = False
+            return
         self.visible = self.parent._app_magnitude < settings.label_lowest_app_magnitude
         self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.parent._app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
         self.fade = clamp(self.fade, 0.0, 1.0)
