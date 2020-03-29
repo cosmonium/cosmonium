@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade "pip<20"
-        pip install panda3d==1.10.5
+        pip install panda3d>=1.10.6
     - name: Build binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
