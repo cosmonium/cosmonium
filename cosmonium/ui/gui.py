@@ -25,7 +25,7 @@ from panda3d.core import LVector3, LVector2
 from pandamenu.menu import DropDownMenu, PopupMenu
 
 from ..bodies import Star, StellarBody
-from ..systems import SimpleSystem
+from ..systems import StellarSystem, SimpleSystem
 from ..universe import Universe
 from ..astro import units
 from ..astro import bayer
@@ -611,9 +611,15 @@ class Gui(object):
 
     def create_orbiting_bodies_menu_items(self, body):
         subitems = []
-        if body is not None and body.system is not None and not isinstance(body.system, Universe):
+        if isinstance(body, StellarSystem):
+            system = body
+        elif body is not None and body.system is not None and not isinstance(body.system, Universe):
+            system = body.system
+        else:
+            system = None
+        if system is not None:
             children = []
-            for child in body.system.children:
+            for child in system.children:
                 if child != body:
                     children.append(child)
             if len(children) > 0:
