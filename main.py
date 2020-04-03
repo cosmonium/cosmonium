@@ -58,7 +58,7 @@ class CosmoniumConfig(object):
         self.main = 'data/cosmonium.yaml'
         self.default = 'earth'
         self.script = None
-        self.extra = [settings.data_dir]
+        self.extra = ['data/extra', settings.data_dir]
         self.celestia = False
         self.celestia_data_list = ["../Celestia"]
         if sys.platform == "darwin":
@@ -90,7 +90,7 @@ class CosmoniumConfig(object):
         if args.default is not None:
             self.default = args.default
         if args.extra is not None:
-            self.extra = args.extra
+            self.extra += args.extra
         if args.celestia is not None:
             if args.celestia != '':
                 self.celestia_data_list = [args.celestia]
@@ -202,7 +202,11 @@ class CosmoniumApp(Cosmonium):
 
     def load_dir(self, parser, path):
         for entry in os.listdir(path):
-            self.load_file(parser, os.path.join(path, entry))
+            entry_path = os.path.join(path, entry)
+            if os.path.isdir(entry_path):
+                self.load_dir(parser, entry_path)
+            else:
+                self.load_file(parser, entry_path)
 
     def load_universe_cosmonium(self):
         parser = UniverseYamlParser(self.universe)
