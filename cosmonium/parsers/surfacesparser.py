@@ -30,9 +30,11 @@ from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource,
 from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
 from ..procedural.heightmap import PatchedHeightmap, heightmapRegistry
 from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
+from ..catalogs import objectsDB
 from .. import settings
 
 from .yamlparser import YamlModuleParser
+from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
@@ -165,3 +167,20 @@ class SurfaceYamlParser(YamlModuleParser):
             previous = entry
         return surfaces
 
+class StandaloneSurfaceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        name = data.get('name', None)
+        parent_name = data.get('parent')
+        parent = objectsDB.get(parent_name)
+        if parent is None:
+            print("ERROR: Parent '%s' of surface '%s' not found" % (parent_name, name))
+            return None
+        active = data.get('active', 'True')
+        surface = SurfaceYamlParser.decode_surface(data, parent.atmosphere, {}, parent)
+        parent.add_surface(surface)
+        if active:
+            parent.set_surface(surface)
+        return None
+
+ObjectYamlParser.register_object_parser('surface', StandaloneSurfaceYamlParser())

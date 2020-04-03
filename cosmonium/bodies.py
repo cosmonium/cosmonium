@@ -634,6 +634,10 @@ class StellarBody(StellarObject):
         self.surfaces.append(surface)
         surface.owner = self
 
+    def insert_surface(self, index, surface):
+        self.surfaces.insert(index, surface)
+        surface.owner = self
+
     def set_surface(self, surface):
         if not surface in self.surfaces: return
         if self.auto_surface: return
