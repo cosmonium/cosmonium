@@ -727,11 +727,8 @@ class Gui(object):
 
     def list_objects(self, prefix):
         result = objectsDB.startswith(prefix)
-        text_result = []
-        for entry in result:
-            text_result.append((entry.get_name_startswith(prefix), entry))
-        text_result.sort(key=lambda x: x[0])
-        return text_result
+        result.sort(key=lambda x: x[0])
+        return result
 
     def open_find_object(self):
         self.query.open_query(self)

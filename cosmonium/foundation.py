@@ -63,11 +63,11 @@ class BaseObject(object):
     def get_ascii_name(self):
         return str(self.names[0].encode('ascii', 'replace'))
 
-    def get_name_startswith(self, text):
+    def get_exact_name(self, text):
         text = text.upper()
         result = ''
         for name in self.names:
-            if name.upper().startswith(text):
+            if name.upper() == text:
                 result = name
                 break
         return result

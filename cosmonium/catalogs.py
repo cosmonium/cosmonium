@@ -38,7 +38,7 @@ class ObjectsDB(object):
         result = []
         for (key, value) in self.db.items():
             if key.startswith(text):
-                result.append(value)
+                result.append((value.get_exact_name(key), value))
         return result
 
 class GlobalObjectsDB(object):
@@ -72,7 +72,7 @@ class GlobalObjectsDB(object):
         result = []
         for (key, value) in self.db.items():
             if key.startswith(text):
-                result.append(value)
+                result.append((value.get_exact_name(key), value))
         return result
 
 objectsDB = GlobalObjectsDB()
