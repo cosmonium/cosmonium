@@ -82,7 +82,11 @@ def decode_name(name):
                     print("Failure to decode", name, greek)
                     print(name.__class__, greek.__class__, greek_utf8_map[greek].__class__)
             if number != '':
-                name = name.replace(number, superscripts[int(number)], 1)
+                str_number = str(int(number))
+                superscript = ''
+                for c in str_number:
+                    superscript += superscripts[int(c)]
+                name = name.replace(number, superscript, 1)
     return name
 
 def decode_names(encoded_names):
