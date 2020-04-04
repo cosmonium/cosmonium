@@ -85,9 +85,12 @@ class SurfaceYamlParser(YamlModuleParser):
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
-                shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+                shape.set_lod_control(VertexSizePatchLodControl(settings.patch_max_vertex_size,
+                                                                density=settings.patch_constant_density))
             else:
-                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
+                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.patch_max_vertex_size,
+                                                                         min_density=settings.patch_min_density,
+                                                                         density=settings.patch_max_density))
         if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))

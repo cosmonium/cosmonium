@@ -1395,7 +1395,7 @@ class PatchLodControl(object):
 #When merging, the resulting patch will be  2/2.1 smaller than the slit limit
 
 class TexturePatchLodControl(PatchLodControl):
-    def __init__(self, min_density=8, density=32, max_lod=100):
+    def __init__(self, min_density, density, max_lod=100):
         PatchLodControl.__init__(self, density, max_lod)
         self.min_density = min_density
 
@@ -1420,7 +1420,7 @@ class TexturePatchLodControl(PatchLodControl):
         return apparent_patch_size < self.patch_size / 2.1
 
 class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
-    def __init__(self, max_vertex_size, min_density=8, density=32, max_lod=100):
+    def __init__(self, max_vertex_size, min_density, density, max_lod=100):
         TexturePatchLodControl.__init__(self, min_density, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
@@ -1450,7 +1450,7 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
             return apparent_vertex_size < self.max_vertex_size / 2.1
 
 class VertexSizePatchLodControl(PatchLodControl):
-    def __init__(self, max_vertex_size, density=32, max_lod=100):
+    def __init__(self, max_vertex_size, density, max_lod=100):
         PatchLodControl.__init__(self, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
@@ -1466,7 +1466,7 @@ class VertexSizePatchLodControl(PatchLodControl):
         return to_merge
 
 class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
-    def __init__(self, max_distance, max_vertex_size, density=32, max_lod=100):
+    def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
         VertexSizePatchLodControl.__init__(self, max_vertex_size, density, max_lod)
         self.max_distance = max_distance
 

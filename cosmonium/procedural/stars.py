@@ -26,6 +26,7 @@ from ..shaders import BasicShader, FlatLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
 from ..bodies import SurfaceFactory
+from .. import settings
 
 from .textures import ProceduralVirtualTextureSource
 from .shadernoise import GrayTarget
@@ -40,7 +41,8 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         self.scale = 1.0
 
     def create(self, body):
-        shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=64),
+        shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=settings.patch_max_vertex_size,
+                                                                                 density=settings.patch_constant_density),
                                            use_shader=False)
         shader = BasicShader(lighting_model=FlatLightingModel())
         surface = FlatSurface(appearance=Appearance(emissionColor=body.point_color,
