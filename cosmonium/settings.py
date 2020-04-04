@@ -248,6 +248,8 @@ config_file = os.path.join(config_dir, 'config.yaml')
 
 #Debug flags
 shader_debug_fragment_shader = 'default'
+shader_debug_coord = False
+shader_debug_coord_line_width = 0.005
 
 bodyClasses.register_class("galaxy", "galaxies",
                            BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1),

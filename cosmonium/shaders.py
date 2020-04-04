@@ -770,6 +770,12 @@ class FragmentShader(ShaderProgram):
                     code.append("vec4 total_color = color_picking;")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
+        if settings.shader_debug_coord:
+            code.append("float line_width = %g;" % settings.shader_debug_coord_line_width)
+            code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((line_width - texcoord0.x) / line_width, 0.0, 1.0));")
+            code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((texcoord0.x - 1.0 + line_width) / line_width, 0.0, 1.0));")
+            code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((line_width - texcoord0.y) / line_width, 0.0, 1.0));")
+            code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((texcoord0.y - 1.0 + line_width) / line_width, 0.0, 1.0));")
         code.append("frag_color[0] = clamp(total_color, 0.0, 1.0);")
         if self.version < 130:
             code.append("gl_FragColor = frag_color[0];")
@@ -1039,6 +1045,8 @@ class BasicShader(StructuredShader):
             name = "basic"
         else:
             name = "debug-" + settings.shader_debug_fragment_shader
+        if settings.shader_debug_coord:
+            name += "-debug-coord"
         ap_id = self.appearance.get_id()
         if ap_id:
             name += "-" + ap_id
