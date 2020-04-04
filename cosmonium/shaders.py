@@ -2218,7 +2218,7 @@ class ShaderRingShadow(ShaderShadow):
         code.append("float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot(light_dir, ring_normal.xyz);")
         code.append("if (ring_intersection_param > 0.0) {")
         code.append("  vec3 ring_intersection = new_pos + light_dir * ring_intersection_param;")
-        code.append('  float ring_shadofragw_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
+        code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
         code.append("  shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
         code.append("} else {")
         code.append("  //Not in shadow")
