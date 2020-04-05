@@ -81,7 +81,7 @@ shadow_size = 1024
 max_sprite_size = 800
 
 patch_max_vertex_size = 64
-patch_min_density = 8
+patch_min_density = 32
 patch_max_density = 64
 patch_constant_density = 32
 
