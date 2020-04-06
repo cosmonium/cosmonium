@@ -742,17 +742,34 @@ class FragmentShader(ShaderProgram):
                          ]
             else:
                 code.append("normal = pixel_normal;")
-        code.append("vec4 total_diffuse_color = vec4(0, 0, 0, 0);")
-        code.append("vec4 total_emission_color = vec4(0, 0, 0, 0);")
-        code.append("float shadow = 1.0;")
-        for shadow in self.shadows:
-            shadow.fragment_shader(code)
-        self.lighting_model.fragment_shader(code)
-        self.scattering.fragment_shader(code)
-        self.point_control.fragment_shader(code)
-        code.append("vec4 total_color = total_diffuse_color + total_emission_color;")
-        for effect in self.after_effects:
-            effect.fragment_shader(code)
+        if settings.shader_debug_fragment_shader == 'default':
+            code.append("vec4 total_diffuse_color = vec4(0, 0, 0, 0);")
+            code.append("vec4 total_emission_color = vec4(0, 0, 0, 0);")
+            code.append("float shadow = 1.0;")
+            for shadow in self.shadows:
+                shadow.fragment_shader(code)
+            self.lighting_model.fragment_shader(code)
+            self.scattering.fragment_shader(code)
+            self.point_control.fragment_shader(code)
+            code.append("vec4 total_color = total_diffuse_color + total_emission_color;")
+            for effect in self.after_effects:
+                effect.fragment_shader(code)
+        else:
+            if settings.shader_debug_fragment_shader == 'normal':
+                if self.config.fragment_uses_normal:
+                    code.append("vec4 total_color = vec4((normal + vec3(1.0)) / 2.0, 1.0);")
+                else:
+                    code.append("vec4 total_color = vec4(1.0);")
+            elif settings.shader_debug_fragment_shader == 'normalmap':
+                if self.config.fragment_uses_normal:
+                    code.append("vec4 total_color = vec4((pixel_normal + vec3(1.0)) / 2.0, 1.0);")
+                else:
+                    code.append("vec4 total_color = vec4(1.0);")
+            elif settings.shader_debug_fragment_shader == 'picking':
+                if self.config.color_picking:
+                    code.append("vec4 total_color = color_picking;")
+                else:
+                    code.append("vec4 total_color = vec4(1.0);")
         code.append("frag_color[0] = clamp(total_color, 0.0, 1.0);")
         if self.version < 130:
             code.append("gl_FragColor = frag_color[0];")
@@ -1018,7 +1035,10 @@ class BasicShader(StructuredShader):
                     self.world_normal = True
 
     def get_shader_id(self):
-        name = "basic"
+        if settings.shader_debug_fragment_shader == 'default':
+            name = "basic"
+        else:
+            name = "debug-" + settings.shader_debug_fragment_shader
         ap_id = self.appearance.get_id()
         if ap_id:
             name += "-" + ap_id
@@ -1406,6 +1426,8 @@ class TextureAppearance(ShaderAppearance):
                 code.append("surface_color.a = 1.0;")
         if self.has_normal_texture:
             code.append("pixel_normal = %s;" % self.data.get_source_for('normal'))
+        else:
+            code.append("pixel_normal = vec3(0, 0, 1.0);")
         if self.has_specular_texture:
             code.append("specular_factor = %s;" % self.data.get_source_for('specular'))
         else:

@@ -384,6 +384,10 @@ class Gui(object):
         settings.display_fps = False
         settings.display_ms = False
 
+    def set_shader_fragment_debug(self, mode):
+        settings.shader_debug_fragment_shader = mode
+        self.cosmonium.trigger_check_settings = True
+
     def create_main_menu_items(self):
         return (
                 ('_Find object>Enter', 0, self.open_find_object),
@@ -544,11 +548,18 @@ class Gui(object):
                 ('Render time', settings.display_ms, self.set_render_ms),
                 ("None", not (settings.display_fps or settings.display_ms), self.set_render_none),
                 )
+        shaders = (
+                ('Default', settings.shader_debug_fragment_shader == 'default', self.set_shader_fragment_debug, 'default'),
+                ('Normals', settings.shader_debug_fragment_shader == 'normal', self.set_shader_fragment_debug, 'normal'),
+                ('Normal map', settings.shader_debug_fragment_shader == 'normalmap', self.set_shader_fragment_debug, 'normalmap'),
+                ('Color picking', settings.shader_debug_fragment_shader == 'picking', self.set_shader_fragment_debug, 'picking'),
+                )
         return (
                 ('Toggle filled wireframe>F3', 0, self.cosmonium.toggle_filled_wireframe),
                 ('Toggle wireframe>Shift-F3', 0, self.cosmonium.toggle_wireframe),
                 ("Show render buffers>F5", 0, base.bufferViewer.toggleEnable),
                 0,
+                ('Shaders', 0, shaders),
                 ('Instant movement>Control-J', settings.debug_jump, self.toggle_jump),
                 ('Connect pstats>F2', 0, self.cosmonium.connect_pstats),
                 ('Render info', 0, fps),

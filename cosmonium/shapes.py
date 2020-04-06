@@ -224,6 +224,7 @@ class ShapeObject(VisibleObject):
 
     def check_settings(self):
         self.shape.check_settings()
+        self.update_shader()
 
     def get_user_parameters(self):
         group = ParametersGroup(self.get_component_name())

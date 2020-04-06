@@ -246,6 +246,9 @@ config_dir = appdirs.user_config_dir
 data_dir = appdirs.user_data_dir
 config_file = os.path.join(config_dir, 'config.yaml')
 
+#Debug flags
+shader_debug_fragment_shader = 'default'
+
 bodyClasses.register_class("galaxy", "galaxies",
                            BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1),
                                      orbit_color=LColor(1, 1, 1, 1),
