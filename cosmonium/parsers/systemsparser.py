@@ -32,9 +32,10 @@ class SystemYamlParser(YamlModuleParser):
     def decode(self, data):
         name = data.get('name')
         parent_name = data.get('parent')
+        star_system = data.get('star-system', False)
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))
-        system = SimpleSystem(name, orbit=orbit, rotation=rotation)
+        system = SimpleSystem(name, star_system=star_system, orbit=orbit, rotation=rotation)
         children = data.get('children', [])
         children = ObjectYamlParser.decode(children)
         for child in children:

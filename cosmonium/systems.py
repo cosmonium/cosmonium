@@ -35,6 +35,7 @@ class StellarSystem(StellarObject):
         self.primary = None
         self.has_halo = False
         self.was_visible = True
+        self.abs_magnitude = None
 
     def apply_func(self, func):
         StellarObject.apply_func(self, func)
@@ -232,10 +233,22 @@ class StellarSystem(StellarObject):
     def get_extend(self):
         return self._extend
 
+    def get_abs_magnitude(self):
+        if self.abs_magnitude is None:
+            luminosity = 0.0
+            for child in self.children:
+                luminosity += abs_mag_to_lum(child.get_abs_magnitude())
+            if luminosity > 0.0:
+                self.abs_magnitude = lum_to_abs_mag(luminosity)
+            else:
+                self.abs_magnitude = 99.0
+        return self.abs_magnitude
+
 class SimpleSystem(StellarSystem):
-    def __init__(self, names, primary=None, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
+    def __init__(self, names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
         self.set_primary(primary)
+        self.star_system = star_system
 
     def set_primary(self, primary):
         if self.primary is not None:
@@ -245,7 +258,8 @@ class SimpleSystem(StellarSystem):
             self.primary = primary
             primary.set_system(self)
             self.body_class = primary.body_class
-            self.abs_magnitude = self.primary.get_abs_magnitude()
+            if not self.star_system:
+                self.abs_magnitude = self.primary.get_abs_magnitude()
             self.point_color = primary.point_color
 
     def add_child(self, child):
@@ -278,7 +292,10 @@ class SimpleSystem(StellarSystem):
         return self.primary.get_name()
 
     def get_abs_magnitude(self):
-        return self.primary.get_abs_magnitude()
+        if self.star_system:
+            return StellarSystem.get_abs_magnitude(self)
+        else:
+            return self.primary.get_abs_magnitude()
 
     def update(self, time):
         StellarSystem.update(self, time)
@@ -301,23 +318,11 @@ class SimpleSystem(StellarSystem):
             child.end_shadows_update()
 
 class Barycenter(StellarSystem):
-    has_halo = True
-    
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('body_class', 'star')
         StellarSystem.__init__(self, *args, **kwargs)
         self.abs_magnitude = None
+        self.has_halo = True
 
     def is_emissive(self):
         return True
-
-    def get_abs_magnitude(self):
-        if self.abs_magnitude is None:
-            luminosity = 0.0
-            for child in self.children:
-                luminosity += abs_mag_to_lum(child.get_abs_magnitude())
-            if luminosity > 0.0:
-                self.abs_magnitude = lum_to_abs_mag(luminosity)
-            else:
-                self.abs_magnitude = 99.0
-        return self.abs_magnitude
