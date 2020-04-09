@@ -113,11 +113,13 @@ class OctreeNode(object):
 
     def _split(self):
         new_leaves = []
+        center = self.center
         for leaf in self.leaves:
-            if leaf.get_abs_magnitude() < self.threshold:
+            position = leaf.get_global_position()
+            if leaf.get_abs_magnitude() < self.threshold or (center - position).length() < leaf._extend:
                 new_leaves.append(leaf)
             else:
-                self._add_in_child(leaf, leaf.get_global_position(), leaf.get_abs_magnitude())
+                self._add_in_child(leaf, position, leaf.get_abs_magnitude())
         self.leaves = new_leaves
         self.has_children = True
 

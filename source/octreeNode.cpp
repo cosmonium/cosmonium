@@ -135,10 +135,11 @@ OctreeNode::split(void)
 {
     std::vector<PT(OctreeLeaf)> new_leaves;
     for (const auto leaf : leaves) {
-        if (leaf->get_abs_magnitude() < threshold) {
+        const auto position = leaf->get_global_position();
+        if (leaf->get_abs_magnitude() < threshold || (center - position).length() < leaf->get_extend()) {
             new_leaves.push_back(leaf);
         } else {
-            add_in_child(leaf, leaf->get_global_position(), leaf->get_abs_magnitude());
+            add_in_child(leaf, position, leaf->get_abs_magnitude());
         }
     }
     leaves = new_leaves;
