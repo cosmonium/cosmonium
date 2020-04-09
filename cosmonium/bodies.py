@@ -94,7 +94,8 @@ class StellarBodyLabel(ObjectLabel):
 
 class FixedOrbitLabel(StellarBodyLabel):
     def check_visibility(self, pixel_size):
-        if hasattr(self.parent, "primary") and self.parent.resolved:
+        #TODO: Should be refactored !
+        if hasattr(self.parent, "primary") and self.parent.resolved and (self.parent.primary is None or (self.parent.primary.label is not None and self.parent.primary.label.visible)):
             self.visible = False
             return
         self.visible = self.parent._app_magnitude < settings.label_lowest_app_magnitude
