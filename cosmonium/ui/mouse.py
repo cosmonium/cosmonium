@@ -93,6 +93,8 @@ class Mouse(object):
         if over_ray is not None:
             if over is None or over.distance_to_obs > over_ray.distance_to_obs:
                 over = over_ray
+        if hasattr(over, "primary") and over.primary is not None:
+            over = over.primary
         return over
 
     def get_over(self):
