@@ -27,44 +27,6 @@ from .generator import GeneratorPool
 from .shadernoise import NoiseShader
 from .. import settings
 
-class ProceduralTextureSource(TextureSource):
-    cached = False
-    patched = True
-    procedural = True
-    def __init__(self, terrain):
-        self.terrain = terrain
-        self.loaded = False
-
-    def can_split(self, patch):
-        return True
-
-    def load(self, patch):
-        return None
-
-class GpuTextureSource(ProceduralTextureSource):
-    def load(self, patch):
-        heightmap = self.terrain.get_heightmap(None)
-        #TODO: heightmap has no size, but width and height
-        data = (heightmap.texture, self.terrain.width, 0)
-        return data
-
-class PatchedGpuTextureSource(ProceduralTextureSource):
-    patched=True
-    def __init__(self, terrain):
-        ProceduralTextureSource.__init__(self, terrain)
-        self.textures_map = {}
-
-    def load(self, patch):
-        if patch not in self.textures_map:
-            heightmap = self.terrain.get_heightmap(patch)
-            if heightmap is None:
-                print("NO HEIGHTMAP", patch.str_id())
-            data = (heightmap.texture, self.terrain.size, patch.lod)
-            self.textures_map[patch] = data
-            return data
-        else:
-            return self.textures_map[patch]
-
 class ProceduralVirtualTextureSource(TextureSource):
     tex_generators = {}
     cached = False

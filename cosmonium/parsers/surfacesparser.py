@@ -28,7 +28,6 @@ from ..heightmap import heightmapRegistry
 from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
 from ..shapes import MeshShape
 from ..procedural.shaders import DetailMap
-from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
 from ..catalogs import objectsDB
 from .. import settings
 
@@ -102,10 +101,6 @@ class SurfaceYamlParser(YamlModuleParser):
                     heightmap = heightmapRegistry.get(heightmap_data + '-patched')
                 else:
                     heightmap = heightmapRegistry.get(heightmap_data)
-            if shape.patchable:
-                heightmap_source_type = PatchedGpuTextureSource
-            else:
-                heightmap_source_type = GpuTextureSource
             control = data.get('control', None)
             if control is not None:
                 control_parser = TextureControlYamlParser()
@@ -115,7 +110,7 @@ class SurfaceYamlParser(YamlModuleParser):
             else:
                 shader_appearance = None
                 appearance_source = PandaTextureDataSource()
-            data_source = [HeightmapDataSource(heightmap, heightmap_source_type)]
+            data_source = [HeightmapDataSource(heightmap)]
             if appearance_source is not None:
                 data_source.append(appearance_source)
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),

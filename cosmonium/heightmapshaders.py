@@ -44,11 +44,10 @@ class HeightmapDataSource(DataSource):
     F_quintic = 2
     F_bspline = 3
 
-    def __init__(self, heightmap, texture_class, normals=True, shader=None):
+    def __init__(self, heightmap, normals=True, shader=None):
         DataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.name = self.heightmap.name
-        self.texture_source = DataTexture(texture_class(heightmap))
         self.has_normal_texture = normals
         self.filtering = heightmap.interpolator.get_data_source_filtering()
 
@@ -314,9 +313,8 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         self.shader.fragment_shader.add_function(code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal)
 
     def update_shader_patch_static(self, shape, patch, appearance):
-        #TODO: Should not be done here !
-        self.texture_source.load(patch)
-        self.texture_source.apply(patch, 'heightmap_%s' % self.name)
+        heightmap = self.heightmap.get_heightmap(patch)
+        patch.instance.set_shader_input('heightmap_%s' % self.name, heightmap.texture)
         #TODO: replace this by a vec3
         patch.instance.set_shader_input("heightmap_%s_height_scale" % self.name, self.heightmap.get_height_scale(patch))
         patch.instance.set_shader_input("heightmap_%s_u_scale" % self.name, self.heightmap.get_u_scale(patch))
