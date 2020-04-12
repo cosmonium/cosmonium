@@ -24,10 +24,11 @@ from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader, PandaTextureDataSource
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
+from ..heightmap import heightmapRegistry
+from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
 from ..shapes import MeshShape
-from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource, DetailMap
+from ..procedural.shaders import DetailMap
 from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
-from ..procedural.heightmap import heightmapRegistry
 from ..catalogs import objectsDB
 from .. import settings
 

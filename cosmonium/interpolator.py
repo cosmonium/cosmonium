@@ -23,8 +23,8 @@ from __future__ import division
 
 from panda3d.core import LColor, Texture
 
-from .. import settings
-from .shaders import HeightmapDataSource
+from .heightmapshaders import HeightmapDataSource
+from . import settings
 
 from math import floor
 

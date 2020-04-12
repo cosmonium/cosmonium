@@ -21,9 +21,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..astro import units
-from ..procedural.heightmap import PatchedHeightmap, heightmapRegistry
+from ..heightmap import PatchedHeightmap, heightmapRegistry
+from ..interpolator import NearestInterpolator, BilinearInterpolator, ImprovedBilinearInterpolator, QuinticInterpolator, BSplineInterpolator
 from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
-from ..procedural.interpolator import NearestInterpolator, BilinearInterpolator, ImprovedBilinearInterpolator, QuinticInterpolator, BSplineInterpolator
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
