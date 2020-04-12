@@ -63,11 +63,17 @@ class TextureBase(object):
     def can_split(self, patch):
         return False
 
+    def get_default_nb_components(self):
+        return 4
+
+    def get_default_max_val(self):
+        return 255
+
     def get_default_color(self):
         return (1, 1, 1, 1)
 
     def create_default_image(self):
-        image = PNMImage(1, 1, 4)
+        image = PNMImage(1, 1, self.get_default_nb_components(), self.get_default_max_val())
         image.setXelA(0, 0, self.get_default_color())
         return image
 
@@ -128,7 +134,7 @@ class TextureSource(object):
     def texture_filename(self, patch):
         return None
 
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
         pass
 
     def can_split(self, patch):
@@ -141,7 +147,7 @@ class TextureSource(object):
         return None
 
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
         callback(None, 0, 0, *cb_args)
 
 class AutoTextureSource(TextureSource):
@@ -201,7 +207,7 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
         if self.source is None:
             self.create_source()
         return self.source.load(patch, color_space, sync, callback, cb_args)
@@ -245,7 +251,7 @@ class TextureFileSource(TextureSource):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
@@ -384,6 +390,41 @@ class SimpleTexture(TextureBase):
 
     def can_split(self, patch):
         return self.source.can_split(patch)
+
+class DataTexture(TextureBase):
+    def __init__(self, source):
+        TextureBase.__init__(self)
+        if source is not None and not isinstance(source, TextureSource):
+            source = AutoTextureSource(source, attribution=None)
+        self.source = source
+
+    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
+        if callback is not None:
+            callback(self, *cb_args)
+
+    def load(self, patch, callback=None, cb_args=None):
+        if not self.source.loaded or not self.source.cached:
+            self.source.load(patch, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
+        else:
+            if callback is not None:
+                callback(self, *cb_args)
+
+    def apply(self, shape, input_name):
+        (texture, texture_size, texture_lod) = self.source.get_texture(shape)
+        if texture is None:
+            (texture, texture_size, texture_lod) = self.get_default_texture()
+        if texture is not None:
+            if self.source.is_patched():
+                self.clamp()
+            shape.instance.set_shader_input(input_name, texture)
+
+    def can_split(self, patch):
+        return self.source.can_split(patch)
+
+    def clamp(self):
+        if self.texture is not None:
+            self.texture.setWrapU(Texture.WM_clamp)
+            self.texture.setWrapV(Texture.WM_clamp)
 
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
@@ -549,35 +590,14 @@ class TextureArray(TextureBase):
     def can_split(self, patch):
         return False
 
-class DataTexture(TextureBase):
-    def __init__(self, source):
-        TextureBase.__init__(self)
-        if source is not None and not isinstance(source, TextureSource):
-            source = TextureFileSource(source)
-        self.source = source
-        self.texture = None
-        self.texture_size = 0
-        self.texture_lod = 0
+class HeightMapTexture(DataTexture):
+    category = 'heightmap'
 
-    def load(self, patch, callback=None):
-        if not self.source.loaded or not self.source.cached:
-            (self.texture, self.texture_size, self.texture_lod) = self.source.load(patch)
-        if callback is not None:
-            callback(patch, self)
+    def get_default_nb_components(self):
+        return 1
 
-    def apply(self, shape, input_name):
-        if self.texture is not None:
-            if self.source.is_patched():
-                self.clamp()
-            shape.instance.set_shader_input(input_name, self.texture)
-
-    def can_split(self, patch):
-        return self.source.can_split(patch)
-
-    def clamp(self):
-        if self.texture is not None:
-            self.texture.setWrapU(Texture.WM_clamp)
-            self.texture.setWrapV(Texture.WM_clamp)
+    def get_default_color(self):
+        return (0,)
 
 class VirtualTextureSource(TextureSource):
     cached = False
@@ -622,7 +642,7 @@ class VirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
         if not patch in self.map_patch:
             tex_name = self.texture_name(patch)
             filename = self.context.find_texture(tex_name)

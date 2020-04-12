@@ -22,15 +22,16 @@ from __future__ import print_function
 from panda3d.core import LVector2, Texture
 
 from .patchedshapes import PatchLodControl
-from .textures import TexCoord
+from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .interpolator import BilinearInterpolator
+from .dircontext import defaultDirContext
 
 from math import floor, ceil
 import traceback
 import numpy
 import sys
 
-#TODO: HeightmapPatch has common code with Heightmap, this should be refactored
+#TODO: HeightmapPatch has common code with Heightmap and TextureHeightmapBase, this should be refactored
 #TODO: Texture data should be refactored like appearance to be fully independent from the source
 
 class HeightmapPatch:
@@ -162,42 +163,74 @@ class HeightmapPatch:
     def get_height_uv(self, u, v):
         return self.get_height(int(u * (self.width - 1)), int(v * (self.height - 1)))
 
-    def load(self, callback, cb_args=()):
+    def load(self, patch, callback, cb_args=()):
         if self.texture is None:
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
             self.parent.interpolator.configure_texture(self.texture)
-            self.do_load(callback, cb_args)
+            self.do_load(patch, callback, cb_args)
         else:
             if callback is not None:
                 callback(self, *cb_args)
 
     def heightmap_ready_cb(self, texture, callback, cb_args):
-        #print("READY", self.patch.str_id())
-        self.texture_peeker = self.texture.peek()
+        self.texture = texture
+        #print("READY", self.patch.str_id(), texture, self.texture)
+        self.texture_peeker = texture.peek()
 #         if self.texture_peeker is None:
 #             print("NOT READY !!!")
         self.heightmap_ready = True
         data = self.texture.getRamImage()
+        #TODO: should be completed and refactored
+        component_type = texture.getComponentType()
+        if component_type == Texture.T_float:
+            buffer_type = numpy.float32
+            scale = 1.0
+        elif component_type == Texture.T_unsigned_byte:
+            buffer_type = numpy.uint8
+            scale = 255.0
+        elif component_type == Texture.T_unsigned_short:
+            buffer_type = numpy.uint16
+            scale = 65535.0
         if sys.version_info[0] < 3:
             buf = data.getData()
-            np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
+            np_buffer = numpy.fromstring(buf, dtype=buffer_type)
         else:
-            np_buffer = numpy.frombuffer(data, numpy.float32)
+            np_buffer = numpy.frombuffer(data, buffer_type)
         np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
-        self.min_height = np_buffer.min()
-        self.max_height = np_buffer.max()
-        self.mean_height = np_buffer.mean()
+        self.min_height = np_buffer.min() / scale
+        self.max_height = np_buffer.max() / scale
+        self.mean_height = np_buffer.mean() / scale
         if callback is not None:
             callback(self, *cb_args)
 
-    def do_load(self, callback, cb_args):
+    def do_load(self, patch, callback, cb_args):
         pass
+
+class TextureHeightmapPatch(HeightmapPatch):
+    def __init__(self, data_source, parent, x0, y0, x1, y1, width, height, scale, coord, face, border):
+        HeightmapPatch.__init__(self, parent, x0, y0, x1, y1, width, height, scale, coord, face, border)
+        self.data_source = data_source
+
+    def texture_loaded_cb(self, texture, patch, callback, cb_args):
+        (texture, texture_size, texture_lod) = self.data_source.source.get_texture(patch)
+        self.heightmap_ready_cb(texture, callback, cb_args)
+
+    def do_load(self, patch, callback, cb_args):
+        self.data_source.load(patch, self.texture_loaded_cb, (patch, callback, cb_args))
 
 class HeightmapPatchFactory(object):
     def create_patch(self, *args, **kwargs):
         return None
+
+class TextureHeightmapPatchFactory(HeightmapPatchFactory):
+    def __init__(self, data_source):
+        HeightmapPatchFactory.__init__(self)
+        self.data_source = data_source
+
+    def create_patch(self, *args, **kwargs):
+        return TextureHeightmapPatch.create_from_patch(self.data_source, *args, **kwargs)
 
 class Heightmap(object):
     def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None):
@@ -218,6 +251,14 @@ class Heightmap(object):
         self.global_frequency = 1.0
         self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
+
+    def set_size(self, width, height):
+        u_scale = self.u_scale * self.width
+        v_scale = self.v_scale * self.height
+        self.width = width
+        self.height = height
+        self.u_scale = u_scale / self.width
+        self.v_scale = v_scale / self.height
 
     def set_height_scale(self, height_scale):
         self.height_scale = height_scale
@@ -274,7 +315,7 @@ class Heightmap(object):
     def create_heightmap(self, patch, callback=None, cb_args=()):
         return None
 
-class TextureHeightmap(Heightmap):
+class TextureHeightmapBase(Heightmap):
     def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator):
         Heightmap.__init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator)
         self.texture = None
@@ -308,16 +349,16 @@ class TextureHeightmap(Heightmap):
         height = self.interpolator.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale# + self.offset
 
-    def create_heightmap(self, patch, callback=None, cb_args=()):
-        return self.load(callback, cb_args)
+    def create_heightmap(self, shape, callback=None, cb_args=()):
+        return self.load(shape, callback, cb_args)
 
-    def load(self, callback, cb_args=()):
+    def load(self, shape, callback, cb_args=()):
         if self.texture is None:
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
             self.interpolator.configure_texture(self.texture)
-            self.do_load(callback, cb_args)
+            self.do_load(shape, self.heightmap_ready_cb, (callback, cb_args))
         else:
             if callback is not None:
                 callback(self, *cb_args)
@@ -341,8 +382,21 @@ class TextureHeightmap(Heightmap):
         if callback is not None:
             callback(self, *cb_args)
 
-    def do_load(self, callback, cb_args):
+    def do_load(self, shape, callback, cb_args):
         pass
+
+class TextureHeightmap(TextureHeightmapBase):
+    def __init__(self, name, width, height, height_scale, median, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
+        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
+        self.data_source = data_source
+
+    def set_data_source(self, data_source, context=defaultDirContext):
+        if data_source is not None and not isinstance(data_source, TextureBase):
+            data_source = HeightMapTexture(AutoTextureSource(data_source, None, context))
+        self.data_source = data_source
+
+    def do_load(self, shape, callback, cb_args):
+        self.data_source.load(shape, self.heightmap_ready_cb, (callback, cb_args))
 
 class PatchedHeightmap(Heightmap):
     def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, max_lod=100):
@@ -423,7 +477,7 @@ class PatchedHeightmap(Heightmap):
                     callback(heightmap, *cb_args)
             else:
                 #print("GEN", patch.str_id())
-                heightmap.load(callback, cb_args)
+                heightmap.load(patch, callback, cb_args)
         else:
             #print("CACHE", patch.str_id())
             heightmap = self.map_patch[patch.str_id()]

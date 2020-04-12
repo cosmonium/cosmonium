@@ -31,6 +31,9 @@ from .utilsparser import DistanceUnitsYamlParser
 from .noiseparser import NoiseYamlParser
 
 from math import pi
+from cosmonium.heightmap import TextureHeightmap, TextureHeightmapPatchFactory
+from cosmonium.textures import HeightMapTexture
+from cosmonium.parsers.appearancesparser import TexturesAppearanceYamlParser
 
 class InterpolatorYamlParser(YamlModuleParser):
     @classmethod
@@ -54,7 +57,7 @@ class InterpolatorYamlParser(YamlModuleParser):
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, name, patched, radius):
-        size = data.get('size', 256)
+        heightmap_type = data.get('type', 'procedural')
         raw_height_scale = data.get('max-height', 1.0)
         if radius is not None:
             height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.m)
@@ -72,15 +75,31 @@ class HeightmapYamlParser(YamlModuleParser):
             relative_height_scale = height_scale
         median = data.get('median', True)
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
-        noise_parser = NoiseYamlParser(scale_length)
-        noise = noise_parser.decode(data.get('noise'))
-        if patched:
-            max_lod = data.get('max-lod', 100)
-            heightmap = PatchedHeightmap(name, size,
-                                         relative_height_scale, pi, pi, median,
-                                         ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
+        if heightmap_type == 'procedural':
+            size = data.get('size', 256)
+            noise_parser = NoiseYamlParser(scale_length)
+            noise = noise_parser.decode(data.get('noise'))
+            if patched:
+                max_lod = data.get('max-lod', 100)
+                heightmap = PatchedHeightmap(name, size,
+                                             relative_height_scale, pi, pi, median,
+                                             ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
+            else:
+                heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
         else:
-            heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
+            heightmap_data = data.get('data')
+            if heightmap_data is not None:
+                texture_source, texture_offset = TexturesAppearanceYamlParser.decode_source(heightmap_data)
+                heightmap_source = HeightMapTexture(texture_source)
+                #TODO: missing texture offset
+            if patched:
+                max_lod = data.get('max-lod', 100)
+                size = heightmap_source.source.texture_size
+                heightmap = PatchedHeightmap(name, size,
+                                             relative_height_scale, pi, pi, median,
+                                             TextureHeightmapPatchFactory(heightmap_source), interpolator, max_lod)
+            else:
+                heightmap = TextureHeightmap(name, 1.0, 0.5, relative_height_scale, median, heightmap_source, interpolator)
         #TODO: should be set using a method or in constructor
         #TODO: Why raw_height_scale ???
         heightmap.global_scale = 1.0 / raw_height_scale

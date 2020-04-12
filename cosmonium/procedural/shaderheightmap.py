@@ -25,15 +25,15 @@ from panda3d.core import Texture
 from .generator import TexGenerator, GeneratorPool
 from .shadernoise import NoiseShader, FloatTarget
 
-from ..heightmap import TextureHeightmap, HeightmapPatch, HeightmapPatchFactory
+from ..heightmap import TextureHeightmapBase, HeightmapPatch, HeightmapPatchFactory
 from ..textures import TexCoord
 from .. import settings
 
-class ShaderHeightmap(TextureHeightmap):
+class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
 
     def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
-        TextureHeightmap.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
+        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
         self.noise = noise
         self.offset = offset
         self.scale = scale
@@ -57,7 +57,7 @@ class ShaderHeightmap(TextureHeightmap):
             self.shader.scale = scale
         self.reset()
 
-    def do_load(self, callback, cb_args):
+    def do_load(self, shape, callback, cb_args):
         if not self.tex_id in ShaderHeightmap.tex_generators:
             ShaderHeightmap.tex_generators[self.tex_id] = TexGenerator()
             if settings.encode_float:
@@ -101,7 +101,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.noise = noise
         self.tex_generator = None
 
-    def do_load(self, callback, cb_args):
+    def do_load(self, patch, callback, cb_args):
         if not self.width in ShaderHeightmapPatch.tex_generators:
             ShaderHeightmapPatch.tex_generators[self.width] = GeneratorPool(settings.patch_pool_size)
             if settings.encode_float:
