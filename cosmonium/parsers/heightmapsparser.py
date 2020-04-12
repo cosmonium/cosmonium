@@ -53,27 +53,48 @@ class InterpolatorYamlParser(YamlModuleParser):
 
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
+    def decode(self, data, name, patched, radius):
+        size = data.get('size', 256)
+        raw_height_scale = data.get('max-height', 1.0)
+        if radius is not None:
+            height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.m)
+            height_scale = raw_height_scale * height_scale_units
+            scale_length = data.get('scale-length', None)
+            scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
+            if scale_length is not None:
+                scale_length *= scale_length_units
+            else:
+                scale_length = radius * 2 * pi
+                relative_height_scale = height_scale / radius
+        else:
+            height_scale = raw_height_scale
+            scale_length = 1.0
+            relative_height_scale = height_scale
+        median = data.get('median', True)
+        interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
+        noise_parser = NoiseYamlParser(scale_length)
+        noise = noise_parser.decode(data.get('noise'))
+        if patched:
+            max_lod = data.get('max-lod', 100)
+            heightmap = PatchedHeightmap(name, size,
+                                         relative_height_scale, pi, pi, median,
+                                         ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
+        else:
+            heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
+        #TODO: should be set using a method or in constructor
+        #TODO: Why raw_height_scale ???
+        heightmap.global_scale = 1.0 / raw_height_scale
+        return heightmap
+
+class StandaloneHeightmapYamlParser(YamlModuleParser):
+    @classmethod
     def decode(self, data):
         name = data.get('name')
         if name is None: return None
-        size = data.get('size', 256)
-        raw_height_scale = data.get('max-height', 1.0)
-        height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.Km)
-        median = data.get('median', True)
-        noise_parser = NoiseYamlParser()
-        noise = noise_parser.decode(data.get('noise'))
-        height_scale = raw_height_scale * height_scale_units
-        interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
-        max_lod = data.get('max-lod', 100)
-        patched_heightmap = PatchedHeightmap(name, size,
-                                             height_scale, pi, pi, median,
-                                             ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
-        heightmap = ShaderHeightmap(name, size, size // 2, height_scale, median, noise, interpolator)
-        #TODO: should be set using a method or in constructor
-        patched_heightmap.global_scale = 1.0 / raw_height_scale
-        heightmap.global_scale = 1.0 / raw_height_scale
+        heightmap = HeightmapYamlParser.decode(data, name, False, None)
+        patched_heightmap = HeightmapYamlParser.decode(data, name, True, None)
         heightmapRegistry.register(name, heightmap)
         heightmapRegistry.register(name + '-patched', patched_heightmap)
         return None
 
-ObjectYamlParser.register_object_parser('heightmap', HeightmapYamlParser())
+ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser())
