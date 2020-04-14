@@ -57,6 +57,9 @@ class ShaderHeightmap(TextureHeightmapBase):
             self.shader.scale = scale
         self.reset()
 
+    def apply(self, shape):
+        shape.instance.set_shader_input("heightmap_%s" % self.name, self.texture)
+
     def do_load(self, shape, callback, cb_args):
         if not self.tex_id in ShaderHeightmap.tex_generators:
             ShaderHeightmap.tex_generators[self.tex_id] = TexGenerator()
@@ -100,6 +103,9 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.shader = None
         self.noise = noise
         self.tex_generator = None
+
+    def apply(self, patch):
+        patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
 
     def do_load(self, patch, callback, cb_args):
         if not self.width in ShaderHeightmapPatch.tex_generators:

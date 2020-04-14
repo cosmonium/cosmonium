@@ -343,6 +343,22 @@ class ShapeObject(VisibleObject):
             if self.shape.jobs_pending == 0:
                 self.jobs_done_cb(None)
 
+    def patch_done(self, patch):
+        if self.first_patch:
+            if self.shader is not None:
+                self.shader.apply(self.shape, self.appearance)
+            self.first_patch = None
+        if self.appearance is not None:
+            self.appearance.apply_textures(patch)
+        if self.shader is not None:
+            self.shader.apply_patch(self.shape, patch, self.appearance)
+
+    def shape_done(self):
+        if self.appearance is not None and not self.shape.patchable:
+            self.appearance.apply_textures(self.shape)
+        if self.shader is not None:
+            self.shader.apply(self.shape, self.appearance)
+
     def jobs_done_cb(self, patch):
         if patch is not None:
             patch.jobs_pending -= 1
@@ -350,14 +366,7 @@ class ShapeObject(VisibleObject):
             patch.jobs_pending = 0
             patch.jobs = 0
             if patch.instance is not None:
-                if self.first_patch:
-                    if self.shader is not None:
-                        self.shader.apply(self.shape, self.appearance)
-                    self.first_patch = None
-                if self.appearance is not None:
-                    self.appearance.apply_textures(patch)
-                if self.shader is not None:
-                    self.shader.apply_patch(self.shape, patch, self.appearance)
+                self.patch_done(patch)
                 patch.instance_ready = True
                 if self.callback is not None:
                     self.callback(self, patch, *self.cb_args)
@@ -367,10 +376,7 @@ class ShapeObject(VisibleObject):
             self.shape.jobs_pending = 0
             self.shape.jobs = 0
             if self.shape.instance is not None:
-                if self.appearance is not None and not self.shape.patchable:
-                    self.appearance.apply_textures(self.shape)
-                if self.shader is not None:
-                    self.shader.apply(self.shape, self.appearance)
+                self.shape_done()
                 self.shape.instance_ready = True
                 self.instance_ready = True
                 if self.callback is not None:

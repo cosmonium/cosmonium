@@ -245,9 +245,12 @@ class TextureHeightmapPatch(HeightmapPatch):
         HeightmapPatch.__init__(self, parent, x0, y0, x1, y1, width, height, scale, coord, face, border)
         self.data_source = data_source
 
+    def apply(self, patch):
+        self.data_source.apply(patch, "heightmap_%s" % self.parent.name)
+
     def texture_loaded_cb(self, texture, patch, callback, cb_args):
-        (texture, texture_size, texture_lod) = self.data_source.source.get_texture(patch)
-        self.heightmap_ready_cb(texture, callback, cb_args)
+        (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
+        self.heightmap_ready_cb(texture_data, callback, cb_args)
 
     def do_load(self, patch, callback, cb_args):
         self.data_source.load(patch, self.texture_loaded_cb, (patch, callback, cb_args))
@@ -503,6 +506,10 @@ class PatchedHeightmap(Heightmap):
                 callback(heightmap, *cb_args)
             else:
                 print("PATCH NOT READY?", heightmap.heightmap_ready, callback)
+
+    def apply(self, patch):
+        heightmap = self.map_patch[patch.str_id()]
+        heightmap.apply(patch)
 
 class StackedHeightmapPatch(HeightmapPatch):
     def __init__(self, patches, *args, **kwargs):
