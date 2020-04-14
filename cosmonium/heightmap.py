@@ -126,6 +126,26 @@ class HeightmapPatch:
         self.max_height = heightmap_patch.max_height
         self.mean_height = heightmap_patch.mean_height
 
+    def calc_sub_patch(self):
+        self.copy_from(self.parent_heightmap)
+        delta = self.patch.lod - self.lod
+        scale = 1 << delta
+        if self.patch.coord != TexCoord.Flat:
+            x_tex = int(self.x / scale) * scale
+            y_tex = int(self.y / scale) * scale
+            x_delta = float(self.x - x_tex) / scale
+            y_delta = float(self.y - y_tex) / scale
+        else:
+            x_tex = int(self.x * scale) / scale
+            y_tex = int(self.y * scale) / scale
+            x_delta = float(self.x - x_tex)
+            y_delta = float(self.y - y_tex)
+        #Y orientation is the opposite of the texture v axis
+        y_delta = 1.0 - y_delta - 1.0 / scale
+        if y_delta == 1.0: y_delta = 0.0
+        self.texture_offset = LVector2(x_delta, y_delta)
+        self.texture_scale = LVector2(1.0 / scale, 1.0 / scale)
+
     def is_ready(self):
         return self.heightmap_ready
 
@@ -175,33 +195,45 @@ class HeightmapPatch:
                 callback(self, *cb_args)
 
     def heightmap_ready_cb(self, texture, callback, cb_args):
-        self.texture = texture
-        #print("READY", self.patch.str_id(), texture, self.texture)
-        self.texture_peeker = texture.peek()
-#         if self.texture_peeker is None:
-#             print("NOT READY !!!")
-        self.heightmap_ready = True
-        data = self.texture.getRamImage()
-        #TODO: should be completed and refactored
-        component_type = texture.getComponentType()
-        if component_type == Texture.T_float:
-            buffer_type = numpy.float32
-            scale = 1.0
-        elif component_type == Texture.T_unsigned_byte:
-            buffer_type = numpy.uint8
-            scale = 255.0
-        elif component_type == Texture.T_unsigned_short:
-            buffer_type = numpy.uint16
-            scale = 65535.0
-        if sys.version_info[0] < 3:
-            buf = data.getData()
-            np_buffer = numpy.fromstring(buf, dtype=buffer_type)
+        if texture is not None:
+            self.texture = texture
+            #print("READY", self.patch.str_id(), texture, self.texture)
+            self.texture_peeker = texture.peek()
+#           if self.texture_peeker is None:
+#               print("NOT READY !!!")
+            self.heightmap_ready = True
+            data = self.texture.getRamImage()
+            #TODO: should be completed and refactored
+            signed = False
+            component_type = texture.getComponentType()
+            if component_type == Texture.T_float:
+                buffer_type = numpy.float32
+                scale = 1.0
+            elif component_type == Texture.T_unsigned_byte:
+                if signed:
+                    buffer_type = numpy.int8
+                    scale = 128.0
+                else:
+                    buffer_type = numpy.uint8
+                    scale = 255.0
+            elif component_type == Texture.T_unsigned_short:
+                if signed:
+                    buffer_type = numpy.int16
+                    scale = 32768.0
+                else:
+                    buffer_type = numpy.uint16
+                    scale = 65535.0
+            if sys.version_info[0] < 3:
+                buf = data.getData()
+                np_buffer = numpy.fromstring(buf, dtype=buffer_type)
+            else:
+                np_buffer = numpy.frombuffer(data, buffer_type)
+            np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
+            self.min_height = np_buffer.min() / scale
+            self.max_height = np_buffer.max() / scale
+            self.mean_height = np_buffer.mean() / scale
         else:
-            np_buffer = numpy.frombuffer(data, buffer_type)
-        np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
-        self.min_height = np_buffer.min() / scale
-        self.max_height = np_buffer.max() / scale
-        self.mean_height = np_buffer.mean() / scale
+            self.calc_sub_patch()
         if callback is not None:
             callback(self, *cb_args)
 
@@ -451,27 +483,13 @@ class PatchedHeightmap(Heightmap):
             self.map_patch[patch.str_id()] = heightmap
             #TODO: Should be linked properly
             heightmap.patch = patch
+            if patch.parent is not None:
+                heightmap.parent_heightmap = self.map_patch[patch.parent.str_id()]
+            else:
+                heightmap.parent_heightmap = None
             if patch.lod > self.max_lod and patch.parent is not None:
                 #print("CLONE", patch.str_id())
-                parent_heightmap = self.map_patch[patch.parent.str_id()]
-                heightmap.copy_from(parent_heightmap)
-                delta = patch.lod - heightmap.lod
-                scale = 1 << delta
-                if patch.coord != TexCoord.Flat:
-                    x_tex = int(x / scale) * scale
-                    y_tex = int(y / scale) * scale
-                    x_delta = float(x - x_tex) / scale
-                    y_delta = float(y - y_tex) / scale
-                else:
-                    x_tex = int(x * scale) / scale
-                    y_tex = int(y * scale) / scale
-                    x_delta = float(x - x_tex)
-                    y_delta = float(y - y_tex)
-                #Y orientation is the opposite of the texture v axis
-                y_delta = 1.0 - y_delta - 1.0 / scale
-                if y_delta == 1.0: y_delta = 0.0
-                heightmap.texture_offset = LVector2(x_delta, y_delta)
-                heightmap.texture_scale = LVector2(1.0 / scale, 1.0 / scale)
+                heightmap.calc_sub_patch()
                 #print(patch.str_id(), ':', parent_heightmap.lod, heightmap.texture_offset, heightmap.texture_scale)
                 if callback is not None:
                     callback(heightmap, *cb_args)
@@ -484,7 +502,7 @@ class PatchedHeightmap(Heightmap):
             if heightmap.is_ready() and callback is not None:
                 callback(heightmap, *cb_args)
             else:
-                pass#print("PATCH NOT READY?", heightmap.heightmap_ready, callback)
+                print("PATCH NOT READY?", heightmap.heightmap_ready, callback)
 
 class StackedHeightmapPatch(HeightmapPatch):
     def __init__(self, patches, *args, **kwargs):
