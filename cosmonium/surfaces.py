@@ -53,7 +53,7 @@ class Surface(ShapeObject):
         return 'Surface'
 
     def is_flat(self):
-        return False
+        return True
 
     def create_shadows(self):
         if self.shape is not None and self.shape.is_spherical():
@@ -84,9 +84,6 @@ class Surface(ShapeObject):
         return self.shape.get_normals_at(coord)
 
 class FlatSurface(Surface):
-    def is_flat(self):
-        return True
-
     def get_height_at(self, x, y):
         return self.owner.get_apparent_radius()
 
@@ -94,6 +91,9 @@ class FlatSurface(Surface):
         return self.owner.get_apparent_radius()
 
 class MeshSurface(Surface):
+    def is_flat(self):
+        return False
+
     def get_height_at(self, x, y):
         coord = self.shape.global_to_shape_coord(x, y)
         return self.shape.get_height_at(coord)
@@ -166,6 +166,9 @@ class HeightmapSurface(ProceduralSurface):
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
+
+    def is_flat(self):
+        return False
 
     def get_average_radius(self):
         return self.radius
