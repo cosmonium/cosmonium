@@ -415,16 +415,11 @@ class DataTexture(TextureBase):
             (texture, texture_size, texture_lod) = self.get_default_texture()
         if texture is not None:
             if self.source.is_patched():
-                self.clamp()
+                self.clamp(texture)
             shape.instance.set_shader_input(input_name, texture)
 
     def can_split(self, patch):
         return self.source.can_split(patch)
-
-    def clamp(self):
-        if self.texture is not None:
-            self.texture.setWrapU(Texture.WM_clamp)
-            self.texture.setWrapV(Texture.WM_clamp)
 
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
