@@ -1369,7 +1369,7 @@ class TextureAppearance(ShaderAppearance):
     def create_shader_configuration(self, appearance):
         #TODO: This should use the shader data source inso appearance!
         self.has_surface_texture = appearance.texture is not None
-        self.has_normal_texture = appearance.normal_map is not None
+        self.has_normal_texture = appearance.normal_map is not None or self.data.has_source_for('normal')
         self.normal_texture_tangent_space = appearance.normal_map_tangent_space
         self.has_bump_texture = appearance.bump_map is not None
 
@@ -1767,6 +1767,9 @@ class OffsetScaleInstanceControl(InstanceControl):
             shape.instance.set_shader_input('instances_offset', appearance.offsets)
 
 class DataSource(ShaderComponent):
+    def has_source_for(self, source):
+        return False
+
     def get_source_for(self, source, params=None, error=True):
         if error: print("Unknown source '%s' requested" % source)
         return ''
@@ -1798,6 +1801,12 @@ class MultiDataSource(DataSource):
     def create_shader_configuration(self, appearance):
         for source in self.sources:
             source.create_shader_configuration(appearance)
+
+    def has_source_for(self, source_id):
+        for source in self.sources:
+            if source.has_source_for(source_id):
+                return True
+        return False
 
     def get_source_for(self, source_id, params=None, error=True):
         for source in self.sources:
@@ -1998,7 +2007,7 @@ class PandaTextureDataSource(DataSource):
                 return "tex%i.a" % self.texture_index
             else:
                 return "1.0"
-        if source == 'normal':
+        if self.has_normal_texture and source == 'normal':
             return "(vec3(tex%i) * 2.0) - 1.0" % self.normal_map_index
         if source == 'specular':
             if self.has_specular_texture:

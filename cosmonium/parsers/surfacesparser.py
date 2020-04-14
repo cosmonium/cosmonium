@@ -110,7 +110,7 @@ class SurfaceYamlParser(YamlModuleParser):
             else:
                 shader_appearance = None
                 appearance_source = PandaTextureDataSource()
-            data_source = [HeightmapDataSource(heightmap)]
+            data_source = [HeightmapDataSource(heightmap, normals=True)]
             if appearance_source is not None:
                 data_source.append(appearance_source)
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),

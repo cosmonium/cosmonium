@@ -60,7 +60,7 @@ class HeightmapDataSource(DataSource):
         DataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.name = self.heightmap.name
-        self.has_normal_texture = normals
+        self.has_normal = normals
         self.filtering = heightmap.interpolator.get_data_source_filtering()
 
     def get_id(self):
@@ -289,12 +289,15 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
 }
 ''' % (self.name, self.name, self.name, self.name, self.name)]
 
+    def has_source_for(self, source):
+        return self.has_normal and source == 'normal'
+
     def get_source_for(self, source, param, error=True):
         if source == 'height_%s' % self.name:
             return "get_terrain_height_%s(heightmap_%s, %s, heightmap_%s_height_scale, heightmap_%s_offset, heightmap_%s_scale)" % (self.name, self.name, param, self.name, self.name, self.name)
-        if source == 'normal_%s' % self.name:
+        if source == 'normal_%s' % self.name or (self.has_normal and source == 'normal'):
             return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_height_scale, heightmap_%s_offset, heightmap_%s_scale, heightmap_%s_u_scale, heightmap_%s_v_scale)" \
-                    % (self.name, self.name, param, self.name, self.name, self.name, self.name, self.name)
+                    % (self.name, self.name, "texcoord0.xy", self.name, self.name, self.name, self.name, self.name)
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
