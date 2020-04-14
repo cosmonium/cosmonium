@@ -27,9 +27,12 @@ from . import settings
 class DisplacementVertexControl(VertexControl):
     use_normal = True
 
-    def __init__(self, heightmap, shader=None):
+    def __init__(self, heightmap, create_normals=False, shader=None):
         VertexControl.__init__(self, shader)
         self.heightmap = heightmap
+        self.has_normal = create_normals
+        if create_normals:
+            self.use_tangent = True
 
     def get_id(self):
         return "dis-" + self.heightmap.name
@@ -37,6 +40,15 @@ class DisplacementVertexControl(VertexControl):
     def update_vertex(self, code):
         code.append("float vertex_height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'model_texcoord0.xy'))
         code.append("model_vertex4 = model_vertex4 + model_normal4 * vertex_height;")
+
+    def update_normal(self, code):
+        code.append("vec3 normal = model_normal4.xyz;")
+        code.append('vec3 surface_normal = %s;' % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'model_texcoord0.xy'))
+        code.append("normal *= surface_normal.z;")
+        code.append("normal += model_tangent4.xyz * surface_normal.x;")
+        code.append("normal += model_tangent4.xyz * surface_normal.y;")
+        code.append("normal = normalize(normal);")
+        code.append("model_normal4 = vec4(normal, 0.0);")
 
 class HeightmapDataSource(DataSource):
     F_none = 0

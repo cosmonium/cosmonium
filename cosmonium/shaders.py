@@ -546,8 +546,9 @@ class VertexShader(ShaderProgram):
         if not self.config.fragment_uses_tangent:
             code.append("vec3 binormal;")
             code.append("vec3 tangent;")
-        self.vertex_control.update_vertex(code)
-        if self.config.use_normal:
+        if self.vertex_control.has_vertex:
+            self.vertex_control.update_vertex(code)
+        if self.config.use_normal and self.vertex_control.has_normal:
             self.vertex_control.update_normal(code)
         if self.config.use_vertex and self.config.world_vertex and not (self.vertex_control.world_vertex or self.instance_control.world_vertex):
             code.append("world_vertex4 = p3d_ModelMatrix * model_vertex4;")
@@ -976,6 +977,10 @@ class BasicShader(StructuredShader):
                 self.model_vertex = True
             if self.vertex_control.world_vertex:
                 self.world_vertex = True
+        if self.vertex_control.use_normal:
+            self.use_normal = True
+        if self.vertex_control.use_tangent:
+            self.use_tangent = True
 
         if self.point_control.use_vertex:
             self.use_vertex = True
@@ -1013,7 +1018,7 @@ class BasicShader(StructuredShader):
         if self.lighting_model.use_normal and self.appearance.has_normal_texture and self.appearance.normal_texture_tangent_space:
             self.use_tangent = True
             self.fragment_uses_tangent = True
-        
+
         if self.scattering.use_vertex:
             self.use_vertex = True
             if self.scattering.model_vertex:
@@ -1032,7 +1037,7 @@ class BasicShader(StructuredShader):
                     self.world_vertex = True
                 if shadow.use_vertex_frag:
                     self.fragment_uses_vertex = True
-    
+
             if shadow.use_normal:
                 self.use_normal = True
                 if shadow.model_normal:
@@ -1571,6 +1576,8 @@ class ConstantTessellationControl(TessellationControl):
 
 class VertexControl(ShaderComponent):
     use_double = False
+    has_vertex = True
+    has_normal = False
     def update_vertex(self, code):
         pass
 
@@ -1578,7 +1585,7 @@ class VertexControl(ShaderComponent):
         pass
 
 class DefaultVertexControl(VertexControl):
-    pass
+    has_vertex = False
 
 class LargeObjectVertexControl(VertexControl):
     use_vertex = True
@@ -1603,6 +1610,7 @@ class LargeObjectVertexControl(VertexControl):
 
 class NormalizedCubeVertexControl(VertexControl):
     use_vertex = True
+    has_normal = True
 
     def get_id(self):
         return "normcube"
@@ -1626,6 +1634,7 @@ class NormalizedCubeVertexControl(VertexControl):
 
 class SquaredDistanceCubeVertexControl(VertexControl):
     use_vertex = True
+    has_normal = True
 
     def get_id(self):
         return "sqrtcube"
@@ -1655,6 +1664,7 @@ class SquaredDistanceCubeVertexControl(VertexControl):
 class DoubleSquaredDistanceCubeVertexControl(VertexControl):
     use_double = True
     use_vertex = True
+    has_normal = True
 
     def get_id(self):
         return "sqrtcubedouble"
