@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
 from . import units
 from math import pi
 
@@ -142,6 +142,30 @@ class SynchroneReferenceFrame(RelativeReferenceFrame):
     def get_orientation(self):
         rot = self.body.get_sync_rotation()
         return rot
+
+class SurfaceReferenceFrame(RelativeReferenceFrame):
+    def __init__(self, long, lat):
+        RelativeReferenceFrame.__init__(self)
+        self.long = long
+        self.lat = lat
+
+    def set_parent_body(self, body):
+        self.body = body
+        if self.body.primary is not None:
+            self.body = self.body.primary
+
+    def get_center(self):
+        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
+        distance = self.body.get_height_under_xy(x, y)
+        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, distance))
+        return self.body.get_local_position() + self.body.get_sync_rotation().xform(position)
+
+    def get_orientation(self):
+        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
+        (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
+        rotation = LQuaterniond()
+        look_at(rotation, normal, tangent)
+        return rotation * self.body.get_sync_rotation()
 
 class FramesDB(object):
     def __init__(self):
