@@ -126,7 +126,7 @@ min_fov = 0.001
 max_fov = 120.0
 
 if use_double:
-    offset_body_center = False
+    offset_body_center = True
     shift_patch_origin = True
 else:
     offset_body_center = True
