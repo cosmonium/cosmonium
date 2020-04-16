@@ -53,10 +53,14 @@ def degree_angle_decoder(text):
     return angle
 
 class DistanceUnitsYamlParser(YamlModuleParser):
-    translation = { 'km': units.Km,
+    translation = { 'm': units.m,
+                    'km': units.Km,
                     'au': units.AU,
                     'ly': units.Ly,
                     'pc': units.Parsec,
+                    'kpc': units.KParsec,
+                    'mpc': units.MParsec,
+                    'gpc': units.GParsec,
                    }
     @classmethod
     def decode(self, data, default=None):
@@ -66,7 +70,9 @@ class DistanceUnitsYamlParser(YamlModuleParser):
             return DistanceUnitsYamlParser.translation.get(data.lower(), default)
 
 class TimeUnitsYamlParser(YamlModuleParser):
-    translation = { 'hour': units.Hour,
+    translation = { 'sec': units.Sec,
+                    'min': units.Min,
+                    'hour': units.Hour,
                     'day': units.Day,
                     'year': units.JYear,
                    }
