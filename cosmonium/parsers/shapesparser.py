@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d
+from panda3d.core import LVector3d, LQuaterniond
 
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
@@ -38,9 +38,17 @@ class MeshYamlParser(YamlModuleParser):
         panda = data.get('panda', False)
         scale = data.get('scale', True)
         offset = data.get('offset', None)
-        rotation = data.get('rotation', None)
+        rotation_data = data.get('rotation', None)
         if offset is not None:
             offset = LVector3d(*offset)
+        if rotation_data is not None:
+            if len(rotation_data) == 3:
+                rotation = LQuaterniond()
+                rotation.set_hpr(LVector3d(*rotation_data))
+            else:
+                rotation = LQuaterniond(*rotation_data)
+        else:
+            rotation = None
         flatten = data.get('flatten', True)
         attribution = data.get('attribution', None)
         shape = MeshShape(model, offset, rotation, scale, flatten, panda, attribution, context=YamlModuleParser.context)
