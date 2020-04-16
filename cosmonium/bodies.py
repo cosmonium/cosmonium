@@ -275,7 +275,7 @@ class StellarObject(LabelledObject):
             self.remove_component(self.orbit_object)
             self.orbit_object = None
         self.orbit = orbit
-        self.orbit.body = self
+        self.orbit.set_body(self)
         if self.has_orbit and self.init_annotations:
             self.create_orbit_object()
 

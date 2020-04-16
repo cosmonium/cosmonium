@@ -38,6 +38,7 @@ class Orbit(object):
             frame = J2000EclipticReferenceFrame()
         self.frame = frame
         self.origin = LPoint3d()
+        self.body = None
 
     def get_user_parameters(self):
         return None
@@ -47,6 +48,9 @@ class Orbit(object):
 
     def set_frame(self, frame):
         self.frame = frame
+
+    def set_body(self, body):
+        self.body = body
 
     def is_periodic(self):
         return False
@@ -143,7 +147,7 @@ class FixedPosition(Orbit):
 
     def get_frame_rotation_at(self, time):
         return self.rotation
-    
+
 class InfinitePosition(Orbit):
     def __init__(self,
                  right_asc=0.0, right_asc_unit=units.Deg,
@@ -158,13 +162,13 @@ class InfinitePosition(Orbit):
 
     def project(self, time, center, radius):
         return self.orientation.xform(LVector3d(0, 0, radius))
-    
+
     def get_frame_position_at(self, time):
         return self.position
 
     def get_frame_rotation_at(self, time):
         return self.rotation
-    
+
 class FixedOrbit(Orbit):
     def __init__(self, position=LPoint3d(0, 0, 0), rotation=LQuaterniond(), frame=None):
         Orbit.__init__(self, frame)
