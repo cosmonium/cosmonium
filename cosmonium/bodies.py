@@ -389,23 +389,27 @@ class StellarObject(LabelledObject):
             theta = 0.0
         return (phi, theta, distance)
 
-    def spherical_to_cartesian(self, position):
+    def spherical_to_frame_cartesian(self, position):
         (phi, theta, distance) = position
         #Offset phi by 180 deg with proper wrap around
         #phi = (phi + pi + pi) % (2 * pi) - pi
         rel_position = LPoint3d(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta))
         rel_position *= distance
+        return rel_position
+
+    def spherical_to_cartesian(self, position):
+        rel_position = self.spherical_to_frame_cartesian(position)
         sync_frame = SynchroneReferenceFrame(self)
         position = sync_frame.get_local_position(rel_position)
         return position
 
-    def spherical_to_longlat(self, position):
+    def spherical_to_xy(self, position):
         (phi, theta, distance) = position
         x = phi / pi / 2 + 0.5
         y = 1.0 - (theta / pi + 0.5)
         return (x, y, distance)
 
-    def longlat_to_spherical(self, position):
+    def xy_to_spherical(self, position):
         (x, y, distance) = position
         phi = (x - 0.5) * pi / 2
         tetha = (1.0 - y - 0.5) * pi
@@ -719,17 +723,31 @@ class StellarBody(StellarObject):
         else:
             return self.get_apparent_radius()
 
-    def get_height_under(self, position):
+    def get_height_under_xy(self, x, y):
         if self.surface is not None:
-            (x, y, distance) = self.spherical_to_longlat(self.cartesian_to_spherical(position))
             return self.surface.get_height_at(x, y)
         else:
             #print("No surface")
             return self.radius
 
+    def get_height_under(self, position):
+        if self.surface is not None:
+            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
+            return self.surface.get_height_at(x, y)
+        else:
+            #print("No surface")
+            return self.radius
+
+    def get_normals_under_xy(self, x, y):
+        if self.surface is not None:
+            vectors = self.surface.get_normals_at(x, y)
+        else:
+            vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
+        return vectors
+
     def get_normals_under(self, position):
         if self.surface is not None:
-            (x, y, distance) = self.spherical_to_longlat(self.cartesian_to_spherical(position))
+            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
             vectors = self.surface.get_normals_at(x, y)
         else:
             vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())

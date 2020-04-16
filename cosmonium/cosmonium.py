@@ -814,7 +814,7 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position())
+            print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.orbit.get_frame_position_at(self.time.time_full), ')')
             print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected._orientation)
             print("\tVector to obs", self.selected.vector_to_obs)
@@ -844,7 +844,8 @@ class Cosmonium(CosmoniumBase):
                 else:
                     print("\tPoint")
                 projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
-                print("\tProjection:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2])
+                xy = self.selected.spherical_to_xy(projection)
+                print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
                 height = self.selected.get_height_under(self.observer.get_camera_pos())
                 print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.distance_to_obs - height))
                 if self.selected.surface is not None and self.selected.surface.shape.patchable:

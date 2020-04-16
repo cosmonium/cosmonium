@@ -563,7 +563,7 @@ class WalkNav(NavBase):
         delta_y = binormal.dot(projected) * arc_to_angle
         new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
         altitude = position[2] - self.body.height_under
-        (x, y, distance) = self.body.spherical_to_longlat(new_position)
+        (x, y, distance) = self.body.spherical_to_xy(new_position)
         new_height = self.body.surface.get_height_at(x, y, strict = True)
         if new_height is not None:
             new_position[2] = new_height + altitude
@@ -573,7 +573,7 @@ class WalkNav(NavBase):
         self.observer.set_camera_pos(new_position)
         target_pos = new_position + direction * 10 * units.m
         target_pos = self.body.cartesian_to_spherical(target_pos)
-        (x, y, distance) = self.body.spherical_to_longlat(target_pos)
+        (x, y, distance) = self.body.spherical_to_xy(target_pos)
         target_height = self.body.surface.get_height_at(x, y, strict = True)
         if target_height is not None:
             target_pos = (target_pos[0], target_pos[1], target_height + altitude)

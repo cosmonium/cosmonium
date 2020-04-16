@@ -1161,7 +1161,7 @@ class PatchedShape(PatchedShapeBase):
         camera_vector = self.owner.context.observer.get_camera_rot().xform(LVector3d.forward())
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.owner.get_scale())
-        (x, y, distance) = self.owner.spherical_to_longlat(self.owner.cartesian_to_spherical(camera_pos))
+        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(camera_pos))
         return (model_camera_pos, model_camera_vector, (x, y))
 
     def local_to_model(self, point, position, orientation, scale):
