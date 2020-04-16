@@ -592,7 +592,7 @@ class HeightMapTexture(DataTexture):
         return 1
 
     def get_default_color(self):
-        return (0,)
+        return (0, 0, 0, 0)
 
 class VirtualTextureSource(TextureSource):
     cached = False
