@@ -39,10 +39,7 @@ class TexInterpolator(object):
             x = min(max(x, 0.0), 1.0)
             y = min(max(y, 0.0), 1.0)
         value = LColor()
-        result = peeker.lookup(value, x, y)
-        if not result:
-            print("Invalid offsets", x, y)
-            return 0.0
+        peeker.lookup(value, x, y)
         if settings.encode_float:
             value = value[0] + value[1] / 255.0 + value[2] / 65025.0 + value[3] / 16581375.0
         else:
