@@ -22,23 +22,17 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor, LVector3
 
-from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..bodies import ReflectiveBody
-from ..surfaces import FlatSurface, surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader
 from ..catalogs import objectsDB
-from .. import settings
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
-from .appearancesparser import AppearanceYamlParser
-from .shadersparser import LightingModelYamlParser
-from .shapesparser import ShapeYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .atmospheresparser import AtmosphereYamlParser
 from .elementsparser import CloudsYamlParser, RingsYamlParser
 from .surfacesparser import SurfaceYamlParser
+from .framesparser import FrameYamlParser
 
 class ReflectiveYamlParser(YamlModuleParser):
     def __init__(self, body_class):
@@ -76,8 +70,9 @@ class ReflectiveYamlParser(YamlModuleParser):
         rings = RingsYamlParser.decode(data.get('rings'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        frame = FrameYamlParser.decode(data.get('frame', None))
+        orbit = OrbitYamlParser.decode(data.get('orbit'), frame)
+        rotation = RotationYamlParser.decode(data.get('rotation'), frame)
         body = ReflectiveBody(names=name,
                               body_class=body_class,
                               radius=radius,

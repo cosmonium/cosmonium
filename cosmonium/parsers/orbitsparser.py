@@ -33,7 +33,7 @@ from .framesparser import FrameYamlParser
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, frame=None):
         semi_major_axis = data.get('semi-major-axis', None)
         semi_major_axis_units = DistanceUnitsYamlParser.decode(data.get('semi-major-axis-units', 'AU'))
         pericenter_distance = data.get('pericenter-distance', None)
@@ -51,7 +51,8 @@ class EllipticOrbitYamlParser(YamlModuleParser):
         time_of_perihelion = data.get('time-of-perihelion', None)
         mean_longitude = data.get('mean-longitude', 0.0)
         epoch = data.get('epoch', units.J2000)
-        frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+        if data.get('frame') is not None or frame is None:
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
         return create_elliptical_orbit(semi_major_axis,
                               semi_major_axis_units,
                               pericenter_distance,
@@ -73,7 +74,7 @@ class EllipticOrbitYamlParser(YamlModuleParser):
 
 class FixedPositionYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, frame=None):
         position = data.get('position', None)
         if position is None:
             ra = data.get('ra', 0.0)
@@ -82,7 +83,8 @@ class FixedPositionYamlParser(YamlModuleParser):
             decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
             distance = data.get('distance', 0.0)
             distance_units = DistanceUnitsYamlParser.decode(data.get('distance-units', 'pc'))
-            frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
+            if data.get('frame') is not None or frame is None:
+                frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
             global_pos = True
         else:
             ra = None
@@ -92,7 +94,8 @@ class FixedPositionYamlParser(YamlModuleParser):
             distance = None
             distance_units = None
             global_pos = data.get("global", True)
-            frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+            if data.get('frame') is not None or frame is None:
+                frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
         return FixedPosition(position=position,
                              global_position=global_pos,
                              right_asc=ra,
@@ -105,24 +108,25 @@ class FixedPositionYamlParser(YamlModuleParser):
 
 class GlobalPositionYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, frame=None):
         position = LPoint3d(*data.get('position', [0, 0, 0]))
         position_units = DistanceUnitsYamlParser.decode(data.get('position-units', 'pc'))
-        frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+        if data.get('frame') is not None or frame is None:
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
         return FixedPosition(position=position * position_units,
                              frame=frame)
 
 class OrbitYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
-        if data is None: return FixedOrbit()
+    def decode(cls, data, frame=None):
+        if data is None: return FixedOrbit(frame=frame)
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'elliptic':
-            orbit = EllipticOrbitYamlParser.decode(parameters)
+            orbit = EllipticOrbitYamlParser.decode(parameters, frame)
         elif object_type == 'fixed':
-            orbit = FixedPositionYamlParser.decode(parameters)
+            orbit = FixedPositionYamlParser.decode(parameters, frame)
         elif object_type == 'global':
-            orbit = GlobalPositionYamlParser.decode(parameters)
+            orbit = GlobalPositionYamlParser.decode(parameters, frame)
         else:
             orbit = orbit_elements_db.get(data)
         return orbit

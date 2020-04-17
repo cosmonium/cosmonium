@@ -34,7 +34,7 @@ from .framesparser import FrameYamlParser
 
 class UniformYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, frame):
         synchronous = data.get('synchronous', False)
         period = data.get('period', None)
         period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
@@ -48,7 +48,8 @@ class UniformYamlParser(YamlModuleParser):
         decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
         meridian_angle = data.get('meridian', 0.0)
         epoch = data.get('epoch', units.J2000)
-        frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
+        if data.get('frame') is not None or frame is None:
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
         return create_uniform_rotation(period,
                                 period_units,
                                 synchronous,
@@ -66,26 +67,27 @@ class UniformYamlParser(YamlModuleParser):
 
 class FixedRotationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, frame):
         if 'angle' in data:
             angle = float(data['angle'])
             axis = data.get("axis", LVector3d.up())
             rot = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
         else:
             rot = LQuaterniond()
-        frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
+        if data.get('frame') is not None or frame is None:
+            frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'))
         rotation = FixedRotation(rot, frame)
         return rotation
 
 class RotationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, frame=None):
         if data is None: return UnknownRotation()
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'uniform':
-            rotation = UniformYamlParser.decode(parameters)
+            rotation = UniformYamlParser.decode(parameters, frame)
         elif object_type == 'fixed':
-            rotation = FixedRotationYamlParser.decode(parameters)
+            rotation = FixedRotationYamlParser.decode(parameters, frame)
         else:
             rotation = rotation_elements_db.get(data)
         return rotation
