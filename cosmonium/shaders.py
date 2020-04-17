@@ -756,6 +756,8 @@ class FragmentShader(ShaderProgram):
             for effect in self.after_effects:
                 effect.fragment_shader(code)
         else:
+            if settings.shader_debug_fragment_shader == 'diffuse':
+                code.append("vec4 total_color = surface_color;")
             if settings.shader_debug_fragment_shader == 'normal':
                 if self.config.fragment_uses_normal:
                     code.append("vec4 total_color = vec4((normal + vec3(1.0)) / 2.0, 1.0);")
