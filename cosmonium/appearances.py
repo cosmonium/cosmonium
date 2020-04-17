@@ -396,6 +396,7 @@ class ModelAppearance(AppearanceBase):
             tex = instance.find_texture(stage)
             if tex:
                 mode = stage.get_mode()
+                #print("FOUND STAGE", stage.name, stage.sort, mode, tex)
                 if mode in (TextureStage.M_modulate, TextureStage.M_modulate_glow, TextureStage.M_modulate_gloss):
                     if not has_surface:
                         self.texture = tex
@@ -409,18 +410,21 @@ class ModelAppearance(AppearanceBase):
                                 self.texture.set_format(Texture.F_srgb_alpha)
                         self.nb_textures += 1
                         has_surface = True
+                        #print("SURFACE", self.texture_index, self.texture)
                 elif mode in (TextureStage.M_normal, TextureStage.M_normal_height, TextureStage.M_normal_gloss):
                     if not has_normal:
                         self.normal_map = tex
                         self.normal_map_index = self.nb_textures
                         self.nb_textures += 1
                         has_normal = True
+                        #print("NORMAL", self.normal_map_index, self.normal_map)
                 elif mode in (TextureStage.M_gloss, ):
                     if not has_gloss:
                         self.gloss_map = tex
                         self.gloss_map_texture_index = self.nb_textures
                         self.nb_textures += 1
                         has_gloss = True
+                        #print("GLOSS", self.gloss_map_texture_index, self.gloss_map)
                 else:
                     print("Unsupported mode %d" % mode)
         transparency_mode = TransparencyAttrib.M_none
