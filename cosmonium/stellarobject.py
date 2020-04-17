@@ -333,9 +333,6 @@ class StellarObject(LabelledObject):
     def get_extend(self):
         return self.get_apparent_radius()
 
-    def calc_height_under(self, camera_pos):
-        self.height_under = self.get_height_under(camera_pos)
-
     def get_abs_magnitude(self):
         return 99.0
 
@@ -456,7 +453,10 @@ class StellarObject(LabelledObject):
         length = self.rel_position.length()
         self.vector_to_obs = -self.rel_position / length
         self.distance_to_obs = length
-        self.cos_view_angle = observer.camera_vector.dot(-self.vector_to_obs)
+        if self.resolved:
+            self.height_under = self.get_height_under(observer._position)
+        else:
+            self.height_under = self.get_apparent_radius()
         CompositeObject.update_obs(self, observer)
 
     def check_visibility(self, pixel_size):

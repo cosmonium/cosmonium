@@ -692,8 +692,7 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_obs(self):
         self.universe.update_obs(self.observer)
-        if self.selected is not None:
-            self.selected.calc_height_under(self.observer.get_camera_pos())
+
     @pstat
     def update_visibility(self):
         self.reset_visibles()
