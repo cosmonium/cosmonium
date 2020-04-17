@@ -95,7 +95,8 @@ class ReflectiveYamlParser(YamlModuleParser):
         if parent_name is not None:
             parent = objectsDB.get(parent_name)
             if parent is not None:
-                parent.add_child_fast(body)
+                system = parent.get_or_create_system()
+                system.add_child_fast(body)
             else:
                 print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
             return None

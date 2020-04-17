@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..systems import SimpleSystem, Barycenter
+from ..bodies import Star
 from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
@@ -39,7 +40,10 @@ class SystemYamlParser(YamlModuleParser):
         children = data.get('children', [])
         children = ObjectYamlParser.decode(children)
         for child in children:
-            system.add_child_fast(child)
+            if isinstance(child, Star):
+                system.add_child_star_fast(child)
+            else:
+                system.add_child_fast(child)
         if parent_name is not None:
             parent = objectsDB.get(parent_name)
             if parent is not None:

@@ -111,7 +111,7 @@ def do_load_bin(filepath, names, universe):
                     abs_magnitude=abs_magnitude / 256.0,
                     orbit=orbit,
                     rotation=UnknownRotation())
-        universe.add_child_fast(star)
+        universe.add_child_star_fast(star)
     end = time()
     print("Load time:", end - start)
 

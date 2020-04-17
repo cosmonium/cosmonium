@@ -406,20 +406,7 @@ def find_parent(universe, path, item_parent):
         path = body_path(item_parent)
         body = universe.find_by_path(path)
         if body:
-            print("Creating system for", body.get_name())
-            explicit = body.orbit.frame.explicit_body
-            if explicit:
-                #TODO: This looks completely wrong !
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(body.orbit.frame.body, body.orbit.frame))
-            else:
-                orbit = body.orbit
-            system=SimpleSystem(body.get_name() + " System", primary=body, orbit=orbit)
-            body.parent.add_child_fast(system)
-            if not explicit:
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(system, orbit.frame))
-                body.set_orbit(orbit)
-            system.add_child_fast(body)
-            body=system
+            body = body.get_or_create_system()
     return body
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):

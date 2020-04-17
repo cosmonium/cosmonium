@@ -130,7 +130,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
                 radius=radius,
                 orbit=orbit,
                 rotation=rotation)
-    parent.add_child_fast(star)
+    parent.add_child_star_fast(star)
     return star
 
 def instanciate_barycenter(universe, item_name, item_alias, item_data):
@@ -169,7 +169,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     if parent is None:
         parent = universe
     barycenter = Barycenter(names, orbit=orbit, rotation=rotation)
-    parent.add_child_fast(barycenter)
+    parent.add_child_star_fast(barycenter)
     return barycenter
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):

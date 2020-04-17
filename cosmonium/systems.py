@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .bodies import StellarObject, Star
+from .stellarobject import StellarObject
 from .catalogs import ObjectsDB, objectsDB
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
 
@@ -36,6 +36,9 @@ class StellarSystem(StellarObject):
         self.has_halo = False
         self.was_visible = True
         self.abs_magnitude = None
+
+    def is_system(self):
+        return True
 
     def apply_func(self, func):
         StellarObject.apply_func(self, func)
@@ -123,11 +126,19 @@ class StellarSystem(StellarObject):
         self.children.append(child)
         child.set_parent(self)
         #TODO: Temporary workaround until multiple stars are supported
-        if isinstance(child, Star):
-            self.star = child
-            self.has_halo = True
-        elif self.star is not None:
+        if self.star is not None:
             child.set_star(self.star)
+
+    #TODO: This is a quick workaround until stars of a system are properly managed
+    def add_child_star_fast(self, child):
+        if child.parent is not None:
+            child.parent.remove_child_fast(child)
+        self.children_map.add(child)
+        #print("Add child", child.get_name(), "to", self.get_name())
+        self.children.append(child)
+        child.set_parent(self)
+        self.star = child
+        self.has_halo = True
 
     def add_child(self, child):
         old_parent = child.parent
@@ -247,8 +258,8 @@ class StellarSystem(StellarObject):
 class SimpleSystem(StellarSystem):
     def __init__(self, names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
-        self.set_primary(primary)
         self.star_system = star_system
+        self.set_primary(primary)
 
     def set_primary(self, primary):
         if self.primary is not None:
@@ -269,6 +280,11 @@ class SimpleSystem(StellarSystem):
 
     def add_child_fast(self, child):
         StellarSystem.add_child_fast(self, child)
+        if self.primary is None and len(self.children) == 1:
+            self.set_primary(child)
+
+    def add_child_star_fast(self, child):
+        StellarSystem.add_child_star_fast(self, child)
         if self.primary is None and len(self.children) == 1:
             self.set_primary(child)
 
