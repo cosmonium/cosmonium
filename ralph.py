@@ -38,17 +38,16 @@ from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
 from direct.actor.Actor import Actor
 
-from cosmonium.procedural.shaders import HeightmapDataSource, TextureDictionaryDataSource
-from cosmonium.procedural.shaders import DetailMap, DisplacementVertexControl
+from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
+from cosmonium.procedural.shaders import TextureDictionaryDataSource
+from cosmonium.procedural.shaders import DetailMap
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl,\
-    ShaderShadowMap
+from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
 from cosmonium.shapes import InstanceShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
-from cosmonium.procedural.textures import PatchedGpuTextureSource
-from cosmonium.procedural.heightmap import PatchedHeightmap
+from cosmonium.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
@@ -484,8 +483,8 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
         appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
-        data_source = [HeightmapDataSource(self.heightmap, PatchedGpuTextureSource),
-                       HeightmapDataSource(self.biome, PatchedGpuTextureSource),
+        data_source = [HeightmapDataSource(self.heightmap),
+                       HeightmapDataSource(self.biome, normals=False),
                        TextureDictionaryDataSource(self.terrain_appearance)]
         if settings.hardware_tessellation:
             tessellation_control = ConstantTessellationControl(invert_v=True)
@@ -508,6 +507,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                         self.ralph_config.tile_size,
                                         VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
                                                                              self.ralph_config.max_vertex_size,
+                                                                             density=settings.patch_constant_density,
                                                                              max_lod=self.ralph_config.max_lod))
         self.create_terrain_appearance()
         self.create_terrain_shader()
@@ -657,6 +657,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.app_config = RalphAppConfig()
         CosmoniumBase.__init__(self)
 
+        settings.color_picking = False
         if args.config is not None:
             self.config_file = args.config
         else:
@@ -689,6 +690,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.model_body_center_offset = LVector3()
         self.world_body_center_offset = LVector3()
         self.context = self
+        self.oid_color = 0
+        self.oid_texture = None
         self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
         #Size of an edge seen from 4 units above
