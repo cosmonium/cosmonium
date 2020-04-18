@@ -146,6 +146,14 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         appearance.attribution = attribution
         return appearance
 
+class ModelAppearanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        material = data.get('material', True)
+        vertex_color = data.get('vertex-color', True)
+        appearance = ModelAppearance(vertex_color=vertex_color, material=material)
+        return appearance
+
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
@@ -153,7 +161,7 @@ class AppearanceYamlParser(YamlModuleParser):
         if object_type == 'textures':
             appearance = TexturesAppearanceYamlParser.decode(parameters)
         elif object_type == 'model':
-            appearance = ModelAppearance()
+            appearance = ModelAppearanceYamlParser.decode(parameters)
         elif object_type == 'textures-dict':
             appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
         else:

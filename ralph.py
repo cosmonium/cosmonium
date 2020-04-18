@@ -758,7 +758,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shape.parent = self
         self.ralph_shape.set_owner(self)
         self.ralph_shape.create_instance()
-        self.ralph_appearance = ModelAppearance(self.ralph)
+        self.ralph_appearance = ModelAppearance(self.ralph, vertex_color=True, material=False)
         self.ralph_appearance.set_shadow(self.shadow_caster)
         self.ralph_shader = BasicShader()
         self.ralph_shader.add_shadows(ShaderShadowMap())
@@ -841,6 +841,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_rel_position = -base.cam.get_pos()
 
         self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
+        self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
         return task.cont
 
     def print_debug(self):

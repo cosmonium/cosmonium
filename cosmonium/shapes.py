@@ -506,6 +506,7 @@ class InstanceShape(Shape):
     def create_instance(self, callback=None):
         self.apply_owner()
         self.parent.apply_instance(self.instance)
+        self.instance_ready = True
         if callback is not None:
             callback(self)
         return self.instance

@@ -81,9 +81,6 @@ class LightingModelYamlParser(YamlModuleParser):
             model = PbrLightingModel()
         elif object_type == 'flat':
             model = FlatLightingModel()
-            #TODO: This should be done a better way...
-            if appearance.emissionColor is None:
-                appearance.emissionColor = LColor(1, 1, 1, 1)
         elif object_type == 'custom':
             model = CustomShaderComponentYamlParser.decode(parameters)
         else:

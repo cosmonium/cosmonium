@@ -67,6 +67,9 @@ layers:
       model: 'ralph-data/models/trees/tree1'
       panda: true
       scale: false
+    appearance:
+      type: model
+      material: false
     placer: random
     min-lod: 4
     density: 250
@@ -85,6 +88,9 @@ layers:
         model: 'ralph-data/models/rock1'
         panda: true
         scale: false
+    appearance:
+      type: model
+      material: false
     placer: random
     min-lod: 4
 water:

@@ -165,8 +165,8 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
 
     def fragment_shader(self, code):
         code.append("vec3 obs_dir = normalize(-world_vertex);")
-        code.append("metallic = clamp(metallic * p3d_Material.metallic, 0, 1);")
-        code.append("perceptual_roughness = clamp(perceptual_roughness * p3d_Material.roughness, 0, 1);")
+        code.append("metallic = clamp(metallic, 0, 1);")
+        code.append("perceptual_roughness = clamp(perceptual_roughness, 0, 1);")
         code.append("PointMaterial material;")
         code.append("material.diffuse_color = surface_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);")
         code.append("material.specular_color = mix(f0, surface_color.rgb, metallic);")
@@ -182,7 +182,7 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("total_diffuse_color = vectors.n_dot_l * light_color * vec4(shade, 1.0) * shadow;")
 
         code.append("if (vectors.n_dot_l < 0.0) {")
-        if self.appearance.has_night_texture:
+        if self.appearance.has_night:
             code.append("  float emission_coef = clamp(sqrt(-vectors.n_dot_l), 0.0, 1.0);")
             code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
         code.append("  total_emission_color.rgb += material.diffuse_color * backlit * sqrt(-vectors.n_dot_l);")

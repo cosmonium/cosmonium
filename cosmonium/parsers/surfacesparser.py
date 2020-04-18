@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader, PandaTextureDataSource
+from ..shaders import BasicShader, PandaDataSource
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..heightmap import heightmapRegistry
 from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
@@ -109,7 +109,7 @@ class SurfaceYamlParser(YamlModuleParser):
                     shader_appearance = DetailMap(control, heightmap, create_normals=True)
             else:
                 shader_appearance = None
-                appearance_source = PandaTextureDataSource()
+                appearance_source = PandaDataSource()
             data_source = [HeightmapDataSource(heightmap, normals=True)]
             if appearance_source is not None:
                 data_source.append(appearance_source)

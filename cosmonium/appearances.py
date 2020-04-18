@@ -155,6 +155,7 @@ class Appearance(AppearanceBase):
                  ambientColor=None,
                  specularColor=None,
                  shininess=1.0,
+                 colorScale=None,
                  transparency=False,
                  transparency_level=0.0,
                  transparency_blend=TransparencyBlend.TB_Alpha,
@@ -172,6 +173,7 @@ class Appearance(AppearanceBase):
         self.ambientColor = ambientColor
         self.specularColor = specularColor
         self.shininess = shininess
+        self.colorScale = colorScale
         if srgb is None:
             srgb = settings.srgb
         self.srgb = srgb
@@ -339,6 +341,8 @@ class Appearance(AppearanceBase):
     def apply(self, shape, owner):
         #Override any material present on the shape (use ModelAppearance to keep it)
         shape.instance.setMaterial(self.material, 1)
+        if self.colorScale is not None:
+            shape.instance.set_color_scale(self.colorScale)
         if shape.patchable: return
         if (shape.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
             #print("APPLY", shape, self.nb_textures)
@@ -348,7 +352,7 @@ class Appearance(AppearanceBase):
                 self.load_textures(shape, owner)
 
 class ModelAppearance(AppearanceBase):
-    def __init__(self, srgb=None, vertex_color=False, attribute_color=False):
+    def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False):
         AppearanceBase.__init__(self)
         self.shadow = None
         self.specularColor = None
@@ -359,7 +363,7 @@ class ModelAppearance(AppearanceBase):
         #TODO: Should be inferred from model
         self.has_vertex_color = vertex_color
         self.has_attribute_color = attribute_color
-        self.has_material = True
+        self.has_material = material
         self.offsets = None
         #TODO: This should be factored out...
         self.normal_map_tangent_space = True

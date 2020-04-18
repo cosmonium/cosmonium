@@ -209,17 +209,17 @@ class DetailMap(ShaderAppearance):
         self.textures_control = textures_control
         self.heightmap = heightmap
         self.textures_control.set_heightmap(self.heightmap)
-        self.has_surface_texture = True
-        self.has_normal_texture = create_normals
+        self.has_surface = True
+        self.has_occlusion = True
+        self.has_normal = create_normals
         self.normal_texture_tangent_space = True
-        self.has_material = False
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance)
 
     def get_id(self):
         config = "dm"
-        if self.has_normal_texture:
+        if self.has_normal:
             config += '-n'
         return config
 
@@ -260,7 +260,7 @@ class DetailMap(ShaderAppearance):
         if self.textures_control.has_albedo:
             self.textures_control.get_value(code, 'albedo')
             code.append("surface_color = %s_albedo;" % self.textures_control.name)
-        if self.has_normal_texture:
+        if self.has_normal:
             if self.textures_control.has_normal:
                 self.textures_control.get_value(code, 'normal')
                 code.append("vec3 n1 = surface_normal + vec3(0, 0, 1);")
