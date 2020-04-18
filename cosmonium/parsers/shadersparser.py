@@ -43,6 +43,10 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         custom.model_normal = data.get('model-normal', False)
         custom.world_normal = data.get('world-normal', False)
         custom.use_tangent = data.get('use-tangent', False)
+        if data.get('update-vertex') is not None:
+            custom.has_vertex = True
+        if data.get('update-normal') is not None:
+            custom.has_normal = True
 
         custom.vertex_uniforms_data = [data.get('vertex-uniforms', '')]
         custom.vertex_inputs_data = [data.get('vertex-inputs', '')]

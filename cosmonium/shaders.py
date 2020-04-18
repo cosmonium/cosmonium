@@ -1244,6 +1244,8 @@ class ShaderComponent(object):
 class CustomShaderComponent(ShaderComponent):
     def __init__(self, component_id):
         self.component_id = component_id
+        self.has_vertex = False
+        self.has_normal = False
         self.use_vertex = False
         self.use_vertex_frag = False
         self.model_vertex = False
