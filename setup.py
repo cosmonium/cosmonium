@@ -66,6 +66,10 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
+            'package_data_dirs':
+            {
+             'numpy': [('numpy.libs/*', '', {'PKG_DATA_MAKE_EXECUTABLE'})],
+            },
             'rename_paths': {'lib/dummypy/': ''},
             'gui_apps': {
                 'cosmonium': 'main.py',
