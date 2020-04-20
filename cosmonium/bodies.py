@@ -282,13 +282,12 @@ class ReflectiveBody(StellarBody):
         vector_to_star = self.vector_to_star
         self_radius = self.get_apparent_radius()
         body_radius = body.get_apparent_radius()
-        total_radius = self_radius + body_radius
         position = self._local_position
         body_position = body._local_position
         pa = body_position - position
         #TODO: should be refactored somehow
-        self_ar = self_radius / (pa.length() - total_radius)
-        star_ar = self.star.get_apparent_radius() / (self.star._local_position - body_position).length()
+        self_ar = self_radius / (pa.length() - body_radius)
+        star_ar = self.star.get_apparent_radius() / ((self.star._local_position - body_position).length() - body_radius)
         ar_ratio = star_ar / self_ar
         #TODO: No longer valid if we are using HDR
         if ar_ratio * ar_ratio > 255:

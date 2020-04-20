@@ -245,7 +245,7 @@ class GenericShadows(ShadowBase):
         self.occluders.append(occluder)
         if not occluder in self.old_occluders:
             print("Add shadow caster", occluder.name)
-            shadow_shader =  ShaderShadowMap(occluder.name, occluder.shadow_caster)
+            shadow_shader =  ShaderShadowMap(occluder.name, occluder.body, occluder.shadow_caster)
             self.shader_components[occluder] = shadow_shader
             self.target.shader.add_shadows(shadow_shader)
             self.update_needed = True

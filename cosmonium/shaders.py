@@ -2088,10 +2088,11 @@ class ShaderShadowMap(ShaderShadow):
     use_normal = True
     model_normal = True
 
-    def __init__(self, name, caster, shader=None):
+    def __init__(self, name, caster_body, caster, shader=None):
         ShaderShadow.__init__(self, shader)
-        self.caster = caster
         self.name = name
+        self.caster_body = caster_body
+        self.caster = caster
 
     def get_id(self):
         return 'sm-' + self.name
@@ -2109,20 +2110,37 @@ class ShaderShadowMap(ShaderShadow):
 
     def fragment_uniforms(self, code):
         code.append("uniform sampler2DShadow %s_depthmap;" % self.name)
+        code.append("uniform float %s_shadow_coef;" % self.name)
 
     def fragment_inputs(self, code):
         code.append("in vec4 %s_lightcoord;" % self.name)
 
     def fragment_shader(self, code):
         if self.shader.fragment_shader.version < 130:
-            code.append("shadow *= shadow2D(%s_depthmap, %s_lightcoord.xyz).x;" % (self.name, self.name))
+            code.append("shadow *= 1.0 - (1.0 - shadow2D(%s_depthmap, %s_lightcoord.xyz).x) * %s_shadow_coef;" % (self.name, self.name, self.name))
         else:
-            code.append("shadow *= texture(%s_depthmap, %s_lightcoord.xyz);" % (self.name, self.name))
+            code.append("shadow *= 1.0 - (1.0 - texture(%s_depthmap, %s_lightcoord.xyz)) * %s_shadow_coef;" % (self.name, self.name, self.name))
 
     def update_shader_shape_static(self, shape, appearance):
         shape.instance.setShaderInput('%s_shadow_bias' % self.name, self.caster.bias)
         shape.instance.setShaderInput('%s_depthmap' % self.name, self.caster.depthmap)
         shape.instance.setShaderInput("%sLightSource" % self.name, self.caster.cam)
+        if self.caster_body is None:
+            shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0)
+
+    def update_shader_shape(self, shape, appearance):
+        if self.caster_body is None: return
+        caster = self.caster_body
+        body = shape.owner
+        self_radius = caster.get_apparent_radius()
+        body_radius = body.get_apparent_radius()
+        position = caster._local_position
+        body_position = body._local_position
+        pa = body_position - position
+        self_ar = self_radius / (pa.length() - body_radius)
+        star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
+        ar_ratio = star_ar / self_ar
+        shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0 - ar_ratio * ar_ratio)
 
     def clear(self, shape, appearance):
         shape.instance.clearShaderInput('%s_depthmap' % self.name)
