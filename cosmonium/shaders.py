@@ -2088,40 +2088,45 @@ class ShaderShadowMap(ShaderShadow):
     use_normal = True
     model_normal = True
 
+    def __init__(self, name, caster, shader=None):
+        ShaderShadow.__init__(self, shader)
+        self.caster = caster
+        self.name = name
+
     def get_id(self):
-        return 'sm'
+        return 'sm-' + self.name
 
     def vertex_uniforms(self, code):
-        code.append("uniform mat4 trans_model_to_clip_of_sunLight;")
-        code.append("uniform float shadow_bias;")
+        code.append("uniform mat4 trans_model_to_clip_of_%sLightSource;" % self.name)
+        code.append("uniform float %s_shadow_bias;" % self.name)
 
     def vertex_outputs(self, code):
-        code.append("out vec4 lightcoord;")
+        code.append("out vec4 %s_lightcoord;" % self.name)
 
     def vertex_shader(self, code):
-        code.append("vec4 lightclip = trans_model_to_clip_of_sunLight * (model_vertex4 + model_normal4 * shadow_bias);")
-        code.append("lightcoord = lightclip * vec4(0.5, 0.5, 0.5, 1.0) + lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);")
+        code.append("vec4 %s_lightclip = trans_model_to_clip_of_%sLightSource * (model_vertex4 + model_normal4 * %s_shadow_bias);" % (self.name, self.name, self.name))
+        code.append("%s_lightcoord = %s_lightclip * vec4(0.5, 0.5, 0.5, 1.0) + %s_lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);" % (self.name, self.name, self.name))
 
     def fragment_uniforms(self, code):
-        code.append("uniform sampler2DShadow depthmap;")
+        code.append("uniform sampler2DShadow %s_depthmap;" % self.name)
 
     def fragment_inputs(self, code):
-        code.append("in vec4 lightcoord;")
+        code.append("in vec4 %s_lightcoord;" % self.name)
 
     def fragment_shader(self, code):
         if self.shader.fragment_shader.version < 130:
-            code.append("shadow *= shadow2D(depthmap, lightcoord.xyz).x;")
+            code.append("shadow *= shadow2D(%s_depthmap, %s_lightcoord.xyz).x;" % (self.name, self.name))
         else:
-            code.append("shadow *= texture(depthmap, lightcoord.xyz);")
+            code.append("shadow *= texture(%s_depthmap, %s_lightcoord.xyz);" % (self.name, self.name))
 
     def update_shader_shape_static(self, shape, appearance):
-        shape.instance.setShaderInput('shadow_bias', appearance.shadow.bias)
-        shape.instance.setShaderInput('depthmap', appearance.shadow.depthmap)
-        shape.instance.setShaderInput("sunLight", appearance.shadow.cam)
+        shape.instance.setShaderInput('%s_shadow_bias' % self.name, self.caster.bias)
+        shape.instance.setShaderInput('%s_depthmap' % self.name, self.caster.depthmap)
+        shape.instance.setShaderInput("%sLightSource" % self.name, self.caster.cam)
 
     def clear(self, shape, appearance):
-        shape.instance.clearShaderInput('depthmap')
-        shape.instance.clearShaderInput("sunLight")
+        shape.instance.clearShaderInput('%s_depthmap' % self.name)
+        shape.instance.clearShaderInput("%sLightSource" % self.name)
 
 class ShaderSphereShadow(ShaderShadow):
     use_vertex = True

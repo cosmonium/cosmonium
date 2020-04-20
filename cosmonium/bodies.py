@@ -116,6 +116,7 @@ class StellarBody(StellarObject):
         if not surface in self.surfaces: return
         if self.auto_surface: return
         if self.init_components:
+            self.unconfigure_shape()
             self.remove_component(self.surface)
         self.surface = surface
         if self.init_components:
@@ -136,6 +137,7 @@ class StellarBody(StellarObject):
         self.configure_shape()
 
     def remove_components(self):
+        self.unconfigure_shape()
         StellarObject.remove_components(self)
         self.remove_component(self.surface)
         if self.auto_surface:
@@ -156,6 +158,9 @@ class StellarBody(StellarObject):
             self.surface.set_scale(scale)
         if self.clouds is not None:
             self.clouds.set_scale(scale)
+
+    def unconfigure_shape(self):
+        pass
 
     def get_apparent_radius(self):
         return self.radius
@@ -241,7 +246,7 @@ class ReflectiveBody(StellarBody):
     def __init__(self, *args, **kwargs):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
-        self.sunLight = None
+        self.light_source = None
 
     def is_emissive(self):
         return False
@@ -274,12 +279,15 @@ class ReflectiveBody(StellarBody):
         return phase
 
     def check_cast_shadow_on(self, body):
-        position = self.get_local_position()
-        body_position = body.get_local_position()
-        pa = body_position - position
+        vector_to_star = self.vector_to_star
         self_radius = self.get_apparent_radius()
+        body_radius = body.get_apparent_radius()
+        total_radius = self_radius + body_radius
+        position = self._local_position
+        body_position = body._local_position
+        pa = body_position - position
         #TODO: should be refactored somehow
-        self_ar = self.radius / pa.length()
+        self_ar = self_radius / (pa.length() - total_radius)
         star_ar = self.star.get_apparent_radius() / (self.star._local_position - body_position).length()
         ar_ratio = star_ar / self_ar
         #TODO: No longer valid if we are using HDR
@@ -287,11 +295,11 @@ class ReflectiveBody(StellarBody):
             #the shadow coef is smaller than the min change in pixel color
             #the umbra will have no visible impact
             return False
-        distance_vector = pa - self.vector_to_star * self.vector_to_star.dot(pa)
+        distance_vector = pa - vector_to_star * vector_to_star.dot(pa)
         distance = distance_vector.length()
-        projected = self.vector_to_star * self.vector_to_star.dot(body_position)
-        face = self.vector_to_star.dot(projected - position)
-        radius = (1 + ar_ratio) * self_radius + body.get_apparent_radius()
+        projected = vector_to_star * vector_to_star.dot(body_position)
+        face = vector_to_star.dot(projected - position)
+        radius = (1 + ar_ratio) * self_radius + body_radius
         return face < 0.0 and distance < radius
 
     def start_shadows_update(self):
@@ -318,21 +326,21 @@ class ReflectiveBody(StellarBody):
 
     def create_light(self):
         print("Create light for", self.get_name())
-        self.dir_light = DirectionalLight('sunLight')
-        self.dir_light.setDirection(LVector3(*-self.vector_to_star))
-        self.dir_light.setColor((1, 1, 1, 1))
-        self.sunLight = self.context.world.attachNewNode(self.dir_light)
-        self.set_light(self.sunLight)
+        self.directional_light = DirectionalLight('light_source')
+        self.directional_light.setDirection(LVector3(*-self.vector_to_star))
+        self.directional_light.setColor((1, 1, 1, 1))
+        self.light_source = self.context.world.attachNewNode(self.directional_light)
+        self.set_light(self.light_source)
 
     def update_light(self, camera_pos):
         pos = self.get_local_position() + self.vector_to_star * self.get_extend()
-        self.place_pos_only(self.sunLight, pos, camera_pos, self.distance_to_obs, self.vector_to_obs)
-        self.dir_light.setDirection(LVector3(*-self.vector_to_star))
+        self.place_pos_only(self.light_source, pos, camera_pos, self.distance_to_obs, self.vector_to_obs)
+        self.directional_light.setDirection(LVector3(*-self.vector_to_star))
 
     def remove_light(self):
-        self.sunLight.remove_node()
-        self.sunLight = None
-        self.dir_light = None
+        self.light_source.remove_node()
+        self.light_source = None
+        self.directional_light = None
 
     def configure_shape(self):
         StellarBody.configure_shape(self)
@@ -346,18 +354,22 @@ class ReflectiveBody(StellarBody):
             self.surface.shadow_caster.add_target(self.ring)
             self.ring.end_shadows_update()
 
+    def unconfigure_shape(self):
+        StellarBody.unconfigure_shape(self)
+        self.surface.remove_shadows()
+
     def create_components(self):
         StellarBody.create_components(self)
-        if self.sunLight is None:
+        if self.light_source is None:
             self.create_light()
             self.update_shader()
 
     def update_components(self, camera_pos):
-        if self.sunLight is not None:
+        if self.light_source is not None:
             self.update_light(camera_pos)
 
     def remove_components(self):
-        if self.sunLight is not None:
+        if self.light_source is not None:
             self.remove_light()
             self.update_shader()
         StellarBody.remove_components(self)

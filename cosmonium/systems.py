@@ -315,6 +315,7 @@ class SimpleSystem(StellarSystem):
 
     def update(self, time):
         StellarSystem.update(self, time)
+        if not self.visible or not self.resolved: return
         primary = self.primary
         if primary is None or primary.is_emissive(): return
         check_primary = primary.visible and primary.resolved and primary.in_view

@@ -121,7 +121,6 @@ class AppearanceBase:
         self.has_vertex_color = False
         self.has_attribute_color = False
         self.has_material = False
-        self.shadow = None
         self.roughness = 0.0
         self.backlit = 0.0
         self.attribution = None
@@ -184,7 +183,6 @@ class Appearance(AppearanceBase):
         self.set_normal_map(normalMap)
         self.set_specular_map(specularMap)
         self.set_bump_map(bumpMap, bump_height)
-        self.shadow = None
         self.normal_map_tangent_space = True
         self.nb_textures = 0
         self.nb_textures_coord = 0
@@ -212,9 +210,6 @@ class Appearance(AppearanceBase):
     def check_transparency(self):
         if self.texture is not None:
             self.texture.check_transparency = True
-
-    def set_shadow(self, shadow):
-        self.shadow = shadow
 
     def bake(self):
         self.material=Material()
@@ -354,7 +349,6 @@ class Appearance(AppearanceBase):
 class ModelAppearance(AppearanceBase):
     def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False):
         AppearanceBase.__init__(self)
-        self.shadow = None
         self.specularColor = None
         self.tex_transform = False
         if srgb is None:
@@ -384,9 +378,6 @@ class ModelAppearance(AppearanceBase):
         self.has_specular_mask = False
         self.transparency = False
         self.transparency_blend = TransparencyBlend.TB_None
-
-    def set_shadow(self, shadow):
-        self.shadow = shadow
 
     def scan_model(self, instance):
         stages = instance.findAllTextureStages()

@@ -224,6 +224,8 @@ class ShapeObject(VisibleObject):
 
     def check_settings(self):
         self.shape.check_settings()
+        if self.shadow_caster is not None:
+            self.shadow_caster.check_settings()
         self.update_shader()
 
     def get_user_parameters(self):
@@ -309,6 +311,9 @@ class ShapeObject(VisibleObject):
         self.schedule_jobs()
 
     def create_shadows(self):
+        pass
+
+    def remove_shadows(self):
         pass
 
     def start_shadows_update(self):
@@ -411,6 +416,8 @@ class ShapeObject(VisibleObject):
             self.shape.place_patches(self.parent)
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+        if self.shadow_caster is not None:
+            self.shadow_caster.update()
         if self.shadows.update_needed:
             self.update_shader()
             self.shadows.update_needed = False

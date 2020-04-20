@@ -131,6 +131,7 @@ class StellarObject(LabelledObject):
         self.in_view = False
         self.selected = False
         self.update_id = 0
+        self.visibility_override = False
         #Cached values
         self._position = LPoint3d()
         self._global_position = LPoint3d()
@@ -466,22 +467,26 @@ class StellarObject(LabelledObject):
         else:
             self.visible_size = 0.0
         self._app_magnitude = self.get_app_magnitude()
-        self.resolved = self.visible_size > settings.min_body_size
-        if self.resolved:
-            radius = self.get_extend()
-            if self.distance_to_obs > radius:
-                D = self.rel_position + (self.context.observer.camera_vector * (radius * self.context.observer.inv_sin_dfov))
-                len_squared = D.dot(D)
-                e = D.dot(self.context.observer.camera_vector)
-                self.in_view = e >= 0.0 and e*e > len_squared * self.context.observer.sqr_cos_dfov
-                #TODO: add check if object is slightly behind the observer
+        if not self.visibility_override:
+            self.resolved = self.visible_size > settings.min_body_size
+            if self.resolved:
+                radius = self.get_extend()
+                if self.distance_to_obs > radius:
+                    D = self.rel_position + (self.context.observer.camera_vector * (radius * self.context.observer.inv_sin_dfov))
+                    len_squared = D.dot(D)
+                    e = D.dot(self.context.observer.camera_vector)
+                    self.in_view = e >= 0.0 and e*e > len_squared * self.context.observer.sqr_cos_dfov
+                    #TODO: add check if object is slightly behind the observer
+                else:
+                    #We are in the object
+                    self.in_view = True
             else:
-                #We are in the object
+                #Don't bother checking the visibility of a point
                 self.in_view = True
+            self.visible = self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
-            #Don't bother checking the visibility of a point
-            self.in_view = True
-        self.visible = self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
+            self.visible = True
+            self.resolved = True
         if not self.virtual_object and self.resolved and self.in_view:
             self.context.add_visible(self)
         LabelledObject.check_visibility(self, pixel_size)

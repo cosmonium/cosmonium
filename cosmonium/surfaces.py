@@ -20,9 +20,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .shapes import ShapeObject
 from panda3d.core import NodePath
-from cosmonium.shadows import SphereShadowCaster
+
+from .shapes import ShapeObject
+from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -56,10 +57,21 @@ class Surface(ShapeObject):
         return True
 
     def create_shadows(self):
-        if self.shape is not None and self.shape.is_spherical():
-            self.shadow_caster = SphereShadowCaster(self.owner)
-        else:
-            self.shadow_caster = None
+        if self.shadow_caster is None:
+            if self.shape is not None and self.shape.is_spherical():
+                self.shadow_caster = SphereShadowCaster(self.owner)
+            else:
+                self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
+                self.owner.visibility_override = True
+        self.shadow_caster.create()
+
+    def remove_shadows(self):
+        if self.shadow_caster is not None:
+            self.shadow_caster.remove()
+            if self.owner.visibility_override:
+                self.owner.visibility_override = False
+                #Force recheck of visibility or the body will be immediately recreated
+                self.owner.check_visibility(self.owner.context.observer.pixel_size)
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()

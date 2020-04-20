@@ -35,6 +35,7 @@ class ShadowMap(object):
         self.depthmap = None
         self.cam = None
         self.shadow_caster = None
+        self.bias = 0.
 
     def create(self):
         winprops = WindowProperties.size(self.size, self.size)
@@ -102,19 +103,29 @@ class ShadowMap(object):
         self.buffer = None
 
 class ShadowCasterBase(object):
+    def create(self):
+        pass
+
+    def remove(self):
+        pass
+
+    def check_settings(self):
+        pass
+
+    def is_valid(self):
+        return True
+
     def add_target(self, shape_object):
         pass
 
-    def remove_target(self, shape_object):
+    def update(self):
         pass
-
-class ShadowBase(object):
-    pass
 
 class ShadowMapShadowCaster(ShadowCasterBase):
     def __init__(self, body, light):
         self.body = body
         self.light = light
+        self.name = self.body.get_ascii_name()
         self.shadow_caster = None
         self.shadow_camera = None
 
@@ -122,9 +133,8 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         pass
 
     def create(self):
+        if self.shadow_caster is not None: return
         self.create_camera()
-        if settings.debug_shadow_frustum:
-            self.shadow_camera.showFrustum()
         self.shadow_camera.set_camera_mask(DrawMask(1))
 
     def remove_camera(self):
@@ -132,6 +142,15 @@ class ShadowMapShadowCaster(ShadowCasterBase):
 
     def remove(self):
         self.remove_camera()
+
+    def check_settings(self):
+        if settings.debug_shadow_frustum:
+            self.shadow_camera.show_frustum()
+        else:
+            self.shadow_camera.hide_frustum()
+
+    def is_valid(self):
+        return self.shadow_caster is not None
 
     def update(self):
         radius = self.body.get_extend() / settings.scale
@@ -142,12 +161,13 @@ class ShadowMapShadowCaster(ShadowCasterBase):
 
 class PandaShadowCaster(ShadowMapShadowCaster):
     def create_camera(self):
-        print("Create Panda3D shadow caster")
+        print("Create Panda3D shadow camera for", self.body.get_name())
         self.light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)
-        self.shadow_caster = self.dir_light
-        self.shadow_camera = self.dir_light
+        self.shadow_caster = self.directional_light
+        self.shadow_camera = self.directional_light
 
     def remove_camera(self):
+        print("Remove Panda3D shadow camera for", self.body.get_name())
         self.light.setShadowCaster(False)
         self.shadow_caster = None
         self.shadow_camera = None
@@ -155,34 +175,28 @@ class PandaShadowCaster(ShadowMapShadowCaster):
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def __init__(self, body, light):
         ShadowMapShadowCaster.__init__(self, body, light)
-        self.bias = 0.
+        self.targets = {}
 
     def create_camera(self):
-        print("Create custom shadow caster for", self.body.get_name())
+        print("Create shadow camera for", self.body.get_name())
         self.shadow_caster = ShadowMap(settings.shadow_size)
         self.shadow_caster.create()
         self.shadow_camera = self.shadow_caster.node
-        #TODO: should be done in surface
-        #TODO
-        #self.body.surface.appearance.set_shadow(self.shadow_caster)
-        #self.body.surface.shader.add_shadows(ShadowsMap())
-        if self.body.surface.instance_ready:
-            self.body.surface.shader.apply(self.body.surface.shape, self.body.surface.appearance)
 
     def remove_camera(self):
-        print("Remove custom shadow caster", self.body.get_name())
+        print("Remove shadow camera for", self.body.get_name())
         self.shadow_caster.remove()
-        #TODO: Temporary until all dangling instance references have been removed
-        self.body.surface.appearance.set_shadow(None)
-        self.body.surface.shader.remove_shadows(self.body.surface.shape, self.body.surface.appearance)
-        if self.body.surface.instance_ready:
-            self.body.surface.shader.apply(self.body.surface.shape, self.body.surface.appearance)
+        for target in list(self.targets.keys()):
+            self.remove_target(target)
         self.shadow_caster = None
         self.shadow_camera = None
 
     def update(self):
         ShadowMapShadowCaster.update(self)
-        self.shadow_caster.set_pos(self.body.sunLight.getPos())
+        self.shadow_caster.set_pos(self.body.light_source.getPos())
+
+    def add_target(self, shape_object):
+        shape_object.shadows.add_generic_occluder(self)
 
 class RingShadowCaster(ShadowCasterBase):
     def __init__(self, ring):
@@ -192,9 +206,6 @@ class RingShadowCaster(ShadowCasterBase):
     def add_target(self, shape_object):
         shape_object.shadows.add_ring_occluder(self)
 
-    def remove_target(self, shape_object):
-        shape_object.shadows.remove_ring_occluder(self)
-
 class SphereShadowCaster(ShadowCasterBase):
     def __init__(self, body):
         ShadowCasterBase.__init__(self)
@@ -203,22 +214,17 @@ class SphereShadowCaster(ShadowCasterBase):
     def add_target(self, shape_object):
         shape_object.shadows.add_sphere_occluder(self)
 
-    def remove_target(self, shape_object):
-        shape_object.shadows.remove_sphere_occluder(self)
+class ShadowBase(object):
+    pass
 
 class SphereShadows(ShadowBase):
     def __init__(self):
         self.occluders = []
-        self.old_occluders = []
         self.shader_component = ShaderSphereShadow()
 
     def add_occluder(self, occluder):
         if not occluder in self.occluders:
             self.occluders.append(occluder)
-
-    def remove_occluder(self, occluder):
-        if occluder in self.occluders:
-            self.occluders.remove(occluder)
 
     def empty(self):
         return len(self.occluders) == 0
@@ -226,12 +232,47 @@ class SphereShadows(ShadowBase):
     def clear(self):
         self.occluders = []
 
+class GenericShadows(ShadowBase):
+    def __init__(self, target):
+        self.target = target
+        self.occluders = []
+        self.old_occluders = []
+        self.shader_components = {}
+        self.update_needed = False
+
+    def add_occluder(self, occluder):
+        if not occluder.is_valid(): return
+        self.occluders.append(occluder)
+        if not occluder in self.old_occluders:
+            print("Add shadow caster", occluder.name)
+            shadow_shader =  ShaderShadowMap(occluder.name, occluder.shadow_caster)
+            self.shader_components[occluder] = shadow_shader
+            self.target.shader.add_shadows(shadow_shader)
+            self.update_needed = True
+        else:
+            self.old_occluders.remove(occluder)
+
+    def start_update(self):
+        self.old_occluders = self.occluders
+        self.occluders = []
+        self.update_needed = False
+
+    def end_update(self):
+        for occluder in self.old_occluders:
+            print("Remove shadow caster", occluder.name)
+            shadow_shader = self.shader_components[occluder]
+            self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
+            del self.shader_components[occluder]
+            self.update_needed = True
+        self.old_occluders = []
+        return self.update_needed
+
 class MultiShadows(ShadowBase):
     def __init__(self, target):
         self.target = target
         self.ring_shadow = None
         self.sphere_shadows = SphereShadows()
-        self.shadow_map = None
+        self.generic_shadows = GenericShadows(target)
         self.update_needed = False
         self.had_sphere_occluder = False
 
@@ -246,6 +287,7 @@ class MultiShadows(ShadowBase):
     def start_update(self):
         self.had_sphere_occluder = not self.sphere_shadows.empty()
         self.sphere_shadows.clear()
+        self.generic_shadows.start_update()
 
     def end_update(self):
         if self.sphere_shadows.empty() and self.had_sphere_occluder:
@@ -262,6 +304,7 @@ class MultiShadows(ShadowBase):
                 self.sphere_shadows.shader_component.oblate_occluder = True
             print("Add sphere shadow component")
             self.update_needed = True
+        self.update_needed = self.generic_shadows.end_update() or self.update_needed
 
     def add_ring_occluder(self, shadow_caster):
         if self.ring_shadow is None:
@@ -272,23 +315,9 @@ class MultiShadows(ShadowBase):
         else:
             print("Can not switch ring shadow caster")
 
-    def remove_ring_occluder(self, shadow_caster):
-        if shadow_caster == self.ring_shadow_caster:
-            print("Remove ring shadow component")
-            self.target.shader.remove_shadows(self.ring_shadow_caster)
-            self.ring_shadow_caster = None
-            self.update_needed = True
-        else:
-            print("Wrong ring shadow caster")
-
     def add_sphere_occluder(self, shadow_caster):
         self.sphere_shadows.add_occluder(shadow_caster)
 
-    def remove_sphere_occluder(self, shadow_caster):
-        self.sphere_shadows.remove_occluder(shadow_caster)
-
     def add_generic_occluder(self, occluder):
-        pass
+        self.generic_shadows.add_occluder(occluder)
 
-    def remove_generic_occluder(self, occluder):
-        pass

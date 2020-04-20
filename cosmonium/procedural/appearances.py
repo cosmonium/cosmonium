@@ -78,9 +78,6 @@ class TexturesDictionary(AppearanceBase):
         texture = block.textures_map[category]
         return texture.array_id
 
-    def set_shadow(self, shadow):
-        self.shadow = shadow
-
     def apply_textures(self, shape):
         for texture in self.texture_arrays.values():
             texture.apply(shape)
@@ -115,11 +112,6 @@ class TexturesDictionary(AppearanceBase):
 
 class ProceduralAppearance(AppearanceBase):
     def __init__(self,
-                 scale_factor = (1, 1),
-                 shadow=None):
+                 scale_factor = (1, 1)):
         AppearanceBase.__init__(self)
-        self.shadow = shadow
         self.scale_factor = scale_factor
-
-    def set_shadow(self, shadow):
-        self.shadow = shadow

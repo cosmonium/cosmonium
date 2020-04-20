@@ -150,8 +150,7 @@ class Gui(object):
         event_ctrl.accept('f9', self.toggle_shader_debug_coord)
         event_ctrl.accept('shift-f9', self.toggle_bb)
         event_ctrl.accept('control-f9', self.toggle_frustum)
-        #event_ctrl.accept('f8', self.cosmonium.universe.dumpOctree)
-        #event_ctrl.accept('f9', self.cosmonium.universe.addPlanes)
+        event_ctrl.accept('shift-control-f9', self.toggle_shadow_frustum)
         event_ctrl.accept('f10', self.cosmonium.save_screenshot)
         event_ctrl.accept('shift-f10', self.cosmonium.save_screenshot_no_annotation)
         event_ctrl.accept('f11', render.explore)
@@ -313,6 +312,10 @@ class Gui(object):
 
     def toggle_frustum(self):
         settings.debug_lod_frustum = not settings.debug_lod_frustum
+        self.cosmonium.trigger_check_settings = True
+
+    def toggle_shadow_frustum(self):
+        settings.debug_shadow_frustum = not settings.debug_shadow_frustum
         self.cosmonium.trigger_check_settings = True
 
     def dump_object_info(self):
@@ -564,6 +567,7 @@ class Gui(object):
                 ('Toggle filled wireframe>F3', 0, self.cosmonium.toggle_filled_wireframe),
                 ('Toggle wireframe>Shift-F3', 0, self.cosmonium.toggle_wireframe),
                 ("Show render buffers>F5", 0, base.bufferViewer.toggleEnable),
+                ('Show shadow frustum>Shift-Control-F9', settings.debug_shadow_frustum, self.toggle_shadow_frustum),
                 0,
                 ('Shaders', 0, shaders),
                 ('Instant movement>Control-J', settings.debug_jump, self.toggle_jump),
