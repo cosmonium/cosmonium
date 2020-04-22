@@ -89,7 +89,8 @@ class CosmoniumBase(ShowBase):
             check_opengl_config(self)
         else:
             self.buttonThrowers = [NodePath('dummy')]
-            self.cam = NodePath('dummy')
+            self.camera = NodePath('dummy')
+            self.cam = self.camera.attach_new_node('dummy')
             self.camLens = PerspectiveLens()
             settings.shader_version = 130
         BaseObject.context = self
@@ -344,7 +345,7 @@ class Cosmonium(CosmoniumBase):
             self.render.set_shader_input("oid_store", self.oid_texture)
         else:
             self.oid_texture = None
-        self.observer = Camera(self.cam, self.camLens)
+        self.observer = Camera(self.camera, self.camLens)
         self.autopilot = AutoPilot(self.observer, self)
         self.mouse = Mouse(self, self.oid_texture)
         if self.nav is None:

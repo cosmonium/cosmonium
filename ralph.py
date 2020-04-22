@@ -232,28 +232,28 @@ class RalphCamera(CameraBase):
         self.camera_frame = AbsoluteReferenceFrame()
 
     def get_frame_camera_pos(self):
-        return LPoint3d(*base.cam.get_pos())
+        return LPoint3d(*self.cam.get_pos())
 
     def set_frame_camera_pos(self, position):
-        base.cam.set_pos(*position)
+        self.cam.set_pos(*position)
 
     def get_frame_camera_rot(self):
-        return LQuaterniond(*base.cam.get_quat())
+        return LQuaterniond(*self.cam.get_quat())
 
     def set_frame_camera_rot(self, rot):
-        base.cam.set_quat(LQuaternion(*rot))
+        self.cam.set_quat(LQuaternion(*rot))
 
     def set_camera_pos(self, position):
-        base.cam.set_pos(*position)
+        self.cam.set_pos(*position)
 
     def get_camera_pos(self):
-        return LPoint3d(*base.cam.get_pos())
+        return LPoint3d(*self.cam.get_pos())
 
     def set_camera_rot(self, rot):
-        base.cam.set_quat(LQuaternion(*rot))
+        self.cam.set_quat(LQuaternion(*rot))
 
     def get_camera_rot(self):
-        return LQuaterniond(*base.cam.get_quat())
+        return LQuaterniond(*self.cam.get_quat())
 
 class FollowCam(object):
     def __init__(self, terrain, cam, target, floater):
@@ -443,7 +443,7 @@ class RalphAppConfig:
 class RoamingRalphDemo(CosmoniumBase):
 
     def get_local_position(self):
-        return base.cam.get_pos()
+        return base.camera.get_pos()
 
     def create_terrain_appearance(self):
         self.terrain_appearance = self.ralph_config.appearance
@@ -555,7 +555,7 @@ class RoamingRalphDemo(CosmoniumBase):
         return height
 
     def skybox_init(self):
-        skynode = base.cam.attachNewNode('skybox')
+        skynode = base.camera.attachNewNode('skybox')
         self.skybox = loader.loadModel('ralph-data/models/rgbCube')
         self.skybox.reparentTo(skynode)
 
@@ -677,7 +677,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.directionalLight = None
 
-        self.observer = RalphCamera(self.cam, self.camLens)
+        self.observer = RalphCamera(self.camera, self.camLens)
         self.observer.init()
 
         self.distance_to_obs = 2.0 #Can not be 0 !
@@ -703,7 +703,7 @@ class RoamingRalphDemo(CosmoniumBase):
         # Set up the environment
         #
         # Create some lighting
-        self.vector_to_obs = base.cam.get_pos()
+        self.vector_to_obs = base.camera.get_pos()
         self.vector_to_obs.normalize()
         if True:
             self.shadow_caster = ShadowMap(1024)
@@ -775,9 +775,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_body = NodePathHolder(self.ralph)
         self.ralph_floater = NodePathHolder(self.floater)
 
-        self.follow_cam = FollowCam(self, self.cam, self.ralph, self.floater)
+        self.follow_cam = FollowCam(self, self.camera, self.ralph, self.floater)
 
-        self.nav = RalphNav(self.ralph, self.ralph_floater, self.cam, self.observer, self, self.follow_cam)
+        self.nav = RalphNav(self.ralph, self.ralph_floater, self.camera, self.observer, self, self.follow_cam)
         self.nav.register_events(self)
 
         self.accept("escape", sys.exit)
@@ -802,10 +802,10 @@ class RoamingRalphDemo(CosmoniumBase):
 
         # Set up the camera
         self.follow_cam.update()
-        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
-        render.set_shader_input("camera", self.cam.get_pos())
+        self.distance_to_obs = self.camera.get_z() - self.get_height(self.camera.getPos())
+        render.set_shader_input("camera", self.camera.get_pos())
 
-        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
+        self.terrain.update_instance(LPoint3d(*self.camera.getPos()), None)
 
     def move(self, task):
         dt = globalClock.getDt()
@@ -823,29 +823,29 @@ class RoamingRalphDemo(CosmoniumBase):
             self.follow_cam.update()
         else:
             #TODO: Should have a FreeCam class for mouse orbit and this in update()
-            self.cam.lookAt(self.floater)
+            self.camera.lookAt(self.floater)
 
         if self.shadow_caster is not None:
-            vec = self.ralph.getPos() - self.cam.getPos()
+            vec = self.ralph.getPos() - self.camera.getPos()
             vec.set_z(0)
             dist = vec.length()
             vec.normalize()
             self.shadow_caster.set_pos(self.ralph.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
-        render.set_shader_input("camera", self.cam.get_pos())
-        self.vector_to_obs = base.cam.get_pos()
+        render.set_shader_input("camera", self.camera.get_pos())
+        self.vector_to_obs = self.camera.get_pos()
         self.vector_to_obs.normalize()
-        self.distance_to_obs = self.cam.get_z() - self.get_height(self.cam.getPos())
-        self.scene_rel_position = -base.cam.get_pos()
+        self.distance_to_obs = self.camera.get_z() - self.get_height(self.camera.getPos())
+        self.scene_rel_position = -self.camera.get_pos()
 
-        self.terrain.update_instance(LPoint3d(*self.cam.getPos()), None)
+        self.terrain.update_instance(LPoint3d(*self.camera.getPos()), None)
         self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
         return task.cont
 
     def print_debug(self):
         print("Height:", self.get_height(self.ralph.getPos()), self.terrain_object.get_height(self.ralph.getPos()))
         print("Ralph:", self.ralph.get_pos())
-        print("Camera:", base.cam.get_pos(), self.follow_cam.height, self.distance_to_obs)
+        print("Camera:", self.camera.get_pos(), self.follow_cam.height, self.distance_to_obs)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",
