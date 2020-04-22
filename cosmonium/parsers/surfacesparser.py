@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader, PandaDataSource
+from ..shaders import BasicShader, PandaDataSource, ShaderSphereSelfShadow
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..heightmap import heightmapRegistry
 from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
@@ -37,8 +37,7 @@ from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser
 from .textureparser import TextureControlYamlParser
-
-from cosmonium.parsers.heightmapsparser import HeightmapYamlParser
+from .heightmapsparser import HeightmapYamlParser
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
@@ -123,6 +122,8 @@ class SurfaceYamlParser(YamlModuleParser):
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         if atmosphere is not None:
             atmosphere.add_shape_object(surface)
+        if shape.is_spherical() and atmosphere is None:
+            shader.add_shadows(ShaderSphereSelfShadow())
         return surface
 
     @classmethod

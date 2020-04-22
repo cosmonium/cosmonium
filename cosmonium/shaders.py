@@ -830,6 +830,7 @@ class BasicShader(StructuredShader):
         self.shadows = shadows
         for shadow in self.shadows:
             shadow.shader = self
+            shadow.appearance  = appearance
         self.lighting_model = lighting_model
         self.lighting_model.shader = self
         self.scattering = scattering
@@ -916,9 +917,10 @@ class BasicShader(StructuredShader):
             self.tessellation_eval_shader.scattering = scattering
         self.fragment_shader.scattering = scattering
 
-    def add_shadows(self, shadows):
-        self.shadows.append(shadows)
-        shadows.shader = self
+    def add_shadows(self, shadow):
+        self.shadows.append(shadow)
+        shadow.shader = self
+        shadow.appearance = self.appearance
         #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
 
     def remove_shadows(self, shape, appearance, shadow):
@@ -927,6 +929,7 @@ class BasicShader(StructuredShader):
                 shadow.clear(shape, appearance)
             self.shadows.remove(shadow)
             shadow.shader = None
+            shadow.appearance = None
         else:
             print("SHADOW NOT FOUND")
         #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
@@ -2323,11 +2326,21 @@ class ShaderRingShadow(ShaderShadow):
             body_center = shape.owner.scene_position
         shape.instance.setShaderInput('body_center', body_center)
 
-class LightingModel(ShaderComponent):
+class ShaderSphereSelfShadow(ShaderShadow):
     #TODO: Until proper self-shadowing is added, the effect of the normal map
     #is damped by this factor when the angle between the normal and the light
     #is negative (angle > 90deg)
     fake_self_shadow = 0.05
+
+    def get_id(self):
+        return 'sss' if self.appearance.has_normal else ''
+
+    def fragment_shader(self, code):
+        if self.appearance.has_normal:
+            code.append("float terminator_coef = dot(shape_normal, light_dir);")
+            code.append("shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
+
+class LightingModel(ShaderComponent):
     pass
 
 class FlatLightingModel(LightingModel):
@@ -2373,9 +2386,6 @@ class LambertPhongLightingModel(LightingModel):
             code.append("ambient *= surface_occlusion;")
         code.append("float diffuse_angle = 0.0;")
         code.append("diffuse_angle = dot(normal, light_dir);")
-        if self.appearance.has_normal:
-            code.append("float terminator_coef = dot(shape_normal, light_dir);")
-            code.append("diffuse_angle = diffuse_angle * smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
         code.append("float diffuse_coef = clamp(diffuse_angle, 0.0, 1.0) * shadow;")
         code.append("vec4 total_light = clamp((diffuse_coef + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
         code.append("total_light.a = 1.0;")
@@ -2434,9 +2444,6 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("float b = 0.45 * roughness_squared / (roughness_squared + 0.09);")
         code.append("float c = sin(alpha) * tan(beta);")
         code.append("float diffuse_coef = max(0.0, l_dot_n) * (a + b * max(0.0, delta) * c);")
-        if self.appearance.has_normal:
-            code.append("float terminator_coef = dot(shape_normal, light_dir);")
-            code.append("diffuse_coef = diffuse_coef * smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
         code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
         code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
         code.append("total_light.a = 1.0;")
