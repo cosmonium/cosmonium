@@ -183,9 +183,9 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("total_diffuse_color.a = surface_color.a;")
 
         code.append("if (vectors.n_dot_l < 0.0) {")
-        if self.appearance.has_night:
+        if self.appearance.has_emission:
             code.append("  float emission_coef = clamp(sqrt(-vectors.n_dot_l), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
+            code.append("  total_emission_color.rgb = emission_color.rgb * emission_coef;")
         code.append("  total_emission_color.rgb += material.diffuse_color * backlit * sqrt(-vectors.n_dot_l);")
         code.append("}")
 

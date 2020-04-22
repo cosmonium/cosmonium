@@ -1327,7 +1327,6 @@ class ShaderAppearance(ShaderComponent):
         self.has_bump = False
         self.has_gloss = False
         self.has_specular = False
-        self.has_night = False
         self.has_transparency = False
 
     def fragment_shader_decl(self, code):
@@ -1342,8 +1341,6 @@ class ShaderAppearance(ShaderComponent):
         if self.has_specular:
             code.append("float shininess;")
             code.append("vec3 specular_color;")
-        if self.has_night:
-            code.append("vec3 night_color;")
         if self.has_gloss:
             code.append("float metallic;")
             code.append("float perceptual_roughness;")
@@ -1363,8 +1360,6 @@ class TextureAppearance(ShaderAppearance):
             config += "b"
         if self.has_specular:
             config += "s"
-        if self.has_night:
-            config += "i"
         if self.has_transparency:
             config += "t"
             if self.transparency_blend == TransparencyBlend.TB_None:
@@ -1376,14 +1371,13 @@ class TextureAppearance(ShaderAppearance):
     def create_shader_configuration(self, appearance):
         #TODO: This should use the shader data source iso appearance!
         self.has_surface = True
-        self.has_emission = False
         self.has_occlusion = False
         self.has_normal = appearance.normal_map is not None or self.data.has_source_for('normal')
         self.normal_texture_tangent_space = appearance.normal_map_tangent_space
         self.has_bump = appearance.bump_map is not None
 
         self.has_specular = appearance.specularColor is not None
-        self.has_night = appearance.night_texture is not None
+        self.has_emission = appearance.emission_texture is not None
 
         self.has_gloss = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
@@ -1404,8 +1398,6 @@ class TextureAppearance(ShaderAppearance):
         if self.has_specular:
             code.append("shininess = %s;" % self.data.get_source_for('shininess'))
             code.append("specular_color = %s;" % self.data.get_source_for('specular-color'))
-        if self.has_night:
-            code.append("night_color = %s;" % self.data.get_source_for('night'))
         if self.has_occlusion:
             code.append("surface_occlusion = %s;" % self.data.get_source_for('occlusion'))
         if self.has_gloss:
@@ -1841,14 +1833,14 @@ class PandaDataSource(DataSource):
         self.normal_map_index = 0
         self.bump_map_index = 0
         self.specular_map_index = 0
-        self.night_texture_index = 0
+        self.emission_texture_index = 0
         self.nb_textures = 0
         self.has_surface_texture = False
         self.has_normal_texture = False
         self.has_bump_texture = False
         self.has_specular_texture = False
         self.has_specular_mask = False
-        self.has_night_texture = False
+        self.has_emission_texture = False
         self.has_transparency = False
         self.has_gloss_map_texture = False
 
@@ -1868,8 +1860,8 @@ class PandaDataSource(DataSource):
             config += "p"
         if self.has_alpha_mask:
             config += "l"
-        if self.has_night_texture:
-            config += "i"
+        if self.has_emission_texture:
+            config += "e"
         if self.tex_transform:
             config += "r"
         if self.has_gloss_map_texture:
@@ -1886,7 +1878,7 @@ class PandaDataSource(DataSource):
         self.normal_map_index = appearance.normal_map_index
         self.bump_map_index = appearance.bump_map_index
         self.specular_map_index = appearance.specular_map_index
-        self.night_texture_index = appearance.night_texture_index
+        self.emission_texture_index = appearance.emission_texture_index
         self.gloss_map_texture_index = appearance.gloss_map_texture_index
         self.nb_textures = appearance.nb_textures
         self.has_surface_texture = appearance.texture is not None
@@ -1894,7 +1886,7 @@ class PandaDataSource(DataSource):
         self.has_bump_texture = appearance.bump_map is not None
         self.has_specular_texture = appearance.specular_map is not None
         self.has_specular_mask = appearance.has_specular_mask
-        self.has_night_texture = appearance.night_texture
+        self.has_emission_texture = appearance.emission_texture
         self.has_gloss_map_texture = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
         self.has_alpha_mask = appearance.alpha_mask
@@ -1942,7 +1934,7 @@ class PandaDataSource(DataSource):
     def fragment_uniforms(self, code):
         for i in range(self.nb_textures):
             code.append("uniform sampler2D p3d_Texture%i;" % i)
-        if self.has_night_texture:
+        if self.has_emission_texture:
             code.append("uniform float nightscale;")
         if self.nb_textures > 0:
             code.append("uniform mat4 p3d_TextureMatrix[%d];" % (self.nb_textures))
@@ -1983,8 +1975,8 @@ class PandaDataSource(DataSource):
             code += self.create_tex_coord(self.bump_map_index, texture_coord)
         if self.has_specular_texture:
             code += self.create_tex_coord(self.specular_map_index, texture_coord)
-        if self.has_night_texture:
-            code += self.create_tex_coord(self.night_texture_index, texture_coord)
+        if self.has_emission_texture:
+            code += self.create_tex_coord(self.emission_texture_index, texture_coord)
         if self.has_gloss_map_texture:
             code += self.create_tex_coord(self.gloss_map_texture_index, texture_coord)
 
@@ -2012,12 +2004,6 @@ class PandaDataSource(DataSource):
                 data = data + " * p3d_Material.baseColor"
             data += " * p3d_ColorScale"
             return data
-        if source == 'emission':
-            if self.has_material:
-                data = "p3d_Material.emission.rgb"
-            else:
-                data = "vec3(0.0)"
-            return data
         if source == 'alpha':
             if self.has_transparency:
                 return "tex%i.a" % self.texture_index
@@ -2037,11 +2023,16 @@ class PandaDataSource(DataSource):
                 return "tex%i.aaa * shape_specular_color" % self.texture_index
             else:
                 return "shape_specular_color"
-        if source == 'night':
-            if self.has_night_texture:
-                return "tex%i.rgb * nightscale" % self.night_texture_index
+        if source == 'emission':
+            if self.has_emission_texture:
+                data = "tex%i.rgb * nightscale" % self.emission_texture_index
+                if self.has_material:
+                    data += " * p3d_Material.emission.rgb"
+            elif self.has_material:
+                data = "p3d_Material.emission.rgb"
             else:
-                return "vec3(0.0)"
+                data = "vec3(0.0)"
+            return data
         if source == 'metallic':
             if self.has_gloss_map_texture:
                 data = "tex%i.b" % self.gloss_map_texture_index
@@ -2068,13 +2059,13 @@ class PandaDataSource(DataSource):
             code += self.create_sample_texture(self.normal_map_index)
         if self.has_specular_texture:
             code += self.create_sample_texture(self.specular_map_index)
-        if self.has_night_texture:
-            code += self.create_sample_texture(self.night_texture_index)
+        if self.has_emission_texture:
+            code += self.create_sample_texture(self.emission_texture_index)
         if self.has_gloss_map_texture:
             code += self.create_sample_texture(self.gloss_map_texture_index)
 
     def update_shader_shape_static(self, shape, appearance):
-        if self.has_night_texture:
+        if self.has_emission_texture:
             shape.instance.setShaderInput("nightscale", 0.02)
         if self.has_specular:
             shape.instance.setShaderInput("shape_specular_color", appearance.specularColor)
@@ -2393,9 +2384,9 @@ class LambertPhongLightingModel(LightingModel):
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_color.rgb * shadow;")
         code.append("if (diffuse_angle < 0.0) {")
-        if self.appearance.has_night:
+        if self.appearance.has_emission:
             code.append("  float emission_coef = clamp(sqrt(-diffuse_angle), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb = night_color.rgb * emission_coef;")
+            code.append("  total_emission_color.rgb = emission_color.rgb * emission_coef;")
         code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-diffuse_angle);")
         code.append("}")
 
@@ -2451,9 +2442,9 @@ class OrenNayarPhongLightingModel(LightingModel):
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_factor.rgb * specular_color.rgb * shadow;")
         code.append("if (l_dot_n < 0.0) {")
-        if self.appearance.has_night:
+        if self.appearance.has_emission:
             code.append("  float emission_coef = clamp(sqrt(-l_dot_n), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb += night_color.rgb * emission_coef;")
+            code.append("  total_emission_color.rgb += emission_color.rgb * emission_coef;")
         code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-l_dot_n);")
         code.append("}")
 

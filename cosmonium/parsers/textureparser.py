@@ -31,7 +31,7 @@ from ..procedural.shaders import TextureDictionaryDataSource
 from ..astro import units
 
 from ..textures import AutoTextureSource
-from ..textures import TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
+from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from ..appearances import TexturesBlock
 
 from .utilsparser import DistanceUnitsYamlParser

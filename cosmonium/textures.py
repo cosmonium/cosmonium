@@ -478,7 +478,7 @@ class SurfaceTexture(VisibleTexture):
     def get_default_color(self):
         return (1, 1, 1, 1)
 
-class NightTexture(SurfaceTexture):
+class EmissionTexture(SurfaceTexture):
     def get_default_color(self):
         return (0, 0, 0, 1)
 

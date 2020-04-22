@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import  Material, TextureStage, Texture, GeomNode
 from panda3d.core import TransparencyAttrib
 
-from .textures import TextureBase, SurfaceTexture, TransparentTexture, NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from .textures import AutoTextureSource
 from .utils import TransparencyBlend, srgb_to_linear
 from .dircontext import defaultDirContext
@@ -103,13 +103,13 @@ class AppearanceBase:
         self.normal_map_index = 0
         self.bump_map_index = 0
         self.specular_map_index = 0
-        self.night_texture_index = 0
+        self.emission_texture_index = 0
         self.gloss_map_texture_index = 0
         self.texture = None
         self.normal_map = None
         self.bump_map = None
         self.specular_map = None
-        self.night_texture = None
+        self.emission_texture = None
         self.gloss_map = None
         self.has_specular_mask = False
         self.normal_map_tangent_space = False
@@ -163,7 +163,7 @@ class Appearance(AppearanceBase):
                  specularMap=None,
                  bumpMap=None,
                  bump_height = 10.0,
-                 night_texture=None,
+                 emission_texture=None,
                  tint=None,
                  srgb=None):
         AppearanceBase.__init__(self)
@@ -178,8 +178,8 @@ class Appearance(AppearanceBase):
         self.srgb = srgb
         if texture is not None:
             self.set_texture(texture, tint, transparency, transparency_level, transparency_blend)
-        if night_texture is not None:
-            self.set_night_texture(night_texture, tint)
+        if emission_texture is not None:
+            self.set_emission_texture(emission_texture, tint)
         self.set_normal_map(normalMap)
         self.set_specular_map(specularMap)
         self.set_bump_map(bumpMap, bump_height)
@@ -190,7 +190,7 @@ class Appearance(AppearanceBase):
         self.normal_map_index = 0
         self.bump_map_index = 0
         self.specular_map_index = 0
-        self.night_texture_index = 0
+        self.emission_texture_index = 0
         self.has_specular_mask = False
         self.tex_transform = True
         self.has_vertex_color = False
@@ -239,10 +239,10 @@ class Appearance(AppearanceBase):
         self.tint = tint
         texture.set_offset(offset)
 
-    def set_night_texture(self, night_texture, tint=None, context=defaultDirContext):
-        if night_texture is not None and not isinstance(night_texture, TextureBase):
-            night_texture = NightTexture(AutoTextureSource(night_texture, None, context), tint, srgb=self.srgb)
-        self.night_texture = night_texture
+    def set_emission_texture(self, emission_texture, tint=None, context=defaultDirContext):
+        if emission_texture is not None and not isinstance(emission_texture, TextureBase):
+            emission_texture = EmissionTexture(AutoTextureSource(emission_texture, None, context), tint, srgb=self.srgb)
+        self.emission_texture = emission_texture
 
     def set_normal_map(self, normal_map, context=defaultDirContext):
         if normal_map is not None and not isinstance(normal_map, TextureBase):
@@ -275,8 +275,8 @@ class Appearance(AppearanceBase):
         if self.specularColor is not None and self.specular_map is not None:
             self.specular_map_index = self.nb_textures
             self.nb_textures += 1
-        if self.night_texture is not None:
-            self.night_texture_index = self.nb_textures
+        if self.emission_texture is not None:
+            self.emission_texture_index = self.nb_textures
             self.nb_textures += 1
         if self.nb_textures > 0:
             self.nb_textures_coord = 1
@@ -308,8 +308,8 @@ class Appearance(AppearanceBase):
             self.bump_map.load(shape, self.texture_loaded_cb, (shape, owner))
         if self.specular_map:
             self.specular_map.load(shape, self.texture_loaded_cb, (shape, owner))
-        if self.night_texture:
-            self.night_texture.load(shape, self.texture_loaded_cb, (shape, owner))
+        if self.emission_texture:
+            self.emission_texture.load(shape, self.texture_loaded_cb, (shape, owner))
 
     def apply_textures(self, patch):
         patch.instance.clearTexture()
@@ -322,8 +322,8 @@ class Appearance(AppearanceBase):
             self.bump_map.apply(patch)
         if self.specularColor is not None and self.specular_map is not None:
             self.specular_map.apply(patch)
-        if self.night_texture:
-            self.night_texture.apply(patch)
+        if self.emission_texture:
+            self.emission_texture.apply(patch)
 
     def apply_patch(self, patch, owner):
         if (patch.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
@@ -371,8 +371,8 @@ class ModelAppearance(AppearanceBase):
         self.bump_map_index = 0
         self.specular_map = None
         self.specular_map_index = 0
-        self.night_texture = None
-        self.night_texture_index = 0
+        self.emission_texture = None
+        self.emission_texture_index = 0
         self.gloss_map = None
         self.gloss_map_texture_index = 0
         self.has_specular_mask = False

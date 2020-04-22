@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LColor
 
 from ..appearances import Appearance, ModelAppearance
-from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
 from ..procedural.shadernoise import GrayTarget, AlphaTarget
 #TODO: Should not be here but in respective packages
@@ -106,12 +106,12 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             else:
                 texture = SurfaceTexture(texture_source)
             appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend, offset=texture_offset, context=YamlModuleParser.context)
-        night_texture = data.get('night-texture')
-        if night_texture is not None:
-            texture_source, texture_offset = self.decode_source(night_texture)
-            night_texture = NightTexture(texture_source)
+        emission_texture = data.get('night-texture')
+        if emission_texture is not None:
+            texture_source, texture_offset = self.decode_source(emission_texture)
+            emission_texture = EmissionTexture(texture_source)
             #TODO: missing texture offset
-            appearance.set_night_texture(night_texture, context=YamlModuleParser.context)
+            appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         normal_map = data.get('normalmap')
         if normal_map is not None:
             texture_source, texture_offset = self.decode_source(normal_map)
@@ -138,6 +138,11 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         diffuse_color = data.get('diffuse-color')
         if diffuse_color is not None:
             appearance.diffuseColor = LColor(*diffuse_color)
+        emission_color = data.get('emission-color')
+        if emission_color is not None:
+            appearance.emissionColor = LColor(*emission_color)
+        elif emission_texture is not None:
+            appearance.emissionColor = LColor(1, 1, 1, 1)
         roughness = data.get('roughness', 0.0)
         appearance.set_roughness(roughness)
         backlit = data.get('backlit', 0.0)
