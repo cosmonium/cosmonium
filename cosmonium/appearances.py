@@ -390,6 +390,7 @@ class ModelAppearance(AppearanceBase):
         #Should be done like transparency for all the geoms and create a shader per geom...
         has_surface = False
         has_normal = False
+        has_glow = False
         has_gloss = False
         for stage in stages:
             tex = instance.find_texture(stage)
@@ -417,6 +418,13 @@ class ModelAppearance(AppearanceBase):
                         self.nb_textures += 1
                         has_normal = True
                         #print("NORMAL", self.normal_map_index, self.normal_map)
+                elif mode in (TextureStage.M_glow, ):
+                    if not has_glow:
+                        self.emission_texture = tex
+                        self.emission_texture_index = self.nb_textures
+                        self.nb_textures += 1
+                        has_glow = True
+                        #print("GLOW", self.emission_texture_index, self.emission_texture)
                 elif mode in (TextureStage.M_gloss, ):
                     if not has_gloss:
                         self.gloss_map = tex
