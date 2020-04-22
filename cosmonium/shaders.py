@@ -1328,6 +1328,8 @@ class ShaderAppearance(ShaderComponent):
         self.has_gloss = False
         self.has_specular = False
         self.has_transparency = False
+        self.has_nightscale = False
+        self.has_backlit = False
 
     def fragment_shader_decl(self, code):
         if self.has_surface:
@@ -1366,6 +1368,10 @@ class TextureAppearance(ShaderAppearance):
                 config += "b"
         if self.has_gloss:
             config += 'g'
+        if self.has_nightscale:
+            config += 'i'
+        if self.has_backlit:
+            config += 'a'
         return config
 
     def create_shader_configuration(self, appearance):
@@ -1382,6 +1388,9 @@ class TextureAppearance(ShaderAppearance):
         self.has_gloss = appearance.gloss_map is not None
         self.has_transparency = appearance.transparency
         self.transparency_blend = appearance.transparency_blend
+
+        self.has_nightscale = appearance.nightscale is not None
+        self.has_backlit = appearance.backlit is not None
 
     def fragment_shader(self, code):
         if self.has_surface:
@@ -1934,8 +1943,6 @@ class PandaDataSource(DataSource):
     def fragment_uniforms(self, code):
         for i in range(self.nb_textures):
             code.append("uniform sampler2D p3d_Texture%i;" % i)
-        if self.has_emission_texture:
-            code.append("uniform float nightscale;")
         if self.nb_textures > 0:
             code.append("uniform mat4 p3d_TextureMatrix[%d];" % (self.nb_textures))
         code.append("uniform vec4 p3d_ColorScale;")
@@ -2025,7 +2032,7 @@ class PandaDataSource(DataSource):
                 return "shape_specular_color"
         if source == 'emission':
             if self.has_emission_texture:
-                data = "tex%i.rgb * nightscale" % self.emission_texture_index
+                data = "tex%i.rgb" % self.emission_texture_index
                 if self.has_material:
                     data += " * p3d_Material.emission.rgb"
             elif self.has_material:
@@ -2065,8 +2072,6 @@ class PandaDataSource(DataSource):
             code += self.create_sample_texture(self.gloss_map_texture_index)
 
     def update_shader_shape_static(self, shape, appearance):
-        if self.has_emission_texture:
-            shape.instance.setShaderInput("nightscale", 0.02)
         if self.has_specular:
             shape.instance.setShaderInput("shape_specular_color", appearance.specularColor)
             shape.instance.setShaderInput("shape_shininess", appearance.shininess)
@@ -2332,7 +2337,25 @@ class ShaderSphereSelfShadow(ShaderShadow):
             code.append("shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
 
 class LightingModel(ShaderComponent):
-    pass
+    def apply_emission(self, code, angle):
+        back_test = self.appearance.has_backlit or (self.appearance.has_emission and self.appearance.has_nightscale)
+        if back_test:
+            code.append("if (%s < 0.0) {" % angle)
+        if self.appearance.has_emission and self.appearance.has_nightscale:
+            code.append("  float emission_coef = clamp(sqrt(-%s), 0.0, 1.0);" % angle)
+            code.append("  total_emission_color.rgb += emission_color.rgb * emission_coef;")
+        if self.appearance.has_backlit:
+            code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-%s);" % angle)
+        if back_test:
+            code.append("}")
+        if self.appearance.has_emission and not self.appearance.has_nightscale:
+            code.append("  total_emission_color.rgb += emission_color.rgb;")
+
+    def update_shader_shape(self, shape, appearance):
+        if self.appearance.has_backlit:
+            shape.instance.setShaderInput("backlit", appearance.backlit)
+        if self.appearance.has_nightscale:
+            shape.instance.setShaderInput("nightscale", appearance.nightscale)
 
 class FlatLightingModel(LightingModel):
     def get_id(self):
@@ -2383,21 +2406,16 @@ class LambertPhongLightingModel(LightingModel):
         code.append("total_diffuse_color = surface_color * total_light;")
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_color.rgb * shadow;")
-        code.append("if (diffuse_angle < 0.0) {")
-        if self.appearance.has_emission:
-            code.append("  float emission_coef = clamp(sqrt(-diffuse_angle), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb = emission_color.rgb * emission_coef;")
-        code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-diffuse_angle);")
-        code.append("}")
+        self.apply_emission(code, 'diffuse_angle')
 
     def update_shader_shape(self, shape, appearance):
+        LightingModel.update_shader_shape(self, shape, appearance)
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
-        shape.instance.setShaderInput("backlit", appearance.backlit)
 
 class OrenNayarPhongLightingModel(LightingModel):
     use_vertex = True
@@ -2441,21 +2459,16 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("total_diffuse_color = surface_color * total_light;")
         if self.appearance.has_specular:
             code.append("total_diffuse_color.rgb += specular.rgb * specular_factor.rgb * specular_color.rgb * shadow;")
-        code.append("if (l_dot_n < 0.0) {")
-        if self.appearance.has_emission:
-            code.append("  float emission_coef = clamp(sqrt(-l_dot_n), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb += emission_color.rgb * emission_coef;")
-        code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-l_dot_n);")
-        code.append("}")
+        self.apply_emission(code, 'l_dot_n')
 
     def update_shader_shape(self, shape, appearance):
+        LightingModel.update_shader_shape(self, shape, appearance)
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
-        shape.instance.setShaderInput("backlit", appearance.backlit)
         shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
 
 class AtmosphericScattering(ShaderComponent):

@@ -122,7 +122,8 @@ class AppearanceBase:
         self.has_attribute_color = False
         self.has_material = False
         self.roughness = 0.0
-        self.backlit = 0.0
+        self.nightscale = None
+        self.backlit = None
         self.attribution = None
 
     def bake(self):
@@ -199,6 +200,9 @@ class Appearance(AppearanceBase):
 
     def set_roughness(self, roughness):
         self.roughness = roughness
+
+    def set_nightscale(self, nightscale):
+        self.nightscale = nightscale
 
     def set_backlit(self, backlit):
         self.backlit = backlit

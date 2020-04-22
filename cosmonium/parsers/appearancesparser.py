@@ -112,6 +112,15 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             emission_texture = EmissionTexture(texture_source)
             #TODO: missing texture offset
             appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
+            nightscale = data.get('nightscale', 0.02)
+            appearance.set_nightscale(nightscale)
+        else:
+            emission_texture = data.get('emission-texture')
+            if emission_texture is not None:
+                texture_source, texture_offset = self.decode_source(emission_texture)
+                emission_texture = EmissionTexture(texture_source)
+                #TODO: missing texture offset
+                appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         normal_map = data.get('normalmap')
         if normal_map is not None:
             texture_source, texture_offset = self.decode_source(normal_map)
@@ -145,7 +154,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             appearance.emissionColor = LColor(1, 1, 1, 1)
         roughness = data.get('roughness', 0.0)
         appearance.set_roughness(roughness)
-        backlit = data.get('backlit', 0.0)
+        backlit = data.get('backlit', None)
         appearance.set_backlit(backlit)
         attribution = data.get('attribution', None)
         appearance.attribution = attribution

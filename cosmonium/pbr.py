@@ -181,19 +181,13 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("vec3 shade = calc_shade(material, vectors);")
         code.append("total_diffuse_color.rgb = vectors.n_dot_l * light_color.rgb * shade, 1.0 * shadow;")
         code.append("total_diffuse_color.a = surface_color.a;")
-
-        code.append("if (vectors.n_dot_l < 0.0) {")
-        if self.appearance.has_emission:
-            code.append("  float emission_coef = clamp(sqrt(-vectors.n_dot_l), 0.0, 1.0);")
-            code.append("  total_emission_color.rgb = emission_color.rgb * emission_coef;")
-        code.append("  total_emission_color.rgb += material.diffuse_color * backlit * sqrt(-vectors.n_dot_l);")
-        code.append("}")
+        self.apply_emission(code, 'vectors.n_dot_l')
 
     def update_shader_shape(self, shape, appearance):
+        LightingModel.update_shader_shape(self, shape, appearance)
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
-        shape.instance.setShaderInput("backlit", appearance.backlit)
