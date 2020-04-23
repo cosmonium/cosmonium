@@ -111,6 +111,7 @@ class YamlParser(object):
 
 class YamlModuleParser(YamlParser):
     context = defaultDirContext
+    app = None
 
     def create_new_context(self, old_context, filepath):
         new_context = DirContext(old_context)

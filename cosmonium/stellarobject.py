@@ -366,14 +366,12 @@ class StellarObject(LabelledObject):
     def get_sync_rotation(self):
         return self._orientation
 
-    def cartesian_to_spherical(self, position):
-        sync_frame = SynchroneReferenceFrame(self)
-        rel_position = sync_frame.get_rel_position(position)
-        distance = rel_position.length()
+    def frame_cartesian_to_spherical(self, position):
+        distance = position.length()
         if distance > 0:
-            theta = asin(rel_position[2] / distance)
-            if rel_position[0] != 0.0:
-                phi = atan2(rel_position[1], rel_position[0])
+            theta = asin(position[2] / distance)
+            if position[0] != 0.0:
+                phi = atan2(position[1], position[0])
                 #Offset phi by 180 deg with proper wrap around
                 #phi = (phi + pi + pi) % (2 * pi) - pi
             else:
@@ -382,6 +380,11 @@ class StellarObject(LabelledObject):
             phi = 0.0
             theta = 0.0
         return (phi, theta, distance)
+
+    def cartesian_to_spherical(self, position):
+        sync_frame = SynchroneReferenceFrame(self)
+        rel_position = sync_frame.get_rel_position(position)
+        return self.frame_cartesian_to_spherical(rel_position)
 
     def spherical_to_frame_cartesian(self, position):
         (phi, theta, distance) = position

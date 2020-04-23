@@ -33,6 +33,7 @@ from .atmospheresparser import AtmosphereYamlParser
 from .elementsparser import CloudsYamlParser, RingsYamlParser
 from .surfacesparser import SurfaceYamlParser
 from .framesparser import FrameYamlParser
+from .controllersparser import ControllerYamlParser
 
 class ReflectiveYamlParser(YamlModuleParser):
     def __init__(self, body_class):
@@ -87,6 +88,7 @@ class ReflectiveYamlParser(YamlModuleParser):
                               point_color=point_color)
         for surface in surfaces:
             body.add_surface(surface)
+        controller_data = data.get('controller')
         if parent_name is not None:
             parent = objectsDB.get(parent_name)
             if parent is not None:
@@ -94,6 +96,12 @@ class ReflectiveYamlParser(YamlModuleParser):
                 system.add_child_fast(body)
             else:
                 print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
+                return None
+        if controller_data is not None:
+            controller_class = ControllerYamlParser.decode(controller_data)
+            controller = controller_class(body)
+            self.app.add_controller(controller)
+        if parent_name is not None:
             return None
         else:
             return body

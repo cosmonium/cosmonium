@@ -600,3 +600,120 @@ class WalkNav(NavBase):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
         self.observer.step_turn_camera(rot, absolute=False)
+
+class ControlNav(NavBase):
+    rot_step_per_sec = pi/4
+    speed = 10  * units.m
+    distance_speed = 2.0
+
+    def __init__(self, controller):
+        NavBase.__init__(self)
+        self.controller = controller
+        self.speed_factor = 1.0
+
+    def register_events(self, event_ctrl):
+        self.keyMap = {"left": 0, "right": 0,
+                       "up": 0, "down": 0,
+                       "home": 0, "end": 0,
+                       "shift-left": 0, "shift-right": 0,
+                       "shift-up": 0, "shift-down": 0,
+                       "control-left": 0, "control-right": 0,
+                       }
+        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0, 'shift-up'])
+        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0, 'shift-down'])
+        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0, 'shift-left', 'control-left'])
+        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0, 'shift-right', 'control-right'])
+        event_ctrl.accept("shift-arrow_up", self.setKey, ['shift-up', 1])
+        event_ctrl.accept("shift-arrow_down", self.setKey, ['shift-down', 1])
+        event_ctrl.accept("shift-arrow_left", self.setKey, ['shift-left', 1])
+        event_ctrl.accept("shift-arrow_right", self.setKey, ['shift-right', 1])
+        if sys.platform != "darwin":
+            event_ctrl.accept("control-arrow_left", self.setKey, ['control-left', 1])
+            event_ctrl.accept("control-arrow_right", self.setKey, ['control-right', 1])
+        else:
+            event_ctrl.accept("alt-arrow_left", self.setKey, ['control-left', 1])
+            event_ctrl.accept("alt-arrow_right", self.setKey, ['control-right', 1])
+        event_ctrl.accept("home", self.setKey, ['home', 1])
+        event_ctrl.accept("home-up", self.setKey, ['home', 0])
+        event_ctrl.accept("end", self.setKey, ['end', 1])
+        event_ctrl.accept("end-up", self.setKey, ['end', 0])
+
+        self.register_wheel_events(event_ctrl)
+
+        event_ctrl.accept("a", self.fast)
+        event_ctrl.accept("a-up", self.slow)
+
+    def remove_events(self, event_ctrl):
+        event_ctrl.ignore("arrow_up")
+        event_ctrl.ignore("arrow_up-up")
+        event_ctrl.ignore("arrow_down")
+        event_ctrl.ignore("arrow_down-up")
+        event_ctrl.ignore("arrow_left")
+        event_ctrl.ignore("arrow_left-up")
+        event_ctrl.ignore("arrow_right")
+        event_ctrl.ignore("arrow_right-up")
+        event_ctrl.ignore("shift-arrow_up")
+        event_ctrl.ignore("shift-arrow_down")
+        event_ctrl.ignore("shift-arrow_left")
+        event_ctrl.ignore("shift-arrow_right")
+        if sys.platform != "darwin":
+            event_ctrl.ignore("control-arrow_left")
+            event_ctrl.ignore("control-arrow_right")
+        else:
+            event_ctrl.ignore("alt-arrow_left")
+            event_ctrl.ignore("alt-arrow_right")
+        event_ctrl.ignore("home")
+        event_ctrl.ignore("home-up")
+
+        self.remove_wheel_events(event_ctrl)
+
+        event_ctrl.ignore("a")
+        event_ctrl.ignore("a-up")
+
+    def fast(self):
+        self.speed_factor = 10.0
+
+    def slow(self):
+        self.speed_factor = 1.0
+
+    def update(self, dt):
+        if self.keyMap['up']:
+            self.step(self.speed * self.speed_factor * dt)
+
+        if self.keyMap['down']:
+            self.step(-self.speed * self.speed_factor * dt)
+
+        if self.keyMap['left']:
+            self.turn(self.rot_step_per_sec * dt)
+
+        if self.keyMap['right']:
+            self.turn(-self.rot_step_per_sec * dt)
+
+        if self.keyMap['shift-left']:
+            self.turn(self.rot_step_per_sec * dt)
+
+        if self.keyMap['shift-right']:
+            self.turn(-self.rot_step_per_sec * dt)
+
+        if self.keyMap['home']:
+            self.change_altitude(self.distance_speed * dt)
+
+        if self.keyMap['end']:
+            self.change_altitude(-self.distance_speed * dt)
+
+        if self.wheel_event_time + self.wheel_event_duration > globalClock.getRealTime():
+            distance = self.wheel_direction
+            self.change_altitude(distance * self.distance_speed * dt)
+
+    def step(self, distance):
+        self.controller.step_relative(distance)
+
+    def change_altitude(self, rate):
+        if rate == 0.0: return
+
+    def turn(self, angle):
+        self.controller.turn_relative(angle)

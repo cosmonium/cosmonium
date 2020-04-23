@@ -155,17 +155,27 @@ class SurfaceReferenceFrame(RelativeReferenceFrame):
             self.body = self.body.primary
 
     def get_center(self):
+        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+
+    def get_orientation(self):
+        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+
+    #TODO: workaround until proper hierarchical frames are implemented
+    def get_center_parent_frame(self):
         (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
         distance = self.body.get_height_under_xy(x, y)
         position = self.body.spherical_to_frame_cartesian((self.long, self.lat, distance))
-        return self.body.get_local_position() + self.body.get_sync_rotation().xform(position)
+        return position
 
-    def get_orientation(self):
+    def get_position_parent_frame(self, relative_pos):
+        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
+
+    def get_orientation_parent_frame(self):
         (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
         (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
         rotation = LQuaterniond()
-        look_at(rotation, normal, tangent)
-        return rotation * self.body.get_sync_rotation()
+        look_at(rotation, binormal, normal)
+        return rotation
 
 class FramesDB(object):
     def __init__(self):

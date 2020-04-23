@@ -155,11 +155,12 @@ class Gui(object):
         event_ctrl.accept('shift-f10', self.cosmonium.save_screenshot_no_annotation)
         event_ctrl.accept('f11', render.explore)
         event_ctrl.accept('f12', render.analyze)
-        
+
         event_ctrl.accept('f', self.cosmonium.follow_selected)
         event_ctrl.accept('y', self.cosmonium.sync_selected)
         event_ctrl.accept('t', self.cosmonium.toggle_track_selected)
-        
+        event_ctrl.accept('control-t', self.cosmonium.control_selected)
+
         event_ctrl.accept('d', self.autopilot.go_to_front, [None, None, None, False])
         event_ctrl.accept('shift-d', self.autopilot.go_to_front, [None, None, None, True])
         event_ctrl.accept('g', self.autopilot.go_to_object)

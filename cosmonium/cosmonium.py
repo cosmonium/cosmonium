@@ -34,6 +34,7 @@ from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
+from .stellarobject import StellarObject
 from .bodies import StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
@@ -42,6 +43,7 @@ from .pointsset import PointsSet
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
+from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 
 #import orbits and rotations elements to add them to the DB
@@ -54,8 +56,10 @@ from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
-from .nav import FreeNav, WalkNav
+from .nav import FreeNav, WalkNav, ControlNav
+from .controllers import BodyController, SurfaceBodyMover
 from .astro import units
+from .parsers.yamlparser import YamlModuleParser
 from .fonts import fontsManager
 from .pstats import pstat
 from . import utils
@@ -69,7 +73,6 @@ from math import pi
 import platform
 import sys
 import os
-from cosmonium.bodies import StellarObject
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
@@ -93,7 +96,11 @@ class CosmoniumBase(ShowBase):
             self.cam = self.camera.attach_new_node('dummy')
             self.camLens = PerspectiveLens()
             settings.shader_version = 130
+
+        #TODO: should find a better way than patching classes...
         BaseObject.context = self
+        YamlModuleParser.app = self
+        BodyController.context = self
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
@@ -306,6 +313,7 @@ class Cosmonium(CosmoniumBase):
         self.autopilot = None
         self.globalAmbient = None
         self.oid_texture = None
+        self.controllers = []
 
         self.universe = Universe(self)
 
@@ -380,6 +388,10 @@ class Cosmonium(CosmoniumBase):
         self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
 
         self.time.set_current_date()
+
+        for controller in self.controllers:
+            controller.init()
+
         self.universe.first_update()
         self.universe.first_update_obs(self.observer)
         self.window_event(None)
@@ -388,7 +400,6 @@ class Cosmonium(CosmoniumBase):
         taskMgr.add(self.time_task, "time-task")
 
         self.start_universe()
-
         if self.app_config.test_start:
             #TODO: this is where the tests should be inserted
             print("Tests done.")
@@ -398,6 +409,9 @@ class Cosmonium(CosmoniumBase):
         icon = defaultDirContext.find_texture('cosmonium.ico')
         data.append("icon-filename %s" % icon)
         data.append("window-title Cosmonium")
+
+    def add_controller(self, controller):
+        self.controllers.append(controller)
 
     def set_nav(self, nav):
         if self.nav is not None:
@@ -670,6 +684,18 @@ class Cosmonium(CosmoniumBase):
         elif self.selected is not None:
             self.track_body(self.selected)
 
+    def control_selected(self):
+        if self.selected is None: return
+        if not isinstance(self.selected.orbit.frame, SurfaceReferenceFrame) or not isinstance(self.selected.rotation.frame, SurfaceReferenceFrame):
+            print("Can not take control")
+            return
+        mover = SurfaceBodyMover(self.selected)
+        print("Take control")
+        self.fly = True
+        self.follow = None
+        self.sync = None
+        self.set_nav(ControlNav(mover))
+
     def reset_visibles(self):
         self.visibles = []
 
@@ -689,15 +715,21 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_universe(self):
         self.universe.update(self.time.time_full)
+        for controller in self.controllers:
+            controller.update(self.time.time_full)
 
     @pstat
     def update_obs(self):
         self.universe.update_obs(self.observer)
+        for controller in self.controllers:
+            controller.update_obs(self.observer)
 
     @pstat
     def update_visibility(self):
         self.reset_visibles()
         self.universe.check_visibility(self.observer.pixel_size)
+        for controller in self.controllers:
+            controller.check_visibility(self.observer.pixel_size)
         self.print_visibles()
 
     @pstat
@@ -705,6 +737,8 @@ class Cosmonium(CosmoniumBase):
         self.pointset.reset()
         self.haloset.reset()
         self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
+        for controller in self.controllers:
+            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
         self.pointset.update()
         self.haloset.update()
         self.gui.update_status()
