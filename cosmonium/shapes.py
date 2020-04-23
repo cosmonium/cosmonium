@@ -432,19 +432,21 @@ class ShapeObject(VisibleObject):
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, rotation=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
+    def __init__(self, model, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
         self.attribution = attribution
         self.context = context
-        self.scale_factor = 1.0
         if offset is None:
             offset = LPoint3d()
         self.offset = offset
         if rotation is None:
-            rotation= LQuaterniond()
+            rotation = LQuaterniond()
+        if scale is None and not auto_scale_mesh:
+            scale = LVector3d(1, 1, 1)
+        self.scale_factor = scale
         self.rotation = rotation
-        self.scale_mesh = scale_mesh
+        self.auto_scale_mesh = auto_scale_mesh
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
@@ -454,7 +456,7 @@ class MeshShape(Shape):
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
         self.mesh.set_quat(LQuaternion(*self.rotation))
-        self.mesh.set_scale(self.scale_factor, self.scale_factor, self.scale_factor)
+        self.mesh.set_scale(*self.scale_factor)
 
     def get_rotation(self):
         return self.rotation.get_hpr()
@@ -463,9 +465,12 @@ class MeshShape(Shape):
         self.rotation.set_hpr(rotation)
 
     def get_user_parameters(self):
-        return [AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3),
-                UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3)
-               ]
+        parameters = [AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3),
+                      UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3)
+                      ]
+        if not self.auto_scale_mesh:
+            parameters.append(AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3))
+        return parameters
 
     def is_spherical(self):
         return False
@@ -475,10 +480,11 @@ class MeshShape(Shape):
         #The shape has been removed from the view while the mesh was loaded
         if self.instance is None: return
         self.mesh = mesh
-        if self.scale_mesh:
+        if self.auto_scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
-            self.scale_factor = 1.0 / major
+            scale_factor = 1.0 / major
+            self.scale_factor = LVector3d(scale_factor, scale_factor, scale_factor)
         if self.flatten:
             self.mesh.flattenStrong()
         self.update_shape()
