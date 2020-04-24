@@ -40,6 +40,7 @@ from .shaders import BasicShader, FlatLightingModel
 from . import settings
 
 from math import pi
+from copy import deepcopy
 
 class ReferencePoint(StellarObject):
     pass
@@ -87,13 +88,14 @@ class StellarBody(StellarObject):
             explicit = self.orbit.frame.explicit_body
             if explicit:
                 #TODO: This looks completely wrong !
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(self.orbit.frame.body, self.orbit.frame))
+                system_orbit = FixedOrbit(frame=RelativeReferenceFrame(self.orbit.frame.body, self.orbit.frame))
             else:
-                orbit = self.orbit
-            self.system = SimpleSystem(self.get_name() + " System", primary=self, orbit=orbit)
+                #TODO: Deepcopy needed because orbit frame keep ref to body
+                system_orbit = deepcopy(self.orbit)
+            self.system = SimpleSystem(self.get_name() + " System", primary=self, orbit=system_orbit)
             self.parent.add_child_fast(self.system)
             if not explicit:
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, orbit.frame))
+                orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, deepcopy(self.orbit.frame)))
                 self.set_orbit(orbit)
             if isinstance(self, Star):
                 self.system.add_child_star_fast(self)
