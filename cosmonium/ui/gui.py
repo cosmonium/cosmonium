@@ -117,6 +117,8 @@ class Gui(object):
             self.show_menu()
         else:
             self.hide_menu()
+        if self.cosmonium.cockpit is not None:
+            self.editor.show(self.cosmonium.cockpit)
 
     def calc_scale(self):
         self.scale = LVector2(1.0 / self.screen_width * 2.0, 1.0 / self.screen_height * 2.0)
@@ -448,6 +450,10 @@ class Gui(object):
 
     def create_camera_menu_items(self):
         has_selected = self.cosmonium.selected is not None
+        cockpits = [('No cockpit', self.cosmonium.cockpit is None, self.cosmonium.set_cockpit, None)]
+        for cockpit in self.cosmonium.cockpits:
+            cockpits.append((cockpit.get_name(), self.cosmonium.cockpit is cockpit, self.cosmonium.set_cockpit, cockpit))
+
         return (
                 ('_Center on>C', 0, self.autopilot.center_on_object if has_selected else 0),
                 ('Look _back>*', 0, self.camera.camera_look_back),
@@ -456,6 +462,9 @@ class Gui(object):
                 ('Zoom _in>Z', 0, self.camera.zoom, 1.05),
                 ('Zoom _out>Shift-Z', 0, self.camera.zoom, 1.0/1.05),
                 ('_Reset Zoom>Control-R', 0, self.camera.reset_zoom),
+                0,
+                ('Select cockpit', 0, cockpits),
+                ('Edit cockpit', 0, self.show_cockpit_editor if self.cosmonium.cockpit is not None else 0),
                 )
 
     def create_render_menu_items(self):
@@ -947,6 +956,14 @@ class Gui(object):
             if self.editor.shown():
                 self.editor.hide()
             self.editor.show(self.cosmonium.selected)
+            if not self.editor in self.opened_windows:
+                self.opened_windows.append(self.editor)
+
+    def show_cockpit_editor(self):
+        if self.cosmonium.cockpit is not None:
+            if self.editor.shown():
+                self.editor.hide()
+            self.editor.show(self.cosmonium.cockpit)
             if not self.editor in self.opened_windows:
                 self.opened_windows.append(self.editor)
 

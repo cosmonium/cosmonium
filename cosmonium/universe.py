@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LQuaterniond
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
 from .astro.orbits import FixedOrbit
 from .astro.rotations import FixedRotation
@@ -43,6 +43,7 @@ class Universe(StellarSystem):
                                rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
                                description='Universe')
         self.visible = True
+        self.resolved = True
         self.octree_width = 100000.0 * units.Ly
         abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
         self.octree = OctreeNode(0,
@@ -60,6 +61,11 @@ class Universe(StellarSystem):
         self.nb_leaves_in_cells = 0
         self.dump_octree = False
         self.dump_octree_stats = False
+        #TODO: Temporary until non physical objects, like cockpit and annotations are properly managed
+        self.scene_position = LPoint3d(0, 0, 0)
+        self.scene_orientation = LQuaterniond()
+        self.scene_scale_factor = 1.0
+        self.vector_to_star = LVector3d.forward()
 
     def get_fullname(self, separator='/'):
         return ''

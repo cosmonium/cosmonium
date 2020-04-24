@@ -30,3 +30,4 @@ from . import orbitsparser
 from . import rotationsparser
 from . import starsparser
 from . import systemsparser
+from . import cockpitparser

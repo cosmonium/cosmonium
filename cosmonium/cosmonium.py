@@ -322,6 +322,8 @@ class Cosmonium(CosmoniumBase):
         self.globalAmbient = None
         self.oid_texture = None
         self.controllers = []
+        self.cockpits = []
+        self.cockpit = None
 
         self.universe = Universe(self)
 
@@ -433,6 +435,16 @@ class Cosmonium(CosmoniumBase):
         self.near_dr.setCamera(self.near_cam)
         self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
         self.near_cam.node().get_lens().set_near_far(0.001, float('inf'))
+
+    def add_cockpit(self, cockpit):
+        self.cockpits.append(cockpit)
+
+    def set_cockpit(self, cockpit):
+        self.universe.remove_component(self.cockpit)
+        self.cockpit = cockpit
+        if self.cockpit is not None:
+            self.universe.add_component(self.cockpit)
+            self.cockpit.camera = self.observer
 
     def set_nav(self, nav):
         if self.nav is not None:
