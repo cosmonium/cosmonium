@@ -21,9 +21,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput, Texture, OrthographicLens, PandaNode, NodePath
-from panda3d.core import DrawMask
 from panda3d.core import LVector3, ColorWriteAttrib, LColor, CullFaceAttrib
 
+from .foundation import BaseObject
 from .shaders import ShaderShadowMap, ShaderRingShadow, ShaderSphereShadow
 
 from . import settings
@@ -135,7 +135,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def create(self):
         if self.shadow_caster is not None: return
         self.create_camera()
-        self.shadow_camera.set_camera_mask(DrawMask(1))
+        self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraMask)
 
     def remove_camera(self):
         pass

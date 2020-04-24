@@ -22,10 +22,11 @@ from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
-from panda3d.core import DrawMask, Texture, CardMaker
+from panda3d.core import Texture, CardMaker
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
+from panda3d.core import Camera as PandaCamera #TODO: fix the name collision
 
 from direct.task.Task import Task
 
@@ -90,6 +91,8 @@ class CosmoniumBase(ShowBase):
         if not self.app_config.test_start:
             create_main_window(self)
             check_opengl_config(self)
+            self.create_additional_display_regions()
+            self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask)
         else:
             self.buttonThrowers = [NodePath('dummy')]
             self.camera = NodePath('dummy')
@@ -110,7 +113,8 @@ class CosmoniumBase(ShowBase):
 
         self.world = self.render.attachNewNode("world")
         self.annotation = self.render.attachNewNode("annotation")
-        self.annotation.node().adjust_draw_mask(DrawMask(0), DrawMask(1), DrawMask(0))
+        self.annotation.hide(BaseObject.AllCamerasMask)
+        self.annotation.show(BaseObject.DefaultCameraMask)
 
         self.world.setShaderAuto()
         self.annotation.setShaderAuto()
@@ -157,6 +161,9 @@ class CosmoniumBase(ShowBase):
 
     def exit(self):
         sys.exit(0)
+
+    def create_additional_display_regions(self):
+        pass
 
     def keystroke_event(self, keyname):
         #TODO: Should be better isolated
@@ -293,6 +300,7 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
 
+        self.near_cam = None
         self.over = None
         self.patch = None
         self.selected = None
@@ -356,6 +364,9 @@ class Cosmonium(CosmoniumBase):
         self.observer = Camera(self.camera, self.camLens)
         self.autopilot = AutoPilot(self.observer, self)
         self.mouse = Mouse(self, self.oid_texture)
+        if self.near_cam is not None:
+            self.observer.add_linked_cam(self.near_cam)
+
         if self.nav is None:
             self.nav = FreeNav()
         if self.gui is None:
@@ -370,17 +381,17 @@ class Cosmonium(CosmoniumBase):
         self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
         if settings.render_sprite_points:
             self.pointset.instance.reparentTo(self.world)
-        
+
         self.haloset = PointsSet(use_sprites=True, sprite=ExpPointSprite(size=256, max_value=0.6), background=settings.halo_depth)
         if settings.render_sprite_points:
             self.haloset.instance.reparentTo(self.world)
-        
+
         render.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
         self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 
         self.set_ambient(settings.global_ambient)
-        
+
         self.equatorial_grid = Grid("Equatorial", J2000EquatorialReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
         self.equatorial_grid.set_shown(settings.show_equatorial_grid)
 
@@ -412,6 +423,16 @@ class Cosmonium(CosmoniumBase):
 
     def add_controller(self, controller):
         self.controllers.append(controller)
+
+    def create_additional_display_regions(self):
+        self.near_dr = self.win.make_display_region()
+        self.near_dr.set_sort(1)
+        self.near_dr.set_clear_depth_active(True)
+        near_cam_node = PandaCamera('nearcam')
+        self.near_cam = self.camera.attach_new_node(near_cam_node)
+        self.near_dr.setCamera(self.near_cam)
+        self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
+        self.near_cam.node().get_lens().set_near_far(0.001, float('inf'))
 
     def set_nav(self, nav):
         if self.nav is not None:

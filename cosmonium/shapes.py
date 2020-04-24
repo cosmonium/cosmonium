@@ -207,6 +207,7 @@ class CompositeShapeObject(object):
             component.remove_instance()
 
 class ShapeObject(VisibleObject):
+    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.ShadowCameraMask
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.shape = None
@@ -298,6 +299,8 @@ class ShapeObject(VisibleObject):
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
         self.instance.reparentTo(self.context.world)
+        instance.hide(self.AllCamerasMask)
+        instance.show(self.default_camera_mask)
         if self.parent.is_emissive():
             #TODO: Should be done by the owner of the shape
             myMaterial = Material()

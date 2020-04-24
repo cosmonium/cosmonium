@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, OmniBoundingVolume
+from panda3d.core import NodePath, OmniBoundingVolume, DrawMask
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
 from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
@@ -67,6 +67,8 @@ class PointsSet(VisibleObject):
         if self.background is not None:
             self.instance.setBin('background', self.background)
         self.instance.set_depth_write(False)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.DefaultCameraMask)
 
     def jobs_done_cb(self, patch):
         pass

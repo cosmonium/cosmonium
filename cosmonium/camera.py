@@ -44,6 +44,10 @@ class CameraBase(object):
         self.default_focal = None
         #Current zoom factor
         self.zoom_factor = 1.0
+        self.linked_cams = []
+
+    def add_linked_cam(self, cam):
+        self.linked_cams.append(cam)
 
     def init(self):
         self.realCamLens = self.camLens.make_copy()
@@ -83,24 +87,32 @@ class CameraBase(object):
         self.default_focal = self.realCamLens.get_focal_length()
         self.set_film_size(self.width, self.height)
 
+    def do_set_fov_lens(self, lens, hfov, vfov):
+        lens.set_film_size(self.width, self.height)
+        lens.set_fov(hfov, vfov)
+
     def do_set_fov(self, fov):
         hfov = 2 * atan(tan(fov * pi / 180 / 2) * self.width / self.height) * 180 / pi
-        self.camLens.set_film_size(self.width, self.height)
-        self.camLens.set_fov(hfov, fov)
-        self.realCamLens.set_film_size(self.width, self.height)
-        self.realCamLens.set_fov(hfov, fov)
+        self.do_set_fov_lens(self.camLens, hfov, fov)
+        self.do_set_fov_lens(self.realCamLens, hfov, fov)
+        for cam in self.linked_cams:
+            self.do_set_fov_lens(cam.node().get_lens(), hfov, fov)
         self.fov = fov
 
     def set_focal(self, new_focal):
         new_fov = atan(self.height / 2 / new_focal) * 2 / pi * 180
         self.set_fov(new_fov)
 
+    def do_set_film_size_lens(self, lens, width, height):
+        focal = lens.get_focal_length()
+        lens.set_film_size(width, height)
+        lens.set_focal_length(focal)
+
     def set_film_size(self, width, height):
-        focal = self.realCamLens.get_focal_length()
-        self.camLens.set_film_size(width, height)
-        self.camLens.set_focal_length(focal)
-        self.realCamLens.setFilmSize(width, height)
-        self.realCamLens.set_focal_length(focal)
+        self.do_set_film_size_lens(self.camLens, width, height)
+        self.do_set_film_size_lens(self.realCamLens, width, height)
+        for cam in self.linked_cams:
+            self.do_set_film_size_lens(cam.node().get_lens(), width, height)
         self.height = height
         self.width = width
         self.fov = self.realCamLens.getVfov()

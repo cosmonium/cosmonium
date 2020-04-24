@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor
+from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor, DrawMask
 from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
@@ -38,6 +38,10 @@ from math import log
 class BaseObject(object):
     context = None
     default_shown = True
+    AllCamerasMask = DrawMask.all_on()
+    DefaultCameraMask = DrawMask.bit(0)
+    NearCameraMask = DrawMask.bit(1)
+    ShadowCameraMask = DrawMask.bit(30)
 
     def __init__(self, names=None):
         self.set_names(names)
