@@ -432,9 +432,9 @@ class StellarObject(LabelledObject):
             return 0.0
 
     def first_update(self, time):
-        self.update(time)
+        self.update(time, 0)
 
-    def update(self, time):
+    def update(self, time, dt):
         StellarObject.nb_update += 1
         self._orientation = self.rotation.get_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
@@ -443,7 +443,7 @@ class StellarObject(LabelledObject):
         self._position = self._global_position + self._local_position
         if self.star is not None:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
-        CompositeObject.update(self, time)
+        CompositeObject.update(self, time, dt)
         self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
 
     def first_update_obs(self, observer):

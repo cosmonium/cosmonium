@@ -713,10 +713,10 @@ class Cosmonium(CosmoniumBase):
         self.universe.add_extra_to_list(self.selected, self.track)
 
     @pstat
-    def update_universe(self):
-        self.universe.update(self.time.time_full)
+    def update_universe(self, time, dt):
+        self.universe.update(time, dt)
         for controller in self.controllers:
-            controller.update(self.time.time_full)
+            controller.update(time, dt)
 
     @pstat
     def update_obs(self):
@@ -763,7 +763,7 @@ class Cosmonium(CosmoniumBase):
             self.universe.check_settings()
             self.trigger_check_settings = False
 
-        self.update_universe()
+        self.update_universe(self.time.time_full, self.time.dt)
         self.observer.update_camera()
         self.update_obs()
 

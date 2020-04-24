@@ -115,7 +115,7 @@ class BaseObject(object):
             else:
                 self.hide()
 
-    def update(self, time):
+    def update(self, time, dt):
         pass
 
     def update_obs(self, observer):
@@ -292,9 +292,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.do_hide()
 
-    def update(self, time):
+    def update(self, time, dt):
         for component in self.components:
-            component.update(time)
+            component.update(time, dt)
 
     def update_obs(self, observer):
         for component in self.components:

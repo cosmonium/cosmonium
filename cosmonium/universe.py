@@ -130,18 +130,18 @@ class Universe(StellarSystem):
             if extra is not None:
                 self.to_update_extra.append(extra)
 
-    def update(self, time):
-        CompositeObject.update(self, time)
+    def update(self, time, dt):
+        CompositeObject.update(self, time, dt)
         for leaf in self.to_update:
             if isinstance(leaf, StellarSystem):
                 #print("Update system", leaf.get_name())
-                leaf.update(time)
+                leaf.update(time, dt)
             elif not leaf.update_frozen:
                 #print("Update", leaf.get_name())
-                leaf.update(time)
+                leaf.update(time, dt)
         for extra in self.to_update_extra:
             #print("Update", extra.get_name())
-            extra.update(time)
+            extra.update(time, dt)
 
     def update_obs(self, observer):
         CompositeObject.update_obs(self, observer)

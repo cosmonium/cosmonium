@@ -184,16 +184,16 @@ class StellarSystem(StellarObject):
             child.set_star(star)
 
     def first_update(self, time):
-        StellarObject.update(self, time)
+        StellarObject.update(self, time, 0)
         for child in self.children:
             child.first_update(time)
 
-    def update(self, time):
-        StellarObject.update(self, time)
+    def update(self, time, dt):
+        StellarObject.update(self, time, dt)
         #No need to update the children if not visible
         if not self.visible or not self.resolved: return
         for child in self.children:
-            child.update(time)
+            child.update(time, dt)
 
     def first_update_obs(self, observer):
         StellarObject.update_obs(self, observer)
@@ -313,8 +313,8 @@ class SimpleSystem(StellarSystem):
         else:
             return self.primary.get_abs_magnitude()
 
-    def update(self, time):
-        StellarSystem.update(self, time)
+    def update(self, time, dt):
+        StellarSystem.update(self, time, dt)
         if not self.visible or not self.resolved: return
         primary = self.primary
         if primary is None or primary.is_emissive(): return

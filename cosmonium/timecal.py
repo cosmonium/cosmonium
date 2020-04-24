@@ -28,11 +28,12 @@ class Time(object):
     def __init__(self):
         self.multiplier = 1
         self.time_full = 0
+        self.dt = 0
         self.running = True
 
     def set_J2000_date(self):
         self.time_full = jdcal.MJD_0 + jdcal.MJD_JD2000
-        
+
     def set_time(self, years, months, days, hours, mins, secs):
         self.time_full = values_to_time(years, months, days, hours, mins, secs)
 
@@ -47,8 +48,10 @@ class Time(object):
         return time_to_values(self.time_full)
 
     def update_time(self, dt):
+        last_time = self.time_full
         if self.running:
             self.time_full += dt * self.multiplier / (24 * 3600)
+        self.dt = self.time_full - last_time
 
     def set_timerate(self, multiplier):
         self.multiplier = multiplier

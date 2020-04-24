@@ -46,7 +46,7 @@ class BodyController():
     def init(self):
         self.create_mover()
 
-    def update(self, time):
+    def update(self, time, dt):
         pass
 
     def update_obs(self, observer):
