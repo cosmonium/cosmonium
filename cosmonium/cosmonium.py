@@ -855,6 +855,7 @@ class Cosmonium(CosmoniumBase):
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
             print("\tUpdate frozen:", self.selected.update_frozen)
+            print("\tOrbit:", self.selected.orbit.__class__.__name__, self.selected.orbit.frame)
             if self.selected.label is not None:
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:

@@ -55,6 +55,8 @@ class ReferenceFrame(object):
         return absolute_orien * self.get_orientation().conjugate()
     def set_parent_body(self, body):
         raise Exception
+    def __str__(self):
+        raise Exception
 
 class AbsoluteReferenceFrame(ReferenceFrame):
     null_center = LPoint3d(0, 0, 0)
@@ -71,6 +73,8 @@ class AbsoluteReferenceFrame(ReferenceFrame):
         return relative_orien
     def get_rel_orientation(self, absolute_orien):
         return absolute_orien
+    def __str__(self):
+        return 'AbsoluteReferenceFrame'
 
 class BodyReferenceFrame(ReferenceFrame):
     def __init__(self, body = None):
@@ -83,6 +87,9 @@ class BodyReferenceFrame(ReferenceFrame):
 
     def get_center(self):
         return self.body.get_local_position()
+
+    def __str__(self):
+        return self.__class__.__name__ + '(' + self.body.get_name() +', ' + str(self.explicit_body) + ')'
 
 class J2000EclipticReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
@@ -102,6 +109,9 @@ class RelativeReferenceFrame(BodyReferenceFrame):
 
     def get_orientation(self):
         return self.parent_frame.get_orientation()
+
+    def __str__(self):
+        return BodyReferenceFrame.__str__(self) + ' ' + str(self.parent_frame)
 
 class CelestialReferenceFrame(RelativeReferenceFrame):
     """
