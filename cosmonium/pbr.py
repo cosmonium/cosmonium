@@ -179,7 +179,7 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         #TODO: Loop here over light sources
         code.append('PointVectors vectors = calc_point_vectors(normal, obs_dir, light_dir);')
         code.append("vec3 shade = calc_shade(material, vectors);")
-        code.append("total_diffuse_color.rgb = vectors.n_dot_l * light_color.rgb * shade, 1.0 * shadow;")
+        code.append("total_diffuse_color.rgb = vectors.n_dot_l * light_color.rgb * shade * shadow;")
         code.append("total_diffuse_color.a = surface_color.a;")
         self.apply_emission(code, 'vectors.n_dot_l')
 
