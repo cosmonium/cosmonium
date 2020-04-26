@@ -165,7 +165,8 @@ class ModelAppearanceYamlParser(YamlModuleParser):
     def decode(self, data):
         material = data.get('material', True)
         vertex_color = data.get('vertex-color', True)
-        appearance = ModelAppearance(vertex_color=vertex_color, material=material)
+        occlusion_channel = data.get('occlusion-channel', False)
+        appearance = ModelAppearance(vertex_color=vertex_color, material=material, occlusion_channel=occlusion_channel)
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):

@@ -20,12 +20,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..appearances import AppearanceBase, Appearance
+from ..appearances import AppearanceBase, Appearance, TexturesBlock
+from ..textures import TextureArray
 from ..dircontext import defaultDirContext
 
 from .. import settings
-from cosmonium.appearances import TexturesBlock
-from cosmonium.textures import TextureArray
 
 class TextureTilingMode(object):
     F_none = 0

@@ -1377,7 +1377,7 @@ class TextureAppearance(ShaderAppearance):
     def create_shader_configuration(self, appearance):
         #TODO: This should use the shader data source iso appearance!
         self.has_surface = True
-        self.has_occlusion = False
+        self.has_occlusion = self.data.has_source_for('occlusion')
         self.has_normal = appearance.normal_map is not None or self.data.has_source_for('normal')
         self.normal_texture_tangent_space = appearance.normal_map_tangent_space
         self.has_bump = appearance.bump_map is not None
@@ -1852,6 +1852,8 @@ class PandaDataSource(DataSource):
         self.has_emission_texture = False
         self.has_transparency = False
         self.has_gloss_map_texture = False
+        self.has_occlusion_map_texture = False
+        self.has_occlusion_channel = False
 
     def get_id(self):
         config = ""
@@ -1875,6 +1877,10 @@ class PandaDataSource(DataSource):
             config += "r"
         if self.has_gloss_map_texture:
             config += "g"
+        if self.has_occlusion_map_texture:
+            config += "o"
+        if self.has_occlusion_channel:
+            config += "c"
         return config
 
     def create_shader_configuration(self, appearance):
@@ -1889,16 +1895,19 @@ class PandaDataSource(DataSource):
         self.specular_map_index = appearance.specular_map_index
         self.emission_texture_index = appearance.emission_texture_index
         self.gloss_map_texture_index = appearance.gloss_map_texture_index
+        self.occlusion_map_texture_index = appearance.occlusion_map_index
         self.nb_textures = appearance.nb_textures
         self.has_surface_texture = appearance.texture is not None
         self.has_normal_texture = appearance.normal_map is not None
         self.has_bump_texture = appearance.bump_map is not None
         self.has_specular_texture = appearance.specular_map is not None
-        self.has_specular_mask = appearance.has_specular_mask
         self.has_emission_texture = appearance.emission_texture
         self.has_gloss_map_texture = appearance.gloss_map is not None
+        self.has_occlusion_map_texture = appearance.occlusion_map is not None
+        self.has_specular_mask = appearance.has_specular_mask
         self.has_transparency = appearance.transparency
         self.has_alpha_mask = appearance.alpha_mask
+        self.has_occlusion_channel = appearance.has_occlusion_channel
 
     def vertex_inputs(self, code):
         if self.has_vertex_color:
@@ -1986,9 +1995,16 @@ class PandaDataSource(DataSource):
             code += self.create_tex_coord(self.emission_texture_index, texture_coord)
         if self.has_gloss_map_texture:
             code += self.create_tex_coord(self.gloss_map_texture_index, texture_coord)
+        if self.has_occlusion_map_texture:
+            code += self.create_tex_coord(self.occlusion_map_texture_index, texture_coord)
 
     def bump_sample(self, code):
         pass
+
+    def has_source_for(self, source):
+        if source == 'occlusion':
+            return self.has_occlusion_map_texture or self.has_occlusion_channel
+        return False
 
     def get_source_for(self, source, params=None, error=True):
         if source == 'surface':
@@ -2056,6 +2072,11 @@ class PandaDataSource(DataSource):
             if self.has_material:
                 data = data + " * p3d_Material.roughness"
             return data
+        if source == 'occlusion':
+            if self.has_occlusion_map_texture:
+                return "tex%i.r" % self.occlusion_map_texture_index
+            if self.has_occlusion_channel:
+                return "tex%i.r" % self.gloss_map_texture_index
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
@@ -2070,6 +2091,8 @@ class PandaDataSource(DataSource):
             code += self.create_sample_texture(self.emission_texture_index)
         if self.has_gloss_map_texture:
             code += self.create_sample_texture(self.gloss_map_texture_index)
+        if self.has_occlusion_map_texture:
+            code += self.create_sample_texture(self.occlusion_map_texture_index)
 
     def update_shader_shape_static(self, shape, appearance):
         if self.has_specular:

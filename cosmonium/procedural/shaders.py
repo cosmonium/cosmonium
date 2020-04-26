@@ -209,19 +209,28 @@ class DetailMap(ShaderAppearance):
         self.textures_control = textures_control
         self.heightmap = heightmap
         self.textures_control.set_heightmap(self.heightmap)
-        self.has_surface = True
-        self.has_occlusion = True
-        self.has_normal = create_normals
+        self.create_normals = create_normals
         self.normal_texture_tangent_space = True
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance)
+        self.has_surface = True
+        self.has_normal = self.create_normals or self.textures_control.has_normal
+        self.has_occlusion = self.textures_control.has_occlusion
 
     def get_id(self):
-        config = "dm"
+        name = "dm"
+        config = ""
+        if self.has_surface:
+            config += "u"
+        if self.has_occlusion:
+            config += "o"
         if self.has_normal:
-            config += '-n'
-        return config
+            config += "n"
+        if config != "":
+            return name + '-' + config
+        else:
+            return name
 
     def set_shader(self, shader):
         ShaderAppearance.set_shader(self, shader)

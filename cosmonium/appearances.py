@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import  Material, TextureStage, Texture, GeomNode
 from panda3d.core import TransparencyAttrib
 
-from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from .textures import AutoTextureSource
 from .utils import TransparencyBlend, srgb_to_linear
 from .dircontext import defaultDirContext
@@ -105,13 +105,16 @@ class AppearanceBase:
         self.specular_map_index = 0
         self.emission_texture_index = 0
         self.gloss_map_texture_index = 0
+        self.occlusion_map_index = 0
         self.texture = None
         self.normal_map = None
         self.bump_map = None
         self.specular_map = None
         self.emission_texture = None
         self.gloss_map = None
+        self.occlusion_map = None
         self.has_specular_mask = False
+        self.has_occlusion_channel = False
         self.normal_map_tangent_space = False
         self.specularColor = None
         self.transparency = False
@@ -185,17 +188,8 @@ class Appearance(AppearanceBase):
         self.set_specular_map(specularMap)
         self.set_bump_map(bumpMap, bump_height)
         self.normal_map_tangent_space = True
-        self.nb_textures = 0
         self.nb_textures_coord = 0
-        self.texture_index = 0
-        self.normal_map_index = 0
-        self.bump_map_index = 0
-        self.specular_map_index = 0
-        self.emission_texture_index = 0
-        self.has_specular_mask = False
         self.tex_transform = True
-        self.has_vertex_color = False
-        self.has_attribute_color = False
         self.has_material = True
 
     def set_roughness(self, roughness):
@@ -264,6 +258,11 @@ class Appearance(AppearanceBase):
         self.bump_map = bump_map
         self.bump_height = bump_height
 
+    def set_occlusion_map(self, occlusion_map, context=defaultDirContext):
+        if occlusion_map is not None and not isinstance(occlusion_map, TextureBase):
+            occlusion_map = OcclusionMapTexture(AutoTextureSource(occlusion_map, None, context))
+        self.occlusion_map = occlusion_map
+
     def calc_indexes(self):
         self.nb_textures = 0
         self.nb_textures_coord = 0
@@ -281,6 +280,9 @@ class Appearance(AppearanceBase):
             self.nb_textures += 1
         if self.emission_texture is not None:
             self.emission_texture_index = self.nb_textures
+            self.nb_textures += 1
+        if self.occlusion_map is not None:
+            self.occlusion_map_index = self.nb_textures
             self.nb_textures += 1
         if self.nb_textures > 0:
             self.nb_textures_coord = 1
@@ -314,6 +316,8 @@ class Appearance(AppearanceBase):
             self.specular_map.load(shape, self.texture_loaded_cb, (shape, owner))
         if self.emission_texture:
             self.emission_texture.load(shape, self.texture_loaded_cb, (shape, owner))
+        if self.occlusion_map:
+            self.occlusion_map.load(shape, self.texture_loaded_cb, (shape, owner))
 
     def apply_textures(self, patch):
         patch.instance.clearTexture()
@@ -328,6 +332,8 @@ class Appearance(AppearanceBase):
             self.specular_map.apply(patch)
         if self.emission_texture:
             self.emission_texture.apply(patch)
+        if self.occlusion_map:
+            self.occlusion_map.apply(patch)
 
     def apply_patch(self, patch, owner):
         if (patch.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
@@ -351,9 +357,8 @@ class Appearance(AppearanceBase):
                 self.load_textures(shape, owner)
 
 class ModelAppearance(AppearanceBase):
-    def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False):
+    def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):
         AppearanceBase.__init__(self)
-        self.specularColor = None
         self.tex_transform = False
         if srgb is None:
             srgb = settings.srgb
@@ -362,26 +367,11 @@ class ModelAppearance(AppearanceBase):
         self.has_vertex_color = vertex_color
         self.has_attribute_color = attribute_color
         self.has_material = material
+        self.has_occlusion_channel = occlusion_channel
         self.offsets = None
         #TODO: This should be factored out...
         self.normal_map_tangent_space = True
-        self.nb_textures = 0
         self.nb_textures_coord = 0
-        self.texture = None
-        self.texture_index = 0
-        self.normal_map = None
-        self.normal_map_index = 0
-        self.bump_map = None
-        self.bump_map_index = 0
-        self.specular_map = None
-        self.specular_map_index = 0
-        self.emission_texture = None
-        self.emission_texture_index = 0
-        self.gloss_map = None
-        self.gloss_map_texture_index = 0
-        self.has_specular_mask = False
-        self.transparency = False
-        self.transparency_blend = TransparencyBlend.TB_None
 
     def scan_model(self, instance):
         stages = instance.findAllTextureStages()
