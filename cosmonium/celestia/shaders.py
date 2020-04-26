@@ -50,13 +50,10 @@ class LunarLambertLightingModel(LightingModel):
         code.append("  diffuse_coef = clamp(light_angle / (max(view_angle, 0.001) + light_angle), 0.0, 1.0);")
         code.append("  diffuse = light_color * shadow * diffuse_coef;")
         code.append("}")
-        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("vec4 total_light = diffuse + ambient;")
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
-        if self.appearance.has_emission_texture:
-            code.append("if (light_angle < 0.0) {")
-            code.append("  total_emission_color.rgb = emission_color.rgb * clamp(sqrt(-light_angle), 0.0, 1.0);")
-            code.append("}")
+        self.apply_emission(code, 'light_angle')
 
     def update_shader_shape(self, shape, appearance):
         light_dir = shape.owner.vector_to_star

@@ -2473,7 +2473,7 @@ class LambertPhongLightingModel(LightingModel):
         code.append("float diffuse_angle = 0.0;")
         code.append("diffuse_angle = dot(normal, light_dir);")
         code.append("float diffuse_coef = clamp(diffuse_angle, 0.0, 1.0) * shadow;")
-        code.append("vec4 total_light = clamp((diffuse_coef + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("vec4 total_light = diffuse_coef + ambient;")
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
         if self.appearance.has_specular:
@@ -2526,7 +2526,7 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("float c = sin(alpha) * tan(beta);")
         code.append("float diffuse_coef = max(0.0, l_dot_n) * (a + b * max(0.0, delta) * c);")
         code.append("vec4 diffuse = light_color * shadow * diffuse_coef;")
-        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("vec4 total_light = diffuse + ambient;")
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
         if self.appearance.has_specular:

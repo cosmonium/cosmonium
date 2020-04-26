@@ -180,6 +180,10 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append('PointVectors vectors = calc_point_vectors(normal, obs_dir, light_dir);')
         code.append("vec3 shade = calc_shade(material, vectors);")
         code.append("total_diffuse_color.rgb = vectors.n_dot_l * light_color.rgb * shade * shadow;")
+        code.append("vec4 ambient = ambient_color * ambient_coef;")
+        if self.appearance.has_occlusion:
+            code.append("ambient *= surface_occlusion;")
+        code.append("total_diffuse_color.rgb += material.diffuse_color * ambient.rgb;")
         code.append("total_diffuse_color.a = surface_color.a;")
         self.apply_emission(code, 'vectors.n_dot_l')
 
