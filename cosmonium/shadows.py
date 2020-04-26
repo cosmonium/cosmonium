@@ -20,8 +20,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput, Texture, OrthographicLens, PandaNode, NodePath
-from panda3d.core import LVector3, ColorWriteAttrib, LColor, CullFaceAttrib
+from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput
+from panda3d.core import Texture, OrthographicLens, PandaNode, NodePath
+from panda3d.core import LVector3
+from panda3d.core import ColorWriteAttrib, LColor, CullFaceAttrib, RenderState, DepthOffsetAttrib
 
 from .foundation import BaseObject
 from .shaders import ShaderShadowMap, ShaderRingShadow, ShaderSphereShadow
@@ -35,7 +37,7 @@ class ShadowMap(object):
         self.depthmap = None
         self.cam = None
         self.shadow_caster = None
-        self.bias = 0.
+        self.bias = 0.1
 
     def create(self):
         winprops = WindowProperties.size(self.size, self.size)
@@ -65,10 +67,9 @@ class ShadowMap(object):
         self.cam = base.makeCamera(self.buffer, lens=OrthographicLens())
         self.cam.reparent_to(render)
         self.node = self.cam.node()
-        lci = NodePath(PandaNode("Light Camera Initializer"))
-        lci.set_attrib(ColorWriteAttrib.make(ColorWriteAttrib.M_none), 1000)
-        lci.set_attrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise), 1000)
-        self.node.setInitialState(lci.getState())
+        self.node.setInitialState(RenderState.make(CullFaceAttrib.make_reverse(),
+                                                   ColorWriteAttrib.make(ColorWriteAttrib.M_none),
+                                                   ))
         self.node.setScene(render)
         if settings.debug_shadow_frustum:
             self.node.showFrustum()

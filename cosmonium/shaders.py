@@ -2083,28 +2083,37 @@ class ShaderShadow(ShaderComponent):
 
 class ShaderShadowMap(ShaderShadow):
     use_vertex = True
-    model_vertex = True
+    world_vertex = True
     use_normal = True
-    model_normal = True
+    world_normal = True
 
     def __init__(self, name, caster_body, caster, shader=None):
         ShaderShadow.__init__(self, shader)
         self.name = name
         self.caster_body = caster_body
         self.caster = caster
+        self.use_slope_scale_bias = settings.shadows_slope_scale_bias
 
     def get_id(self):
-        return 'sm-' + self.name
+        name = 'sm' + self.name
+        if self.use_slope_scale_bias:
+            name += '-sl'
+        return name
 
     def vertex_uniforms(self, code):
-        code.append("uniform mat4 trans_model_to_clip_of_%sLightSource;" % self.name)
+        code.append("uniform mat4 trans_world_to_clip_of_%sLightSource;" % self.name)
         code.append("uniform float %s_shadow_bias;" % self.name)
+        code.append("uniform vec3 %s_light_dir;" % self.name)
 
     def vertex_outputs(self, code):
         code.append("out vec4 %s_lightcoord;" % self.name)
 
     def vertex_shader(self, code):
-        code.append("vec4 %s_lightclip = trans_model_to_clip_of_%sLightSource * (model_vertex4 + model_normal4 * %s_shadow_bias);" % (self.name, self.name, self.name))
+        code.append("float %s_vertex_shadow_bias = %s_shadow_bias;" % (self.name, self.name))
+        if self.use_slope_scale_bias:
+            code.append("float %s_slope_scale = clamp(1.0 - dot(%s_light_dir, world_normal), 0.0, 1.0);" % (self.name, self.name))
+            code.append("%s_vertex_shadow_bias *= %s_slope_scale;" % (self.name,self.name))
+        code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * (world_vertex4 + vec4(world_normal, 0.0) * %s_vertex_shadow_bias);" % (self.name, self.name, self.name))
         code.append("%s_lightcoord = %s_lightclip * vec4(0.5, 0.5, 0.5, 1.0) + %s_lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);" % (self.name, self.name, self.name))
 
     def fragment_uniforms(self, code):
@@ -2128,22 +2137,25 @@ class ShaderShadowMap(ShaderShadow):
             shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0)
 
     def update_shader_shape(self, shape, appearance):
-        if self.caster_body is None: return
-        caster = self.caster_body
-        body = shape.owner
-        self_radius = caster.get_apparent_radius()
-        body_radius = body.get_apparent_radius()
-        position = caster._local_position
-        body_position = body._local_position
-        pa = body_position - position
-        distance = abs(pa.length() - body_radius)
-        if distance != 0:
-            self_ar = self_radius / distance
-            star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
-            ar_ratio = star_ar / self_ar
-        else:
-            ar_ratio = 0.0
-        shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0 - ar_ratio * ar_ratio)
+        if self.use_slope_scale_bias:
+            light_dir = shape.owner.vector_to_star
+            shape.instance.setShaderInput("%s_light_dir" % self.name, *light_dir)
+        if self.caster_body is not None:
+            caster = self.caster_body
+            body = shape.owner
+            self_radius = caster.get_apparent_radius()
+            body_radius = body.get_apparent_radius()
+            position = caster._local_position
+            body_position = body._local_position
+            pa = body_position - position
+            distance = abs(pa.length() - body_radius)
+            if distance != 0:
+                self_ar = self_radius / distance
+                star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
+                ar_ratio = star_ar / self_ar
+            else:
+                ar_ratio = 0.0
+            shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0 - ar_ratio * ar_ratio)
 
     def clear(self, shape, appearance):
         shape.instance.clearShaderInput('%s_depthmap' % self.name)
