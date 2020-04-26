@@ -46,6 +46,9 @@ class BodyController():
     def init(self):
         self.create_mover()
 
+    def should_update(self, time, dt):
+        return self.body.visible
+
     def update(self, time, dt):
         pass
 

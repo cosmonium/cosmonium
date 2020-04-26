@@ -748,20 +748,23 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_universe(self, time, dt):
         self.universe.update(time, dt)
+        self.controllers_to_update = []
         for controller in self.controllers:
-            controller.update(time, dt)
+            if controller.should_update(time, dt):
+                controller.update(time, dt)
+                self.controllers_to_update.append(controller)
 
     @pstat
     def update_obs(self):
         self.universe.update_obs(self.observer)
-        for controller in self.controllers:
+        for controller in self.controllers_to_update:
             controller.update_obs(self.observer)
 
     @pstat
     def update_visibility(self):
         self.reset_visibles()
         self.universe.check_visibility(self.observer.pixel_size)
-        for controller in self.controllers:
+        for controller in self.controllers_to_update:
             controller.check_visibility(self.observer.pixel_size)
         self.print_visibles()
 
@@ -770,7 +773,7 @@ class Cosmonium(CosmoniumBase):
         self.pointset.reset()
         self.haloset.reset()
         self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
-        for controller in self.controllers:
+        for controller in self.controllers_to_update:
             controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
         self.pointset.update()
         self.haloset.update()
