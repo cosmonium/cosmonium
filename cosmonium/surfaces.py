@@ -58,11 +58,12 @@ class Surface(ShapeObject):
 
     def create_shadows(self):
         if self.shadow_caster is None:
-            if self.shape is not None and self.shape.is_spherical():
+            if self.shape.is_spherical():
                 self.shadow_caster = SphereShadowCaster(self.owner)
             else:
                 self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
                 self.owner.visibility_override = True
+                self.shadow_caster.add_target(self)
         self.shadow_caster.create()
 
     def remove_shadows(self):
@@ -72,6 +73,13 @@ class Surface(ShapeObject):
                 self.owner.visibility_override = False
                 #Force recheck of visibility or the body will be immediately recreated
                 self.owner.check_visibility(self.owner.context.observer.pixel_size)
+
+    def start_shadows_update(self):
+        ShapeObject.start_shadows_update(self)
+        #Add self-shadowing for non-spherical objects
+        #TODO: It's a bit convoluted to do it like that...
+        if not self.shape.is_spherical() and self.owner.visible and self.owner.resolved:
+            self.shadow_caster.add_target(self)
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()
