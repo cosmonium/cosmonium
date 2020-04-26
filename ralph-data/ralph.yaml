@@ -66,7 +66,7 @@ layers:
       type: mesh
       model: 'ralph-data/models/trees/tree1'
       panda: true
-      scale: false
+      auto-scale: false
     appearance:
       type: model
       material: false
@@ -87,7 +87,7 @@ layers:
       mesh:
         model: 'ralph-data/models/rock1'
         panda: true
-        scale: false
+        auto-scale: false
     appearance:
       type: model
       material: false
