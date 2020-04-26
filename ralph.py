@@ -676,6 +676,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light_quat = LQuaternion()
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.directionalLight = None
+        self.set_ambient(0.3)
 
         self.observer = RalphCamera(self.camera, self.camLens)
         self.observer.init()
