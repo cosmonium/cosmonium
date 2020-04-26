@@ -2136,9 +2136,13 @@ class ShaderShadowMap(ShaderShadow):
         position = caster._local_position
         body_position = body._local_position
         pa = body_position - position
-        self_ar = self_radius / (pa.length() - body_radius)
-        star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
-        ar_ratio = star_ar / self_ar
+        distance = abs(pa.length() - body_radius)
+        if distance != 0:
+            self_ar = self_radius / distance
+            star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
+            ar_ratio = star_ar / self_ar
+        else:
+            ar_ratio = 0.0
         shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0 - ar_ratio * ar_ratio)
 
     def clear(self, shape, appearance):
