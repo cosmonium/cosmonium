@@ -2093,11 +2093,14 @@ class ShaderShadowMap(ShaderShadow):
         self.caster_body = caster_body
         self.caster = caster
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias
+        self.use_pcf_16 = settings.shadows_pcf_16
 
     def get_id(self):
         name = 'sm' + self.name
         if self.use_slope_scale_bias:
             name += '-sl'
+        if self.use_slope_scale_bias:
+            name += '-pcf16'
         return name
 
     def vertex_uniforms(self, code):
@@ -2123,11 +2126,41 @@ class ShaderShadowMap(ShaderShadow):
     def fragment_inputs(self, code):
         code.append("in vec4 %s_lightcoord;" % self.name)
 
+    def pcf_16(self, code):
+        code.append('''
+float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
+{
+    float shadow = 0.0;
+    if (shadow_coord.w > .0)
+    {
+        vec2 pixel_size = 1.0 / textureSize(shadow_map, 0).xy;
+        float x, y;
+        for (y = -1.5 ; y <= 1.5 ; y += 1.0) {
+            for (x = -1.5 ; x <= 1.5 ; x += 1.0) {
+                float offset_x = x * pixel_size.x * shadow_coord.w;
+                float offset_y = y * pixel_size.y * shadow_coord.w;
+                shadow += textureProj(shadow_map, vec4(shadow_coord.x + offset_x, shadow_coord.y + offset_y, shadow_coord.z, shadow_coord.w));
+            }
+        }
+        shadow /= 16.0;
+    } else {
+        shadow = 1.0;
+    }
+    return shadow;
+}''')
+
+    def fragment_extra(self, code):
+        if self.use_pcf_16:
+            self.shader.fragment_shader.add_function(code, 'shadow_pcf_16', self.pcf_16)
+
     def fragment_shader(self, code):
         if self.shader.fragment_shader.version < 130:
             code.append("shadow *= 1.0 - (1.0 - shadow2D(%s_depthmap, %s_lightcoord.xyz).x) * %s_shadow_coef;" % (self.name, self.name, self.name))
         else:
-            code.append("shadow *= 1.0 - (1.0 - texture(%s_depthmap, %s_lightcoord.xyz)) * %s_shadow_coef;" % (self.name, self.name, self.name))
+            if self.use_pcf_16:
+                code.append("shadow *= 1.0 - (1.0 - shadow_pcf_16(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
+            else:
+                code.append("shadow *= 1.0 - (1.0 - textureProj(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
 
     def update_shader_shape_static(self, shape, appearance):
         shape.instance.setShaderInput('%s_shadow_bias' % self.name, self.caster.bias)

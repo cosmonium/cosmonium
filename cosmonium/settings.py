@@ -95,6 +95,7 @@ disable_tint = False
 software_instancing = False
 
 shadows_slope_scale_bias = True
+shadows_pcf_16 = True
 
 hud_font = 'DejaVuSans'
 markdown_font = 'DejaVuSans'
