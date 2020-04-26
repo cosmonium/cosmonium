@@ -2409,12 +2409,16 @@ class ShaderSphereSelfShadow(ShaderShadow):
             code.append("shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
 
 class LightingModel(ShaderComponent):
+    def fragment_uniforms(self, code):
+        if self.appearance.has_emission and self.appearance.has_nightscale:
+            code.append("uniform float nightscale;")
+
     def apply_emission(self, code, angle):
         back_test = self.appearance.has_backlit or (self.appearance.has_emission and self.appearance.has_nightscale)
         if back_test:
             code.append("if (%s < 0.0) {" % angle)
         if self.appearance.has_emission and self.appearance.has_nightscale:
-            code.append("  float emission_coef = clamp(sqrt(-%s), 0.0, 1.0);" % angle)
+            code.append("  float emission_coef = clamp(sqrt(-%s), 0.0, 1.0) * nightscale;" % angle)
             code.append("  total_emission_color.rgb += emission_color.rgb * emission_coef;")
         if self.appearance.has_backlit:
             code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-%s);" % angle)
@@ -2426,7 +2430,7 @@ class LightingModel(ShaderComponent):
     def update_shader_shape(self, shape, appearance):
         if self.appearance.has_backlit:
             shape.instance.setShaderInput("backlit", appearance.backlit)
-        if self.appearance.has_nightscale:
+        if self.appearance.has_emission and self.appearance.has_nightscale:
             shape.instance.setShaderInput("nightscale", appearance.nightscale)
 
 class FlatLightingModel(LightingModel):
@@ -2454,6 +2458,7 @@ class LambertPhongLightingModel(LightingModel):
         return "lambert"
  
     def fragment_uniforms(self, code):
+        LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform float backlit;")
         code.append("uniform vec3 light_dir;")
@@ -2500,6 +2505,7 @@ class OrenNayarPhongLightingModel(LightingModel):
         return "oren-nayar"
 
     def fragment_uniforms(self, code):
+        LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")

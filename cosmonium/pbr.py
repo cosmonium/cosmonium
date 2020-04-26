@@ -36,6 +36,7 @@ class PbrLightingModel(LightingModel):
         return "pbr"
 
     def fragment_uniforms(self, code):
+        LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform float backlit;")
         code.append("uniform vec3 light_dir;")

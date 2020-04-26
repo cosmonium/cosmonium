@@ -35,6 +35,7 @@ class LunarLambertLightingModel(LightingModel):
         return "lunar"
 
     def fragment_uniforms(self, code):
+        LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")
@@ -56,6 +57,7 @@ class LunarLambertLightingModel(LightingModel):
         self.apply_emission(code, 'light_angle')
 
     def update_shader_shape(self, shape, appearance):
+        LightingModel.update_shader_shape(self, shape, appearance)
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
