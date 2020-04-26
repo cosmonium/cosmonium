@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput
 from panda3d.core import Texture, OrthographicLens, PandaNode, NodePath
-from panda3d.core import LVector3
+from panda3d.core import LVector3, LPoint4, Mat4
 from panda3d.core import ColorWriteAttrib, LColor, CullFaceAttrib, RenderState, DepthOffsetAttrib
 
 from .foundation import BaseObject
@@ -37,6 +37,7 @@ class ShadowMap(object):
         self.depthmap = None
         self.cam = None
         self.shadow_caster = None
+        self.snap_cam = settings.shadows_snap_cam
         self.bias = 0.1
 
     def create(self):
@@ -74,6 +75,19 @@ class ShadowMap(object):
         if settings.debug_shadow_frustum:
             self.node.showFrustum()
 
+    def align_cam(self):
+        mvp = Mat4(base.render.get_transform(self.cam).get_mat() * self.get_lens().get_projection_mat())
+        center = mvp.xform(LPoint4(0, 0, 0, 1)) * 0.5 + 0.5
+        texel_size = 1.0 / self.size
+        offset_x = center.x % texel_size
+        offset_y = center.y % texel_size
+        mvp.invert_in_place()
+        new_center = mvp.xform(LPoint4((center.x - offset_x) * 2.0 - 1.0,
+                                       (center.y - offset_y) * 2.0 - 1.0,
+                                       (center.z) * 2.0 - 1.0,
+                                       1.0))
+        self.cam.set_pos(self.cam.get_pos() - LVector3(new_center.x, new_center.y, new_center.z))
+
     def set_lens(self, size, near, far, direction):
         lens = self.node.get_lens()
         lens.set_film_size(size)
@@ -93,6 +107,8 @@ class ShadowMap(object):
 
     def set_pos(self, position):
         self.cam.set_pos(position)
+        if self.snap_cam:
+            self.align_cam()
 
     def remove(self):
         self.node = None

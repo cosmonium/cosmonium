@@ -96,6 +96,7 @@ software_instancing = False
 
 shadows_slope_scale_bias = True
 shadows_pcf_16 = True
+shadows_snap_cam = False
 
 hud_font = 'DejaVuSans'
 markdown_font = 'DejaVuSans'

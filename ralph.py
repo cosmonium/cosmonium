@@ -711,6 +711,7 @@ class RoamingRalphDemo(CosmoniumBase):
             self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.light_dir)
             self.shadow_caster.set_pos(self.light_dir * self.ralph_config.shadow_box_length / 2.0)
             self.shadow_caster.bias = 0.1
+            self.shadow_caster.snap_cam = True
         else:
             self.shadow_caster = None
 
