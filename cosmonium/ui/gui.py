@@ -155,7 +155,8 @@ class Gui(object):
         event_ctrl.accept('shift-control-f9', self.toggle_shadow_frustum)
         event_ctrl.accept('f10', self.cosmonium.save_screenshot)
         event_ctrl.accept('shift-f10', self.cosmonium.save_screenshot_no_annotation)
-        event_ctrl.accept('f11', render.explore)
+        event_ctrl.accept('f11', render.ls)
+        event_ctrl.accept('shift-f11', render.explore)
         event_ctrl.accept('f12', render.analyze)
 
         event_ctrl.accept('f', self.cosmonium.follow_selected)
