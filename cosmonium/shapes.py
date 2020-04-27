@@ -301,11 +301,6 @@ class ShapeObject(VisibleObject):
         self.instance.reparentTo(self.context.world)
         instance.hide(self.AllCamerasMask)
         instance.show(self.default_camera_mask)
-        if self.parent.is_emissive():
-            #TODO: Should be done by the owner of the shape
-            myMaterial = Material()
-            myMaterial.setEmission((1, 1, 1, 1))
-            self.instance.setMaterial(myMaterial, 1)
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()

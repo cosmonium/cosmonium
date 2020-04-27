@@ -345,9 +345,6 @@ class Grid(VisibleObject):
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.grid_thickness)
-        #myMaterial = Material()
-        #myMaterial.setEmission((1.0, 1.0, 1.0, 1))
-        #self.instance.setMaterial(myMaterial)
         self.instance.reparentTo(self.context.annotation)
         self.instance.setQuat(LQuaternion(*self.orientation))
 
