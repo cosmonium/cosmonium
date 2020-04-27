@@ -91,7 +91,7 @@ class Universe(StellarSystem):
         self.update_id += 1
         self.previous_leaves = self.to_update_leaves
         pos = self.context.observer.get_position()
-        mat = self.context.cam.getMat()
+        mat = self.context.camera.getMat()
         bh = self.context.observer.realCamLens.make_bounds()
         f = InfiniteFrustum(bh, mat, pos)
         t = VisibleObjectsTraverser(f, 6.0, self.update_id)
