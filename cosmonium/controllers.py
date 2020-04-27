@@ -102,7 +102,7 @@ class DefaultBodyMover():
         self.set_rot(new_rotation)
 
     def turn_relative(self, step):
-        rotation = self.get_rotation()
+        rotation = self.get_rot()
         delta = LQuaterniond()
         delta.setFromAxisAngleRad(step, LVector3d.up())
         new_rotation = delta * rotation
@@ -123,7 +123,7 @@ class SurfaceBodyMover(BodyMover):
         alt = self.body.orbit.position.get_z()
         return (frame.long, frame.lat, alt)
 
-    def get_rotation(self):
+    def get_rot(self):
         #TODO: It's not really a reference axis...
         return self.body.rotation.reference_axis.rotation
 
@@ -138,7 +138,8 @@ class SurfaceBodyMover(BodyMover):
 
     def delta(self, delta):
         frame = self.body.orbit.frame
-        new_position = frame.get_center_parent_frame() + delta
+        frame_delta = frame.get_orientation_parent_frame().xform(delta)
+        new_position = frame.get_center_parent_frame() + frame_delta
         new_position = self.body.frame_cartesian_to_spherical(new_position)
         frame.long = new_position[0]
         frame.lat = new_position[1]
@@ -147,7 +148,7 @@ class SurfaceBodyMover(BodyMover):
         frame = self.body.orbit.frame
         rotation = LQuaterniond()
         look_at(rotation, direction, LVector3d.up())
-        rotation = rotation * frame.get_orientation_parent_frame()
+        rotation = rotation
         delta = rotation.xform(LVector3d(0, distance, 0))
         self.delta(delta)
 
@@ -162,7 +163,7 @@ class SurfaceBodyMover(BodyMover):
         self.set_rot(new_rotation)
 
     def turn_relative(self, step):
-        rotation = self.get_rotation()
+        rotation = self.get_rot()
         delta = LQuaterniond()
         delta.setFromAxisAngleRad(step, LVector3d.up())
         new_rotation = delta * rotation
