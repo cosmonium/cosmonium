@@ -280,8 +280,6 @@ class DetailMap(ShaderAppearance):
         if self.textures_control.has_occlusion:
             self.textures_control.get_value(code, 'occlusion')
             code.append("surface_occlusion = %s_occlusion.x;" % self.textures_control.name)
-        else:
-            code.append('surface_occlusion = 1.0;')
 
     def update_shader_shape_static(self, shape, appearance):
         ShaderAppearance.update_shader_shape_static(self, shape, appearance)
