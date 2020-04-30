@@ -572,6 +572,7 @@ class Gui(object):
                 ('Diffuse', settings.shader_debug_fragment_shader == 'diffuse', self.set_shader_fragment_debug, 'diffuse'),
                 ('Normals', settings.shader_debug_fragment_shader == 'normal', self.set_shader_fragment_debug, 'normal'),
                 ('Normal map', settings.shader_debug_fragment_shader == 'normalmap', self.set_shader_fragment_debug, 'normalmap'),
+                ('Shadows', settings.shader_debug_fragment_shader == 'shadows', self.set_shader_fragment_debug, 'shadows'),
                 ('Color picking', settings.shader_debug_fragment_shader == 'picking', self.set_shader_fragment_debug, 'picking'),
                 )
         return (

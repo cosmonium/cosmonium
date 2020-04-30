@@ -773,6 +773,11 @@ class FragmentShader(ShaderProgram):
                     code.append("vec4 total_color = color_picking;")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
+            elif settings.shader_debug_fragment_shader == 'shadows':
+                code.append("float shadow = 1.0;")
+                for shadow in self.shadows:
+                    shadow.fragment_shader(code)
+                code.append("vec4 total_color = vec4(1.0, shadow, shadow, 1.0);")
         if settings.shader_debug_coord:
             code.append("float line_width = %g;" % settings.shader_debug_coord_line_width)
             code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((line_width - texcoord0.x) / line_width, 0.0, 1.0));")
