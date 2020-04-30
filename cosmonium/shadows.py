@@ -172,8 +172,10 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def update(self):
         radius = self.body.get_extend() / settings.scale
         self.shadow_caster.get_lens().set_film_size(radius * 2.1, radius * 2.1)
-        self.shadow_caster.get_lens().setNear(-radius)
-        self.shadow_caster.get_lens().setFar(radius)
+        #The shadow frustum origin is at the light center which is one radius away from the object
+        #So the near plane is 0 to coincide with the boundary of the object
+        self.shadow_caster.get_lens().setNear(0)
+        self.shadow_caster.get_lens().setFar(radius*2)
         self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.body.vector_to_star), LVector3.up())
 
 class PandaShadowCaster(ShadowMapShadowCaster):
