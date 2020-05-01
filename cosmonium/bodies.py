@@ -39,7 +39,7 @@ from .astro import units
 from .shaders import BasicShader, FlatLightingModel
 from . import settings
 
-from math import pi
+from math import asin, pi
 from copy import deepcopy
 
 class ReferencePoint(StellarObject):
@@ -290,16 +290,16 @@ class ReflectiveBody(StellarBody):
         #TODO: should be refactored somehow
         distance = abs(pa.length() - body_radius)
         if distance != 0:
-            self_ar = self_radius / distance
-            star_ar = self.star.get_apparent_radius() / ((self.star._local_position - body_position).length() - body_radius)
-            ar_ratio = star_ar / self_ar
+            self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
+            star_ar = asin(self.star.get_apparent_radius() / ((self.star._local_position - body_position).length() - body_radius))
+            ar_ratio = self_ar / star_ar
             #TODO: No longer valid if we are using HDR
-            if ar_ratio * ar_ratio > 255:
+            if ar_ratio * ar_ratio < 1.0 / 255:
                 #the shadow coef is smaller than the min change in pixel color
                 #the umbra will have no visible impact
                 return False
         else:
-            ar_ratio = 0.0
+            ar_ratio = 1.0
         distance_vector = pa - vector_to_star * vector_to_star.dot(pa)
         distance = distance_vector.length()
         projected = vector_to_star * vector_to_star.dot(body_position)

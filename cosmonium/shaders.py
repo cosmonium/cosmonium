@@ -27,7 +27,7 @@ from .cache import create_path_for
 from .parameters import ParametersGroup
 from . import settings
 
-from math import asin
+from math import asin, pi
 import hashlib
 import os
 import re
@@ -2212,12 +2212,12 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
             pa = body_position - position
             distance = abs(pa.length() - body_radius)
             if distance != 0:
-                self_ar = self_radius / distance
-                star_ar = caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius)
-                ar_ratio = star_ar / self_ar
+                self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
+                star_ar = asin(caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius))
+                ar_ratio = self_ar /star_ar
             else:
-                ar_ratio = 0.0
-            shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0 - ar_ratio * ar_ratio)
+                ar_ratio = 1.0
+            shape.instance.setShaderInput('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
 
     def clear(self, shape, appearance):
         shape.instance.clearShaderInput('%s_depthmap' % self.name)
