@@ -70,7 +70,8 @@ class ShaderBase(object):
         self.update_shader_shape_static(shape, appearance)
         if shape.patchable:
             for patch in shape.patches:
-                self.update_shader_patch_static(shape, patch, appearance)
+                if patch.instance_ready:
+                    self.update_shader_patch_static(shape, patch, appearance)
         else:
             self.update_shader_patch_static(shape, shape, appearance)
 

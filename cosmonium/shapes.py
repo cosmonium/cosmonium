@@ -369,8 +369,8 @@ class ShapeObject(VisibleObject):
             patch.jobs_pending = 0
             patch.jobs = 0
             if patch.instance is not None:
-                self.patch_done(patch)
                 patch.instance_ready = True
+                self.patch_done(patch)
                 if self.callback is not None:
                     self.callback(self, patch, *self.cb_args)
         else:
@@ -379,8 +379,8 @@ class ShapeObject(VisibleObject):
             self.shape.jobs_pending = 0
             self.shape.jobs = 0
             if self.shape.instance is not None:
-                self.shape_done()
                 self.shape.instance_ready = True
+                self.shape_done()
                 self.instance_ready = True
                 if self.callback is not None:
                     self.callback(self, *self.cb_args)
