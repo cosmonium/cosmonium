@@ -38,7 +38,6 @@ class ShadowMap(object):
         self.cam = None
         self.shadow_caster = None
         self.snap_cam = settings.shadows_snap_cam
-        self.bias = 0.1
 
     def create(self):
         winprops = WindowProperties.size(self.size, self.size)
@@ -214,8 +213,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
         ShadowMapShadowCaster.update(self)
         self.shadow_caster.set_pos(self.body.light_source.getPos())
 
-    def add_target(self, shape_object):
-        shape_object.shadows.add_generic_occluder(self)
+    def add_target(self, shape_object, self_shadow=False):
+        shape_object.shadows.add_generic_occluder(self, self_shadow)
 
 class RingShadowCaster(ShadowCasterBase):
     def __init__(self, ring):
@@ -259,12 +258,12 @@ class GenericShadows(ShadowBase):
         self.shader_components = {}
         self.update_needed = False
 
-    def add_occluder(self, occluder):
+    def add_occluder(self, occluder, self_shadow):
         if not occluder.is_valid(): return
         self.occluders.append(occluder)
         if not occluder in self.old_occluders:
             print("Add shadow caster", occluder.name)
-            shadow_shader =  ShaderShadowMap(occluder.name, occluder.body, occluder.shadow_caster)
+            shadow_shader =  ShaderShadowMap(occluder.name, occluder.body, occluder.shadow_caster, self_shadow)
             self.shader_components[occluder] = shadow_shader
             self.target.shader.add_shadows(shadow_shader)
             self.update_needed = True
@@ -337,6 +336,5 @@ class MultiShadows(ShadowBase):
     def add_sphere_occluder(self, shadow_caster):
         self.sphere_shadows.add_occluder(shadow_caster)
 
-    def add_generic_occluder(self, occluder):
-        self.generic_shadows.add_occluder(occluder)
-
+    def add_generic_occluder(self, occluder, self_shadow):
+        self.generic_shadows.add_occluder(occluder, self_shadow)

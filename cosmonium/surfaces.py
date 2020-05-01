@@ -63,7 +63,7 @@ class Surface(ShapeObject):
             else:
                 self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
                 self.owner.visibility_override = True
-                self.shadow_caster.add_target(self)
+                self.shadow_caster.add_target(self, self_shadow=True)
         self.shadow_caster.create()
 
     def remove_shadows(self):
@@ -79,7 +79,7 @@ class Surface(ShapeObject):
         #Add self-shadowing for non-spherical objects
         #TODO: It's a bit convoluted to do it like that...
         if not self.shape.is_spherical() and self.owner.visible and self.owner.resolved:
-            self.shadow_caster.add_target(self)
+            self.shadow_caster.add_target(self, self_shadow=True)
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()

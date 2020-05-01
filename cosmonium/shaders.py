@@ -514,6 +514,8 @@ class VertexShader(ShaderProgram):
         self.vertex_source.vertex_extra(code)
         self.vertex_control.vertex_extra(code)
         self.point_control.vertex_extra(code)
+        for shadow in self.shadows:
+            shadow.vertex_extra(code)
 
     def create_body(self, code):
         code.append("vec4 model_vertex4;")
@@ -2116,16 +2118,19 @@ class ShaderShadowMap(ShaderShadow):
     use_normal = True
     world_normal = True
 
-    def __init__(self, name, caster_body, caster, shader=None):
+    def __init__(self, name, caster_body, caster, use_bias, shader=None):
         ShaderShadow.__init__(self, shader)
         self.name = name
         self.caster_body = caster_body
         self.caster = caster
+        self.use_bias = use_bias
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias
         self.use_pcf_16 = settings.shadows_pcf_16
 
     def get_id(self):
-        name = 'sm' + self.name
+        name = 'sm-' + self.name
+        if self.use_bias:
+            name += '-b'
         if self.use_slope_scale_bias:
             name += '-sl'
         if self.use_slope_scale_bias:
@@ -2134,18 +2139,38 @@ class ShaderShadowMap(ShaderShadow):
 
     def vertex_uniforms(self, code):
         code.append("uniform mat4 trans_world_to_clip_of_%sLightSource;" % self.name)
-        code.append("uniform float %s_shadow_bias;" % self.name)
+        if self.use_bias:
+            code.append("uniform float %s_shadow_normal_bias;" % self.name)
+            code.append("uniform float %s_shadow_slope_bias;" % self.name)
+            code.append("uniform float %s_shadow_depth_bias;" % self.name)
         code.append("uniform vec3 %s_light_dir;" % self.name)
 
     def vertex_outputs(self, code):
         code.append("out vec4 %s_lightcoord;" % self.name)
 
+    def get_bias(self, code):
+        #http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
+        code.append('''
+vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) {
+    float cos_alpha = clamp(dot(normal, light_dir), 0.0, 1.0);
+    float offset_scale_n = sqrt(1 - cos_alpha * cos_alpha);       // sin(acos(L·N))
+    float offset_scale_l = min(2, offset_scale_n / cos_alpha);    // tan(acos(L·N))
+    vec3 offset = normal * offset_scale_n * normal_bias + light_dir * offset_scale_l * slope_bias;
+    return offset;
+}
+''')
+
+    def vertex_extra(self, code):
+        if self.use_bias:
+            self.shader.fragment_shader.add_function(code, 'shadow_get_bias', self.get_bias)
+
     def vertex_shader(self, code):
-        code.append("float %s_vertex_shadow_bias = %s_shadow_bias;" % (self.name, self.name))
-        if self.use_slope_scale_bias:
-            code.append("float %s_slope_scale = clamp(1.0 - dot(%s_light_dir, world_normal), 0.0, 1.0);" % (self.name, self.name))
-            code.append("%s_vertex_shadow_bias *= %s_slope_scale;" % (self.name,self.name))
-        code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * (world_vertex4 + vec4(world_normal, 0.0) * %s_vertex_shadow_bias);" % (self.name, self.name, self.name))
+        if self.use_bias:
+            code.append("vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, %s_light_dir);" % (self.name, self.name, self.name, self.name))
+            code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * (world_vertex4 + vec4(%s_offset, 0.0));" % (self.name, self.name, self.name))
+            code.append("%s_lightclip.z -= %s_shadow_depth_bias * %s_lightclip.w;" % (self.name, self.name, self.name))
+        else:
+            code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * world_vertex4;" % (self.name, self.name))
         code.append("%s_lightcoord = %s_lightclip * vec4(0.5, 0.5, 0.5, 1.0) + %s_lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);" % (self.name, self.name, self.name))
 
     def fragment_uniforms(self, code):
@@ -2192,14 +2217,20 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
                 code.append("shadow *= 1.0 - (1.0 - textureProj(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
 
     def update_shader_shape_static(self, shape, appearance):
-        shape.instance.setShaderInput('%s_shadow_bias' % self.name, self.caster.bias)
         shape.instance.setShaderInput('%s_depthmap' % self.name, self.caster.depthmap)
         shape.instance.setShaderInput("%sLightSource" % self.name, self.caster.cam)
         if self.caster_body is None:
             shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0)
 
     def update_shader_shape(self, shape, appearance):
-        if self.use_slope_scale_bias:
+        if self.use_bias:
+            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
+            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
+            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
+            #print(normal_bias, slope_bias, depth_bias, shape.owner.scene_scale_factor, shape.owner.get_apparent_radius())
+            shape.instance.setShaderInput('%s_shadow_normal_bias' % self.name, normal_bias)
+            shape.instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
+            shape.instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
             light_dir = shape.owner.vector_to_star
             shape.instance.setShaderInput("%s_light_dir" % self.name, *light_dir)
         if self.caster_body is not None:

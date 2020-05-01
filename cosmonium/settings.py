@@ -76,8 +76,6 @@ damped_nav = True
 
 global_ambient = 0.0
 corrected_global_ambient = global_ambient
-allow_shadows = True
-shadow_size = 1024
 max_sprite_size = 800
 
 patch_max_vertex_size = 64
@@ -94,6 +92,8 @@ show_halo = True
 disable_tint = False
 software_instancing = False
 
+allow_shadows = True
+shadow_size = 1024
 shadows_slope_scale_bias = True
 shadows_pcf_16 = True
 shadows_snap_cam = False

@@ -27,6 +27,7 @@ from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionT
 from .textures import AutoTextureSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
+from .parameters import ParametersGroup, AutoUserParameter
 
 from . import settings
 
@@ -127,6 +128,9 @@ class AppearanceBase:
         self.roughness = 0.0
         self.nightscale = None
         self.backlit = None
+        self.shadow_normal_bias = 0
+        self.shadow_slope_bias = 0.5
+        self.shadow_depth_bias = 0.1
         self.attribution = None
 
     def bake(self):
@@ -148,7 +152,11 @@ class AppearanceBase:
         return None
 
     def get_user_parameters(self):
-        return None
+        group = ParametersGroup("Appearance")
+        group.add_parameters(AutoUserParameter('Shadow normal bias', 'shadow_normal_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        group.add_parameters(AutoUserParameter('Shadow slope bias', 'shadow_slope_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        group.add_parameters(AutoUserParameter('Shadow depth bias', 'shadow_depth_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        return group
 
 class Appearance(AppearanceBase):
     JOB_TEXTURE_LOAD = 0x0001

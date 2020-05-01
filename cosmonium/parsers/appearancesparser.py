@@ -35,6 +35,11 @@ from .yamlparser import YamlModuleParser
 from .noiseparser import NoiseYamlParser
 from .textureparser import TextureDictionaryYamlParser
 
+def decode_bias(data, appearance):
+    appearance.shadow_normal_bias = data.get('normal-bias', appearance.shadow_normal_bias)
+    appearance.shadow_slope_bias = data.get('slope-bias', appearance.shadow_slope_bias)
+    appearance.shadow_depth_bias = data.get('depth-bias', appearance.shadow_depth_bias)
+
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode_source(cls, data):
@@ -158,6 +163,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         appearance.set_backlit(backlit)
         attribution = data.get('attribution', None)
         appearance.attribution = attribution
+        decode_bias(data, appearance)
         return appearance
 
 class ModelAppearanceYamlParser(YamlModuleParser):
@@ -167,6 +173,7 @@ class ModelAppearanceYamlParser(YamlModuleParser):
         vertex_color = data.get('vertex-color', True)
         occlusion_channel = data.get('occlusion-channel', False)
         appearance = ModelAppearance(vertex_color=vertex_color, material=material, occlusion_channel=occlusion_channel)
+        decode_bias(data, appearance)
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):
