@@ -124,10 +124,12 @@ class Universe(StellarSystem):
 #         in_view.set_level(self.in_view)
 
     def first_update(self):
+        CompositeObject.update(self, self.context.time.time_full, 0)
         for child in self.children:
             child.first_update(self.context.time.time_full)
 
     def first_update_obs(self, observer):
+        CompositeObject.update_obs(self, observer)
         for child in self.children:
             child.first_update_obs(observer)
 
@@ -137,7 +139,6 @@ class Universe(StellarSystem):
                 self.to_update_extra.append(extra)
 
     def update(self, time, dt):
-        CompositeObject.update(self, time, dt)
         for leaf in self.to_update:
             if isinstance(leaf, StellarSystem):
                 #print("Update system", leaf.get_name())
@@ -148,6 +149,7 @@ class Universe(StellarSystem):
         for extra in self.to_update_extra:
             #print("Update", extra.get_name())
             extra.update(time, dt)
+        CompositeObject.update(self, time, dt)
 
     def update_obs(self, observer):
         CompositeObject.update_obs(self, observer)

@@ -58,9 +58,9 @@ class AppState(object):
         self.time_full = cosmonium.time.time_full
         self.running = cosmonium.time.running
 
-        self.global_position = cosmonium.observer.camera_global_pos
-        self.local_position = cosmonium.observer.get_frame_camera_pos()
-        self.orientation = cosmonium.observer.get_frame_camera_rot()
+        self.global_position = cosmonium.ship._global_position
+        self.local_position = cosmonium.ship._frame_position
+        self.orientation = cosmonium.ship._frame_rotation
         self.absolute = False
 
         self.fov = cosmonium.observer.get_fov()
@@ -94,14 +94,13 @@ class AppState(object):
         cosmonium.time.time_full = self.time_full
         cosmonium.time.running = self.running
 
-        cosmonium.observer.camera_global_pos = self.global_position
+        cosmonium.ship._global_position = self.global_position
         if self.absolute:
-            cosmonium.observer.set_camera_pos(self.local_position)
-            cosmonium.observer.set_camera_rot(self.orientation)
+            cosmonium.ship.set_pos(self.local_position)
+            cosmonium.ship.set_rot(self.orientation)
         else:
-            cosmonium.observer.set_frame_camera_pos(self.local_position)
-            cosmonium.observer.set_frame_camera_rot(self.orientation)
-        #update_camera() will be performed next frame
+            cosmonium.ship.set_frame_pos(self.local_position)
+            cosmonium.ship.set_frame_rot(self.orientation)
 
         cosmonium.observer.set_fov(self.fov)
 

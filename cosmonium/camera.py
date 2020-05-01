@@ -20,14 +20,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LQuaternion
+from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
 
-from .astro.frame import AbsoluteReferenceFrame
-from .settings import near_plane
 from . import settings
-from . import utils
 
-from math import sin, cos, acos, tan, atan, sqrt, pi, log
+from math import sin, cos, acos, tan, atan, sqrt, pi
 
 class CameraBase(object):
     def __init__(self, cam, lens):
@@ -172,127 +169,164 @@ class CameraBase(object):
             return 0
         return w[1] / w[3] * self.height
 
-class Camera(CameraBase):
+class CameraHolder(CameraBase):
     def __init__(self, cam, lens):
         CameraBase.__init__(self, cam, lens)
-        #Global position of the camera, i.e. the center of the current system
         self.camera_global_pos = LPoint3d()
-        #Local position of the camera within the system in the current camera reference frame
-        #Initialize not at zero to avoid null vector when starting to move
-        self.camera_pos = LPoint3d(0, -1, 0)
-        #Camera orientation in the current camera reference frame
-        self.camera_rot = LQuaterniond()
-        #Camera reference frame
-        self.camera_frame = AbsoluteReferenceFrame()
-        #Direction of sight of the camera
-        self.camera_vector = LVector3d.forward()
-        self.update_camera()
+        self._position = LPoint3d()
+        self._local_position = LPoint3d()
+        self._orientation = LQuaterniond()
+        self.camera_vector = LVector3d()
 
-    def set_camera_frame(self, frame):
-        #Get position and rotation in the absolute reference frame
-        pos = self.get_camera_pos()
-        rot = self.get_camera_rot()
-        #Update reference frame
-        self.camera_frame = frame
-        #Set back the camera position to calculate the position in the new reference frame
-        self.set_camera_pos(pos)
-        self.set_camera_rot(rot)
-
-    def change_global(self, new_global_pos):
-        old_local = self.camera_frame.get_local_position(self.camera_pos)
-        new_local = (self.camera_global_pos - new_global_pos) + old_local
-        self.camera_global_pos = new_global_pos
-        self.camera_pos = self.camera_frame.get_rel_position(new_local)
+        #These two variables should only be used by the camera controller
+        self._frame_position = LPoint3d()
+        self._frame_rotation = LQuaterniond()
 
     def get_position(self):
-        return self.camera_global_pos + self.camera_frame.get_local_position(self.camera_pos)
-
-    def get_position_of(self, rel_position):
-        return self.camera_global_pos + self.camera_frame.get_local_position(rel_position)
-
-    def set_frame_camera_pos(self, position):
-        self.camera_pos = position
-
-    def get_frame_camera_pos(self):
-        return self.camera_pos
-
-    def set_frame_camera_rot(self, orientation):
-        self.camera_rot = orientation
-
-    def get_frame_camera_rot(self):
-        return self.camera_rot
-
-    def get_rel_position_of(self, position, local=True):
-        if not local:
-            position -= self.camera_global_pos
-        return self.camera_frame.get_rel_position(position)
-
-    def get_rel_rotation_of(self, orientation):
-        return self.camera_frame.get_rel_orientation(orientation)
-
-    def set_camera_pos(self, position, local=True, local_ref=None):
-        if local:
-            if local_ref is not None:
-                position -= (self.camera_global_pos - local_ref)
-        else:
-            position -= self.camera_global_pos
-        self.camera_pos = self.camera_frame.get_rel_position(position)
+        return self.camera_global_pos + self._local_position
 
     def get_camera_pos(self):
-        return self.camera_frame.get_local_position(self.camera_pos)
-    
-    def set_camera_rot(self, orientation):
-        self.camera_rot = self.camera_frame.get_rel_orientation(orientation)
+        return self._local_position
 
     def get_camera_rot(self):
-        return self.camera_frame.get_abs_orientation(self.camera_rot)
+        return self._orientation
 
     def get_camera_vector(self):
-        return self.get_camera_rot().xform(LVector3d.forward())
+        return self.camera_vector
+
+    def update_camera(self, global_position, position, orientation):
+        self.camera_global_pos = global_position
+        self._position = position
+        self._local_position = position
+        self._orientation = orientation
+        self.camera_vector = self._orientation.xform(LVector3d.forward())
+        #Don't update camera position as everything is relative to camera
+        self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
+
+class CameraController():
+    camera_type = None
+    FIXED = 'fixed'
+    LOOK_AROUND = 'look-around'
+    FOLLOW = 'follow'
+    def __init__(self):
+        self.camera = None
+        self.reference_point = None
+        self.event_ctrl = None
+
+    def get_name(self):
+        return ''
+
+    def activate(self, camera, reference_point, event_ctrl):
+        self.camera = camera
+        self.reference_point = reference_point
+        self.event_ctrl = event_ctrl
+        self.register_events()
+
+    def deactivate(self):
+        self.remove_events()
+        self.camera = None
+        self.reference_point = None
+        self.event_ctrl = None
+
+    def set_reference_point(self, reference_point):
+        self.reference_point = reference_point
+
+    def register_events(self):
+        pass
+
+    def remove_events(self):
+        pass
 
     def update_camera(self):
-        #Don't update camera position as everything is relative to camera
-        self.camera_vector = self.get_camera_vector()
-        self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
-        self._position = self.get_camera_pos()
-        
-    def camera_look_back(self):
-        new_rot=utils.relative_rotation(self.get_camera_rot(), LVector3d.up(), pi)
-        self.set_camera_rot(new_rot)
+        pass
 
-    def step_camera(self, delta, absolute=True):
-        if absolute:
-            self.set_camera_pos(self.get_camera_pos() + delta)
-        else:
-            self.camera_pos += delta
+class FixedCameraController(CameraController):
+    camera_mode = CameraController.FIXED
+    def __init__(self):
+        CameraController.__init__(self)
+        self.rotation = LQuaterniond()
+        self.is_looking_back = False
 
-    def turn_camera(self, orientation, absolute=True):
-        if absolute:
-            self.set_camera_rot(orientation)
-        else:
-            self.camera_rot = orientation
+    def get_name(self):
+        return 'Fixed camera'
 
-    def step_turn_camera(self, delta, absolute=True):
-        if absolute:
-            self.set_camera_rot(delta * self.get_camera_rot())
-        else:
-            self.camera_rot = delta * self.camera_rot
+    def register_events(self):
+        self.event_ctrl.accept('*', self.look_back)
 
-    def calc_look_at(self, target, rel=True, position=None):
-        if not rel:
-            if position is None:
-                position = self.get_camera_pos()
-            direction = LVector3d(target - position)
-        else:
-            direction = LVector3d(target)
-        direction.normalize()
-        local_direction = self.get_camera_rot().conjugate().xform(direction)
-        angle=LVector3d.forward().angleRad(local_direction)
-        axis=LVector3d.forward().cross(local_direction)
-        if axis.length() > 0.0:
-            new_rot = utils.relative_rotation(self.get_camera_rot(), axis, angle)
-#         new_rot=LQuaterniond()
-#         lookAt(new_rot, direction, LVector3d.up())
-        else:
-            new_rot = self.get_camera_rot()
-        return new_rot, angle
+    def remove_events(self):
+        self.event_ctrl.ignore('*')
+
+    def look_back(self):
+        self.rotation = LQuaterniond()
+        if not self.is_looking_back:
+            self.rotation.setFromAxisAngleRad(pi, LVector3d.up())
+        self.is_looking_back = not self.is_looking_back
+
+    def update_camera(self):
+        (reference_distance, reference_pos, reference_rot) = self.reference_point.get_camera_hints()
+
+        global_position = self.reference_point._global_position
+
+        local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
+        orientation = reference_rot * self.rotation * self.reference_point._orientation
+        self.camera.update_camera(global_position, local_position, orientation)
+
+class LookAroundCameraController(CameraController):
+    camera_mode = CameraController.LOOK_AROUND
+    def __init__(self):
+        CameraController.__init__(self)
+        self.rotation = LQuaterniond()
+
+    def get_name(self):
+        return 'Look around camera'
+
+    def update_camera(self):
+        (reference_distance, reference_pos, reference_rot) = self.reference_point.get_camera_hints()
+
+        if self.event_ctrl.mouseWatcherNode.hasMouse():
+            mpos = self.event_ctrl.mouseWatcherNode.getMouse()
+            x_angle = mpos.get_y() * pi / 2
+            z_angle = mpos.get_x() * pi / 2
+            x_rotation = LQuaterniond()
+            x_rotation.setFromAxisAngleRad(x_angle, LVector3d.right())
+            z_rotation = LQuaterniond()
+            z_rotation.setFromAxisAngleRad(-z_angle, LVector3d.up())
+            self.rotation = x_rotation * z_rotation
+
+        global_position = self.reference_point._global_position
+
+        local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
+        orientation = reference_rot * self.rotation * self.reference_point._orientation
+        self.camera.update_camera(global_position, local_position, orientation)
+
+class FollowCameraController(CameraController):
+    camera_mode = CameraController.FOLLOW
+    def get_name(self):
+        return 'Follow camera'
+
+    def update_camera(self):
+        (reference_distance, reference_pos, reference_rot) = self.reference_point.get_camera_hints()
+        min_distance = reference_distance / 2.0
+        max_distance = reference_distance * 2.0
+
+        camera_frame_position = self.camera._frame_position
+        vector_to_reference = self.reference_point._frame_position - camera_frame_position
+        distance = vector_to_reference.length()
+        vector_to_reference.normalize()
+        if min_distance > 0 and distance == 0:
+            vector_to_reference = self.reference_point._frame_rotation.xform(-LVector3d.forward())
+            distance = 1.0
+        if distance > max_distance:
+            camera_frame_position = camera_frame_position + vector_to_reference * (distance - max_distance)
+        if distance < min_distance:
+            camera_frame_position = camera_frame_position - vector_to_reference * (min_distance - distance)
+
+        camera_frame_orientation = LQuaterniond()
+        look_at(camera_frame_orientation, vector_to_reference, self.reference_point._frame_rotation.xform(LVector3d.up()))
+
+        camera_global_position = self.reference_point._global_position
+        camera_local_position = self.reference_point.frame.get_local_position(camera_frame_position)
+        camera_local_orientation = self.reference_point.frame.get_abs_orientation(camera_frame_orientation)
+        self.camera.update_camera(camera_global_position, camera_local_position, camera_local_orientation)
+        self.camera._frame_position = camera_frame_position
+        self.camera._frame_rotation = camera_frame_orientation

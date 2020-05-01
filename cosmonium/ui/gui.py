@@ -117,8 +117,6 @@ class Gui(object):
             self.show_menu()
         else:
             self.hide_menu()
-        if self.cosmonium.cockpit is not None:
-            self.editor.show(self.cosmonium.cockpit)
 
     def calc_scale(self):
         self.scale = LVector2(1.0 / self.screen_width * 2.0, 1.0 / self.screen_height * 2.0)
@@ -169,7 +167,6 @@ class Gui(object):
         event_ctrl.accept('g', self.autopilot.go_to_object)
         event_ctrl.accept('c', self.autopilot.center_on_object)
         event_ctrl.accept('control-j', self.toggle_jump)
-        event_ctrl.accept('*', self.camera.camera_look_back)
 
         event_ctrl.accept('shift-n', self.autopilot.go_north)
         event_ctrl.accept('shift-s', self.autopilot.go_south)
@@ -451,21 +448,29 @@ class Gui(object):
 
     def create_camera_menu_items(self):
         has_selected = self.cosmonium.selected is not None
-        cockpits = [('No cockpit', self.cosmonium.cockpit is None, self.cosmonium.set_cockpit, None)]
-        for cockpit in self.cosmonium.cockpits:
-            cockpits.append((cockpit.get_name(), self.cosmonium.cockpit is cockpit, self.cosmonium.set_cockpit, cockpit))
+        controllers = []
+        for controller in self.cosmonium.camera_controllers:
+            controllers.append((controller.get_name(),
+                                self.cosmonium.camera_controller is controller,
+                                self.cosmonium.set_camera_controller if self.cosmonium.ship.supports_camera_mode(controller.camera_mode) else 0,
+                                controller))
+        ships = []
+        for ship in self.cosmonium.ships:
+            ships.append((ship.get_name(), self.cosmonium.ship is ship, self.cosmonium.set_ship, ship))
 
         return (
+                ('_Mode', 0, controllers),
+                0,
                 ('_Center on>C', 0, self.autopilot.center_on_object if has_selected else 0),
-                ('Look _back>*', 0, self.camera.camera_look_back),
+                #('Look _back>*', 0, self.camera.camera_look_back),
                 ('_Track>Y', 0, self.cosmonium.track_selected if has_selected else 0),
                 0,
                 ('Zoom _in>Z', 0, self.camera.zoom, 1.05),
                 ('Zoom _out>Shift-Z', 0, self.camera.zoom, 1.0/1.05),
                 ('_Reset Zoom>Control-R', 0, self.camera.reset_zoom),
                 0,
-                ('Select cockpit', 0, cockpits),
-                ('Edit cockpit', 0, self.show_cockpit_editor if self.cosmonium.cockpit is not None else 0),
+                ('_Select ship', 0, ships if len(self.cosmonium.ships) > 1 else 0),
+                ('_Edit ship', 0, self.show_ship_editor if self.cosmonium.ship.editable else 0),
                 )
 
     def create_render_menu_items(self):
@@ -961,11 +966,11 @@ class Gui(object):
             if not self.editor in self.opened_windows:
                 self.opened_windows.append(self.editor)
 
-    def show_cockpit_editor(self):
-        if self.cosmonium.cockpit is not None:
+    def show_ship_editor(self):
+        if self.cosmonium.ship is not None:
             if self.editor.shown():
                 self.editor.hide()
-            self.editor.show(self.cosmonium.cockpit)
+            self.editor.show(self.cosmonium.ship)
             if not self.editor in self.opened_windows:
                 self.opened_windows.append(self.editor)
 

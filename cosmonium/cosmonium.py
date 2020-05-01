@@ -26,7 +26,7 @@ from panda3d.core import Texture, CardMaker
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
-from panda3d.core import Camera as PandaCamera #TODO: fix the name collision
+from panda3d.core import Camera
 
 from direct.task.Task import Task
 
@@ -52,13 +52,14 @@ from .astro.tables import uniform, vsop87, wgccre
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
-from .camera import Camera
+from .camera import CameraHolder, FixedCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
 from .controllers import BodyController, SurfaceBodyMover
+from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser
 from .fonts import fontsManager
@@ -300,7 +301,6 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
 
-        self.near_cam = None
         self.over = None
         self.patch = None
         self.selected = None
@@ -321,11 +321,38 @@ class Cosmonium(CosmoniumBase):
         self.autopilot = None
         self.globalAmbient = None
         self.oid_texture = None
+        self.camera_controllers = []
+        self.camera_controller = None
         self.controllers = []
-        self.cockpits = []
-        self.cockpit = None
+        self.ships = []
+        self.ship = None
 
         self.universe = Universe(self)
+
+        if settings.color_picking:
+            self.oid_texture = Texture()
+            self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
+            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
+            self.render.set_shader_input("oid_store", self.oid_texture)
+        else:
+            self.oid_texture = None
+        self.observer = CameraHolder(self.camera, self.camLens)
+        self.autopilot = AutoPilot(self)
+        self.mouse = Mouse(self, self.oid_texture)
+        if self.near_cam is not None:
+            self.observer.add_linked_cam(self.near_cam)
+
+        self.add_camera_controller(FixedCameraController())
+        self.add_camera_controller(LookAroundCameraController())
+        self.add_camera_controller(FollowCameraController())
+        self.observer.init()
+
+        if self.nav is None:
+            self.nav = FreeNav()
+        ship = NoShip()
+        self.set_camera_controller(self.camera_controllers[0])
+        self.add_ship(ship)
+        self.set_ship(ship)
 
         self.splash = Splash() if not self.app_config.test_start else NoSplash()
 
@@ -356,29 +383,12 @@ class Cosmonium(CosmoniumBase):
         #Force frame update to render the last status of the splash screen
         base.graphicsEngine.renderFrame()
         self.splash.close()
-        if settings.color_picking:
-            self.oid_texture = Texture()
-            self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
-            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
-            self.render.set_shader_input("oid_store", self.oid_texture)
-        else:
-            self.oid_texture = None
-        self.observer = Camera(self.camera, self.camLens)
-        self.autopilot = AutoPilot(self.observer, self)
-        self.mouse = Mouse(self, self.oid_texture)
-        if self.near_cam is not None:
-            self.observer.add_linked_cam(self.near_cam)
-
-        if self.nav is None:
-            self.nav = FreeNav()
         if self.gui is None:
             self.gui = Gui(self, self.time, self.observer, self.mouse, self.nav, self.autopilot)
         self.set_nav(self.nav)
 
         self.nav.register_events(self)
         self.gui.register_events(self)
-
-        self.observer.init()
 
         self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
         if settings.render_sprite_points:
@@ -406,6 +416,7 @@ class Cosmonium(CosmoniumBase):
             controller.init()
 
         self.universe.first_update()
+        self.camera_controller.update_camera()
         self.universe.first_update_obs(self.observer)
         self.window_event(None)
         self.time_task(None)
@@ -430,28 +441,56 @@ class Cosmonium(CosmoniumBase):
         self.near_dr = self.win.make_display_region()
         self.near_dr.set_sort(1)
         self.near_dr.set_clear_depth_active(True)
-        near_cam_node = PandaCamera('nearcam')
+        near_cam_node = Camera('nearcam')
         self.near_cam = self.camera.attach_new_node(near_cam_node)
         self.near_dr.setCamera(self.near_cam)
         self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
-        self.near_cam.node().get_lens().set_near_far(0.001, float('inf'))
+        self.near_cam.node().get_lens().set_near_far(units.m /settings.scale, float('inf'))
 
-    def add_cockpit(self, cockpit):
-        self.cockpits.append(cockpit)
+    def add_camera_controller(self, camera_controller):
+        self.camera_controllers.append(camera_controller)
 
-    def set_cockpit(self, cockpit):
-        self.universe.remove_component(self.cockpit)
-        self.cockpit = cockpit
-        if self.cockpit is not None:
-            self.universe.add_component(self.cockpit)
-            self.cockpit.camera = self.observer
+    def set_camera_controller(self, camera_controller):
+        if self.camera_controller is not None:
+            self.camera_controller.deactivate()
+        self.camera_controller = camera_controller
+        self.camera_controller.activate(self.observer, self.ship, self)
+        print("Switching camera to", self.camera_controller.get_name())
+
+    def add_ship(self, ship):
+        self.ships.append(ship)
+
+    def set_ship(self, ship):
+        if self.ship is not None:
+            self.universe.remove_component(self.ship)
+            self.autopilot.set_ship(None)
+            self.nav.set_ship(None)
+            self.camera_controller.set_reference_point(None)
+        old_ship = self.ship
+        self.ship = ship
+        if self.ship is not None:
+            self.universe.add_component(self.ship)
+            self.autopilot.set_ship(self.ship)
+            self.nav.set_ship(self.ship)
+            if old_ship is not None:
+                self.ship.copy(old_ship)
+            if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
+                self.camera_controller.set_reference_point(self.ship)
+            else:
+                #Current camera controller is not supported by the ship, switch to the first one supported
+                for camera_controller in self.camera_controllers:
+                    if self.ship.supports_camera_mode(camera_controller.camera_mode):
+                        self.set_camera_controller(camera_controller)
+                        break
+                else:
+                    print("ERROR: No camera controller supported by this ship")
 
     def set_nav(self, nav):
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
-            self.nav.init(self, self.observer, self.gui)
+            self.nav.init(self, self.observer, self.ship, self.gui)
             self.nav.register_events(self)
 
     def toggle_fly_mode(self):
@@ -512,7 +551,7 @@ class Cosmonium(CosmoniumBase):
     def reset_nav(self):
         print("Reset nav")
         self.follow = None
-        self.observer.set_camera_frame(AbsoluteReferenceFrame())
+        self.ship.set_frame(AbsoluteReferenceFrame())
         self.sync = None
         if self.fly:
             #Disable fly mode when changing body
@@ -681,9 +720,9 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.observer.set_camera_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.ship.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
         else:
-            self.observer.set_camera_frame(AbsoluteReferenceFrame())
+            self.ship.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -696,9 +735,9 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.observer.set_camera_frame(SynchroneReferenceFrame(body))
+            self.ship.set_frame(SynchroneReferenceFrame(body))
         else:
-            self.observer.set_camera_frame(AbsoluteReferenceFrame())
+            self.ship.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -800,19 +839,21 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.update_universe(self.time.time_full, self.time.dt)
-        self.observer.update_camera()
+        self.camera_controller.update_camera()
         self.update_obs()
 
         if self.track != None:
             self.autopilot.center_on_object(self.track, duration=0, cmd=False)
-            self.observer.update_camera()
+            self.ship.update(self.time.time_full, self.time.dt)
+            self.camera_controller.update_camera()
 
         if self.universe.nearest_system != self.nearest_system:
             if self.universe.nearest_system is not None:
                 print("New nearest system:", self.universe.nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.observer.change_global(self.universe.nearest_system.get_global_position())
+                self.ship.change_global(self.universe.nearest_system.get_global_position())
+                self.camera_controller.update_camera()
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:
@@ -870,7 +911,8 @@ class Cosmonium(CosmoniumBase):
     def print_debug(self):
         print("Global:")
         print("\tscale", settings.scale)
-        print("\tPlanes", self.camLens.getNear(), self.camLens.getFar())
+        print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
+        print("\tFoV", self.camLens.get_fov())
         print("Camera:")
         print("\tGlobal position", self.observer.camera_global_pos)
         print("\tLocal position", self.observer.get_camera_pos(), '(Frame:', self.observer.camera_pos, ')')

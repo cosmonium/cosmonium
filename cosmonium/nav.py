@@ -31,7 +31,8 @@ class NavBase(object):
 
     def __init__(self):
         self.base = None
-        self.observer = None
+        self.camera = None
+        self.ship = None
         self.keyMap = {}
         self.dragCenter = None
         self.dragDir = None
@@ -41,10 +42,14 @@ class NavBase(object):
         self.wheel_event_time = 0.0
         self.wheel_direction = 0.0
 
-    def init(self, base, camera, ui):
+    def init(self, base, camera, ship, ui):
         self.base = base
-        self.observer = camera
+        self.camera = camera
+        self.ship = ship
         self.ui = ui
+
+    def set_ship(self, ship):
+        self.ship = ship
 
     def setKey(self, key, state, *keys):
         self.keyMap[key] = state
@@ -72,17 +77,17 @@ class NavBase(object):
         self.wheel_direction = direction
 
     def stash_position(self):
-        self.dragCenter = self.observer.get_position_of(self.dragCenter)
+        self.dragCenter = self.ship.get_position_of(self.dragCenter)
 
     def pop_position(self):
-        self.dragCenter = self.observer.get_rel_position_of(self.dragCenter, local=False)
+        self.dragCenter = self.ship.get_rel_position_of(self.dragCenter, local=False)
 
     def create_drag_params(self, target):
-        center = target.get_rel_position_to(self.observer.camera_global_pos)
-        self.dragCenter = self.observer.camera_frame.get_rel_position(center)
-        dragPosition = self.observer.get_frame_camera_pos()
+        center = target.get_rel_position_to(self.ship._global_position)
+        self.dragCenter = self.ship.frame.get_rel_position(center)
+        dragPosition = self.ship.get_frame_pos()
         self.dragDir = self.dragCenter - dragPosition
-        self.dragOrientation = self.observer.get_frame_camera_rot()
+        self.dragOrientation = self.ship.get_frame_rot()
         self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
         self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
 
@@ -94,10 +99,10 @@ class NavBase(object):
         combined = xRotation * zRotation
         if move:
             delta = combined.xform(-self.dragDir)
-            self.observer.set_frame_camera_pos(delta + self.dragCenter)
-            self.observer.set_frame_camera_rot(self.dragOrientation * combined)
+            self.ship.set_frame_pos(delta + self.dragCenter)
+            self.ship.set_frame_rot(self.dragOrientation * combined)
         else:
-            self.observer.set_camera_rot(self.dragOrientation * combined)
+            self.ship.set_rot(self.dragOrientation * combined)
 
     def update(self, dt):
         pass
@@ -228,8 +233,8 @@ class FreeNav(NavBase):
             mpos = self.base.mouseWatcherNode.getMouse()
             self.startX = mpos.getX()
             self.startY = mpos.getY()
-            self.dragCenter = self.observer.get_camera_pos()
-            self.dragOrientation = self.observer.get_camera_rot()
+            self.dragCenter = self.ship.get_pos()
+            self.dragOrientation = self.ship.get_rot()
             self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
             self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
 
@@ -249,10 +254,10 @@ class FreeNav(NavBase):
         if target is not None:
             self.mouseTrackClick = True
             arc_length = pi * target.get_apparent_radius()
-            apparent_size = arc_length / ((target.distance_to_obs - target.height_under) * self.observer.pixel_size)
+            apparent_size = arc_length / ((target.distance_to_obs - target.height_under) * self.camera.pixel_size)
             if apparent_size != 0.0:
-                self.dragAngleX = min(pi, pi / 2 / apparent_size * self.observer.height)
-                self.dragAngleY = min(pi, pi / 2 / apparent_size * self.observer.width)
+                self.dragAngleX = min(pi, pi / 2 / apparent_size * self.camera.height)
+                self.dragAngleY = min(pi, pi / 2 / apparent_size * self.camera.width)
             else:
                 self.dragAngleX = pi
                 self.dragAngleY = pi
@@ -282,8 +287,8 @@ class FreeNav(NavBase):
             mpos = self.base.mouseWatcherNode.getMouse()
             deltaX = mpos.getX() - self.startX
             deltaY = mpos.getY() - self.startY
-            z_angle = deltaX * self.observer.realCamLens.getHfov() / 180 * pi / 2
-            x_angle = -deltaY * self.observer.realCamLens.getVfov() / 180 * pi / 2
+            z_angle = deltaX * self.camera.realCamLens.getHfov() / 180 * pi / 2
+            x_angle = -deltaY * self.camera.realCamLens.getVfov() / 180 * pi / 2
             self.do_drag(z_angle, x_angle)
 
         if settings.celestia_nav:
@@ -411,26 +416,26 @@ class FreeNav(NavBase):
     def turn(self, axis, angle):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
-        self.observer.step_turn_camera(rot, absolute=False)
+        self.ship.step_turn(rot, absolute=False)
 
     def stepRelative(self, x = 0, y = 0, z = 0):
         direction=LVector3d(x,y,z)
-        delta = self.observer.get_frame_camera_rot().xform(direction)
-        self.observer.step_camera(delta, absolute=False)
+        delta = self.ship.get_frame_rot().xform(direction)
+        self.ship.step(delta, absolute=False)
 
     def change_altitude(self, rate):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        direction = target.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos()
-        height = target.get_height_under(self.observer.get_camera_pos())
+        direction = target.get_rel_position_to(self.ship._global_position) - self.ship.get_pos()
+        height = target.get_height_under(self.ship.get_pos())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
         direction.normalize()
         if rate < 0 or altitude >= settings.min_altitude:
-            self.observer.step_camera(direction*altitude*rate, absolute=True)
+            self.ship.step(direction*altitude*rate, absolute=True)
         else:
-            self.observer.set_camera_pos(target.get_position() - direction * (height + settings.min_altitude))
+            self.ship.set_pos(target.get_position() - direction * (height + settings.min_altitude))
 
 class WalkNav(NavBase):
     rot_step_per_sec = pi/4
@@ -554,11 +559,11 @@ class WalkNav(NavBase):
 
     def step(self, distance):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
-        camera_pos = self.observer.get_camera_pos()
-        (normal, tangent, binormal) = self.body.get_normals_under(camera_pos)
-        direction = self.observer.get_camera_rot().xform(LVector3d(0, distance, 0))
+        ship_pos = self.ship.get_pos()
+        (normal, tangent, binormal) = self.body.get_normals_under(ship_pos)
+        direction = self.ship.get_rot().xform(LVector3d(0, distance, 0))
         projected = direction - normal * direction.dot(normal)
-        position = self.body.cartesian_to_spherical(self.observer.get_camera_pos())
+        position = self.body.cartesian_to_spherical(self.ship.get_pos())
         delta_x = tangent.dot(projected) * arc_to_angle
         delta_y = binormal.dot(projected) * arc_to_angle
         new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
@@ -570,7 +575,7 @@ class WalkNav(NavBase):
         else:
             print("Patch not found for", x, y, '->', new_position[2])
         new_position = self.body.spherical_to_cartesian(new_position)
-        self.observer.set_camera_pos(new_position)
+        self.ship.set_pos(new_position)
         target_pos = new_position + direction * 10 * units.m
         target_pos = self.body.cartesian_to_spherical(target_pos)
         (x, y, distance) = self.body.spherical_to_xy(target_pos)
@@ -580,26 +585,26 @@ class WalkNav(NavBase):
         else:
             print("Patch not found for", x, y, '->', target_pos[2])
         target_pos = self.body.spherical_to_cartesian(target_pos)
-        rot, angle = self.observer.calc_look_at(target_pos, rel=False)
-        #self.observer.set_camera_rot(rot)
+        rot, angle = self.ship.calc_look_at(target_pos, rel=False)
+        #self.ship.set_rot(rot)
         #print(angle)
 
     def change_altitude(self, rate):
         if rate == 0.0: return
-        direction=(self.body.get_rel_position_to(self.observer.camera_global_pos) - self.observer.get_camera_pos())
-        height = self.body.get_height_under(self.observer.get_camera_pos())
+        direction=(self.body.get_rel_position_to(self.ship._global_position) - self.ship.get_pos())
+        height = self.body.get_height_under(self.ship.get_pos())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
         if altitude < settings.min_altitude:
             altitude = altitude - settings.min_altitude
             rate = 1.0
         direction.normalize()
-        self.observer.step_camera(direction*altitude*rate, absolute=True)
+        self.ship.step(direction*altitude*rate, absolute=True)
 
     def turn(self, axis, angle):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
-        self.observer.step_turn_camera(rot, absolute=False)
+        self.ship.step_turn(rot, absolute=False)
 
 class ControlNav(NavBase):
     rot_step_per_sec = pi/4
