@@ -19,7 +19,7 @@
 
 from __future__ import print_function
 
-from panda3d.core import LVector2, Texture
+from panda3d.core import LVector2, Texture, LColor
 
 from .patchedshapes import PatchLodControl
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
@@ -233,7 +233,15 @@ class HeightmapPatch:
             self.max_height = np_buffer.max() / scale
             self.mean_height = np_buffer.mean() / scale
         else:
-            self.calc_sub_patch()
+            if self.parent_heightmap is not None:
+                self.calc_sub_patch()
+            else:
+                print("Make default texture for heightmap")
+                texture = Texture()
+                texture.setup_2d_texture(1, 1, Texture.T_float, Texture.F_r32)
+                texture.set_clear_color(LColor(0, 0, 0, 0))
+                texture.make_ram_image()
+                self.heightmap_ready_cb(texture, None, None)
         if callback is not None:
             callback(self, *cb_args)
 
