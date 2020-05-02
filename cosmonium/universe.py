@@ -135,7 +135,7 @@ class Universe(StellarSystem):
 
     def add_extra_to_list(self, *elems):
         for extra in elems:
-            if extra is not None:
+            if extra is not None and extra not in self.to_update_extra:
                 self.to_update_extra.append(extra)
 
     def update(self, time, dt):

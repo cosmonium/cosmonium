@@ -785,7 +785,7 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_octree(self):
         self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
-        self.universe.add_extra_to_list(self.selected, self.track)
+        self.universe.add_extra_to_list(self.selected, self.follow, self.sync, self.track)
 
     @pstat
     def update_universe(self, time, dt):
