@@ -918,8 +918,8 @@ class Cosmonium(CosmoniumBase):
         print("\tFoV", self.camLens.get_fov())
         print("Camera:")
         print("\tGlobal position", self.observer.camera_global_pos)
-        print("\tLocal position", self.observer.get_camera_pos(), '(Frame:', self.observer.camera_pos, ')')
-        print("\tRotation", self.observer.get_camera_rot(), '(Frame:', self.observer.camera_rot, ')')
+        print("\tLocal position", self.observer.get_camera_pos())
+        print("\tRotation", self.observer.get_camera_rot())
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
