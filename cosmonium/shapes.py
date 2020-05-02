@@ -463,12 +463,12 @@ class MeshShape(Shape):
         self.rotation.set_hpr(rotation)
 
     def get_user_parameters(self):
-        parameters = [AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3),
-                      UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3)
-                      ]
+        group = ParametersGroup("Mesh")
+        group.add_parameter(AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3))
+        group.add_parameter( UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3))
         if not self.auto_scale_mesh:
-            parameters.append(AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3))
-        return parameters
+            group.add_parameter(AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3))
+        return group
 
     def is_spherical(self):
         return False
