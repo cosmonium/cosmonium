@@ -327,6 +327,9 @@ class Cosmonium(CosmoniumBase):
         self.ships = []
         self.ship = None
 
+        if self.app_config.test_start:
+            self.near_cam = None
+
         self.universe = Universe(self)
 
         if settings.color_picking:
