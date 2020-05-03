@@ -493,7 +493,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                           tessellation_control=tessellation_control,
                                           vertex_control=DisplacementVertexControl(self.heightmap),
                                           data_source=data_source)
-        self.terrain_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster))
+        self.terrain_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=False))
 
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
@@ -761,7 +761,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shape.create_instance()
         self.ralph_appearance = ModelAppearance(self.ralph, vertex_color=True, material=False)
         self.ralph_shader = BasicShader()
-        self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster))
+        self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=True))
         self.ralph_appearance.bake()
         self.ralph_appearance.apply(self.ralph_shape, self.ralph_shader)
         self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)
