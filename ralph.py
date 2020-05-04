@@ -36,7 +36,6 @@ sys.path.insert(0, 'third-party/gltf')
 from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
 from panda3d.core import LPoint3d, LQuaterniond
 from panda3d.core import PandaNode, NodePath
-from direct.actor.Actor import Actor
 
 from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
 from cosmonium.procedural.shaders import TextureDictionaryDataSource
@@ -44,7 +43,7 @@ from cosmonium.procedural.shaders import DetailMap
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
-from cosmonium.shapes import InstanceShape, CompositeShapeObject
+from cosmonium.shapes import ActorShape, CompositeShapeObject
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.heightmap import PatchedHeightmap
@@ -305,9 +304,10 @@ class FollowCam(object):
         self.cam.lookAt(self.floater)
 
 class RalphNav(NavBase):
-    def __init__(self, ralph, target, cam, observer, sun, follow):
+    def __init__(self, ralph, ralph_actor, target, cam, observer, sun, follow):
         NavBase.__init__(self)
         self.ralph = ralph
+        self.actor = ralph_actor
         self.target = target
         self.cam = cam
         self.observer = observer
@@ -427,12 +427,12 @@ class RalphNav(NavBase):
 
         if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
             if self.isMoving is False:
-                self.ralph.loop("run")
+                self.actor.loop("run")
                 self.isMoving = True
         else:
             if self.isMoving:
-                self.ralph.stop()
-                self.ralph.pose("walk", 5)
+                self.actor.stop()
+                self.actor.pose("walk", 5)
                 self.isMoving = False
         return False
 
@@ -748,18 +748,17 @@ class RoamingRalphDemo(CosmoniumBase):
 
         # Create the main character, Ralph
 
-        ralphStartPos = LPoint3()
-        self.ralph = Actor("ralph-data/models/ralph",
-                           {"run": "ralph-data/models/ralph-run",
-                            "walk": "ralph-data/models/ralph-walk"})
-        self.ralph.reparentTo(render)
-        self.ralph.setScale(.2)
-        self.ralph.setPos(ralphStartPos + (0, 0, 0.5))
-        self.ralph_shape = InstanceShape(self.ralph)
+        self.ralph_shape = ActorShape("ralph-data/models/ralph",
+                                      {"run": "ralph-data/models/ralph-run",
+                                       "walk": "ralph-data/models/ralph-walk"},
+                                      auto_scale_mesh=False,
+                                      scale=(0.2, 0.2, 0.2))
         self.ralph_shape.parent = self
         self.ralph_shape.set_owner(self)
         self.ralph_shape.create_instance()
-        self.ralph_appearance = ModelAppearance(self.ralph, vertex_color=True, material=False)
+        self.ralph_shape.instance.reparentTo(render)
+        #self.ralph_shape.mesh.setPos(LPoint3d(0, 0, 0.5))
+        self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
         self.ralph_shader = BasicShader()
         self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=True))
         self.ralph_appearance.bake()
@@ -771,15 +770,15 @@ class RoamingRalphDemo(CosmoniumBase):
         # use this as a target for the camera to look at.
 
         self.floater = NodePath(PandaNode("floater"))
-        self.floater.reparentTo(self.ralph)
+        self.floater.reparentTo(self.ralph_shape.mesh)
         self.floater.setZ(2.0)
 
-        self.ralph_body = NodePathHolder(self.ralph)
+        self.ralph_body = NodePathHolder(self.ralph_shape.instance)
         self.ralph_floater = NodePathHolder(self.floater)
 
-        self.follow_cam = FollowCam(self, self.camera, self.ralph, self.floater)
+        self.follow_cam = FollowCam(self, self.camera, self.ralph_shape.instance, self.floater)
 
-        self.nav = RalphNav(self.ralph, self.ralph_floater, self.camera, self.observer, self, self.follow_cam)
+        self.nav = RalphNav(self.ralph_shape.instance, self.ralph_shape.mesh, self.ralph_floater, self.camera, self.observer, self, self.follow_cam)
         self.nav.register_events(self)
 
         self.accept("escape", sys.exit)
@@ -818,8 +817,8 @@ class RoamingRalphDemo(CosmoniumBase):
 
         control = self.nav.update(dt)
 
-        ralph_height = self.get_height(self.ralph.getPos())
-        self.ralph.setZ(ralph_height)
+        ralph_height = self.get_height(self.ralph_shape.instance.getPos())
+        self.ralph_shape.instance.setZ(ralph_height)
 
         if not control:
             self.follow_cam.update()
@@ -828,11 +827,11 @@ class RoamingRalphDemo(CosmoniumBase):
             self.camera.lookAt(self.floater)
 
         if self.shadow_caster is not None:
-            vec = self.ralph.getPos() - self.camera.getPos()
+            vec = self.ralph_shape.instance.getPos() - self.camera.getPos()
             vec.set_z(0)
             dist = vec.length()
             vec.normalize()
-            self.shadow_caster.set_pos(self.ralph.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
+            self.shadow_caster.set_pos(self.ralph_shape.instance.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
         render.set_shader_input("camera", self.camera.get_pos())
         self.vector_to_obs = self.camera.get_pos()

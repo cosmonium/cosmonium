@@ -25,6 +25,7 @@ from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
+from direct.actor.Actor import Actor
 
 from .foundation import VisibleObject
 from .shaders import AutoShader
@@ -161,7 +162,7 @@ class Shape:
             else:
                 self.instance.setCollideMask(BitMask32.all_off())
 
-class CompositeShapeObject(object):
+class CompositeShapeObject(VisibleObject):
     def __init__(self):
         self.components = []
         self.owner = None
@@ -501,6 +502,39 @@ class MeshShape(Shape):
         else:
             load_model(self.model, self.create_instance_cb, self.context)
         return self.instance
+
+class ActorShape(MeshShape):
+    def __init__(self, model, animations, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, attribution=None, context=defaultDirContext):
+        MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, True, attribution, context)
+        self.animations = animations
+
+    def create_instance(self, callback=None, cb_args=()):
+        self.callback = callback
+        self.cb_args = cb_args
+        self.instance = NodePath('holder')
+        actor = Actor(self.model, self.animations)
+        self.create_instance_cb(actor)
+        return self.instance
+
+    def stop(self, animName=None, partName=None):
+        if self.mesh is not None:
+            self.mesh.stop(animName, partName)
+
+    def play(self, animName, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.play(animName, partName, fromFrame, toFrame)
+
+    def loop(self, animName, restart=1, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.loop(animName, restart, partName, fromFrame, toFrame)
+
+    def pingpong(self, animName, restart=1, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.pingpong(animName, restart, partName, fromFrame, toFrame)
+
+    def pose(self, animName, frame, partName=None, lodName=None):
+        if self.mesh is not None:
+            self.mesh.pose(animName, frame, partName, lodName)
 
 class InstanceShape(Shape):
     deferred_instance = True
