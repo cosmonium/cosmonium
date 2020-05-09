@@ -174,7 +174,7 @@ class BaseObject(object):
 
     def place_instance(self, instance, parent):
         instance.setPos(*self.parent.scene_position)
-        instance.setScale(self.get_scale() * self.parent.scene_scale_factor)
+        instance.setScale(*(self.get_scale() * self.parent.scene_scale_factor))
         instance.setQuat(LQuaternion(*self.parent.scene_orientation))
 
     def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
