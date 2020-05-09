@@ -26,6 +26,7 @@
 from __future__ import print_function
 
 import sys
+from direct.showbase.DirectObject import DirectObject
 
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
@@ -33,38 +34,40 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from panda3d.core import AmbientLight, DirectionalLight, LPoint3, LVector3, LQuaternion, LColor
-from panda3d.core import LPoint3d, LQuaterniond
-from panda3d.core import PandaNode, NodePath
+from panda3d.core import AmbientLight, DirectionalLight, LColor
+from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion
 
+from cosmonium.foundation import BaseObject
 from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
 from cosmonium.procedural.shaders import TextureDictionaryDataSource
 from cosmonium.procedural.shaders import DetailMap
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
-from cosmonium.shapes import ActorShape, CompositeShapeObject
+from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
+from cosmonium.ships import ActorShip
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
+from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
+from cosmonium.nav import NavBase, ControlNav
+from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
+from cosmonium.controllers import CartesianBodyMover, CartesianSurfaceFrameBodyMover
+from cosmonium.astro.frame import CartesianSurfaceReferenceFrame
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
 from cosmonium.ui.splash import NoSplash
+from cosmonium.utils import quaternion_from_euler
+from cosmonium.cosmonium import CosmoniumBase
 from cosmonium import settings
 
 from math import pow, pi, sqrt
 import argparse
-
-from cosmonium.cosmonium import CosmoniumBase
-from cosmonium.camera import CameraBase
-from cosmonium.nav import NavBase
-from cosmonium.astro.frame import AbsoluteReferenceFrame
-from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
 
 class TileFactory(object):
     def __init__(self, heightmap, tile_density, size, height_scale, has_water, water):
@@ -217,234 +220,136 @@ class RalphConfigParser(YamlModuleParser):
             self.fog_parameters = None
         return True
 
-class NodePathHolder(object):
-    def __init__(self, instance):
-        self.instance = instance
+class RaphSkyBox(DirectObject):
+    def __init__(self):
+        self.skybox = None
+        self.sun_color = None
+        self.skybox_color = None
+        self.light_angle = None
+        self.light_dir = LVector3d.up()
+        self.light_quat = LQuaternion()
+        self.light_color = (1.0, 1.0, 1.0, 1.0)
+        self.fog = None
 
-    def get_rel_position_to(self, position):
-        return LPoint3d(*self.instance.get_pos(render))
+    def init(self, config):
+        skynode = base.camera.attachNewNode('skybox')
+        self.skybox = loader.loadModel('ralph-data/models/rgbCube')
+        self.skybox.reparentTo(skynode)
 
-class RalphCamera(CameraBase):
-    def __init__(self, cam, lens):
-        CameraBase.__init__(self, cam, lens)
-        self.camera_global_pos = LPoint3d()
-        self.camera_frame = AbsoluteReferenceFrame()
+        self.skybox.setTextureOff(1)
+        self.skybox.setShaderOff(1)
+        self.skybox.setTwoSided(True)
+        # make big enough to cover whole terrain, else there'll be problems with the water reflections
+        self.skybox.setScale(1.5 * config.tile_size)
+        self.skybox.setBin('background', 1)
+        self.skybox.setDepthWrite(False)
+        self.skybox.setDepthTest(False)
+        self.skybox.setLightOff(1)
+        self.skybox.setShaderOff(1)
+        self.skybox.setFogOff(1)
 
-    def get_frame_camera_pos(self):
-        return LPoint3d(*self.cam.get_pos())
+        #self.skybox.setColor(.55, .65, .95, 1.0)
+        self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
+        self.sun_color = LColor(pow(1.0, 1/2.2), pow(0.9, 1/2.2), pow(0.7, 1/2.2), 1.0)
+        self.skybox.setColor(self.skybox_color)
 
-    def set_frame_camera_pos(self, position):
-        self.cam.set_pos(*position)
+    def set_fog(self, fog):
+        self.fog = fog
+        self.set_light_angle(self.light_angle)
 
-    def get_frame_camera_rot(self):
-        return LQuaterniond(*self.cam.get_quat())
-
-    def set_frame_camera_rot(self, rot):
-        self.cam.set_quat(LQuaternion(*rot))
-
-    def set_camera_pos(self, position):
-        self.cam.set_pos(*position)
-
-    def get_camera_pos(self):
-        return LPoint3d(*self.cam.get_pos())
-
-    def set_camera_rot(self, rot):
-        self.cam.set_quat(LQuaternion(*rot))
-
-    def get_camera_rot(self):
-        return LQuaterniond(*self.cam.get_quat())
-
-class FollowCam(object):
-    def __init__(self, terrain, cam, target, floater):
-        self.terrain = terrain
-        self.cam = cam
-        self.target = target
-        self.floater = floater
-        self.height = 2.0
-        self.min_height = 1.0
-        self.max_dist = 10.0
-        self.min_dist = 5.0
-        self.cam.setPos(self.target.getX(), self.target.getY() + self.max_dist, self.height)
-
-    def set_limits(self, min_dist, max_dist):
-        self.min_dist = min_dist
-        self.max_dist = max_dist
-
-    def set_height(self, height):
-        self.height = max(height, self.min_height)
-
-    def scale_height(self, scale):
-        self.height = max(self.min_height, self.height * scale)
-
-    def update(self):
-        vec = self.target.getPos() - self.cam.getPos()
-        vec.setZ(0)
-        dist = vec.length()
-        vec.normalize()
-        if dist > self.max_dist:
-            self.cam.setPos(self.cam.getPos() + vec * (dist - self.max_dist))
-            dist = self.max_dist
-        if dist < self.min_dist:
-            self.cam.setPos(self.cam.getPos() - vec * (self.min_dist - dist))
-            dist = self.min_dist
-
-        # Keep the camera at min_height above the terrain,
-        # or camera_height above target, whichever is greater.
-        terrain_height = self.terrain.get_height(self.cam.getPos())
-        target_height = self.target.get_z()
-        if terrain_height + self.min_height < target_height + self.height:
-            new_camera_height = target_height + self.height
+    def set_light_angle(self, angle):
+        self.light_angle = angle
+        self.light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3.forward())
+        self.light_dir = self.light_quat.xform(-LVector3.up())
+        cosA = self.light_dir.dot(-LVector3.up())
+        if cosA >= 0:
+            coef = sqrt(cosA)
+            self.light_color = (1, coef, coef, 1)
+            new_sky_color = self.skybox_color * cosA
+            new_sky_color[3] = 1.0
+            self.skybox.setColor(new_sky_color)
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * cosA
+                self.fog.sun_color = self.sun_color * cosA
         else:
-            new_camera_height = terrain_height + self.min_height
-        self.cam.setZ(new_camera_height)
+            self.light_color = (0, 0, 0, 1)
+            self.skybox.setColor(self.light_color)
+            if self.fog is not None:
+                self.fog.fog_color = self.skybox_color * 0
+                self.fog.sun_color = self.sun_color * 0
 
-        # The camera should look in ralph's direction,
-        # but it should also try to stay horizontal, so look at
-        # a floater which hovers above ralph's head.
-        self.cam.lookAt(self.floater)
+class RalphShip(ActorShip):
+    def __init__(self, name, ship_object, radius):
+        ActorShip.__init__(self, name, ship_object, radius)
+        self.current_state = None
 
-class RalphNav(NavBase):
-    def __init__(self, ralph, ralph_actor, target, cam, observer, sun, follow):
-        NavBase.__init__(self)
-        self.ralph = ralph
-        self.actor = ralph_actor
-        self.target = target
-        self.cam = cam
-        self.observer = observer
+    def set_state(self, new_state):
+        if self.current_state == new_state: return
+        if new_state == 'moving':
+            self.ship_object.shape.loop("run")
+        if new_state == 'idle':
+            self.ship_object.shape.stop()
+            self.ship_object.shape.pose("walk", 5)
+        self.current_state = new_state
+
+class RalphControl(EventsControllerBase):
+    def __init__(self, sun, engine):
+        EventsControllerBase.__init__(self)
         self.sun = sun
-        self.follow = follow
-        self.isMoving = False
-        self.mouseSelectClick = False
+        self.engine = engine
 
-    def register_events(self, event_ctrl):
-        self.keyMap = {
-            "left": 0, "right": 0, "forward": 0, "backward": 0,
-            "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0,
-            "sun-left": 0, "sun-right": 0,
-            "turbo": 0}
-        event_ctrl.accept("arrow_left", self.setKey, ["left", True])
-        event_ctrl.accept("arrow_right", self.setKey, ["right", True])
-        event_ctrl.accept("arrow_up", self.setKey, ["forward", True])
-        event_ctrl.accept("arrow_down", self.setKey, ["backward", True])
-        event_ctrl.accept("shift", self.setKey, ["turbo", True])
-        event_ctrl.accept("a", self.setKey, ["cam-left", True], direct=True)
-        event_ctrl.accept("s", self.setKey, ["cam-right", True], direct=True)
-        event_ctrl.accept("u", self.setKey, ["cam-up", True], direct=True)
-        event_ctrl.accept("u-up", self.setKey, ["cam-up", False])
-        event_ctrl.accept("d", self.setKey, ["cam-down", True], direct=True)
-        event_ctrl.accept("d-up", self.setKey, ["cam-down", False])
-        event_ctrl.accept("o", self.setKey, ["sun-left", True], direct=True)
-        event_ctrl.accept("o-up", self.setKey, ["sun-left", False])
-        event_ctrl.accept("p", self.setKey, ["sun-right", True], direct=True)
-        event_ctrl.accept("p-up", self.setKey, ["sun-right", False])
-        event_ctrl.accept("arrow_left-up", self.setKey, ["left", False])
-        event_ctrl.accept("arrow_right-up", self.setKey, ["right", False])
-        event_ctrl.accept("arrow_up-up", self.setKey, ["forward", False])
-        event_ctrl.accept("arrow_down-up", self.setKey, ["backward", False])
-        event_ctrl.accept("shift-up", self.setKey, ["turbo", False])
-        event_ctrl.accept("a-up", self.setKey, ["cam-left", False])
-        event_ctrl.accept("s-up", self.setKey, ["cam-right", False])
+    def register_events(self):
+        self.accept("escape", sys.exit)
+        self.accept("control-q", sys.exit)
+        self.accept("w", self.engine.toggle_water)
+        self.accept("h", self.engine.print_debug)
+        self.accept("f2", self.engine.connect_pstats)
+        self.accept("f3", self.engine.toggle_filled_wireframe)
+        self.accept("shift-f3", self.engine.toggle_wireframe)
+        self.accept("f5", self.engine.bufferViewer.toggleEnable)
+        self.accept('f8', self.toggle_lod_freeze)
+        self.accept("shift-f8", self.engine.terrain_shape.dump_tree)
+        self.accept('control-f8', self.toggle_split_merge_debug)
+        self.accept('shift-f9', self.toggle_bb)
+        self.accept('control-f9', self.toggle_frustum)
+        self.accept("f10", self.engine.save_screenshot)
+        self.accept("f11", render.ls)
+        self.accept('alt-enter', self.engine.toggle_fullscreen)
+        self.accept('{', self.engine.incr_ambient, [-0.05])
+        self.accept('}', self.engine.incr_ambient, [+0.05])
 
-        event_ctrl.accept("mouse1", self.OnSelectClick )
-        event_ctrl.accept("mouse1-up", self.OnSelectRelease )
+        self.accept("o", self.set_key, ["sun-left", True])#, direct=True)
+        self.accept("o-up", self.set_key, ["sun-left", False])
+        self.accept("p", self.set_key, ["sun-right", True])#, direct=True)
+        self.accept("p-up", self.set_key, ["sun-right", False])
 
-        if settings.invert_wheel:
-            event_ctrl.accept("wheel_up", self.change_distance, [0.1])
-            event_ctrl.accept("wheel_down", self.change_distance, [-0.1])
-        else:
-            event_ctrl.accept("wheel_up", self.change_distance, [-0.1])
-            event_ctrl.accept("wheel_down", self.change_distance, [0.1])
+    def toggle_lod_freeze(self):
+        settings.debug_lod_freeze = not settings.debug_lod_freeze
 
-    def remove_events(self, event_ctrl):
-        NavBase.remove_events(self, event_ctrl)
+    def toggle_split_merge_debug(self):
+        settings.debug_lod_split_merge = not settings.debug_lod_split_merge
 
-    def OnSelectClick(self):
-        if base.mouseWatcherNode.hasMouse():
-            self.mouseSelectClick = True
-            mpos = base.mouseWatcherNode.getMouse()
-            self.startX = mpos.getX()
-            self.startY = mpos.getY()
-            self.dragAngleX = pi
-            self.dragAngleY = pi
-            self.create_drag_params(self.target)
+    def toggle_bb(self):
+        settings.debug_lod_show_bb = not settings.debug_lod_show_bb
+        self.engine.trigger_check_settings = True
 
-    def OnSelectRelease(self):
-        if base.mouseWatcherNode.hasMouse():
-            mpos = base.mouseWatcherNode.getMouse()
-            if self.startX == mpos.getX() and self.startY == mpos.getY():
-                pass
-        self.mouseSelectClick = False
+    def toggle_frustum(self):
+        settings.debug_lod_frustum = not settings.debug_lod_frustum
+        self.engine.trigger_check_settings = True
 
-    def change_distance(self, step):
-        camvec = self.ralph.getPos() - self.cam.getPos()
-        camdist = camvec.length()
-        camvec /= camdist
-        new_dist = max(5.0, camdist * (1.0 + step))
-        new_pos = self.ralph.getPos() - camvec * new_dist
-        self.follow.set_limits(new_dist / 2.0, new_dist)
-        self.follow.set_height(new_pos.get_z() - self.ralph.get_z())
-        self.cam.set_pos(new_pos)
-
-    def update(self, dt):
-        if self.mouseSelectClick and base.mouseWatcherNode.hasMouse():
-            mpos = base.mouseWatcherNode.getMouse()
-            deltaX = mpos.getX() - self.startX
-            deltaY = mpos.getY() - self.startY
-            z_angle = -deltaX * self.dragAngleX
-            x_angle = deltaY * self.dragAngleY
-            self.do_drag(z_angle, x_angle, move=True, rotate=False)
-            camvec = self.ralph.getPos() - self.cam.getPos()
-            camdist = camvec.length()
-            self.follow.set_height(self.cam.get_z() - self.ralph.get_z())
-            self.follow.set_limits(camdist / 2.0, camdist)
-            return True
-
-        if self.keyMap["cam-left"]:
-            self.cam.setX(self.cam, -20 * dt)
-        if self.keyMap["cam-right"]:
-            self.cam.setX(self.cam, +20 * dt)
-        if self.keyMap["cam-up"]:
-            self.follow.scale_height(1 + 2 * dt)
-        if self.keyMap["cam-down"]:
-            self.follow.scale_height(1 - 2 * dt)
-
-        if self.keyMap["sun-left"]:
+    def update(self, time, dt):
+        if self.keymap.get("sun-left"):
             self.sun.set_light_angle(self.sun.light_angle + 30 * dt)
-        if self.keyMap["sun-right"]:
+            self.engine.update_shader()
+        if self.keymap.get("sun-right"):
             self.sun.set_light_angle(self.sun.light_angle - 30 * dt)
-
-        delta = 25
-        if self.keyMap["turbo"]:
-            delta *= 10
-        if self.keyMap["left"]:
-            self.ralph.setH(self.ralph.getH() + 300 * dt)
-        if self.keyMap["right"]:
-            self.ralph.setH(self.ralph.getH() - 300 * dt)
-        if self.keyMap["forward"]:
-            self.ralph.setY(self.ralph, -delta * dt)
-        if self.keyMap["backward"]:
-            self.ralph.setY(self.ralph, delta * dt)
-
-        if self.keyMap["forward"] or self.keyMap["backward"] or self.keyMap["left"] or self.keyMap["right"]:
-            if self.isMoving is False:
-                self.actor.loop("run")
-                self.isMoving = True
-        else:
-            if self.isMoving:
-                self.actor.stop()
-                self.actor.pose("walk", 5)
-                self.isMoving = False
-        return False
+            self.engine.update_shader()
 
 class RalphAppConfig:
     def __init__(self):
         self.test_start = False
 
 class RoamingRalphDemo(CosmoniumBase):
-
-    def get_local_position(self):
-        return base.camera.get_pos()
-
     def create_terrain_appearance(self):
         self.terrain_appearance = self.ralph_config.appearance
 
@@ -542,10 +447,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
-        height = self.terrain_object.get_height(position)
+        height = self.terrain_object.get_height_at(position[0], position[1])
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
+
+    def get_height_under(self, position):
+        return self.get_height(position)
 
     #Used by populator
     def get_height_patch(self, patch, u, v):
@@ -554,56 +462,8 @@ class RoamingRalphDemo(CosmoniumBase):
             height = self.water.level
         return height
 
-    def skybox_init(self):
-        skynode = base.camera.attachNewNode('skybox')
-        self.skybox = loader.loadModel('ralph-data/models/rgbCube')
-        self.skybox.reparentTo(skynode)
-
-        self.skybox.setTextureOff(1)
-        self.skybox.setShaderOff(1)
-        self.skybox.setTwoSided(True)
-        # make big enough to cover whole terrain, else there'll be problems with the water reflections
-        self.skybox.setScale(1.5 * self.ralph_config.tile_size)
-        self.skybox.setBin('background', 1)
-        self.skybox.setDepthWrite(False)
-        self.skybox.setDepthTest(False)
-        self.skybox.setLightOff(1)
-        self.skybox.setShaderOff(1)
-        self.skybox.setFogOff(1)
-
-        #self.skybox.setColor(.55, .65, .95, 1.0)
-        self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
-        self.sun_color = LColor(pow(1.0, 1/2.2), pow(0.9, 1/2.2), pow(0.7, 1/2.2), 1.0)
-        self.skybox.setColor(self.skybox_color)
-
-    def set_light_angle(self, angle):
-        self.light_angle = angle
-        self.light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3.forward())
-        self.light_dir = self.light_quat.xform(LVector3.up())
-        cosA = self.light_dir.dot(LVector3.up())
-        self.vector_to_star = self.light_dir
-        if self.shadow_caster is not None:
-            self.shadow_caster.set_direction(-self.light_dir)
-        if self.directionalLight is not None:
-            self.directionalLight.setDirection(-self.light_dir)
-        if cosA >= 0:
-            coef = sqrt(cosA)
-            self.light_color = (1, coef, coef, 1)
-            self.directionalLight.setColor(self.light_color)
-            new_sky_color = self.skybox_color * cosA
-            new_sky_color[3] = 1.0
-            self.skybox.setColor(new_sky_color)
-            if self.fog is not None:
-                self.fog.fog_color = self.skybox_color * cosA
-                self.fog.sun_color = self.sun_color * cosA
-        else:
-            self.light_color = (0, 0, 0, 1)
-            self.directionalLight.setColor(self.light_color)
-            self.skybox.setColor(self.light_color)
-            if self.fog is not None:
-                self.fog.fog_color = self.skybox_color * 0
-                self.fog.sun_color = self.sun_color * 0
-        self.terrain.update_shader()
+    def get_normals_under(self, position):
+        return self.terrain_object.get_normals_at(position[0], position[1])
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
@@ -617,11 +477,9 @@ class RoamingRalphDemo(CosmoniumBase):
     def incr_ambient(self, ambient_incr):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
-    def update(self):
-        self.terrain.update_instance(None, None)
-
-    def apply_instance(self, instance):
-        pass
+    def update_shader(self):
+        self.terrain.update_shader()
+        self.ralph.update_shader()
 
     def get_apparent_radius(self):
         return 0
@@ -638,25 +496,20 @@ class RoamingRalphDemo(CosmoniumBase):
     def is_emissive(self):
         return False
 
-    def toggle_lod_freeze(self):
-        settings.debug_lod_freeze = not settings.debug_lod_freeze
+    def get_local_position(self):
+        return LPoint3d()
 
-    def toggle_split_merge_debug(self):
-        settings.debug_lod_split_merge = not settings.debug_lod_split_merge
-
-    def toggle_bb(self):
-        settings.debug_lod_show_bb = not settings.debug_lod_show_bb
-        self.trigger_check_settings = True
-
-    def toggle_frustum(self):
-        settings.debug_lod_frustum = not settings.debug_lod_frustum
-        self.trigger_check_settings = True
+    def get_sync_rotation(self):
+        return LQuaterniond()
 
     def __init__(self, args):
         self.app_config = RalphAppConfig()
         CosmoniumBase.__init__(self)
 
         settings.color_picking = False
+        settings.scale = 1.0
+        settings.use_inv_scaling = False
+
         if args.config is not None:
             self.config_file = args.config
         else:
@@ -670,62 +523,50 @@ class RoamingRalphDemo(CosmoniumBase):
         self.has_water = True
         self.fullscreen = False
         self.shadow_caster = None
-        self.light_angle = None
-        self.light_dir = LVector3.up()
-        self.vector_to_star = self.light_dir
-        self.light_quat = LQuaternion()
-        self.light_color = (1.0, 1.0, 1.0, 1.0)
-        self.directionalLight = None
         self.set_ambient(0.3)
 
-        self.observer = RalphCamera(self.camera, self.camLens)
+        self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask | BaseObject.NearCameraMask)
+        self.observer = CameraHolder(self.camera, self.camLens)
         self.observer.init()
 
         self.distance_to_obs = 2.0 #Can not be 0 !
         self.height_under = 0.0
-        self.scene_position = LVector3()
+        self.scene_position = LVector3d()
         self.scene_scale_factor = 1
-        self.scene_rel_position = LVector3()
+        self.scene_rel_position = LVector3d()
         self.scene_orientation = LQuaternion()
-        self.model_body_center_offset = LVector3()
-        self.world_body_center_offset = LVector3()
+        self.model_body_center_offset = LVector3d()
+        self.world_body_center_offset = LVector3d()
+        self._local_position = LPoint3d()
         self.context = self
         self.oid_color = 0
         self.oid_texture = None
+        #Needed for create_light to work
+        self.nearest_system = self
+        self.star = self
+        self.primary = None
         self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
-        #Size of an edge seen from 4 units above
-        self.edge_apparent_size = (1.0 * self.ralph_config.tile_size / self.ralph_config.tile_density) / (4.0 * self.observer.pixel_size)
-        print("Apparent size:", self.edge_apparent_size)
+        self.skybox = RaphSkyBox()
+        self.skybox.init(self.ralph_config)
+        self.skybox.set_light_angle(45)
+        self.vector_to_star = -self.skybox.light_dir
 
-        self.win.setClearColor((135.0/255, 206.0/255, 235.0/255, 1))
-
-
-        # Set up the environment
-        #
-        # Create some lighting
         self.vector_to_obs = base.camera.get_pos()
         self.vector_to_obs.normalize()
         if True:
             self.shadow_caster = ShadowMap(1024)
             self.shadow_caster.create()
-            self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.light_dir)
-            self.shadow_caster.set_pos(self.light_dir * self.ralph_config.shadow_box_length / 2.0)
-            self.shadow_caster.bias = 0.1
+            self.shadow_caster.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, -self.vector_to_star)
+            self.shadow_caster.set_pos(self.vector_to_star * self.ralph_config.shadow_box_length / 2.0)
             self.shadow_caster.snap_cam = True
         else:
             self.shadow_caster = None
 
         self.ambientLight = AmbientLight("ambientLight")
         self.ambientLight.setColor((settings.global_ambient, settings.global_ambient, settings.global_ambient, 1))
-        self.directionalLight = DirectionalLight("directionalLight")
-        self.directionalLight.setDirection(-self.light_dir)
-        self.directionalLight.setColor(self.light_color)
-        self.directionalLight.setSpecularColor(self.light_color)
         render.setLight(render.attachNewNode(self.ambientLight))
-        render.setLight(render.attachNewNode(self.directionalLight))
 
-        render.setShaderAuto()
         base.setFrameRateMeter(True)
 
         self.create_terrain()
@@ -736,15 +577,13 @@ class RoamingRalphDemo(CosmoniumBase):
         if self.ralph_config.fog_parameters is not None:
             self.fog = Fog(**self.ralph_config.fog_parameters)
             self.terrain.add_after_effect(self.fog)
+            self.skybox.set_fog(self.fog)
         else:
             self.fog = None
         self.surface = self.terrain_object
 
         self.create_instance()
         self.create_tile(0, 0)
-        self.skybox_init()
-
-        self.set_light_angle(45)
 
         # Create the main character, Ralph
 
@@ -752,61 +591,49 @@ class RoamingRalphDemo(CosmoniumBase):
                                       {"run": "ralph-data/models/ralph-run",
                                        "walk": "ralph-data/models/ralph-walk"},
                                       auto_scale_mesh=False,
+                                      rotation=quaternion_from_euler(180, 0, 0),
                                       scale=(0.2, 0.2, 0.2))
-        self.ralph_shape.parent = self
-        self.ralph_shape.set_owner(self)
-        self.ralph_shape.create_instance()
-        self.ralph_shape.instance.reparentTo(render)
-        #self.ralph_shape.mesh.setPos(LPoint3d(0, 0, 0.5))
         self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
         self.ralph_shader = BasicShader()
         self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=True))
-        self.ralph_appearance.bake()
-        self.ralph_appearance.apply(self.ralph_shape, self.ralph_shader)
-        self.ralph_shader.apply(self.ralph_shape, self.ralph_appearance)
-        self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
 
-        # Create a floater object, which floats 2 units above ralph.  We
-        # use this as a target for the camera to look at.
+        self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
+        self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5)
+        frame = CartesianSurfaceReferenceFrame(LPoint3d())
+        frame.set_parent_body(self)
+        self.ralph.set_frame(frame)
+        self.ralph.create_own_shadow_caster = False
 
-        self.floater = NodePath(PandaNode("floater"))
-        self.floater.reparentTo(self.ralph_shape.mesh)
-        self.floater.setZ(2.0)
+        self.camera_controller = SurfaceFollowCameraController()
+        #self.camera_controller = FixedCameraController()
+        self.camera_controller.activate(self.observer, self.ralph)
+        self.camera_controller.set_body(self)
+        self.camera_controller.set_camera_hints(distance=5, max=1.5)
 
-        self.ralph_body = NodePathHolder(self.ralph_shape.instance)
-        self.ralph_floater = NodePathHolder(self.floater)
+        self.controller = RalphControl(self.skybox, self)
+        self.controller.register_events()
 
-        self.follow_cam = FollowCam(self, self.camera, self.ralph_shape.instance, self.floater)
+        #TEMPORARY
+        self.ralph.update(0, 0)
+        self.camera_controller.update(0, 0)
+        self.ralph.update_obs(self.observer)
+        self.ralph.check_visibility(self.observer.pixel_size)
+        self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
+        self.ralph.create_light()
 
-        self.nav = RalphNav(self.ralph_shape.instance, self.ralph_shape.mesh, self.ralph_floater, self.camera, self.observer, self, self.follow_cam)
+        self.mover = CartesianSurfaceFrameBodyMover(self.ralph)
+        self.nav = ControlNav(self.mover)
         self.nav.register_events(self)
-
-        self.accept("escape", sys.exit)
-        self.accept("control-q", sys.exit)
-        self.accept("w", self.toggle_water)
-        self.accept("h", self.print_debug)
-        self.accept("f2", self.connect_pstats)
-        self.accept("f3", self.toggle_filled_wireframe)
-        self.accept("shift-f3", self.toggle_wireframe)
-        self.accept("f5", self.bufferViewer.toggleEnable)
-        self.accept('f8', self.toggle_lod_freeze)
-        self.accept("shift-f8", self.terrain_shape.dump_tree)
-        self.accept('control-f8', self.toggle_split_merge_debug)
-        self.accept('shift-f9', self.toggle_bb)
-        self.accept('control-f9', self.toggle_frustum)
-        self.accept("f10", self.save_screenshot)
-        self.accept('alt-enter', self.toggle_fullscreen)
-        self.accept('{', self.incr_ambient, [-0.05])
-        self.accept('}', self.incr_ambient, [+0.05])
+        self.nav.speed = 25
+        self.nav.rot_step_per_sec = 2
 
         taskMgr.add(self.move, "moveTask")
 
         # Set up the camera
-        self.follow_cam.update()
         self.distance_to_obs = self.camera.get_z() - self.get_height(self.camera.getPos())
         render.set_shader_input("camera", self.camera.get_pos())
 
-        self.terrain.update_instance(LPoint3d(*self.camera.getPos()), None)
+        self.terrain.update_instance(self.observer.get_camera_pos(), None)
 
     def move(self, task):
         dt = globalClock.getDt()
@@ -815,16 +642,18 @@ class RoamingRalphDemo(CosmoniumBase):
             self.terrain.check_settings()
             self.trigger_check_settings = False
 
-        control = self.nav.update(dt)
-
-        ralph_height = self.get_height(self.ralph_shape.instance.getPos())
-        self.ralph_shape.instance.setZ(ralph_height)
-
-        if not control:
-            self.follow_cam.update()
-        else:
-            #TODO: Should have a FreeCam class for mouse orbit and this in update()
-            self.camera.lookAt(self.floater)
+        self.nav.update(dt)
+        self.ralph.update(0, dt)
+        self.terrain.update(0, dt)
+        self.camera_controller.update(0, dt)
+        self.controller.update(0, dt)
+        #TODO: Proper light management should be added
+        self.light_color = self.skybox.light_color
+        self.vector_to_star = -self.skybox.light_dir
+        if self.shadow_caster is not None:
+            self.shadow_caster.set_direction(-self.vector_to_star)
+        if False and self.directionalLight is not None:
+            self.directionalLight.setDirection(-self.vector_to_star)
 
         if self.shadow_caster is not None:
             vec = self.ralph_shape.instance.getPos() - self.camera.getPos()
@@ -836,17 +665,23 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.camera.get_pos())
         self.vector_to_obs = self.camera.get_pos()
         self.vector_to_obs.normalize()
-        self.distance_to_obs = self.camera.get_z() - self.get_height(self.camera.getPos())
-        self.scene_rel_position = -self.camera.get_pos()
+        self.distance_to_obs = self.observer._local_position.get_z() - self.get_height(self.observer._local_position)
+        self.scene_rel_position = LPoint3d() - self.observer._local_position
+        self.scene_position = self.scene_rel_position
 
-        self.terrain.update_instance(LPoint3d(*self.camera.getPos()), None)
-        self.ralph_shader.update(self.ralph_shape, self.ralph_appearance)
+        self.ralph.update_obs(self.observer)
+        self.terrain.update_obs(self.observer)
+        self.ralph.check_visibility(self.observer.pixel_size)
+        self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
+        self.terrain.update_instance(self.observer.get_camera_pos(), None)
+
         return task.cont
 
     def print_debug(self):
-        print("Height:", self.get_height(self.ralph.getPos()), self.terrain_object.get_height(self.ralph.getPos()))
-        print("Ralph:", self.ralph.get_pos())
-        print("Camera:", self.camera.get_pos(), self.follow_cam.height, self.distance_to_obs)
+        print("Height:", self.get_height(self.ralph._local_position),
+              self.terrain_object.get_height_at(self.ralph._local_position[0], self.ralph._local_position[1]))
+        print("Ralph:", self.ralph._local_position, self.ralph._frame_position, self.ralph._frame_rotation.get_hpr(), self.ralph._orientation.get_hpr())
+        print("Camera:", self.observer._local_position, self.observer._orientation.get_hpr(), self.distance_to_obs)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",
