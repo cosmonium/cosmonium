@@ -620,28 +620,15 @@ class ControlNav(NavBase):
         self.keyMap = {"left": 0, "right": 0,
                        "up": 0, "down": 0,
                        "home": 0, "end": 0,
-                       "shift-left": 0, "shift-right": 0,
-                       "shift-up": 0, "shift-down": 0,
-                       "control-left": 0, "control-right": 0,
                        }
         event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
-        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0, 'shift-up'])
+        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0])
         event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
-        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0, 'shift-down'])
+        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0])
         event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
-        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0, 'shift-left', 'control-left'])
+        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0])
         event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
-        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0, 'shift-right', 'control-right'])
-        event_ctrl.accept("shift-arrow_up", self.setKey, ['shift-up', 1])
-        event_ctrl.accept("shift-arrow_down", self.setKey, ['shift-down', 1])
-        event_ctrl.accept("shift-arrow_left", self.setKey, ['shift-left', 1])
-        event_ctrl.accept("shift-arrow_right", self.setKey, ['shift-right', 1])
-        if sys.platform != "darwin":
-            event_ctrl.accept("control-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("control-arrow_right", self.setKey, ['control-right', 1])
-        else:
-            event_ctrl.accept("alt-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("alt-arrow_right", self.setKey, ['control-right', 1])
+        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0])
         event_ctrl.accept("home", self.setKey, ['home', 1])
         event_ctrl.accept("home-up", self.setKey, ['home', 0])
         event_ctrl.accept("end", self.setKey, ['end', 1])
@@ -661,16 +648,6 @@ class ControlNav(NavBase):
         event_ctrl.ignore("arrow_left-up")
         event_ctrl.ignore("arrow_right")
         event_ctrl.ignore("arrow_right-up")
-        event_ctrl.ignore("shift-arrow_up")
-        event_ctrl.ignore("shift-arrow_down")
-        event_ctrl.ignore("shift-arrow_left")
-        event_ctrl.ignore("shift-arrow_right")
-        if sys.platform != "darwin":
-            event_ctrl.ignore("control-arrow_left")
-            event_ctrl.ignore("control-arrow_right")
-        else:
-            event_ctrl.ignore("alt-arrow_left")
-            event_ctrl.ignore("alt-arrow_right")
         event_ctrl.ignore("home")
         event_ctrl.ignore("home-up")
 
@@ -696,12 +673,6 @@ class ControlNav(NavBase):
             self.turn(self.rot_step_per_sec * dt)
 
         if self.keyMap['right']:
-            self.turn(-self.rot_step_per_sec * dt)
-
-        if self.keyMap['shift-left']:
-            self.turn(self.rot_step_per_sec * dt)
-
-        if self.keyMap['shift-right']:
             self.turn(-self.rot_step_per_sec * dt)
 
         if self.keyMap['home']:
