@@ -105,6 +105,9 @@ class ShipBase(VisibleObject):
     def get_position_of(self, rel_position):
         return self._global_position + self.frame.get_local_position(rel_position)
 
+    def get_rel_position_to(self, position):
+        return (self._global_position - position) + self.get_local_position()
+
     def get_rel_position_of(self, position, local=True):
         if not local:
             position -= self._global_position
@@ -199,6 +202,9 @@ class NoShip(ShipBase):
     def __init__(self):
         ShipBase.__init__(self, "No ship")
 
+    def get_apparent_radius(self):
+        return 0.0
+
 class VisibleShip(ShipBase):
     editable = True
     def __init__(self, name, ship_object, radius):
@@ -221,10 +227,16 @@ class VisibleShip(ShipBase):
         self.directional_light = None
         self.light_source = None
 
+        self.scene_position = None
+        self.scene_distance = None
+        self.scene_scale_factor = None
+        self.scene_orientation = None
+
         self.ship_object.set_parent(self)
         self.ship_object.set_scale(LVector3d(self.radius, self.radius, self.radius))
 
         self.shadow_caster = None
+        self.create_own_shadow_caster = True
 
     def check_settings(self):
         self.ship_object.check_settings()
@@ -291,6 +303,10 @@ class VisibleShip(ShipBase):
     def check_visibility(self, pixel_size):
         self.ship_object.check_visibility(pixel_size)
 
+    def update_shader(self):
+        ShipBase.update_shader(self)
+        self.ship_object.update_shader()
+
     def check_and_update_instance(self, camera_pos, orientation, pointset):
         self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, self.distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self._orientation
@@ -299,16 +315,15 @@ class VisibleShip(ShipBase):
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.NearCameraMask)
         self.instance.show(self.ShadowCameraMask)
-        if self.shadow_caster is None:
-            self.shadow_caster = CustomShadowMapShadowCaster(self, None)
-            self.shadow_caster.create()
-            self.create_light()
-
         self.update_light(camera_pos)
-        self.shadow_caster.update()
-        self.ship_object.shadows.start_update()
-        self.shadow_caster.add_target(self.ship_object)
-        self.ship_object.shadows.end_update()
+        if self.create_own_shadow_caster:
+            if self.shadow_caster is None:
+                self.shadow_caster = CustomShadowMapShadowCaster(self, None)
+                self.shadow_caster.create()
+            self.shadow_caster.update()
+            self.ship_object.shadows.start_update()
+            self.shadow_caster.add_target(self.ship_object)
+            self.ship_object.shadows.end_update()
 
     def remove_instance(self):
         self.ship_object.remove_instance()
