@@ -39,9 +39,9 @@ class BodyController():
             print("Can not create a mover with dynamic rotation", self.body.rotation)
             return
         if isinstance(self.body.orbit.frame, SurfaceReferenceFrame) and isinstance(self.body.rotation.frame, SurfaceReferenceFrame):
-            self.mover = SurfaceBodyMover(self.body)
+            self.mover = SurfaceFrameBodyMover(self.body)
         else:
-            self.mover = DefaultBodyMover(self.body)
+            self.mover = CartesianBodyMover(self.body)
 
     def init(self):
         self.create_mover()
@@ -64,23 +64,49 @@ class BodyController():
 class BodyMover():
     def __init__(self, body):
         self.body = body
-        #TODO: Should create dynamicOrbit and DynamicRotation instead
-        self.body.orbit.dynamic = True
-        self.body.rotation.dynamic = True
 
-class DefaultBodyMover():
     def set_pos(self, position):
-        self.body.orbit.position = position
+        pass
 
     def get_pos(self):
-        return self.body.orbit.position
+        pass
 
     def get_rot(self):
-        #TODO: It's not really a reference axis...
-        return self.body.rotation.reference_axis.rotation
+        pass
 
     def set_rot(self, rotation):
-        self.body.rotation.reference_axis.rotation = rotation
+        pass
+
+    def delta(self, delta):
+        pass
+
+    def step(self, direction, distance):
+        pass
+
+    def step_relative(self, distance):
+        pass
+
+    def turn(self, angle):
+        pass
+
+    def turn_relative(self, step):
+        pass
+
+    def set_state(self, new_state):
+        self.body.set_state(new_state)
+
+class CartesianBodyMover(BodyMover):
+    def set_pos(self, position):
+        self.body.set_pos(position)
+
+    def get_pos(self):
+        return self.body.get_pos()
+
+    def get_rot(self):
+        return self.body.get_rot()
+
+    def set_rot(self, rotation):
+        self.body.set_rot(rotation)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
@@ -108,8 +134,14 @@ class DefaultBodyMover():
         new_rotation = delta * rotation
         self.set_rot(new_rotation)
 
-class SurfaceBodyMover(BodyMover):
+class SurfaceFrameBodyMover(CartesianBodyMover):
     #We assume the frame is shared between the orbit and the rotation
+    #This will be simplified when the orbit and rotation will disappear for anchors
+    def __init__(self, body):
+        CartesianBodyMover.__init__(self, body)
+        #TODO: Should create dynamicOrbit and DynamicRotation instead
+        self.body.orbit.dynamic = True
+        self.body.rotation.dynamic = True
 
     def set_pos(self, position):
         frame = self.body.orbit.frame
@@ -144,30 +176,44 @@ class SurfaceBodyMover(BodyMover):
         frame.long = new_position[0]
         frame.lat = new_position[1]
 
-    def step(self, direction, distance):
-        frame = self.body.orbit.frame
-        rotation = LQuaterniond()
-        look_at(rotation, direction, LVector3d.up())
-        rotation = rotation
-        delta = rotation.xform(LVector3d(0, distance, 0))
-        self.delta(delta)
+    def step_altitude(self, step):
+        self.set_altitude(self.get_altitude() + step)
+
+class CartesianSurfaceFrameBodyMover(CartesianBodyMover):
+    def set_pos(self, position):
+        frame = self.body.frame
+        (x, y, alt) = position
+        frame.position[0] = x
+        frame.position[1] = y
+        self.body._frame_position[2] = alt
+
+    def get_pos(self):
+        frame = self.body.frame
+        return (frame.position[0], frame.position[1], self.body._frame_position[2])
+
+    def get_rot(self):
+        return self.body._frame_rotation
+
+    def set_rot(self, rotation):
+        self.body._frame_rotation = rotation
+
+    def get_altitude(self):
+        return self.body._frame_position[2]
+
+    def set_altitude(self, altitude):
+        self.body._frame_position[2]
+
+    def delta(self, delta):
+        frame = self.body.frame
+        frame_delta = frame.get_orientation_parent_frame().xform(delta)
+        new_position = frame.get_center_parent_frame() + frame_delta
+        frame.position[0] = new_position[0]
+        frame.position[1] = new_position[1]
 
     def step_relative(self, distance):
-        rotation = self.body.rotation.get_frame_rotation_at(0) #TODO: retrieve simulation time
+        rotation = self.body._frame_rotation
         direction = rotation.xform(LVector3d.forward())
         self.step(direction, distance)
-
-    def turn(self, angle):
-        new_rotation = LQuaterniond()
-        new_rotation.setFromAxisAngleRad(angle, LVector3d.up())
-        self.set_rot(new_rotation)
-
-    def turn_relative(self, step):
-        rotation = self.get_rot()
-        delta = LQuaterniond()
-        delta.setFromAxisAngleRad(step, LVector3d.up())
-        new_rotation = delta * rotation
-        self.set_rot(new_rotation)
 
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)

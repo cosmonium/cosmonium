@@ -187,6 +187,37 @@ class SurfaceReferenceFrame(RelativeReferenceFrame):
         look_at(rotation, binormal, normal)
         return rotation
 
+class CartesianSurfaceReferenceFrame(RelativeReferenceFrame):
+    def __init__(self, position):
+        RelativeReferenceFrame.__init__(self)
+        self.position = position
+
+    def set_parent_body(self, body):
+        self.body = body
+        if self.body.primary is not None:
+            self.body = self.body.primary
+
+    def get_center(self):
+        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+
+    def get_orientation(self):
+        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+
+    #TODO: workaround until proper hierarchical frames are implemented
+    def get_center_parent_frame(self):
+        distance = self.body.get_height_under(self.position)
+        position = LPoint3d(self.position[0], self.position[1], distance)
+        return position
+
+    def get_position_parent_frame(self, relative_pos):
+        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
+
+    def get_orientation_parent_frame(self):
+        (normal, tangent, binormal) = self.body.get_normals_under(self.position)
+        rotation = LQuaterniond()
+        look_at(rotation, tangent, normal)
+        return rotation
+
 class FramesDB(object):
     def __init__(self):
         self.frames = {}
