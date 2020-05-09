@@ -44,7 +44,6 @@ class BaseShipYamlParser(YamlModuleParser):
         radius_units = data.get('radius-units',units.m)
         radius *= radius_units
         camera_distance = data.get('camera-distance', None)
-        camera_distance_units = data.get('camera-distance', units.m)
         camera_pos = data.get('camera-position', None)
         camera_pos_units = data.get('camera-position-units', units.m)
         camera_rot_data = data.get('camera-rotation', None)
@@ -72,14 +71,13 @@ class BaseShipYamlParser(YamlModuleParser):
         ship_object = ShapeObject('ship', shape=shape, appearance=appearance, shader=shader)
         if camera_distance is None:
             if camera_pos is None:
-                camera_distance = radius * 5
-                camera_pos = LPoint3d(0, -camera_distance, 0)
+                camera_distance = 5.0
+                camera_pos = LPoint3d(0, -camera_distance * radius, 0)
             else:
                 camera_pos = LPoint3d(*camera_pos) * camera_pos_units
-                camera_distance = camera_pos.length()
+                camera_distance = camera_pos.length() / radius
         else:
-            camera_distance *= camera_distance_units
-            camera_pos = LPoint3d(0, -camera_distance, 0)
+            camera_pos = LPoint3d(0, -camera_distance * radius, 0)
         ship = VisibleShip(name, ship_object, radius)
         ship.set_camera_hints(camera_distance, camera_pos, camera_rot)
         for mode in self.camera_modes:

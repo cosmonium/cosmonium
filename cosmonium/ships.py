@@ -64,7 +64,9 @@ class ShipBase(VisibleObject):
         self._frame_rotation = other._frame_rotation
 
     def get_camera_hints(self):
-        return (self.camera_distance, self.camera_pos, self.camera_rot)
+        return {'distance': self.camera_distance,
+                'position': self.camera_pos,
+                'rotation': self.camera_rot}
 
     def set_camera_hints(self, camera_distance, camera_pos, camera_rot):
         self.camera_distance = camera_distance

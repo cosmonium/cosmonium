@@ -58,7 +58,7 @@ from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
-from .controllers import BodyController, SurfaceBodyMover
+from .controllers import BodyController, SurfaceFrameBodyMover
 from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser
@@ -419,7 +419,7 @@ class Cosmonium(CosmoniumBase):
             controller.init()
 
         self.universe.first_update()
-        self.camera_controller.update_camera()
+        self.camera_controller.update(self.time.time_full, 0)
         self.universe.first_update_obs(self.observer)
         self.window_event(None)
         self.time_task(None)
@@ -457,7 +457,9 @@ class Cosmonium(CosmoniumBase):
         if self.camera_controller is not None:
             self.camera_controller.deactivate()
         self.camera_controller = camera_controller
-        self.camera_controller.activate(self.observer, self.ship, self)
+        self.camera_controller.activate(self.observer, self.ship)
+        if self.ship is not None:
+            self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         print("Switching camera to", self.camera_controller.get_name())
 
     def add_ship(self, ship):
@@ -479,6 +481,7 @@ class Cosmonium(CosmoniumBase):
                 self.ship.copy(old_ship)
             if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
                 self.camera_controller.set_reference_point(self.ship)
+                self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
             else:
                 #Current camera controller is not supported by the ship, switch to the first one supported
                 for camera_controller in self.camera_controllers:
@@ -555,6 +558,7 @@ class Cosmonium(CosmoniumBase):
         print("Reset nav")
         self.follow = None
         self.ship.set_frame(AbsoluteReferenceFrame())
+        self.observer.set_frame(AbsoluteReferenceFrame())
         self.sync = None
         if self.fly:
             #Disable fly mode when changing body
@@ -724,8 +728,10 @@ class Cosmonium(CosmoniumBase):
         if self.follow is not None:
             print("Follow", self.follow.get_name())
             self.ship.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.observer.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
+            self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -739,8 +745,10 @@ class Cosmonium(CosmoniumBase):
         if self.sync is not None:
             print("Sync", self.sync.get_name())
             self.ship.set_frame(SynchroneReferenceFrame(body))
+            self.observer.set_frame(SynchroneReferenceFrame(body))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
+            self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -764,7 +772,7 @@ class Cosmonium(CosmoniumBase):
         if not isinstance(self.selected.orbit.frame, SurfaceReferenceFrame) or not isinstance(self.selected.rotation.frame, SurfaceReferenceFrame):
             print("Can not take control")
             return
-        mover = SurfaceBodyMover(self.selected)
+        mover = SurfaceFrameBodyMover(self.selected)
         print("Take control")
         self.fly = True
         self.follow = None
@@ -842,13 +850,13 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.update_universe(self.time.time_full, self.time.dt)
-        self.camera_controller.update_camera()
+        self.camera_controller.update(self.time.time_full, self.time.dt)
         self.update_obs()
 
         if self.track != None:
             self.autopilot.center_on_object(self.track, duration=0, cmd=False)
-            self.ship.update(self.time.time_full, self.time.dt)
-            self.camera_controller.update_camera()
+            self.ship.update(self.time.time_full, 0)
+            self.camera_controller.update(self.time.time_full, 0)
 
         if self.universe.nearest_system != self.nearest_system:
             if self.universe.nearest_system is not None:
@@ -856,7 +864,7 @@ class Cosmonium(CosmoniumBase):
                 self.autopilot.stash_position()
                 self.nav.stash_position()
                 self.ship.change_global(self.universe.nearest_system.get_global_position())
-                self.camera_controller.update_camera()
+                self.camera_controller.update(self.time.time_full, 0)
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:
