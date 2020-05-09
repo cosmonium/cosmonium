@@ -29,6 +29,11 @@ from .astro import units
 def join_names(names):
     return ' / '.join(names)
 
+def quaternion_from_euler(h, p, r):
+    rotation = LQuaterniond()
+    rotation.set_hpr((h, p, r))
+    return rotation
+
 def relative_rotation(rotation, axis, angle):
     axis.normalize()
     rel_axis = rotation.xform(axis)
