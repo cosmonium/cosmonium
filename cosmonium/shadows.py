@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput
 from panda3d.core import Texture, OrthographicLens, PandaNode, NodePath
-from panda3d.core import LVector3, LPoint4, Mat4
+from panda3d.core import LVector3, LPoint3, LVector3d, LPoint4, Mat4
 from panda3d.core import ColorWriteAttrib, LColor, CullFaceAttrib, RenderState, DepthOffsetAttrib
 
 from .foundation import BaseObject
@@ -92,20 +92,20 @@ class ShadowMap(object):
         lens.set_film_size(size)
         lens.setNear(near)
         lens.setFar(far)
-        lens.set_view_vector(direction, LVector3.up())
+        lens.set_view_vector(LVector3(*direction), LVector3.up())
  
     def get_lens(self):
         return self.node.get_lens()
 
     def set_direction(self, direction):
         lens = self.node.get_lens()
-        lens.set_view_vector(direction, LVector3.up())
+        lens.set_view_vector(LVector3(*direction), LVector3.up())
 
     def get_pos(self):
         return self.cam.get_pos()
 
     def set_pos(self, position):
-        self.cam.set_pos(position)
+        self.cam.set_pos(LPoint3(*position))
         if self.snap_cam:
             self.align_cam()
 
