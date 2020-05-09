@@ -198,6 +198,9 @@ class ShipBase(VisibleObject):
     def remove_instance(self):
         pass
 
+    def set_state(self, new_state):
+        pass
+
 class NoShip(ShipBase):
     def __init__(self):
         ShipBase.__init__(self, "No ship")
@@ -332,3 +335,6 @@ class VisibleShip(ShipBase):
             self.shadow_caster.remove()
             self.shadow_caster = None
             self.remove_light()
+
+class ActorShip(VisibleShip):
+    pass

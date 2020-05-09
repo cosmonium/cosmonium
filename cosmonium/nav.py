@@ -663,11 +663,14 @@ class ControlNav(NavBase):
         self.speed_factor = 1.0
 
     def update(self, dt):
+        is_moving = False
         if self.keyMap['up']:
             self.step(self.speed * self.speed_factor * dt)
+            is_moving = True
 
         if self.keyMap['down']:
             self.step(-self.speed * self.speed_factor * dt)
+            is_moving = True
 
         if self.keyMap['left']:
             self.turn(self.rot_step_per_sec * dt)
@@ -684,6 +687,11 @@ class ControlNav(NavBase):
         if self.wheel_event_time + self.wheel_event_duration > globalClock.getRealTime():
             distance = self.wheel_direction
             self.change_altitude(distance * self.distance_speed * dt)
+
+        if is_moving:
+            self.controller.set_state('moving')
+        else:
+            self.controller.set_state('idle')
 
     def step(self, distance):
         self.controller.step_relative(distance)
