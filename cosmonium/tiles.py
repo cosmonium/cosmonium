@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import OmniBoundingVolume, BoundingBox
-from panda3d.core import LPoint3d, LVector3, LVector4
+from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4
 from panda3d.core import NodePath
 
 from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape
@@ -133,6 +133,10 @@ class Tile(PatchBase):
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)
 
+    def get_normals_at(self, coord):
+        vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
+        return vectors
+
 class TerrainLayer(object):
     def __init__(self):
         self.instance = None
@@ -182,6 +186,9 @@ class TiledShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, None, lod_control)
         self.factory = factory
         self.scale = scale
+
+    def global_to_shape_coord(self, x, y):
+        return (x / self.scale, y / self.scale)
 
     def find_patch_at(self, coord):
         (x, y) = coord

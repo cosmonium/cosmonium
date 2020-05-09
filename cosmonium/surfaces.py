@@ -211,12 +211,6 @@ class HeightmapSurface(ProceduralSurface):
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
 
-    def get_height(self, position):
-        #TODO: Surface coord should be 0-1, not scaled
-        x = position[0] / self.scale
-        y = position[1] / self.scale
-        return self.get_height_at(x, y)
-
     def get_height_at(self, x, y, strict=False):
         #print("get_height_at", x, y)
         if not self.displacement:
