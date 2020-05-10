@@ -203,7 +203,7 @@ class OrbitTargetHelper():
         self.delta_y = mpos.get_y() - self.start_y
         self.update()
 
-    def start(self, target, orbit_speed_x, orbit_speed_z):
+    def start(self, target, orbit_speed_x, orbit_speed_z, orientation = None):
         self.delta_x = 0
         self.delta_y = 0
         self.orbit_speed_x = orbit_speed_x
@@ -212,16 +212,19 @@ class OrbitTargetHelper():
         self.orbit_center = self.anchor.frame.get_rel_position(center)
         orbit_position = self.anchor.get_frame_pos()
         self.orbit_dir = self.orbit_center - orbit_position
-        self.orbit_orientation = self.anchor.get_frame_rot()
+        if orientation is None:
+            self.orbit_orientation = self.anchor.get_frame_rot()
+        else:
+            self.orbit_orientation = orientation
         self.orbit_zaxis = self.orbit_orientation.xform(LVector3d.up())
         self.orbit_xaxis = self.orbit_orientation.xform(LVector3d.right())
 
-    def start_mouse(self, target, orbit_speed_x, orbit_speed_z):
+    def start_mouse(self, target, orbit_speed_x, orbit_speed_z, orientation = None):
         if not base.mouseWatcherNode.hasMouse(): return
         mpos = base.mouseWatcherNode.getMouse()
         self.start_x = mpos.get_x()
         self.start_y = mpos.get_y()
-        self.start(target, orbit_speed_x, orbit_speed_z)
+        self.start(target, orbit_speed_x, orbit_speed_z, orientation)
 
 class RotateAnchorHelper():
     def __init__(self, anchor):
@@ -553,10 +556,19 @@ class SurfaceFollowCameraController(CameraController):
     def set_body(self, body):
         self.body = body
 
+    def calc_projected_orientation(self):
+        projected_vector_to_reference = self.reference_point._local_position - self.camera._local_position
+        projected_vector_to_reference[2] = 0.0
+        projected_vector_to_reference.normalize()
+        orientation = LQuaterniond()
+        look_at(orientation, projected_vector_to_reference, self.reference_point._orientation.xform(LVector3d.up()))
+        return orientation
+
     def mouse_click_event(self):
         if not self.state == self.STATE_DEFAULT: return
+        orientation = self.calc_projected_orientation()
         self.mouse_control = OrbitTargetHelper(self.camera)
-        self.mouse_control.start_mouse(self.reference_point, pi, pi)
+        self.mouse_control.start_mouse(self.reference_point, pi, pi, orientation)
         self.state = self.STATE_ORBIT_MOUSE
 
     def mouse_release_event(self):
@@ -583,14 +595,25 @@ class SurfaceFollowCameraController(CameraController):
         self.height = self.camera._local_position[2] - surface_height
         self.distance = distance / self.reference_point.get_apparent_radius()
 
+    def update_lookat(self):
+        camera_position = self.camera._local_position
+        vector_to_reference = self.reference_point._local_position - camera_position
+        vector_to_reference.normalize()
+        camera_orientation = LQuaterniond()
+        look_at(camera_orientation, vector_to_reference, self.reference_point._orientation.xform(LVector3d.up()))
+        self.camera.set_rot(camera_orientation)
+
     def update(self, time, dt):
         if self.state == self.STATE_DEFAULT:
             if self.keymap.get('shift-left') or self.keymap.get('shift-right') or self.keymap.get('shift-up') or self.keymap.get('shift-down'):
+                orientation = self.calc_projected_orientation()
                 self.mouse_control = OrbitTargetHelper(self.camera)
-                self.mouse_control.start(self.reference_point, pi, pi)
+                self.mouse_control.start(self.reference_point, pi, pi, orientation)
                 self.state = self.STATE_ORBIT_KEYBOARD
         if self.state == self.STATE_ORBIT_MOUSE:
             self.mouse_control.update_mouse()
+            self.camera.update()
+            self.update_lookat()
             self.camera.update()
             self.update_limits()
         elif self.state == self.STATE_ORBIT_KEYBOARD:
@@ -608,6 +631,8 @@ class SurfaceFollowCameraController(CameraController):
                 key_pressed = True
                 self.mouse_control.delta_y -= dt
             self.mouse_control.update()
+            self.camera.update()
+            self.update_lookat()
             self.camera.update()
             self.update_limits()
             if not key_pressed:
