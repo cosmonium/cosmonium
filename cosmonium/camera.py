@@ -591,9 +591,10 @@ class SurfaceFollowCameraController(CameraController):
     def update_limits(self):
         surface_height = self.body.get_height_under(self.camera._local_position)
         vector_to_reference = self.reference_point._local_position - self.camera._local_position
-        distance = vector_to_reference.length()
         self.height = self.camera._local_position[2] - surface_height
-        self.distance = distance / self.reference_point.get_apparent_radius()
+        vector_to_reference[2] = 0.0
+        distance = vector_to_reference.length()
+        self.distance = max(self.reference_min_distance, distance / self.reference_point.get_apparent_radius())
 
     def update_lookat(self):
         camera_position = self.camera._local_position
