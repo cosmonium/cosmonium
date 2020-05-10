@@ -131,7 +131,7 @@ class BaseObject(object):
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         pass
 
     def remove_instance(self):
@@ -228,14 +228,14 @@ class VisibleObject(BaseObject):
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         if self.shown and self.visible:
             self.do_show()
-            self.update_instance(camera_pos, orientation)
+            self.update_instance(camera_pos, camera_rot)
         else:
             self.do_hide()
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         pass
 
     def set_light(self, light):
@@ -312,9 +312,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         for component in self.components:
-            component.check_and_update_instance(camera_pos, orientation, pointset)
+            component.check_and_update_instance(camera_pos, camera_rot, pointset)
 
     def update_shader(self):
         for component in self.components:

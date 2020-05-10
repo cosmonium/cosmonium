@@ -79,7 +79,7 @@ class Shape:
     def create_instance(self):
         return None
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -195,9 +195,9 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.create_instance()
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         for component in self.components:
-            component.update_instance(camera_pos, orientation)
+            component.update_instance(camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -397,10 +397,10 @@ class ShapeObject(VisibleObject):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.apply(self.shape, self.appearance)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
         self.place_instance(self.instance, self.parent)
-        self.shape.update_instance(camera_pos, orientation)
+        self.shape.update_instance(camera_pos, camera_rot)
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
             self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))

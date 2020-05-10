@@ -177,10 +177,10 @@ class Universe(StellarSystem):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
-        CompositeObject.check_and_update_instance(self, camera_pos, orientation, pointset)
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+        CompositeObject.check_and_update_instance(self, camera_pos, camera_rot, pointset)
         for leaf in self.to_update:
-            leaf.check_and_update_instance(camera_pos, orientation, pointset)
+            leaf.check_and_update_instance(camera_pos, camera_rot, pointset)
         for leaf in self.to_remove:
             leaf.remove_instance()
 

@@ -143,7 +143,7 @@ class Clouds(FlatSurface):
     def check_settings(self):
         self.set_shown(settings.show_clouds)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         radius = self.parent.get_apparent_radius() + self.height
         inside = self.parent.distance_to_obs < radius
         if self.inside != inside:
@@ -160,7 +160,7 @@ class Clouds(FlatSurface):
                 if self.appearance.transparency:
                     self.instance.set_depth_write(False)
             self.inside = inside
-        return FlatSurface.update_instance(self, camera_pos, orientation)
+        return FlatSurface.update_instance(self, camera_pos, camera_rot)
 
     def remove_instance(self):
         FlatSurface.remove_instance(self)

@@ -466,8 +466,8 @@ class DeepSpaceObject(EmissiveBody):
                               body_class=body_class, point_color=point_color,
                               description=description)
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
-        EmissiveBody.check_and_update_instance(self, camera_pos, orientation, pointset)
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+        EmissiveBody.check_and_update_instance(self, camera_pos, camera_rot, pointset)
         app_magnitude = self.get_app_magnitude()
         self.surface.appearance.set_magnitude(self, self.surface.shape, self.surface.shader, self.abs_magnitude, app_magnitude, self.visible_size)
 

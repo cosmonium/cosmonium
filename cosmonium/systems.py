@@ -222,12 +222,12 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.check_settings()
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
-        StellarObject.check_and_update_instance(self, camera_pos, orientation, pointset)
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+        StellarObject.check_and_update_instance(self, camera_pos, camera_rot, pointset)
         #No need to check the children if not visible
         if (not self.visible or not self.resolved) and not self.was_visible: return
         for child in self.children:
-            child.check_and_update_instance(camera_pos, orientation, pointset)
+            child.check_and_update_instance(camera_pos, camera_rot, pointset)
 
     def remove_components(self):
         StellarObject.remove_components(self)

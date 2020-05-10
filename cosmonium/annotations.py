@@ -38,7 +38,7 @@ from . import settings
 from math import sin, cos, atan2, pi
 
 class AnnotationLabel(ObjectLabel):
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         position = self.parent.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
         if position != None:
             self.instance.setPos(*position)
@@ -49,8 +49,8 @@ class AnnotationLabel(ObjectLabel):
             print("Label too far", self.get_name())
             scale = 1e-7
         self.instance.setScale(scale)
-        self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
-        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
+        self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
+        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
 
 class BackgroundLabel(AnnotationLabel):
     def create_instance(self):
@@ -186,7 +186,7 @@ class Orbit(VisibleObject):
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance_params(self.instance,
                                        self.body.parent.scene_position,
@@ -246,7 +246,7 @@ class RotationAxis(VisibleObject):
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance(self.instance, self.parent)
 
@@ -272,7 +272,7 @@ class ReferenceAxis(VisibleObject):
     def check_visibility(self, pixel_size):
         self.visible = self.parent is not None and self.parent.shown and self.parent.visible and self.parent.resolved
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance(self.instance, self.parent)
 

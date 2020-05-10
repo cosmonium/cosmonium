@@ -194,7 +194,7 @@ class ShipBase(VisibleObject):
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         pass
 
     def remove_instance(self):
@@ -312,10 +312,10 @@ class VisibleShip(ShipBase):
         ShipBase.update_shader(self)
         self.ship_object.update_shader()
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, self.distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self._orientation
-        self.ship_object.check_and_update_instance(camera_pos, orientation, pointset)
+        self.ship_object.check_and_update_instance(camera_pos, camera_rot, pointset)
         self.instance = self.ship_object.instance
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.NearCameraMask)

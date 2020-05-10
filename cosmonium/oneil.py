@@ -69,7 +69,7 @@ class ONeilAtmosphere(Atmosphere):
         shape_object.shader.scattering.set_inside(self.inside)
         shape_object.shader.scattering.set_hdr(self.hdr)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         planet_radius = self.owner.get_min_radius()
         radius = planet_radius * self.AtmosphereRatio
         inside = self.owner.distance_to_obs < radius
@@ -78,7 +78,7 @@ class ONeilAtmosphere(Atmosphere):
             self.shader.scattering.inside = inside
             self.update_shader()
             self.update_scattering()
-        return Atmosphere.update_instance(self, camera_pos, orientation)
+        return Atmosphere.update_instance(self, camera_pos, camera_rot)
 
     def remove_instance(self):
         Atmosphere.remove_instance(self)

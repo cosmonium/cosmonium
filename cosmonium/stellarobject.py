@@ -59,7 +59,7 @@ class StellarBodyLabel(ObjectLabel):
                 self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
         self.fade = clamp(self.fade, 0.0, 1.0)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         body = self.parent
         if body.is_emissive() and (not body.resolved or body.background):
             if body.scene_position != None:
@@ -69,15 +69,15 @@ class StellarBodyLabel(ObjectLabel):
                 scale = 0.0
         else:
             offset = body.get_apparent_radius() * 1.01
-            rel_front_pos = body.rel_position - orientation.xform(LPoint3d(0, offset, 0))
+            rel_front_pos = body.rel_position - camera_rot.xform(LPoint3d(0, offset, 0))
             vector_to_obs = LVector3d(-rel_front_pos)
             distance_to_obs = vector_to_obs.length()
             vector_to_obs /= distance_to_obs
             position, distance, scale_factor = self.get_real_pos_rel(rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
-        self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
-        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
+        self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
+        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
         self.instance.set_color_scale(LColor(self.fade, self.fade, self.fade, 1.0))
         if scale < 1e-7:
             print("Label too far", self.get_name())
@@ -494,7 +494,7 @@ class StellarObject(LabelledObject):
             self.context.add_visible(self)
         LabelledObject.check_visibility(self, pixel_size)
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         StellarObject.nb_instance += 1
         if self.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             height = self.get_height_under(camera_pos)
@@ -531,7 +531,7 @@ class StellarObject(LabelledObject):
         else:
             if self.init_components:
                 self.remove_components()
-        CompositeObject.check_and_update_instance(self, camera_pos, orientation, pointset)
+        CompositeObject.check_and_update_instance(self, camera_pos, camera_rot, pointset)
 
     def remove_instance(self):
         CompositeObject.remove_instance(self)

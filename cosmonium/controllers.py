@@ -58,7 +58,7 @@ class BodyController():
     def check_visibility(self, pixel_size):
         pass
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         pass
 
 class BodyMover():
