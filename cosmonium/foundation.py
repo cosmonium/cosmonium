@@ -119,6 +119,9 @@ class BaseObject(object):
             else:
                 self.hide()
 
+    def set_state(self, new_state):
+        pass
+
     def update(self, time, dt):
         pass
 

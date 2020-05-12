@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d, LQuaterniond, look_at
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
 from cosmonium.astro.orbits import FixedOrbit, FixedPosition
 from cosmonium.astro.rotations import FixedRotation
 from cosmonium.astro.frame import SurfaceReferenceFrame
@@ -39,7 +39,7 @@ class BodyController():
             print("Can not create a mover with dynamic rotation", self.body.rotation)
             return
         if isinstance(self.body.orbit.frame, SurfaceReferenceFrame) and isinstance(self.body.rotation.frame, SurfaceReferenceFrame):
-            self.mover = SurfaceFrameBodyMover(self.body)
+            self.mover = SurfaceBodyMover(self.body)
         else:
             self.mover = CartesianBodyMover(self.body)
 
@@ -64,6 +64,12 @@ class BodyController():
 class BodyMover():
     def __init__(self, body):
         self.body = body
+
+    def activate(self):
+        pass
+
+    def update(self):
+        pass
 
     def set_pos(self, position):
         pass
@@ -97,16 +103,16 @@ class BodyMover():
 
 class CartesianBodyMover(BodyMover):
     def set_pos(self, position):
-        self.body.set_pos(position)
+        self.body.set_frame_pos(position)
 
     def get_pos(self):
-        return self.body.get_pos()
+        return self.body.get_frame_pos()
 
     def get_rot(self):
-        return self.body.get_rot()
+        return self.body.get_frame_rot()
 
     def set_rot(self, rotation):
-        self.body.set_rot(rotation)
+        self.body.set_frame_rot(rotation)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
@@ -134,26 +140,34 @@ class CartesianBodyMover(BodyMover):
         new_rotation = delta * rotation
         self.set_rot(new_rotation)
 
-class SurfaceFrameBodyMover(CartesianBodyMover):
-    #We assume the frame is shared between the orbit and the rotation
-    #This will be simplified when the orbit and rotation will disappear for anchors
+class SurfaceBodyMover(CartesianBodyMover):
     def __init__(self, body):
         CartesianBodyMover.__init__(self, body)
         #TODO: Should create dynamicOrbit and DynamicRotation instead
         self.body.orbit.dynamic = True
         self.body.rotation.dynamic = True
+        #TODO: We assume the frame is shared between the orbit and the rotation
+        #This will be simplified when the orbit and rotation will disappear for anchors
+        self.frame = self.body.orbit.frame
+        self.altitude = 0.0
+
+    def update(self):
+        #Refresh altitude in case the body has changed shape (often due to change of LOD)
+        self.set_altitude(self.altitude)
 
     def set_pos(self, position):
-        frame = self.body.orbit.frame
-        (long, lat, alt) = position
-        frame.long = long
-        frame.lat = lat
-        self.body.orbit.position.set_z(alt)
+        (x, y, altitude) = position
+        new_orbit_pos = LPoint3d(x, y, 1.0)
+        self.body.orbit.position = new_orbit_pos
+        new_pos = self.body.orbit.get_position_at(0)
+        distance = self.frame.body.get_height_under(new_pos) - self.frame.body.get_apparent_radius()
+        new_orbit_pos[2] = distance + altitude
+        self.altitude = altitude
 
     def get_pos(self):
-        frame = self.body.orbit.frame
-        alt = self.body.orbit.position.get_z()
-        return (frame.long, frame.lat, alt)
+        position = LPoint3d(self.body.orbit.position)
+        position[2] = self.altitude
+        return position
 
     def get_rot(self):
         #TODO: It's not really a reference axis...
@@ -163,53 +177,54 @@ class SurfaceFrameBodyMover(CartesianBodyMover):
         self.body.rotation.reference_axis.rotation = rotation
 
     def get_altitude(self):
-        return self.body.orbit.position.get_z()
+        return self.altitude
 
     def set_altitude(self, altitude):
-        self.body.orbit.position.set_z(altitude)
-
-    def delta(self, delta):
-        frame = self.body.orbit.frame
-        frame_delta = frame.get_orientation_parent_frame().xform(delta)
-        new_position = frame.get_center_parent_frame() + frame_delta
-        new_position = self.body.frame_cartesian_to_spherical(new_position)
-        frame.long = new_position[0]
-        frame.lat = new_position[1]
+        pos = self.body.orbit.get_position_at(0)
+        distance = self.body.frame.body.get_height_under(pos) - self.frame.body.get_apparent_radius()
+        frame_pos = self.body.orbit.position
+        frame_pos[2] = distance + altitude
+        self.altitude = altitude
 
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)
 
-class CartesianSurfaceFrameBodyMover(CartesianBodyMover):
+class CartesianSurfaceBodyMover(CartesianBodyMover):
+    def __init__(self, body):
+        CartesianBodyMover.__init__(self, body)
+        self.altitude = 0.0
+
+    def update(self):
+        #Refresh altitude in case the body has changed shape (often due to change of LOD)
+        self.set_altitude(self.altitude)
+
     def set_pos(self, position):
-        frame = self.body.frame
-        (x, y, alt) = position
-        frame.position[0] = x
-        frame.position[1] = y
-        self.body._frame_position[2] = alt
+        (x, y, altitude) = position
+        new_frame_pos = LPoint3d(x, y, 0)
+        self.body.set_frame_pos(new_frame_pos)
+        new_pos = self.body.get_pos()
+        distance = self.body.frame.body.get_height_under(new_pos)
+        new_frame_pos[2] = distance + altitude
+        self.body.set_frame_pos(new_frame_pos)
+        self.altitude = altitude
 
     def get_pos(self):
-        frame = self.body.frame
-        return (frame.position[0], frame.position[1], self.body._frame_position[2])
-
-    def get_rot(self):
-        return self.body._frame_rotation
-
-    def set_rot(self, rotation):
-        self.body._frame_rotation = rotation
+        pos = self.body.get_frame_pos()
+        pos = LPoint3d(pos[0], pos[1], self.altitude)
+        return pos
 
     def get_altitude(self):
-        return self.body._frame_position[2]
+        return self.altitude
 
     def set_altitude(self, altitude):
-        self.body._frame_position[2]
+        pos = self.body.get_pos()
+        distance = self.body.frame.body.get_height_under(pos)
+        new_frame_pos = LPoint3d(self.body.get_frame_pos())
+        new_frame_pos[2] = distance + altitude
+        self.body.set_frame_pos(new_frame_pos)
+        self.altitude = altitude
 
-    def delta(self, delta):
-        frame = self.body.frame
-        frame_delta = frame.get_orientation_parent_frame().xform(delta)
-        new_position = frame.get_center_parent_frame() + frame_delta
-        frame.position[0] = new_position[0]
-        frame.position[1] = new_position[1]
-
+    #TODO: Needed to replace as the CartesianBodyMover version uses body orbit orientation
     def step_relative(self, distance):
         rotation = self.body._frame_rotation
         direction = rotation.xform(LVector3d.forward())

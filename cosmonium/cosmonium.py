@@ -58,7 +58,7 @@ from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
-from .controllers import BodyController, SurfaceFrameBodyMover
+from .controllers import BodyController, SurfaceBodyMover
 from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser
@@ -772,7 +772,7 @@ class Cosmonium(CosmoniumBase):
         if not isinstance(self.selected.orbit.frame, SurfaceReferenceFrame) or not isinstance(self.selected.rotation.frame, SurfaceReferenceFrame):
             print("Can not take control")
             return
-        mover = SurfaceFrameBodyMover(self.selected)
+        mover = SurfaceBodyMover(self.selected)
         print("Take control")
         self.fly = True
         self.follow = None

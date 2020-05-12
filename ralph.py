@@ -55,7 +55,7 @@ from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import NavBase, ControlNav
 from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
-from cosmonium.controllers import CartesianBodyMover, CartesianSurfaceFrameBodyMover
+from cosmonium.controllers import CartesianBodyMover, CartesianSurfaceBodyMover
 from cosmonium.astro.frame import CartesianSurfaceReferenceFrame
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
@@ -613,19 +613,22 @@ class RoamingRalphDemo(CosmoniumBase):
         self.controller = RalphControl(self.skybox, self)
         self.controller.register_events()
 
+        self.mover = CartesianSurfaceBodyMover(self.ralph)
+        self.mover.activate()
+        self.nav = ControlNav(self.mover)
+        self.nav.register_events(self)
+        self.nav.speed = 25
+        self.nav.rot_step_per_sec = 2
+
         #TEMPORARY
         self.ralph.update(0, 0)
         self.camera_controller.update(0, 0)
+        self.mover.update()
         self.ralph.update_obs(self.observer)
         self.ralph.check_visibility(self.observer.pixel_size)
         self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
         self.ralph.create_light()
 
-        self.mover = CartesianSurfaceFrameBodyMover(self.ralph)
-        self.nav = ControlNav(self.mover)
-        self.nav.register_events(self)
-        self.nav.speed = 25
-        self.nav.rot_step_per_sec = 2
 
         taskMgr.add(self.move, "moveTask")
 
@@ -647,6 +650,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain.update(0, dt)
         self.camera_controller.update(0, dt)
         self.controller.update(0, dt)
+        self.mover.update()
         #TODO: Proper light management should be added
         self.light_color = self.skybox.light_color
         self.vector_to_star = -self.skybox.light_dir

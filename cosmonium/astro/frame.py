@@ -172,9 +172,7 @@ class SurfaceReferenceFrame(RelativeReferenceFrame):
 
     #TODO: workaround until proper hierarchical frames are implemented
     def get_center_parent_frame(self):
-        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
-        distance = self.body.get_height_under_xy(x, y)
-        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, distance))
+        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, self.body.get_apparent_radius()))
         return position
 
     def get_position_parent_frame(self, relative_pos):
@@ -205,8 +203,7 @@ class CartesianSurfaceReferenceFrame(RelativeReferenceFrame):
 
     #TODO: workaround until proper hierarchical frames are implemented
     def get_center_parent_frame(self):
-        distance = self.body.get_height_under(self.position)
-        position = LPoint3d(self.position[0], self.position[1], distance)
+        position = LPoint3d(self.position[0], self.position[1], 0)
         return position
 
     def get_position_parent_frame(self, relative_pos):
