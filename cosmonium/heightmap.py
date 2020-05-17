@@ -181,7 +181,7 @@ class HeightmapPatch:
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_uv(self, u, v):
-        return self.get_height(int(u * (self.width - 1)), int(v * (self.height - 1)))
+        return self.get_height(u * self.width, v * self.height)
 
     def load(self, patch, callback, cb_args=()):
         if self.texture is None:
@@ -350,7 +350,7 @@ class Heightmap(object):
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_uv(self, u, v):
-        return self.get_height(int(u * (self.width - 1)), int(v * (self.height - 1)))
+        return self.get_height(u * self.width, v * self.height)
 
     def get_heightmap(self, patch):
         return self
