@@ -135,6 +135,9 @@ class WaterLayer(object):
         if self.config.visible:
             self.water.create_instance()
 
+    def patch_done(self, patch):
+        pass
+
     def update_instance(self, patch):
         pass
 

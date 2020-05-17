@@ -109,6 +109,9 @@ class PatchBase(Shape):
             else:
                 self.bounds_shape.remove_instance()
 
+    def patch_done(self):
+        pass
+
     def update_instance(self, shape):
         pass
 

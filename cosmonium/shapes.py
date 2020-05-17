@@ -356,6 +356,7 @@ class ShapeObject(VisibleObject):
             self.appearance.apply_textures(patch)
         if self.shader is not None:
             self.shader.apply_patch(self.shape, patch, self.appearance)
+        patch.patch_done()
 
     def shape_done(self):
         if self.appearance is not None and not self.shape.patchable:

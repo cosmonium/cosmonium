@@ -104,6 +104,10 @@ class Tile(PatchBase):
             layer.create_instance(self)
         return self.instance
 
+    def patch_done(self):
+        for layer in self.layers:
+            layer.patch_done(self)
+
     def update_instance(self, shape):
         if self.instance is None: return
         #print("Update", self.str_id())
@@ -145,6 +149,9 @@ class TerrainLayer(object):
         pass
 
     def create_instance(self, patch):
+        pass
+
+    def patch_done(self, patch):
         pass
 
     def update_instance(self, patch):
