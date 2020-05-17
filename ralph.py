@@ -673,8 +673,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.vector_to_obs = self.camera.get_pos()
         self.vector_to_obs.normalize()
         self.distance_to_obs = self.observer._local_position.get_z() - self.get_height(self.observer._local_position)
-        self.scene_rel_position = LPoint3d() - self.observer._local_position
-        self.scene_position = self.scene_rel_position
+        self._local_position = LPoint3d()
+        self.rel_position = self._local_position - self.observer._local_position
+        self.scene_rel_position = self.rel_position
+        if settings.camera_at_origin:
+            self.scene_position = self.scene_rel_position
+        else:
+            self.scene_position = LPoint3d()
 
         self.ralph.update_obs(self.observer)
         self.terrain.update_obs(self.observer)

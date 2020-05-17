@@ -339,7 +339,8 @@ class CameraHolder(CameraBase):
         self._local_position = self.get_pos()
         self._orientation = self.get_rot()
         self.camera_vector = self._orientation.xform(LVector3d.forward())
-        #Don't update camera position as everything is relative to camera
+        if not settings.camera_at_origin:
+            self.cam.setPos(*self.get_camera_pos())
         self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
 
 class EventsControllerBase(DirectObject):

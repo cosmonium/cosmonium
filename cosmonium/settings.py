@@ -135,6 +135,7 @@ if use_double:
 else:
     offset_body_center = True
     shift_patch_origin = True
+camera_at_origin = True
 
 min_altitude = 2 * units.m
 

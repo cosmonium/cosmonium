@@ -394,7 +394,7 @@ class Asterism(VisibleObject):
                 #TODO: Temporary workaround to have star pos
                 star.update(0, 0)
                 star.update_obs(self.context.observer)
-                position, distance, scale_factor = self.get_real_pos_rel(star.rel_position, star.distance_to_obs, star.vector_to_obs)
+                position, distance, scale_factor = self.calc_scene_params(star.rel_position, star._position, star.distance_to_obs, star.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.camera_global_pos = old_cam_pos

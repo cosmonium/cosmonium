@@ -73,7 +73,7 @@ class StellarBodyLabel(ObjectLabel):
             vector_to_obs = LVector3d(-rel_front_pos)
             distance_to_obs = vector_to_obs.length()
             vector_to_obs /= distance_to_obs
-            position, distance, scale_factor = self.get_real_pos_rel(rel_front_pos, distance_to_obs, vector_to_obs)
+            position, distance, scale_factor = self.calc_scene_params(rel_front_pos, rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
         self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
@@ -503,7 +503,7 @@ class StellarObject(LabelledObject):
         else:
             self.scene_rel_position = self.rel_position
             distance_to_obs = self.distance_to_obs
-        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, distance_to_obs, self.vector_to_obs)
+        self.scene_position, self.scene_distance, self.scene_scale_factor = self.calc_scene_params(self.scene_rel_position, self._position, distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self.get_abs_rotation()
         if self.label is None:
             self.create_label()

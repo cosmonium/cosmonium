@@ -144,13 +144,17 @@ class BaseObject(object):
         pass
 
     def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        return self.get_real_pos_rel(abs_position - camera_pos, distance_to_obs, vector_to_obs)
+        return self.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
 
-    def get_real_pos_rel(self, rel_position, distance_to_obs, vector_to_obs):
+    def calc_scene_params(self, rel_position, abs_position, distance_to_obs, vector_to_obs):
+        if settings.camera_at_origin:
+            obj_position = rel_position
+        else:
+            obj_position = abs_position
         midPlane = self.context.observer.midPlane
         distance_to_obs /= settings.scale
         if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = rel_position / settings.scale
+            position = obj_position / settings.scale
             distance = distance_to_obs
             scale_factor = 1.0 / settings.scale
         elif settings.use_inv_scaling:

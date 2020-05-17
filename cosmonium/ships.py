@@ -224,6 +224,7 @@ class VisibleShip(ShipBase):
         self.world_body_center_offset = LVector3d()
         self.model_body_center_offset = LVector3d()
         self.light_color = LColor(1, 1, 1, 1)
+        self.rel_position = None
         self.scene_rel_position = None
         self.distance_to_obs = None
         self.vector_to_obs = None
@@ -290,9 +291,9 @@ class VisibleShip(ShipBase):
         self.ship_object.update(time, dt)
 
     def update_obs(self, observer):
-        self.scene_rel_position = self._local_position - observer._local_position
-        self.distance_to_obs = self.scene_rel_position.length()
-        self.vector_to_obs = self.scene_rel_position / self.distance_to_obs
+        self.rel_position = self._local_position - observer._local_position
+        self.distance_to_obs = self.rel_position.length()
+        self.vector_to_obs = self.rel_position / self.distance_to_obs
         if self.context.nearest_system is not None:
             self.star = self.context.nearest_system.star
             self.vector_to_star = (self.star._local_position - self._local_position).normalized()
@@ -313,7 +314,8 @@ class VisibleShip(ShipBase):
         self.ship_object.update_shader()
 
     def check_and_update_instance(self, camera_pos, camera_rot, pointset):
-        self.scene_position, self.scene_distance, self.scene_scale_factor = self.get_real_pos_rel(self.scene_rel_position, self.distance_to_obs, self.vector_to_obs)
+        self.scene_rel_position = self.rel_position
+        self.scene_position, self.scene_distance, self.scene_scale_factor = self.calc_scene_params(self.rel_position, self._position, self.distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self._orientation
         self.ship_object.check_and_update_instance(camera_pos, camera_rot, pointset)
         self.instance = self.ship_object.instance

@@ -79,16 +79,6 @@ class PointsSet(VisibleObject):
         self.sizes = []
         self.oids = []
 
-    def add_point_scale(self, position, color, size, oids):
-        #Observer is at position (0, 0, 0)
-        distance_to_obs = position.length()
-        vector_to_obs = -position / distance_to_obs
-        point, _, _ = self.get_real_pos_rel(position, distance_to_obs, vector_to_obs)
-        self.points.append(point)
-        self.colors.append(color)
-        self.sizes.append(size)
-        self.oids.append(oids)
-
     def add_point(self, position, color, size, oid):
         self.points.append(position)
         self.colors.append(color)
