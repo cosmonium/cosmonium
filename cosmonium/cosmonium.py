@@ -157,7 +157,13 @@ class CosmoniumBase(ShowBase):
 
     def print_info(self):
         print("Python version:", platform.python_version())
-        print("Panda version: %s (%s)" % (PandaSystem.getVersionString(), PandaSystem.getGitCommit()))
+        print("Panda version: %s (%s) by %s (%s)" % (PandaSystem.getVersionString(),
+                                                     PandaSystem.getGitCommit(),
+                                                     PandaSystem.getDistributor(),
+                                                     PandaSystem.getBuildDate()))
+        print("Panda Systems:")
+        for system in PandaSystem.get_global_ptr().get_systems():
+            print("\t", system)
         print("Data type:", "double" if settings.use_double else 'float')
 
     def exit(self):
