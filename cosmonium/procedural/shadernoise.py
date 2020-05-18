@@ -953,7 +953,7 @@ class NoiseFragmentShader(ShaderProgram):
         code.append('vec3 position;')
         if self.coord == TexCoord.Cylindrical:
             code.append('float nx = 2 * pi * (noiseOffset.x + coord.x * noiseScale.x);')
-            code.append('float ny = pi * (noiseOffset.y + (1.0 - coord.y) * noiseScale.y);')
+            code.append('float ny = pi * (noiseOffset.y + coord.y * noiseScale.y);')
             code.append('float cnx = cos(nx);')
             code.append('float snx = sin(nx);')
             code.append('float cny = cos(ny);')
@@ -964,13 +964,13 @@ class NoiseFragmentShader(ShaderProgram):
         elif self.coord == TexCoord.NormalizedCube:
             code.append('vec3 p;')
             code.append('p.x = 2.0 * (noiseOffset.x + coord.x * noiseScale.x) - 1.0;')
-            code.append('p.y = 2.0 * (noiseOffset.y + (1.0 - coord.y) * noiseScale.y) - 1.0;')
+            code.append('p.y = 2.0 * (noiseOffset.y + coord.y * noiseScale.y) - 1.0;')
             code.append('p.z = 1.0;')
             code.append('position = normalize(cube_rot * p);')
         elif self.coord == TexCoord.SqrtCube:
             code.append('vec3 p;')
             code.append('p.x = 2.0 * (noiseOffset.x + coord.x * noiseScale.x) - 1.0;')
-            code.append('p.y = 2.0 * (noiseOffset.y + (1.0 - coord.y) * noiseScale.y) - 1.0;')
+            code.append('p.y = 2.0 * (noiseOffset.y + coord.y * noiseScale.y) - 1.0;')
             code.append('p.z = 1.0;')
             code.append('p = cube_rot * p;')
             code.append('vec3 p2 = p * p;')
@@ -979,7 +979,7 @@ class NoiseFragmentShader(ShaderProgram):
             code.append("position.z = p.z * sqrt(1.0 - p2.x * 0.5 - p2.y * 0.5 + p2.x * p2.y / 3.0);")
         else:
             code.append('position.x = noiseOffset.x + coord.x * noiseScale.x;')
-            code.append('position.y = noiseOffset.y + (1.0 - coord.y) * noiseScale.y;')
+            code.append('position.y = noiseOffset.y + coord.y * noiseScale.y;')
             code.append('position.z = noiseOffset.z;')
         code.append('position = position * global_frequency + global_offset;')
         code.append('float value;')

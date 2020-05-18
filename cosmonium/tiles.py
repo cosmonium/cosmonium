@@ -48,9 +48,9 @@ class Tile(PatchBase):
         self.y1 = y + self.size
         self.centre = LPoint3d(x + self.half_size, y + self.half_size, 0.0)
         self.flat_coord = LVector4(self.x0 * scale,
-                                    self.y0 * scale,
+                                    self.y1 * scale,
                                     (self.x1 - self.x0) * scale,
-                                    (self.y1 - self.y0) * scale)
+                                    (self.y0 - self.y1) * scale)
         self.local_bounds = geometry.PatchAABB(1.0, min_height, max_height)
         self.layers = []
         self.create_holder_instance()

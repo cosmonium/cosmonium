@@ -139,9 +139,6 @@ class HeightmapPatch:
             y_tex = int(self.y * scale) / scale
             x_delta = float(self.x - x_tex)
             y_delta = float(self.y - y_tex)
-        #Y orientation is the opposite of the texture v axis
-        y_delta = 1.0 - y_delta - 1.0 / scale
-        if y_delta == 1.0: y_delta = 0.0
         self.texture_offset = LVector2(x_delta, y_delta)
         self.texture_scale = LVector2(1.0 / scale, 1.0 / scale)
 
@@ -157,7 +154,7 @@ class HeightmapPatch:
             traceback.print_stack()
             return 0.0
         new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
         height = self.parent.interpolator.get_value(self.texture_peeker, new_x, new_y)
@@ -355,7 +352,7 @@ class TextureHeightmapBase(Heightmap):
             traceback.print_stack()
             return 0.0
         new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-        new_y = ((self.height - 1) - y) * self.texture_scale[1] + self.texture_offset[1] * self.height
+        new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
         height = self.interpolator.get_value(self.texture_peeker, new_x, new_y)

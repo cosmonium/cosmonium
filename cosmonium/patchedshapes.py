@@ -293,8 +293,8 @@ class SpherePatch(Patch):
         lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale
         long1 = self.x1 * long_scale
-        lat0 = self.y0 * lat_scale
-        lat1 = self.y1 * lat_scale
+        lat0 = self.y1 * lat_scale
+        lat1 = self.y0 * lat_scale
         self.flat_coord = LVector4((long0 % 1000.0),
                                     (lat0 % 1000.0),
                                     (long1 - long0),
@@ -369,9 +369,6 @@ class SpherePatch(Patch):
         y_tex = (self.ring // y_scale) * y_scale
         x_delta = float(self.sector - x_tex) / x_scale
         y_delta = float(self.ring - y_tex) / y_scale
-        #Y orientation is the opposite of the texture v axis
-        y_delta = 1.0 - y_delta - 1.0 / y_scale
-        if y_delta == 1.0: y_delta = 0.0
         if not patched and texture.offset != 0:
             x_delta += texture.offset / 360.0
         self.instance.setTexOffset(texture_stage, x_delta, y_delta)
@@ -442,8 +439,8 @@ class SquarePatchBase(Patch):
         lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale / 4
         long1 = self.x1 * long_scale / 4
-        lat0 = self.y0 * lat_scale / 4
-        lat1 = self.y1 * lat_scale / 4
+        lat0 = self.y1 * lat_scale / 4
+        lat1 = self.y0 * lat_scale / 4
         self.flat_coord = LVector4((long0 % 1000.0),
                                     (lat0 % 1000.0),
                                     (long1 - long0),
@@ -1311,7 +1308,7 @@ class PatchedSquareShapeBase(PatchedShape):
         return (face, u, v)
 
     def global_to_shape_coord(self, x, y):
-        theta = (1.0 - y - 0.5) * pi
+        theta = (y - 0.5) * pi
         phi = (x - 0.5) * 2 * pi
         xp = cos(theta) * cos(phi)
         yp = cos(theta) * sin(phi)

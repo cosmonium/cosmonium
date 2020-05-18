@@ -108,7 +108,7 @@ def BoundingBoxGeom(box):
     geom.add_primitive(prim)
     return path
 
-def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=True):
+def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
     node.add_geom(geom)
@@ -135,7 +135,7 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Tr
             cos_r = cos(pi * r * R)
             x = cos_s * sin_r
             y = sin_s * sin_r
-            z = cos_r
+            z = -cos_r
             u = s * S
             v = r * R
             if inv_texture_v:
@@ -148,7 +148,7 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Tr
             #Derivation wrt s and normalization (sin_r is dropped)
             gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, -sin_r)
+            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3f(*binormal)
     u = 0.0
@@ -242,7 +242,7 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     cos_r = cos(pi * (y0 + r * dy))
     x = cos_s * sin_r * radius
     y = sin_s * sin_r * radius
-    z = cos_r * radius
+    z = -cos_r * radius
 
     if offset is not None:
         x = x - normal[0] * offset
@@ -256,10 +256,10 @@ def UVPatchNormal(x0, y0, x1, y1):
     dy = y1 - y0
     x = cos(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
     y = sin(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
-    z = sin(pi / 2 - pi * (y0 + dy / 2))
+    z = -cos(pi * (y0 + dy / 2))
     return LVector3d(x, y, z)
 
-def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=True, offset=None):
+def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
@@ -280,7 +280,7 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
             cos_r = cos(pi * (y0 + r * dy / rings))
             x = cos_s * sin_r
             y = sin_s * sin_r
-            z = cos_r
+            z = -cos_r
             if global_texture:
                 gtw.add_data2f((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:
@@ -301,7 +301,7 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
             #Derivation wrt s and normalization (sin_r is dropped)
             gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, -sin_r)
+            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3f(*binormal)
 
@@ -313,8 +313,8 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
 #                 #prim.addVertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
 #             else:
 #             if y0 >= 0.5:
-                prim.addVertices(r * r_sectors + s, (r+1) * r_sectors + s, r * r_sectors + (s+1))
-                prim.addVertices((r+1) * r_sectors + (s+1), r * r_sectors + (s+1), (r+1) * r_sectors + s)
+                prim.addVertices(r * r_sectors + s, r * r_sectors + (s+1), (r+1) * r_sectors + s)
+                prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + (s+1), (r+1) * r_sectors + s)
 #             else:
 #                 prim.addVertices((r + 1) * r_sectors + s, r * r_sectors + (s+1), r * r_sectors + s)
 #                 prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + s, (r + 1) * r_sectors + (s+1))
@@ -684,7 +684,7 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
                 prim.addVertices(skirt, v + 1, skirt + 1)
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
+def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
@@ -838,7 +838,7 @@ def QuadPatch(x0, y0, x1, y1,
 
 def SquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
-                inv_u=False, inv_v=True, swap_uv=False,
+                inv_u=False, inv_v=False, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
@@ -883,7 +883,7 @@ def SquarePatch(height, inner, outer,
 
 def SquaredDistanceSquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
-                inv_u=False, inv_v=True, swap_uv=False,
+                inv_u=False, inv_v=False, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
@@ -1054,7 +1054,7 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
 
 def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
-                          global_texture=False, inv_u=False, inv_v=True, swap_uv=False,
+                          global_texture=False, inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')

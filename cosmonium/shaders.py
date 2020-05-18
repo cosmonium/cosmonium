@@ -1457,7 +1457,7 @@ class DirectVertexInput(VertexInput):
             code.append("model_texcoord0p = vec4(fract(u + 0.5) - 0.5, v, 0, 1);")
 
 class QuadTessellationVertexInput(VertexInput):
-    def __init__(self, invert_v=True, shader=None):
+    def __init__(self, invert_v=False, shader=None):
         VertexInput.__init__(self, shader)
         self.invert_v = invert_v
 
@@ -1503,7 +1503,7 @@ class TessellationControl(ShaderComponent):
     pass
 
 class ConstantTessellationControl(TessellationControl):
-    def __init__(self, invert_v=True, shader=None):
+    def __init__(self, invert_v=False, shader=None):
         TessellationControl.__init__(self, shader)
         #invert_v is not used in TessellationControl but in QuadTessellationVertexInput
         #It is configured here as this is the user class

@@ -403,13 +403,13 @@ class StellarObject(LabelledObject):
     def spherical_to_xy(self, position):
         (phi, theta, distance) = position
         x = phi / pi / 2 + 0.5
-        y = 1.0 - (theta / pi + 0.5)
+        y = theta / pi + 0.5
         return (x, y, distance)
 
     def xy_to_spherical(self, position):
         (x, y, distance) = position
         phi = (x - 0.5) * pi / 2
-        tetha = (1.0 - y - 0.5) * pi
+        tetha = (y - 0.5) * pi
         return (phi, tetha, distance)
 
     def calc_global_distance_to(self, position):

@@ -24,12 +24,12 @@ from .. import geometry
 
 class SpaceEngineTextureSquarePatch(SquarePatchBase):
     xy_params = [
-                 {'x_inverted':False, 'y_inverted':False, 'xy_swap':True}, #Right
-                 {'x_inverted':True, 'y_inverted':True, 'xy_swap':True}, #left
-                 {'x_inverted':False, 'y_inverted':True, 'xy_swap':False}, #Back
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False}, #Face
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False}, #Top
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False} #bottom
+                 {'x_inverted':True,  'y_inverted':False, 'xy_swap':True},  # Right  # Africa
+                 {'x_inverted':False, 'y_inverted':True,  'xy_swap':True},  # Left   # Pacific
+                 {'x_inverted':False, 'y_inverted':False, 'xy_swap':False}, # Back   # America
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}, # Face   # Asia
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}, # Top    # Arctic
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}  # Bottom # Antartic
              ]
 
     def __init__(self, *args, **kwargs):
