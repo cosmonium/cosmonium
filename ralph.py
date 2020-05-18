@@ -35,7 +35,8 @@ sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
 from panda3d.core import AmbientLight, DirectionalLight, LColor
-from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion
+from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion, BitMask32, NodePath
+from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
 from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
@@ -47,7 +48,7 @@ from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, Sha
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.ships import ActorShip
 from cosmonium.surfaces import HeightmapSurface
-from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
+from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer, TerrainLayer
 from cosmonium.heightmap import PatchedHeightmap
 from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
@@ -61,6 +62,7 @@ from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.parsers.textureparser import TextureControlYamlParser, HeightColorControlYamlParser, TextureDictionaryYamlParser
+from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.utils import quaternion_from_euler
 from cosmonium.cosmonium import CosmoniumBase
@@ -70,13 +72,15 @@ from math import pow, pi, sqrt
 import argparse
 
 class TileFactory(object):
-    def __init__(self, heightmap, tile_density, size, height_scale, has_water, water):
+    def __init__(self, heightmap, tile_density, size, height_scale, has_water, water, has_physics, physics):
         self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
         self.height_scale = height_scale
         self.has_water = has_water
         self.water = water
+        self.has_physics = has_physics
+        self.physics = physics
 
     def create_patch(self, parent, lod, x, y):
         min_height = -self.height_scale
@@ -95,6 +99,8 @@ class TileFactory(object):
         patch.add_layer(terrain_layer)
         if self.has_water:
             patch.add_layer(WaterLayer(self.water))
+        if self.has_physics:
+            patch.add_layer(PhysicsLayer(self.physics))
         return patch
 
     def split_patch(self, parent):
@@ -147,11 +153,98 @@ class WaterLayer(object):
             self.water.remove_instance()
             self.water = None
 
+class PhysicsLayer(TerrainLayer):
+    def __init__(self, physics):
+        self.physics = physics
+        self.instance = None
+
+    def patch_done(self, patch):
+        heightmap_patch = patch.owner.heightmap.get_heightmap(patch)
+        shape = BulletHeightfieldShape(heightmap_patch.texture, patch.owner.heightmap.height_scale, ZUp)
+        shape.setUseDiamondSubdivision(True)
+        self.instance = NodePath(BulletRigidBodyNode('Heightfield'))
+        self.instance.node().add_shape(shape)
+        x = (heightmap_patch.x0 + heightmap_patch.x1) / 2.0
+        y = (heightmap_patch.y0 + heightmap_patch.y1) / 2.0
+        z = patch.owner.heightmap.height_scale / 2
+        size = heightmap_patch.x1 - heightmap_patch.x0
+        self.instance.set_pos(x, y, z)
+        self.instance.set_scale(size / heightmap_patch.width, size / heightmap_patch.height, 1.0)
+        self.instance.setCollideMask(BitMask32.allOn())
+        self.physics.add(self.instance)
+
+    def remove_instance(self):
+        if self.instance is None: return
+        self.physics.remove(self.instance)
+        self.instance.remove_node()
+        self.instance = None
+
+class PhysicsBox():
+    def __init__(self, model, physics, mass, limit):
+        self.model = model
+        self.physics = physics
+        self.mass = mass
+        self.limit = limit
+        self.instance = None
+        self.physics_instance = None
+
+    def create_instance(self, observer):
+        self.mesh = loader.loadModel(self.model)
+        self.mesh.clearModelNodes()
+        self.instance = NodePath("BoxHolder")
+        self.mesh.reparent_to(self.instance)
+        self.instance.reparent_to(render)
+
+        bounds = self.instance.get_tight_bounds()
+        half_size = (bounds[1] - bounds[0]) / 2.0
+        shape = BulletBoxShape(half_size)
+
+        self.physics_instance = NodePath(BulletRigidBodyNode('Box'))
+        self.physics_instance.node().set_mass(self.mass)
+        self.physics_instance.node().add_shape(shape)
+        self.physics_instance.setCollideMask(BitMask32.allOn())
+        position = observer._local_position + observer._orientation.xform(LPoint3d(0, 15, 5))
+        self.physics_instance.set_pos(*position)
+        self.physics.add(self.physics_instance)
+
+    def remove_instance(self):
+        if self.instance is not None:
+            self.instance.remove_node()
+            self.instance = None
+            self.physics.remove(self.physics_instance)
+            self.physics_instance = None
+
+    def update(self, observer):
+        if self.instance is None: return False
+        local_position = LPoint3d(*self.physics_instance.get_pos())
+        local_rotation = LQuaterniond(*self.physics_instance.get_quat())
+        if settings.camera_at_origin:
+            scene_rel_position = local_position - observer._local_position
+        else:
+            scene_rel_position = local_position
+        self.instance.set_pos(*scene_rel_position)
+        self.instance.set_quat(LQuaternion(*local_rotation))
+        if (local_position - observer._local_position).length() > self.limit:
+            print("Object is too far, removing it")
+            self.remove_instance()
+            return False
+        else:
+            return True
+
 class WaterConfig():
     def __init__(self, level, visible, scale):
         self.level = level
         self.visible = visible
         self.scale = scale
+
+class PhysicsConfig():
+    def __init__(self, enable, gravity, model, mass, limit, debug):
+        self.enable = enable
+        self.gravity = gravity
+        self.model = model
+        self.mass = mass
+        self.limit = limit
+        self.debug = debug
 
 class RalphConfigParser(YamlModuleParser):
     def decode(self, data):
@@ -160,6 +253,7 @@ class RalphConfigParser(YamlModuleParser):
         appearance = data.get('appearance', None)
         water = data.get('water', None)
         fog = data.get('fog', None)
+        physics = data.get('physics', {})
 
         terrain = data.get('terrain', {})
         self.tile_size = terrain.get("tile-size", 1024)
@@ -215,6 +309,7 @@ class RalphConfigParser(YamlModuleParser):
             self.water = WaterConfig(level, visible, scale)
         else:
             self.water = WaterConfig(0, False, 1.0)
+
         if fog is not None:
             self.fog_parameters = {}
             self.fog_parameters['fall_off'] = fog.get('falloff', 0.035)
@@ -222,6 +317,15 @@ class RalphConfigParser(YamlModuleParser):
             self.fog_parameters['ground'] = fog.get('ground', -500)
         else:
             self.fog_parameters = None
+
+        has_physics = physics.get('enable', False)
+        gravity = physics.get('gravity', 9.81)
+        model = physics.get('model', None)
+        mass = physics.get('mass', 20)
+        limit = physics.get('limit', 100)
+        enable_debug = physics.get('debug', False)
+        self.physics = PhysicsConfig(has_physics, gravity, model, mass, limit, enable_debug)
+
         return True
 
 class RaphSkyBox(DirectObject):
@@ -285,9 +389,11 @@ class RaphSkyBox(DirectObject):
                 self.fog.sun_color = self.sun_color * 0
 
 class RalphShip(ActorShip):
-    def __init__(self, name, ship_object, radius):
+    def __init__(self, name, ship_object, radius, enable_physics):
         ActorShip.__init__(self, name, ship_object, radius)
         self.current_state = None
+        self.physics_instance = None
+        self.enable_physics = enable_physics
 
     def set_state(self, new_state):
         if self.current_state == new_state: return
@@ -297,6 +403,27 @@ class RalphShip(ActorShip):
             self.ship_object.shape.stop()
             self.ship_object.shape.pose("walk", 5)
         self.current_state = new_state
+
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+        ActorShip.check_and_update_instance(self, camera_pos, camera_rot, pointset)
+        if self.enable_physics and self.physics_instance is None:
+            bounds = self.instance.get_tight_bounds()
+            dims = bounds[1] - bounds[0]
+            width = max(dims[0], dims[1]) / 2.0
+            height = dims[2]
+            self.physics_instance = NodePath(BulletRigidBodyNode("Ralph"))
+            shape = BulletCapsuleShape(width, height - 2 * width, ZUp)
+            self.physics_instance.node().addShape(shape)
+            self.physics_instance.node().setMass(1.0)
+            self.physics_instance.node().setKinematic(True)
+            base.physics.add(self.physics_instance)
+
+    def update(self, time, dt):
+        ActorShip.update(self, time, dt)
+        if self.physics_instance is not None:
+            offset = LPoint3d(0, 0, 0.8)
+            self.physics_instance.set_pos(*(self._local_position + offset))
+            self.physics_instance.set_quat(LQuaternion(*self._orientation))
 
 class RalphControl(EventsControllerBase):
     def __init__(self, sun, engine):
@@ -323,6 +450,7 @@ class RalphControl(EventsControllerBase):
         self.accept('alt-enter', self.engine.toggle_fullscreen)
         self.accept('{', self.engine.incr_ambient, [-0.05])
         self.accept('}', self.engine.incr_ambient, [+0.05])
+        self.accept('space', self.engine.spawn_box)
 
         self.accept("o", self.set_key, ["sun-left", True])#, direct=True)
         self.accept("o-up", self.set_key, ["sun-left", False])
@@ -412,7 +540,11 @@ class RoamingRalphDemo(CosmoniumBase):
     def create_terrain(self):
         self.create_terrain_heightmap()
         self.create_terrain_biome()
-        self.tile_factory = TileFactory(self.heightmap, self.ralph_config.tile_density, self.ralph_config.tile_size, self.ralph_config.height_scale, self.has_water, self.water)
+        self.tile_factory = TileFactory(self.heightmap,
+                                        self.ralph_config.tile_density, self.ralph_config.tile_size,
+                                        self.ralph_config.height_scale,
+                                        self.has_water, self.water,
+                                        self.ralph_config.physics.enable, self.physics)
         self.terrain_shape = TiledShape(self.tile_factory,
                                         self.ralph_config.tile_size,
                                         VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
@@ -445,6 +577,16 @@ class RoamingRalphDemo(CosmoniumBase):
         WaterNode.observer = self.observer
         if self.has_water:
             WaterNode.create_cam()
+
+    def spawn_box(self):
+        if not self.ralph_config.physics.enable: return
+        if self.ralph_config.physics.model is None: return
+        box = PhysicsBox(self.ralph_config.physics.model,
+                         self.physics,
+                         self.ralph_config.physics.mass,
+                         self.ralph_config.physics.limit)
+        box.create_instance(self.ralph)
+        self.physic_objects.append(box)
 
     def toggle_water(self):
         if not self.has_water: return
@@ -527,9 +669,18 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_config = RalphConfigParser()
         if self.ralph_config.load_and_parse(self.config_file) is None:
             sys.exit(1)
-        self.water = self.ralph_config.water
 
         self.has_water = True
+        self.water = self.ralph_config.water
+
+        if self.ralph_config.physics.enable:
+            self.physics = Physics(self.ralph_config.physics.debug)
+            self.physics.enable()
+            self.physics.set_gravity(self.ralph_config.physics.gravity)
+        else:
+            self.physics = None
+        self.physic_objects = []
+
         self.fullscreen = False
         self.shadow_caster = None
         self.set_ambient(0.3)
@@ -607,7 +758,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=True))
 
         self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
-        self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5)
+        self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
         frame = CartesianSurfaceReferenceFrame(LPoint3d())
         frame.set_parent_body(self)
         self.ralph.set_frame(frame)
@@ -637,7 +788,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph.check_visibility(self.observer.pixel_size)
         self.ralph.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), None)
         self.ralph.create_light()
-
+        if self.ralph_config.physics.enable:
+            for physic_object in self.physic_objects:
+                physic_object.update(self.observer)
 
         taskMgr.add(self.move, "moveTask")
 
@@ -660,6 +813,17 @@ class RoamingRalphDemo(CosmoniumBase):
         self.camera_controller.update(0, dt)
         self.controller.update(0, dt)
         self.mover.update()
+
+        if self.ralph_config.physics.enable:
+            to_remove = []
+            self.physics.update(0, dt)
+            for physic_object in self.physic_objects:
+                keep = physic_object.update(self.observer)
+                if not keep:
+                    to_remove.append(physic_object)
+            for physic_object in to_remove:
+                self.physic_objects.remove(physic_object)
+
         #TODO: Proper light management should be added
         self.light_color = self.skybox.light_color
         self.vector_to_star = -self.skybox.light_dir
