@@ -24,7 +24,7 @@ jobs:
     - name: Build binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
-        python setup.py build_apps -p manylinux1_x86_64 --cosmonium-test
+        python setup.py bdist_apps -p manylinux1_x86_64 --cosmonium-test
     - name: Test binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
@@ -33,7 +33,7 @@ jobs:
     - name: Build binary (macOS)
       if: runner.os == 'macOS'
       run: |
-        python setup.py build_apps -p macosx_10_9_x86_64 --cosmonium-test
+        python setup.py bdist_apps -p macosx_10_9_x86_64 --cosmonium-test
     - name: Test binary (macOS)
       if: runner.os == 'macOS'
       run: |
@@ -42,9 +42,36 @@ jobs:
     - name: Build binary (Windows)
       if: runner.os == 'Windows'
       run: |
-        python setup.py build_apps -p win_amd64 --cosmonium-test
+        python setup.py bdist_apps -p win_amd64 --cosmonium-test
     - name: Test binary (Windows)
       if: runner.os == 'Windows'
       run: |
         cd build/win_amd64
         & ./cosmonium.exe --% --test-start
+    - name: 'Upload development build (Ubuntu)'
+      if: runner.os == 'Linux'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest-linux"
+        prerelease: true
+        title: "Linux Development Build"
+        files: dist/*
+    - name: 'Upload development build (macOS)'
+      if: runner.os == 'macOS'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest-macos"
+        prerelease: true
+        title: "MacOS Development Build"
+        files: dist/*
+    - name: 'Upload development build (Windows)'
+      if: runner.os == 'Windows'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest-windows"
+        prerelease: true
+        title: "Windows Development Build"
+        files: dist/*
