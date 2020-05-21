@@ -88,6 +88,7 @@ class ShipBase(VisibleObject):
         new_local = (self._global_position - new_global_pos) + old_local
         self._global_position = new_global_pos
         self._frame_position = self.frame.get_rel_position(new_local)
+        self.do_update()
 
     def get_position(self):
         return self._global_position + self.frame.get_local_position(self._frame_position)
@@ -132,11 +133,14 @@ class ShipBase(VisibleObject):
     def get_rot(self):
         return self.frame.get_abs_orientation(self._frame_rotation)
 
-    def update(self, time, dt):
+    def do_update(self):
         #TODO: _position should be global + local !
         self._position = self.get_pos()
         self._local_position = self.get_pos()
         self._orientation = self.get_rot()
+
+    def update(self, time, dt):
+        self.do_update()
 
     def turn_back(self):
         new_rot = utils.relative_rotation(self.get_rot(), LVector3d.up(), pi)
