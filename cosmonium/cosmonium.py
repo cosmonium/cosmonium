@@ -167,6 +167,7 @@ class CosmoniumBase(ShowBase):
         print("Data type:", "double" if settings.use_double else 'float')
 
     def exit(self):
+        sys.stdout.flush()
         sys.exit(0)
 
     def create_additional_display_regions(self):
