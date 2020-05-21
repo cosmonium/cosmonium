@@ -166,10 +166,6 @@ class CosmoniumBase(ShowBase):
             print("\t", system)
         print("Data type:", "double" if settings.use_double else 'float')
 
-    def exit(self):
-        sys.stdout.flush()
-        sys.exit(0)
-
     def create_additional_display_regions(self):
         pass
 
@@ -203,7 +199,7 @@ class CosmoniumBase(ShowBase):
 
     def gsg_failure(self, event):
         print("Internal error detected, see output.log for more details")
-        sys.exit(1)
+        self.userExit()
 
     def get_fullscreen_sizes(self):
         info = self.pipe.getDisplayInformation()
@@ -238,7 +234,7 @@ class CosmoniumBase(ShowBase):
     def window_event(self, window):
         if self.win is None: return
         if self.win.is_closed():
-            sys.exit(0)
+            self.userExit()
         wp = self.win.getProperties()
         width = wp.getXSize()
         height = wp.getYSize()
@@ -437,7 +433,7 @@ class Cosmonium(CosmoniumBase):
         if self.app_config.test_start:
             #TODO: this is where the tests should be inserted
             print("Tests done.")
-            self.exit()
+            self.userExit()
 
     def app_panda_config(self, data):
         icon = defaultDirContext.find_texture('cosmonium.ico')

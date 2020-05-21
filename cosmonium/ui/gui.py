@@ -122,7 +122,7 @@ class Gui(object):
         self.scale = LVector2(1.0 / self.screen_width * 2.0, 1.0 / self.screen_height * 2.0)
 
     def register_events(self, event_ctrl):
-        event_ctrl.accept('control-q', self.cosmonium.exit)
+        event_ctrl.accept('control-q', self.cosmonium.userExit)
         event_ctrl.accept('enter', self.open_find_object)
         event_ctrl.accept('escape', self.escape)
         event_ctrl.accept('alt-enter', self.cosmonium.toggle_fullscreen)
@@ -408,7 +408,7 @@ class Gui(object):
                 0,
                 ('_Preferences', 0, self.show_preferences),
                 0,
-                ('_Quit>Control-Q', 0, self.cosmonium.exit),
+                ('_Quit>Control-Q', 0, self.cosmonium.userExit),
                 )
 
     def create_time_menu_items(self):
