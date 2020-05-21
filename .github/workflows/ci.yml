@@ -24,30 +24,48 @@ jobs:
     - name: Build binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
-        python setup.py bdist_apps -p manylinux1_x86_64 --cosmonium-test
+        python setup.py bdist_apps -p manylinux1_x86_64
     - name: Test binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
         cd build/manylinux1_x86_64
         ./cosmonium --test-start
+    - name: Upload logs (Linux)
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-logs
+        path: ~/.local/share/cosmonium/output.log
     - name: Build binary (macOS)
       if: runner.os == 'macOS'
       run: |
-        python setup.py bdist_apps -p macosx_10_9_x86_64 --cosmonium-test
+        python setup.py bdist_apps -p macosx_10_9_x86_64
     - name: Test binary (macOS)
       if: runner.os == 'macOS'
       run: |
         cd build/macosx_10_9_x86_64/cosmonium.app/Contents/MacOS
         ./cosmonium --test-start
+    - name: Upload logs (macOS)
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-logs
+        path: ~/Documents/cosmonium/output.log
     - name: Build binary (Windows)
       if: runner.os == 'Windows'
       run: |
-        python setup.py bdist_apps -p win_amd64 --cosmonium-test
+        python setup.py bdist_apps -p win_amd64
     - name: Test binary (Windows)
       if: runner.os == 'Windows'
       run: |
         cd build/win_amd64
         & ./cosmonium.exe --% --test-start
+    - name: Upload logs (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-logs
+        path: ~/AppData/Local/cosmonium/output.log
     - name: 'Upload development build (Ubuntu)'
       if: runner.os == 'Linux'
       uses: "marvinpinto/action-automatic-releases@latest"
