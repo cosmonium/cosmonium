@@ -21,7 +21,7 @@ from setuptools import setup
 
 from setup import config
 
-config['options']['build_apps']['platforms'] = ['win_amd64']
+config['options']['build_apps']['platforms'] = ['win_amd64', 'win32']
 config['options']['build_apps']['requirements_path'] = 'requirements-win.txt'
 package_data_dirs = config['options']['build_apps'].setdefault('package_data_dirs', {})
 package_data_dirs['win32'] = [('pywin32_system32/*', '', {}),

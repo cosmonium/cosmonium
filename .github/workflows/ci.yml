@@ -24,7 +24,7 @@ jobs:
     - name: Build binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
-        python setup.py bdist_apps -p manylinux1_x86_64
+        python setup.py bdist_apps -p manylinux1_x86_64,manylinux1_i686
     - name: Test binary (Ubuntu)
       if: runner.os == 'Linux'
       run: |
@@ -54,11 +54,13 @@ jobs:
     - name: Build binary (Windows)
       if: runner.os == 'Windows'
       run: |
-        python setup.py bdist_apps -p win_amd64
+        python setup.py bdist_apps -p win_amd64,win32
     - name: Test binary (Windows)
       if: runner.os == 'Windows'
       run: |
         cd build/win_amd64
+        & ./cosmonium.exe --% --test-start
+        cd ../win32
         & ./cosmonium.exe --% --test-start
     - name: Upload logs (Windows)
       if: runner.os == 'Windows'

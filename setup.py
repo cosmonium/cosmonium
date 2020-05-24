@@ -42,7 +42,7 @@ config = {
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
-            'platforms': ['manylinux1_x86_64', 'macosx_10_9_x86_64'],
+            'platforms': ['manylinux1_x86_64', 'manylinux1_i686', 'macosx_10_9_x86_64'],
             'include_patterns': [
                 'shaders/**',
                 'data/**',
