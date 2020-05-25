@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from ..shaders import BasicShader, LightingModel
 from ..appearances import Appearance
+from ..oneil import ONeilSimpleScattering, ONeilSimpleAtmosphere
 from ..oneil import ONeilScattering, ONeilAtmosphere
 from ..celestia.atmosphere import CelestiaScattering, CelestiaAtmosphere
 
@@ -54,13 +55,14 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
                                     absorption_coef = absorption_coef)
         return atmosphere
 
-class ONeilAtmosphereYamlParser(YamlModuleParser):
+class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
         mie_phase_asymmetry = data.get('g', -0.99)
         rayleigh_coef = data.get('rayleigh', 0.0025)
         mie_coef = data.get('mie', 0.0015)
         sun_power = data.get('power', 15.0)
+        samples = data.get('samples', 5)
         exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc-in-fragment', False)
         normalize = data.get('normalize', False)
@@ -70,17 +72,67 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         atm_hdr = data.get('atm-hdr', True)
         appearance = Appearance()
         lighting_model = LightingModel()
+        scattering = ONeilSimpleScattering(atmosphere=True, calc_in_fragment=atm_calc_in_fragment, normalize=atm_normalize, hdr=atm_hdr)
+        shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
+        shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
+        atmosphere = ONeilSimpleAtmosphere(shape=shape,
+                                           wavelength = [0.650, 0.570, 0.465],
+                                           mie_phase_asymmetry=mie_phase_asymmetry,
+                                           mie_coef=mie_coef,
+                                           rayleigh_coef=rayleigh_coef,
+                                           sun_power=sun_power,
+                                           samples=samples,
+                                           exposure=exposure,
+                                           calc_in_fragment=calc_in_fragment,
+                                           normalize=normalize,
+                                           hdr=hdr,
+                                           appearance=appearance,
+                                           shader=shader)
+        return atmosphere
+
+class ONeilAtmosphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        height = data.get('height', 160)
+        mie_phase_asymmetry = data.get('g', -0.85)
+        rayleigh_scale_depth = data.get('rayleigh-scale-depth', 0.25 * height)
+        rayleigh_coef = data.get('rayleigh', 0.0025)
+        mie_scale_depth = data.get('mie-scale-depth', 0.1 * height)
+        mie_coef = data.get('mie', 0.0015)
+        sun_power = data.get('power', 15.0)
+        samples = data.get('samples', 5)
+        exposure = data.get('exposure', 0.8)
+        calc_in_fragment = data.get('calc-in-fragment', False)
+        normalize = data.get('normalize', False)
+        hdr = data.get('hdr', False)
+        atm_calc_in_fragment = data.get('atm-calc-in-fragment', True)
+        atm_normalize = data.get('atm-normalize', True)
+        atm_hdr = data.get('atm-hdr', True)
+        rayleigh_scale_depth /= height
+        mie_scale_depth /= height
+        appearance = Appearance()
+        lighting_model = LightingModel()
         scattering = ONeilScattering(atmosphere=True, calc_in_fragment=atm_calc_in_fragment, normalize=atm_normalize, hdr=atm_hdr)
         shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
         atmosphere = ONeilAtmosphere(shape=shape,
-                                     mie_phase_asymmetry=mie_phase_asymmetry, mie_coef=mie_coef,
-                                     rayleigh_coef=rayleigh_coef, sun_power=sun_power,
+                                     height=height,
+                                     wavelength = [0.650, 0.570, 0.465],
+                                     mie_phase_asymmetry=mie_phase_asymmetry,
+                                     rayleigh_scale_depth=rayleigh_scale_depth,
+                                     rayleigh_coef=rayleigh_coef,
+                                     mie_scale_depth=mie_scale_depth,
+                                     mie_coef=mie_coef,
+                                     sun_power=sun_power,
+                                     samples=samples,
                                      exposure=exposure,
                                      calc_in_fragment=calc_in_fragment,
                                      normalize=normalize,
                                      hdr=hdr,
-                                     appearance=appearance, shader=shader)
+                                     lookup_size=256,
+                                     lookup_samples=50,
+                                     appearance=appearance,
+                                     shader=shader)
         return atmosphere
 
 class AtmosphereYamlParser(YamlModuleParser):
@@ -88,7 +140,9 @@ class AtmosphereYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None: return None
         (object_type, parameters) = cls.get_type_and_data(data)
-        if object_type == 'oneil':
+        if object_type == 'oneil:simple':
+            return ONeilSimpleAtmosphereYamlParser.decode(parameters)
+        elif object_type == 'oneil':
             return ONeilAtmosphereYamlParser.decode(parameters)
         elif object_type == 'celestia':
             return CelestiaAtmosphereYamlParser.decode(parameters)
