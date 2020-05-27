@@ -87,7 +87,7 @@ class TransparencyBlend:
             blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
                                                 ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one_minus_incoming_alpha,
                                                 ColorBlendAttrib.M_add,
-                                                ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one_minus_incoming_alpha)
+                                                ColorBlendAttrib.O_one, ColorBlendAttrib.O_one_minus_incoming_alpha)
             translucid = True
         elif blend == TransparencyBlend.TB_PremultipliedAlpha:
             blendAttrib = ColorBlendAttrib.make(ColorBlendAttrib.MAdd,
