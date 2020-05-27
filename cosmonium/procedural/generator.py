@@ -24,7 +24,26 @@ from panda3d.core import NodePath, OrthographicLens, CardMaker, GraphicsOutput, 
 from panda3d.core import FrameBufferProperties, GraphicsPipe, WindowProperties
 from direct.task import Task
 
+from ..shaders import ShaderProgram
 from .. import settings
+
+class GeneratorVertexShader(ShaderProgram):
+    def __init__(self):
+        ShaderProgram.__init__(self, 'vertex')
+
+    def create_uniforms(self, code):
+        code.append("uniform mat4 p3d_ModelViewProjectionMatrix;")
+
+    def create_inputs(self, code):
+        code.append("in vec2 p3d_MultiTexCoord0;")
+        code.append("in vec4 p3d_Vertex;")
+
+    def create_outputs(self, code):
+        code.append("out vec2 texcoord;")
+
+    def create_body(self, code):
+        code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
+        code.append("texcoord = p3d_MultiTexCoord0;")
 
 class TexGenerator(object):
     def __init__(self):
@@ -138,7 +157,7 @@ class TexGenerator(object):
 
     def generate(self, shader, face, texture, callback=None, cb_args=()):
         #print("ADD")
-        if texture.has_ram_image():
+        if texture.has_ram_image() and callback is not None:
             print("Texture already has data")
         self.schedule((shader, face, texture, callback, cb_args))
 

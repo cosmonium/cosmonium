@@ -27,6 +27,8 @@ from ..textures import TexCoord
 from ..parameters import ParametersGroup, AutoUserParameter
 from .. import settings
 
+from .generator import GeneratorVertexShader
+
 class NoiseSource(object):
     last_id = 0
     def __init__(self, name, prefix):
@@ -912,24 +914,6 @@ class NoiseRotate(NoiseSource):
         group.add_parameters(self.noise_angle.get_user_parameters())
         return group
 
-class NoiseVertexShader(ShaderProgram):
-    def __init__(self):
-        ShaderProgram.__init__(self, 'vertex')
-
-    def create_uniforms(self, code):
-        code.append("uniform mat4 p3d_ModelViewProjectionMatrix;")
-
-    def create_inputs(self, code):
-        code.append("in vec2 p3d_MultiTexCoord0;")
-        code.append("in vec4 p3d_Vertex;")
-
-    def create_outputs(self, code):
-        code.append("out vec2 texcoord;")
-
-    def create_body(self, code):
-        code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
-        code.append("texcoord = p3d_MultiTexCoord0;")
-
 class NoiseFragmentShader(ShaderProgram):
     def __init__(self, coord, noise_source, noise_target):
         ShaderProgram.__init__(self, 'fragment')
@@ -1030,7 +1014,7 @@ class NoiseShader(StructuredShader):
         self.global_frequency = 1.0
         self.global_offset = LVector3(0, 0, 0)
         self.global_scale = 1.0
-        self.vertex_shader = NoiseVertexShader()
+        self.vertex_shader = GeneratorVertexShader()
         self.fragment_shader = NoiseFragmentShader(self.coord, self.noise_source, self.noise_target)
         #self.texture = loader.loadTexture('permtexture.png')
 
