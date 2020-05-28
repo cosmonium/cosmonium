@@ -107,7 +107,7 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         hdr = data.get('hdr', False)
         atm_calc_in_fragment = data.get('atm-calc-in-fragment', True)
         atm_normalize = data.get('atm-normalize', True)
-        atm_hdr = data.get('atm-hdr', True)
+        atm_hdr = data.get('atm-hdr', False)
         rayleigh_scale_depth /= height
         mie_scale_depth /= height
         appearance = Appearance()
