@@ -58,6 +58,7 @@ jobs:
     - name: Test binary (Windows)
       if: runner.os == 'Windows'
       run: |
+        set PYTHONUNBUFFERED=1
         cd build/win_amd64
         & ./cosmonium.exe --% --test-start
         cd ../win32
