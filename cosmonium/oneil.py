@@ -87,7 +87,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         if parent is not None:
             self.planet_radius = parent.get_min_radius()
             self.radius = self.planet_radius * self.AtmosphereRatio
-            self.ratio = self.atmosphere_ratio
+            self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere):
         scattering = ONeilSimpleScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
@@ -438,7 +438,7 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         parameters = shape.owner.atmosphere
         planet_radius = shape.owner.get_min_radius()
         inner_radius = planet_radius
-        outer_radius = planet_radius * parameters.atmosphere_ratio
+        outer_radius = planet_radius * parameters.AtmosphereRatio
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
@@ -467,8 +467,8 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         shape.instance.setShaderInput("fInnerRadius2", inner_radius * inner_radius)
 
         shape.instance.setShaderInput("fScale", scale)
-        shape.instance.setShaderInput("fScaleDepth", parameters.rayleigh_scale_depth)
-        shape.instance.setShaderInput("fScaleOverScaleDepth", scale / parameters.rayleigh_scale_depth)
+        shape.instance.setShaderInput("fScaleDepth", parameters.ScaleDepth)
+        shape.instance.setShaderInput("fScaleOverScaleDepth", scale / parameters.ScaleDepth)
 
     def update_shader_shape(self, shape, appearance):
         factor = 1.0 / shape.owner.scene_scale_factor
