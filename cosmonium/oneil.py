@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Texture
+from panda3d.core import Texture, LVector3d
 
 from .bodyelements import Atmosphere
 from .shaders import StructuredShader, ShaderProgram, AtmosphericScattering
@@ -116,8 +116,10 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                  mie_phase_asymmetry,
                  rayleigh_scale_depth,
                  rayleigh_coef,
+                 rayleigh_absorption,
                  mie_scale_depth,
-                 mie_coef,
+                 mie_alpha_coef,
+                 mie_beta_coef,
                  sun_power,
                  samples,
                  exposure,
@@ -133,8 +135,10 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.G = mie_phase_asymmetry
         self.rayleigh_scale_depth = rayleigh_scale_depth
         self.Kr = rayleigh_coef
+        self.rayleigh_absorption = rayleigh_absorption
         self.mie_scale_depth = mie_scale_depth
-        self.Km = mie_coef
+        self.Km_alpha = mie_alpha_coef
+        self.Km_beta = mie_beta_coef
         self.ESun = sun_power
         self.samples = samples
         self.exposure = exposure
@@ -203,10 +207,13 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         group.add_parameters(
                              UserParameter('Rayleigh scale depth', self.set_rayleigh_scale_depth, self.get_rayleigh_scale_depth, UserParameter.TYPE_FLOAT, [0, self.height]),
                              AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
+                             AutoUserParameter('Rayleigh absorption', 'rayleigh_absorption', self, AutoUserParameter.TYPE_VEC, [0, 100.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6, nb_components=3),
                              UserParameter('Mie scale depth', self.set_mie_scale_depth, self.get_mie_scale_depth, UserParameter.TYPE_FLOAT, [0, self.height]),
-                             AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
+                             AutoUserParameter('Mie alpha coef', 'Km_alpha', self, AutoUserParameter.TYPE_FLOAT, [-4.0, 4.0]),
+                             AutoUserParameter('Mie beta coef', 'Km_beta', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
                              AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
                              AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
+                             AutoUserParameter('Samples', 'samples', self, AutoUserParameter.TYPE_INT, [0, 64]),
                              AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
                              AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
                             )
@@ -610,22 +617,21 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("uniform vec3 v3OriginPos;")       # Center of the planet
         code.append("uniform vec3 v3CameraPos;")       # The camera's current position
         code.append("uniform vec3 v3LightPos;")        # The direction vector to the light source
-        code.append("uniform vec3 v3InvWavelength;")   # 1 / pow(wavelength, 4) for the red, green, and blue channels
+        code.append("uniform vec3 v3Absorption;")      # Absorption coefs for the red, green, and blue channels
         code.append("uniform float fCameraHeight;")    # The camera's current height
         code.append("uniform float fCameraHeight2;")   # fCameraHeight^2
         code.append("uniform float fOuterRadius;")     # The outer (atmosphere) radius
         code.append("uniform float fOuterRadius2;")    # fOuterRadius^2
         code.append("uniform float fInnerRadius; ")    # The inner (planetary) radius
         code.append("uniform float fInnerRadius2;")    # fInnerRadius^2
-        code.append("uniform float fKrESun;")          # Kr * ESun
-        code.append("uniform float fKmESun;")          # Km * ESun
-        code.append("uniform float fKr4PI;")           # Kr * 4 * PI
-        code.append("uniform float fKm4PI;")           # Km * 4 * PI
+        code.append("uniform vec3 v3KrESun;")          # Kr * ESun
+        code.append("uniform vec3 v3KmESun;")          # Km * ESun
+        code.append("uniform vec3 v3Kr4PI;")           # Kr * 4 * PI
+        code.append("uniform vec3 v3Km4PI;")           # Km * 4 * PI
         code.append("uniform float fScale;")           # 1 / (fOuterRadius - fInnerRadius)
 
         code.append("uniform sampler2D pbOpticalDepth;")
         code.append("uniform int nSamples;")
-        code.append("uniform float fSamples;")
         code.append("uniform float model_scale;")
         code.append("#define DELTA 1e-6")
 
@@ -706,7 +712,7 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("  vec3 v3Attenuate = vec3(1.0);")
         code.append("  vec3 v3RayleighSum = vec3(0.0);")
         code.append("  vec3 v3MieSum = vec3(0.0);")
-        code.append("  float fSampleLength = fFar / fSamples;")
+        code.append("  float fSampleLength = fFar / float(nSamples);")
         code.append("  float fScaledLength = fSampleLength * fScale;")
         code.append("  vec3 v3SampleRay = v3Ray * fSampleLength;")
 
@@ -720,7 +726,7 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("      float fAltitude = (fHeight - fInnerRadius) * fScale;")
         code.append("      v4LightDepth = texture(pbOpticalDepth, vec2(fAltitude, 0.5 - fLightAngle * 0.5));")
 
-        code.append("     // If no light light reaches this part of the atmosphere, no light is scattered in at this point")
+        code.append("      // If no light light reaches this part of the atmosphere, no light is scattered in at this point")
         code.append("      if(v4LightDepth[0] < DELTA)")
         code.append("          continue;")
 
@@ -748,13 +754,10 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("      }")
 
         code.append("      // Now multiply the optical depth by the attenuation factor for the sample ray")
-        code.append("      fRayleighDepth *= fKr4PI;")
-        code.append("      fMieDepth *= fKm4PI;")
-
         code.append("      // Calculate the attenuation factor for the sample ray")
         code.append("      vec3 v3Attenuation;")
-        code.append("      v3Attenuation = exp(-fRayleighDepth * v3InvWavelength - fMieDepth);")
-        code.append("      v3Attenuate *= v3Attenuation;")
+        code.append("      v3Attenuation = exp(-fRayleighDepth * v3Absorption -fRayleighDepth * v3Kr4PI - fMieDepth * v3Km4PI);")
+        code.append("      v3Attenuate = v3Attenuation;")
 
         code.append("      v3RayleighSum += fRayleighDensity * v3Attenuation;")
         code.append("      v3MieSum += fMieDensity * v3Attenuation;")
@@ -764,12 +767,12 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("  }")
         if self.atmosphere:
             code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
-            code.append("  primary_color = vec4(v3RayleighSum * (v3InvWavelength * fKrESun), 0.0);")
-            code.append("  secondary_color = vec4(v3MieSum * fKmESun, 0.0);")
+            code.append("  primary_color = vec4(v3RayleighSum * v3KrESun, 0.0);")
+            code.append("  secondary_color = vec4(v3MieSum * v3KmESun, 0.0);")
             code.append("  v3Direction = -v3Ray;")
         else:
             code.append("  // Finally, scale the Mie and Rayleigh colors and calculate the attenuation factor for the ground")
-            code.append("  primary_color = vec4(v3RayleighSum * v3InvWavelength * fKrESun + v3MieSum * fKmESun, 1.0);")
+            code.append("  primary_color = vec4(v3RayleighSum * v3KrESun + v3MieSum * v3KmESun, 1.0);")
             code.append("  secondary_color = vec4(v3Attenuate, 1.0);")
 
     def calc_colors(self, code):
@@ -803,21 +806,22 @@ class ONeilScattering(ONeilScatteringBase):
         outer_radius =  parameters.radius
         scale = 1.0 / (outer_radius - inner_radius)
 
-        shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
-        shape.instance.setShaderInput("fKm4PI", parameters.Km * 4 * pi)
-
-        shape.instance.setShaderInput("fSamples", parameters.samples)
-        shape.instance.setShaderInput("nSamples", parameters.samples)
+        shape.instance.setShaderInput("nSamples", int(parameters.samples))
         # These do sunsets and sky colors
         # Brightness of sun
         # Reyleight Scattering (Main sky colors)
-        shape.instance.setShaderInput("fKrESun", parameters.Kr * parameters.ESun)
+        Kr = LVector3d(parameters.Kr / pow(parameters.wavelength[0], 4),
+                       parameters.Kr / pow(parameters.wavelength[1], 4),
+                       parameters.Kr / pow(parameters.wavelength[2], 4))
+        shape.instance.setShaderInput("v3KrESun", Kr * parameters.ESun)
+        shape.instance.setShaderInput("v3Kr4PI", Kr * 4 * pi)
+        shape.instance.setShaderInput("v3Absorption", parameters.rayleigh_absorption)
         # Mie Scattering -- Haze and sun halos
-        shape.instance.setShaderInput("fKmESun", parameters.Km * parameters.ESun)
-        # Color of sun
-        shape.instance.setShaderInput("v3InvWavelength", 1.0 / pow(parameters.wavelength[0], 4),
-                                                         1.0 / pow(parameters.wavelength[1], 4),
-                                                         1.0 / pow(parameters.wavelength[2], 4))
+        Km = LVector3d(parameters.Km_beta / pow(parameters.wavelength[0], parameters.Km_alpha),
+                       parameters.Km_beta / pow(parameters.wavelength[1], parameters.Km_alpha),
+                       parameters.Km_beta / pow(parameters.wavelength[2], parameters.Km_alpha))
+        shape.instance.setShaderInput("v3KmESun", Km * parameters.ESun)
+        shape.instance.setShaderInput("v3Km4PI", Km * 4 * pi)
 
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)

@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from panda3d.core import LVector3d
+
 from ..shaders import BasicShader, LightingModel
 from ..appearances import Appearance
 from ..oneil import ONeilSimpleScattering, ONeilSimpleAtmosphere
@@ -97,10 +99,12 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         mie_phase_asymmetry = data.get('g', -0.85)
         rayleigh_scale_depth = data.get('rayleigh-scale-depth', 0.25 * height)
         rayleigh_coef = data.get('rayleigh', 0.0025)
+        rayleigh_absorption = LVector3d(*(data.get('rayleigh-absorption', [0, 0, 0])))
         mie_scale_depth = data.get('mie-scale-depth', 0.1 * height)
-        mie_coef = data.get('mie', 0.0015)
+        mie_alpha_coef = data.get('mie-alpha', 0)
+        mie_beta_coef = data.get('mie', 0.0015)
         sun_power = data.get('power', 15.0)
-        samples = data.get('samples', 5)
+        samples = data.get('samples', 16)
         exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc-in-fragment', False)
         normalize = data.get('normalize', False)
@@ -121,8 +125,10 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
                                      mie_phase_asymmetry=mie_phase_asymmetry,
                                      rayleigh_scale_depth=rayleigh_scale_depth,
                                      rayleigh_coef=rayleigh_coef,
+                                     rayleigh_absorption=rayleigh_absorption,
                                      mie_scale_depth=mie_scale_depth,
-                                     mie_coef=mie_coef,
+                                     mie_alpha_coef=mie_alpha_coef,
+                                     mie_beta_coef=mie_beta_coef,
                                      sun_power=sun_power,
                                      samples=samples,
                                      exposure=exposure,
