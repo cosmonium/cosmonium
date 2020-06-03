@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import Texture, LVector3d
 
 from .bodyelements import Atmosphere
-from .shaders import StructuredShader, ShaderProgram, AtmosphericScattering
+from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
 from .procedural.generator import GeneratorVertexShader, TexGenerator
@@ -35,6 +35,9 @@ class ONeilAtmosphereBase(Atmosphere):
         Atmosphere.__init__(self, shape, appearance, shader)
         self.blend = TransparencyBlend.TB_Alpha
         self.inside = None
+        self.radius = None
+        self.planet_radius = None
+        self.ratio = None
 
     def do_update_scattering(self, shape_object):
         shape_object.shader.scattering.set_inside(self.inside)
@@ -66,11 +69,13 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
                  samples,
                  exposure,
                  calc_in_fragment,
+                 atm_calc_in_fragment,
                  normalize,
+                 atm_normalize,
                  hdr,
-                 appearance,
-                 shader):
-        ONeilAtmosphereBase.__init__(self, shape, appearance, shader)
+                 atm_hdr,
+                 appearance):
+        ONeilAtmosphereBase.__init__(self, shape, appearance, None)
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
         self.Kr = rayleigh_coef
@@ -79,8 +84,13 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.samples = samples
         self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
+        self.atm_calc_in_fragment = atm_calc_in_fragment
         self.normalize = normalize
+        self.atm_normalize = atm_normalize
         self.hdr = hdr
+        self.atm_hdr = atm_hdr
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(True))
+        self.set_shader(shader)
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -90,7 +100,10 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
             self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere):
-        scattering = ONeilSimpleScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+        if atmosphere:
+            scattering = ONeilSimpleScattering(self, atmosphere=True, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+        else:
+            scattering = ONeilSimpleScattering(self, atmosphere=False, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -124,13 +137,15 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                  samples,
                  exposure,
                  calc_in_fragment,
+                 atm_calc_in_fragment,
                  normalize,
+                 atm_normalize,
                  hdr,
+                 atm_hdr,
                  lookup_size,
                  lookup_samples,
-                 appearance,
-                 shader):
-        ONeilAtmosphereBase.__init__(self, shape, appearance, shader)
+                 appearance):
+        ONeilAtmosphereBase.__init__(self, shape, appearance, None)
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
         self.rayleigh_scale_depth = rayleigh_scale_depth
@@ -143,12 +158,17 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.samples = samples
         self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
+        self.atm_calc_in_fragment = atm_calc_in_fragment
         self.normalize = normalize
+        self.atm_normalize = atm_normalize
         self.hdr = hdr
+        self.atm_hdr = atm_hdr
         self.height = height
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
         self.pbOpticalDepth = None
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(True))
+        self.set_shader(shader)
 
     @classmethod
     def get_generator(cls, size):
@@ -162,12 +182,15 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
-            self.planet_radius = parent.get_min_radius()
+            self.planet_radius = parent.get_average_radius()
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
     def create_scattering_shader(self, atmosphere):
-        scattering = ONeilScattering(atmosphere=atmosphere, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+        if atmosphere:
+            scattering = ONeilScattering(self, atmosphere=True, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+        else:
+            scattering = ONeilScattering(self, atmosphere=False, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -224,8 +247,9 @@ class ONeilScatteringBase(AtmosphericScattering):
     world_vertex = True
     str_id = None
 
-    def __init__(self, atmosphere=False, calc_in_fragment=False, normalize=False, hdr=False):
+    def __init__(self, parameters, atmosphere=False, calc_in_fragment=False, normalize=False, hdr=False):
         AtmosphericScattering.__init__(self)
+        self.parameters = parameters
         self.atmosphere = atmosphere
         self.calc_in_fragment = calc_in_fragment
         self.use_vertex_frag = calc_in_fragment
@@ -233,6 +257,9 @@ class ONeilScatteringBase(AtmosphericScattering):
         self.hdr = hdr
         self.use_normal = False#not self.atmosphere
         self.inside = False
+
+    def set_parameters(self, parameters):
+        self.parameters = parameters
 
     def set_inside(self, inside):
         self.inside = inside
@@ -442,10 +469,9 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         self.calc_colors(code)
 
     def update_shader_shape_static(self, shape, appearance):
-        parameters = shape.owner.atmosphere
-        planet_radius = shape.owner.get_min_radius()
-        inner_radius = planet_radius
-        outer_radius = planet_radius * parameters.AtmosphereRatio
+        parameters = self.parameters
+        inner_radius = parameters.planet_radius
+        outer_radius = parameters.planet_radius * parameters.AtmosphereRatio
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
@@ -597,7 +623,7 @@ class ONeilLookupTableShader(StructuredShader):
         return name
 
     def update(self, instance, face):
-        planet_radius = self.parameters.owner.get_min_radius()
+        planet_radius = self.parameters.planet_radius
         inner_radius = planet_radius
         outer_radius = self.parameters.radius
 
@@ -799,10 +825,9 @@ class ONeilScattering(ONeilScatteringBase):
         self.calc_colors(code)
 
     def update_shader_shape_static(self, shape, appearance):
-        parameters = shape.owner.atmosphere
+        parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
-        planet_radius = shape.owner.get_min_radius()
-        inner_radius = planet_radius
+        inner_radius = parameters.planet_radius
         outer_radius =  parameters.radius
         scale = 1.0 / (outer_radius - inner_radius)
 

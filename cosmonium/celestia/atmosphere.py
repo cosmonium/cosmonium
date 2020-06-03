@@ -24,7 +24,7 @@ from panda3d.core import LVector3d
 
 from ..bodyelements import Atmosphere
 from ..utils import TransparencyBlend
-from ..shaders import AtmosphericScattering
+from ..shaders import BasicShader, AtmosphericScattering
 
 from math import log
 
@@ -51,6 +51,8 @@ class CelestiaAtmosphere(Atmosphere):
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
         self.blend = TransparencyBlend.TB_AlphaAdditive
+        shader = BasicShader(lighting_model=CelestiaScattering(atmosphere=True))
+        self.set_shader(shader)
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)

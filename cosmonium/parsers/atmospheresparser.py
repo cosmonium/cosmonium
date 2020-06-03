@@ -22,11 +22,10 @@ from __future__ import absolute_import
 
 from panda3d.core import LVector3d
 
-from ..shaders import BasicShader, LightingModel
 from ..appearances import Appearance
-from ..oneil import ONeilSimpleScattering, ONeilSimpleAtmosphere
-from ..oneil import ONeilScattering, ONeilAtmosphere
-from ..celestia.atmosphere import CelestiaScattering, CelestiaAtmosphere
+from ..oneil import ONeilSimpleAtmosphere
+from ..oneil import ONeilAtmosphere
+from ..celestia.atmosphere import CelestiaAtmosphere
 
 from .yamlparser import YamlModuleParser
 from .shapesparser import ShapeYamlParser
@@ -42,13 +41,10 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
         rayleigh_scale_height = data.get('rayleigh-scale-height', 0.0)
         absorption_coef = data.get('absorption', None)
         appearance = Appearance()
-        lighting_model = CelestiaScattering(atmosphere=True)
-        shader = BasicShader(lighting_model=lighting_model)
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
         atmosphere = CelestiaAtmosphere(height = atmosphere_height,
                                     shape=shape,
                                     appearance=appearance,
-                                    shader=shader,
                                     mie_scale_height = mie_scale_height,
                                     mie_coef = mie_coef,
                                     mie_phase_asymmetry = mie_phase_asymmetry,
@@ -73,9 +69,6 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
         atm_normalize = data.get('atm-normalize', True)
         atm_hdr = data.get('atm-hdr', True)
         appearance = Appearance()
-        lighting_model = LightingModel()
-        scattering = ONeilSimpleScattering(atmosphere=True, calc_in_fragment=atm_calc_in_fragment, normalize=atm_normalize, hdr=atm_hdr)
-        shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
         atmosphere = ONeilSimpleAtmosphere(shape=shape,
                                            wavelength = [0.650, 0.570, 0.465],
@@ -86,10 +79,12 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
                                            samples=samples,
                                            exposure=exposure,
                                            calc_in_fragment=calc_in_fragment,
+                                           atm_calc_in_fragment=atm_calc_in_fragment,
                                            normalize=normalize,
+                                           atm_normalize=atm_normalize,
                                            hdr=hdr,
-                                           appearance=appearance,
-                                           shader=shader)
+                                           atm_hdr=atm_hdr,
+                                           appearance=appearance)
         return atmosphere
 
 class ONeilAtmosphereYamlParser(YamlModuleParser):
@@ -115,9 +110,6 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         rayleigh_scale_depth /= height
         mie_scale_depth /= height
         appearance = Appearance()
-        lighting_model = LightingModel()
-        scattering = ONeilScattering(atmosphere=True, calc_in_fragment=atm_calc_in_fragment, normalize=atm_normalize, hdr=atm_hdr)
-        shader = BasicShader(lighting_model=lighting_model, scattering=scattering)
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
         atmosphere = ONeilAtmosphere(shape=shape,
                                      height=height,
@@ -133,12 +125,14 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
                                      samples=samples,
                                      exposure=exposure,
                                      calc_in_fragment=calc_in_fragment,
+                                     atm_calc_in_fragment=atm_calc_in_fragment,
                                      normalize=normalize,
+                                     atm_normalize=atm_normalize,
                                      hdr=hdr,
+                                     atm_hdr=atm_hdr,
                                      lookup_size=256,
                                      lookup_samples=50,
-                                     appearance=appearance,
-                                     shader=shader)
+                                     appearance=appearance)
         return atmosphere
 
 class AtmosphereYamlParser(YamlModuleParser):
