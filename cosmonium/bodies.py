@@ -85,18 +85,12 @@ class StellarBody(StellarObject):
     def get_or_create_system(self):
         if self.system is None:
             print("Creating system for", self.get_name())
-            explicit = self.orbit.frame.explicit_body
-            if explicit:
-                #TODO: This looks completely wrong !
-                system_orbit = FixedOrbit(frame=RelativeReferenceFrame(self.orbit.frame.body, self.orbit.frame))
-            else:
-                #TODO: Deepcopy needed because orbit frame keep ref to body
-                system_orbit = deepcopy(self.orbit)
+            system_orbit = self.orbit
             self.system = SimpleSystem(self.get_name() + " System", primary=self, orbit=system_orbit)
             self.parent.add_child_fast(self.system)
-            if not explicit:
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, deepcopy(self.orbit.frame)))
-                self.set_orbit(orbit)
+            system_orbit.set_body(self.system)
+            orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, system_orbit.frame))
+            self.set_orbit(orbit)
             if isinstance(self, Star):
                 self.system.add_child_star_fast(self)
             else:
