@@ -561,7 +561,7 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("bool bVisible = (fDet < 0.0 || (0.5f * (-B - sqrt(fDet)) <= 0.0) && (0.5 * (-B + sqrt(fDet)) <= 0.0));")
         code.append("float fRayleighDensityRatio;")
         code.append("float fMieDensityRatio;")
-        code.append("if(true)")
+        code.append("if(bVisible)")
         code.append("{")
         code.append("    fRayleighDensityRatio = exp(-(fHeight - fInnerRadius) * fScale / fRayleighScaleHeight);")
         code.append("    fMieDensityRatio = exp(-(fHeight - fInnerRadius) * fScale / fMieScaleHeight);")
@@ -754,7 +754,11 @@ class ONeilScattering(ONeilScatteringBase):
 
         code.append("      // If no light light reaches this part of the atmosphere, no light is scattered in at this point")
         code.append("      if(v4LightDepth[0] < DELTA)")
+        code.append("      {")
+        code.append("          // Move the position to the center of the next sample ray")
+        code.append("          v3SamplePoint += v3SampleRay;")
         code.append("          continue;")
+        code.append("      }")
 
         code.append("      // Get the density at this point, along with the optical depth from the light source to this point")
         code.append("      float fRayleighDensity = fScaledLength * v4LightDepth[0];")
