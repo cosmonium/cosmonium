@@ -324,6 +324,8 @@ class SimpleSystem(StellarSystem):
         for child in self.children:
             if child == primary: continue
             if child.visible and child.resolved and child.in_view:
+                if primary.atmosphere is not None and primary.init_components and (child._local_position - self.primary._local_position).length() < primary.atmosphere.radius:
+                    primary.atmosphere.add_shape_object(child.surface)
                 if primary.check_cast_shadow_on(child):
                     #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())
                     primary.add_shadow_target(child)
