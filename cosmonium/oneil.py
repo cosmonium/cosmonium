@@ -34,6 +34,7 @@ class ONeilAtmosphereBase(Atmosphere):
     def __init__(self, shape, appearance, shader):
         Atmosphere.__init__(self, shape, appearance, shader)
         self.blend = TransparencyBlend.TB_Alpha
+        self.planet = None
         self.inside = None
         self.radius = None
         self.planet_radius = None
@@ -95,6 +96,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
+            self.planet = parent
             self.planet_radius = parent.get_min_radius()
             self.radius = self.planet_radius * self.AtmosphereRatio
             self.ratio = self.AtmosphereRatio
@@ -182,6 +184,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
+            self.planet = parent
             self.planet_radius = parent.get_average_radius()
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
@@ -504,12 +507,13 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         shape.instance.setShaderInput("fScaleOverScaleDepth", scale / parameters.ScaleDepth)
 
     def update_shader_shape(self, shape, appearance):
+        planet = self.parameters.planet
         factor = 1.0 / shape.owner.scene_scale_factor
 
-        camera_height = shape.owner.distance_to_obs
+        camera_height = planet.distance_to_obs
         light_dir = shape.owner.vector_to_star
 
-        pos = shape.owner.rel_position
+        pos = planet.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)
         shape.instance.setShaderInput("v3CameraPos", -pos)
 
@@ -866,12 +870,13 @@ class ONeilScattering(ONeilScatteringBase):
         shape.instance.setShaderInput("pbOpticalDepth", pbOpticalDepth)
 
     def update_shader_shape(self, shape, appearance):
+        planet = self.parameters.planet
         factor = 1.0 / shape.owner.scene_scale_factor
 
-        camera_height = shape.owner.distance_to_obs
+        camera_height = planet.distance_to_obs
         light_dir = shape.owner.vector_to_star
 
-        pos = shape.owner.rel_position
+        pos = planet.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)
         shape.instance.setShaderInput("v3CameraPos", -pos)
 
