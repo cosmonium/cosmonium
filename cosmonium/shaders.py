@@ -2438,7 +2438,7 @@ class ShaderSphereSelfShadow(ShaderShadow):
     fake_self_shadow = 0.05
 
     def get_id(self):
-        return 'sss' if self.appearance.has_normal else ''
+        return 'sssn' if self.appearance.has_normal else 'sss'
 
     def fragment_shader(self, code):
         if self.appearance.has_normal:
