@@ -470,8 +470,8 @@ class StellarObject(LabelledObject):
         else:
             self.visible_size = 0.0
         self._app_magnitude = self.get_app_magnitude()
+        self.resolved = self.visible_size > settings.min_body_size
         if not self.visibility_override:
-            self.resolved = self.visible_size > settings.min_body_size
             if self.resolved:
                 radius = self.get_extend()
                 if self.distance_to_obs > radius:
@@ -489,7 +489,6 @@ class StellarObject(LabelledObject):
             self.visible = self.in_view and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
             self.visible = True
-            self.resolved = True
         if not self.virtual_object and self.resolved and self.in_view:
             self.context.add_visible(self)
         LabelledObject.check_visibility(self, pixel_size)

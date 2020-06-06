@@ -328,7 +328,8 @@ class SimpleSystem(StellarSystem):
                     #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())
                     primary.add_shadow_target(child)
             if check_primary:
-                if child.check_cast_shadow_on(primary):
+                #TODO: The test should be done on the actual shadow size, not the resolved state of the child
+                if child.resolved and child.check_cast_shadow_on(primary):
                     #print(child.get_friendly_name(), "casts shadow on", primary.get_friendly_name())
                     child.add_shadow_target(primary)
         for child in self.children:
