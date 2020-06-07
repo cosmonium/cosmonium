@@ -286,6 +286,63 @@ class ONeilScatteringBase(AtmosphericScattering):
             name += "-norm"
         return name
 
+    def uniforms_colors(self, code):
+        if not self.calc_in_fragment:
+            code.append("uniform vec3 v3LightPos;")
+        if self.atmosphere:
+            code.append("uniform float fg;")
+            code.append("uniform float fg2;")
+        code.append("uniform float fExposure;")
+
+    def vertex_uniforms(self, code):
+        if not self.calc_in_fragment:
+            self.uniforms_scattering(code)
+
+    def vertex_outputs(self, code):
+        if not self.calc_in_fragment:
+            code.append("out vec3 rayleigh_inscattering;")
+            code.append("out vec3 mie_inscattering;")
+            code.append("out vec3 transmittance;")
+            if self.atmosphere:
+                code.append("out vec3 v3Direction;")
+
+    def fragment_uniforms(self, code):
+        if self.calc_in_fragment:
+            self.uniforms_scattering(code)
+        self.uniforms_colors(code)
+
+    def fragment_inputs(self, code):
+        if not self.calc_in_fragment:
+            code.append("in vec3 rayleigh_inscattering;")
+            code.append("in vec3 mie_inscattering;")
+            code.append("in vec3 transmittance;")
+            if self.atmosphere:
+                code.append("in vec3 v3Direction;")
+
+    def vertex_shader(self, code):
+        if not self.calc_in_fragment:
+            self.calc_scattering(code)
+
+    def calc_colors(self, code):
+        if self.atmosphere:
+            code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
+            code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
+            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
+            code.append("    total_diffuse_color.rgb = shadow * (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
+            if self.hdr:
+                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
+            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
+        else:
+            code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance;")
+            code.append("  //total_diffuse_color.rgb = tertiary_color.rgb;")
+            if self.hdr:
+                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
+
+    def fragment_shader(self, code):
+        if self.calc_in_fragment:
+            self.calc_scattering(code)
+        self.calc_colors(code)
+
 class ONeilSimpleScattering(ONeilScatteringBase):
     str_id = 'oneil-simple'
 
@@ -312,14 +369,6 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         code.append("uniform float fSamples;")
         code.append("uniform float model_scale;")
 
-    def uniforms_colors(self, code):
-        if not self.calc_in_fragment:
-            code.append("uniform vec3 v3LightPos;")
-        if self.atmosphere:
-            code.append("uniform float fg;")
-            code.append("uniform float fg2;")
-        code.append("uniform float fExposure;")
-
     def scale_func(self, code):
         code.append("float scale(float fCos)")
         code.append("{")
@@ -328,36 +377,22 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         code.append("}")
 
     def vertex_uniforms(self, code):
+        ONeilScatteringBase.vertex_uniforms(self, code)
         if not self.calc_in_fragment:
-            self.uniforms_scattering(code)
             self.scale_func(code)
-
-    def vertex_outputs(self, code):
-        if not self.calc_in_fragment:
-            code.append("out vec4 primary_color;")
-            code.append("out vec4 secondary_color;")
-            if self.atmosphere:
-                code.append("out vec3 v3Direction;")
 
     def fragment_uniforms(self, code):
+        ONeilScatteringBase.fragment_uniforms(self, code)
         if self.calc_in_fragment:
-            self.uniforms_scattering(code)
             self.scale_func(code)
-        self.uniforms_colors(code)
-
-    def fragment_inputs(self, code):
-        if not self.calc_in_fragment:
-            code.append("in vec4 primary_color;")
-            code.append("in vec4 secondary_color;")
-            if self.atmosphere:
-                code.append("in vec3 v3Direction;")
 
     def calc_scattering(self, code):
         if self.calc_in_fragment and self.atmosphere:
             code.append("vec3 v3Direction;")
         if self.calc_in_fragment:
-            code.append("vec4 primary_color;")
-            code.append("vec4 secondary_color;")
+            code.append("vec3 rayleigh_inscattering;")
+            code.append("vec3 mie_inscattering;")
+            code.append("vec3 transmittance;")
         if self.normalize:
             if self.atmosphere:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
@@ -438,38 +473,12 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         code.append("    v3SamplePoint += v3SampleRay;")
         code.append("  }")
 
+        code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
+        code.append("  rayleigh_inscattering = v3FrontColor * (v3InvWavelength * fKrESun);")
+        code.append("  mie_inscattering = v3FrontColor * fKmESun;")
+        code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
-            code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
-            code.append("  primary_color = vec4(v3FrontColor * (v3InvWavelength * fKrESun), 0.0);")
-            code.append("  secondary_color = vec4(v3FrontColor * fKmESun, 0.0);")
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
-        else:
-            code.append("  // Finally, scale the Mie and Rayleigh colors and calculate the attenuation factor for the ground")
-            code.append("  primary_color = vec4(v3FrontColor * (v3InvWavelength * fKrESun + fKmESun), 1.0);")
-            code.append("  secondary_color = vec4(v3Attenuate, 1.0);")
-
-    def calc_colors(self, code):
-        if self.atmosphere:
-            code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
-            code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
-            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
-            code.append("    total_diffuse_color = shadow * (fRayleighPhase * primary_color + fMiePhase * secondary_color);")
-            if self.hdr:
-                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
-        else:
-            code.append("  total_diffuse_color.rgb = shadow * primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
-            if self.hdr:
-                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-
-    def vertex_shader(self, code):
-        if not self.calc_in_fragment:
-            self.calc_scattering(code)
-
-    def fragment_shader(self, code):
-        if self.calc_in_fragment:
-            self.calc_scattering(code)
-        self.calc_colors(code)
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters
@@ -665,43 +674,13 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("uniform float model_scale;")
         code.append("#define DELTA 1e-6")
 
-    def uniforms_colors(self, code):
-        if not self.calc_in_fragment:
-            code.append("uniform vec3 v3LightPos;")
-        if self.atmosphere:
-            code.append("uniform float fg;")
-            code.append("uniform float fg2;")
-        code.append("uniform float fExposure;")
-
-    def vertex_uniforms(self, code):
-        if not self.calc_in_fragment:
-            self.uniforms_scattering(code)
-
-    def vertex_outputs(self, code):
-        if not self.calc_in_fragment:
-            code.append("out vec4 primary_color;")
-            code.append("out vec4 secondary_color;")
-            if self.atmosphere:
-                code.append("out vec3 v3Direction;")
-
-    def fragment_uniforms(self, code):
-        if self.calc_in_fragment:
-            self.uniforms_scattering(code)
-        self.uniforms_colors(code)
-
-    def fragment_inputs(self, code):
-        if not self.calc_in_fragment:
-            code.append("in vec4 primary_color;")
-            code.append("in vec4 secondary_color;")
-            if self.atmosphere:
-                code.append("in vec3 v3Direction;")
-
     def calc_scattering(self, code):
         if self.calc_in_fragment and self.atmosphere:
             code.append("vec3 v3Direction;")
         if self.calc_in_fragment:
-            code.append("vec4 primary_color;")
-            code.append("vec4 secondary_color;")
+            code.append("vec3 rayleigh_inscattering;")
+            code.append("vec3 mie_inscattering;")
+            code.append("vec3 transmittance;")
         if self.normalize:
             if self.atmosphere:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
@@ -799,38 +778,12 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("      // Move the position to the center of the next sample ray")
         code.append("      v3SamplePoint += v3SampleRay;")
         code.append("  }")
+        code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
+        code.append("  rayleigh_inscattering = v3RayleighSum * v3KrESun;")
+        code.append("  mie_inscattering = v3MieSum * v3KmESun;")
+        code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
-            code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
-            code.append("  primary_color = vec4(v3RayleighSum * v3KrESun, 0.0);")
-            code.append("  secondary_color = vec4(v3MieSum * v3KmESun, 0.0);")
             code.append("  v3Direction = -v3Ray;")
-        else:
-            code.append("  // Finally, scale the Mie and Rayleigh colors and calculate the attenuation factor for the ground")
-            code.append("  primary_color = vec4(v3RayleighSum * v3KrESun + v3MieSum * v3KmESun, 1.0);")
-            code.append("  secondary_color = vec4(v3Attenuate, 1.0);")
-
-    def calc_colors(self, code):
-        if self.atmosphere:
-            code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
-            code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
-            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
-            code.append("    total_diffuse_color = shadow * (fRayleighPhase * primary_color + fMiePhase * secondary_color);")
-            if self.hdr:
-                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
-        else:
-            code.append("  total_diffuse_color.rgb = shadow * primary_color.rgb + total_diffuse_color.rgb * (secondary_color.rgb + (1.0 - secondary_color.rgb) * ambient.rgb);")
-            if self.hdr:
-                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-
-    def vertex_shader(self, code):
-        if not self.calc_in_fragment:
-            self.calc_scattering(code)
-
-    def fragment_shader(self, code):
-        if self.calc_in_fragment:
-            self.calc_scattering(code)
-        self.calc_colors(code)
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters
