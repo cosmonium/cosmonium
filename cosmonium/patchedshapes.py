@@ -89,6 +89,7 @@ class PatchBase(Shape):
         self.parent_split_pending = False
         self.instanciate_pending = False
         self.shown = False
+        self.visible = False
         self.apparent_size = None
         self.patch_in_view = False
         self.last_split = 0
@@ -204,13 +205,15 @@ class PatchBase(Shape):
     def replace_neighbours(self, face, olds, news):
         opposite = PatchBase.opposite_face[face]
         for neighbour in self.neighbours[face]:
+            neighbour_list = neighbour.neighbours[opposite]
             for old in olds:
                 try:
-                    neighbour.neighbours[opposite].remove(old)
+                    neighbour_list.remove(old)
                 except ValueError:
                     pass
             for new in news:
-                neighbour.neighbours[opposite].append(new)
+                if not new in neighbour_list:
+                    neighbour_list.append(new)
 
     def calc_outer_tessellation_level(self, update):
         for face in range(4):
