@@ -20,10 +20,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import NodePath
-
 from .shapes import ShapeObject
 from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
+
+from math import floor, ceil
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -172,7 +172,7 @@ class ProceduralSurface(FlatSurface):
         FlatSurface.schedule_shape_jobs(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
-    def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, average=False):
+    def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, follow_mesh=True):
         ProceduralSurface.__init__(self, name, shape, heightmap, appearance, shader, clickable)
         if radius != 0.0:
             self.height_scale = radius
@@ -191,7 +191,7 @@ class HeightmapSurface(ProceduralSurface):
         self.biome = biome
         self.scale = scale
         self.displacement = displacement
-        self.average = average
+        self.follow_mesh = follow_mesh
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
@@ -233,6 +233,26 @@ class HeightmapSurface(ProceduralSurface):
             #print("Patch not found for", x, y)
             return self.radius
 
+    #TODO: Should be based on how the patch is tesselated !
+    def get_mesh_height_uv(self, heightmap, u, v, density):
+        x = u * density
+        y = v * density
+        x0 = floor(x) / density * heightmap.width
+        y0 = floor(y) / density * heightmap.height
+        x1 = ceil(x) / density * heightmap.width
+        y1 = ceil(y) / density * heightmap.height
+        dx = u * heightmap.width - x0
+        if x1 != x0:
+            dx /= x1 - x0
+        dy = v * heightmap.height - y0
+        if y1 != y0:
+            dy /= y1 - y0
+        h_00 = heightmap.get_height(x0, y0)
+        h_01 = heightmap.get_height(x0, y1)
+        h_10 = heightmap.get_height(x1, y0)
+        h_11 = heightmap.get_height(x1, y1)
+        return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
+
     def get_height_patch(self, patch, u, v, recursive=False):
         if not self.displacement:
             return self.radius
@@ -246,8 +266,8 @@ class HeightmapSurface(ProceduralSurface):
         if heightmap is None:
             print("No heightmap")
             return self.radius
-        if self.average:
-            h = heightmap.get_average_height_uv(u, v)
+        if self.follow_mesh:
+            h = self.get_mesh_height_uv(heightmap, u, v, patch.density)
         else:
             h = heightmap.get_height_uv(u, v)
         height = h * self.height_scale + self.heightmap_base

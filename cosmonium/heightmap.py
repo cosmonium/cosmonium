@@ -26,7 +26,6 @@ from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .interpolator import BilinearInterpolator
 from .dircontext import defaultDirContext
 
-from math import floor, ceil
 import traceback
 import numpy
 import sys
@@ -164,21 +163,6 @@ class HeightmapPatch:
         height = self.parent.interpolator.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale# + self.parent.offset
-
-    def get_average_height_uv(self, u, v):
-        x = u * (self.width - 1)
-        y = v * (self.height - 1)
-        x0 = int(floor(x))
-        y0 = int(floor(y))
-        x1 = int(ceil(x))
-        y1 = int(ceil(y))
-        dx = x - x0
-        dy = y - y0
-        h_00 = self.get_height(x0, y0)
-        h_01 = self.get_height(x0, y1)
-        h_10 = self.get_height(x1, y0)
-        h_11 = self.get_height(x1, y1)
-        return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
@@ -333,21 +317,6 @@ class Heightmap(object):
 
     def get_height(self, x, y):
         return None
-
-    def get_average_height_uv(self, u, v):
-        x = u * (self.width - 1)
-        y = v * (self.height - 1)
-        x0 = int(floor(x))
-        y0 = int(floor(y))
-        x1 = int(ceil(x))
-        y1 = int(ceil(y))
-        dx = x - x0
-        dy = y - y0
-        h_00 = self.get_height(x0, y0)
-        h_01 = self.get_height(x0, y1)
-        h_10 = self.get_height(x1, y0)
-        h_11 = self.get_height(x1, y1)
-        return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
