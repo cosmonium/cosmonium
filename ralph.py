@@ -131,7 +131,8 @@ class WaterLayer(object):
                 self.water.remove_instance()
 
     def create_instance(self, patch):
-        self.water = WaterNode(-0.5, -0.5, 0.5, 0.5, self.config.level, self.config.scale, patch)
+        scale = patch.scale * patch.size / self.config.scale
+        self.water = WaterNode(0, 0, 1, 1, scale, patch)
         if self.config.visible:
             self.water.create_instance()
 
@@ -210,7 +211,7 @@ class RalphConfigParser(YamlModuleParser):
         if water is not None:
             level = water.get('level', 0)
             visible = water.get('visible', False)
-            scale = 8.0 #* self.size / self.default_size
+            scale = water.get('scale', 8.0)
             self.water = WaterConfig(level, visible, scale)
         else:
             self.water = WaterConfig(0, False, 1.0)
@@ -236,6 +237,8 @@ class RaphSkyBox(DirectObject):
 
     def init(self, config):
         skynode = base.camera.attachNewNode('skybox')
+        base.camera.hide(BaseObject.AllCamerasMask)
+        base.camera.show(BaseObject.DefaultCameraMask | BaseObject.WaterCameraMask)
         self.skybox = loader.loadModel('ralph-data/models/rgbCube')
         self.skybox.reparentTo(skynode)
 
@@ -437,6 +440,9 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def create_instance(self):
         self.terrain.create_instance()
+        #TODO: Should do init correctly
+        WaterNode.z = self.water.level
+        WaterNode.observer = self.observer
         if self.has_water:
             WaterNode.create_cam()
 

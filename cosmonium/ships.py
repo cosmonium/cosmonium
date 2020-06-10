@@ -325,6 +325,7 @@ class VisibleShip(ShipBase):
         self.instance = self.ship_object.instance
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.NearCameraMask)
+        self.instance.show(self.WaterCameraMask)
         self.instance.show(self.ShadowCameraMask)
         self.update_light(camera_pos)
         if self.create_own_shadow_caster:

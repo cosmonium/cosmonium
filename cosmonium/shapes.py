@@ -208,7 +208,7 @@ class CompositeShapeObject(VisibleObject):
             component.remove_instance()
 
 class ShapeObject(VisibleObject):
-    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.ShadowCameraMask
+    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.WaterCameraMask | VisibleObject.ShadowCameraMask
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.shape = None

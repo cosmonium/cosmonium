@@ -41,6 +41,7 @@ class BaseObject(object):
     AllCamerasMask = DrawMask.all_on()
     DefaultCameraMask = DrawMask.bit(0)
     NearCameraMask = DrawMask.bit(1)
+    WaterCameraMask = DrawMask.bit(29)
     ShadowCameraMask = DrawMask.bit(30)
 
     def __init__(self, names=None):

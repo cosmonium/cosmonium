@@ -96,6 +96,7 @@ layers:
 water:
     level: 0
     visible: true
+    scale: 8
 fog:
     falloff: 0.035
     density: 10
