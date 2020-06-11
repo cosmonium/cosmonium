@@ -34,28 +34,13 @@ class ONeilAtmosphereBase(Atmosphere):
     def __init__(self, shape, appearance, shader):
         Atmosphere.__init__(self, shape, appearance, shader)
         self.blend = TransparencyBlend.TB_Alpha
-        self.planet = None
-        self.inside = None
-        self.radius = None
-        self.planet_radius = None
-        self.ratio = None
+
+    def update_shader_params(self):
+        self.shader.scattering.set_inside(self.inside)
 
     def do_update_scattering(self, shape_object):
         shape_object.shader.scattering.set_inside(self.inside)
         shape_object.shader.scattering.set_hdr(self.hdr)
-
-    def update_instance(self, camera_pos, camera_rot):
-        inside = self.owner.distance_to_obs < self.radius
-        if self.inside != inside:
-            self.inside = inside
-            self.shader.scattering.inside = inside
-            self.update_shader()
-            self.update_scattering()
-        return Atmosphere.update_instance(self, camera_pos, camera_rot)
-
-    def remove_instance(self):
-        Atmosphere.remove_instance(self)
-        self.inside = None
 
 class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
     AtmosphereRatio = 1.025

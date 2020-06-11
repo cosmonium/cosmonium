@@ -52,9 +52,11 @@ class Atmosphere(ShapeObject):
         if appearance is None:
             appearance = Appearance()
         ShapeObject.__init__(self, 'atmosphere', shape=shape, appearance=appearance, shader=shader, clickable=False)
-        self.planet_radius = 0
-        self.radius = 0
-        self.ratio = 0
+        self.inside = None
+        self.planet = None
+        self.planet_radius = None
+        self.radius = None
+        self.ratio = None
         self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
 
@@ -113,12 +115,28 @@ class Atmosphere(ShapeObject):
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
 
+    def update_shader_params(self):
+        pass
+
+    def update_obs(self, observer):
+        ShapeObject.update_obs(self, observer)
+        inside = self.owner.distance_to_obs < self.radius
+        if self.inside != inside:
+            self.inside = inside
+            self.update_shader_params()
+            self.update_shader()
+            self.update_scattering()
+
     def create_scattering_shader(self, atmosphere):
         return AtmosphericScattering()
 
     def update_user_parameters(self):
         ShapeObject.update_user_parameters(self)
         self.update_scattering()
+
+    def remove_instance(self):
+        ShapeObject.remove_instance(self)
+        self.inside = None
 
 class Clouds(FlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
