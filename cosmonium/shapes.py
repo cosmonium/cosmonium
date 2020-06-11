@@ -305,6 +305,8 @@ class ShapeObject(VisibleObject):
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()
+        if self.context.observer.has_scattering:
+            self.context.observer.scattering.add_attenuated_object(self)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.schedule_jobs()
@@ -421,6 +423,8 @@ class ShapeObject(VisibleObject):
         if self.shadows.update_needed:
             self.update_shader()
             self.shadows.update_needed = False
+        if self.context.observer.apply_scattering > 0:
+            self.context.observer.scattering.add_attenuated_object(self)
         if self.shader is not None:
             self.shader.update(self.shape, self.appearance)
 
@@ -429,6 +433,8 @@ class ShapeObject(VisibleObject):
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
+        if self.context.observer.has_scattering:
+            self.context.observer.scattering.remove_attenuated_object(self)
 
 class MeshShape(Shape):
     deferred_instance = True

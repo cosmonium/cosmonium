@@ -38,9 +38,10 @@ class ONeilAtmosphereBase(Atmosphere):
     def update_shader_params(self):
         self.shader.scattering.set_inside(self.inside)
 
-    def do_update_scattering(self, shape_object):
+    def do_update_scattering(self, shape_object, extinction):
         shape_object.shader.scattering.set_inside(self.inside)
         shape_object.shader.scattering.set_hdr(self.hdr)
+        shape_object.shader.scattering.set_extinction_only(extinction)
 
 class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
     AtmosphereRatio = 1.025
@@ -75,7 +76,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.atm_normalize = atm_normalize
         self.hdr = hdr
         self.atm_hdr = atm_hdr
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(True))
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, extinction=False))
         self.set_shader(shader)
 
     def set_parent(self, parent):
@@ -86,11 +87,11 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
             self.radius = self.planet_radius * self.AtmosphereRatio
             self.ratio = self.AtmosphereRatio
 
-    def create_scattering_shader(self, atmosphere):
+    def create_scattering_shader(self, atmosphere, extinction):
         if atmosphere:
-            scattering = ONeilSimpleScattering(self, atmosphere=True, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+            scattering = ONeilSimpleScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
         else:
-            scattering = ONeilSimpleScattering(self, atmosphere=False, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+            scattering = ONeilSimpleScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -154,7 +155,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
         self.pbOpticalDepth = None
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(True))
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, extinction=False))
         self.set_shader(shader)
 
     @classmethod
@@ -174,11 +175,11 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
-    def create_scattering_shader(self, atmosphere):
+    def create_scattering_shader(self, atmosphere, extinction):
         if atmosphere:
-            scattering = ONeilScattering(self, atmosphere=True, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+            scattering = ONeilScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
         else:
-            scattering = ONeilScattering(self, atmosphere=False, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+            scattering = ONeilScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -235,10 +236,11 @@ class ONeilScatteringBase(AtmosphericScattering):
     world_vertex = True
     str_id = None
 
-    def __init__(self, parameters, atmosphere=False, calc_in_fragment=False, normalize=False, hdr=False):
+    def __init__(self, parameters, atmosphere=False, extinction_only=False, calc_in_fragment=False, normalize=False, hdr=False):
         AtmosphericScattering.__init__(self)
         self.parameters = parameters
         self.atmosphere = atmosphere
+        self.extinction_only = extinction_only
         self.calc_in_fragment = calc_in_fragment
         self.use_vertex_frag = calc_in_fragment
         self.normalize = normalize
@@ -255,6 +257,9 @@ class ONeilScatteringBase(AtmosphericScattering):
     def set_hdr(self, hdr):
         self.hdr = hdr
 
+    def set_extinction_only(self, extinction_only):
+        self.extinction_only = extinction_only
+
     def get_id(self):
         name = self.str_id
         if self.atmosphere:
@@ -269,6 +274,8 @@ class ONeilScatteringBase(AtmosphericScattering):
             name += "-hdr"
         if self.hdr:
             name += "-norm"
+        if self.extinction_only:
+            name += "-ext"
         return name
 
     def uniforms_colors(self, code):
@@ -318,8 +325,10 @@ class ONeilScatteringBase(AtmosphericScattering):
                 code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
             code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
         else:
-            code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance;")
-            code.append("  //total_diffuse_color.rgb = tertiary_color.rgb;")
+            if self.extinction_only:
+                code.append("  total_diffuse_color.rgb = total_diffuse_color.rgb * transmittance;")
+            else:
+                code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance;")
             if self.hdr:
                 code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 
@@ -505,7 +514,7 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         factor = 1.0 / shape.owner.scene_scale_factor
 
         camera_height = planet.distance_to_obs
-        light_dir = shape.owner.vector_to_star
+        light_dir = planet.vector_to_star
 
         pos = planet.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)
@@ -812,7 +821,7 @@ class ONeilScattering(ONeilScatteringBase):
         factor = 1.0 / shape.owner.scene_scale_factor
 
         camera_height = planet.distance_to_obs
-        light_dir = shape.owner.vector_to_star
+        light_dir = planet.vector_to_star
 
         pos = planet.rel_position
         shape.instance.setShaderInput("v3OriginPos", pos)

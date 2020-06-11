@@ -275,6 +275,14 @@ class CameraHolder(CameraBase):
         self.camera_vector = LVector3d()
         self._frame_position = LPoint3d()
         self._frame_rotation = LQuaterniond()
+        self.has_scattering = False
+        self.scattering = None
+        self.apply_scattering = 0
+        self.update_shader_needed = False
+
+    def set_scattering(self, scattering):
+        self.scattering = scattering
+        self.update_shader_needed = True
 
     def set_frame(self, frame):
         #Get position and rotation in the absolute reference frame
