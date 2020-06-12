@@ -89,16 +89,18 @@ class Atmosphere(ShapeObject):
             shape_object.shader.set_scattering(AtmosphericScattering())
             shape_object.update_shader()
 
-    def do_update_scattering(self, shape_object, extinction):
+    def do_update_scattering(self, shape_object, atmosphere, extinction):
         pass
 
     def update_scattering(self):
         if not settings.show_atmospheres: return
+        self.do_update_scattering(self, atmosphere=True, extinction=False)
+        self.update_shader()
         for shape_object in self.shape_objects:
-            self.do_update_scattering(shape_object, extinction=False)
+            self.do_update_scattering(shape_object, atmosphere=False, extinction=False)
             shape_object.update_shader()
         for shape_object in self.attenuated_objects:
-            self.do_update_scattering(shape_object, extinction=True)
+            self.do_update_scattering(shape_object, atmosphere=False, extinction=True)
             shape_object.update_shader()
 
     def add_shape_object(self, shape_object):

@@ -38,9 +38,12 @@ class ONeilAtmosphereBase(Atmosphere):
     def update_shader_params(self):
         self.shader.scattering.set_inside(self.inside)
 
-    def do_update_scattering(self, shape_object, extinction):
+    def do_update_scattering(self, shape_object, atmosphere, extinction):
         shape_object.shader.scattering.set_inside(self.inside)
-        shape_object.shader.scattering.set_hdr(self.hdr)
+        if atmosphere:
+            shape_object.shader.scattering.set_hdr(self.atm_hdr)
+        else:
+            shape_object.shader.scattering.set_hdr(self.hdr)
         shape_object.shader.scattering.set_extinction_only(extinction)
 
 class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
@@ -104,6 +107,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
                              AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
                              AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
                              AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                             AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
                             )
         return group
 
@@ -228,6 +232,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                              AutoUserParameter('Samples', 'samples', self, AutoUserParameter.TYPE_INT, [0, 64]),
                              AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
                              AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                             AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
                             )
         return group
 
