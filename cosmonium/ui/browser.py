@@ -28,7 +28,7 @@ cefpanda_valid = False
 try:
     import cefpanda
     cefpanda_valid = True
-except ImportError:
+except Exception:
     print("ERROR: Could not load cefpanda")
     traceback.print_exc()
 
