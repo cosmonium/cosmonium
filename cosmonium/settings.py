@@ -51,6 +51,7 @@ use_inverse_z = False
 instancing_use_tex = True
 use_texture_array = True
 use_aux_buffer = False
+sync_video = True
 
 stereoscopic_framebuffer = False
 red_blue_stereo = False

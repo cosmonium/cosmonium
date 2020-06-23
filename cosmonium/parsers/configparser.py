@@ -170,6 +170,7 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_opengl(self, data):
+        settings.sync_video = data.get('sync-video', settings.sync_video)
         settings.multisamples = data.get('multisamples', settings.multisamples)
         settings.use_srgb = data.get('srgb', settings.use_srgb)
         settings.use_hardware_srgb = data.get('hw-srgb', settings.use_hardware_srgb)
@@ -186,6 +187,7 @@ class ConfigParser(YamlParser):
 
     def encode_opengl(self):
         data = {}
+        data['sync-video'] = settings.sync_video
         data['multisamples'] = settings.multisamples
         data['srgb'] = settings.use_srgb
         data['hw-srgb'] = settings.use_hardware_srgb

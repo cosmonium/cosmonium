@@ -29,8 +29,14 @@ from .shaders import PostProcessShader
 from . import settings
 
 import sys
+import os
 
 def request_opengl_config(data):
+    sync_video_value = int(settings.sync_video)
+    data.append("sync-video %d" % sync_video_value)
+    os.environ['__GL_SYNC_TO_VBLANK'] = str(sync_video_value)
+    os.environ['vblank_mode'] = str(sync_video_value)
+
     if settings.use_gl_version is not None:
         data.append("gl-version %s" % settings.use_gl_version)
         settings.core_profile = True
