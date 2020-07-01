@@ -20,7 +20,7 @@
 from panda3d.core import CardMaker
 from panda3d.core import CullFaceAttrib
 from panda3d.core import Plane, PlaneNode, Point3, Vec3, Vec4
-from panda3d.core import RenderState, Shader
+from panda3d.core import RenderState, Shader, Filename
 from panda3d.core import Texture, TransparencyAttrib
 
 from ..foundation import BaseObject
@@ -56,9 +56,11 @@ class WaterNode():
         self.waterNP.setHpr(0, -90, 0)
         self.waterNP.setPos(0, 0, self.z)
         self.waterNP.setTransparency(TransparencyAttrib.MAlpha)
+        vertex_shader = defaultDirContext.find_shader('water-vertex.glsl')
+        fragment_shader = defaultDirContext.find_shader('water-fragment.glsl')
         self.waterNP.setShader(Shader.load(Shader.SL_GLSL,
-                                           vertex=defaultDirContext.find_shader('water-vertex.glsl'),
-                                           fragment=defaultDirContext.find_shader('water-fragment.glsl')))
+                                           vertex=Filename.from_os_specific(vertex_shader).get_fullpath(),
+                                           fragment=Filename.from_os_specific(fragment_shader).get_fullpath()))
         self.waterNP.setShaderInput('wateranim', Vec4(0.03, -0.015, self.scale, 0)) # vx, vy, scale, skip
         # offset, strength, refraction factor (0=perfect mirror, 1=total refraction), refractivity
         self.waterNP.setShaderInput('waterdistort', Vec4(0.4, 1.0, 0.25, 0.45))
