@@ -99,7 +99,8 @@ class Rotation(object):
         self.frame = frame
 
     def get_user_parameters(self):
-        return None
+        group = ParametersGroup('Rotation')
+        return group
 
     def update_user_parameters(self):
         pass
@@ -127,7 +128,7 @@ class FixedRotation(Rotation):
         self.reference_axis = reference_axis
 
     def get_user_parameters(self):
-        group = ParametersGroup('Rotation')
+        group = Rotation.get_user_parameters(self)
         group.add_parameters(self.reference_axis.get_user_parameters())
         return group
 

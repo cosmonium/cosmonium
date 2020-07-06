@@ -153,9 +153,11 @@ class AppearanceBase:
 
     def get_user_parameters(self):
         group = ParametersGroup("Appearance")
-        group.add_parameters(AutoUserParameter('Shadow normal bias', 'shadow_normal_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
-        group.add_parameters(AutoUserParameter('Shadow slope bias', 'shadow_slope_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
-        group.add_parameters(AutoUserParameter('Shadow depth bias', 'shadow_depth_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        parameters = []
+        parameters.append(AutoUserParameter('Shadow normal bias', 'shadow_normal_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        parameters.append(AutoUserParameter('Shadow slope bias', 'shadow_slope_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        parameters.append(AutoUserParameter('Shadow depth bias', 'shadow_depth_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        group.add_parameter(ParametersGroup("Shadows", parameters))
         return group
 
 class Appearance(AppearanceBase):

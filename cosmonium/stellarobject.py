@@ -179,7 +179,8 @@ class StellarObject(LabelledObject):
         self.set_shown(bodyClasses.get_show(self.body_class))
 
     def get_user_parameters(self):
-        group = LabelledObject.get_user_parameters(self)
+        group = ParametersGroup(self.get_name())
+        parameters = []
         if isinstance(self.orbit, FixedOrbit) and self.system is not None:
             orbit = self.system.orbit
         else:
@@ -187,9 +188,11 @@ class StellarObject(LabelledObject):
         general_group = ParametersGroup('General')
         general_group.add_parameter(orbit.get_user_parameters())
         general_group.add_parameter(self.rotation.get_user_parameters())
-        if group is None:
-            group = ParametersGroup(self.get_name(), [])
-        group.prepend_parameters(general_group)
+        group.add_parameter(general_group)
+        for component in self.components:
+            component_group = component.get_user_parameters()
+            if component_group is not None:
+                group.add_parameter(component_group)
         return group
 
     def update_user_parameters(self):

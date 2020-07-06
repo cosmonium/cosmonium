@@ -41,7 +41,8 @@ class Orbit(object):
         self.body = None
 
     def get_user_parameters(self):
-        return None
+        group = ParametersGroup('Orbit')
+        return group
 
     def update_user_parameters(self):
         pass
@@ -226,7 +227,7 @@ class EllipticalOrbit(Orbit):
         self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
 
     def get_user_parameters(self):
-        group = ParametersGroup('Orbit')
+        group = Orbit.get_user_parameters(self)
         group.add_parameters(
                       UserParameter("Period", self.set_period, self.get_period, UserParameter.TYPE_FLOAT),
                       AutoUserParameter("Eccentricity", "eccentricity", self, UserParameter.TYPE_FLOAT, value_range=[0, 10]),

@@ -181,7 +181,7 @@ class ParamEditor():
             else:
                 self.add_parameter(frame, sizer, param)
 
-    def create_layout(self, parameters):
+    def create_layout(self, group):
         scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
         buttonSize = self.font_size * 2
         self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, settings.panel_width, -settings.panel_height, 0),
@@ -193,15 +193,16 @@ class ParamEditor():
                                                         tabSelectedColor = settings.panel_background,
                                                         scroll_scrollBarWidth=self.font_size))
         self.layout.frame.setPos(0, 0, -buttonSize)
-        for group in parameters.parameters:
+        for section in group.parameters:
+            print(section.name)
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
-            self.add_parameters(frame, sizer, group.parameters)
+            self.add_parameters(frame, sizer, section.parameters)
             sizer.update((settings.panel_width, settings.panel_height))
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
-            self.layout.frame.addPage(frame, group.name)
-        title = "Editor"
+            self.layout.frame.addPage(frame, section.name)
+        title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
 
     def do_update(self, value, slider, param, component=None):
