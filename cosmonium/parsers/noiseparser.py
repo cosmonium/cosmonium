@@ -103,7 +103,7 @@ class NoiseYamlParser(YamlParser):
         return self.decode_noise_dict(noise)
 
 from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
-from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
+from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseExp, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
 from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
@@ -141,6 +141,13 @@ def create_pow_noise(parser, data, length_scale):
     base = parser.decode_noise_dict(data.get('base'))
     power = parser.decode_noise_dict(data.get('power'))
     return NoisePow(base, power, name=name)
+
+def create_exp_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = { 'power': data }
+    name = data.get('name', None)
+    power = parser.decode_noise_dict(data.get('power'))
+    return NoiseExp(power, name=name)
 
 def create_threshold_noise(parser, data, length_scale):
     if not isinstance(data, dict):
@@ -346,6 +353,7 @@ NoiseYamlParser.register_noise_parser('add', create_add_noise)
 NoiseYamlParser.register_noise_parser('sub', create_sub_noise)
 NoiseYamlParser.register_noise_parser('mul', create_mul_noise)
 NoiseYamlParser.register_noise_parser('pow', create_pow_noise)
+NoiseYamlParser.register_noise_parser('exp', create_exp_noise)
 NoiseYamlParser.register_noise_parser('threshold', create_threshold_noise)
 NoiseYamlParser.register_noise_parser('clamp', create_clamp_noise)
 NoiseYamlParser.register_noise_parser('min', create_min_noise)

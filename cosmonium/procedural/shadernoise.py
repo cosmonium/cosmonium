@@ -545,6 +545,18 @@ class NoisePow(NoiseSource):
         group.add_parameters(self.noise_b.get_user_parameters())
         return group
 
+class NoiseExp(BasicNoiseSource):
+    def __init__(self, noise, name=None):
+        BasicNoiseSource.__init__(self, noise, name, 'exp')
+
+    def get_id(self):
+        return 'exp-' + self.noise.get_id()
+
+    def noise_value(self, code, value, point):
+        tmp = self.create_tmp(code)
+        self.noise.noise_value(code, tmp, point)
+        code.append('      %s = exp(%s);' % (value, tmp))
+
 class NoiseThreshold(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
         NoiseSource.__init__(self, name, 'threshold')
