@@ -67,6 +67,7 @@ def request_opengl_config(data):
         data.append("dump-generated-shaders #t")
     data.append("driver-generate-mipmaps #t")
     data.append("gl-immutable-texture-storage true")
+    data.append("state-cache #f")
 
     render_scene_to_buffer = False
     if settings.use_srgb and not settings.use_hardware_srgb:

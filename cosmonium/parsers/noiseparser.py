@@ -92,6 +92,8 @@ class NoiseYamlParser(YamlParser):
         return noises
 
     def decode(self, data):
+        if isinstance(data, str):
+            data = { 'noise': data }
         aliases = data.get('aliases', {})
         for (alias, func) in aliases.items():
             parser = self.parsers.get(func, None)

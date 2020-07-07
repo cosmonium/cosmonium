@@ -397,6 +397,14 @@ class Gui(object):
         settings.shader_debug_coord = not settings.shader_debug_coord
         self.cosmonium.trigger_check_settings = True
 
+    def toggle_shader_debug_raymarching_canvas(self):
+        settings.shader_debug_raymarching_canvas = not settings.shader_debug_raymarching_canvas
+        self.cosmonium.trigger_check_settings = True
+
+    def toggle_shader_debug_raymarching_slice(self):
+        settings.shader_debug_raymarching_slice = not settings.shader_debug_raymarching_slice
+        self.cosmonium.trigger_check_settings = True
+
     def create_main_menu_items(self):
         return (
                 ('_Find object>Enter', 0, self.open_find_object),
@@ -579,6 +587,8 @@ class Gui(object):
                 ('Normal map', settings.shader_debug_fragment_shader == 'normalmap', self.set_shader_fragment_debug, 'normalmap'),
                 ('Shadows', settings.shader_debug_fragment_shader == 'shadows', self.set_shader_fragment_debug, 'shadows'),
                 ('Color picking', settings.shader_debug_fragment_shader == 'picking', self.set_shader_fragment_debug, 'picking'),
+                ('Ray hit', settings.shader_debug_raymarching_canvas, self.toggle_shader_debug_raymarching_canvas),
+                ('Show slice', settings.shader_debug_raymarching_slice, self.toggle_shader_debug_raymarching_slice),
                 )
         return (
                 ('Toggle filled wireframe>F3', 0, self.cosmonium.toggle_filled_wireframe),

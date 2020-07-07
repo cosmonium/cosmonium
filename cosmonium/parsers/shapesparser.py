@@ -25,6 +25,7 @@ from panda3d.core import LVector3d, LQuaterniond
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
+from ..procedural.raymarching import RayMarchingShape
 
 from .yamlparser import YamlModuleParser
 
@@ -55,6 +56,12 @@ class MeshYamlParser(YamlModuleParser):
         shape = MeshShape(model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context=YamlModuleParser.context)
         return (shape, {'create-uv': create_uv})
 
+class RayMarchingYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        shape = RayMarchingShape()
+        return (shape, {})
+
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, default='patched-sphere'):
@@ -76,6 +83,8 @@ class ShapeYamlParser(YamlModuleParser):
             shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':
             shape, extra = MeshYamlParser.decode(shape_data)
+        elif shape_type == 'raymarching':
+            shape, extra = RayMarchingYamlParser.decode(shape_data)
         else:
             print("Unknown shape", shape_type)
         return shape, extra

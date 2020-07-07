@@ -261,6 +261,8 @@ config_file = os.path.join(config_dir, 'config.yaml')
 shader_debug_fragment_shader = 'default'
 shader_debug_coord = False
 shader_debug_coord_line_width = 0.005
+shader_debug_raymarching_canvas = False
+shader_debug_raymarching_slice = False
 
 bodyClasses.register_class("galaxy", "galaxies",
                            BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1),

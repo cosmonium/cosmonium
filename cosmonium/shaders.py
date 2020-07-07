@@ -1323,6 +1323,10 @@ class ShaderAppearance(ShaderComponent):
         self.has_nightscale = False
         self.has_backlit = False
 
+        self.has_vertex_color = False
+        self.has_attribute_color = False
+        self.has_material = False
+
     def fragment_shader_decl(self, code):
         if self.has_surface:
             code.append("vec4 surface_color;")

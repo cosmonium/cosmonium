@@ -108,6 +108,35 @@ def BoundingBoxGeom(box):
     geom.add_primitive(prim)
     return path
 
+def CubeGeom():
+    (path, node) = empty_node('cube')
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', 8, 12, normal=False, texture=False, tanbin=False)
+    node.add_geom(geom)
+    gvw.add_data3(-1, -1, -1)
+    gvw.add_data3(-1, -1, 1)
+    gvw.add_data3(-1, 1, -1)
+    gvw.add_data3(-1, 1, 1)
+    gvw.add_data3(1, -1, -1)
+    gvw.add_data3(1, -1, 1)
+    gvw.add_data3(1, 1, -1)
+    gvw.add_data3(1, 1, 1)
+
+    prim.add_vertices(0, 4, 5)
+    prim.add_vertices(0, 5, 1)
+    prim.add_vertices(4, 6, 7)
+    prim.add_vertices(4, 7, 5)
+    prim.add_vertices(6, 2, 3)
+    prim.add_vertices(6, 3, 7)
+    prim.add_vertices(2, 0, 1)
+    prim.add_vertices(2, 1, 3)
+    prim.add_vertices(1, 5, 7)
+    prim.add_vertices(1, 7, 3)
+    prim.add_vertices(2, 6, 4)
+    prim.add_vertices(2, 4, 0)
+
+    geom.add_primitive(prim)
+    return path
+
 def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)

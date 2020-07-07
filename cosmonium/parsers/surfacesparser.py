@@ -35,7 +35,7 @@ from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
-from .shadersparser import LightingModelYamlParser
+from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
 from .textureparser import TextureControlYamlParser
 from .heightmapsparser import HeightmapYamlParser
 
@@ -57,6 +57,7 @@ class SurfaceYamlParser(YamlModuleParser):
         shape = data.setdefault('shape', previous.get('shape'))
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
+        shader_appearance = data.setdefault('shader-appearance', previous.get('shader-appearance'))
         if shape is not None:
             shape, extra = ShapeYamlParser.decode(shape)
         if appearance is not None:
@@ -77,6 +78,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 appearance = 'textures'
             appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
+        shader_appearance = ShaderAppearanceYamlParser.decode(shader_appearance, appearance)
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
                 shape.set_lod_control(VertexSizePatchLodControl(settings.patch_max_vertex_size,
@@ -87,6 +89,7 @@ class SurfaceYamlParser(YamlModuleParser):
                                                                          density=settings.patch_max_density))
         if heightmap_data is None:
             shader = BasicShader(lighting_model=lighting_model,
+                                 appearance=shader_appearance,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(name, category=category, resolution=resolution, attribution=attribution,
                                   shape=shape, appearance=appearance, shader=shader)

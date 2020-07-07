@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from . import shadersparser
+from . import raymarchingparser
 from . import objectparser
 from . import bodiesparser
 from . import constellationsparser
@@ -29,5 +31,6 @@ from . import heightmapsparser
 from . import orbitsparser
 from . import rotationsparser
 from . import starsparser
+from . import nebulasparser
 from . import systemsparser
 from . import shipsparser
