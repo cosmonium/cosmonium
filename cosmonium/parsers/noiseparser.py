@@ -102,7 +102,7 @@ class NoiseYamlParser(YamlParser):
         noise = data.get('noise')
         return self.decode_noise_dict(noise)
 
-from ..procedural.shadernoise import NoiseClamp, NegNoise
+from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
 from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
@@ -159,6 +159,24 @@ def create_clamp_noise(parser, data, length_scale):
     data['min'] = None
     data['max'] = None
     return NoiseClamp(noise, min_value, max_value, name=name)
+
+def create_min_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {'a': data[0],
+                'b': data[1]}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('a'))
+    b = parser.decode_noise_dict(data.get('b'))
+    return NoiseMin(a, b, name=name)
+
+def create_max_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {'a': data[0],
+                'b': data[1]}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('a'))
+    b = parser.decode_noise_dict(data.get('b'))
+    return NoiseMax(a, b, name=name)
 
 def create_const_noise(parser, data, length_scale):
     name = data.get('name', None)
@@ -330,6 +348,8 @@ NoiseYamlParser.register_noise_parser('mul', create_mul_noise)
 NoiseYamlParser.register_noise_parser('pow', create_pow_noise)
 NoiseYamlParser.register_noise_parser('threshold', create_threshold_noise)
 NoiseYamlParser.register_noise_parser('clamp', create_clamp_noise)
+NoiseYamlParser.register_noise_parser('min', create_min_noise)
+NoiseYamlParser.register_noise_parser('max', create_max_noise)
 NoiseYamlParser.register_noise_parser('abs', create_abs_noise)
 NoiseYamlParser.register_noise_parser('neg', create_neg_noise)
 NoiseYamlParser.register_noise_parser('1d', create_1d_noise)
