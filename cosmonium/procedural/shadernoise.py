@@ -31,6 +31,7 @@ from .generator import GeneratorVertexShader
 
 class NoiseSource(object):
     last_id = 0
+    last_tmp = 0
     def __init__(self, name, prefix):
         NoiseSource.last_id += 1
         self.num_id = NoiseSource.last_id
@@ -44,6 +45,12 @@ class NoiseSource(object):
 
     def get_name(self):
         return self.name
+
+    def create_tmp(self, code, tmp_type='float'):
+        NoiseSource.last_tmp += 1
+        tmp = "tmp_" + str(self.last_tmp)
+        code.append("    %s %s;" % (tmp_type, tmp))
+        return tmp
 
     def noise_uniforms(self, code):
         pass
@@ -274,11 +281,9 @@ class AbsNoise(BasicNoiseSource):
         return 'abs-' + self.noise.get_id()
 
     def noise_value(self, code, value, point):
-        code.append('        {')
-        code.append('          float tmp_abs;')
-        self.noise.noise_value(code, 'tmp_abs', point)
-        code.append('          %s = abs(tmp_abs);' % value)
-        code.append('        }')
+        tmp = self.create_tmp(code)
+        self.noise.noise_value(code, tmp, point)
+        code.append('          %s = abs(%s);' % (value, tmp))
 
 class NegNoise(BasicNoiseSource):
     def __init__(self, noise, name=None):
@@ -288,11 +293,9 @@ class NegNoise(BasicNoiseSource):
         return 'neg-' + self.noise.get_id()
 
     def noise_value(self, code, value, point):
-        code.append('        {')
-        code.append('          float tmp_neg;')
-        self.noise.noise_value(code, 'tmp_neg', point)
-        code.append('          %s = -(tmp_neg);' % value)
-        code.append('        }')
+        tmp = self.create_tmp(code)
+        self.noise.noise_value(code, tmp, point)
+        code.append('          %s = -(%s);' % (value, tmp))
 
 class RidgedNoise(BasicNoiseSource):
     def __init__(self, noise, offset=0.33, shift=True, name=None):
