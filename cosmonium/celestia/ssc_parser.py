@@ -178,6 +178,7 @@ def instanciate_body(universe, names, is_planet, data):
         elif key == 'NightTexture':
             appearance.set_emission_texture(value)
             appearance.emissionColor = LColor(1, 1, 1, 1)
+            appearance.set_nightscale(0.02)
         elif key == 'BumpHeight':
             bump_height = value
         elif key == 'BumpMap':
