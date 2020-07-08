@@ -62,7 +62,7 @@ class CelestiaAtmosphere(Atmosphere):
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
-    def create_scattering_shader(self, atmosphere, extinction):
+    def create_scattering_shader(self, atmosphere, displacement, extinction):
         return CelestiaScattering(self, atmosphere, extinction)
 
 class CelestiaScattering(AtmosphericScattering):

@@ -79,7 +79,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.atm_normalize = atm_normalize
         self.hdr = hdr
         self.atm_hdr = atm_hdr
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, extinction=False))
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     def set_parent(self, parent):
@@ -90,11 +90,11 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
             self.radius = self.planet_radius * self.AtmosphereRatio
             self.ratio = self.AtmosphereRatio
 
-    def create_scattering_shader(self, atmosphere, extinction):
+    def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
-            scattering = ONeilSimpleScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+            scattering = ONeilSimpleScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
         else:
-            scattering = ONeilSimpleScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+            scattering = ONeilSimpleScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -159,7 +159,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
         self.pbOpticalDepth = None
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, extinction=False))
+        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     @classmethod
@@ -179,11 +179,11 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
-    def create_scattering_shader(self, atmosphere, extinction):
+    def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
-            scattering = ONeilScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, hdr=self.atm_hdr)
+            scattering = ONeilScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
         else:
-            scattering = ONeilScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, hdr=self.hdr)
+            scattering = ONeilScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
 
@@ -241,7 +241,7 @@ class ONeilScatteringBase(AtmosphericScattering):
     world_vertex = True
     str_id = None
 
-    def __init__(self, parameters, atmosphere=False, extinction_only=False, calc_in_fragment=False, normalize=False, hdr=False):
+    def __init__(self, parameters, atmosphere=False, extinction_only=False, calc_in_fragment=False, normalize=False, displacement=False, hdr=False):
         AtmosphericScattering.__init__(self)
         self.parameters = parameters
         self.atmosphere = atmosphere
@@ -249,6 +249,7 @@ class ONeilScatteringBase(AtmosphericScattering):
         self.calc_in_fragment = calc_in_fragment
         self.use_vertex_frag = calc_in_fragment
         self.normalize = normalize
+        self.displacement = displacement
         self.hdr = hdr
         self.use_normal = False#not self.atmosphere
         self.inside = False
@@ -277,8 +278,10 @@ class ONeilScatteringBase(AtmosphericScattering):
             name += "-infrag"
         if self.hdr:
             name += "-hdr"
-        if self.hdr:
+        if self.normalize:
             name += "-norm"
+            if self.displacement:
+                name += '-disp'
         if self.extinction_only:
             name += "-ext"
         return name
@@ -397,6 +400,8 @@ class ONeilSimpleScattering(ONeilScatteringBase):
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
             else:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
+                if self.displacement:
+                    code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
         else:
             code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
@@ -685,6 +690,8 @@ class ONeilScattering(ONeilScatteringBase):
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
             else:
                 code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
+                if self.displacement:
+                    code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
         else:
             code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")

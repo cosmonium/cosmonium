@@ -623,6 +623,7 @@ class FragmentShader(ShaderProgram):
                  shadows,
                  lighting_model,
                  scattering,
+                 vertex_control,
                  point_control,
                  after_effects):
         ShaderProgram.__init__(self, 'fragment')
@@ -632,6 +633,7 @@ class FragmentShader(ShaderProgram):
         self.shadows = shadows
         self.lighting_model = lighting_model
         self.scattering = scattering
+        self.vertex_control = vertex_control
         self.point_control = point_control
         self.after_effects = after_effects
         self.nb_outputs = 1
@@ -679,6 +681,7 @@ class FragmentShader(ShaderProgram):
             shadow.fragment_inputs(code)
         self.lighting_model.fragment_inputs(code)
         self.scattering.fragment_inputs(code)
+        self.vertex_control.fragment_inputs(code)
         self.point_control.fragment_inputs(code)
         if self.config.color_picking and self.config.vertex_oids:
             code.append("in vec4 color_picking;")
@@ -875,6 +878,7 @@ class BasicShader(StructuredShader):
                                               shadows=self.shadows,
                                               lighting_model=self.lighting_model,
                                               scattering=self.scattering,
+                                              vertex_control=vertex_control,
                                               point_control=self.point_control,
                                               after_effects=self.after_effects)
 

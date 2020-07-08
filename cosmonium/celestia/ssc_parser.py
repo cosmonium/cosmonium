@@ -103,7 +103,6 @@ def instanciate_atmosphere(data):
     if mie_phase_asymmetry != 0.0:
         atmosphere = CelestiaAtmosphere(height = atmosphere_height,
                                     appearance=Appearance(),
-                                    shader=BasicShader(lighting_model=CelestiaScattering(atmosphere=True)),
                                     mie_scale_height = mie_scale_height,
                                     mie_coef = mie_coef,
                                     mie_phase_asymmetry = mie_phase_asymmetry,

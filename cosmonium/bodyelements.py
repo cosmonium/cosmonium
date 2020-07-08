@@ -80,7 +80,7 @@ class Atmosphere(ShapeObject):
 
     def set_scattering_on(self, shape_object, extinction):
         if shape_object.shader is not None:
-            scattering = self.create_scattering_shader(atmosphere=False, extinction=extinction)
+            scattering = self.create_scattering_shader(atmosphere=False, displacement=not shape_object.is_flat(), extinction=extinction)
             shape_object.shader.set_scattering(scattering)
             shape_object.update_shader()
 
@@ -175,7 +175,7 @@ class Atmosphere(ShapeObject):
         elif observer.apply_scattering > 0:
             observer.apply_scattering -= 1
 
-    def create_scattering_shader(self, atmosphere, extinction):
+    def create_scattering_shader(self, atmosphere, displacement, extinction):
         return AtmosphericScattering()
 
     def update_user_parameters(self):

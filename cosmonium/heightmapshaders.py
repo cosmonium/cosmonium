@@ -37,8 +37,14 @@ class DisplacementVertexControl(VertexControl):
     def get_id(self):
         return "dis-" + self.heightmap.name
 
+    def vertex_outputs(self, code):
+        code.append('out float vertex_height;')
+
+    def fragment_inputs(self, code):
+        code.append("in float vertex_height;")
+
     def update_vertex(self, code):
-        code.append("float vertex_height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'model_texcoord0.xy'))
+        code.append("vertex_height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'model_texcoord0.xy'))
         code.append("model_vertex4 = model_vertex4 + model_normal4 * vertex_height;")
 
     def update_normal(self, code):
