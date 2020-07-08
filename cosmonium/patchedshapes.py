@@ -158,6 +158,29 @@ class PatchBase(Shape):
     def get_neighbours(self, face):
         return [] + self.neighbours[face]
 
+    def _collect_side_neighbours(self, result, side):
+        if len(self.children) != 0:
+            (bl, br, tr, tl) = self.children
+            if side == PatchBase.NORTH:
+                tl._collect_side_neighbours(result, side)
+                tr._collect_side_neighbours(result, side)
+            elif side == PatchBase.EAST:
+                tr._collect_side_neighbours(result, side)
+                br._collect_side_neighbours(result, side)
+            elif side == PatchBase.SOUTH:
+                bl._collect_side_neighbours(result, side)
+                br._collect_side_neighbours(result, side)
+            elif side == PatchBase.WEST:
+                tl._collect_side_neighbours(result, side)
+                bl._collect_side_neighbours(result, side)
+        else:
+            result.append(self)
+
+    def collect_side_neighbours(self, side):
+        result = []
+        self._collect_side_neighbours(result, side)
+        return result
+
     def set_all_neighbours(self, north, east, south, west):
         self.neighbours[PatchBase.NORTH] = north
         self.neighbours[PatchBase.EAST] = east

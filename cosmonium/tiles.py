@@ -219,6 +219,30 @@ class TiledShape(PatchedShapeBase):
             self.root_patches.append(patch)
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
+                north = self.find_root_patch(patch.x, patch.y + 1)
+                if north is not None:
+                    neighbours = north.collect_side_neighbours(PatchBase.SOUTH)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.NORTH, neighbour)
+                        neighbour.add_neighbour(PatchBase.SOUTH, patch)
+                east = self.find_root_patch(patch.x + 1, patch.y)
+                if east is not None:
+                    neighbours = east.collect_side_neighbours(PatchBase.WEST)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.EAST, neighbour)
+                        neighbour.add_neighbour(PatchBase.WEST, patch)
+                south = self.find_root_patch(patch.x, patch.y - 1)
+                if south is not None:
+                    neighbours = south.collect_side_neighbours(PatchBase.NORTH)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.SOUTH, neighbour)
+                        neighbour.add_neighbour(PatchBase.NORTH, patch)
+                west = self.find_root_patch(patch.x - 1, patch.y)
+                if west is not None:
+                    neighbours = west.collect_side_neighbours(PatchBase.EAST)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.WEST, neighbour)
+                        neighbour.add_neighbour(PatchBase.EAST, patch)
         return patch
 
     def split_patch(self, patch):
@@ -230,28 +254,12 @@ class TiledShape(PatchedShapeBase):
     def add_root_patches(self, patch, update):
         #print("Create root patches", patch.centre, self.scale)
         self.add_root_patch(patch.x - 1, patch.y - 1)
-        south = self.find_root_patch(patch.x, patch.y - 1)
-        if south is None:
-            south = self.add_root_patch(patch.x, patch.y - 1)
-        patch.add_neighbour(PatchBase.SOUTH, south)
-        south.add_neighbour(PatchBase.NORTH, patch)
+        self.add_root_patch(patch.x, patch.y - 1)
         self.add_root_patch(patch.x + 1, patch.y - 1)
-        west = self.find_root_patch(patch.x - 1, patch.y)
-        if west is None:
-            west = self.add_root_patch(patch.x - 1, patch.y)
-        patch.add_neighbour(PatchBase.WEST, west)
-        west.add_neighbour(PatchBase.EAST, patch)
-        east = self.find_root_patch(patch.x + 1, patch.y)
-        if east is None:
-            east = self.add_root_patch(patch.x + 1, patch.y)
-        patch.add_neighbour(PatchBase.EAST, east)
-        east.add_neighbour(PatchBase.WEST, patch)
+        self.add_root_patch(patch.x - 1, patch.y)
+        self.add_root_patch(patch.x + 1, patch.y)
         self.add_root_patch(patch.x - 1, patch.y + 1)
-        north = self.find_root_patch(patch.x, patch.y + 1)
-        if north is None:
-            north = self.add_root_patch(patch.x, patch.y + 1)
-        patch.add_neighbour(PatchBase.NORTH, north)
-        north.add_neighbour(PatchBase.SOUTH, patch)
+        self.add_root_patch(patch.x, patch.y + 1)
         self.add_root_patch(patch.x + 1, patch.y + 1)
         patch.calc_outer_tessellation_level(update)
 
