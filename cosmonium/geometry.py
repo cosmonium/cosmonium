@@ -195,12 +195,12 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
     for r in range(0, rings - 1):
         for s in range(0, sectors):
             if r == 0:
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
             elif r == rings - 1:
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
             else:
-                prim.addVertices(r * sectors + s, (r+1) * sectors + s, r * sectors + (s+1))
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + s, r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
