@@ -335,7 +335,7 @@ class StructuredShader(ShaderBase):
                            geometry=geometry,
                            fragment=fragment)
 
-class PassThroughVertexShader(ShaderProgram):
+class TexturePassThroughVertexShader(ShaderProgram):
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -353,7 +353,45 @@ class PassThroughVertexShader(ShaderProgram):
         code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
         code.append("uv = gl_Position * 0.5 + 0.5;")
 
-class PassThroughFragmentShader(ShaderProgram):
+class GeomPassThroughVertexShader(ShaderProgram):
+    def __init__(self, config):
+        ShaderProgram.__init__(self, 'vertex')
+        self.config = config
+
+    def create_inputs(self, code):
+        code.append("in vec4 p3d_Vertex;")
+        code.append("in vec4 p3d_Normal;")
+
+    def create_outputs(self, code):
+        code.append("out vec4 normal;")
+
+    def create_body(self, code):
+        code.append("gl_Position = p3d_Vertex;")
+        code.append("normal = p3d_Normal;")
+
+class ColorPassThroughFragmentShader(ShaderProgram):
+    def __init__(self, config):
+        ShaderProgram.__init__(self, 'fragment')
+        self.config = config
+
+    def create_inputs(self, code):
+        code.append("in vec4 pixel_color;")
+
+    def create_outputs(self, code):
+        code.append("out vec4 color;")
+
+    def create_extra(self, code):
+        self.add_function(code, 'to_srgb', self.to_srgb)
+
+    def create_body(self, code):
+        code.append("vec4 final_color = pixel_color;")
+        if self.config.gamma_correction:
+            #code.append("color = vec4(pow(final_color.xyz, vec3(1.0/2.2)), final_color.a);")
+            code.append("color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);")
+        else:
+            code.append("color = final_color;")
+
+class TexturePassThroughFragmentShader(ShaderProgram):
     def __init__(self, config):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -385,8 +423,8 @@ class PassThroughFragmentShader(ShaderProgram):
 class PostProcessShader(StructuredShader):
     def __init__(self, gamma_correction=False, hdr=False):
         StructuredShader.__init__(self)
-        self.vertex_shader = PassThroughVertexShader(self)
-        self.fragment_shader = PassThroughFragmentShader(self)
+        self.vertex_shader = TexturePassThroughVertexShader(self)
+        self.fragment_shader = TexturePassThroughFragmentShader(self)
         self.gamma_correction = gamma_correction
         self.hdr = hdr
 
@@ -2636,3 +2674,43 @@ vec3 applyFog(in vec3  pixelColor, in vec3 position)
         shape.instance.set_shader_input("fogGround", self.fog_ground)
         shape.instance.set_shader_input("fogColor", self.fog_color)
         shape.instance.set_shader_input("sunColor", self.sun_color)
+
+class GenerateNormalsGeomShader(ShaderProgram):
+    def create_layout(self, code):
+        code.append("layout(triangles) in;")
+        code.append("layout(line_strip, max_vertices=6) out;")
+
+    def create_uniforms(self, code):
+        code.append("uniform mat4x4 p3d_ModelViewProjectionMatrix;")
+        code.append("vec4 normal_color;")
+        code.append("float normal_length;")
+
+    def create_inputs(self, code):
+        code.append("in normal[];")
+
+    def create_outputs(self, code):
+        code.append("out pixel_color;")
+
+    def create_body(self, code):
+        code.append("int i;")
+        code.append("for(i=0; i<gl_in.length(); i++)")
+        code.append("{")
+        code.append("  vec3 cur_vertex = gl_in[i].gl_Position.xyz;")
+        code.append("  vec3 cur_normal = normal[i].xyz;")
+        code.append("  gl_Position = p3d_ModelViewProjectionMatrix * vec4(cur_vertex, 1.0);")
+        code.append("  pixel_color = normal_color;")
+        code.append("  EmitVertex();")
+        code.append("  gl_Position = p3d_ModelViewProjectionMatrix * vec4(cur_vertex + cur_normal * normal_length, 1.0);")
+        code.append("  pixel_color = normal_color;")
+        code.append("  EmitVertex();")
+        code.append("  EndPrimitive();")
+        code.append("}")
+
+def DebugNormalsShader(StructuredShader):
+    def __init__(self):
+        self.geometry_shader = GenerateNormalsGeomShader(self)
+        self.vertex_shader = GeomPassThroughVertexShader(self)
+        self.fragment_shader = ColorPassThroughFragmentShader(self)
+
+    def get_shader_id(self):
+        return "normals"
