@@ -24,7 +24,7 @@ from __future__ import print_function
 from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName,\
     LVector3d, GlobPattern, BoundingBox, LPoint3, BoundingSphere
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
-from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32
+from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
 from . import settings
@@ -941,26 +941,33 @@ def SquaredDistanceSquarePatch(height, inner, outer,
             x2 = x * x
             y2 = y * y
             z2 = z * z
-            x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-            y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-            z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+            xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+            yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+            zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
             if inv_u:
                 u = 1.0 - u
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
-            else:
-                gtw.add_data2f(u, v)
+                u, v = v, u
+            gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f(x * height - normal[0] * offset,
-                               y * height - normal[1] * offset,
-                               z * height - normal[2] * offset)
+                gvw.add_data3f(xp * height - normal[0] * offset,
+                               yp * height - normal[1] * offset,
+                               zp * height - normal[2] * offset)
             else:
-                gvw.add_data3f(x * height, y * height, z * height)
-            gnw.add_data3f(x, y, z)
-            gtanw.add_data3f(z, y, -x)
-            gbiw.add_data3f(x, z, -y)
+                gvw.add_data3f(xp * height, yp * height, zp * height)
+            gnw.add_data3f(xp, yp, zp)
+            tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+            tan.normalize()
+            bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+            bin.normalize()
+            if inv_u: tan = -tan
+            if inv_v: bin = -bin
+            if swap_uv:
+                tan, bin = bin, tan
+            gtanw.add_data3(tan)
+            gbiw.add_data3(bin)
 
     if settings.use_patch_skirts:
         if offset is None:
@@ -990,26 +997,33 @@ def SquaredDistanceSquarePatch(height, inner, outer,
                 x2 = x * x
                 y2 = y * y
                 z2 = z * z
-                x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-                y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-                z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+                xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+                yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+                zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
                 if inv_u:
                     u = 1.0 - u
                 if inv_v:
                     v = 1.0 - v
                 if swap_uv:
-                    gtw.add_data2f(v, u)
-                else:
-                    gtw.add_data2f(u, v)
+                    u, v = v, u
+                gtw.add_data2f(u, v)
                 if offset is not None:
-                    gvw.add_data3f(x * height - normal[0] * offset,
-                                   y * height - normal[1] * offset,
-                                   z * height - normal[2] * offset)
+                    gvw.add_data3f(xp * height - normal[0] * offset,
+                                   yp * height - normal[1] * offset,
+                                   zp * height - normal[2] * offset)
                 else:
-                    gvw.add_data3f(x * height, y * height, z * height)
-                gnw.add_data3f(x, y, z)
-                gtanw.add_data3f(z, y, -x)
-                gbiw.add_data3f(x, z, -y)
+                    gvw.add_data3f(xp * height, yp * height, zp * height)
+                gnw.add_data3f(xp, yp, zp)
+                tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+                tan.normalize()
+                bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+                bin.normalize()
+                if inv_u: tan = -tan
+                if inv_v: bin = -bin
+                if swap_uv:
+                    tan, bin = bin, tan
+                gtanw.add_data3(tan)
+                gbiw.add_data3(bin)
 
     if settings.use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
@@ -1104,7 +1118,9 @@ def NormalizedSquarePatch(height, inner, outer,
         for j in range(0, nb_vertices):
             x = x0 + i * dx / inner
             y = y0 + j * dy / inner
-            vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+            x = 2.0 * x - 1.0
+            y = 2.0 * y - 1.0
+            vec = LVector3d(x, y, 1.0)
             vec.normalize()
             u = float(i) / inner
             v = float(j) / inner
@@ -1113,19 +1129,24 @@ def NormalizedSquarePatch(height, inner, outer,
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
-            else:
-                gtw.add_data2f(u, v)
+                u, v = v, u
+            gtw.add_data2f(u, v)
             nvec = vec
             vec = vec * height
             if offset is not None:
                 vec = vec - normal * offset
             gvw.add_data3f(*vec)
             gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-            gtanw.add_data3f(-(1.0 + y*y), x*y, x)
-            gbiw.add_data3f(x * y, -(1.0 + x*x), y)
-            #gtanw.add_data3f(vec.z, vec.y, -vec.x)
-            #gbiw.add_data3f(vec.x, vec.z, -vec.y)
+            tan = LVector3(1.0 + y*y, -x*y, -x)
+            tan.normalize()
+            bin = LVector3(x * y, 1.0 + x*x, -y)
+            bin.normalize()
+            if inv_u: tan = -tan
+            if inv_v: bin = -bin
+            if swap_uv:
+                tan, bin = bin, tan
+            gtanw.add_data3(tan)
+            gbiw.add_data3(bin)
 
     if settings.use_patch_skirts:
         if offset is None:
@@ -1147,7 +1168,9 @@ def NormalizedSquarePatch(height, inner, outer,
                     j = inner
                 x = x0 + i * dx / inner
                 y = y0 + j * dy / inner
-                vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+                x = 2.0 * x - 1.0
+                y = 2.0 * y - 1.0
+                vec = LVector3d(x, y, 1.0)
                 vec.normalize()
                 u = float(i) / inner
                 v = float(j) / inner
@@ -1156,19 +1179,24 @@ def NormalizedSquarePatch(height, inner, outer,
                 if inv_v:
                     v = 1.0 - v
                 if swap_uv:
-                    gtw.add_data2f(v, u)
-                else:
-                    gtw.add_data2f(u, v)
+                    u, v = v, u
+                gtw.add_data2f(u, v)
                 nvec = vec
                 vec = vec * height
                 if offset is not None:
                     vec = vec - normal * offset
                 gvw.add_data3f(*vec)
                 gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-                gtanw.add_data3f(-(1.0 + y*y), x*y, x)
-                gbiw.add_data3f(x * y, -(1.0 + x*x), y)
-                #gtanw.add_data3f(vec.z, vec.y, -vec.x)
-                #gbiw.add_data3f(vec.x, vec.z, -vec.y)
+                tan = LVector3(1.0 + y*y, -x*y, -x)
+                tan.normalize()
+                bin = LVector3(x * y, 1.0 + x*x, -y)
+                bin.normalize()
+                if inv_u: tan = -tan
+                if inv_v: bin = -bin
+                if swap_uv:
+                    tan, bin = bin, tan
+                gtanw.add_data3(tan)
+                gbiw.add_data3(bin)
 
     if settings.use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
