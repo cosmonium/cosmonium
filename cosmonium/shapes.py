@@ -50,9 +50,6 @@ class Shape:
         self.scale = LVector3(1.0, 1.0, 1.0)
         self.radius = 1.0
         self.owner = None
-        self.inv_u = False
-        self.inv_v = False
-        self.swap_uv = False
         self.instance_ready = False
         self.jobs_pending = 0
         self.jobs = 0
@@ -615,11 +612,9 @@ class DisplacementSphereShape(Shape):
         return self.instance
 
 class ScaledSphereShape(Shape):
-    def __init__(self, radius=1.0, inv_texture_u=False, inv_texture_v=False):
+    def __init__(self, radius=1.0):
         Shape.__init__(self)
         self.radius = radius
-        self.inv_u = inv_texture_u
-        self.inv_v = inv_texture_v
 
     def create_instance(self):
         self.instance=geometry.UVSphere(radius=self.radius, rings=45, sectors=90)

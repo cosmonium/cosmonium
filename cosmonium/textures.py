@@ -365,27 +365,6 @@ class SimpleTexture(TextureBase):
         self.init_texture_stage(texture_stage, texture)
         if self.tex_matrix:
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
-            if shape.swap_uv:
-                shape.instance.setTexRotate(texture_stage, -90)
-            scale = shape.instance.getTexScale(texture_stage)
-            offset = shape.instance.getTexOffset(texture_stage)
-            if shape.swap_uv:
-                if shape.inv_v:
-                    scale.x = -scale.x
-                else:
-                    offset.y += 1.0
-                if not shape.inv_u:
-                    scale.y = -scale.y
-                    offset.x += 1.0
-            else:
-                if shape.inv_v:
-                    scale.y = -scale.y
-                    offset.y += 1.0
-                if shape.inv_u:
-                    scale.x = -scale.x
-                    offset.x += 1.0
-            shape.instance.setTexScale(texture_stage, scale)
-            shape.instance.setTexOffset(texture_stage, offset)
         shape.instance.setTexture(texture_stage, texture, 1)
 
     def can_split(self, patch):

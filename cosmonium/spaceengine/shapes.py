@@ -32,12 +32,6 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                  {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}  # Bottom # Antartic
              ]
 
-    def __init__(self, *args, **kwargs):
-        SquarePatchBase.__init__(self, *args, **kwargs)
-        self.inv_u = self.xy_params[self.face]['x_inverted']
-        self.inv_v = self.xy_params[self.face]['y_inverted']
-        self.swap_uv = self.xy_params[self.face]['xy_swap']
-
     def face_normal(self, x, y):
         (x, y) = self.calc_xy(x, y)
         return geometry.NormalizedSquarePatchNormal(float(x) / self.div,
@@ -72,7 +66,10 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
                                               float(y + 1) / self.div,
-                                              offset=self.offset)
+                                              offset=self.offset,
+                                              inv_u=self.xy_params[self.face]['x_inverted'],
+                                              inv_v=self.xy_params[self.face]['y_inverted'],
+                                              swap_uv=self.xy_params[self.face]['xy_swap'])
 
     def calc_xy(self, x, y):
         if self.xy_params[self.face]['xy_swap']:
