@@ -73,7 +73,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             channel = parameters.get('color', None)
             alpha_channel = parameters.get('alpha', None)
             attribution = parameters.get('attribution', None)
-            texture_source = SpaceEngineVirtualTextureSource(root, ext, size, channel, alpha_channel, attribution)
+            texture_source = SpaceEngineVirtualTextureSource(root, ext, size, channel, alpha_channel, attribution, YamlModuleParser.context)
             texture_offset = 0
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()

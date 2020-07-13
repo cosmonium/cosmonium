@@ -39,8 +39,8 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
                 'neg_y',
                 ]
 
-    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None):
-        VirtualTextureSource.__init__(self, root, ext, size, attribution)
+    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=defaultDirContext):
+        VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.channel = channel
         self.alpha_channel = alpha_channel
         if channel is None:
