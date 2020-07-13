@@ -290,7 +290,7 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
     //float deltax = textureBSplineDerivX(heightmap, texcoord);
     //float deltay = textureBSplineDerivY(heightmap, texcoord);
     vec3 tangent = normalize(vec3(2.0 * u_scale, 0, deltax));
-    vec3 binormal = normalize(vec3(0, 2.0 * v_scale, -deltay));
+    vec3 binormal = normalize(vec3(0, 2.0 * v_scale, deltay));
     return normalize(cross(tangent, binormal));
 }
 ''' % (self.name, self.name, self.name, self.name, self.name)]
