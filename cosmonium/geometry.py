@@ -41,16 +41,16 @@ def empty_node(prefix, color=False):
 
 def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=True, color=False, tanbin=False):
     array = GeomVertexArrayFormat()
-    array.addColumn(InternalName.make('vertex'), 3, Geom.NTFloat32, Geom.CPoint)
+    array.addColumn(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
     if color:
-        array.addColumn(InternalName.make('color'), 4, Geom.NTFloat32, Geom.CColor)
+        array.addColumn(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
     if texture:
-        array.addColumn(InternalName.make('texcoord'), 2, Geom.NTFloat32, Geom.CTexcoord)
+        array.addColumn(InternalName.get_texcoord(), 2, Geom.NTFloat32, Geom.CTexcoord)
     if normal:
-        array.addColumn(InternalName.make('normal'), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_normal(), 3, Geom.NTFloat32, Geom.CVector)
     if tanbin:
-        array.addColumn(InternalName.make('binormal'), 3, Geom.NTFloat32, Geom.CVector)
-        array.addColumn(InternalName.make('tangent'), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_tangent(), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_binormal(), 3, Geom.NTFloat32, Geom.CVector)
     format = GeomVertexFormat()
     format.addArray(array)
     format = GeomVertexFormat.registerFormat(format)
@@ -58,22 +58,22 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
     if nb_data != 0:
         gvd.unclean_set_num_rows(nb_data)
     geom = Geom(gvd)
-    gvw = GeomVertexWriter(gvd, 'vertex')
+    gvw = GeomVertexWriter(gvd, InternalName.get_vertex())
     if color:
-        gcw = GeomVertexWriter(gvd, 'color')
+        gcw = GeomVertexWriter(gvd, InternalName.get_color())
     else:
         gcw = None
     if texture:
-        gtw = GeomVertexWriter(gvd, 'texcoord')
+        gtw = GeomVertexWriter(gvd, InternalName.get_texcoord())
     else:
         gtw = None
     if normal:
-        gnw = GeomVertexWriter(gvd, 'normal')
+        gnw = GeomVertexWriter(gvd, InternalName.get_normal())
     else:
         gnw = None
     if tanbin:
-        gtanw = GeomVertexWriter(gvd, 'tangent')
-        gbiw = GeomVertexWriter(gvd, 'binormal')
+        gtanw = GeomVertexWriter(gvd, InternalName.get_tangent())
+        gbiw = GeomVertexWriter(gvd, InternalName.get_binormal())
     else:
         gtanw = None
         gbiw = None

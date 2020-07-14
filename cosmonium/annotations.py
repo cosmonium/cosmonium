@@ -157,7 +157,7 @@ class Orbit(VisibleObject):
     def update_geom(self):
         geom = self.node.modify_geom(0)
         vdata = geom.modify_vertex_data()
-        vwriter = GeomVertexRewriter(vdata, InternalName.make('vertex'))
+        vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
         #TODO: refactor with above code !!!
         delta = self.body.parent.get_local_position()
         if self.orbit.is_periodic():
