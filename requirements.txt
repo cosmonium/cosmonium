@@ -1,5 +1,5 @@
 panda3d>=1.10.6
 numpy
 pywin32 ; sys_platform == 'win32' or sys_platform == 'win_amd64'
-ruamel.yaml>=0.16
+ruamel.yaml<0.16
 cefpython3==66.0
