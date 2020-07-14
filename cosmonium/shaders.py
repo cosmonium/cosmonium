@@ -37,6 +37,7 @@ class ShaderBase(object):
 
     def __init__(self):
         self.shader = None
+        self.inputs = None
 
     def get_shader_id(self):
         return None
@@ -94,14 +95,23 @@ class ShaderBase(object):
         if not shape.instance_ready:
             print("shader update called on non ready shape instance")
         self.create_and_register_shader(shape, appearance)
+        self.inputs = {}
         self.update_shader_shape(shape, appearance)
+        shape.instance.set_shader_inputs(**self.inputs)
+        self.inputs = None
         if shape.patchable:
             for patch in shape.patches:
                 if not shape.instance_ready:
                     print("shader update called on non ready patch instance")
+                self.inputs = {}
                 self.update_shader_patch(shape, patch, appearance)
+                patch.instance.set_shader_inputs(**self.inputs)
+                self.inputs = None
         else:
+            self.inputs = {}
             self.update_shader_patch(shape, shape, appearance)
+            shape.instance.set_shader_inputs(**self.inputs)
+            self.inputs = None
 
     def update_patch(self, shape, patch, appearance):
         self.update_shader_patch(shape, patch, appearance)
