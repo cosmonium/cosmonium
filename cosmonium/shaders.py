@@ -933,6 +933,7 @@ class BasicShader(StructuredShader):
         self.world_normal = False
         self.fragment_uses_normal = False
         self.use_tangent = False
+        self.generate_binormal = False
         self.fragment_uses_tangent = False
         self.use_model_texcoord = use_model_texcoord
         self.color_picking = settings.color_picking
@@ -1083,6 +1084,10 @@ class BasicShader(StructuredShader):
                     self.model_normal = True
                 if shadow.world_normal:
                     self.world_normal = True
+
+        #TODO: Should be done in data source
+        if self.use_tangent:
+            self.generate_binormal = appearance.generate_binormal
 
     def get_shader_id(self):
         if settings.shader_debug_fragment_shader == 'default':
@@ -1460,20 +1465,24 @@ class DirectVertexInput(VertexInput):
     def vertex_inputs(self, code):
         code.append("in vec4 p3d_Vertex;")
         if self.config.use_normal or self.config.vertex_control.use_normal:
-            code.append("in vec3 p3d_Normal;")
+            code.append("in vec4 p3d_Normal;")
         if self.config.use_tangent:
-            code.append("in vec3 p3d_Binormal;")
-            code.append("in vec3 p3d_Tangent;")
+            code.append("in vec4 p3d_Binormal;")
+            code.append("in vec4 p3d_Tangent;")
         for i in range(self.config.nb_textures_coord):
             code.append("in vec4 p3d_MultiTexCoord%i;" % i)
 
     def vertex_shader(self, code):
         code.append("model_vertex4 = p3d_Vertex;")
         if self.config.use_normal or self.config.vertex_control.use_normal:
-            code.append("model_normal4 = vec4(p3d_Normal, 0.0);")
+            code.append("model_normal4 = vec4(p3d_Normal.xyz, 0.0);")
         if self.config.use_tangent:
-            code.append("model_binormal4 = vec4(p3d_Binormal, 0.0);")
-            code.append("model_tangent4 = vec4(p3d_Tangent, 0.0);")
+            code.append("model_tangent4 = vec4(p3d_Tangent.xyz, 0.0);")
+            if self.config.generate_binormal:
+                #TODO: Should be done here ?
+                code.append("model_binormal4 = vec4(cross(p3d_Normal.xyz, p3d_Tangent.xyz) * p3d_Tangent.w, 0.0);")
+            else:
+                code.append("model_binormal4 = vec4(p3d_Binormal.xyz, 0.0);")
         if self.config.use_model_texcoord:
             for i in range(self.config.nb_textures_coord):
                 code.append("model_texcoord%i = p3d_MultiTexCoord%i;" % (i, i))

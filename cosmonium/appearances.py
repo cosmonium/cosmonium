@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import  Material, TextureStage, Texture, GeomNode
+from panda3d.core import  Material, TextureStage, Texture, GeomNode, InternalName
 from panda3d.core import TransparencyAttrib
 
 from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
@@ -117,6 +117,7 @@ class AppearanceBase:
         self.has_specular_mask = False
         self.has_occlusion_channel = False
         self.normal_map_tangent_space = False
+        self.generate_binormal = False
         self.specularColor = None
         self.transparency = False
         self.transparency_level = 0.0
@@ -445,6 +446,11 @@ class ModelAppearance(AppearanceBase):
             if attrib is not None:
                 transparency_mode = attrib.get_mode()
             if isinstance(node, GeomNode):
+                for geom in node.get_geoms():
+                    vdata = geom.getVertexData()
+                    has_tangent= vdata.has_column(InternalName.get_tangent())
+                    has_binormal = vdata.has_column(InternalName.get_binormal())
+                    self.generate_binormal =  has_tangent and not has_binormal
                 for state in node.get_geom_states():
                     attrib = state.get_attrib(TransparencyAttrib)
                     if attrib is not None:
