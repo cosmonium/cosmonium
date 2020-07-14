@@ -53,9 +53,6 @@ class Surface(ShapeObject):
     def get_component_name(self):
         return 'Surface'
 
-    def is_flat(self):
-        return True
-
     def create_shadows(self):
         if self.shadow_caster is None:
             if self.shape.is_spherical():

@@ -25,12 +25,12 @@ from panda3d.core import DirectionalLight
 
 from .astro.frame import AbsoluteReferenceFrame
 from .foundation import VisibleObject
+from .camera import CameraController
 from .parameters import ParametersGroup
 from .shadows import CustomShadowMapShadowCaster
 from . import utils
 
 from math import pi
-from cosmonium.camera import CameraController
 
 class ShipBase(VisibleObject):
     editable = False
@@ -189,6 +189,9 @@ class ShipBase(VisibleObject):
     def set_light(self, light):
         pass
 
+    def is_flat(self):
+        return True
+
     def update_obs(self, observer):
         pass
 
@@ -243,6 +246,9 @@ class VisibleShip(ShipBase):
         self.scene_orientation = None
 
         self.ship_object.set_parent(self)
+        #TODO: Temporary workaround as some code need the shape to have an owner
+        self.ship_object.set_owner(self)
+
         self.ship_object.set_scale(LVector3d(self.radius, self.radius, self.radius))
 
         self.shadow_caster = None

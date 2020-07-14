@@ -277,6 +277,9 @@ class ShapeObject(VisibleObject):
     def get_scale(self):
         return self.shape.get_scale()
 
+    def is_flat(self):
+        return True
+
     def create_instance(self, callback=None, cb_args=()):
         self.callback = callback
         self.cb_args = cb_args
