@@ -62,7 +62,7 @@ class PlaneReferenceAxis(ReferenceAxisBase):
 
     def get_user_parameters(self):
         parameters = [AutoUserParameter("Inclination", 'inclination', self, AutoUserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
-                      AutoUserParameter("Ascending node", 'ascending_node', self, AutoUserParameter.TYPE_FLOAT, value_range=[0, 360], units=pi / 180),
+                      AutoUserParameter("Ascending node", 'ascending_node', self, AutoUserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
                      ]
         return parameters
 
