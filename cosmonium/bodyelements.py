@@ -141,7 +141,9 @@ class Atmosphere(ShapeObject):
             self.visible = False
 
     def create_instance(self):
-        self.shape.set_radius(self.radius)
+        #TODO: Find a better way to retrieve ellipticity
+        scale = self.planet.get_scale() / self.planet_radius
+        self.set_scale(scale * self.radius)
         ShapeObject.create_instance(self)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
