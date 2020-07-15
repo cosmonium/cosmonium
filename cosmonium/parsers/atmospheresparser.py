@@ -99,7 +99,7 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         mie_alpha_coef = data.get('mie-alpha', 0)
         mie_beta_coef = data.get('mie', 0.0015)
         sun_power = data.get('power', 15.0)
-        samples = data.get('samples', 16)
+        samples = data.get('samples', 32)
         exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc-in-fragment', True)
         normalize = data.get('normalize', True)
