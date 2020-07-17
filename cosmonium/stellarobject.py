@@ -337,6 +337,10 @@ class StellarObject(LabelledObject):
     def get_extend(self):
         return self.get_apparent_radius()
 
+    def get_scale(self):
+        radius = self.get_apparent_radius()
+        return LVector3d(radius, radius, radius)
+
     def get_abs_magnitude(self):
         return 99.0
 
@@ -517,7 +521,12 @@ class StellarObject(LabelledObject):
             if self.resolved:
                 if self.support_offset_body_center and settings.offset_body_center:
                     self.world_body_center_offset = -self.vector_to_obs * self.height_under * self.scene_scale_factor
-                    self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self.height_under / self.get_apparent_radius()
+                    self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self.height_under
+                    if self.height_under != 0:
+                        scale = self.get_scale()
+                        self.model_body_center_offset[0] /= scale[0]
+                        self.model_body_center_offset[1] /= scale[1]
+                        self.model_body_center_offset[2] /= scale[2]
                 if not self.init_components:
                     self.create_components()
                     self.check_settings()

@@ -26,6 +26,7 @@ from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
 
 class StellarSystem(StellarObject):
     virtual_object = True
+    support_offset_body_center = False
 
     def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         StellarObject.__init__(self, names, orbit, rotation, body_class, point_color, description)

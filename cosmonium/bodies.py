@@ -183,7 +183,7 @@ class StellarBody(StellarObject):
         if self.surface is not None:
             return self.surface.shape.get_scale()
         else:
-            return LVector3d()
+            return StellarObject.get_scale(self)
 
     def get_extend(self):
         if self.ring is not None:
