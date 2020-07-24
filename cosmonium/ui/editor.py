@@ -46,9 +46,12 @@ class ParamEditor():
         self.last_pos = None
         self.font_size = font_size
         self.owner = owner
-        self.scale = LVector2(1, 1)
+        self.scale = LVector2(*settings.ui_scale)
+        self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
         self.body = None
         self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
+        self.width = settings.default_window_width
+        self.height = settings.default_window_height
 
     def create_text_entry(self, frame, param):
         entry = DirectEntry(parent=frame,
@@ -66,11 +69,11 @@ class ParamEditor():
     def create_bool_entry(self, frame, param):
         btn = DirectCheckButton(parent=frame,
                                 text="",
-                                text_scale=self.font_size,
+                                text_scale=self.text_scale,
                                 text_align=TextNode.A_left,
                                 boxPlacement="left",
                                 #borderWidth=(2, 2),
-                                indicator_text_scale=self.font_size,
+                                indicator_text_scale=self.text_scale,
                                 indicator_text='A',
                                 indicator_text_pos=(0, 4),
                                 indicator_borderWidth=(2, 2),
@@ -103,6 +106,7 @@ class ParamEditor():
         return hsizer
 
     def create_spin_entry(self, frame, param, slider=None, component=None):
+        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
         value_range = param.get_range()
         value_type = param.get_type()
         if value_range is None:
@@ -122,7 +126,7 @@ class ParamEditor():
                               valueEntry_width = 10,
                               valueEntry_text_align=TextNode.A_left,
                               valueEntry_frameColor=settings.entry_background,
-                              scale=self.font_size)
+                              scale=scale3)
         widget = SizerWidget(entry)
         return widget
 
@@ -131,7 +135,7 @@ class ParamEditor():
         label = DirectLabel(parent=frame,
                             text=param.name,
                             textMayChange=True,
-                            text_scale=self.font_size,
+                            text_scale=self.text_scale,
                             text_align=TextNode.A_left)
         widget = SizerWidget(label)
         hsizer.add(widget, borders=self.borders, alignment="center_v")
@@ -173,7 +177,7 @@ class ParamEditor():
                     label = DirectLabel(parent=frame,
                                         text=param.name,
                                         textMayChange=True,
-                                        text_scale=self.font_size,
+                                        text_scale=self.text_scale,
                                         text_align=TextNode.A_left)
                     widget = SizerWidget(label)
                     sizer.add(widget, borders=borders)
@@ -182,11 +186,11 @@ class ParamEditor():
                 self.add_parameter(frame, sizer, param)
 
     def create_layout(self, group):
-        scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
+        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
         buttonSize = self.font_size * 2
-        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, settings.panel_width, -settings.panel_height, 0),
+        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, self.width, -self.height, 0),
                                                         tab_frameSize = (0, 7, 0, 2),
-                                                        tab_scale=scale3 * self.font_size,
+                                                        tab_scale=scale3,
                                                         tab_text_align = TextNode.ALeft,
                                                         tab_text_pos = (0.2, 0.6),
                                                         tabUnselectedColor = settings.tab_background,
@@ -198,7 +202,7 @@ class ParamEditor():
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
             self.add_parameters(frame, sizer, section.parameters)
-            sizer.update((settings.panel_width, settings.panel_height))
+            sizer.update((self.width, self.height))
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
             self.layout.frame.addPage(frame, section.name)

@@ -91,7 +91,7 @@ class Gui(object):
             self.font = None
         self.clipboard = create_clipboard()
         self.hud = HUD(self.scale, self.font)
-        self.query = Query(self.scale, self.font)
+        self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
         self.last_fps = globalClock.getRealTime()
         self.width = 0
         self.height = 0
@@ -119,7 +119,7 @@ class Gui(object):
             self.hide_menu()
 
     def calc_scale(self):
-        self.scale = LVector2(1.0 / self.screen_width * 2.0, 1.0 / self.screen_height * 2.0)
+        self.scale = LVector2(settings.ui_scale[0] / self.screen_width * 2.0,  settings.ui_scale[1] / self.screen_height * 2.0)
 
     def register_events(self, event_ctrl):
         event_ctrl.accept('control-q', self.cosmonium.userExit)
@@ -624,7 +624,7 @@ class Gui(object):
        )
 
     def create_menubar(self):
-        scale = self.hud.scale
+        scale = self.scale
         scale = LVector3(scale[0], 1.0, scale[1])
         scale[0] *= settings.menu_text_size
         scale[2] *= settings.menu_text_size

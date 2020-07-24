@@ -32,6 +32,8 @@ from directguilayout.gui import Widget as SizerWidget
 from .widgets import DirectWidgetContainer
 from .window import Window
 
+from .. import settings
+
 import sys
 if sys.version_info[0] >= 3:
     from collections.abc import Iterable
@@ -45,14 +47,17 @@ class PreferencesPanel():
         self.last_pos = None
         self.font_size = font_size
         self.owner = owner
-        self.scale = LVector2(1, 1)
+        self.scale = LVector2(*settings.ui_scale)
+        self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
+        self.width = settings.default_window_width
+        self.height = settings.default_window_height
 
     def create_layout(self):
-        scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
+        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
         buttonSize = self.font_size * 2
-        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, 800, -600, 0),
+        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, self.width, -self.height, 0),
                                                         tab_frameSize = (0, 7, 0, 2),
-                                                        tab_scale=scale3 * self.font_size,
+                                                        tab_scale=scale3,
                                                         tab_text_align = TextNode.ALeft,
                                                         tab_text_pos = (0.2, 0.6),
                                                         tabSelectedColor = (0.7, 0.7, 0.7, 1)))
@@ -68,7 +73,7 @@ class PreferencesPanel():
                     label = DirectLabel(parent=frame,
                                         text=entry,
                                         textMayChange=True,
-                                        text_scale=self.font_size,
+                                        text_scale=self.text_scale,
                                         text_align=TextNode.A_left)
                     widget = SizerWidget(label)
                     sizer.add(widget, expand=True, borders=borders)
@@ -78,11 +83,11 @@ class PreferencesPanel():
                     args = entry[3:]
                     btn = DirectCheckButton(parent=frame,
                                             text=text,
-                                            text_scale=self.font_size,
+                                            text_scale=self.text_scale,
                                             text_align=TextNode.A_left,
                                             boxPlacement="left",
                                             #borderWidth=(2, 2),
-                                            indicator_text_scale=self.font_size,
+                                            indicator_text_scale=self.text_scale,
                                             indicator_text='A',
                                             indicator_text_pos=(0, 4),
                                             indicator_borderWidth=(2, 2),
@@ -98,7 +103,7 @@ class PreferencesPanel():
                     sizer.add((0, self.font_size))
                 else:
                     print("Unknown entry type", entry)
-            sizer.update((800, 600))
+            sizer.update((self.width, self.height))
             self.layout.frame.addPage(frame, tab_name)
         title = "Preferences"
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)

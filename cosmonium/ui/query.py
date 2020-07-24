@@ -25,15 +25,14 @@ from direct.gui.DirectGui import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.OnscreenText import OnscreenText
 
-from .. import settings
-
 class Query:
-    text_size = 12 * 1.5
-    suggestions_text_size = 12
-
-    def __init__(self, scale, font):
+    def __init__(self, scale, font, color, text_size, suggestions_text_size, query_delay):
         self.scale = scale
         self.font = font
+        self.color = color
+        self.text_size = text_size
+        self.suggestions_text_size = suggestions_text_size
+        self.query_delay = query_delay
         self.background = None
         self.prefix = None
         self.query = None
@@ -102,7 +101,7 @@ class Query:
         self.current_selection = None
         if self.completion_task is not None:
             taskMgr.remove(self.completion_task)
-        self.completion_task = taskMgr.doMethodLater(settings.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
+        self.completion_task = taskMgr.doMethodLater(self.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
 
     def select(self, event):
         modifiers = event.getModifierButtons()
@@ -123,7 +122,7 @@ class Query:
 
     def open_query(self, owner):
         self.owner = owner
-        bg_color = LColor(*settings.hud_color)
+        bg_color = LColor(*self.color)
         bg_color[3] = 0.2
         scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
         self.background = DirectFrame(frameColor=bg_color,
@@ -132,7 +131,7 @@ class Query:
                                       parent=base.a2dBottomLeft)
         self.prefix = OnscreenText(text="Target name:",
                                    font=self.font,
-                                   fg=settings.hud_color,
+                                   fg=self.color,
                                    align=TextNode.ALeft,
                                    parent=base.a2dBottomLeft,
                                    scale=tuple(self.scale * self.text_size),
@@ -141,7 +140,7 @@ class Query:
         bounds = self.prefix.getTightBounds()
         length = bounds[1][0] - bounds[0][0] + self.scale[0] * self.text_size / 2
         self.query = DirectEntry(text="",
-                                 text_fg=settings.hud_color,
+                                 text_fg=self.color,
                                  scale=tuple(scale3 * self.text_size),
                                  command=self.do_query,
                                  parent=base.a2dBottomLeft,
@@ -162,7 +161,7 @@ class Query:
         llz = bounds[2] / self.text_size
         self.suggestions = OnscreenText(text = "",
                                        font=self.font,
-                                       fg=settings.hud_color,
+                                       fg=self.color,
                                        align=TextNode.ALeft,
                                        mayChange=True,
                                        parent=base.a2dBottomLeft,

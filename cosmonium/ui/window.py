@@ -25,14 +25,17 @@ from direct.gui.DirectGui import DirectFrame, DGG
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.ShowBaseGlobal import aspect2d
 
+from .. import settings
+
 class Window():
     texture = None
-    def __init__(self, title, scale, parent=None, child=None, transparent=False, owner=None):
+    def __init__(self, title_text, scale, parent=None, child=None, transparent=False, owner=None):
+        self.title_text = title_text
         self.scale = scale
+        self.title_size = settings.window_title_size
         self.owner = owner
         self.child = None
         self.last_pos = None
-        self.title_text = title
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
         if parent is None:
@@ -51,7 +54,7 @@ class Window():
         self.title = OnscreenText(text=self.title_text,
                                   style=Plain,
                                   fg=self.title_color,
-                                  scale=tuple(self.scale * 14),
+                                  scale=tuple(self.scale * self.title_size),
                                   parent=self.title_frame,
                                   pos=(0, 0),
                                   align=TextNode.ALeft,
@@ -65,7 +68,7 @@ class Window():
         self.close = OnscreenText(text='X',
                                   style=Plain,
                                   fg=self.title_color,
-                                  scale=tuple(self.scale * 14),
+                                  scale=tuple(self.scale * self.title_size),
                                   parent=self.close_frame,
                                   pos=(0, 0),
                                   align=TextNode.ACenter,

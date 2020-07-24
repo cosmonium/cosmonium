@@ -87,6 +87,14 @@ class ConfigParser(YamlParser):
         data['global-ambient'] = settings.global_ambient
         return data
 
+    def decode_ui_general(self, data):
+        settings.ui_scale = data.get('scale', settings.ui_scale)
+
+    def encode_ui_general(self):
+        data = {}
+        data['scale'] = list(settings.ui_scale)
+        return data
+
     def decode_ui_hud(self, data):
         settings.show_hud = data.get('visible', settings.show_hud)
         settings.hud_font = data.get('font', settings.hud_font)
@@ -138,6 +146,7 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_ui(self, data):
+        self.decode_ui_general(data.get('general', {}))
         self.decode_ui_hud(data.get('hud', {}))
         self.decode_ui_menu(data.get('menu', {}))
         self.decode_ui_nav(data.get('nav', {}))
@@ -146,6 +155,7 @@ class ConfigParser(YamlParser):
 
     def encode_ui(self):
         data = {}
+        data['general'] = self.encode_ui_general()
         data['hud'] = self.encode_ui_hud()
         data['menu'] = self.encode_ui_menu()
         data['nav'] = self.encode_ui_nav()

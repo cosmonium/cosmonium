@@ -197,7 +197,10 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+ui_scale = (1, 1)
 show_hud = True
+hud_text_size = 12
+info_text_size = 18
 show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
@@ -205,15 +208,20 @@ help_background = LColor(0.5, 0.5, 0.5, 0.7)
 display_fps = True
 display_ms = False
 ui_font_size = 12
-panel_width = 800
-panel_height = 600
 panel_background = LColor(0.8, 0.8, 0.8, 1)
 tab_background = LColor(0.7, 0.7, 0.7, 1)
 entry_background = LColor(0.9, 0.9, 0.9, 1)
 
 menu_text_size = 12
 
+query_color = LColor(0.7, 0.7, 1.0, 1.0)
 query_delay = 0.333
+query_text_size = 18
+query_suggestion_text_size = 12
+
+window_title_size = 14
+default_window_width = 800
+default_window_height = 600
 
 #These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
