@@ -52,6 +52,7 @@ config = {
                 'textures/**',
                 '*.md',
                 'lib/dummypy/*',
+                'locale/**'
             ],
             'exclude_patterns': [
                 'data/**/level1/**',

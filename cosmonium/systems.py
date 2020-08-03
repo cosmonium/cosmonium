@@ -306,7 +306,7 @@ class SimpleSystem(StellarSystem):
         return self.primary.get_equatorial_rotation()
 
     def get_label_text(self):
-        return self.primary.get_name()
+        return self.primary.get_label_text()
 
     def get_abs_magnitude(self):
         if self.star_system:

@@ -31,7 +31,7 @@ from .rotationsparser import RotationYamlParser
 
 class SystemYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         star_system = data.get('star-system', False)
         orbit = OrbitYamlParser.decode(data.get('orbit'))
@@ -56,7 +56,7 @@ class SystemYamlParser(YamlModuleParser):
 
 class BarycenterYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))

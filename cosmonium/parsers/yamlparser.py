@@ -111,7 +111,28 @@ class YamlParser(object):
 
 class YamlModuleParser(YamlParser):
     context = defaultDirContext
+    translation = None
     app = None
+
+    @classmethod
+    def set_translation(cls, translation):
+        YamlModuleParser.translation = translation
+
+    @classmethod
+    def translate_name(cls, name, context=None):
+        if context is not None:
+            return cls.translation.pgettext(context, name)
+        else:
+            return cls.translation.gettext(name)
+
+    @classmethod
+    def translate_names(cls, names, context=None):
+        if not isinstance(names, list):
+            names = [names]
+        if context is not None:
+            return list(map(lambda x: cls.translation.pgettext(context, x), names))
+        else:
+            return list(map(lambda x: cls.translation.gettext(x), names))
 
     def create_new_context(self, old_context, filepath):
         new_context = DirContext(old_context)

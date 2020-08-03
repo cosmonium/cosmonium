@@ -43,7 +43,7 @@ class Ring(ShapeObject):
         self.shape.vanish_borders = True
 
     def get_component_name(self):
-        return 'Ring'
+        return _('Rings')
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
@@ -62,7 +62,7 @@ class Atmosphere(ShapeObject):
         self.attenuated_objects = []
 
     def get_component_name(self):
-        return 'Atmosphere'
+        return _('Atmosphere')
 
     def check_settings(self):
         if settings.show_atmospheres != self.shown:
@@ -206,7 +206,7 @@ class Clouds(FlatSurface):
             pass#appearance.check_transparency()
  
     def get_component_name(self):
-        return 'Clouds'
+        return _('Clouds')
 
     def set_scale(self, scale):
         self.scale_base = scale

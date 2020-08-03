@@ -35,7 +35,7 @@ class ConstellationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
         constellation = None
-        name = data.get('name')
+        name = cls.translate_name(data.get('name'), context='constellation')
         genitive = data.get('genitive')
         abbr = data.get('abbreviation')
         ra = hour_angle_decoder(data.get('ra'))

@@ -33,7 +33,7 @@ from .noiseparser import NoiseYamlParser
 
 class StarYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', 'star')
         radius = data.get('radius')

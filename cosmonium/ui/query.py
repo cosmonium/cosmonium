@@ -129,7 +129,7 @@ class Query:
                                       frameSize=(-1 / self.scale[0], 1.0 / self.scale[0],
                                                  0.15 + self.scale[1] * self.text_size, 0.0),
                                       parent=base.a2dBottomLeft)
-        self.prefix = OnscreenText(text="Target name:",
+        self.prefix = OnscreenText(text=_("Target name:"),
                                    font=self.font,
                                    fg=self.color,
                                    align=TextNode.ALeft,

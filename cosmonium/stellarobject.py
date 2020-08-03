@@ -185,7 +185,7 @@ class StellarObject(LabelledObject):
             orbit = self.system.orbit
         else:
             orbit = self.orbit
-        general_group = ParametersGroup('General')
+        general_group = ParametersGroup(_('General'))
         general_group.add_parameter(orbit.get_user_parameters())
         general_group.add_parameter(self.rotation.get_user_parameters())
         group.add_parameter(general_group)

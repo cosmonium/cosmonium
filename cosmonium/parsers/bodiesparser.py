@@ -40,7 +40,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         self.body_class = body_class
 
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', self.body_class)
         radius = data.get('radius', None)

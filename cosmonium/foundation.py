@@ -51,6 +51,9 @@ class BaseObject(object):
         self.light = None
         self.parent = None
 
+    def get_names(self):
+        return self.names
+
     def set_names(self, names):
         if names is None:
             self.names = ['']

@@ -31,6 +31,8 @@ from panda3d.core import Camera
 from direct.task.Task import Task
 
 import logging
+import gettext
+
 from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
@@ -86,6 +88,7 @@ class CosmoniumBase(ShowBase):
         self.trigger_check_settings = True
         self.request_fullscreen = False
 
+        self.init_lang()
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
@@ -122,6 +125,13 @@ class CosmoniumBase(ShowBase):
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
+
+    def load_lang(self, domain, locale):
+        return gettext.translation(domain, locale, fallback=True)
+
+    def init_lang(self):
+        self.translation = self.load_lang('cosmonium', 'locale')
+        self.translation.install()
 
     def panda_config(self):
         data = []

@@ -51,7 +51,7 @@ class Surface(ShapeObject):
         self.owner = None
 
     def get_component_name(self):
-        return 'Surface'
+        return _('Surface')
 
     def create_shadows(self):
         if self.shadow_caster is None:
