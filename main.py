@@ -23,8 +23,8 @@ from __future__ import absolute_import
 
 import sys
 
-# Add source/ directory to import path to be able to load the c++ libraries
-sys.path.insert(1, 'source')
+# Add lib/ directory to import path to be able to load the c++ libraries
+sys.path.insert(1, 'lib')
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(1, 'third-party')
 # CEFPanda and glTF modules aree not at top level
