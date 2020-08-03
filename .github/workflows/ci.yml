@@ -70,7 +70,7 @@ jobs:
         name: windows-logs
         path: ~/AppData/Local/cosmonium/output.log
     - name: 'Upload development build (Ubuntu)'
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -79,7 +79,7 @@ jobs:
         title: "Linux Development Build"
         files: dist/*
     - name: 'Upload development build (macOS)'
-      if: runner.os == 'macOS'
+      if: runner.os == 'macOS' && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -88,7 +88,7 @@ jobs:
         title: "MacOS Development Build"
         files: dist/*
     - name: 'Upload development build (Windows)'
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
