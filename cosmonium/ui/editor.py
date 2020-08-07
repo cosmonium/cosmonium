@@ -79,6 +79,7 @@ class ParamEditor():
                                 indicator_borderWidth=(2, 2),
                                 #boxBorder=1
                                 pressEffect=False,
+                                suppressKeys=1,
                                 command=self.do_update,
                                 extraArgs=[None, param],
                                 )
@@ -96,6 +97,7 @@ class ParamEditor():
                               scale=(self.font_size * 16, 1, self.font_size * 2),
                               value=scaled_value,
                               range=param.get_range(scale=True),
+                              suppressKeys=1,
                               command=self.do_update_slider
                               )
         widget = SizerWidget(slider)
@@ -121,6 +123,7 @@ class ParamEditor():
                               textFormat='{}',
                               minValue=value_range[0],
                               maxValue=value_range[1],
+                              suppressKeys=1,
                               command=self.do_update,
                               extraArgs=[slider, param, component],
                               valueEntry_width = 10,
