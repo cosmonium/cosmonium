@@ -122,6 +122,8 @@ class DirectSpinBox(DirectFrame):
                                                command = self['command'],
                                                extraArgs = self['extraArgs'],
                                                focusOutCommand = self.focusOutCommand,
+                                               suppressKeys = self['suppressKeys'],
+                                               suppressMouse = self['suppressMouse']
                                                )
         self.valueEntry.bind(WHEELUP, self.__mousewheelUp)
         self.valueEntry.bind(WHEELDOWN, self.__mousewheelDown)
@@ -141,6 +143,8 @@ class DirectSpinBox(DirectFrame):
                                               DirectButton, (self,),
                                               text = '5' if self['buttonOrientation'] == DGG.VERTICAL else '4',
                                               text_font = shuttle_controls_font,
+                                              suppressKeys = self['suppressKeys'],
+                                              suppressMouse = self['suppressMouse']
                                               )
         # Set commands for the Inc Button
         self.incButton.bind(DGG.B1PRESS, self.__incButtonDown)
@@ -150,7 +154,9 @@ class DirectSpinBox(DirectFrame):
         self.decButton = self.createcomponent('decButton', (), None,
                                               DirectButton, (self,),
                                               text = '6' if self['buttonOrientation'] == DGG.VERTICAL else '3',
-                                              text_font = shuttle_controls_font
+                                              text_font = shuttle_controls_font,
+                                              suppressKeys = self['suppressKeys'],
+                                              suppressMouse = self['suppressMouse']
                                               )
         # Set commands for the Dec Button
         self.decButton.bind(DGG.B1PRESS, self.__decButtonDown)
