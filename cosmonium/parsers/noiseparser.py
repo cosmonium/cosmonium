@@ -93,7 +93,7 @@ class NoiseYamlParser(YamlParser):
 
     def decode(self, data):
         if isinstance(data, str):
-            data = { 'noise': data }
+            data = { 'func': data }
         aliases = data.get('aliases', {})
         for (alias, func) in aliases.items():
             parser = self.parsers.get(func, None)
@@ -101,8 +101,11 @@ class NoiseYamlParser(YamlParser):
                 self.register_noise_parser(alias, parser)
             else:
                 print("Function", func, "unknown")
-        noise = data.get('noise')
-        return self.decode_noise_dict(noise)
+        func = data.get('func')
+        if func is None:
+            func = data.get('noise')
+            print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+        return self.decode_noise_dict(func)
 
 from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
 from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseExp, NoiseThreshold
