@@ -35,7 +35,7 @@ endif
 build: build-source update-mo
 
 build-source:
-	@cd source && $(PYTHON) ../tools/p3d_module_builder/build.py
+	@cd source && $(MAKE) build
 	@mv source/*.so lib/
 
 update-mo:
