@@ -144,7 +144,7 @@ kepler_elliptic(const double ecc, double mean_anom)
     }
   }
 
-  while (fabs(delta_curr) > thresh and n_iter < MAX_ITERATIONS) {
+  while (fabs(delta_curr) > thresh && n_iter < MAX_ITERATIONS) {
     if (n_iter > MAX_DEFAULT_ITERATIONS) {
       err = near_parabolic(curr, ecc) - mean_anom;
     } else {

@@ -71,7 +71,7 @@ OctreeNode::traverse(OctreeTraverser *traverser)
 {
   traverser->traverse(*this, leaves);
   for(auto child : children) {
-    if (child != 0 and traverser->enter(*child)) {
+    if (child != 0 && traverser->enter(*child)) {
       child->traverse(traverser);
     }
   }
