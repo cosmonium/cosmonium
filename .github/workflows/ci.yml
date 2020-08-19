@@ -20,6 +20,7 @@ jobs:
     - name: Build app
       run: |
         make bdist PLATFORM=manylinux1_x86_64
+        python3 setup.py bdist_apps -p manylinux1_i686
     - name: Test binary
       run: |
         cd build/manylinux1_x86_64
@@ -41,7 +42,6 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    if: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -81,7 +81,6 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    if: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
