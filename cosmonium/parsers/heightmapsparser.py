@@ -78,14 +78,18 @@ class HeightmapYamlParser(YamlModuleParser):
         if heightmap_type == 'procedural':
             size = data.get('size', 256)
             noise_parser = NoiseYamlParser(scale_length)
-            noise = noise_parser.decode(data.get('noise'))
+            func = data.get('func')
+            if func is None:
+                func = data.get('noise')
+                print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+            func = noise_parser.decode(func)
             if patched:
                 max_lod = data.get('max-lod', 100)
                 heightmap = PatchedHeightmap(name, size,
                                              relative_height_scale, pi, pi, median,
-                                             ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
+                                             ShaderHeightmapPatchFactory(func), interpolator, max_lod)
             else:
-                heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
+                heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, func, interpolator)
         else:
             heightmap_data = data.get('data')
             if heightmap_data is not None:
