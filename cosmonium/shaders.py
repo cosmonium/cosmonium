@@ -2202,8 +2202,8 @@ class ShaderShadowMap(ShaderShadow):
         code.append('''
 vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) {
     float cos_alpha = clamp(dot(normal, light_dir), 0.0, 1.0);
-    float offset_scale_n = sqrt(1 - cos_alpha * cos_alpha);       // sin(acos(L·N))
-    float offset_scale_l = min(2, offset_scale_n / cos_alpha);    // tan(acos(L·N))
+    float offset_scale_n = sqrt(1 - cos_alpha * cos_alpha);       // sin(acos(L.N))
+    float offset_scale_l = min(2, offset_scale_n / cos_alpha);    // tan(acos(L.N))
     vec3 offset = normal * offset_scale_n * normal_bias + light_dir * offset_scale_l * slope_bias;
     return offset;
 }
