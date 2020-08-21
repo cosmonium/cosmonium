@@ -433,9 +433,9 @@ class FreeNav(NavBase):
         #print(direction.length(), height, altitude)
         direction.normalize()
         if rate < 0 or altitude >= settings.min_altitude:
-            self.ship.step(direction*altitude*rate, absolute=True)
+            self.ship.step(direction * altitude * rate, absolute=True)
         else:
-            self.ship.set_pos(target.get_position() - direction * (height + settings.min_altitude))
+            pass#self.ship.set_pos(target._local_position - direction * (height + settings.min_altitude))
 
 class WalkNav(NavBase):
     rot_step_per_sec = pi/4
