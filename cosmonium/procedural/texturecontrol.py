@@ -134,12 +134,15 @@ class HeightTextureControl(TextureControl):
             if previous is None:
                 code.append("    if (height <= %g) {" % (entry.height - entry.blend / 2.0))
                 code.append("      coefs = %s_coefs;" % entry.texture_control.name)
+            elif entry.blend != 0.0:
+                code.append("    } else if (height <= %g) {" % (entry.height - entry.blend / 2.0))
+                code.append("        height_weight = clamp((height - %g) / %g, 0, 1);" % (previous.height - previous.blend / 2.0, previous.blend))
+                code.append("        for (int i = 0; i < coefs.length(); ++i) {")
+                code.append("            coefs[i] = mix(%s_coefs[i], %s_coefs[i], height_weight);" % (previous.texture_control.name, entry.texture_control.name))
+                code.append("        }")
             else:
                 code.append("    } else if (height <= %g) {" % (entry.height - entry.blend / 2.0))
-                code.append("    height_weight = clamp((height - %g) / %g, 0, 1);" % (previous.height - previous.blend / 2.0, previous.blend))
-                code.append("    for (int i = 0; i < coefs.length(); ++i) {")
-                code.append("        coefs[i] = mix(%s_coefs[i], %s_coefs[i], height_weight);" % (previous.texture_control.name, entry.texture_control.name))
-                code.append("    }")
+                code.append("      coefs = %s_coefs;" % entry.texture_control.name)
             previous = entry
         code.append("   } else {")
         code.append("      coefs = %s_coefs;" % entry.texture_control.name)
