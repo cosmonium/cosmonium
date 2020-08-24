@@ -78,8 +78,9 @@ class TexturesDictionary(AppearanceBase):
         return texture.array_id
 
     def apply_textures(self, shape):
-        for texture in self.texture_arrays.values():
-            texture.apply(shape)
+        if self.texture_array:
+            for texture in self.texture_arrays.values():
+                texture.apply(shape)
         else:
             for entry in self.blocks.values():
                 for texture in entry.textures:
