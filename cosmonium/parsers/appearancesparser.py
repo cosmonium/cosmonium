@@ -77,7 +77,11 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             texture_offset = 0
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()
-            noise = noise_parser.decode(data.get('noise'))
+            func = data.get('func')
+            if func is None:
+                func = data.get('noise')
+                print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+            func = noise_parser.decode(func)
             target = data.get('target', 'gray')
             if target == 'gray':
                 target = GrayTarget()
@@ -89,7 +93,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             size = int(data.get('size', 256))
             frequency = float(data.get('frequency', 1.0))
             scale = float(data.get('scale', 1.0))
-            texture_source = ProceduralVirtualTextureSource(noise, target, size, frequency, scale)
+            texture_source = ProceduralVirtualTextureSource(func, target, size, frequency, scale)
             texture_offset = parameters.get('offset', 0)
         else:
             print("Unknown type", object_type)

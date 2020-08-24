@@ -67,9 +67,13 @@ class StarSurfaceFactoryYamlParser(YamlModuleParser):
     def decode(self, data):
         name = data.get('name')
         noise_parser = NoiseYamlParser()
-        noise = noise_parser.decode(data.get('noise'))
+        func = data.get('func')
+        if func is None:
+            func = data.get('noise')
+            print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+        func = noise_parser.decode(func)
         size = int(data.get('size', 256))
-        factory = ProceduralStarSurfaceFactory(noise, size)
+        factory = ProceduralStarSurfaceFactory(func, size)
         proceduralStarSurfaceFactoryDB.add(name, factory)
         return None
 
