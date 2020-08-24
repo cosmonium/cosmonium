@@ -115,7 +115,7 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
             else:
                 sampler = 'texture2D'
         code.append("    float coef;")
-        code.append("    vec4 result;")
+        code.append("    vec4 result = vec4(0.0);")
         for (block_id, block) in self.dictionary.blocks.items():
             index = self.dictionary.blocks_index[block_id]
             major = index // 4
