@@ -542,6 +542,7 @@ class TextureArray(TextureBase):
         if texture is not None:
             self.convert_texture(texture)
         self.texture = texture
+        self.mipmap(self.texture)
         if callback is not None:
             callback(self, *cb_args)
 
@@ -558,7 +559,6 @@ class TextureArray(TextureBase):
                 callback(self, *cb_args)
 
     def apply(self, shape):
-        self.mipmap(self.texture)
         self.apply_shader(shape, self.input_name, self.texture, None)
 
     def can_split(self, patch):
