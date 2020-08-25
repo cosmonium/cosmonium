@@ -225,6 +225,9 @@ class AutoPilot(object):
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")
+        else:
+            # Make the up vector orthogonal to the direction using Gram-Schmidt
+            up = up - direction * up.dot(direction)
         orientation = LQuaterniond()
         lookAt(orientation, direction, up)
         self.move_and_rotate_to(position, orientation, duration=duration)
