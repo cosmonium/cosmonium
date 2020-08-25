@@ -29,6 +29,7 @@ class TranslationYamlParser(YamlModuleParser):
         'body': {'translate-list': ['name']},
         'constellation': {'translate': ['name'],
                           'context': 'constellation'},
+        'custom-translate': {'translate-list': ['names']},
         }
     aliases = {'planet': 'body', 
                'dwarfplanet': 'body',
@@ -124,7 +125,8 @@ context.add_all_path(main_dir)
 
 settings.cache_yaml = False
 parser = TranslationYamlParser()
-TranslationYamlParser.output = open(sys.argv[2], 'w')
+TranslationYamlParser.output = open(sys.argv[1], 'w')
 parser.output_header()
-parser.load_and_parse(sys.argv[1], context)
+for entry in sys.argv[2:]:
+    parser.load_and_parse(entry, context)
 TranslationYamlParser.output.close()
