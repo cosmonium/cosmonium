@@ -125,10 +125,17 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
             code.append("    if (coef > 0) {")
             if self.dictionary.texture_array:
                 dict_name = 'array_%s' % category
-                if category == 'normal':
-                    code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz * 2 - 1;" % (block_id, sampler, dict_name, tex_id))
+                #TODO: There should not be a link like that
+                if self.shader.appearance.resolved:
+                    if category == 'normal':
+                        code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz * 2 - 1;" % (block_id, sampler, dict_name, tex_id))
+                    else:
+                        code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz;" % (block_id, sampler, dict_name, tex_id))
                 else:
-                    code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz;" % (block_id, sampler, dict_name, tex_id))
+                    if category == 'normal':
+                        code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz * 2 - 1;" % (block_id, dict_name, tex_id))
+                    else:
+                        code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz;" % (block_id, dict_name, tex_id))
             else:
                 if category == 'normal':
                     code.append("      vec3 tex_%s = %s(tex_%s_%s, position.xy * detail_factor).xyz * 2 - 1;" % (block_id, sampler, block_id, category))
@@ -211,6 +218,7 @@ class DetailMap(ShaderAppearance):
         self.textures_control.set_heightmap(self.heightmap)
         self.create_normals = create_normals
         self.normal_texture_tangent_space = True
+        self.resolved = False
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance)
@@ -227,6 +235,8 @@ class DetailMap(ShaderAppearance):
             config += "o"
         if self.has_normal:
             config += "n"
+        if self.resolved:
+            config += 'r'
         if config != "":
             return name + '-' + config
         else:
@@ -235,6 +245,9 @@ class DetailMap(ShaderAppearance):
     def set_shader(self, shader):
         ShaderAppearance.set_shader(self, shader)
         self.textures_control.set_shader(shader)
+
+    def set_resolved(self, resolved):
+        self.resolved = resolved
 
     def vertex_uniforms(self, code):
         code.append("uniform vec4 flat_coord;")

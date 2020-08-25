@@ -22,9 +22,12 @@ from __future__ import absolute_import
 
 from ..appearances import AppearanceBase, Appearance, TexturesBlock
 from ..textures import TextureArray
+from ..astro import units
 from ..dircontext import defaultDirContext
 
 from .. import settings
+
+from math import pi
 
 class TextureTilingMode(object):
     F_none = 0
@@ -41,6 +44,8 @@ class TexturesDictionary(AppearanceBase):
         self.nb_textures = 0
         self.nb_blocks = 0
         self.nb_arrays = 0
+        self.extend = 2 * pi * max(self.scale_factor) * units.m
+        self.resolved = False
         self.blocks = {}
         self.blocks_index = {}
         if settings.use_texture_array and array:
@@ -109,6 +114,19 @@ class TexturesDictionary(AppearanceBase):
                 else:
                     shape.jobs_pending += self.nb_textures
                     self.load_textures(shape, owner)
+
+    def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
+        AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
+        height_under = shape.owner.height_under
+        distance = distance_to_obs - height_under
+        if distance > 0.0:
+            size = self.extend / (distance * pixel_size)
+            resolved = size > 1.0
+            if resolved != self.resolved:
+                self.resolved = resolved
+                #TODO: this should be done properly
+                shape.parent.shader.appearance.set_resolved(resolved)
+                shape.parent.update_shader()
 
 class ProceduralAppearance(AppearanceBase):
     def __init__(self,

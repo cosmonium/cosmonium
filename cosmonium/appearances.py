@@ -146,7 +146,7 @@ class AppearanceBase:
     def apply(self, shape, owner):
         pass
 
-    def update_lod(self, nodepath, apparent_radius, distance_to_obs, pixel_size):
+    def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         pass
 
     def get_recommended_shape(self):
