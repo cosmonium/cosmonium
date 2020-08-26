@@ -19,7 +19,8 @@ jobs:
         sudo dpkg -i panda3d1.10_1.10.6~xenial_amd64.deb
     - name: Build app
       run: |
-        make bdist PLATFORM=manylinux1_x86_64
+        make build
+        python3 setup.py bdist_apps -p manylinux1_x86_64
         python3 setup.py bdist_apps -p manylinux1_i686
     - name: Test binary
       run: |
