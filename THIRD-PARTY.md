@@ -1,18 +1,8 @@
 # Third-party code used in Cosmonium
 
-Cosmonium is used code or algorithm from third-parties, here is the (hopefully) exhaustive list with the acknowledgment and license.
+Cosmonium is using code or algorithm from third-parties, here is the list of all these dependencies with the attribution and license.
 
-## support/ply
-
-PLY (Python Lex-Yacc) is an implementation of lex and yacc parsing tools for Python.
-
-Copyright: Copyright (C) 2001-2019 David M. Beazley (Dabeaz LLC) All rights reserved.
-
-License: BSD
-
-Reference: [Homepage](http://dabeaz.com/ply/), [Github](https://github.com/dabeaz/ply)
-
-## support/appdirs
+## third-party/appdirs
 
 Utilities for determining application-specific dirs.
 
@@ -22,7 +12,47 @@ License: MIT
 
 Reference: [Github](https://github.com/ActiveState/appdirs)
 
-## support/mistune
+## third-party/cefpanda
+
+Python module for using CEFPython with Panda3D.
+
+Copyright: Copyright (c) 2016 Mitchell Stokes
+
+License: MIT
+
+Reference: [Github](https://github.com/Moguri/cefpanda)
+
+## third-party/directguilayout
+
+Automatic layout management system for Panda3D's DirectGui.
+
+Copyright: Copyright (c) 2019, Epihaius
+
+License: BSD 2-Clause License
+
+Reference: [Github](https://github.com/Epihaius/DirectGui-layout-system)
+
+## third-party/directspinbox
+
+Spin Box entry implementation for Panda3D's DirectGui.
+
+Copyright: Copyright (c) 2019, fireclawthefox.
+
+License: BSD
+
+Reference: [Github](https://github.com/panda3d/panda3d/pull/742)
+
+## third-party/gltf
+
+ glTF loader for Panda3D.
+
+Copyright: Copyright (c) 2018, Mitchell Stokes
+
+License: BSD
+
+Reference: [Github](https://github.com/Moguri/panda3d-gltf)
+
+## third-party/mistune
 
 Markdown parser library.
 
@@ -32,7 +62,7 @@ License: BSD
 
 Reference: [Github](https://github.com/lepture/mistune)
 
-## ui/Menu
+## third-party/pandamenu
 
 Dropdown and popup menu for DirectGUI.
 
@@ -41,6 +71,26 @@ Copyright: Joni Hariyanto <ynjh d0t jo At gmail.com>
 License: WTFPL
 
 Reference: [Panda3D](https://discourse.panda3d.org/t/popup-menu-drop-down-menu-bar/4886) [Homepage](http://jon1.us/P3D/) [Source](http://jon1.us/P3D/other/)
+
+## third-party/ply
+
+PLY (Python Lex-Yacc) is an implementation of lex and yacc parsing tools for Python.
+
+Copyright: Copyright (C) 2001-2019 David M. Beazley (Dabeaz LLC) All rights reserved.
+
+License: BSD
+
+Reference: [Homepage](http://dabeaz.com/ply/), [Github](https://github.com/dabeaz/ply)
+
+## third-party/tabbedframe
+
+ A multi-page frame for Panda3D's DirectGUI.
+
+Copyright: Copyright (c) 2019 Ian Eborn (Thaumaturge)
+
+License: MIT
+
+Reference: [Github](https://github.com/ArsThaumaturgis/TabbedFrame)
 
 ## astro/jdcal
 
@@ -70,7 +120,7 @@ License: BSD
 
 Reference: [Homepage](http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/)
 
-## celestia
+## cosmonium/celestia
 
 atmosphere.py: Atmosphere shader code from Celestia used for compatibility.
 
@@ -82,7 +132,7 @@ License: GPL-V2
 
 Reference: [Homepage](https://celestia.space) [Github](https://github.com/CelestiaProject/Celestia)
 
-## procedural/shaders/gpu-noise-lib
+## shaders/gpu-noise-lib
 
 GPU noise library.
 
@@ -92,7 +142,7 @@ License: See procedural/shaders/gpu-noise-lib/README
 
 Reference: [Blog](http://briansharpe.wordpress.com), [Github](https://github.com/BrianSharpe)
 
-## procedural/shaders/quilez
+## shaders/quilez
 
 GPU noise library.
 
@@ -102,7 +152,7 @@ License: MIT (https://www.facebook.com/inigo.quilez.art/posts/1829376627387435/)
 
 Reference: [Homepage](http://iquilezles.org/www/index.htm)
 
-## procedural/shaders/stegu
+## shaders/stegu
 
 GPU noise library.
 
@@ -112,7 +162,7 @@ License: MIT
 
 Reference: [Github](https://github.com/stegu/webgl-noise)
 
-## oneil.py
+## cosmonium/oneil.py
 
 Atmospheric scattering code.
 
