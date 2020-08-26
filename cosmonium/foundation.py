@@ -69,7 +69,7 @@ class BaseObject(object):
         return self.names[0]
 
     def get_ascii_name(self):
-        return self.names[0].encode('ascii', 'replace').decode('ascii').lower()
+        return self.names[0].encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
 
     def get_exact_name(self, text):
         text = text.upper()
