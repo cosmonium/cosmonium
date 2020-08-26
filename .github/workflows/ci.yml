@@ -98,7 +98,7 @@ jobs:
         pip install panda3d>=1.10.6
     - name: Build binary
       run: |
-        python setup.py bdist_apps -p win_amd64,win32
+        python setup.py bdist_apps -p win_amd64,win32 -r requirements-win.txt
     - name: Test binary
       run: |
         cd build/win_amd64
