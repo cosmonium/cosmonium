@@ -22,6 +22,7 @@ from __future__ import absolute_import
 try:
     from cosmonium_engine import OctreeNode, OctreeLeaf, InfiniteFrustum, VisibleObjectsTraverser
     hasOctreeLeaf = True
+    print("Using C++ Engine")
 except ImportError as e:
     print("WARNING: Could not load Octree C implementation, fallback on python implementation")
     print("\t", e)
