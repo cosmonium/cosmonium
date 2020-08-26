@@ -31,10 +31,18 @@ sys.path.insert(0, 'third-party/gltf')
 version = '0.1.2.dev0'
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
+requirements_path = 'requirements.txt'
 
 if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')
     log_filename = None
+
+for (index, arg) in enumerate(sys.argv):
+    if arg == '-r':
+        requirements_path = sys.argv[index + 1]
+        sys.argv.pop(index)
+        sys.argv.pop(index)
+        break
 
 config = {
     'name': "cosmonium",
@@ -42,6 +50,7 @@ config = {
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
+            'requirements_path': requirements_path,
             'platforms': ['manylinux1_x86_64', 'manylinux1_i686', 'macosx_10_9_x86_64'],
             'include_patterns': [
                 'shaders/**',
