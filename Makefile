@@ -43,6 +43,7 @@ else
         PLATFORM:=macosx
         ifeq ($(RELEASE),1)
             SOURCE_TARGET:=build-macos-37
+            PYTHON=/usr/local/opt/python@3.7/bin/python3
         endif
         PLATFORM_ARCH:=macosx_10_9_x86_64
     endif
