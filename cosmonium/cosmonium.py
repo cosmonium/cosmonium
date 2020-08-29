@@ -110,9 +110,6 @@ class CosmoniumBase(ShowBase):
         self.trigger_check_settings = True
         self.request_fullscreen = False
 
-        # Disable stdout block buffering
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
-
         self.init_lang()
         self.print_info()
         self.panda_config()

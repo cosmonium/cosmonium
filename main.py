@@ -22,6 +22,10 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import sys
+import os
+# Disable stdout block buffering
+sys.stdout.flush()
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
 # Add lib/ directory to import path to be able to load the c++ libraries
 sys.path.insert(1, 'lib')

@@ -26,7 +26,10 @@
 from __future__ import print_function
 
 import sys
-from direct.showbase.DirectObject import DirectObject
+import os
+# Disable stdout block buffering
+sys.stdout.flush()
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
@@ -34,6 +37,7 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
+from direct.showbase.DirectObject import DirectObject
 from panda3d.core import AmbientLight, DirectionalLight, LColor
 from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion, BitMask32, NodePath
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
