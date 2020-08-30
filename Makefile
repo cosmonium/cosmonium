@@ -42,15 +42,14 @@ else
     ifeq ($(UNAME_S),Darwin)
         PLATFORM:=macosx
         ifeq ($(RELEASE),1)
-            SOURCE_TARGET:=build-macos-37
+            SOURCE_TARGET:=build-macos-release
             PYTHON=/usr/local/opt/python@3.7/bin/python3
+        else
+            SOURCE_TARGET:=build-macos
         endif
         PLATFORM_ARCH:=macosx_10_9_x86_64
     endif
 endif
-
-clean:
-	@cd source && $(MAKE) clean
 
 build: build-source update-mo
 
@@ -60,6 +59,9 @@ build-source:
 
 update-mo:
 	@cd po && make update-mo
+
+clean:
+	@cd source && $(MAKE) clean
 
 ifeq ($(RELEASE),1)
 REQUIREMENTS=source/requirements-$(PLATFORM_ARCH).txt

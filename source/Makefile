@@ -1,13 +1,18 @@
 PYTHON?=python3
+ABI=3.7
+OPTIONS=
 
 build:
-	$(PYTHON) ../tools/p3d_module_builder/build.py
+	$(PYTHON) ../tools/p3d_module_builder/build.py $(OPTIONS)
 
 build-manylinux1:
 	docker run --rm -v `pwd`/..:/cosmonium quay.io/pypa/manylinux1_x86_64 /cosmonium/source/build-manylinux1.sh
 
-build-macos-37:
-	/usr/local/opt/python@3.7/bin/python3 ../tools/p3d_module_builder/build.py --clean --python-libdir /usr/local/opt/python\@3.7/Frameworks/Python.framework/Python  --python-incdir /usr/local/opt/python\@3.7/Frameworks/Python.framework/Headers
+build-macos:
+	/usr/local/opt/python@$(ABI)/bin/python3 ../tools/p3d_module_builder/build.py --use-sdk-path --python-libdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Python  --python-incdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Headers
+
+build-macos-release:
+	/usr/local/opt/python@$(ABI)/bin/python3 ../tools/p3d_module_builder/build.py --clean --python-libdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Python  --python-incdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Headers
 
 clean:
 	@rm -rf build/
