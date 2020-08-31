@@ -3,9 +3,9 @@
 SOURCE=/cosmonium/source
 
 URL=https://github.com/cosmonium/panda3d/releases/download/
-VERSION=cosmonium-v1.10.6.dev76
+VERSION=cosmonium-v1.10.6.dev79
 
-PANDA3D=panda3d-1.10.6-1.x86_64.rpm
+PANDA3D=panda3d-1.10.6.dev79.x86_64.rpm
 EXTRA=extra-includes.zip
 
 cd $SOURCE
