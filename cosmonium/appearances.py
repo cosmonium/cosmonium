@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import  Material, TextureStage, Texture, GeomNode, InternalName
 from panda3d.core import TransparencyAttrib
 
-from .textures import TextureBase, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
+from .textures import TextureBase, WrapperTexture, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from .textures import AutoTextureSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
@@ -400,35 +400,35 @@ class ModelAppearance(AppearanceBase):
                 #print("FOUND STAGE", stage.name, stage.sort, mode, tex)
                 if mode in (TextureStage.M_modulate, TextureStage.M_modulate_glow, TextureStage.M_modulate_gloss):
                     if not has_surface:
-                        self.texture = tex
+                        self.texture = WrapperTexture(tex)
                         self.texture_index = self.nb_textures
                         self.has_specular_mask = mode == TextureStage.M_modulate_gloss
                         if self.srgb:
-                            tex_format = self.texture.getFormat()
+                            tex_format = tex.getFormat()
                             if tex_format == Texture.F_rgb:
-                                self.texture.set_format(Texture.F_srgb)
+                                tex.set_format(Texture.F_srgb)
                             elif tex_format == Texture.F_rgba:
-                                self.texture.set_format(Texture.F_srgb_alpha)
+                                tex.set_format(Texture.F_srgb_alpha)
                         self.nb_textures += 1
                         has_surface = True
                         #print("SURFACE", self.texture_index, self.texture)
                 elif mode in (TextureStage.M_normal, TextureStage.M_normal_height, TextureStage.M_normal_gloss):
                     if not has_normal:
-                        self.normal_map = tex
+                        self.normal_map = WrapperTexture(tex)
                         self.normal_map_index = self.nb_textures
                         self.nb_textures += 1
                         has_normal = True
                         #print("NORMAL", self.normal_map_index, self.normal_map)
                 elif mode in (TextureStage.M_glow, ):
                     if not has_glow:
-                        self.emission_texture = tex
+                        self.emission_texture = WrapperTexture(tex)
                         self.emission_texture_index = self.nb_textures
                         self.nb_textures += 1
                         has_glow = True
                         #print("GLOW", self.emission_texture_index, self.emission_texture)
                 elif mode in (TextureStage.M_gloss, ):
                     if not has_gloss:
-                        self.gloss_map = tex
+                        self.gloss_map = WrapperTexture(tex)
                         self.gloss_map_texture_index = self.nb_textures
                         self.nb_textures += 1
                         has_gloss = True

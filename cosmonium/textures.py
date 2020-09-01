@@ -295,6 +295,11 @@ class DirectTextureSource(TextureSource):
     def get_texture(self, shape):
         return (self.texture, 0, 0)
 
+class WrapperTexture(TextureBase):
+    def __init__(self, texture):
+        self.texture = texture
+        self.source = TextureSource()
+
 class SimpleTexture(TextureBase):
     def __init__(self, source, srgb=False, offset=0):
         TextureBase.__init__(self)
