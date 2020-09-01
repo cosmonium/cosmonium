@@ -112,7 +112,16 @@ config = {
                     "textures/cosmonium-16.png",
                 ],
             },
-       }
+        },
+        'bdist_apps': {
+            'installers': {
+                'manylinux1_x86_64': 'gztar',
+                 'manylinux1_i686': 'gztar',
+                'macosx_10_9_x86_64': 'zip',
+                'win_amd64': 'nsis',
+                'win32': 'nsis',
+            }
+        }
     }
 }
 
