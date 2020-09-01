@@ -91,7 +91,7 @@ config = {
             'rename_paths': {'lib/dummypy/': ''},
             'gui_apps': {
                 'cosmonium': 'main.py',
-                'ralph': 'ralph.py',
+                #'ralph': 'ralph.py',
             },
             'macos_main_app': 'cosmonium',
             'log_filename': log_filename,
