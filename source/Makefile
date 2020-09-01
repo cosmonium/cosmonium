@@ -14,6 +14,9 @@ build-macos:
 build-macos-release:
 	/usr/local/opt/python@$(ABI)/bin/python3 ../tools/p3d_module_builder/build.py --clean --python-libdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Python  --python-incdir /usr/local/opt/python\@$(ABI)/Frameworks/Python.framework/Headers
 
+build-win-release:
+	$(PYTHON) ../tools/p3d_module_builder/build.py --clean --windows-sdk 7.1
+
 clean:
 	@rm -rf build/
 

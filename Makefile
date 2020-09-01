@@ -2,6 +2,7 @@ PLATFORM:=
 PLATFORM_ARCH:=
 PYTHON=python3
 SOURCE_TARGET:=build
+SOURCE_OPTIONS=
 RELEASE=0
 REQUIREMENTS=
 
@@ -11,6 +12,10 @@ endif
 
 ifeq ($(OS),Windows_NT)
     PLATFORM:=win
+    PYTHON=C:/thirdparty/win-python3.7-x64/python.exe
+    ifeq ($(RELEASE),1)
+        SOURCE_TARGET:=build-win-release
+    endif
     ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
         PLATFORM_ARCH:=win_amd64
     else
@@ -42,10 +47,7 @@ else
     ifeq ($(UNAME_S),Darwin)
         PLATFORM:=macosx
         ifeq ($(RELEASE),1)
-            SOURCE_TARGET:=build-macos-release
-            PYTHON=/usr/local/opt/python@3.7/bin/python3
-        else
-            SOURCE_TARGET:=build-macos
+            SOURCE_TARGET:=build-macos-37
         endif
         PLATFORM_ARCH:=macosx_10_9_x86_64
     endif
@@ -54,8 +56,12 @@ endif
 build: build-source update-mo
 
 build-source:
-	@cd source && $(MAKE) $(SOURCE_TARGET) PYTHON=$(PYTHON)
+	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON=$(PYTHON) OPTIONS=$(SOURCE_OPTIONS)
+ifeq ($(OS),Windows_NT)
+	@mv -f source/*.pyd lib/
+else
 	@mv -f source/*.so lib/
+endif
 
 update-mo:
 	@cd po && make update-mo
