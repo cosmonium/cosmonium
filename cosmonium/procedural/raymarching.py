@@ -279,6 +279,10 @@ class SDFPointShape(SDFShapeBase):
         self.position = position
         self.dynamic = dynamic
 
+    def noise_uniforms(self, code):
+        if self.dynamic:
+            code.append("uniform vec3 %s;" % self.str_id)
+
     def noise_value(self, code, value, point):
         if self.dynamic:
             code.append('        %s  = length(%s - %s);' % (value, point, self.str_id))
@@ -296,6 +300,11 @@ class SDFSphereShape(SDFShapeBase):
         self.radius = radius
         self.dynamic = dynamic
 
+    def noise_uniforms(self, code):
+        if self.dynamic:
+            code.append("uniform vec3 %s_position;" % self.str_id)
+            code.append("uniform float %s_radius;" % self.str_id)
+
     def noise_value(self, code, value, point):
         if self.dynamic:
             code.append('        %s  = length(%s - %s_position) - %s_radius;' % (value, point, self.str_id, self.str_id))
@@ -306,6 +315,12 @@ class SDFSphereShape(SDFShapeBase):
         if self.dynamic:
             instance.set_shader_input('%s_position' % self.str_id, self.position)
             instance.set_shader_input('%s_radius' % self.str_id, self.radius)
+
+    def get_user_parameters(self):
+        if not self.dynamic: return []
+        group = ParametersGroup(self.name)
+        group.add_parameters(AutoUserParameter('radius', 'radius', self, param_type=AutoUserParameter.TYPE_FLOAT))
+        return [group]
 
 class VolumetricDensityRayMarchingShaderBase(RayMarchingShader):
     def __init__(self, density, shader=None):
