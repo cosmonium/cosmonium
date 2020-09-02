@@ -91,7 +91,7 @@ class BasicNoiseSource(NoiseSource):
         return self.noise.get_user_parameters()
 
 class NoiseConst(NoiseSource):
-    def __init__(self, value, dynamic=True, name=None):
+    def __init__(self, value, dynamic=False, name=None):
         NoiseSource.__init__(self, name, 'const')
         self.value = value
         self.dynamic = dynamic
