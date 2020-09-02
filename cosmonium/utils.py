@@ -123,11 +123,23 @@ class TransparencyBlend:
 def srgb_to_linear_channel(color):
     return pow(((color + 0.055) / 1.055), 2.4) if color > 0.0404482362771082 else color / 12.92
 
+def  linear_to_srgb_channel(value):
+    return 1.055 * pow(value, 0.41666) - 0.055 if(value > 0.0031308) else 12.92 * value
+
 def srgb_to_linear(color):
     if settings.srgb:
         return LColor(srgb_to_linear_channel(color[0]),
                       srgb_to_linear_channel(color[1]),
                       srgb_to_linear_channel(color[2]),
+                      color[3])
+    else:
+        return color
+
+def linear_to_srgb(color):
+    if settings.srgb:
+        return LColor(linear_to_srgb_channel(color[0]),
+                      linear_to_srgb_channel(color[1]),
+                      linear_to_srgb_channel(color[2]),
                       color[3])
     else:
         return color
