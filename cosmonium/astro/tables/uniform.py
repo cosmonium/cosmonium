@@ -34,6 +34,7 @@ uniform_rotations['earth']=create_uniform_rotation(
         frame=J2000EclipticReferenceFrame())
 
 uniform_rotations['moon']=create_uniform_rotation(
+        sync=True,
         right_asc=269.9949,
         declination=66.5392,
         meridian_angle=38.3213)
