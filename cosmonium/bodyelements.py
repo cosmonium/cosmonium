@@ -173,6 +173,7 @@ class Atmosphere(ShapeObject):
                     shape_object.update_shader()
                 observer.has_scattering = False
                 observer.scattering = None
+                observer.apply_scattering = 0
                 self.attenuated_objects = []
         elif observer.apply_scattering > 0:
             observer.apply_scattering -= 1
@@ -192,6 +193,7 @@ class Atmosphere(ShapeObject):
         self.attenuated_objects = []
         self.context.observer.has_scattering = False
         self.context.observer.scattering = None
+        self.context.observer.apply_scattering = 0
 
 class Clouds(FlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
