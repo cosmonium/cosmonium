@@ -201,7 +201,7 @@ class SynchronousRotation(FixedRotation):
                  frame=None):
         FixedRotation.__init__(self, reference_axis, frame)
         self.epoch = epoch
-        self.meridian_angle = meridian_angle * pi / 180
+        self.meridian_angle = meridian_angle
 
     def get_user_parameters(self):
         group = FixedRotation.get_user_parameters(self)
@@ -239,7 +239,7 @@ def create_uniform_rotation(
              ascending_node=0.0, ascending_node_units=units.Deg,
              right_asc=None, right_asc_unit=units.Deg,
              declination=None, declination_unit=units.Deg,
-             meridian_angle=0.0,
+             meridian_angle=0.0, meridian_units=units.Deg,
              epoch=units.J2000,
              frame=None):
     if right_asc is not None:
@@ -249,7 +249,7 @@ def create_uniform_rotation(
         reference_axis = PlaneReferenceAxis(inclination * inclination_units, ascending_node * ascending_node_units)
     if frame is None:
         frame = J2000EquatorialReferenceFrame()
-    meridian_angle = meridian_angle * pi / 180
+    meridian_angle = meridian_angle * meridian_units
     if sync:
         return SynchronousRotation(reference_axis, meridian_angle, epoch, frame)
     else:

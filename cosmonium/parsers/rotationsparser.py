@@ -47,6 +47,7 @@ class UniformYamlParser(YamlModuleParser):
         declination = data.get('de', 0.0)
         decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
         meridian_angle = data.get('meridian', 0.0)
+        meridian_units = AngleUnitsYamlParser.decode(data.get('meridian-units', 'Deg'))
         epoch = data.get('epoch', units.J2000)
         if data.get('frame') is not None or frame is None:
             frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'))
@@ -62,6 +63,7 @@ class UniformYamlParser(YamlModuleParser):
                                 declination,
                                 decl_units,
                                 meridian_angle,
+                                meridian_units,
                                 epoch,
                                 frame)
 

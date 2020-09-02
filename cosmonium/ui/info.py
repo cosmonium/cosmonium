@@ -100,6 +100,7 @@ def uniform_rotation_info(rotation):
         texts.append([_("Period"), toUnit(abs(rotation.period), units.times_scale)])
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
+    texts.append([_("Meridian"), "%g°" % (rotation.meridian_angle * 180 / pi)])
     date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(rotation.epoch)
     texts.append([_("Epoch"), "%s" % date])
     return [_("Rotation"), texts]
