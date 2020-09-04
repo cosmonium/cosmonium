@@ -27,6 +27,7 @@ jobs:
         cd build/manylinux1_x86_64
         ./cosmonium --test-start
     - name: Upload logs
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: linux-logs
@@ -66,6 +67,7 @@ jobs:
         cd build/macosx_10_9_x86_64/cosmonium.app/Contents/MacOS
         ./cosmonium --test-start
     - name: Upload logs
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: macos-logs
@@ -107,6 +109,7 @@ jobs:
         cd ../win32
         & ./cosmonium.exe --% --test-start
     - name: Upload logs
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: windows-logs
