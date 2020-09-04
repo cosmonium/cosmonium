@@ -113,6 +113,9 @@ class ParamEditor():
         value_type = param.get_type()
         if value_range is None:
             value_range=(value_type(float("-inf")), value_type(float("inf")))
+        step_size = param.get_step()
+        if step_size is None:
+            step_size = 1
         if component is not None:
             value = param.get_param_component(component)
         else:
@@ -123,6 +126,7 @@ class ParamEditor():
                               textFormat='{}',
                               minValue=value_range[0],
                               maxValue=value_range[1],
+                              stepSize=step_size,
                               suppressKeys=1,
                               command=self.do_update,
                               extraArgs=[slider, param, component],

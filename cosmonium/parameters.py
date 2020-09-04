@@ -78,6 +78,13 @@ class UserParameterBase(object):
         elif self.scale == self.SCALE_LOG_0:
             return [log(self.value_range_0), log(self.value_range[1])]
 
+    def get_step(self):
+        if self.value_range is None: return None
+        if self.param_type == self.TYPE_INT:
+            return 1
+        else:
+            return (self.value_range[1] - self.value_range[0]) / 100.0
+
     def get_type(self):
         if self.param_type == self.TYPE_STRING:
             return str
