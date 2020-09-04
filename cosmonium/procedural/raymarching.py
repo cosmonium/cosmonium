@@ -274,8 +274,8 @@ class SDFShapeBase(NoiseSource):
     pass
 
 class SDFPointShape(SDFShapeBase):
-    def __init__(self, position, dynamic=True, name=None):
-        SDFShapeBase.__init__(self, name, 'point')
+    def __init__(self, position, dynamic=True, name=None, ranges={}):
+        SDFShapeBase.__init__(self, name, 'point', ranges)
         self.position = position
         self.dynamic = dynamic
 
@@ -294,8 +294,8 @@ class SDFPointShape(SDFShapeBase):
             instance.set_shader_input('%s' % self.str_id, self.position)
 
 class SDFSphereShape(SDFShapeBase):
-    def __init__(self, position, radius, dynamic=True, name=None):
-        SDFShapeBase.__init__(self, name, 'sphere')
+    def __init__(self, position, radius, dynamic=True, name=None, ranges={}):
+        SDFShapeBase.__init__(self, name, 'sphere', ranges)
         self.position = position
         self.radius = radius
         self.dynamic = dynamic
@@ -319,7 +319,7 @@ class SDFSphereShape(SDFShapeBase):
     def get_user_parameters(self):
         if not self.dynamic: return []
         group = ParametersGroup(self.name)
-        group.add_parameters(AutoUserParameter('radius', 'radius', self, param_type=AutoUserParameter.TYPE_FLOAT))
+        group.add_parameters(AutoUserParameter('radius', 'radius', self, param_type=AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('radius')))
         return [group]
 
 class VolumetricDensityRayMarchingShaderBase(RayMarchingShader):

@@ -32,13 +32,14 @@ from .generator import GeneratorVertexShader
 class NoiseSource(object):
     last_id = 0
     last_tmp = 0
-    def __init__(self, name, prefix):
+    def __init__(self, name, prefix, ranges={}):
         NoiseSource.last_id += 1
         self.num_id = NoiseSource.last_id
         self.str_id = prefix + '_' + str(self.num_id)
         if name is None:
             name = self.str_id
         self.name = name
+        self.ranges = ranges
 
     def get_id(self):
         return ''
@@ -71,8 +72,8 @@ class NoiseSource(object):
         return []
 
 class BasicNoiseSource(NoiseSource):
-    def __init__(self, noise, name, prefix):
-        NoiseSource.__init__(self, name, prefix)
+    def __init__(self, noise, name, prefix, ranges={}):
+        NoiseSource.__init__(self, name, prefix, ranges)
         self.noise = noise
 
     def noise_uniforms(self, code):
@@ -91,8 +92,8 @@ class BasicNoiseSource(NoiseSource):
         return self.noise.get_user_parameters()
 
 class NoiseConst(NoiseSource):
-    def __init__(self, value, dynamic=False, name=None):
-        NoiseSource.__init__(self, name, 'const')
+    def __init__(self, value, dynamic=False, name=None, ranges={}):
+        NoiseSource.__init__(self, name, 'const', ranges)
         self.value = value
         self.dynamic = dynamic
 
@@ -119,7 +120,7 @@ class NoiseConst(NoiseSource):
     def get_user_parameters(self):
         if not self.dynamic: return []
         group = ParametersGroup(self.name)
-        group.add_parameters(AutoUserParameter('value', 'value', self, param_type=AutoUserParameter.TYPE_FLOAT))
+        group.add_parameters(AutoUserParameter('value', 'value', self, param_type=AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('value')))
         return [group]
 
 class NoiseCoord(NoiseSource):
@@ -594,17 +595,24 @@ class NoiseThreshold(NoiseSource):
         return self.noise_a.get_user_parameters() + self.noise_b.get_user_parameters()
 
 class NoiseClamp(NoiseSource):
-    def __init__(self, noise, min_value, max_value, name=None):
-        NoiseSource.__init__(self, name, 'clamp')
+    def __init__(self, noise, min_value, max_value, dynamic=False, name=None, ranges={}):
+        NoiseSource.__init__(self, name, 'clamp', ranges)
         self.noise = noise
         self.min_value = min_value
         self.max_value = max_value
+        self.dynamic = dynamic
 
     def get_id(self):
-        return ('clamp-%g-%g-' % (self.min_value, self.max_value)) + self.noise.get_id()
+        if self.dynamic:
+            return 'clamp-' + self.noise.get_id()
+        else:
+            return ('clamp-%g-%g-' % (self.min_value, self.max_value)) + self.noise.get_id()
 
     def noise_uniforms(self, code):
         self.noise.noise_uniforms(code)
+        if self.dynamic:
+            code.append("uniform float %s_min;" % self.str_id)
+            code.append("uniform float %s_max;" % self.str_id)
 
     def noise_extra(self, program, code):
         self.noise.noise_extra(program, code)
@@ -615,7 +623,10 @@ class NoiseClamp(NoiseSource):
         code.append('{')
         code.append('  float value;')
         self.noise.noise_value(code, 'value', 'point')
-        code.append('  return clamp(value, %g, %g);' % (self.min_value, self.max_value))
+        if self.dynamic:
+            code.append('  return clamp(value, %s_min, %s_max);' % (self.str_id, self.str_id))
+        else:
+            code.append('  return clamp(value, %g, %g);' % (self.min_value, self.max_value))
         code.append('}')
 
     def noise_value(self, code, value, point):
@@ -623,6 +634,16 @@ class NoiseClamp(NoiseSource):
 
     def update(self, instance):
         self.noise.update(instance)
+        if self.dynamic:
+            instance.set_shader_input('%s_min' % self.str_id, self.min_value)
+            instance.set_shader_input('%s_max' % self.str_id, self.max_value)
+
+    def get_user_parameters(self):
+        if not self.dynamic: return []
+        group = ParametersGroup(self.name)
+        group.add_parameters(AutoUserParameter('Min', 'min_value', self, param_type=AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('min')))
+        group.add_parameters(AutoUserParameter('Max', 'max_value', self, param_type=AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('max')))
+        return [group]
 
 class NoiseMin(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
@@ -751,8 +772,8 @@ class Noise1D(BasicNoiseSource):
         code.append('%s = noise_axis_%d(%s);' % (value, self.num_id, point))
 
 class FbmNoise(BasicNoiseSource):
-    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, geometric=True, h=0.25, gain=0.5, name=None):
-        BasicNoiseSource.__init__(self, noise, name, 'fbm')
+    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, geometric=True, h=0.25, gain=0.5, name=None, ranges={}):
+        BasicNoiseSource.__init__(self, noise, name, 'fbm', ranges)
         self.octaves = octaves
         self.frequency = frequency
         self.lacunarity = lacunarity
@@ -818,17 +839,17 @@ class FbmNoise(BasicNoiseSource):
 
     def get_user_parameters(self):
         group = ParametersGroup(self.name,
-                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=[1, 16]),
-                                AutoUserParameter('Frequency', 'frequency', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
-                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
-                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 1]),
+                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=self.ranges.get('octaves')),
+                                AutoUserParameter('Frequency', 'frequency', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('frequency')),
+                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('lacunarity')),
+                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('gain')),
                                 )
         group.add_parameters(self.noise.get_user_parameters())
         return [group]
 
 class SpiralNoise(BasicNoiseSource):
-    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, gain=0.5, nudge=0.5, name=None):
-        BasicNoiseSource.__init__(self, noise, name, 'spiral')
+    def __init__(self, noise, octaves=8, frequency=1.0, lacunarity=2.0, gain=0.5, nudge=0.5, name=None, ranges={}):
+        BasicNoiseSource.__init__(self, noise, name, 'spiral', ranges)
         self.octaves = octaves
         self.frequency = frequency
         self.lacunarity = lacunarity
@@ -889,17 +910,18 @@ class SpiralNoise(BasicNoiseSource):
 
     def get_user_parameters(self):
         group = ParametersGroup(self.name,
-                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=[1, 16]),
-                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
-                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 1]),
-                                AutoUserParameter('Nudge', 'nudge', self, AutoUserParameter.TYPE_FLOAT, value_range=[0.01, 10]),
+                                AutoUserParameter('Octaves', 'octaves', self, AutoUserParameter.TYPE_INT, value_range=self.ranges.get('octaves')),
+                                AutoUserParameter('Frequency', 'frequency', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('frequency')),
+                                AutoUserParameter('Lacunarity', 'lacunarity', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('lacunarity')),
+                                AutoUserParameter('Gain', 'gain', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('gain')),
+                                AutoUserParameter('Nudge', 'nudge', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('nudge')),
                   )
         group.add_parameters(self.noise.get_user_parameters())
         return [group]
 
 class NoiseWarp(NoiseSource):
-    def __init__(self, noise_main, noise_warp, scale=4.0, name=None):
-        NoiseSource.__init__(self, name, 'warp')
+    def __init__(self, noise_main, noise_warp, scale=4.0, name=None, ranges={}):
+        NoiseSource.__init__(self, name, 'warp', ranges)
         self.noise_main = noise_main
         self.noise_warp = noise_warp
         self.scale = scale
@@ -910,6 +932,7 @@ class NoiseWarp(NoiseSource):
     def noise_uniforms(self, code):
         self.noise_main.noise_uniforms(code)
         self.noise_warp.noise_uniforms(code)
+        code += ["uniform float %s_scale;" % self.str_id]
 
     def noise_extra(self, program, code):
         self.noise_main.noise_extra(program, code)
@@ -925,7 +948,7 @@ class NoiseWarp(NoiseSource):
         self.noise_warp.noise_value(code, 'warped_point.x', 'point')
         self.noise_warp.noise_value(code, 'warped_point.y', 'point + vec3(1, 2, 3)')
         self.noise_warp.noise_value(code, 'warped_point.z', 'point + vec3(4, 3, 2)')
-        self.noise_main.noise_value(code, 'value', 'point + %g * warped_point' % self.scale)
+        self.noise_main.noise_value(code, 'value', 'point + %s_scale * warped_point' % self.str_id)
         code.append('  return value;')
         code.append('}')
 
@@ -935,10 +958,11 @@ class NoiseWarp(NoiseSource):
     def update(self, instance):
         self.noise_main.update(instance)
         self.noise_warp.update(instance)
+        instance.set_shader_input('%s_scale' % self.str_id, self.scale)
 
     def get_user_parameters(self):
         group = ParametersGroup(self.name,
-                                AutoUserParameter('scale', 'scale', self, AutoUserParameter.TYPE_FLOAT),
+                                AutoUserParameter('scale', 'scale', self, AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('scale')),
                                 )
         group.add_parameters(self.noise_main.get_user_parameters())
         group.add_parameters(self.noise_wrap.get_user_parameters())

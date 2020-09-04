@@ -167,10 +167,16 @@ def create_clamp_noise(parser, data, length_scale):
     name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     min_value = data.get('min', 0.0)
+    min_value_range = data.get('min-range')
     max_value = data.get('max', 1.0)
+    max_value_range = data.get('max-range')
     data['min'] = None
     data['max'] = None
-    return NoiseClamp(noise, min_value, max_value, name=name)
+    ranges = {
+        'min': min_value_range,
+        'max': max_value_range
+        }
+    return NoiseClamp(noise, min_value, max_value, dynamic=name is not None, name=name, ranges=ranges)
 
 def create_min_noise(parser, data, length_scale):
     if not isinstance(data, dict):
@@ -193,7 +199,8 @@ def create_max_noise(parser, data, length_scale):
 def create_const_noise(parser, data, length_scale):
     name = data.get('name', None)
     value = data.get('value')
-    return NoiseConst(value, dynamic=name is not None, name=name)
+    value_range = data.get('value-range')
+    return NoiseConst(value, dynamic=name is not None, name=name, ranges={'value': value_range})
 
 def create_x_noise(parser, data, length_scale):
     if not isinstance(data, dict):
@@ -313,6 +320,7 @@ def create_fbm_noise(parser, data, length_scale):
     name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     octaves = data.get('octaves', 8)
+    octaves_range = data.get('octaves-range', [1, 16])
     frequency = data.get('frequency', None)
     if frequency is None:
         length = data.get('length', length_scale)
@@ -322,30 +330,59 @@ def create_fbm_noise(parser, data, length_scale):
             frequency = length_scale / (length * 4)
         else:
             frequency = 1.0
+        frequency_range = None
+    else:
+        frequency_range = data.get('frequency-range', [0.01, 10])
     lacunarity = data.get('lacunarity', 2.0)
+    lacunarity_range = data.get('lacunarity-range', [0.01, 10])
     geometric = data.get('geometric', True)
     h = data.get('h', 0.25)
+    h_range = data.get('h-range')
     gain = data.get('gain', 0.5)
+    gain_range = data.get('gain-range', [0.01, 1])
 
-    return FbmNoise(noise, octaves, frequency, lacunarity, geometric, h, gain, name=name)
+    ranges = {
+        'octaves': octaves_range,
+        'frequency': frequency_range,
+        'lacunarity': lacunarity_range,
+        'h': h_range,
+        'gain': gain_range
+        }
+    return FbmNoise(noise, octaves, frequency, lacunarity, geometric, h, gain, name=name, ranges=ranges)
 
 def create_spiral_noise(parser, data, length_scale):
     name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     octaves = data.get('octaves', 8)
+    octaves_range = data.get('octaves-range', [1, 16])
     frequency = data.get('frequency', 1.0)
+    frequency_range = data.get('frequency-range', [0.01, 10])
     lacunarity = data.get('lacunarity', 2.0)
+    lacunarity_range = data.get('lacunarity-range', [0.01, 10])
     gain = data.get('gain', 0.5)
+    gain_range = data.get('gain-range', [0.01, 1])
     nudge = data.get('nudge', 0.5)
+    nudge_range = data.get('nudge-range', [0.01, 1])
 
-    return SpiralNoise(noise, octaves, frequency, lacunarity, gain, nudge, name=name)
+    ranges = {
+        'octaves': octaves_range,
+        'frequency': frequency_range,
+        'lacunarity': lacunarity_range,
+        'gain': gain_range,
+        'nudge': nudge_range
+        }
+    return SpiralNoise(noise, octaves, frequency, lacunarity, gain, nudge, name=name, ranges=ranges)
 
 def create_warp_noise(parser, data, length_scale):
     name = data.get('name', None)
     main = parser.decode_noise_dict(data.get('noise'))
     warp = parser.decode_noise_dict(data.get('warp'))
     scale = float(data.get('strength', 4.0))
-    return NoiseWarp(main, warp, scale, name=name)
+    scale_range = data.get('strength-range', [0.0, 10])
+    ranges = {
+        'scale': scale_range,
+        }
+    return NoiseWarp(main, warp, scale, name=name, ranges=ranges)
 
 def create_rotate_noise(parser, data, length_scale):
     name = data.get('name', None)

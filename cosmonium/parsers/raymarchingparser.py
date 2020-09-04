@@ -35,7 +35,10 @@ def create_sphere_sdf(parser, data, length_scale):
     name = data.get('name', None)
     position = data.get('position', [0, 0, 0])
     radius = data.get('radius', 1.0)
-    return SDFSphereShape(position, radius, dynamic=name is not None, name=name)
+    radius_range = data.get('radius-range', [0.0, 1.0])
+    ranges = {
+        'radius': radius_range}
+    return SDFSphereShape(position, radius, dynamic=name is not None, name=name, ranges=ranges)
 
 NoiseYamlParser.register_noise_parser('point', create_point_sdf)
 NoiseYamlParser.register_noise_parser('sphere', create_sphere_sdf)
