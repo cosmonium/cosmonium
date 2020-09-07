@@ -919,6 +919,18 @@ class Gui(object):
         self.hud.show()
         self.show_menu()
 
+    def hide_with_state(self):
+        state = (self.hud.shown, self.menubar_shown)
+        self.hide()
+        return state
+
+    def show_with_state(self, state):
+        (hud_shown, menubar_shown) =state
+        if hud_shown:
+            self.hud.show()
+        if menubar_shown:
+            self.show_menu()
+
     def show_hud(self):
         self.hud.show()
 

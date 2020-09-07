@@ -561,11 +561,11 @@ class Cosmonium(CosmoniumBase):
             self.world.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
-        self.gui.hide()
+        state = self.gui.hide_with_state()
         self.annotation.hide()
         base.graphicsEngine.renderFrame()
         filename = self.screenshot(namePrefix=settings.screenshot_path)
-        self.gui.show()
+        self.gui.show_with_state(state)
         self.annotation.show()
         if filename is not None:
             print("Saving screenshot without annotation into", filename)
