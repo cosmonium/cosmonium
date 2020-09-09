@@ -802,7 +802,7 @@ class FragmentShader(ShaderProgram):
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
             elif settings.shader_debug_fragment_shader == 'normalmap':
-                if self.config.fragment_uses_normal:
+                if self.config.fragment_uses_normal and self.appearance.has_normal:
                     code.append("vec4 total_color = vec4((pixel_normal + vec3(1.0)) / 2.0, 1.0);")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
