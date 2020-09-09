@@ -3,17 +3,17 @@
 SOURCE=/cosmonium/source
 
 URL=https://github.com/cosmonium/panda3d/releases/download/
-VERSION=cosmonium-v1.10.6.dev79
+VERSION=1.10.6.dev93
 
-PANDA3D=panda3d-1.10.6.dev79.x86_64.rpm
-EXTRA=extra-includes.zip
+PANDA3D=panda3d-$VERSION.x86_64.rpm
+EXTRA=extra-includes.$VERSION.zip
 
 cd $SOURCE
 if [ ! -e $PANDA3D ]; then
-    curl -L $URL/$VERSION/$PANDA3D -o $PANDA3D
+    curl -L $URL/cosmonium-v$VERSION/$PANDA3D -o $PANDA3D
 fi
 if [ ! -e $EXTRA ]; then
-    curl -L $URL/$VERSION/$EXTRA -o $EXTRA
+    curl -L $URL/cosmonium-v$VERSION/$EXTRA -o $EXTRA
 fi
 
 PYTHON_DIR=/opt/python/cp37-cp37m
