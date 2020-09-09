@@ -201,7 +201,6 @@ class ParamEditor():
                                                         scroll_scrollBarWidth=self.font_size))
         self.layout.frame.setPos(0, 0, -buttonSize)
         for section in group.parameters:
-            print(section.name)
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
             self.add_parameters(frame, sizer, section.parameters)

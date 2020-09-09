@@ -380,7 +380,7 @@ class PositionMap(BasicNoiseSource):
             group = parameters
         else:
             group = ParametersGroup(self.noise.name)
-            group.add_parameters(ParametersGroup)
+            group.add_parameters(parameters)
         group.add_parameters(AutoUserParameter('Scale', 'scale', self, param_type=AutoUserParameter.TYPE_FLOAT),
                              AutoUserParameter('Offset', 'offset', self, param_type=AutoUserParameter.TYPE_FLOAT))
         return [group]
