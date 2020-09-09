@@ -407,7 +407,9 @@ class NoiseAdd(NoiseSource):
         code.append('float noise_add_%d(vec3 point)' % self.num_id)
         code.append('{')
         for (i, noise) in enumerate(self.noises):
-            noise.noise_value(code, 'float value_%d' % i, 'point')
+            code.append('  float value_%d;' % i)
+        for (i, noise) in enumerate(self.noises):
+            noise.noise_value(code, 'value_%d' % i, 'point')
         add = ' + '.join(map(lambda i: 'value_%d' % i, range(len(self.noises))))
         code.append('  return %s;' % add)
         code.append('}')
@@ -486,7 +488,9 @@ class NoiseMul(NoiseSource):
         code.append('float noise_mul_%d(vec3 point)' % self.num_id)
         code.append('{')
         for (i, noise) in enumerate(self.noises):
-            noise.noise_value(code, 'float value_%d' % i, 'point')
+            code.append('float value_%d;' % i)
+        for (i, noise) in enumerate(self.noises):
+            noise.noise_value(code, 'value_%d' % i, 'point')
         mul = ' * '.join(map(lambda i: 'value_%d' % i, range(len(self.noises))))
         code.append('  return %s;' % mul)
         code.append('}')
