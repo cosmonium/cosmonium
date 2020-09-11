@@ -510,7 +510,7 @@ class NoiseMul(NoiseSource):
 
 class NoisePow(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
-        NoiseSource.__init__(self, name, 'mul')
+        NoiseSource.__init__(self, name, 'pow')
         self.noise_a = noise_a
         self.noise_b = noise_b
 
