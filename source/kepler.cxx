@@ -44,9 +44,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
 */
 
+#include "lunar.h"
+
 #define THRESH 1.e-12
 #define MIN_THRESH 1.e-14
-#define PI 3.141592653589793238462643383279502884197169399375105
+
 #define CUBE_ROOT(X) (exp(log(X) / 3.0))
 
 #define MAX_DEFAULT_ITERATIONS 7

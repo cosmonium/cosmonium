@@ -49,9 +49,6 @@ from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, Relati
 from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 
-#import orbits and rotations elements to add them to the DB
-from .astro.tables import uniform, vsop87, wgccre
-
 #Initialiser parsers
 from .parsers import parsers
 

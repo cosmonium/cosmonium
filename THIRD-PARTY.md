@@ -100,15 +100,15 @@ License: BSD
 
 Reference: [Github](https://github.com/phn/jdcal)
 
-## source/kepler.cpp astro/pyastro/pykepler.py
+## source/kepler.cpp source/lieske_e5.cpp astro/pyastro/pykepler.py
 
-Kepler ephemerides calculation code from Project Pluto
+Ephemerides calculation code from Project Pluto
 
 Copyright: Copyright (C) 2010, Project Pluto, Bill Gray.
 
 License: GPLv2 or later
 
-Reference: [GitHub](https://github.com/Bill-Gray/lunar) [Homepage](https://projectpluto.com/kepler.htm)
+Reference: [GitHub](https://github.com/Bill-Gray/lunar) [Homepage](https://projectpluto.com/source.htm)
 
 ## source/temperature.cpp astro/pyastro/pyblackbody.py
 

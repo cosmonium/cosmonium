@@ -261,6 +261,27 @@ class EllipticalOrbit(Orbit):
     def get_frame_rotation_at(self, time):
         return self.rotation
 
+class FuncOrbit(Orbit):
+    dynamic = True
+    def __init__(self, period, semi_major_axis, eccentricity, frame=None):
+        self.period = period
+        self.mean_motion = 2 * pi / period
+        self.max_distance = semi_major_axis * (1.0 + eccentricity)
+        if frame is None:
+            frame = J2000EclipticReferenceFrame()
+        self.frame = frame
+        self.origin = LPoint3d()
+        self.body = None
+
+    def get_period(self):
+        return self.period
+
+    def get_mean_motion(self):
+        return self.mean_motion
+
+    def get_apparent_radius(self):
+        return self.max_distance
+
 def create_elliptical_orbit(semi_major_axis=None,
                             semi_major_axis_units=units.AU,
                             pericenter_distance=None,
