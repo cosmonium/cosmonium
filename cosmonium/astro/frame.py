@@ -127,13 +127,17 @@ class CelestialReferenceFrame(RelativeReferenceFrame):
         self.right_asc = right_asc * right_asc_unit
         self.declination = declination * declination_unit
         self.longitude_at_node = longitude_at_node * longitude_at_nod_units
-        right_asc_quat=LQuaterniond()
-        right_asc_quat.setFromAxisAngleRad(self.right_asc + pi / 2, LVector3d.unitZ())
-        declination_quat = LQuaterniond()
-        declination_quat.setFromAxisAngleRad(-self.declination + pi / 2, LVector3d.unitX())
+
+        inclination = pi / 2 - self.declination
+        ascending_node = self.right_asc + pi / 2
+
+        inclination_quat = LQuaterniond()
+        inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
+        ascending_node_quat = LQuaterniond()
+        ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
         longitude_quad = LQuaterniond()
-        longitude_quad.setFromAxisAngleRad(-self.longitude_at_node + pi / 2, LVector3d.unitZ())
-        self.orientation = longitude_quad * declination_quat * right_asc_quat * J2000EquatorialReferenceFrame.orientation
+        longitude_quad.setFromAxisAngleRad(self.longitude_at_node, LVector3d.unitZ())
+        self.orientation = longitude_quad * inclination_quat * ascending_node_quat * J2000EquatorialReferenceFrame.orientation
 
     def get_orientation(self):
         return self.orientation
