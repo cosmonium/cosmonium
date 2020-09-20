@@ -21,8 +21,24 @@
 #define LUNAR_H
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923
-#define J1900 ( 2451545. - 36525.)
-#define J2000   2451545.
+#define TWO_PI (PI + PI)
+
+#define AU_IN_KM 1.495978707e+8
+
+#define J2000 2451545.
+#define J1900 (J2000 - 36525.)
+#define CENTURY 36525.
+
 #define DEG2RAD (PI / 180.)
+
+#define get16bits(d)  (*((const uint16_t *) (d)))
+#define get32bits(d)  (*((const uint32_t *) (d)))
+#define get64bits(d)  (*((const uint64_t *) (d)))
+
+#define get16sbits(d)  (*((const int16_t *) (d)))
+#define get32sbits(d)  (*((const int32_t *) (d)))
+#define get64sbits(d)  (*((const int64_t *) (d)))
+
+#define get_double(d) (*((const double *) (d)))
 
 #endif /* LUNAR_H */

@@ -17,8 +17,8 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIESKE_E5_H
-#define LIESKE_E5_H
+#ifndef VSOP87_H
+#define VSOP87_H
 
 #include "pandabase.h"
 #include "luse.h"
@@ -26,8 +26,8 @@
 BEGIN_PUBLISH
 
 LPoint3d
-lieske_e5_sat_pos(double jd, int body);
+vsop87_pos(double jd, int planet);
 
 END_PUBLISH
 
-#endif //LIESKE_E5_H
+#endif //VSOP87_H

@@ -46,9 +46,7 @@ else
     endif
     ifeq ($(UNAME_S),Darwin)
         PLATFORM:=macosx
-        ifeq ($(RELEASE),1)
-            SOURCE_TARGET:=build-macos-37
-        endif
+        SOURCE_TARGET:=build-macos
         PLATFORM_ARCH:=macosx_10_9_x86_64
     endif
 endif
