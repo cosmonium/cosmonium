@@ -25,6 +25,7 @@ from panda3d.core import LQuaterniond
 from ..elementsdb import orbit_elements_db
 from ..orbits import FuncOrbit
 from .. import units
+from cosmonium.astro.frame import J2000HeliocentricEclipticReferenceFrame
 
 try:
     from cosmonium_engine import vsop87_pos
@@ -36,7 +37,7 @@ except ImportError as e:
 
 class VSOP87(FuncOrbit):
     def __init__(self, planet_id, period, semi_major_axis, eccentricity):
-        FuncOrbit.__init__(self, period * units.JYear, semi_major_axis * units.AU, eccentricity)
+        FuncOrbit.__init__(self, period * units.JYear, semi_major_axis * units.AU, eccentricity, J2000HeliocentricEclipticReferenceFrame())
         self.planet_id = planet_id
 
     def is_periodic(self):

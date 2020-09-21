@@ -23,6 +23,7 @@ from panda3d.core import LQuaterniond
 
 from ..elementsdb import orbit_elements_db
 from ..orbits import FuncOrbit
+from cosmonium.astro.frame import J2000EclipticReferenceFrame
 
 try:
     from cosmonium_engine import lieske_e5_sat_pos
@@ -34,7 +35,7 @@ except ImportError as e:
 
 class LieskE5(FuncOrbit):
     def __init__(self, sat_id, period, semi_major_axis, eccentricity):
-        FuncOrbit.__init__(self, period, semi_major_axis, eccentricity)
+        FuncOrbit.__init__(self, period, semi_major_axis, eccentricity, J2000EclipticReferenceFrame())
         self.sat_id = sat_id
 
     def is_periodic(self):
