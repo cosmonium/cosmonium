@@ -133,8 +133,9 @@ class Gui(object):
         event_ctrl.accept('escape', self.escape)
         event_ctrl.accept('alt-enter', self.cosmonium.toggle_fullscreen)
         event_ctrl.accept(',', self.camera.zoom, [1.05])
+        event_ctrl.accept('shift-,-repeat', self.camera.zoom, [1.05])
         event_ctrl.accept('.', self.camera.zoom, [1.0/1.05])
-        event_ctrl.accept('shift-z-repeat', self.camera.zoom, [1.0/1.05])
+        event_ctrl.accept('shift-.-repeat', self.camera.zoom, [1.0/1.05])
         event_ctrl.accept('control-r', self.camera.reset_zoom)
         event_ctrl.accept('control-m', self.toggle_menu)
         event_ctrl.accept('control-p', self.show_preferences)
@@ -479,8 +480,8 @@ class Gui(object):
                 #('Look _back'), '*'), 0, self.camera.camera_look_back),
                 (menu_text(_('_Track'), 'Y'), 0, self.cosmonium.track_selected if has_selected else 0),
                 0,
-                (menu_text(_('Zoom _in'), 'Z'), 0, self.camera.zoom, 1.05),
-                (menu_text(_('Zoom _out'), 'Shift-Z'), 0, self.camera.zoom, 1.0/1.05),
+                (menu_text(_('Zoom _in'), '.'), 0, self.camera.zoom, 1.05),
+                (menu_text(_('Zoom _out'), ','), 0, self.camera.zoom, 1.0/1.05),
                 (menu_text(_('_Reset Zoom'), 'Control-R'), 0, self.camera.reset_zoom),
                 0,
                 (menu_text(_('_Select ship')), 0, ships if len(self.cosmonium.ships) > 1 else 0),
