@@ -20,7 +20,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame, EquatorialReferenceFrame, SynchroneReferenceFrame
+from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame
+from ..astro.frame import J2000EquatorialReferenceFrame, J2000HeliocentricEquatorialReferenceFrame
+from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
 from ..astro.frame import frames_db
 
@@ -29,6 +31,16 @@ from .objectparser import ObjectYamlParser
 from .utilsparser import AngleUnitsYamlParser
 
 class FrameYamlParser(YamlModuleParser):
+    @classmethod
+    def decode_j2000_ecliptic(cls, data):
+        body = data.get('center', None)
+        return J2000EclipticReferenceFrame(body)
+
+    @classmethod
+    def decode_j2000_equatorial(cls, data):
+        body = data.get('center', None)
+        return J2000EquatorialReferenceFrame(body)
+
     @classmethod
     def decode_equatorial(cls, data):
         ra = data.get("ra", 0.0)
@@ -54,19 +66,23 @@ class FrameYamlParser(YamlModuleParser):
         (object_type, parameters) = self.get_type_and_data(data)
         object_type = object_type.lower()
         if object_type == 'j2000ecliptic':
-            return J2000EclipticReferenceFrame()
+            return self.decode_j2000_ecliptic(parameters)
         elif object_type == 'j2000equatorial':
-            return J2000EquatorialReferenceFrame()
+            return self.decode_j2000_equatorial(parameters)
+        elif object_type == 'j2000heliocentricecliptic':
+            return J2000HeliocentricEclipticReferenceFrame()
+        elif object_type == 'j2000heliocentricequatorial':
+            return J2000HeliocentricEquatorialReferenceFrame()
         elif object_type == 'fixed':
             return SynchroneReferenceFrame()
         elif object_type == 'surface':
-            return self.decode_surface_frame(data)
+            return self.decode_surface_frame(parameters)
         elif object_type == 'equatorial':
-            return self.decode_equatorial(data)
+            return self.decode_equatorial(parameters)
         elif object_type == 'mean-equatorial':
-            return self.decode_mean_equatorial(data)
+            return self.decode_mean_equatorial(parameters)
         else:
-            return frames_db.get(data)
+            return frames_db.get(object_type)
 
 class NamedFrameYamlParser(YamlModuleParser):
     @classmethod

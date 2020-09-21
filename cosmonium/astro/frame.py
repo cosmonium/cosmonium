@@ -96,11 +96,26 @@ class J2000EclipticReferenceFrame(BodyReferenceFrame):
     def get_orientation(self):
         return self.orientation
 
+class SolBarycenter():
+    def get_name(self):
+        return "Solar System Barycenter"
+
+    def get_local_position(self):
+        return LPoint3d()
+
+class J2000HeliocentricEclipticReferenceFrame(J2000EclipticReferenceFrame):
+    def __init__(self):
+        J2000EclipticReferenceFrame.__init__(self, SolBarycenter())
+
 class J2000EquatorialReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
     orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
     def get_orientation(self):
         return self.orientation
+
+class J2000HeliocentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
+    def __init__(self):
+        J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
 
 class RelativeReferenceFrame(BodyReferenceFrame):
     def __init__(self, body = None, parent_frame = None):
