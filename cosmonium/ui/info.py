@@ -24,7 +24,7 @@ from __future__ import absolute_import
 from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
-from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit
+from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FuncOrbit
 from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
 from ..astro import bayer
@@ -68,6 +68,11 @@ def fixed_orbit_info(orbit):
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(orbit.get_right_asc() * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(orbit.get_declination() * 180 / pi)])
     return [_("Position"), texts]
+
+def func_orbit_info(orbit):
+    texts = []
+    texts.append([_("Type"), orbit.__class__.__name__])
+    return [_("Orbit"), texts]
 
 def elliptic_orbit_info(orbit):
     texts = []
@@ -219,6 +224,7 @@ def star(body):
 ObjectInfo.register(object, default_info)
 ObjectInfo.register(Orbit, orbit_info)
 ObjectInfo.register(FixedPosition, fixed_orbit_info)
+ObjectInfo.register(FuncOrbit, func_orbit_info)
 ObjectInfo.register(EllipticalOrbit, elliptic_orbit_info)
 ObjectInfo.register(Rotation, rotation_info)
 ObjectInfo.register(UniformRotation, uniform_rotation_info)
