@@ -27,9 +27,15 @@
 
 #define J2000 2451545.
 #define J1900 (J2000 - 36525.)
+
+#define OBLIQUITY_1950 (23.445792 * PI / 180.)
+#define OBLIQUITY_2000 (23.43929111111111 * PI / 180.)
+
 #define CENTURY 36525.
 
 #define DEG2RAD (PI / 180.)
+
+#define ARCSECONDS_TO_RADIANS (DEG2RAD / 3600.)
 
 #define get16bits(d)  (*((const uint16_t *) (d)))
 #define get32bits(d)  (*((const uint32_t *) (d)))

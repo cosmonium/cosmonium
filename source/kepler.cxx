@@ -17,8 +17,6 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "math.h"
-
 #include "kepler.h"
 
 /* Significant parts of this code comes from Project Pluto library
@@ -44,7 +42,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
 */
 
+#include <math.h>
 #include "lunar.h"
+#include "mathutils.h"
 
 #define THRESH 1.e-12
 #define MIN_THRESH 1.e-14
@@ -220,6 +220,100 @@ kepler_hyperbolic(const double ecc, double mean_anom)
     n_iter += 1;
   }
   return (is_negative ? - curr : curr);
+}
+
+/* We want to have,  in the elements structure,  the ratio of the minor
+and major axes;  the longitude of perihelion;  and a unit vector,
+"sideways",  that lies in the plane of the orbit and points at right angles
+to the direction of perihelion. */
+
+void
+setup_orbit_vectors(struct elements *e)
+{
+   const double sin_incl = sin(e->incl), cos_incl = cos(e->incl);
+   double *vec;
+   double vec_len;
+   double up[3];
+   unsigned i;
+
+   e->minor_to_major = sqrt(fabs(1. - e->ecc * e->ecc));
+   e->lon_per = e->asc_node + atan2(sin(e->arg_per) * cos_incl,
+                                    cos(e->arg_per));
+   vec = e->perih_vec;
+
+   vec[0] = cos(e->lon_per) * cos_incl;
+   vec[1] = sin(e->lon_per) * cos_incl;
+   vec[2] = sin_incl * sin(e->lon_per - e->asc_node);
+   vec_len = sqrt(cos_incl * cos_incl + vec[2] * vec[2]);
+   if (cos_incl < 0.)      /* for retrograde cases, make sure */
+   {
+      vec_len *= -1.;      /* 'vec' has correct orientation   */
+   }
+   for (i = 0; i < 3; i++)
+   {
+      vec[i] /= vec_len;
+   }
+            /* 'up' is a vector perpendicular to the plane of the orbit */
+   up[0] =  sin(e->asc_node) * sin_incl;
+   up[1] = -cos(e->asc_node) * sin_incl;
+   up[2] = cos_incl;
+
+   vector_cross_product(e->sideways, up, vec);
+}
+
+void
+kepler_pos_vel(const struct elements *elem, const double t,
+               double *loc, double *vel)
+{
+   double true_anom, r, x, y, r0;
+
+   if(elem->ecc == 1.)    /* parabolic */
+   {
+      double g = elem->w0 * t * .5;
+
+      y = CUBE_ROOT( g + sqrt( g * g + 1.));
+      true_anom = 2. * atan( y - 1. / y);
+   }
+   else           /* got the mean anomaly;  compute eccentric,  then true */
+   {
+      double ecc_anom;
+
+      if (elem->ecc > 1.)     /* hyperbolic case */
+      {
+         ecc_anom = kepler_hyperbolic(elem->ecc, elem->mean_anomaly);
+         x = (elem->ecc - cosh(ecc_anom));
+         y = sinh(ecc_anom);
+      }
+      else           /* elliptical case */
+      {
+         ecc_anom = kepler_elliptic(elem->ecc, elem->mean_anomaly);
+         x = (cos(ecc_anom) - elem->ecc);
+         y =  sin(ecc_anom);
+      }
+      y *= elem->minor_to_major;
+      true_anom = atan2(y, x);
+   }
+
+   r0 = elem->q * (1. + elem->ecc);
+   r = r0 / (1. + elem->ecc * cos(true_anom));
+   x = r * cos(true_anom);
+   y = r * sin(true_anom);
+   loc[0] = elem->perih_vec[0] * x + elem->sideways[0] * y;
+   loc[1] = elem->perih_vec[1] * x + elem->sideways[1] * y;
+   loc[2] = elem->perih_vec[2] * x + elem->sideways[2] * y;
+   loc[3] = r;
+   if( vel && (elem->angular_momentum != 0.))
+      {
+      double angular_component = elem->angular_momentum / (r * r);
+      double radial_component = elem->ecc * sin(true_anom) *
+                                elem->angular_momentum / (r * r0);
+      double x1 = x * radial_component - y * angular_component;
+      double y1 = y * radial_component + x * angular_component;
+      unsigned i;
+
+      for( i = 0; i < 3; i++)
+         vel[i] = elem->perih_vec[i] * x1 + elem->sideways[i] * y1;
+      }
 }
 
 LPoint3d
