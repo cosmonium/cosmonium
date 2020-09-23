@@ -80,6 +80,8 @@ class StellarBody(StellarObject):
             self.clouds.owner = self
         if self.atmosphere is not None:
             self.atmosphere.owner = self
+        if self.ring is not None:
+            self.ring.owner = self
         self._extend = self.get_extend()
 
     def get_or_create_system(self):
