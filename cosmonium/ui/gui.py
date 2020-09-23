@@ -49,6 +49,7 @@ from .infopanel import InfoPanel
 from .preferences import Preferences
 from .clipboard import create_clipboard
 from .browser import Browser
+from .time import TimeEditor
 
 about_text = """# Cosmonium
 
@@ -105,6 +106,7 @@ class Gui(object):
         self.popup_menu = None
         self.opened_windows = []
         self.editor = ParamEditor(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, owner=self)
         self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)
@@ -436,6 +438,7 @@ class Gui(object):
                 (menu_text(_('_Freeze time'), 'Space'), 0, self.time.toggle_freeze_time),
                 (menu_text(_('_Set real time'), '\\'), 0, self.time.set_real_time),
                 0,
+                (menu_text(_('Set _time...')), 0, self.time_editor.show),
                 (menu_text(_('Set _current time'), '!'), 0, self.time.set_current_date),
                 (menu_text(_('Set _J2000 epoch'), 'Shift-J'), 0, self.time.set_J2000_date),
                 )
@@ -795,8 +798,8 @@ class Gui(object):
         track = self.cosmonium.track
         follow = self.cosmonium.follow
         sync = self.cosmonium.sync
-        (day, month, year, hour, min, sec) = self.time.time_to_values()
-        date="%02d:%02d:%02d %2d:%02d:%02d UTC" % (day, month, year, hour, min, sec)
+        (years, months, days, hours, mins, secs) = self.time.time_to_values()
+        date="%02d:%02d:%02d %2d:%02d:%02d UTC" % (years, months, days, hours, mins, secs)
         if selected is not None:
             names = utils.join_names(bayer.decode_names(selected.get_names()))
             self.hud.title.set(names)
