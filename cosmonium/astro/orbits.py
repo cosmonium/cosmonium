@@ -56,6 +56,9 @@ class Orbit(object):
     def is_periodic(self):
         return False
 
+    def is_closed(self):
+        return False
+
     def get_period(self):
         return 0.0
 
@@ -243,6 +246,9 @@ class EllipticalOrbit(Orbit):
         self.update_rotation()
 
     def is_periodic(self):
+        return self.eccentricity < 1.0
+
+    def is_closed(self):
         return self.eccentricity < 1.0
 
     def get_mean_motion(self):

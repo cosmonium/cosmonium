@@ -43,6 +43,9 @@ class VSOP87(FuncOrbit):
     def is_periodic(self):
         return True
 
+    def is_closed(self):
+        return False
+
     def get_frame_position_at(self, time):
         #TODO: The position is in the ecliptic plane of date, not J2000.0
         #The precession must be taken into account

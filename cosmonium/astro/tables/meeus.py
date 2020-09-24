@@ -41,6 +41,9 @@ class PlutoOrbit(FuncOrbit):
     def is_periodic(self):
         return True
 
+    def is_closed(self):
+        return False
+
     def get_frame_position_at(self, time):
         return pluto_pos(time)
 

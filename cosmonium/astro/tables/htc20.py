@@ -41,6 +41,9 @@ class HTC20(FuncOrbit):
     def is_periodic(self):
         return True
 
+    def is_closed(self):
+        return False
+
     def get_frame_position_at(self, time):
         return htc20_sat_pos(time, self.sat_id)
 

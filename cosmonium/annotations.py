@@ -119,7 +119,7 @@ class Orbit(VisibleObject):
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         delta = self.body.parent.get_local_position()
         if self.orbit.is_periodic():
-            epoch = self.context.time.time_full - self.orbit.period
+            epoch = self.context.time.time_full - self.orbit.period / 2
             step = self.orbit.period / (self.nbOfPoints - 1)
         else:
             #TODO: Properly calculate orbit start and end time
@@ -133,7 +133,7 @@ class Orbit(VisibleObject):
         for i in range(self.nbOfPoints-1):
             self.lines.addVertex(i)
             self.lines.addVertex(i+1)
-        if self.orbit.is_periodic():
+        if self.orbit.is_periodic() and self.orbit.is_closed():
             self.lines.addVertex(self.nbOfPoints-1)
             self.lines.addVertex(0)
         self.geom = Geom(self.vertexData)
