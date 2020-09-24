@@ -91,16 +91,16 @@ class TimeEditor():
 
     def add_time(self, frame, sizer):
         hsizer = Sizer("horizontal")
-        self.hour_entry = self.add_entry(frame, hsizer, "Hour", 0, (0, 23), 2)
-        self.min_entry = self.add_entry(frame, hsizer, "Min", 0, (0, 59), 2)
-        self.sec_entry = self.add_entry(frame, hsizer, "Sec", 0, (0, 59), 2)
+        self.hour_entry = self.add_entry(frame, hsizer, _("Hour"), 0, (0, 23), 2)
+        self.min_entry = self.add_entry(frame, hsizer, _("Min"), 0, (0, 59), 2)
+        self.sec_entry = self.add_entry(frame, hsizer, _("Sec"), 0, (0, 59), 2)
         sizer.add(hsizer, expand=True, borders=self.borders)
 
     def add_date(self, frame, sizer):
         hsizer = Sizer("horizontal")
-        self.day_entry = self.add_entry(frame, hsizer, "Day", 1, (1, 31), 2)
-        self.month_entry = self.add_entry(frame, hsizer, "Month", 1, (1, 12), 2)
-        self.year_entry = self.add_entry(frame, hsizer, "Year", 0, (-1000000, 1000000), 4)
+        self.day_entry = self.add_entry(frame, hsizer, _("Day"), 1, (1, 31), 2)
+        self.month_entry = self.add_entry(frame, hsizer, _("Month"), 1, (1, 12), 2)
+        self.year_entry = self.add_entry(frame, hsizer, _("Year"), 0, (-1000000, 1000000), 4)
         sizer.add(hsizer, expand=True, borders=self.borders)
 
     def set_current_time(self):
@@ -122,17 +122,17 @@ class TimeEditor():
         self.set_current_time()
         hsizer = Sizer("horizontal")
         ok = DirectButton(parent=frame,
-                          text="OK",
+                          text=_("OK"),
                           text_scale=self.text_scale,
                           command = self.ok)
         hsizer.add(SizerWidget(ok), expand=True, borders=self.borders)
         current = DirectButton(parent=frame,
-                               text="Set current time",
+                               text=_("Set current time"),
                                text_scale=self.text_scale,
                                command = self.set_current_time)
         hsizer.add(SizerWidget(current), expand=True, borders=self.borders)
         cancel = DirectButton(parent=frame,
-                              text="Cancel",
+                              text=_("Cancel"),
                               text_scale=self.text_scale,
                               command = self.cancel)
         hsizer.add(SizerWidget(cancel), expand=True, borders=self.borders)
@@ -140,7 +140,7 @@ class TimeEditor():
         sizer.update((self.width, self.height))
         size = sizer.min_size
         frame['frameSize'] = (0, size[0], -size[1], 0)
-        self.window = Window("Set time", parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
+        self.window = Window(_("Set time"), parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
 
     def ok(self):
         years = self.year_entry.getValue()
