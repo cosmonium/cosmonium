@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from copy import deepcopy
+from copy import copy
 
 class ElementCategory():
     def __init__(self, name, priority):
@@ -50,7 +50,7 @@ class ElementsDB(object):
             (category_name, element_name) = name.split(':')
             if category_name in self.db_map:
                 if element_name in self.db_map[category_name].elements:
-                    return deepcopy(self.db_map[category_name].elements[element_name])
+                    return copy(self.db_map[category_name].elements[element_name])
                 else:
                     print("DB", self.name, ':', "Element", name, "not found in category", category_name)
             else:
@@ -59,7 +59,7 @@ class ElementsDB(object):
             element_name = name
         for category in self.db_list:
             if element_name in category.elements:
-                return deepcopy(category.elements[element_name])
+                return copy(category.elements[element_name])
         print("DB", self.name, ':', "Element", name, "not found")
 
 orbit_elements_db = ElementsDB('orbits')

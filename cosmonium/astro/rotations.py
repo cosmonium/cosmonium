@@ -216,6 +216,17 @@ class SynchronousRotation(FixedRotation):
         rotation = local * self.get_frame_equatorial_orientation_at(time)
         return rotation
 
+class FuncRotation(Rotation):
+    def __init__(self, rotation):
+        Rotation.__init__(self, frame=J2000EquatorialReferenceFrame())
+        self.rotation = rotation
+
+    def get_frame_equatorial_orientation_at(self, time):
+        return self.rotation.get_frame_equatorial_orientation_at(time)
+
+    def get_frame_rotation_at(self, time):
+        return self.rotation.get_frame_rotation_at(time)
+
 def create_fixed_rotation(
              inclination=0.0, inclination_units=units.Deg,
              ascending_node=0.0, ascending_node_units=units.Deg,

@@ -25,7 +25,7 @@ from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FuncOrbit
-from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
+from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation, FuncRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
 from ..astro import bayer
 from ..astro import units
@@ -108,6 +108,11 @@ def uniform_rotation_info(rotation):
     texts.append([_("Meridian"), "%g°" % (rotation.meridian_angle * 180 / pi)])
     date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(rotation.epoch)
     texts.append([_("Epoch"), "%s" % date])
+    return [_("Rotation"), texts]
+
+def func_rotation_info(orbit):
+    texts = []
+    texts.append([_("Type"), orbit.__class__.__name__])
     return [_("Rotation"), texts]
 
 def surface(surface):
@@ -230,6 +235,7 @@ ObjectInfo.register(Rotation, rotation_info)
 ObjectInfo.register(UniformRotation, uniform_rotation_info)
 ObjectInfo.register(SynchronousRotation, uniform_rotation_info)
 ObjectInfo.register(UnknownRotation, unknown_rotation_info)
+ObjectInfo.register(FuncRotation, func_rotation_info)
 ObjectInfo.register(Surface, surface)
 ObjectInfo.register(StellarObject, stellar_object)
 ObjectInfo.register(StellarBody, stellar_body)
