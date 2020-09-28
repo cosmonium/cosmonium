@@ -282,12 +282,12 @@ LQuaterniond WGCCREPhobosRotation::calc_frame_rotation_at(double time)
   double M4 = 394.93256437 * deg_to_rad + 38280.79631835 * deg_to_rad * T;
   double M5 = 189.63271560 * deg_to_rad + 41215158.18420050 * deg_to_rad * T + 12.71192322 * deg_to_rad * T * T;
 
-  double W = 34.9964842535 + 1128.84475928 * d + 12.72192797 * T
+  double W = 35.18774440 + 1128.84475928 * d + 12.72192797 * T
       + 1.42421769 * sin(M1)
       - 0.02273783 * sin(M2)
       + 0.00410711 * sin(M3)
       + 0.00631964 * sin(M4)
-      + 1.143 * sin(M5);
+      - 1.143 * sin(M5);
 
   LQuaterniond local;
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());

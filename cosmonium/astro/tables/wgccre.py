@@ -65,7 +65,7 @@ wgccre_simple = { 'sun':     WgccreSimpleRotation(286.13, 63.87, 84.176, 14.1844
                   'uranus':  WgccreSimpleRotation(257.311, -15.175, 203.81, -501.1600928),
                   'neptune': WgccreSimpleRotation(299.36, 43.46, 249.978, 541.1397757),
                   #Mars
-                  'phobos':  WgccreSimpleRotation(317.67071657, 52.88627266, 34.9964842535, 1128.84475928),
+                  'phobos':  WgccreSimpleRotation(317.67071657, 52.88627266, 35.18774440, 1128.84475928),
                   'deimos':  WgccreSimpleRotation(316.65705808, 53.50992033, 79.39932954, 285.16188899),
                   #Jupiter
                   'metis':    WgccreSimpleRotation(268.05, 64.49, 346.09, 1221.2547301),
