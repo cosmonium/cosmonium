@@ -317,7 +317,7 @@ class AutoPilot(object):
         new_position = center + new_orientation.xform(LVector3d(0, height, 0))
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
-    def go_north(self, duration=None, zoom=False):
+    def go_pole(self, target, lat, duration, zoom):
         if not self.ui.selected: return
         target = self.ui.selected
         if zoom:
@@ -327,19 +327,23 @@ class AutoPilot(object):
             if distance_unit == 0.0:
                 distance_unit = target.get_extend()
             distance = target.distance_to_obs / distance_unit
-        self.go_to_object_long_lat(0, pi / 2, duration, distance)
+        self.go_to_object_long_lat(0, lat, duration, distance)
+
+    def go_north(self, duration=None, zoom=False):
+        if not self.ui.selected: return
+        target = self.ui.selected
+        lat = pi / 2
+        if target.rotation.is_flipped():
+            lat = -lat
+        self.go_pole(target, lat, duration, zoom)
 
     def go_south(self, duration=None, zoom=False):
         if not self.ui.selected: return
         target = self.ui.selected
-        if zoom:
-            distance = settings.default_distance
-        else:
-            distance_unit = target.get_apparent_radius()
-            if distance_unit == 0.0:
-                distance_unit = target.get_extend()
-            distance = target.distance_to_obs / distance_unit
-        self.go_to_object_long_lat(0, -pi / 2, duration, distance)
+        lat = -pi / 2
+        if target.rotation.is_flipped():
+            lat = -lat
+        self.go_pole(target, lat, duration, zoom)
 
     def go_meridian(self, duration=None, zoom=False):
         if not self.ui.selected: return

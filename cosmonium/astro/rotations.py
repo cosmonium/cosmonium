@@ -48,9 +48,10 @@ class ReferenceAxis(ReferenceAxisBase):
         return self.rotation
 
 class PlaneReferenceAxis(ReferenceAxisBase):
-    def __init__(self, inclination, ascending_node):
+    def __init__(self, inclination, ascending_node, flipped):
         self.inclination = inclination
         self.ascending_node = ascending_node
+        self.flipped = flipped
         self.rotation = None
         self.update_rotation()
 
@@ -58,7 +59,7 @@ class PlaneReferenceAxis(ReferenceAxisBase):
         return self.rotation
 
     def update_rotation(self):
-        self.rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, False)
+        self.rotation = calc_orientation_from_incl_an(self.inclination, self.ascending_node, self.flipped)
 
     def get_user_parameters(self):
         parameters = [AutoUserParameter(_("Inclination"), 'inclination', self, AutoUserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
@@ -70,9 +71,10 @@ class PlaneReferenceAxis(ReferenceAxisBase):
         self.update_rotation()
 
 class EquatorialReferenceAxis(ReferenceAxisBase):
-    def __init__(self, right_ascension, declination):
+    def __init__(self, right_ascension, declination, flipped):
         self.right_ascension = right_ascension
         self.declination = declination
+        self.flipped = flipped
         self.rotation = None
         self.update_rotation()
 
@@ -82,7 +84,8 @@ class EquatorialReferenceAxis(ReferenceAxisBase):
     def update_rotation(self):
         inclination = pi / 2 - self.declination
         ascending_node = self.right_ascension + pi / 2
-        self.rotation = calc_orientation_from_incl_an(inclination, ascending_node, False)
+        # The rotation into the equatorial plane is done in the reference frame
+        self.rotation = calc_orientation_from_incl_an(inclination, ascending_node, self.flipped)
 
     def get_user_parameters(self):
         parameters = [AutoUserParameter(_("Declination"), 'declination', self, AutoUserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
@@ -97,6 +100,9 @@ class Rotation(object):
     dynamic = False
     def __init__(self, frame):
         self.frame = frame
+
+    def is_flipped(self):
+        return False
 
     def get_user_parameters(self):
         group = ParametersGroup(_('Rotation'))
@@ -169,6 +175,9 @@ class UniformRotation(FixedRotation):
         self.epoch = epoch
         self.meridian_angle = meridian_angle
 
+    def is_flipped(self):
+        return self.period < 0
+
     def set_period(self, period):
         self.period = period
         if period != 0:
@@ -189,6 +198,8 @@ class UniformRotation(FixedRotation):
     def get_frame_rotation_at(self, time):
         angle = (time - self.epoch) * self.mean_motion + self.meridian_angle
         local = LQuaterniond()
+        if self.mean_motion < 0:
+            angle = -angle
         local.setFromAxisAngleRad(angle, LVector3d.unitZ())
         rotation = local * self.get_frame_equatorial_orientation_at(time)
         return rotation
@@ -220,6 +231,9 @@ class FuncRotation(Rotation):
     def __init__(self, rotation):
         Rotation.__init__(self, frame=J2000EquatorialReferenceFrame())
         self.rotation = rotation
+
+    def is_flipped(self):
+        return self.rotation.is_flipped()
 
     def get_frame_equatorial_orientation_at(self, time):
         return self.rotation.get_frame_equatorial_orientation_at(time)
@@ -253,11 +267,12 @@ def create_uniform_rotation(
              meridian_angle=0.0, meridian_units=units.Deg,
              epoch=units.J2000,
              frame=None):
+    flipped = period is not None and period < 0
     if right_asc is not None:
-        reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit)
+        reference_axis = EquatorialReferenceAxis(right_asc * right_asc_unit, declination * declination_unit, flipped)
         frame = J2000EquatorialReferenceFrame()
     else:
-        reference_axis = PlaneReferenceAxis(inclination * inclination_units, ascending_node * ascending_node_units)
+        reference_axis = PlaneReferenceAxis(inclination * inclination_units, ascending_node * ascending_node_units, flipped)
     if frame is None:
         frame = J2000EquatorialReferenceFrame()
     meridian_angle = meridian_angle * meridian_units

@@ -29,8 +29,10 @@ PUBLISHED:
   virtual ~RotationBase(void);
   virtual LQuaterniond get_frame_equatorial_orientation_at(double time) = 0;
   virtual LQuaterniond get_frame_rotation_at(double time) = 0;
+  virtual bool is_flipped(void) const;
+
 public:
-  LQuaterniond calc_orientation(double a, double d) const;
+  LQuaterniond calc_orientation(double a, double d, bool flipped=false) const;
 };
 
 class CachedRotationBase: public RotationBase
@@ -59,11 +61,13 @@ PUBLISHED:
 
   virtual LQuaterniond get_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond get_frame_rotation_at(double time);
+  virtual bool is_flipped(void) const;
 
 private:
   LQuaterniond orientation;
   double meridian_angle;
   double mean_motion;
+  bool flipped;
   double epoch;
 };
 
@@ -75,6 +79,7 @@ PUBLISHED:
 
   virtual LQuaterniond get_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond get_frame_rotation_at(double time);
+  virtual bool is_flipped(void) const;
 
 private:
   double a0;
@@ -83,6 +88,7 @@ private:
   double d0_rate;
   double meridian_angle;
   double mean_motion;
+  bool flipped;
   double epoch;
 };
 

@@ -28,11 +28,19 @@ RotationBase::~RotationBase(void)
 {
 }
 
-LQuaterniond RotationBase::calc_orientation(double a, double d) const
+bool RotationBase::is_flipped(void) const
+{
+  return false;
+}
+
+LQuaterniond RotationBase::calc_orientation(double a, double d, bool flipped) const
 {
   double inclination = M_PI / 2 - d * deg_to_rad;
   double ascending_node = a * deg_to_rad + M_PI / 2;
 
+  if (flipped) {
+    inclination += M_PI;
+  }
   LQuaterniond inclination_quat;
   inclination_quat.set_from_axis_angle_rad(inclination, LVector3d::unit_x());
   LQuaterniond ascending_node_quat;
@@ -69,7 +77,8 @@ WGCCRESimpleRotation::WGCCRESimpleRotation(double a0, double d0, double prime,
     double rate, double epoch) :
     meridian_angle(prime * deg_to_rad), mean_motion(rate * deg_to_rad), epoch(epoch)
 {
-  orientation = calc_orientation(a0, d0);
+  flipped = rate < 0;
+  orientation = calc_orientation(a0, d0, flipped);
 }
 
 LQuaterniond WGCCRESimpleRotation::get_frame_equatorial_orientation_at(
@@ -82,9 +91,17 @@ LQuaterniond WGCCRESimpleRotation::get_frame_rotation_at(double time)
 {
   double angle = (time - epoch) * mean_motion + meridian_angle;
   LQuaterniond local;
+  if (flipped) {
+    angle = -angle;
+  }
   local.set_from_axis_angle_rad(angle, LVector3d::unit_z());
   LQuaterniond rotation = local * orientation;
   return rotation;
+}
+
+bool WGCCRESimpleRotation::is_flipped(void) const
+{
+  return flipped;
 }
 
 WGCCRESimplePrecessingRotation::WGCCRESimplePrecessingRotation(double a0,
@@ -93,6 +110,7 @@ WGCCRESimplePrecessingRotation::WGCCRESimplePrecessingRotation(double a0,
     a0(a0), a0_rate(a0_rate), d0(d0), d0_rate(d0_rate), meridian_angle(prime * deg_to_rad), mean_motion(
         rate * deg_to_rad), epoch(epoch)
 {
+  flipped = rate < 0;
 }
 
 LQuaterniond WGCCRESimplePrecessingRotation::get_frame_equatorial_orientation_at(
@@ -101,16 +119,24 @@ LQuaterniond WGCCRESimplePrecessingRotation::get_frame_equatorial_orientation_at
   double T = (time - epoch) / century;
   double a0p = a0 + a0_rate * T;
   double d0p = d0 + d0_rate * T;
-  return calc_orientation(a0p, d0p);
+  return calc_orientation(a0p, d0p, flipped);
 }
 
 LQuaterniond WGCCRESimplePrecessingRotation::get_frame_rotation_at(double time)
 {
   double angle = (time - epoch) * mean_motion + meridian_angle;
   LQuaterniond local;
+  if (flipped) {
+    angle = -angle;
+  }
   local.set_from_axis_angle_rad(angle, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+bool WGCCRESimplePrecessingRotation::is_flipped(void) const
+{
+  return flipped;
 }
 
 LQuaterniond WGCCREMercuryRotation::calc_frame_equatorial_orientation_at(
