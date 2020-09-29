@@ -30,6 +30,7 @@ from .. import units
 try:
     from cosmonium_engine import WGCCRESimpleRotation, WGCCRESimplePrecessingRotation
     from cosmonium_engine import WGCCREMercuryRotation, WGCCREMarsRotation, WGCCREJupiterRotation, WGCCRENeptuneRotation
+    from cosmonium_engine import WGCCRE9MoonRotation
     from cosmonium_engine import WGCCREPhobosRotation, WGCCREDeimosRotation
     from cosmonium_engine import WGCCREAmaltheaRotation, WGCCREThebeRotation, WGCCREIoRotation
     from cosmonium_engine import WGCCREEuropaRotation, WGCCREGanymedeRotation, WGCCRECallistoRotation
@@ -58,12 +59,14 @@ def WgccreSimpleRotation(ra, d, w, p):
 wgccre_simple = { 'sun':     WgccreSimpleRotation(286.13, 63.87, 84.176, 14.1844000),
                   'mercury': WgccreSimpleRotation(281.0103, 61.4155, 329.5988, 6.1385108),
                   'venus':   WgccreSimpleRotation(272.76, 67.16, 160.20, -1.4813688),
-                  #'earth':   WgccreSimpleRotation(),
+                  'earth':   WgccreSimpleRotation(0.00, 90.00, 190.147, 360.9856235),
                   'mars':    WgccreSimpleRotation(317.269202, 54.432516, 176.049863, 350.891982443297),
                   'jupiter': WgccreSimpleRotation(268.056595, 64.495303, 284.95, 870.5360000),
                   'saturn':  WgccreSimpleRotation(40.589, 83.537, 38.90, 810.7939024),
                   'uranus':  WgccreSimpleRotation(257.311, -15.175, 203.81, -501.1600928),
                   'neptune': WgccreSimpleRotation(299.36, 43.46, 249.978, 541.1397757),
+                  #Moon
+                  'moon':   WgccreSimpleRotation(269.9949, 66.5392, 38.3213, 13.17635815),
                   #Mars
                   'phobos':  WgccreSimpleRotation(317.67071657, 52.88627266, 35.18774440, 1128.84475928),
                   'deimos':  WgccreSimpleRotation(316.65705808, 53.50992033, 79.39932954, 285.16188899),
@@ -145,11 +148,14 @@ if loaded:
         'sun':      WGCCRESimpleRotation(286.13,   63.87,   84.176,  14.1844000, units.J2000),
         'mercury':  WGCCREMercuryRotation(),
         'venus':    WGCCRESimpleRotation(272.76,   67.16,  160.20,    -1.4813688, units.J2000),
+        'earth':    WGCCRESimplePrecessingRotation(0.00, -0.641, 90.00, -0.557, 190.147, 360.9856235, units.J2000),
         'mars':     WGCCREMarsRotation(),
         'jupiter':  WGCCREJupiterRotation(),
         'saturn':   WGCCRESimplePrecessingRotation(40.589, -0.036, 83.537, -0.004, 38.90, 810.7939024, units.J2000),
         'uranus':   WGCCRESimpleRotation(257.311, -15.175, 203.81, -501.1600928, units.J2000),
         'neptune':  WGCCRENeptuneRotation(),
+        #Earth
+        'moon': WGCCRE9MoonRotation(),
         # Mars
         'phobos': WGCCREPhobosRotation(),
         'deimos': WGCCREDeimosRotation(),

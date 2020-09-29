@@ -131,6 +131,20 @@ public:
 };
 
 // ############################################################################
+// Moon
+// ############################################################################
+
+class WGCCRE9MoonRotation: public CachedRotationBase
+{
+PUBLISHED:
+  WGCCRE9MoonRotation() {}
+
+public:
+  virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
+  virtual LQuaterniond calc_frame_rotation_at(double time);
+};
+
+// ############################################################################
 // Mars moons
 // ############################################################################
 

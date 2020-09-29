@@ -246,6 +246,83 @@ LQuaterniond WGCCRENeptuneRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+LQuaterniond WGCCRE9MoonRotation::calc_frame_equatorial_orientation_at(
+    double time)
+{
+  double d = time - j2000_epoch;
+  double T = d / century;
+
+  double E1 = 125.045 * deg_to_rad - 0.0529921 * deg_to_rad * d;
+  double E2 = 250.089 * deg_to_rad - 0.1059842 * deg_to_rad * d;
+  double E3 = 260.008 * deg_to_rad + 13.0120009 * deg_to_rad * d;
+  double E4 = 176.625 * deg_to_rad + 13.3407154 * deg_to_rad * d;
+  double E6 = 311.589 * deg_to_rad + 26.4057084 * deg_to_rad * d;
+  double E7 = 134.963 * deg_to_rad + 13.0649930 * deg_to_rad * d;
+  double E10 = 15.134 * deg_to_rad - 0.1589763 * deg_to_rad * d;
+  double E13 = 25.053 * deg_to_rad + 12.9590088 * deg_to_rad * d;
+
+  double a0 = 269.9949 + 0.0031 * T
+      -3.8787 * sin(E1)
+      -0.1204 * sin(E2)
+      +0.0700 * sin(E3)
+      -0.0172 * sin(E4)
+      +0.0072 * sin(E6)
+      -0.0052 * sin(E10)
+      +0.0043 * sin(E13);
+
+  double d0 = 66.5392 + 0.0130 * T
+      +1.5419 * cos(E1)
+      +0.0239 * cos(E2)
+      -0.0278 * cos(E3)
+      +0.0068 * cos(E4)
+      -0.0029 * cos(E6)
+      +0.0009 * cos(E7)
+      +0.0008 * cos(E10)
+      -0.0009 * cos(E13);
+
+  return calc_orientation(a0, d0);
+}
+
+LQuaterniond WGCCRE9MoonRotation::calc_frame_rotation_at(double time)
+{
+  double d = time - j2000_epoch;
+  double T = d / century;
+
+  double E1 = 125.045 * deg_to_rad - 0.0529921 * deg_to_rad * d;
+  double E2 = 250.089 * deg_to_rad - 0.1059842 * deg_to_rad * d;
+  double E3 = 260.008 * deg_to_rad + 13.0120009 * deg_to_rad * d;
+  double E4 = 176.625 * deg_to_rad + 13.3407154 * deg_to_rad * d;
+  double E5 = 357.529 * deg_to_rad + 0.9856003 * deg_to_rad * d;
+  double E6 = 311.589 * deg_to_rad + 26.4057084 * deg_to_rad * d;
+  double E7 = 134.963 * deg_to_rad + 13.0649930 * deg_to_rad * d;
+  double E8 = 276.617 * deg_to_rad + 0.3287146 * deg_to_rad * d;
+  double E9 = 34.226 * deg_to_rad + 1.7484877 * deg_to_rad * d;
+  double E10 = 15.134 * deg_to_rad - 0.1589763 * deg_to_rad * d;
+  double E11 = 119.743 * deg_to_rad + 0.0036096 * deg_to_rad * d;
+  double E12 = 239.961 * deg_to_rad + 0.1643573 * deg_to_rad * d;
+  double E13 = 25.053 * deg_to_rad + 12.9590088 * deg_to_rad * d;
+
+  double W = 38.3213 + 13.17635815 * d -1.410E-12 * d * d
+      +3.5610 * sin(E1)
+      +0.1208 * sin(E2)
+      -0.0642 * sin(E3)
+      +0.0158 * sin(E4)
+      +0.0252 * sin(E5)
+      -0.0066 * sin(E6)
+      -0.0047 * sin(E7)
+      -0.0046 * sin(E8)
+      +0.0028 * sin(E9)
+      +0.0052 * sin(E10)
+      +0.0040 * sin(E11)
+      +0.0019 * sin(E12)
+      -0.0044 * sin(E13);
+
+  LQuaterniond local;
+  local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
+  LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
+  return rotation;
+}
+
 LQuaterniond WGCCREPhobosRotation::calc_frame_equatorial_orientation_at(
     double time)
 {

@@ -26,18 +26,6 @@ from ..rotations import create_uniform_rotation
 from ..elementsdb import rotation_elements_db
 
 uniform_rotations={}
-uniform_rotations['earth']=create_uniform_rotation(
-        period=23.93447117,
-        inclination=-23.4392911,
-        ascending_node=0,
-        meridian_angle=280.147,
-        frame=J2000EclipticReferenceFrame())
-
-uniform_rotations['moon']=create_uniform_rotation(
-        sync=True,
-        right_asc=269.9949,
-        declination=66.5392,
-        meridian_angle=38.3213)
 
 uniform_rotations['hyperion']=create_uniform_rotation(
         inclination=61.0,
