@@ -106,17 +106,28 @@ bool WGCCRESimpleRotation::is_flipped(void) const
 
 WGCCRESimplePrecessingRotation::WGCCRESimplePrecessingRotation(double a0,
     double a0_rate, double d0, double d0_rate, double prime, double rate,
-    double epoch) :
+    double epoch, double validity) :
     a0(a0), a0_rate(a0_rate), d0(d0), d0_rate(d0_rate), meridian_angle(prime * deg_to_rad), mean_motion(
-        rate * deg_to_rad), epoch(epoch)
+        rate * deg_to_rad), epoch(epoch), validity(validity / century)
 {
   flipped = rate < 0;
+}
+
+double WGCCRESimplePrecessingRotation::get_T(double jd) const
+{
+  double T = (jd - epoch) / century;
+  if (T < -validity) {
+    T = -validity;
+  } else if(T > validity) {
+    T = validity;
+  }
+  return T;
 }
 
 LQuaterniond WGCCRESimplePrecessingRotation::get_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - epoch) / century;
+  double T = get_T(time);
   double a0p = a0 + a0_rate * T;
   double d0p = d0 + d0_rate * T;
   return calc_orientation(a0p, d0p, flipped);
@@ -139,10 +150,28 @@ bool WGCCRESimplePrecessingRotation::is_flipped(void) const
   return flipped;
 }
 
+WGCCREComplexRotation::WGCCREComplexRotation(double epoch, double validity) :
+    epoch(epoch),
+    validity(validity / century)
+{
+
+}
+
+double WGCCREComplexRotation::get_T(double jd) const
+{
+  double T = (jd - epoch) / century;
+  if (T < -validity) {
+    T = -validity;
+  } else if(T > validity) {
+    T = validity;
+  }
+  return T;
+}
+
 LQuaterniond WGCCREMercuryRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
   double a0 = 281.0103 - 0.0328 * T;
   double d0 = 61.4155 - 0.0049 * T;
   return calc_orientation(a0, d0);
@@ -169,7 +198,7 @@ LQuaterniond WGCCREMercuryRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREMarsRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
   double a0 = 317.269202 - 0.10927547 * T
       + 0.000068 * sin(198.991226 * deg_to_rad + 19139.4819985 * deg_to_rad * T)
       + 0.000238 * sin(226.292679 * deg_to_rad + 38280.8511281 * deg_to_rad * T)
@@ -190,7 +219,8 @@ LQuaterniond WGCCREMarsRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREMarsRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
+
   double W = 176.049863 + 350.891982443297 * d
       + 0.000145 * sin(129.071773 * deg_to_rad + 19140.0328244 * deg_to_rad * T)
       + 0.000157 * sin(36.352167 * deg_to_rad + 38281.0473591 * deg_to_rad * T)
@@ -208,7 +238,7 @@ LQuaterniond WGCCREMarsRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREJupiterRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double Ja = 99.360714 * deg_to_rad + 4850.4046 * deg_to_rad * T;
   double Jb = 175.895369 * deg_to_rad + 1191.9605 * deg_to_rad * T;
@@ -235,7 +265,6 @@ LQuaterniond WGCCREJupiterRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREJupiterRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
 
   double W = 284.95 + 870.5360000 * d;
 
@@ -248,7 +277,7 @@ LQuaterniond WGCCREJupiterRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRENeptuneRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
 
@@ -261,7 +290,7 @@ LQuaterniond WGCCRENeptuneRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRENeptuneRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double W = 249.978 + 541.1397757 * d - 0.48 * sin(N);
@@ -276,7 +305,7 @@ LQuaterniond WGCCRE9MoonRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double E1 = 125.045 * deg_to_rad - 0.0529921 * deg_to_rad * d;
   double E2 = 250.089 * deg_to_rad - 0.1059842 * deg_to_rad * d;
@@ -312,7 +341,6 @@ LQuaterniond WGCCRE9MoonRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRE9MoonRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
 
   double E1 = 125.045 * deg_to_rad - 0.0529921 * deg_to_rad * d;
   double E2 = 250.089 * deg_to_rad - 0.1059842 * deg_to_rad * d;
@@ -352,7 +380,7 @@ LQuaterniond WGCCRE9MoonRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREPhobosRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double M1 = 190.72646643 * deg_to_rad + 15917.10818695 * deg_to_rad * T;
   double M2 = 21.46892470 * deg_to_rad + 31834.27934054 * deg_to_rad * T;
@@ -377,7 +405,7 @@ LQuaterniond WGCCREPhobosRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREPhobosRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double M1 = 190.72646643 * deg_to_rad + 15917.10818695 * deg_to_rad * T;
   double M2 = 21.46892470 * deg_to_rad + 31834.27934054 * deg_to_rad * T;
@@ -401,7 +429,7 @@ LQuaterniond WGCCREPhobosRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREDeimosRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double M6 = 121.46893664 * deg_to_rad + 660.22803474 * deg_to_rad * T;
   double M7 = 231.05028581 * deg_to_rad + 660.99123540 * deg_to_rad * T;
@@ -429,7 +457,7 @@ LQuaterniond WGCCREDeimosRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREDeimosRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double M6 = 121.46893664 * deg_to_rad + 660.22803474 * deg_to_rad * T;
   double M7 = 231.05028581 * deg_to_rad + 660.99123540 * deg_to_rad * T;
@@ -453,7 +481,7 @@ LQuaterniond WGCCREDeimosRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREAmaltheaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
   double J1 = 73.32 * deg_to_rad + 91472.9 * deg_to_rad * T;
 
   double a0 = 268.05 - 0.009 * T
@@ -468,7 +496,7 @@ LQuaterniond WGCCREAmaltheaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREAmaltheaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J1 = 73.32 * deg_to_rad + 91472.9 * deg_to_rad * T;
   double W = 231.67 + 722.6314560 * d
@@ -484,7 +512,7 @@ LQuaterniond WGCCREAmaltheaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREThebeRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double J2 = 24.62 * deg_to_rad + 45137.2 * deg_to_rad * T;
 
@@ -502,7 +530,7 @@ LQuaterniond WGCCREThebeRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREThebeRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J2 = 24.62 * deg_to_rad + 45137.2 * deg_to_rad * T;
 
@@ -519,7 +547,7 @@ LQuaterniond WGCCREThebeRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREIoRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double J3 = 283.90 * deg_to_rad + 4850.7 * deg_to_rad * T;
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
@@ -538,7 +566,7 @@ LQuaterniond WGCCREIoRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREIoRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J3 = 283.90 * deg_to_rad + 4850.7 * deg_to_rad * T;
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
@@ -556,7 +584,7 @@ LQuaterniond WGCCREIoRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREEuropaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
@@ -581,7 +609,7 @@ LQuaterniond WGCCREEuropaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREEuropaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
@@ -603,7 +631,7 @@ LQuaterniond WGCCREEuropaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREGanymedeRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
@@ -625,7 +653,7 @@ LQuaterniond WGCCREGanymedeRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREGanymedeRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J4 = 355.80 * deg_to_rad + 1191.3 * deg_to_rad * T;
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
@@ -645,7 +673,7 @@ LQuaterniond WGCCREGanymedeRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRECallistoRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
   double J6 = 229.80 * deg_to_rad + 64.3 * deg_to_rad * T;
@@ -667,7 +695,7 @@ LQuaterniond WGCCRECallistoRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRECallistoRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double J5 = 119.90 * deg_to_rad + 262.1 * deg_to_rad * T;
   double J6 = 229.80 * deg_to_rad + 64.3 * deg_to_rad * T;
@@ -687,7 +715,7 @@ LQuaterniond WGCCRECallistoRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREEpimetheusRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double S1 = 353.32 * deg_to_rad + 75706.7 * deg_to_rad * T;
 
@@ -704,7 +732,7 @@ LQuaterniond WGCCREEpimetheusRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREEpimetheusRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double S1 = 353.32 * deg_to_rad + 75706.7 * deg_to_rad * T;
 
@@ -721,7 +749,7 @@ LQuaterniond WGCCREEpimetheusRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREJanusRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double S2 = 28.72 * deg_to_rad + 75706.7 * deg_to_rad * T;
 
@@ -738,7 +766,7 @@ LQuaterniond WGCCREJanusRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREJanusRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double S2 = 28.72 * deg_to_rad + 75706.7 * deg_to_rad * T;
 
@@ -755,7 +783,7 @@ LQuaterniond WGCCREJanusRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREMimasRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double S3 = 177.40 * deg_to_rad - 36505.5 * deg_to_rad * T;
 
@@ -770,7 +798,7 @@ LQuaterniond WGCCREMimasRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREMimasRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double S3 = 177.40 * deg_to_rad - 36505.5 * deg_to_rad * T;
   double S5 = 316.45 * deg_to_rad + 506.2 * deg_to_rad * T;
@@ -788,7 +816,7 @@ LQuaterniond WGCCREMimasRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRETethysRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double S4 = 300.00 * deg_to_rad - 7225.9 * deg_to_rad * T;
 
@@ -803,7 +831,7 @@ LQuaterniond WGCCRETethysRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRETethysRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double S4 = 300.00 * deg_to_rad - 7225.9 * deg_to_rad * T;
   double S5 = 316.45 * deg_to_rad + 506.2 * deg_to_rad * T;
@@ -821,7 +849,7 @@ LQuaterniond WGCCRETethysRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRERheaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double S6 = 345.20 * deg_to_rad - 1016.3 * deg_to_rad * T;
 
@@ -837,7 +865,7 @@ LQuaterniond WGCCRERheaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRERheaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double S6 = 345.20 * deg_to_rad - 1016.3 * deg_to_rad * T;
 
@@ -853,7 +881,7 @@ LQuaterniond WGCCRERheaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRECordeliaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U1 = 115.75 * deg_to_rad + 54991.87 * deg_to_rad * T;
 
@@ -865,7 +893,7 @@ LQuaterniond WGCCRECordeliaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRECordeliaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U1 = 115.75 * deg_to_rad + 54991.87 * deg_to_rad * T;
   double W = 127.69 - 1074.5205730 * d - 0.04 * sin(U1);
@@ -879,7 +907,7 @@ LQuaterniond WGCCRECordeliaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREOpheliaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U2 = 141.69 * deg_to_rad + 41887.66 * deg_to_rad * T;
 
@@ -892,7 +920,7 @@ LQuaterniond WGCCREOpheliaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREOpheliaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U2 = 141.69 * deg_to_rad + 41887.66 * deg_to_rad * T;
 
@@ -907,7 +935,7 @@ LQuaterniond WGCCREOpheliaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREBiancaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U3 = 135.03 * deg_to_rad + 29927.35 * deg_to_rad * T;
 
@@ -920,7 +948,7 @@ LQuaterniond WGCCREBiancaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREBiancaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U3 = 135.03 * deg_to_rad + 29927.35 * deg_to_rad * T;
 
@@ -935,7 +963,7 @@ LQuaterniond WGCCREBiancaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRECressidaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U4 = 61.77 * deg_to_rad + 25733.59 * deg_to_rad * T;
 
@@ -948,7 +976,7 @@ LQuaterniond WGCCRECressidaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRECressidaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U4 = 61.77 * deg_to_rad + 25733.59 * deg_to_rad * T;
 
@@ -963,7 +991,7 @@ LQuaterniond WGCCRECressidaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREDesdemonaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U5 = 249.32 * deg_to_rad + 24471.46 * deg_to_rad * T;
 
@@ -976,7 +1004,7 @@ LQuaterniond WGCCREDesdemonaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREDesdemonaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U5 = 249.32 * deg_to_rad + 24471.46 * deg_to_rad * T;
 
@@ -991,7 +1019,7 @@ LQuaterniond WGCCREDesdemonaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREJulietRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U6 = 43.86 * deg_to_rad + 22278.41 * deg_to_rad * T;
 
@@ -1004,7 +1032,7 @@ LQuaterniond WGCCREJulietRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREJulietRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U6 = 43.86 * deg_to_rad + 22278.41 * deg_to_rad * T;
 
@@ -1019,7 +1047,7 @@ LQuaterniond WGCCREJulietRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREPortiaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U7 = 77.66 * deg_to_rad + 20289.42 * deg_to_rad * T;
 
@@ -1032,7 +1060,7 @@ LQuaterniond WGCCREPortiaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREPortiaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U7 = 77.66 * deg_to_rad + 20289.42 * deg_to_rad * T;
 
@@ -1047,7 +1075,7 @@ LQuaterniond WGCCREPortiaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRERosalindRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U8 = 157.36 * deg_to_rad + 16652.76 * deg_to_rad * T;
 
@@ -1060,7 +1088,7 @@ LQuaterniond WGCCRERosalindRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRERosalindRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U8 = 157.36 * deg_to_rad + 16652.76 * deg_to_rad * T;
 
@@ -1075,7 +1103,7 @@ LQuaterniond WGCCRERosalindRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREBelindaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U9 = 101.81 * deg_to_rad + 12872.63 * deg_to_rad * T;
 
@@ -1088,7 +1116,7 @@ LQuaterniond WGCCREBelindaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREBelindaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U9 = 101.81 * deg_to_rad + 12872.63 * deg_to_rad * T;
 
@@ -1103,7 +1131,7 @@ LQuaterniond WGCCREBelindaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREPuckRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U10 = 138.64 * deg_to_rad + 8061.81 * deg_to_rad * T;
 
@@ -1116,7 +1144,7 @@ LQuaterniond WGCCREPuckRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREPuckRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U10 = 138.64 * deg_to_rad + 8061.81 * deg_to_rad * T;
 
@@ -1131,7 +1159,7 @@ LQuaterniond WGCCREPuckRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREMirandaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U11 = 102.23 * deg_to_rad - 2024.22 * deg_to_rad * T;
 
@@ -1144,7 +1172,7 @@ LQuaterniond WGCCREMirandaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREMirandaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U11 = 102.23 * deg_to_rad - 2024.22 * deg_to_rad * T;
   double U12 = 316.41 * deg_to_rad + 2863.96 * deg_to_rad * T;
@@ -1164,7 +1192,7 @@ LQuaterniond WGCCREMirandaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREArielRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U13 = 304.01 * deg_to_rad - 51.94 * deg_to_rad * T;
 
@@ -1177,7 +1205,7 @@ LQuaterniond WGCCREArielRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREArielRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U12 = 316.41 * deg_to_rad + 2863.96 * deg_to_rad * T;
   double U13 = 304.01 * deg_to_rad - 51.94 * deg_to_rad * T;
@@ -1193,7 +1221,7 @@ LQuaterniond WGCCREArielRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREUmbrielRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U14 = 308.71 * deg_to_rad - 93.17 * deg_to_rad * T;
 
@@ -1206,7 +1234,7 @@ LQuaterniond WGCCREUmbrielRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREUmbrielRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U12 = 316.41 * deg_to_rad + 2863.96 * deg_to_rad * T;
   double U14 = 308.71 * deg_to_rad - 93.17 * deg_to_rad * T;
@@ -1222,7 +1250,7 @@ LQuaterniond WGCCREUmbrielRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRETitaniaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U15 = 340.82 * deg_to_rad - 75.32 * deg_to_rad * T;
 
@@ -1235,7 +1263,7 @@ LQuaterniond WGCCRETitaniaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRETitaniaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U15 = 340.82 * deg_to_rad - 75.32 * deg_to_rad * T;
 
@@ -1250,7 +1278,7 @@ LQuaterniond WGCCRETitaniaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREOberonRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double U16 = 259.14 * deg_to_rad - 504.81 * deg_to_rad * T;
 
@@ -1263,7 +1291,7 @@ LQuaterniond WGCCREOberonRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREOberonRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double U16 = 259.14 * deg_to_rad - 504.81 * deg_to_rad * T;
 
@@ -1278,7 +1306,7 @@ LQuaterniond WGCCREOberonRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRENaiadRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N1 = 323.92 * deg_to_rad + 62606.6 * deg_to_rad * T;
@@ -1292,7 +1320,7 @@ LQuaterniond WGCCRENaiadRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRENaiadRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N1 = 323.92 * deg_to_rad + 62606.6 * deg_to_rad * T;
@@ -1308,7 +1336,7 @@ LQuaterniond WGCCRENaiadRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREThalassaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N2 = 220.51 * deg_to_rad + 55064.2 * deg_to_rad * T;
@@ -1322,7 +1350,7 @@ LQuaterniond WGCCREThalassaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREThalassaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N2 = 220.51 * deg_to_rad + 55064.2 * deg_to_rad * T;
@@ -1338,7 +1366,7 @@ LQuaterniond WGCCREThalassaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREDespinaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N3 = 354.27 * deg_to_rad + 46564.5 * deg_to_rad * T;
@@ -1352,7 +1380,7 @@ LQuaterniond WGCCREDespinaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREDespinaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N3 = 354.27 * deg_to_rad + 46564.5 * deg_to_rad * T;
@@ -1368,7 +1396,7 @@ LQuaterniond WGCCREDespinaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREGalateaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N4 = 75.31 * deg_to_rad + 26109.4 * deg_to_rad * T;
@@ -1382,7 +1410,7 @@ LQuaterniond WGCCREGalateaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREGalateaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N4 = 75.31 * deg_to_rad + 26109.4 * deg_to_rad * T;
@@ -1398,7 +1426,7 @@ LQuaterniond WGCCREGalateaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRELarissaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N5 = 35.36 * deg_to_rad + 14325.4 * deg_to_rad * T;
@@ -1412,7 +1440,7 @@ LQuaterniond WGCCRELarissaRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRELarissaRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N5 = 35.36 * deg_to_rad + 14325.4 * deg_to_rad * T;
@@ -1428,7 +1456,7 @@ LQuaterniond WGCCRELarissaRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCREProteusRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N6 = 142.61 * deg_to_rad + 2824.6 * deg_to_rad * T;
@@ -1442,7 +1470,7 @@ LQuaterniond WGCCREProteusRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCREProteusRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N = 357.85 * deg_to_rad + 52.316 * deg_to_rad * T;
   double N6 = 142.61 * deg_to_rad + 2824.6 * deg_to_rad * T;
@@ -1458,7 +1486,7 @@ LQuaterniond WGCCREProteusRotation::calc_frame_rotation_at(double time)
 LQuaterniond WGCCRETritonRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
-  double T = (time - j2000_epoch) / century;
+  double T = get_T(time);
 
   double N7 = 177.85 * deg_to_rad + 52.316 * deg_to_rad * T;
 
@@ -1477,7 +1505,7 @@ LQuaterniond WGCCRETritonRotation::calc_frame_equatorial_orientation_at(
 LQuaterniond WGCCRETritonRotation::calc_frame_rotation_at(double time)
 {
   double d = time - j2000_epoch;
-  double T = d / century;
+  double T = get_T(time);
 
   double N7 = 177.85 * deg_to_rad + 52.316 * deg_to_rad * T;
 

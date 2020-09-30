@@ -75,11 +75,15 @@ class WGCCRESimplePrecessingRotation: public RotationBase
 {
 PUBLISHED:
   WGCCRESimplePrecessingRotation(double a0, double a0_rate, double d0,
-      double d0_rate, double meridian_angle, double mean_motion, double epoch);
+      double d0_rate, double meridian_angle, double mean_motion, double epoch,
+      double validity = 10000.0);
 
   virtual LQuaterniond get_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond get_frame_rotation_at(double time);
   virtual bool is_flipped(void) const;
+
+public:
+  inline double get_T(double jd) const;
 
 private:
   double a0;
@@ -90,13 +94,27 @@ private:
   double mean_motion;
   bool flipped;
   double epoch;
+  double validity;
+};
+
+class WGCCREComplexRotation: public CachedRotationBase
+{
+PUBLISHED:
+  WGCCREComplexRotation(double epoch = 2451545.0, double validity = 10000.0);
+
+public:
+  inline double get_T(double jd) const;
+
+protected:
+  double epoch;
+  double validity;
 };
 
 // ############################################################################
 // Planets
 // ############################################################################
 
-class WGCCREMercuryRotation: public CachedRotationBase
+class WGCCREMercuryRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREMercuryRotation() {}
@@ -106,7 +124,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREMarsRotation: public CachedRotationBase
+class WGCCREMarsRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREMarsRotation() {}
@@ -116,7 +134,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREJupiterRotation: public CachedRotationBase
+class WGCCREJupiterRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREJupiterRotation() {}
@@ -126,7 +144,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRENeptuneRotation: public CachedRotationBase
+class WGCCRENeptuneRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRENeptuneRotation() {}
@@ -140,7 +158,7 @@ public:
 // Moon
 // ############################################################################
 
-class WGCCRE9MoonRotation: public CachedRotationBase
+class WGCCRE9MoonRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRE9MoonRotation() {}
@@ -154,7 +172,7 @@ public:
 // Mars moons
 // ############################################################################
 
-class WGCCREPhobosRotation: public CachedRotationBase
+class WGCCREPhobosRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREPhobosRotation() {}
@@ -164,7 +182,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREDeimosRotation: public CachedRotationBase
+class WGCCREDeimosRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREDeimosRotation() {}
@@ -178,7 +196,7 @@ public:
 // Jupiter moons
 // ############################################################################
 
-class WGCCREAmaltheaRotation: public CachedRotationBase
+class WGCCREAmaltheaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREAmaltheaRotation() {}
@@ -188,7 +206,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREThebeRotation: public CachedRotationBase
+class WGCCREThebeRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREThebeRotation() {}
@@ -198,7 +216,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREIoRotation: public CachedRotationBase
+class WGCCREIoRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREIoRotation() {}
@@ -208,7 +226,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREEuropaRotation: public CachedRotationBase
+class WGCCREEuropaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREEuropaRotation() {}
@@ -218,7 +236,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREGanymedeRotation: public CachedRotationBase
+class WGCCREGanymedeRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREGanymedeRotation() {}
@@ -228,7 +246,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRECallistoRotation: public CachedRotationBase
+class WGCCRECallistoRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRECallistoRotation() {}
@@ -242,7 +260,7 @@ public:
 // Saturn moons
 // ############################################################################
 
-class WGCCREEpimetheusRotation: public CachedRotationBase
+class WGCCREEpimetheusRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREEpimetheusRotation() {}
@@ -252,7 +270,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREJanusRotation: public CachedRotationBase
+class WGCCREJanusRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREJanusRotation() {}
@@ -262,7 +280,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREMimasRotation: public CachedRotationBase
+class WGCCREMimasRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREMimasRotation() {}
@@ -272,7 +290,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRETethysRotation: public CachedRotationBase
+class WGCCRETethysRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRETethysRotation() {}
@@ -282,7 +300,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRERheaRotation: public CachedRotationBase
+class WGCCRERheaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRERheaRotation() {}
@@ -296,7 +314,7 @@ public:
 // Uranus moons
 // ############################################################################
 
-class WGCCRECordeliaRotation: public CachedRotationBase
+class WGCCRECordeliaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRECordeliaRotation() {}
@@ -306,7 +324,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREOpheliaRotation: public CachedRotationBase
+class WGCCREOpheliaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREOpheliaRotation() {}
@@ -316,7 +334,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREBiancaRotation: public CachedRotationBase
+class WGCCREBiancaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREBiancaRotation() {}
@@ -326,7 +344,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRECressidaRotation: public CachedRotationBase
+class WGCCRECressidaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRECressidaRotation() {}
@@ -336,7 +354,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREDesdemonaRotation: public CachedRotationBase
+class WGCCREDesdemonaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREDesdemonaRotation() {}
@@ -346,7 +364,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREJulietRotation: public CachedRotationBase
+class WGCCREJulietRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREJulietRotation() {}
@@ -356,7 +374,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREPortiaRotation: public CachedRotationBase
+class WGCCREPortiaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREPortiaRotation() {}
@@ -366,7 +384,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRERosalindRotation: public CachedRotationBase
+class WGCCRERosalindRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRERosalindRotation() {}
@@ -376,7 +394,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREBelindaRotation: public CachedRotationBase
+class WGCCREBelindaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREBelindaRotation() {}
@@ -386,7 +404,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREPuckRotation: public CachedRotationBase
+class WGCCREPuckRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
  WGCCREPuckRotation() {}
@@ -396,7 +414,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREMirandaRotation: public CachedRotationBase
+class WGCCREMirandaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
  WGCCREMirandaRotation() {}
@@ -406,7 +424,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREArielRotation: public CachedRotationBase
+class WGCCREArielRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREArielRotation() {}
@@ -416,7 +434,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREUmbrielRotation: public CachedRotationBase
+class WGCCREUmbrielRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREUmbrielRotation() {}
@@ -426,7 +444,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRETitaniaRotation: public CachedRotationBase
+class WGCCRETitaniaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
 WGCCRETitaniaRotation() {}
@@ -436,7 +454,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREOberonRotation: public CachedRotationBase
+class WGCCREOberonRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREOberonRotation() {}
@@ -450,7 +468,7 @@ public:
 // Neptune moons
 // ############################################################################
 
-class WGCCRENaiadRotation: public CachedRotationBase
+class WGCCRENaiadRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRENaiadRotation() {}
@@ -460,7 +478,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREThalassaRotation: public CachedRotationBase
+class WGCCREThalassaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREThalassaRotation() {}
@@ -470,7 +488,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREDespinaRotation: public CachedRotationBase
+class WGCCREDespinaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREDespinaRotation() {}
@@ -480,7 +498,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREGalateaRotation: public CachedRotationBase
+class WGCCREGalateaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREGalateaRotation() {}
@@ -490,7 +508,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRELarissaRotation: public CachedRotationBase
+class WGCCRELarissaRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRELarissaRotation() {}
@@ -500,7 +518,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCREProteusRotation: public CachedRotationBase
+class WGCCREProteusRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCREProteusRotation() {}
@@ -510,7 +528,7 @@ public:
   virtual LQuaterniond calc_frame_rotation_at(double time);
 };
 
-class WGCCRETritonRotation: public CachedRotationBase
+class WGCCRETritonRotation: public WGCCREComplexRotation
 {
 PUBLISHED:
   WGCCRETritonRotation() {}
