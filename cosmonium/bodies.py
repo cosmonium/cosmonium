@@ -43,7 +43,7 @@ from math import asin, pi
 from copy import deepcopy
 
 class ReferencePoint(StellarObject):
-    pass
+    virtual_object = True
 
 class SurfaceFactory(object):
     def create(self, body):

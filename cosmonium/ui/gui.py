@@ -804,7 +804,7 @@ class Gui(object):
             names = utils.join_names(bayer.decode_names(selected.get_names()))
             self.hud.title.set(names)
             radius = selected.get_apparent_radius()
-            if selected.distance_to_obs > 10 * radius:
+            if selected.virtual_object or selected.distance_to_obs > 10 * radius:
                 self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.distance_to_obs, units.lengths_scale))
             else:
                 if selected.surface is not None and not selected.surface.is_flat():
