@@ -93,9 +93,12 @@ class NavBase(object):
 
     def do_drag(self, z_angle, x_angle, move=False, rotate=True):
         zRotation = LQuaterniond()
-        zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
         xRotation = LQuaterniond()
-        xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
+        try:
+            zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
+            xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
+        except AssertionError as e:
+            print("Wrong drag axis :", e)
         combined = xRotation * zRotation
         if move:
             delta = combined.xform(-self.dragDir)

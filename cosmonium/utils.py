@@ -40,7 +40,7 @@ def relative_rotation(rotation, axis, angle):
     delta_quat = LQuaterniond()
     try:
         delta_quat.setFromAxisAngleRad(angle, rel_axis)
-    except Exception as e:
+    except AssertionError:
         print("invalid axis", axis, axis.length(), rel_axis, rel_axis.length())
     return rotation * delta_quat
 
