@@ -42,6 +42,16 @@ License: BSD
 
 Reference: [Github](https://github.com/panda3d/panda3d/pull/742)
 
+## third-party/directfolderbrowser
+
+A file and folder browser for Panda3D using DirectGUI.
+
+Copyright: Copyright (c) 2020, fireclawthefox.
+
+License: BSD
+
+Reference: [Github](https://github.com/fireclawthefox/DirectFolderBrowser)
+
 ## third-party/gltf
 
  glTF loader for Panda3D.

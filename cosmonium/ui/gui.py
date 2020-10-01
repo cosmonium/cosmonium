@@ -45,6 +45,7 @@ from .hud import HUD
 from .query import Query
 from .editor import ParamEditor
 from .textwindow import TextWindow
+from .filewindow import FileWindow
 from .infopanel import InfoPanel
 from .preferences import Preferences
 from .clipboard import create_clipboard
@@ -115,6 +116,7 @@ class Gui(object):
         self.license.load('COPYING.md')
         self.about = TextWindow('About', self.scale, settings.markdown_font, owner=self)
         self.about.set_text(about_text)
+        self.filewindow = FileWindow('Select', self.scale, settings.markdown_font, owner=self)
         self.create_menubar()
         self.browser = Browser(self.scale, owner=self)
         if settings.show_hud:
@@ -160,8 +162,8 @@ class Gui(object):
         event_ctrl.accept('shift-f9', self.toggle_bb)
         event_ctrl.accept('control-f9', self.toggle_frustum)
         event_ctrl.accept('shift-control-f9', self.toggle_shadow_frustum)
-        event_ctrl.accept('f10', self.cosmonium.save_screenshot)
-        event_ctrl.accept('shift-f10', self.cosmonium.save_screenshot_no_annotation)
+        event_ctrl.accept('f10', self.save_screenshot)
+        event_ctrl.accept('shift-f10', self.save_screenshot_no_annotation)
         event_ctrl.accept('f11', render.ls)
         event_ctrl.accept('shift-f11', render.explore)
         event_ctrl.accept('f12', render.analyze)
@@ -414,6 +416,24 @@ class Gui(object):
         settings.shader_debug_raymarching_slice = not settings.shader_debug_raymarching_slice
         self.cosmonium.trigger_check_settings = True
 
+    def save_screenshot(self):
+        if settings.screenshot_path is not None:
+            self.cosmonium.save_screenshot()
+        else:
+            self.update_info(_("Screenshot not saved"), 0.5, 1.0)
+            self.show_select_screenshots()
+
+    def save_screenshot_no_annotation(self):
+        if settings.screenshot_path is not None:
+            self.cosmonium.save_screenshot_no_annotation
+        else:
+            self.update_info(_("Screenshot not saved"), 0.5, 1.0)
+            self.show_select_screenshots()
+
+    def set_screenshots_path(self, path):
+        settings.screenshot_path = path
+        self.cosmonium.save_settings()
+
     def create_main_menu_items(self):
         return (
                 (menu_text(_('_Find object'), 'Enter'), 0, self.open_find_object),
@@ -580,8 +600,9 @@ class Gui(object):
                 (menu_text(_('Toggle _menubar'), 'Control-M'), 0, self.toggle_menu),
                 (menu_text(_('Toggle _HUD'), 'V'), 0, self.toggle_hud),
                 0,
-                (menu_text(_('Save _screenshot'), 'F10'), 0, self.cosmonium.save_screenshot),
-                (menu_text(_('Save screenshot _without UI'), 'Shift-F10'), 0, self.cosmonium.save_screenshot_no_annotation),
+                (menu_text(_('Save _screenshot'), 'F10'), 0, self.save_screenshot),
+                (menu_text(_('Save screenshot _without UI'), 'Shift-F10'), 0, self.save_screenshot_no_annotation),
+                (menu_text(_('Set screenshots directory...')), 0, self.show_select_screenshots),
                 )
 
     def create_debug_menu_items(self):
@@ -1010,3 +1031,10 @@ class Gui(object):
         self.preferences.show()
         if not self.preferences in self.opened_windows:
             self.opened_windows.append(self.preferences)
+
+    def show_select_screenshots(self):
+        if self.filewindow.shown():
+            self.filewindow.hide()
+        self.filewindow.show(settings.screenshot_path, self.set_screenshots_path)
+        if not self.filewindow in self.opened_windows:
+            self.opened_windows.append(self.filewindow)

@@ -232,7 +232,8 @@ class ConfigParser(YamlParser):
 
     def encode_screenshots(self):
         data = {}
-        data['path'] = settings.screenshot_path
+        if settings.screenshot_path is not None:
+            data['path'] = settings.screenshot_path
         data['filename'] = settings.screenshot_filename
         data['format'] = settings.screenshot_format
         return data

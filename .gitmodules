@@ -22,3 +22,7 @@
 	path = third-party/directguilayout
 	url = https://github.com/cosmonium/DirectGui-layout-system
 	branch = cosmonium
+[submodule "third-party/directfolderbrowser"]
+	path = third-party/directfolderbrowser
+	url = https://github.com/cosmonium/DirectFolderBrowser.git
+	branch = cosmonium
