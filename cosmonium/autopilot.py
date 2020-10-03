@@ -144,7 +144,7 @@ class AutoPilot(object):
     def do_move_and_rot(self, step):
         rot = LQuaterniond(*self.fake.getQuat())
         rot.normalize()
-        self.ship.set_rot(rot)
+        self.ship.set_frame_rot(rot)
         position = self.end_pos * step + self.start_pos * (1.0 - step)
         self.ship.set_frame_pos(position)
         if step == 1.0:
@@ -166,13 +166,18 @@ class AutoPilot(object):
             if absolute:
                 self.start_pos = self.ship.get_frame_pos()
                 self.end_pos = self.ship.get_rel_position_of(new_pos)
-                #TODO
-                #new_rot = self.ship.get_rel_rotation_of(new_pos)
+                start_rot = self.ship.get_frame_rot()
+                end_rot = self.ship.get_rel_rotation_of(new_rot)
+            else:
+                self.start_pos = self.ship.get_frame_pos()
+                self.end_pos = new_pos
+                start_rot = self.ship.get_frame_rot()
+                end_rot = new_rot
             nodepath_lerp = LerpQuatInterval(self.fake,
                                              duration=duration,
                                              blendType='easeInOut',
-                                             quat = LQuaternion(*new_rot),
-                                             startQuat = LQuaternion(*self.ship.get_rot())
+                                             quat = LQuaternion(*end_rot),
+                                             startQuat = LQuaternion(*start_rot)
                                              )
             func_lerp = LerpFunc(self.do_move_and_rot,
                                  fromData=0,

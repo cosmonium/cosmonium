@@ -963,6 +963,7 @@ class Cosmonium(CosmoniumBase):
         print("\tGlobal position", self.observer.camera_global_pos)
         print("\tLocal position", self.observer.get_camera_pos())
         print("\tRotation", self.observer.get_camera_rot())
+        print("\tFrame position", self.observer._frame_position, "rotation", self.observer._frame_rotation)
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
