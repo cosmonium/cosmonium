@@ -40,6 +40,17 @@ Stop a currently running goto command . . . like pressing the ESC key.
 """
     sequence.append(Func(base.reset_nav))
 
+def capture(command_name, sequence, base, parameters):
+    """Parameters:
+string type
+string filename
+Description:
+Take a screenshot of the current window
+"""
+    file_type = parameters.get('type')
+    filename = parameters.get('filename')
+    sequence.append(Func(base.save_screenshot, filename))
+
 def center(command_name, sequence, base, parameters):
     """Parameters:
 float time = 1.0
@@ -451,7 +462,7 @@ def done(base):
 
 commands = {
     "cancel": cancel,
-    "capture": not_implemented,
+    "capture": capture,
     "center": center,
     "changedistance": changedistance,
     "chase": not_implemented,
@@ -462,10 +473,10 @@ commands = {
     "exit": not_implemented,
     "follow": follow,
     "goto": goto,
-    "lock": not_implemented,
     "gotoloc": not_implemented,
     "gotolonglat": gotolonglat,
     "labels": labels,
+    "lock": not_implemented,
     "lookback": lookback,
     "mark": not_implemented,
     "move": move,

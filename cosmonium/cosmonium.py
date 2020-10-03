@@ -317,8 +317,11 @@ class CosmoniumBase(ShowBase):
         if self.wireframe_filled:
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
-    def save_screenshot(self):
-        filename = self.screenshot(namePrefix=settings.screenshot_path)
+    def save_screenshot(self, filename=None):
+        if filename is None:
+            filename = self.screenshot(namePrefix=settings.screenshot_path)
+        else:
+            self.screenshot(namePrefix=filename, defaultFilename=False)
         if filename is not None:
             print("Saving screenshot into", filename)
         else:
