@@ -21,9 +21,13 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
-from panda3d.core import LVector3d
+from panda3d.core import LVector3d, LQuaterniond
 
 from .celestia_utils import body_path
+from .bigfix import Bigfix
+
+from ..astro import units
+from ..utils import quaternion_from_euler
 from .. import settings
 
 from math import pi
@@ -124,6 +128,43 @@ In order for goto to complete, there should be wait commands with a combined dur
     up=LVector3d(up[0], -up[2], up[1])
     up.normalize()
     sequence.append(Func(base.autopilot.go_to_object, duration, distance, up))
+
+def gotoloc(command_name, sequence, base, parameters):
+    """Parameters:
+float time = 1.0
+vector position = [ 0 1 0 ]
+float xrot = 0
+float yrot = 0
+float zrot = 0
+or
+float x, y, z
+string ox, oy, oz, ow
+Description:
+"""
+    duration = float(parameters.get('time', '1.0'))
+    if 'position' in parameters:
+        position = parameters.get('position', [0, 1, 0])
+        position = LVector3d(position[0], -position[2], position[1])
+        xrot = float(parameters.get('xrot', '0.0'))
+        yrot = float(parameters.get('yrot', '0.0'))
+        zrot = float(parameters.get('zrot', '0.0'))
+        # HPR -> ZXY
+        # Changing CS also invert the sign of the rotation
+        orientation = quaternion_from_euler(-yrot, -xrot, zrot)
+    else:
+        x = parameters.get('x')
+        y = parameters.get('y')
+        z = parameters.get('z')
+        x = Bigfix.bigfix_to_float(x)
+        y = Bigfix.bigfix_to_float(y)
+        z = Bigfix.bigfix_to_float(z)
+        position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
+        ox = parameters.get('ox', 0.0)
+        oy = parameters.get('oy', 0.0)
+        oz = parameters.get('oz', 0.0)
+        ow = parameters.get('ow', 0.0)
+        orientation = LQuaterniond(-ow, ox, -oz, oy)
+    sequence.append(Func(base.autopilot.move_and_rotate_to, position, orientation, False, duration))
 
 def gotolonglat(command_name, sequence, base, parameters):
     """Parameters:
@@ -479,7 +520,7 @@ commands = {
     "exit": exit,
     "follow": follow,
     "goto": goto,
-    "gotoloc": not_implemented,
+    "gotoloc": gotoloc,
     "gotolonglat": gotolonglat,
     "labels": labels,
     "lock": not_implemented,
