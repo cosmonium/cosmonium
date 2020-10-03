@@ -91,6 +91,12 @@ Show a line of text on the screen.
     duration = float(parameters.get('duration', '0.0'))
     sequence.append(Func(base.gui.update_info, text, duration))
 
+def exit(command_name, sequence, base, parameters):
+    """Description:
+Exit the application
+"""
+    sequence.append(Func(base.userExit))
+
 def follow(command_name, sequence, base, parameters):
     """Description:
 Follow the currently selected object.
@@ -470,7 +476,7 @@ commands = {
     "constellations": not_implemented,
     "constellationcolor": not_implemented,
     "deleteview": not_implemented,
-    "exit": not_implemented,
+    "exit": exit,
     "follow": follow,
     "goto": goto,
     "gotoloc": not_implemented,
