@@ -638,6 +638,15 @@ class Cosmonium(CosmoniumBase):
     def save_settings(self):
         configParser.save()
 
+    def set_limit_magnitude(self, mag):
+        settings.lowest_app_magnitude = min(16.0, max(0.0, mag))
+        print("Magnitude limit:  %.1f" % settings.lowest_app_magnitude)
+        self.gui.update_info(_("Magnitude limit:  %.1f") % settings.lowest_app_magnitude, 0.5, 1.0)
+        self.save_settings()
+
+    def incr_limit_magnitude(self, incr):
+        self.set_limit_magnitude(settings.lowest_app_magnitude + incr)
+
     def toggle_orbits(self):
         settings.show_orbits = not settings.show_orbits
         self.update_settings()

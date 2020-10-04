@@ -72,6 +72,7 @@ class ConfigParser(YamlParser):
         settings.show_ecliptic_grid = data.get('ecliptic-grid', settings.show_ecliptic_grid)
         settings.show_equatorial_grid = data.get('equatorial-grid', settings.show_equatorial_grid)
         settings.global_ambient = data.get('global-ambient', settings.global_ambient)
+        settings.lowest_app_magnitude = data.get('limit-magnitude', settings.lowest_app_magnitude)
 
     def encode_render(self):
         data = {}
@@ -85,6 +86,7 @@ class ConfigParser(YamlParser):
         data['rotation-axis'] = settings.show_rotation_axis
         data['reference-axis'] = settings.show_reference_axis
         data['global-ambient'] = settings.global_ambient
+        data['limit-magnitude'] = settings.lowest_app_magnitude
         return data
 
     def decode_ui_general(self, data):

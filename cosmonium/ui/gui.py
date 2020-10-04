@@ -211,6 +211,9 @@ class Gui(object):
         event_ctrl.accept('{', self.cosmonium.incr_ambient, [-0.05])
         event_ctrl.accept('}', self.cosmonium.incr_ambient, [+0.05])
 
+        event_ctrl.accept('[', self.cosmonium.incr_limit_magnitude, [-0.1])
+        event_ctrl.accept(']', self.cosmonium.incr_limit_magnitude, [+0.1])
+
         #Render
         event_ctrl.accept('control-a', self.cosmonium.toggle_atmosphere)
         event_ctrl.accept('shift-a', self.cosmonium.toggle_rotation_axis)
@@ -578,6 +581,9 @@ class Gui(object):
         advanced = (
                     (menu_text(_('_Decrease ambient'), '{'), 0, self.cosmonium.incr_ambient, -0.05),
                     (menu_text(_('_Increase ambient'), '}'), 0, self.cosmonium.incr_ambient, +0.05),
+                    0,
+                    (menu_text(_('Fewer _Stars Visible'), '['), 0, self.cosmonium.incr_limit_magnitude, -0.1),
+                    (menu_text(_('_More Stars Visible'), ']'), 0, self.cosmonium.incr_limit_magnitude, +0.1),
                     0,
                     (menu_text(_('_Rotation axis'), 'Shift-A'), settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
                     (menu_text(_('Reference _frame'), 'Shift-Control-R'), settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
