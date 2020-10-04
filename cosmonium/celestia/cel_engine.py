@@ -533,7 +533,7 @@ Description:
 Display only stars brighter than the specified magnitude.
 """
     magnitude = float(parameters.get('magnitude', '6.0'))
-    not_implemented(command_name, sequence, base, parameters)
+    sequence.append(Func(base.set_limit_magnitude, magnitude))
 
 def synchronous(command_name, sequence, base, parameters):
     """Description:
