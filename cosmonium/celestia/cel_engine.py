@@ -27,10 +27,30 @@ from .celestia_utils import body_path
 from .bigfix import Bigfix
 
 from ..astro import units
+from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
 from .. import settings
 
 from math import pi
+
+def create_frame(coordsys, ref):
+    coordsys = coordsys.lower()
+    if coordsys == "observer":
+        return None
+    elif coordsys == "bodyfixed" or "geographic":
+        return SynchroneReferenceFrame(ref)
+    elif coordsys == "equatorial":
+        return J2000EquatorialReferenceFrame(ref)
+    elif coordsys == "ecliptical":
+        return J2000EclipticReferenceFrame(ref)
+    elif coordsys == "universal":
+        return J2000HeliocentricEclipticReferenceFrame()
+    elif coordsys == "lock":
+        return None
+    elif coordsys ==  "chase":
+        return None
+    else:
+        return None
 
 def ignore(command_name, sequence, base, parameters):
     pass
@@ -438,7 +458,18 @@ For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of
     sequence.append(Func(base.set_ambient, magnitude))
 
 def setframe(command_name, sequence, base, parameters):
-    not_implemented(command_name, sequence, base, parameters)
+    """Parameters:
+string ref = ""
+string target = ""
+string coordsys = "universal"
+Description:
+"""
+    ref = parameters.get('ref', "")
+    target = parameters.get('target', "")
+    coordsys = parameters.get('coordsys', "universal")
+    frame = create_frame(coordsys, ref)
+    if frame is not None:
+        sequence.append(Func(base.ship.set_frame, frame))
 
 def setorientation(command_name, sequence, base, parameters):
     """Parameters:
