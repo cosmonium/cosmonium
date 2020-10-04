@@ -27,7 +27,7 @@ from .celestia_utils import body_path
 from .bigfix import Bigfix
 
 from ..astro import units
-from ..utils import quaternion_from_euler
+from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
 from .. import settings
 
 from math import pi
@@ -440,6 +440,52 @@ For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of
 def setframe(command_name, sequence, base, parameters):
     not_implemented(command_name, sequence, base, parameters)
 
+def setorientation(command_name, sequence, base, parameters):
+    """Parameters:
+float angle = 0
+vector axis = [0 0 0]
+or
+float ox, oy, oz, ow
+Description:
+"""
+    if 'angle' in parameters:
+        angle = float(parameters.get('angle', '0.0'))
+        axis = float(parameters.get('axis', [0, 0, 0]))
+        offset = LVector3d(axis[0], -axis[2], axis[1])
+        orientation = LQuaternionromAxisAngle(angle, axis)
+    else:
+        ox = parameters.get('ox', 0.0)
+        oy = parameters.get('oy', 0.0)
+        oz = parameters.get('oz', 0.0)
+        ow = parameters.get('ow', 0.0)
+        orientation = LQuaterniond(-ow, ox, -oz, oy)
+    sequence.append(Func(base.ship.set_frame_pos, orientation))
+
+def setposition(command_name, sequence, base, parameters):
+    """Parameters:
+vector position = [ 0 0 0 ]
+vector position = [ 0 0 0 ]
+or
+string x, y, z
+Description:
+"""
+    if 'base' in parameters:
+        base = parameters.get('base', [0, 0, 0])
+        offset = parameters.get('offset', [0, 0, 0])
+        base = LVector3d(base[0], -base[2], base[1]) * units.Ly
+        offset = LVector3d(offset[0], -offset[2], offset[1])
+        # TODO: use glogal and local position
+        position = base + offset
+    else:
+        x = parameters.get('x')
+        y = parameters.get('y')
+        z = parameters.get('z')
+        x = Bigfix.bigfix_to_float(x)
+        y = Bigfix.bigfix_to_float(y)
+        z = Bigfix.bigfix_to_float(z)
+        position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
+    sequence.append(Func(base.ship.set_frame_pos, position))
+
 def seturl(command_name, sequence, base, parameters):
     """Parameters:
 string url = ""
@@ -543,8 +589,8 @@ commands = {
     "setgalaxylightgain": not_implemented,
     "setlabelcolor": not_implemented,
     "setlinecolor": not_implemented,
-    "setorientation": not_implemented,
-    "setposition": not_implemented,
+    "setorientation": setorientation,
+    "setposition": setposition,
     "setradius": not_implemented,
     "setsurface": not_implemented,
     "settextcolor": not_implemented,
