@@ -39,7 +39,6 @@ from cosmonium.cosmonium import Cosmonium
 
 from cosmonium.parsers.yamlparser import YamlParser
 from cosmonium.parsers.objectparser import UniverseYamlParser
-from cosmonium.celestia import cel_parser, cel_engine
 from cosmonium.celestia import ssc_parser
 from cosmonium.celestia import stc_parser
 from cosmonium.celestia import star_parser
@@ -241,8 +240,7 @@ class CosmoniumApp(Cosmonium):
             else:
                 settings.debug_jump = False
                 print("Running", self.app_config.script)
-                script = cel_parser.load(self.app_config.script)
-                running = self.run_script(cel_engine.build_sequence(self, script))
+                running = self.load_and_run_script(self.app_config.script)
         if not running:
             self.select_body(self.universe.find_by_name(self.app_config.default))
             self.autopilot.go_to_front(duration=0.0)

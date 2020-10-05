@@ -51,19 +51,25 @@ class FileWindow():
             self.callback(self.browser.get())
         self.hide()
 
-    def create_layout(self, current_path):
-        if current_path is None:
-            current_path = "~"
+    def create_layout(self, path, show_files, extensions):
+        if path is None:
+            path = "~"
         width = 800
         height = 600
         self.layout = DirectWidgetContainer(DirectFrame(parent=aspect2d, state=DGG.NORMAL, scale=(self.scale[0], 0, self.scale[1])))
-        self.browser = DirectFolderBrowser(self.done, size=(width, height), parent=self.layout.frame, defaultPath=current_path, icons=self.icons)
+        self.browser = DirectFolderBrowser(command=self.done,
+                                           size=(width, height),
+                                           parent=self.layout.frame,
+                                           defaultPath=path,
+                                           fileBrowser=show_files,
+                                           fileExtensions=extensions,
+                                           icons=self.icons)
         self.layout.frame['frameSize'] = [0, width  * self.scale[0], -height * self.scale[1], 0]
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self, transparent=True)
 
-    def show(self, current_path, callback):
+    def show(self, current_path, callback, show_files=True, extensions=[]):
         self.callback = callback
-        self.create_layout(current_path)
+        self.create_layout(current_path, show_files, extensions)
         if self.last_pos is None:
             self.last_pos = (-self.layout.frame['frameSize'][1] / 2, 0, -self.layout.frame['frameSize'][2] / 2)
         self.window.setPos(self.last_pos)

@@ -48,6 +48,7 @@ from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFr
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
 from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
+from .celestia import cel_parser, cel_engine
 
 #Initialiser parsers
 from .parsers import parsers
@@ -608,6 +609,11 @@ class Cosmonium(CosmoniumBase):
         if self.current_sequence is not None:
             self.current_sequence.start()
         return self.current_sequence is not None
+
+    def load_and_run_script(self, script_path):
+        script = cel_parser.load(script_path)
+        running = self.run_script(cel_engine.build_sequence(self, script))
+        return running
 
     def reset_script(self):
         if self.current_sequence is not None:

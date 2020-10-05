@@ -52,6 +52,8 @@ from .clipboard import create_clipboard
 from .browser import Browser
 from .time import TimeEditor
 
+import os
+
 about_text = """# Cosmonium
 
 **Version**: V%s
@@ -197,6 +199,7 @@ class Gui(object):
 
         event_ctrl.accept('control-c', self.save_celurl)
         event_ctrl.accept('control-v', self.load_celurl)
+        event_ctrl.accept('control-o', self.show_open_script)
 
         event_ctrl.accept('shift-j', self.time.set_J2000_date)
         event_ctrl.accept('!', self.time.set_current_date)
@@ -437,12 +440,19 @@ class Gui(object):
         settings.screenshot_path = path
         self.cosmonium.save_settings()
 
+    def load_cel_script(self, path):
+        settings.last_script_path = os.path.dirname(path)
+        self.cosmonium.save_settings()
+        self.cosmonium.load_and_run_script(path)
+
     def create_main_menu_items(self):
         return (
                 (menu_text(_('_Find object'), 'Enter'), 0, self.open_find_object),
                 0,
                 (menu_text(_('_Save URL'), 'Control-C'), 0, self.save_celurl),
                 (menu_text(_('_Load URL'), 'Control-V'), 0, self.load_celurl),
+                0,
+                (menu_text(_('Load _CEL script'), 'Control-O'), 0, self.show_open_script),
                 0,
                 (menu_text(_('Go to _home'), 'H'), 0, self.cosmonium.go_home),
                 0,
@@ -1041,6 +1051,13 @@ class Gui(object):
     def show_select_screenshots(self):
         if self.filewindow.shown():
             self.filewindow.hide()
-        self.filewindow.show(settings.screenshot_path, self.set_screenshots_path)
+        self.filewindow.show(settings.screenshot_path, self.set_screenshots_path, show_files=False)
+        if not self.filewindow in self.opened_windows:
+            self.opened_windows.append(self.filewindow)
+
+    def show_open_script(self):
+        if self.filewindow.shown():
+            self.filewindow.hide()
+        self.filewindow.show(settings.last_script_path, self.load_cel_script, extensions=['.cel', '.CEL'])
         if not self.filewindow in self.opened_windows:
             self.opened_windows.append(self.filewindow)

@@ -91,10 +91,12 @@ class ConfigParser(YamlParser):
 
     def decode_ui_general(self, data):
         settings.ui_scale = data.get('scale', settings.ui_scale)
+        settings.last_script_path = data.get('last-script-path', settings.last_script_path)
 
     def encode_ui_general(self):
         data = {}
         data['scale'] = list(settings.ui_scale)
+        data['last-script-path'] = settings.last_script_path
         return data
 
     def decode_ui_hud(self, data):
