@@ -520,6 +520,8 @@ class VertexShader(ShaderProgram):
                 code.append("out vec3 model_normal;")
             if self.config.world_normal:
                 code.append("out vec3 world_normal;")
+                if self.config.normals_use_centroid:
+                    code.append("centroid out vec3 centroid_world_normal;")
         if self.config.fragment_uses_tangent:
             code.append("out vec3 binormal;")
             code.append("out vec3 tangent;")
@@ -604,6 +606,8 @@ class VertexShader(ShaderProgram):
                     code.append("world_normal = vec3(normalize(p3d_ModelMatrixInverseTranspose * model_normal4));")
                 else:
                     code.append("world_normal = vec3(normalize(p3d_ModelMatrix * model_normal4));")
+                if self.config.normals_use_centroid:
+                    code.append("centroid_world_normal = world_normal;")
         if self.config.use_tangent or self.config.fragment_uses_tangent:
             code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
             code.append("binormal = vec3(normalize(p3d_ModelMatrix * model_binormal4));")
@@ -714,6 +718,8 @@ class FragmentShader(ShaderProgram):
                 code.append("in vec3 model_normal;")
             if self.config.world_normal:
                 code.append("in vec3 world_normal;")
+                if self.config.normals_use_centroid:
+                    code.append("centroid in vec3 centroid_world_normal;")
         if self.config.fragment_uses_tangent:
             code.append("in vec3 binormal;")
             code.append("in vec3 tangent;")
@@ -766,7 +772,15 @@ class FragmentShader(ShaderProgram):
             if self.config.model_normal:
                 code.append("vec3 model_normal = normalize(model_normal);")
             if self.config.world_normal:
-                code.append("vec3 normal = normalize(world_normal);")
+                if self.config.normals_use_centroid:
+                    code.append("vec3 normal;")
+                    code.append("if (abs(dot(world_normal, world_normal) - 1) > 0.01) {")
+                    code.append("  normal = normalize(centroid_world_normal);")
+                    code.append("} else {")
+                    code.append("  normal = normalize(world_normal);")
+                    code.append("}")
+                else:
+                    code.append("vec3 normal = normalize(world_normal);")
                 if self.appearance.has_normal:
                     code.append("vec3 shape_normal = normal;")
         self.data_source.fragment_shader(code)
@@ -945,6 +959,7 @@ class BasicShader(StructuredShader):
         self.use_tangent = False
         self.generate_binormal = False
         self.fragment_uses_tangent = False
+        self.normals_use_centroid = False
         self.use_model_texcoord = use_model_texcoord
         self.color_picking = settings.color_picking
 
@@ -994,6 +1009,7 @@ class BasicShader(StructuredShader):
     def create_shader_configuration(self, appearance):
         self.nb_textures_coord = 1
 
+        self.normals_use_centroid = not settings.disable_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid
         self.data_source.create_shader_configuration(appearance)
 
         self.appearance.create_shader_configuration(appearance)

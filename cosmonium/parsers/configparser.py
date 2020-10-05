@@ -186,6 +186,7 @@ class ConfigParser(YamlParser):
     def decode_opengl(self, data):
         settings.sync_video = data.get('sync-video', settings.sync_video)
         settings.multisamples = data.get('multisamples', settings.multisamples)
+        settings.shader_normals_use_centroid = data.get('use-centroid', settings.shader_normals_use_centroid)
         settings.use_srgb = data.get('srgb', settings.use_srgb)
         settings.use_hardware_srgb = data.get('hw-srgb', settings.use_hardware_srgb)
         settings.use_hardware_tessellation = data.get('hw-tessellation', settings.use_hardware_tessellation)
@@ -203,6 +204,7 @@ class ConfigParser(YamlParser):
         data = {}
         data['sync-video'] = settings.sync_video
         data['multisamples'] = settings.multisamples
+        data['use-centroid'] = settings.shader_normals_use_centroid
         data['srgb'] = settings.use_srgb
         data['hw-srgb'] = settings.use_hardware_srgb
         data['hw-tessellation'] = settings.use_hardware_tessellation

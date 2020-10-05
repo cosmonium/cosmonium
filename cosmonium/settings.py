@@ -52,6 +52,7 @@ instancing_use_tex = True
 use_texture_array = True
 use_aux_buffer = False
 sync_video = True
+shader_normals_use_centroid = True
 
 stereoscopic_framebuffer = False
 red_blue_stereo = False
