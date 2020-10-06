@@ -1,4 +1,4 @@
-https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.10.6.dev93/panda3d-1.10.6.dev93+fp64+opt-cp37-cp37m-win_amd64.whl
+https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.10.7.dev11/panda3d-1.10.7.dev11+fp64+opt-cp37-cp37m-win_amd64.whl
 pywin32
 numpy==1.19.1
 ruamel.yaml==0.15.100
