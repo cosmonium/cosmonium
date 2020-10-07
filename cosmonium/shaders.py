@@ -691,6 +691,7 @@ class FragmentShader(ShaderProgram):
         self.nb_outputs = 1
 
     def create_uniforms(self, code):
+        code.append("uniform mat4 p3d_ModelMatrix;")
         self.appearance.fragment_uniforms(code)
         self.data_source.fragment_uniforms(code)
 #         if self.config.has_bump_texture:

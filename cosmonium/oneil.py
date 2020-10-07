@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Texture, LVector3d
+from panda3d.core import Texture, LVector3d, LMatrix4d
 
 from .bodyelements import Atmosphere
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
@@ -345,6 +345,35 @@ class ONeilScatteringBase(AtmosphericScattering):
             self.calc_scattering(code)
         self.calc_colors(code)
 
+    def update_shader_shape(self, shape, appearance):
+        planet = self.parameters.planet
+        factor = 1.0 / shape.owner.scene_scale_factor
+        inner_radius = self.parameters.planet_radius
+
+        #TODO: We should get the oblateness correctly
+        planet_scale = self.parameters.planet.surface.get_scale()
+        descale = LMatrix4d.scale_mat(inner_radius / planet_scale[0], inner_radius / planet_scale[1], inner_radius / planet_scale[2])
+        rotation_mat = LMatrix4d()
+        shape.owner.scene_orientation.extract_to_matrix(rotation_mat)
+        rotation_mat_inv = LMatrix4d()
+        rotation_mat_inv.invert_from(rotation_mat)
+        descale_mat = rotation_mat_inv * descale * rotation_mat
+        pos = planet.rel_position
+        scaled_pos = descale_mat.xform_point(pos)
+        star_pos = planet.star._local_position - planet._local_position
+        scaled_star_pos = descale_mat.xform_point(star_pos)
+        scaled_star_pos.normalize()
+        camera_height = scaled_pos.length()
+        shape.instance.setShaderInput("v3OriginPos", pos)
+        shape.instance.setShaderInput("v3CameraPos", -scaled_pos)
+
+        shape.instance.setShaderInput("fCameraHeight", camera_height)
+        shape.instance.setShaderInput("fCameraHeight2", camera_height * camera_height)
+
+        shape.instance.setShaderInput("v3LightPos", scaled_star_pos)
+        shape.instance.setShaderInput("model_scale", factor)
+        shape.instance.setShaderInput("descale", descale_mat)
+
 class ONeilSimpleScattering(ONeilScatteringBase):
     str_id = 'oneil-simple'
 
@@ -397,13 +426,13 @@ class ONeilSimpleScattering(ONeilScatteringBase):
             code.append("vec3 transmittance;")
         if self.normalize:
             if self.atmosphere:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
+                code.append("  vec3 scaled_vertex = normalize(descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;")
             else:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
+                code.append("  vec3 scaled_vertex = normalize(descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
                 if self.displacement:
                     code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
         else:
-            code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
+            code.append("  vec3 scaled_vertex = descale * (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
         code.append("  vec3 scaled_vertex_dir = scaled_vertex / scaled_vertex_length;")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
@@ -518,23 +547,6 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         shape.instance.setShaderInput("fScale", scale)
         shape.instance.setShaderInput("fScaleDepth", parameters.ScaleDepth)
         shape.instance.setShaderInput("fScaleOverScaleDepth", scale / parameters.ScaleDepth)
-
-    def update_shader_shape(self, shape, appearance):
-        planet = self.parameters.planet
-        factor = 1.0 / shape.owner.scene_scale_factor
-
-        camera_height = planet.distance_to_obs
-        light_dir = planet.vector_to_star
-
-        pos = planet.rel_position
-        shape.instance.setShaderInput("v3OriginPos", pos)
-        shape.instance.setShaderInput("v3CameraPos", -pos)
-
-        shape.instance.setShaderInput("fCameraHeight", camera_height)
-        shape.instance.setShaderInput("fCameraHeight2", camera_height * camera_height)
-
-        shape.instance.setShaderInput("v3LightPos", *light_dir)
-        shape.instance.setShaderInput("model_scale", factor)
 
 class ONeilLookupTableFragmentShader(ShaderProgram):
     def __init__(self):
@@ -676,6 +688,7 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("uniform sampler2D pbOpticalDepth;")
         code.append("uniform int nSamples;")
         code.append("uniform float model_scale;")
+        code.append("uniform mat3 descale;")
         code.append("#define DELTA 1e-6")
 
     def calc_scattering(self, code):
@@ -687,13 +700,13 @@ class ONeilScattering(ONeilScatteringBase):
             code.append("vec3 transmittance;")
         if self.normalize:
             if self.atmosphere:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fOuterRadius;")
+                code.append("  vec3 scaled_vertex = normalize(descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;")
             else:
-                code.append("  vec3 scaled_vertex = normalize(world_vertex * model_scale - v3OriginPos) * fInnerRadius;")
+                code.append("  vec3 scaled_vertex = normalize(descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
                 if self.displacement:
                     code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
         else:
-            code.append("  vec3 scaled_vertex = (world_vertex * model_scale - v3OriginPos);")
+            code.append("  vec3 scaled_vertex = descale * (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
         code.append("  vec3 scaled_vertex_dir = scaled_vertex / scaled_vertex_length;")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
@@ -827,20 +840,3 @@ class ONeilScattering(ONeilScatteringBase):
         shape.instance.setShaderInput("fScale", scale)
 
         shape.instance.setShaderInput("pbOpticalDepth", pbOpticalDepth)
-
-    def update_shader_shape(self, shape, appearance):
-        planet = self.parameters.planet
-        factor = 1.0 / shape.owner.scene_scale_factor
-
-        camera_height = planet.distance_to_obs
-        light_dir = planet.vector_to_star
-
-        pos = planet.rel_position
-        shape.instance.setShaderInput("v3OriginPos", pos)
-        shape.instance.setShaderInput("v3CameraPos", -pos)
-
-        shape.instance.setShaderInput("fCameraHeight", camera_height)
-        shape.instance.setShaderInput("fCameraHeight2", camera_height * camera_height)
-
-        shape.instance.setShaderInput("v3LightPos", *light_dir)
-        shape.instance.setShaderInput("model_scale", factor)
