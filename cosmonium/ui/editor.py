@@ -101,9 +101,9 @@ class ParamEditor():
                               command=self.do_update_slider
                               )
         widget = SizerWidget(slider)
-        hsizer.add(widget, expand=True, borders=self.borders)
+        hsizer.add(widget, alignments=("expand", "center"), borders=self.borders)
         widget = self.create_spin_entry(frame, param, slider, component)
-        hsizer.add(widget, expand=True, borders=self.borders)
+        hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
         slider['extraArgs'] = [slider, widget.dgui_obj, param, component]
         return hsizer
 
@@ -145,34 +145,34 @@ class ParamEditor():
                             text_scale=self.text_scale,
                             text_align=TextNode.A_left)
         widget = SizerWidget(label)
-        hsizer.add(widget, borders=self.borders, alignment="center_v")
+        hsizer.add(widget, borders=self.borders, alignments=("min", "center"))
         if param.param_type == UserParameter.TYPE_BOOL:
             widget = self.create_bool_entry(frame, param)
-            hsizer.add(widget, expand=True, borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_STRING:
             widget = self.create_text_entry(frame, param)
-            hsizer.add(widget, expand=True, borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_INT:
             if param.value_range is not None:
                 widget = self.create_slider_entry(frame, param)
             else:
                 widget = self.create_spin_entry(frame, param)
-            hsizer.add(widget, expand=True, borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_FLOAT:
             if param.value_range is not None:
                 widget = self.create_slider_entry(frame, param)
             else:
                 widget = self.create_spin_entry(frame, param)
-            hsizer.add(widget, expand=True, borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_VEC:
             vsizer = Sizer("vertical")
             for component in range(param.nb_components):
                 widget = self.create_slider_entry(frame, param, component)
                 vsizer.add(widget, borders=self.borders)
-            hsizer.add(vsizer, borders=self.borders, alignment="center_v")
+            hsizer.add(vsizer, borders=self.borders, alignments=("min", "center"))
         else:
             print("Unknown entry type", param.param_type)
-        sizer.add(hsizer, expand=True, borders=self.borders)
+        sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
 
     def add_parameters(self, frame, sizer, parameters):
         for param in parameters:

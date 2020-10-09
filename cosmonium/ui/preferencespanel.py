@@ -76,7 +76,7 @@ class PreferencesPanel():
                                         text_scale=self.text_scale,
                                         text_align=TextNode.A_left)
                     widget = SizerWidget(label)
-                    sizer.add(widget, expand=True, borders=borders)
+                    sizer.add(widget, alignments=("center", "expand"), borders=borders)
                     has_titles = True
                 elif isinstance(entry, Iterable):
                     text, value, func = entry[:3]
@@ -98,7 +98,7 @@ class PreferencesPanel():
                                             )
                     btn['indicatorValue'] = value
                     widget = SizerWidget(btn)
-                    sizer.add(widget, expand=True, borders=borders_tab if has_titles else borders)
+                    sizer.add(widget, alignments=("center", "expand"), borders=borders_tab if has_titles else borders)
                 elif entry == 0:
                     sizer.add((0, self.font_size))
                 else:
