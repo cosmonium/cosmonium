@@ -62,10 +62,10 @@ else
 endif
 
 update-mo:
-	@cd po && make update-mo
+	@cd po && "$(MAKE)" update-mo
 
 clean:
-	@cd source && $(MAKE) clean
+	@cd source && "$(MAKE)" clean
 
 ifeq ($(RELEASE),1)
 REQUIREMENTS=source/requirements-$(PLATFORM_ARCH).txt
