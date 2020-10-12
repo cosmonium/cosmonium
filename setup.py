@@ -31,7 +31,7 @@ sys.path.insert(0, 'third-party/gltf')
 version = '0.1.2.dev0'
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
-requirements_path = 'requirements.txt'
+requirements_path = None
 
 if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')
@@ -43,6 +43,10 @@ for (index, arg) in enumerate(sys.argv):
         sys.argv.pop(index)
         sys.argv.pop(index)
         break
+
+if requirements_path is None:
+    print("Missing path for requirements.txt !")
+    exit(1)
 
 config = {
     'name': "cosmonium",

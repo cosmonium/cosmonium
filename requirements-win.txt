@@ -1,5 +1,0 @@
-panda3d>=1.10.7
-numpy
-pywin32
-ruamel.yaml<0.16
-cefpython3==66.0
