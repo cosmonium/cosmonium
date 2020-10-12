@@ -20,6 +20,10 @@
 #include "wgccre.h"
 #include "math.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static double const deg_to_rad = M_PI / 180;
 static double const century = 36525.0;
 static double const j2000_epoch = 2451545.0;
