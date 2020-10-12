@@ -103,7 +103,8 @@ config = {
             'plugins': [
                 'pandagl',
                 'p3ptloader',
-                'p3assimp'
+                'p3assimp',
+                'p3interrogatedb'
             ],
             'icons' : {
                 "cosmonium" : [
