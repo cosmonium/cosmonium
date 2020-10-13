@@ -122,5 +122,4 @@ jobs:
         automatic_release_tag: "latest-windows"
         prerelease: true
         title: "Windows Development Build"
-        files: dist/*
-
+        files: dist/* build/*.exe
