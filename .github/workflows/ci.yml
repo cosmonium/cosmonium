@@ -19,9 +19,11 @@ jobs:
         sudo dpkg -i panda3d1.10_1.10.7~xenial_amd64.deb
     - name: Build app
       run: |
-        make build
-        python3 setup.py bdist_apps -p manylinux1_x86_64
-        python3 setup.py bdist_apps -p manylinux1_i686
+        echo "panda3d" > requirements-tmp.txt
+        cat requirements.txt >> requirements-tmp.txt
+        make build PYTHON_VERSION=3.5 SOURCE_OPTIONS="--optimize 3"
+        python3 setup.py bdist_apps -p manylinux1_x86_64 -r requirements-tmp.txt
+        python3 setup.py bdist_apps -p manylinux1_i686 -r requirements-tmp.txt
     - name: Test binary
       run: |
         cd build/manylinux1_x86_64
@@ -61,7 +63,9 @@ jobs:
         pip install panda3d>=1.10.7
     - name: Build binary
       run: |
-        python setup.py bdist_apps -p macosx_10_9_x86_64
+        echo "panda3d" > requirements-tmp.txt
+        cat requirements.txt >> requirements-tmp.txt
+        python setup.py bdist_apps -p macosx_10_9_x86_64 -r requirements-tmp.txt
     - name: Test binary
       run: |
         cd build/macosx_10_9_x86_64/cosmonium.app/Contents/MacOS
@@ -101,7 +105,9 @@ jobs:
         pip install panda3d>=1.10.7
     - name: Build binary
       run: |
-        python setup.py bdist_apps -p win_amd64,win32 -r requirements-win.txt
+        echo "panda3d" > requirements-tmp.txt
+        cat requirements.txt >> requirements-tmp.txt
+        python setup.py bdist_apps -p win_amd64,win32 -r requirements-tmp.txt
     - name: Test binary
       run: |
         cd build/win_amd64
@@ -122,4 +128,4 @@ jobs:
         automatic_release_tag: "latest-windows"
         prerelease: true
         title: "Windows Development Build"
-        files: dist/* build/*.exe
+        files: build/*.exe
