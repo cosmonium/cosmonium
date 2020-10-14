@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Shader, ShaderAttrib, LVector3d
+from panda3d.core import Shader, ShaderAttrib, LVector3d, LMatrix4, PTA_LMatrix4, LQuaternion
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
@@ -2341,49 +2341,33 @@ class ShaderSphereShadow(ShaderShadow):
         return name
 
     def fragment_uniforms(self, code):
+        code.append("uniform vec3 star_center;")
+        code.append("uniform float star_radius;")
         if self.far_sun:
-            code.append("uniform vec3 vector_to_star;")
-            code.append("uniform float star_dist_radius_ratio;")
             code.append("uniform float star_ar;")
-        else:
-            code.append("uniform vec3 star_center;")
-            code.append("uniform float star_radius;")
         code.append("uniform vec3 occluder_centers[%d];" % self.max_occluders)
         code.append("uniform float occluder_radii[%d];" % self.max_occluders)
         if self.oblate_occluder:
-            code.append("uniform vec3 occluder_transform[%d];" % self.max_occluders)
+            code.append("uniform mat4 occluder_transform[%d];" % self.max_occluders)
         code.append("uniform int nb_of_occluders;")
 
     def fragment_shader(self, code):
-        if self.far_sun:
-            code.append("float aa = star_dist_radius_ratio * star_dist_radius_ratio;")
         code.append("for (int i = 0; i < nb_of_occluders; i++) {")
-        if self.far_sun:
-            if self.oblate_occluder:
-                code.append("  vec3 vector_to_star_local = normalize(vec3(occluder_transform[i].x * vector_to_star.x, occluder_transform[i].y * vector_to_star.y, occluder_transform[i].z * vector_to_star.z));")
-            else:
-                code.append("  vec3 vector_to_star_local = vector_to_star;")
-        else:
-            code.append("  vec3 star_local = star_center - world_vertex;")
-            if self.oblate_occluder:
-                code.append("  star_local = vec3(occluder_transform[i].x * star_local.x, occluder_transform[i].y * star_local.y, occluder_transform[i].z * star_local.z);")
-            code.append("  float aa = dot(star_local, star_local);")
-        code.append("  vec3 occluder_local = occluder_centers[i] - world_vertex;")
         if self.oblate_occluder:
-            code.append("  occluder_local = vec3(occluder_transform[i].x * occluder_local.x, occluder_transform[i].y * occluder_local.y, occluder_transform[i].z * occluder_local.z);")
+            code.append("  vec3 scaled_world_vertex = occluder_centers[i] + mat3(occluder_transform[i]) * (world_vertex - occluder_centers[i]);")
+            code.append("  vec3 scaled_star_center = occluder_centers[i] + mat3(occluder_transform[i]) * (star_center - occluder_centers[i]);")
+        else:
+            code.append("  vec3 scaled_world_vertex = world_vertex;")
+            code.append("  vec3 scaled_star_center = star_center;")
+        code.append("  vec3 star_local = scaled_star_center - scaled_world_vertex;")
+        code.append("  float aa = dot(star_local, star_local);")
+        code.append("  vec3 occluder_local = occluder_centers[i] - scaled_world_vertex;")
         code.append("  float occluder_radius = occluder_radii[i];")
         code.append("  float bb = dot(occluder_local, occluder_local);")
-        if self.far_sun:
-            code.append("  float ab = dot(vector_to_star_local, occluder_local) * star_dist_radius_ratio;")
-        else:
-            code.append("  float ab = dot(star_local, occluder_local);")
+        code.append("  float ab = dot(star_local, occluder_local);")
         code.append("  if (ab > 0) { //Apply shadow only if the occluder is between the target and the star")
-        if self.far_sun:
-            code.append("    float s = ab*ab + bb + occluder_radius*occluder_radius*aa - aa*bb;")
-            code.append("    float t = 2.0*ab*occluder_radius;")
-        else:
-            code.append("    float s = ab*ab + star_radius*star_radius*bb + occluder_radius*occluder_radius*aa - aa*bb;")
-            code.append("    float t = 2.0*ab*star_radius*occluder_radius;")
+        code.append("    float s = ab*ab + star_radius*star_radius*bb + occluder_radius*occluder_radius*aa - aa*bb;")
+        code.append("    float t = 2.0*ab*star_radius*occluder_radius;")
         code.append("    if ((s + t) < 0.0) {");
         code.append("      //No overlap")
         code.append("    } else if ((s - t) < 0.0) {");
@@ -2393,12 +2377,8 @@ class ShaderSphereShadow(ShaderShadow):
         code.append("      float occluder_ar = asin(occluder_radius / length(occluder_local));")
         #acos(dot) has precision issues and shows artefacts in the penumbra
         #We use asin(cross()) instead to diminish the artifacts (though smoothstep below is also needed)
-        if self.far_sun:
-            #code.append("      float separation = acos(clamp(dot(vector_to_star, normalize(occluder_local)), 0, 1));")
-            code.append("      float separation = asin(clamp(length(cross(vector_to_star, normalize(occluder_local))), 0, 1));")
-        else:
-            #code.append("      float separation = acos(clamp(dot(normalize(star_local), normalize(occluder_local)), 0, 1));")
-            code.append("      float separation = asin(clamp(length(cross(normalize(star_local), normalize(occluder_local))), 0, 1));")
+        #code.append("      float separation = acos(clamp(dot(normalize(star_local), normalize(occluder_local)), 0, 1));")
+        code.append("      float separation = asin(clamp(length(cross(normalize(star_local), normalize(occluder_local))), 0, 1));")
         code.append("      if (separation <= star_ar - occluder_ar) {")
         code.append("        //Occluder fully inside star, attenuation is the ratio of the visible surfaces");
         code.append("        float surface_ratio = clamp((occluder_ar * occluder_ar) / (star_ar * star_ar), 0, 1);");
@@ -2426,29 +2406,34 @@ class ShaderSphereShadow(ShaderShadow):
         observer = shape.owner.context.observer._position
         scale = shape.owner.scene_scale_factor
         if self.far_sun:
-            shape.instance.setShaderInput('vector_to_star', shape.owner.vector_to_star)
-            shape.instance.setShaderInput('star_dist_radius_ratio', shape.owner.distance_to_star / star.get_apparent_radius())
             shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.distance_to_star))
-        else:
-            star_center = (star._local_position - observer) * scale
-            star_radius = star.get_apparent_radius() * scale
-            shape.instance.setShaderInput('star_center', star_center)
-            shape.instance.setShaderInput('star_radius', star_radius)
+        star_center = (star._local_position - observer) * scale
+        star_radius = star.get_apparent_radius() * scale
+        shape.instance.setShaderInput('star_center', star_center)
+        shape.instance.setShaderInput('star_radius', star_radius)
         centers = []
         radii = []
-        tf = []
+        occluder_transform = PTA_LMatrix4()
         for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
             centers.append((shadow_caster.body._local_position - observer) * scale)
             radius = shadow_caster.body.get_apparent_radius()
             radii.append(radius * scale)
             if self.oblate_occluder:
-                vs = shadow_caster.body.get_scale()
-                tf.append((radius/vs[0], radius/vs[1], radius/vs[2]))
+                #TODO: This should refactored with the code in oneil and moved to the body class
+                planet_scale = shadow_caster.body.get_scale()
+                descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
+                rotation_mat = LMatrix4()
+                orientation = LQuaternion(*shadow_caster.body.scene_orientation)
+                orientation.extract_to_matrix(rotation_mat)
+                rotation_mat_inv = LMatrix4()
+                rotation_mat_inv.invert_from(rotation_mat)
+                descale_mat = rotation_mat_inv * descale * rotation_mat
+                occluder_transform.push_back(descale_mat)
         nb_of_occluders = len(shape.parent.shadows.sphere_shadows.occluders)
         shape.instance.setShaderInput('occluder_centers', centers)
         shape.instance.setShaderInput('occluder_radii', radii)
         if self.oblate_occluder:
-            shape.instance.setShaderInput('occluder_transform', tf)
+            shape.instance.setShaderInput('occluder_transform', occluder_transform)
         shape.instance.setShaderInput("nb_of_occluders", nb_of_occluders)
 
 class ShaderRingShadow(ShaderShadow):

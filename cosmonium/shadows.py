@@ -314,12 +314,8 @@ class MultiShadows(ShadowBase):
             self.update_needed = True
         elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
             self.target.shader.add_shadows(self.sphere_shadows.shader_component)
-            #TODO: This is an extremely ugly hack :
-            #Currently only ring shape support oblate sphere shadow caster
-            #To know if we target a ring without introducing an import loop
-            #we check the shadow caster type... this is to remove ASAP
-            if isinstance(self.target.shadow_caster, RingShadowCaster):
-                self.sphere_shadows.shader_component.oblate_occluder = True
+            #TODO: We could check if the caster is actually oblate or not
+            self.sphere_shadows.shader_component.oblate_occluder = True
             print("Add sphere shadow component")
             self.update_needed = True
         self.update_needed = self.generic_shadows.end_update() or self.update_needed
