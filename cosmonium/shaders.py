@@ -2508,7 +2508,7 @@ class LightingModel(ShaderComponent):
             code.append("  float emission_coef = clamp(sqrt(-%s), 0.0, 1.0) * nightscale;" % angle)
             code.append("  total_emission_color.rgb += emission_color.rgb * emission_coef;")
         if self.appearance.has_backlit:
-            code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-%s);" % angle)
+            code.append("  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-%s) * shadow;" % angle)
         if back_test:
             code.append("}")
         if self.appearance.has_emission and not self.appearance.has_nightscale:
