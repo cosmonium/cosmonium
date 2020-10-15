@@ -1,6 +1,6 @@
 PLATFORM=
 PLATFORM_ARCH=
-PYTHON_VERSION=3.7
+PYTHON_VERSION=3
 PYTHON=python$(PYTHON_VERSION)
 SOURCE_TARGET=build
 SOURCE_OPTIONS=
@@ -8,6 +8,11 @@ OS_SDK=
 RELEASE=0
 REQUIREMENTS=
 PANDA3D_VERSION=1.10.7.dev11
+
+ifeq ($(RELEASE),1)
+    PYTHON_VERSION=3.7
+	SOURCE_OPTIONS=--clean
+endif
 
 ifeq ($(OS),Windows_NT)
     PLATFORM=win
@@ -46,6 +51,7 @@ else
     ifeq ($(UNAME_S),Darwin)
         PLATFORM=macosx
         OS_SDK=10.9
+        PYTHON_VERSION=3.7
         SOURCE_TARGET=build-macos
         SOURCE_OPTIONS+="--macos-sdk $(OS_SDK)"
         PLATFORM_ARCH=macosx_10_9_x86_64
