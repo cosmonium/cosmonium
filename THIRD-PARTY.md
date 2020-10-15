@@ -110,11 +110,14 @@ License: BSD
 
 Reference: [Github](https://github.com/phn/jdcal)
 
-## source/kepler.cpp source/lieske_e5.cpp astro/pyastro/pykepler.py
+## source
+
+Files: dourneau.cpp, elp82.cpp, gust86.cpp, htc20.cpp, kepler.cpp, lieske_e5.cpp, mathutils.cpp, obliquity.cpp,
+pluto.cpp, precess.cpp, rckin.cpp, vsop_data.cpp, csop87.cpp, astro/pyastro/pykepler.py
 
 Ephemerides calculation code from Project Pluto
 
-Copyright: Copyright (C) 2010, Project Pluto, Bill Gray.
+Copyright: Copyright (C) 2010-2020, Project Pluto, Bill Gray.
 
 License: GPLv2 or later
 
