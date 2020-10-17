@@ -6,16 +6,26 @@
 
 - **Enter** : Find object by name
 - **Escape** : Reset navigation and script
-- **F1** : Show body information
-- **Alt-Enter** : Toggle fullscreen mode
-- **Z** : Zoom in
-- **Shift-Z** : Zoom out
+- **,** : Zoom in
+- **.** : Zoom out
 - **Control-R** : Reset zoom
 - **F10** : Save screenshot
 - **Shift-F10** : Save screenshot without HUD
-- **Shift-F1** : Show this help
+- **Control-C**: Save URL
+- **Control-V**: Load URL
+- **Control-O**: Open script...
+
 - **V** : Toggle HUD verbosity
 - **Control-M** : Toggle menubar
+- **Alt-Enter** : Toggle fullscreen mode
+
+
+- **F1** : Show body information
+- **Control-P** : Show editor window
+- **Control-P** : Show preference window
+
+
+- **Shift-F1** : Show control help
 - **Control-Q** : Exit Cosmonium
 
 ### Navigation
@@ -50,6 +60,10 @@
 - **X** : Decelerate
 - **Q** : Switch direction
 - **S** : Stop
+
+
+- **Control-T** : Take control of object
+
 
 ### Camera
 
@@ -108,6 +122,7 @@
 
 
 - **{ / }** : Decrease / increase ambient lighting
+- **[ / ]** : Decrease / increase magnitude limit
 
 ### Orbits
 
@@ -127,17 +142,21 @@
 
 - **F2** : Connect to PStats
 - **F3** : Toggle filled wireframe
-- **Shift-F3** : Tobble wireframe
+- **Shift-F3** : Toggle wireframe
 - **F4** : Toggle HDR (deprecated)
 - **F5** : Toggle offscreen buffers debug
 - **F7** : Dump octree statistics
+- **Shift-F7** : Dump octree content
 - **F8** : Toggle LOD freeze
-- **Shift-F8** : Dump LOD information
-- **Shift-Ctrl-F8** : Dump LOD information (different layout)
+- **Shift-F8** : Dump hierarchical LOD information
+- **Shift-Ctrl-F8** : Dump flat LOD information
 - **Control-F8** : Toggle LOD debug traces
+- **F9** : Toggle boundary debug
 - **Shift-F9** : Toggle Bounding Box display
 - **Control-F9** : Toggle camera frustum
-- **F11** : Open scene explorer
+- **Shift-Ctrl-F9** : Toggle shadow frustum
+- **F11** : Dump scene tree info
+- **Shift-F11** : Open scene explorer
 - **F12** : Trigger scene analysis
 
 
