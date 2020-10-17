@@ -38,7 +38,7 @@ class DirectWidgetContainer():
 class ScrollText():
     def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12,
                  parent=None,
-                 frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 0.5, -0.5, 0)):
+                 frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 0.5, -1.0, 0)):
         if parent is None:
             parent = aspect2d
         self.parent = parent
