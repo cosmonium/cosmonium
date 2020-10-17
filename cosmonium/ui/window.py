@@ -20,8 +20,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import Point3, TextNode
+from panda3d.core import Point3, TextNode, PGSliderBar
+from direct.showbase.DirectObject import DirectObject
 from direct.gui.DirectGui import DirectFrame, DGG
+from direct.gui.DirectSlider import DirectSlider
+from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.ShowBaseGlobal import aspect2d
 
@@ -46,6 +49,12 @@ class Window():
         else:
             frameColor = (0.5, 0.5, 0.5, 1)
         self.pad = 0
+        self.event_handler = DirectObject()
+        self.button_thrower = base.buttonThrowers[0].node()
+        self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs = [-1])
+        self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs = [1])
+        self.scrollers = []
+
 #         if Window.texture is None:
 #             Window.texture = loader.loadTexture('textures/futureui1.png')
 #         image_scale = (scale[0] * Window.texture.get_x_size(), 1, scale[1] * Window.texture.get_y_size())
@@ -107,6 +116,42 @@ class Window():
             self.title_frame['frameSize'] = title_size
             self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)
 
+    def register_scroller(self, scroller):
+        self.scrollers.append(scroller)
+
+    def mouse_wheel_event(self, dir):
+        # If the user is scrolling a scroll-bar, don't try to scroll the scrolled-frame too.
+        region = base.mouseWatcherNode.getOverRegion()
+        if region is not None:
+            widget = base.render2d.find("**/*{0}".format(region.name))
+            if widget.is_empty() or isinstance(widget.node(), PGSliderBar) or isinstance(widget.getParent().node(), PGSliderBar):
+                return
+
+        # Get the mouse-position
+        if not base.mouseWatcherNode.hasMouse():
+            return
+        mouse_pos = base.mouseWatcherNode.getMouse()
+
+        found_scroller = None
+        # Determine whether any of the scrolled-frames are under the mouse-pointer
+        for scroller in self.scrollers:
+            bounds = scroller['frameSize']
+            pos = scroller.get_relative_point(base.render2d, Point3(mouse_pos.get_x() ,0, mouse_pos.get_y()))
+            if pos.x > bounds[0] and pos.x < bounds[1] and \
+                pos.z > bounds[2] and pos.z < bounds[3]:
+                found_scroller = scroller
+                break
+
+        if found_scroller is not None:
+            if not found_scroller.verticalScroll.isHidden():
+                self.do_mouse_scroll(found_scroller.verticalScroll, dir, None)
+            else:
+                self.do_mouse_scroll(found_scroller.horizontalScroll, dir, None)
+
+    def do_mouse_scroll(self, obj, dir, data):
+        if isinstance(obj, DirectSlider) or isinstance(obj, DirectScrollBar):
+            obj.setValue(obj.getValue() + dir * obj["pageSize"] * 0.1)
+
     def start_drag(self, event):
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
@@ -133,6 +178,8 @@ class Window():
         if self.frame is not None:
             self.frame.destroy()
         self.frame = None
+        self.scrollers = []
+        self.event_handler.ignore_all()
 
     def getPos(self):
         return self.frame.getPos()

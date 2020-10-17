@@ -214,6 +214,7 @@ class ParamEditor():
             self.layout.frame.addPage(frame, section.name)
         title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
+        self.window.register_scroller(self.layout.frame.viewingArea)
 
     def do_update(self, value, slider, param, component=None):
         value = param.convert_to_type(value)

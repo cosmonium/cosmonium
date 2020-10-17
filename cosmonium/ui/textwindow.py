@@ -58,6 +58,7 @@ class TextWindow():
                                  font=self.markdown.renderer.font_normal,
                                  font_size=self.font_size)
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window.register_scroller(self.layout.frame)
 
     def show(self):
         self.create_layout()
