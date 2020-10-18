@@ -85,7 +85,8 @@ class ReflectiveYamlParser(YamlModuleParser):
                               ring=rings,
                               atmosphere=atmosphere,
                               clouds=clouds,
-                              point_color=point_color)
+                              point_color=point_color,
+                              albedo=albedo)
         for surface in surfaces:
             body.add_surface(surface)
         controller_data = data.get('controller')
