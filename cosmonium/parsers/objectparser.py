@@ -124,7 +124,6 @@ class SurfaceCategoryYamlParser(YamlModuleParser):
         return None
 
 ObjectYamlParser.register_object_parser('include', IncludeYamlParser())
-ObjectYamlParser.register_object_parser('data-sources', DataAttributionsListYamlParser())
 ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
 ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser())
 ObjectYamlParser.register_object_parser('surface-category', SurfaceCategoryYamlParser())
