@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from panda3d.core import LVector3
+
 from ..bodies import Star
 from ..catalogs import objectsDB
 from ..procedural.stars import proceduralStarSurfaceFactoryDB
@@ -30,28 +32,64 @@ from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .noiseparser import NoiseYamlParser
+from .surfacesparser import SurfaceYamlParser
+from .elementsparser import CloudsYamlParser, RingsYamlParser
 
 class StarYamlParser(YamlModuleParser):
     def decode(self, data):
         name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', 'star')
-        radius = data.get('radius')
+        radius = data.get('radius', None)
+        if radius is None:
+            diameter = data.get('diameter', None)
+            if diameter is not None:
+                radius = diameter / 2.0
+                #Needed by surface parser
+                data['radius'] = radius
+        ellipticity = data.get('ellipticity', None)
+        scale = data.get('axes', None)
+        if scale is not None:
+            if radius is None:
+                radius = max(scale) / 2.0
+                #Needed by surface parser
+                data['radius'] = radius
+            scale = LVector3(*scale) / 2.0
+        if radius is not None:
+            radius = float(radius)
         temperature = data.get('temperature')
         abs_magnitude = data.get('magnitude')
         spectral_type = data.get('spectral-type')
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))
-        factory = proceduralStarSurfaceFactoryDB.get('default')
+        surfaces = data.get('surfaces')
+        if surfaces is not None:
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, data)
+            surface = surfaces.pop(0)
+            factory = None
+        else:
+            factory_name = data.get('surface-factory', 'default')
+            factory = proceduralStarSurfaceFactoryDB.get(factory_name)
+            surface = None
+            surfaces = []
+        clouds = CloudsYamlParser.decode(data.get('clouds'), None)
+        rings = RingsYamlParser.decode(data.get('rings'))
         star = Star(name,
                     body_class=body_class,
+                    radius=radius,
+                    oblateness=ellipticity,
+                    scale=scale,
                     surface_factory=factory,
+                    surface=surface,
+                    orbit=orbit,
+                    rotation=rotation,
+                    ring=rings,
+                    clouds=clouds,
                     abs_magnitude=abs_magnitude,
                     temperature=temperature,
-                    spectral_type=spectral_type,
-                    radius=radius,
-                    orbit=orbit,
-                    rotation=rotation)
+                    spectral_type=spectral_type)
+        for surface in surfaces:
+            star.add_surface(surface)
         if parent_name is not None:
             parent = objectsDB.get(parent_name)
             if parent is not None:

@@ -406,12 +406,13 @@ class StarTexSurfaceFactory(SurfaceFactory):
         return FlatSurface('surface', shape=shape, appearance=appearance, shader=shader)
 
 class Star(EmissiveBody):
-    def __init__(self, names, radius=None, oblateness=None,
+    def __init__(self, names, radius=None, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  abs_magnitude=None, temperature=None, spectral_type=None,
-                 atmosphere=None, ring=None, clouds=None, point_color=None,
-                 body_class='star'):
+                 atmosphere=None, ring=None, clouds=None,
+                 body_class='star',  point_color=None,
+                 description=''):
         if spectral_type is None:
             self.spectral_type = SpectralType()
         elif isinstance(spectral_type, SpectralType):
@@ -434,12 +435,13 @@ class Star(EmissiveBody):
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
         self._extend = radius #TODO: Optim for octree
-        EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness,
+        EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness, scale=scale,
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
-                              atmosphere=atmosphere, ring=ring, clouds=clouds, point_color=point_color,
-                              body_class=body_class)
+                              atmosphere=atmosphere, ring=ring, clouds=clouds,
+                              body_class=body_class, point_color=point_color,
+                              description=description)
 
 class DeepSpaceObject(EmissiveBody):
     background = True
