@@ -53,7 +53,7 @@ else
         OS_SDK=10.9
         PYTHON_VERSION=3.7
         SOURCE_TARGET=build-macos
-        SOURCE_OPTIONS+="--macos-sdk $(OS_SDK)"
+        SOURCE_OPTIONS+=--macosx-sdk $(OS_SDK)
         PLATFORM_ARCH=macosx_10_9_x86_64
         ifneq ($(RELEASE),1)
             SOURCE_OPTIONS+="--use-sdk-path"
