@@ -3,7 +3,7 @@
 SOURCE=/cosmonium/source
 
 URL=https://github.com/cosmonium/panda3d/releases/download/
-VERSION=1.10.7.dev11
+VERSION=1.10.7.dev13
 
 PANDA3D=panda3d-$VERSION.x86_64.rpm
 EXTRA=extra-includes.$VERSION.zip
