@@ -431,7 +431,7 @@ class Gui(object):
 
     def save_screenshot_no_annotation(self):
         if settings.screenshot_path is not None:
-            self.cosmonium.save_screenshot_no_annotation
+            self.cosmonium.save_screenshot_no_annotation()
         else:
             self.update_info(_("Screenshot not saved"), 0.5, 1.0)
             self.show_select_screenshots()
