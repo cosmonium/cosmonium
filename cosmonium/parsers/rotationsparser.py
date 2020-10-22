@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LQuaterniond, LVector3d
 
 from ..astro.elementsdb import rotation_elements_db
-from ..astro.rotations import FixedRotation, UnknownRotation, create_uniform_rotation
+from ..astro.rotations import EquatorialReferenceAxis, FixedRotation, UnknownRotation, create_uniform_rotation
 from ..astro import units
 from .. import utils
 
@@ -74,6 +74,12 @@ class FixedRotationYamlParser(YamlModuleParser):
             angle = float(data['angle'])
             axis = data.get("axis", LVector3d.up())
             rot = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
+        elif 'ra' in data:
+            right_ascension = data.get('ra', None)
+            ra_units = AngleUnitsYamlParser.decode(data.get('ra-units', 'Deg'))
+            declination = data.get('de', 0.0)
+            decl_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
+            rot = EquatorialReferenceAxis(right_ascension * ra_units, declination * decl_units, False)
         else:
             rot = LQuaterniond()
         if data.get('frame') is not None or frame is None:
