@@ -672,16 +672,22 @@ class Cosmonium(CosmoniumBase):
     def toggle_reference_axis(self):
         settings.show_reference_axis = not settings.show_reference_axis
         self.update_settings()
-    
+
+    def set_grid_equatorial(self, status):
+        settings.show_equatorial_grid = status
+        self.equatorial_grid.set_shown(status)
+        configParser.save()
+
     def toggle_grid_equatorial(self):
-        settings.show_equatorial_grid = not settings.show_equatorial_grid
-        self.equatorial_grid.set_shown(settings.show_equatorial_grid)
+        self.set_grid_equatorial(not settings.show_equatorial_grid)
+
+    def set_grid_ecliptic(self, status):
+        settings.show_ecliptic_grid = status
+        self.ecliptic_grid.set_shown(status)
         configParser.save()
 
     def toggle_grid_ecliptic(self):
-        settings.show_ecliptic_grid = not settings.show_ecliptic_grid
-        self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
-        configParser.save()
+        self.set_grid_ecliptic(not settings.show_ecliptic_grid)
 
     def toggle_asterisms(self):
         settings.show_asterisms = not settings.show_asterisms

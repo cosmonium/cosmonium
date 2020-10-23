@@ -109,8 +109,8 @@ class AppState(object):
             settings.show_clouds = self.render['clouds']
             settings.show_asterisms = self.render['asterisms']
             settings.show_boundaries = self.render['boundaries']
-            cosmonium.equatorial_grid.set_shown(self.render['equatorialgrid'])
-            cosmonium.ecliptic_grid.set_shown(self.render['eclipticgrid'])
+            cosmonium.set_grid_equatorial(self.render['equatorialgrid'])
+            cosmonium.set_grid_ecliptic(self.render['eclipticgrid'])
             for name, body_class in bodyClasses.classes.items():
                 show = self.render.get(name, None)
                 if show is not None:
