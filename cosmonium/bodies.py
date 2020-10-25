@@ -182,10 +182,13 @@ class StellarBody(StellarObject):
             return self.get_apparent_radius()
 
     def get_scale(self):
-        if self.surface is not None:
-            return self.surface.shape.get_scale()
+        if self.scale is not None:
+            scale = self.scale
+        elif self.oblateness is not None:
+            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
         else:
-            return StellarObject.get_scale(self)
+            scale = LVector3(self.radius, self.radius, self.radius)
+        return scale
 
     def get_extend(self):
         if self.ring is not None:
