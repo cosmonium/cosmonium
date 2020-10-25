@@ -21,81 +21,106 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..bodyclass import bodyClasses
+from ..parameters import ParametersGroup, SettingParameter, ParametricFunctionParameter
 from .. import settings
 
-from .preferencespanel import PreferencesPanel
+from .editor import ParamEditor
 
-class Preferences(PreferencesPanel):
+class Preferences(ParamEditor):
     def __init__(self, cosmonium, font_family, font_size = 14, owner=None):
-        PreferencesPanel.__init__(self, font_family, font_size, owner)
+        ParamEditor.__init__(self, font_family, font_size, owner)
         self.cosmonium = cosmonium
-        self.preferences = [['General', self.make_general()],
-                            ['Orbits', self.make_orbits()],
-                            ['Labels', self.make_labels()],
-                            ['Render', self.make_render()],
-                           ]
 
-    def toggle_attribute(self, attribute):
-        setattr(settings, attribute, not getattr(settings, attribute))
+    def show(self):
+        if self.shown():
+            print("Editor already shown")
+            return
+        self.create_layout(self.make_entries())
+        if self.last_pos is None:
+            self.last_pos = (0, 0, -100)
+        self.window.setPos(self.last_pos)
+        self.window.update()
+
+    def update_parameter(self, param):
+        ParamEditor.update_parameter(self, param)
+        self.cosmonium.update_settings()
+
+    def make_entries(self):
+        return ParametersGroup('Preferences',
+                               [ParametersGroup('General', self.make_general()),
+                                ParametersGroup('Orbits', self.make_orbits()),
+                                ParametersGroup('Labels', self.make_labels()),
+                                ParametersGroup('Render', self.make_render()),
+                                ])
+
 
     def make_general(self):
         return [
-                ('Invert mouse wheel', settings.invert_wheel, self.toggle_attribute, 'invert_wheel')
+                SettingParameter('Invert mouse wheel', 'invert_wheel', SettingParameter.TYPE_BOOL)
                ]
 
     def make_orbits(self):
-        return [
-                ('All orbits', settings.show_orbits, self.cosmonium.toggle_orbits),
-                0,
-                ('Stars', bodyClasses.get_show_orbit('star'), self.cosmonium.toggle_orbit, 'star'),
-                ('Planets', bodyClasses.get_show_orbit('planet'), self.cosmonium.toggle_orbit, 'planet'),
-                ('Dwarf planets', bodyClasses.get_show_orbit('dwarfplanet'), self.cosmonium.toggle_orbit, 'dwarfplanet'),
-                ('Moons', bodyClasses.get_show_orbit('moon'), self.cosmonium.toggle_orbit, 'moon'),
-                ('Minor moons', bodyClasses.get_show_orbit('minormoon'), self.cosmonium.toggle_orbit, 'minormoon'),
-                ('Lost moons', bodyClasses.get_show_orbit('lostmoon'), self.cosmonium.toggle_orbit, 'lostmoon'),
-                ('Comets', bodyClasses.get_show_orbit('comet'), self.cosmonium.toggle_orbit, 'comet'),
-                ('Asteroids', bodyClasses.get_show_orbit('asteroid'), self.cosmonium.toggle_orbit, 'asteroid'),
-                ('Interstellars', bodyClasses.get_show_orbit('interstellar'), self.cosmonium.toggle_orbit, 'interstellar'),
-                ('Spacecrafts', bodyClasses.get_show_orbit('spacecraft'), self.cosmonium.toggle_orbit, 'spacecraft'),
+        orbits = [
+                ('Stars', 'star'),
+                ('Planets', 'planet'),
+                ('Dwarf planets','dwarfplanet'),
+                ('Moons', 'moon'),
+                ('Minor moons', 'minormoon'),
+                ('Lost moons', 'lostmoon'),
+                ('Comets', 'comet'),
+                ('Asteroids', 'asteroid'),
+                ('Interstellars', 'interstellar'),
+                ('Spacecrafts', 'spacecraft'),
                ]
+        params = [ SettingParameter('All orbits', 'show_orbits', SettingParameter.TYPE_BOOL) ]
+        params += [ParametricFunctionParameter(label, param_name, bodyClasses.set_show_orbit, bodyClasses.get_show_orbit, SettingParameter.TYPE_BOOL)
+                for (label, param_name) in orbits]
+        return params
 
     def make_labels(self):
-        return [
-                  ('Galaxies', bodyClasses.get_show_label('galaxy'), self.cosmonium.toggle_label, 'galaxy'),
-                  #('Globular', self.toggle_label, 'globular'),
-                  ('Stars', bodyClasses.get_show_label('star'), self.cosmonium.toggle_label, 'star'),
-                  ('Planets', bodyClasses.get_show_label('planet'), self.cosmonium.toggle_label, 'planet'),
-                  ('Dwarf planets', bodyClasses.get_show_label('dwarfplanet'), self.cosmonium.toggle_label, 'dwarfplanet'),
-                  ('Moons', bodyClasses.get_show_label('moon'), self.cosmonium.toggle_label, 'moon'),
-                  ('Minor moons', bodyClasses.get_show_label('minormoon'), self.cosmonium.toggle_label, 'minormoon'),
-                  ('Lost moons', bodyClasses.get_show_label('lostmoon'), self.cosmonium.toggle_label, 'lostmoon'),
-                  ('Comets', bodyClasses.get_show_label('comet'), self.cosmonium.toggle_label, 'comet'),
-                  ('Asteroids', bodyClasses.get_show_label('asteroid'), self.cosmonium.toggle_label, 'asteroid'),
-                  ('Interstellars', bodyClasses.get_show_label('interstellar'), self.cosmonium.toggle_label, 'interstellar'),
-                  ('Spacecrafts', bodyClasses.get_show_label('spacecraft'), self.cosmonium.toggle_label, 'spacecraft'),
-                  ('Constellations', bodyClasses.get_show_label('constellation'), self.cosmonium.toggle_label, 'constellation'),
-                  #('Locations', self.toggle_label, 'location'),
+        labels = [
+                  ('Galaxies', 'galaxy'),
+                  #('Globular', 'globular'),
+                  ('Stars', 'star'),
+                  ('Planets', 'planet'),
+                  ('Dwarf planets', 'dwarfplanet'),
+                  ('Moons', 'moon'),
+                  ('Minor moons', 'minormoon'),
+                  ('Lost moons', 'lostmoon'),
+                  ('Comets', 'comet'),
+                  ('Asteroids', 'asteroid'),
+                  ('Interstellars', 'interstellar'),
+                  ('Spacecrafts', 'spacecraft'),
+                  ('Constellations', 'constellation'),
+                  #('Locations', 'location'),
                 ]
+        return [ParametricFunctionParameter(label, param_name, bodyClasses.set_show_label, bodyClasses.get_show_label, SettingParameter.TYPE_BOOL)
+                for (label, param_name) in labels]
 
     def make_render(self):
         return [
-                'Objects',
-                ('Galaxies', bodyClasses.get_show('galaxy'), self.cosmonium.toggle_body_class, 'galaxy'),
+                ParametersGroup('Objects',
+                                [ParametricFunctionParameter('Galaxies', 'galaxy',bodyClasses.set_show, bodyClasses.get_show, SettingParameter.TYPE_BOOL),
+                                ]),
                 #('shift-u', self.cosmonium.toggle_globulars)
                 #('^', self.cosmonium.toggle_nebulae)
-                'Components',
-                ('Atmospheres', settings.show_atmospheres, self.cosmonium.toggle_atmosphere),
-                ('Clouds', settings.show_clouds, self.cosmonium.toggle_clouds),
+                ParametersGroup('Components',
+                                [SettingParameter('Atmospheres', 'show_atmospheres', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Clouds', 'show_clouds', SettingParameter.TYPE_BOOL),
+                                 ]),
                 #('control-e', self.toggle_shadows)
                 #('control-l', self.cosmonium.toggle_nightsides)
                 #('control-t', self.cosmonium.toggle_comet_tails)
-                'Constellations',
-                ('Boundaries', settings.show_boundaries, self.cosmonium.toggle_boundaries),
-                ('Asterisms', settings.show_asterisms, self.cosmonium.toggle_asterisms),
-                'Grids',
-                ('Equatorial', settings.show_equatorial_grid, self.cosmonium.toggle_grid_equatorial),
-                ('Ecliptic', settings.show_ecliptic_grid, self.cosmonium.toggle_grid_ecliptic),
-                'Annotations',
-                ('Rotation axis', settings.show_rotation_axis, self.cosmonium.toggle_rotation_axis),
-                ('Reference frame', settings.show_reference_axis, self.cosmonium.toggle_reference_axis),
+                ParametersGroup('Constellations',
+                                [SettingParameter('Boundaries', 'show_boundaries', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Asterisms', 'show_asterisms', SettingParameter.TYPE_BOOL),
+                                 ]),
+                ParametersGroup('Grids',
+                                [SettingParameter('Equatorial', 'show_equatorial_grid', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Ecliptic', 'show_ecliptic_grid', SettingParameter.TYPE_BOOL),
+                                 ]),
+                ParametersGroup('Annotations',
+                                [SettingParameter('Rotation axis', 'show_rotation_axis', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Reference frame', 'show_reference_axis', SettingParameter.TYPE_BOOL),
+                                 ]),
                 ]

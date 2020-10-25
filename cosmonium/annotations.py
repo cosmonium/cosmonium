@@ -291,6 +291,12 @@ class Grid(VisibleObject):
         self.points_to_remove = (self.nbOfPoints // (self.nbOfRings + 1)) // 2
         self.orientation = orientation
         self.color = color
+        self.settings_attr = 'show_' + name.lower() + '_grid'
+
+    def check_settings(self):
+        show = getattr(settings, self.settings_attr)
+        if show is not None:
+            self.set_shown(show)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)

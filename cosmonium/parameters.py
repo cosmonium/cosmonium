@@ -8,6 +8,7 @@ else:
     from collections import Iterable
 
 from .utils import isclose
+from . import settings
 
 vector_types = (Iterable, LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d)
 
@@ -190,3 +191,27 @@ class AutoUserParameter(UserParameterBase):
 
     def do_set_param(self, value):
         setattr(self.instance, self.attribute, value)
+
+class SettingParameter(UserParameter):
+    def __init__(self, name, attribute, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
+        self.attribute = attribute
+
+    def do_get_param(self):
+        return getattr(settings, self.attribute)
+
+    def do_set_param(self, value):
+        setattr(settings, self.attribute, value)
+
+class ParametricFunctionParameter(UserParameter):
+    def __init__(self, name, param_name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+        UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
+        self.setter = setter
+        self.getter = getter
+        self.param_name = param_name
+
+    def do_get_param(self):
+        return self.getter(self.param_name)
+
+    def do_set_param(self, value):
+        self.setter(self.param_name, value)

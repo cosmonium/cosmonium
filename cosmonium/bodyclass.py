@@ -56,15 +56,17 @@ class BodyClasses(object):
         else:
             return False
 
-    def show(self, body_class):
+    def set_show(self, body_class, value):
         body_class = self.get_class(body_class)
         if body_class is not None:
-            body_class.show = True
+            body_class.show = value
+            print("Body '%s' : " % body_class.name, 'visible' if body_class.show else 'hidden')
+
+    def show(self, body_class):
+        self.set_show(body_class, True)
 
     def hide(self, body_class):
-        body_class = self.get_class(body_class)
-        if body_class is not None:
-            body_class.show = False
+        self.set_show(body_class, False)
 
     def toggle_show(self, body_class):
         body_class = self.get_class(body_class)
@@ -92,15 +94,17 @@ class BodyClasses(object):
             return body_class.show_label
         return False
 
-    def show_label(self, body_class):
+    def set_show_label(self, body_class, value):
         body_class = self.get_class(body_class)
         if body_class is not None:
-            body_class.show_label = True
+            body_class.show_label = value
+            print("Label '%s' : " % body_class.name, 'visible' if body_class.show_label else 'hidden')
+
+    def show_label(self, body_class):
+        self.set_show_label(body_class, True)
 
     def hide_label(self, body_class):
-        body_class = self.get_class(body_class)
-        if body_class is not None:
-            body_class.show_label = False
+        self.set_show_label(body_class, False)
 
     def toggle_show_label(self, body_class):
         body_class = self.get_class(body_class)
@@ -114,15 +118,17 @@ class BodyClasses(object):
             return body_class.show_orbit
         return False
 
-    def show_orbit(self, body_class):
-        body_class = self.plural_mapping.get(body_class, body_class)
-        if body_class in self.classes:
-            body_class.show_orbit = True
-
-    def hide_orbit(self, body_class):
+    def set_show_orbit(self, body_class, value):
         body_class = self.get_class(body_class)
         if body_class is not None:
-            body_class.show_orbit = False
+            body_class.show_orbit = value
+            print("Orbit '%s' : " % body_class.name, 'visible' if body_class.show_orbit else 'hidden')
+
+    def show_orbit(self, body_class):
+        self.set_show_orbit(body_class, True)
+
+    def hide_orbit(self, body_class):
+        self.set_show_orbit(body_class, False)
 
     def toggle_show_orbit(self, body_class):
         body_class = self.get_class(body_class)

@@ -48,7 +48,6 @@ class ParamEditor():
         self.owner = owner
         self.scale = LVector2(*settings.ui_scale)
         self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
-        self.body = None
         self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
@@ -216,6 +215,9 @@ class ParamEditor():
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame.viewingArea)
 
+    def update_parameter(self, param):
+        pass
+
     def do_update(self, value, slider, param, component=None):
         value = param.convert_to_type(value)
         if component is None:
@@ -230,7 +232,7 @@ class ParamEditor():
                 new_value = param.get_param_component(component, scale=True)
                 if not isclose(slider['value'], new_value, rel_tol=1e-6):
                     slider['value'] = new_value
-        self.body.update_user_parameters()
+        self.update_parameter(param)
 
     def do_update_slider(self, slider, entry, param, component=None):
         value = slider['value']
@@ -247,18 +249,7 @@ class ParamEditor():
                 new_value = param.get_param_component(component)
                 if not isclose(entry.getValue(), new_value, rel_tol=1e-6):
                     entry.setValue(new_value)
-        self.body.update_user_parameters()
-
-    def show(self, body):
-        if self.shown():
-            print("Editor already shown")
-            return
-        self.body = body
-        self.create_layout(body.get_user_parameters())
-        if self.last_pos is None:
-            self.last_pos = (0, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
+        self.update_parameter(param)
 
     def hide(self):
         if self.window is not None:

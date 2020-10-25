@@ -903,6 +903,9 @@ class Cosmonium(CosmoniumBase):
 
         if self.trigger_check_settings:
             self.universe.check_settings()
+            #TODO: This should be done by a container object
+            self.ecliptic_grid.check_settings()
+            self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
         self.update_universe(self.time.time_full, self.time.dt)
