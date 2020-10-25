@@ -2329,9 +2329,10 @@ class ShaderSphereShadow(ShaderShadow):
 
     def __init__(self, shader=None):
         ShaderShadow.__init__(self, shader)
-        #Currently only target having the same orientation as the caster are supported
-        #i.e. rings
         self.oblate_occluder = False
+
+    def set_oblate_occluder(self, oblate_occluder):
+        self.oblate_occluder = oblate_occluder
 
     def get_id(self):
         name = "ss"
@@ -2422,7 +2423,7 @@ class ShaderSphereShadow(ShaderShadow):
                 planet_scale = shadow_caster.body.get_scale()
                 descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
                 rotation_mat = LMatrix4()
-                orientation = LQuaternion(*shadow_caster.body.scene_orientation)
+                orientation = LQuaternion(*shadow_caster.body._orientation)
                 orientation.extract_to_matrix(rotation_mat)
                 rotation_mat_inv = LMatrix4()
                 rotation_mat_inv.invert_from(rotation_mat)

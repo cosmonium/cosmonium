@@ -315,7 +315,7 @@ class MultiShadows(ShadowBase):
         elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
             self.target.shader.add_shadows(self.sphere_shadows.shader_component)
             #TODO: We could check if the caster is actually oblate or not
-            self.sphere_shadows.shader_component.oblate_occluder = True
+            self.sphere_shadows.shader_component.set_oblate_occluder(True)
             print("Add sphere shadow component")
             self.update_needed = True
         self.update_needed = self.generic_shadows.end_update() or self.update_needed
