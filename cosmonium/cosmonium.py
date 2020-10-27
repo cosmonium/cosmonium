@@ -888,6 +888,8 @@ class Cosmonium(CosmoniumBase):
     def time_task(self, task):
         dt = globalClock.getDt()
 
+        self.gui.update()
+
         self.time.update_time(dt)
         self.nav.update(dt)
 

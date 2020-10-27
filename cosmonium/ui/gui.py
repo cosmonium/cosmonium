@@ -270,6 +270,9 @@ class Gui(object):
         if window in self.opened_windows:
             self.opened_windows.remove(window)
 
+    def update(self):
+        self.clipboard.update()
+
     def escape(self):
         if len(self.opened_windows) != 0:
             window = self.opened_windows.pop()

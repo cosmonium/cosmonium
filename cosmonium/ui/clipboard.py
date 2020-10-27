@@ -24,6 +24,9 @@ import sys
 import os
 
 class Clipboard():
+    def update(self):
+        pass
+
     def copy_to(self, text):
         pass
 
@@ -40,6 +43,7 @@ class TkClipboard(Clipboard):
             else:
                 from tkinter import Tk, TclError
             has_tk = True
+            print("Using Tk clipboard")
         except ImportError:
             print("tinker not found, no Tk copy&paste available")
         if has_tk:
@@ -51,19 +55,24 @@ class TkClipboard(Clipboard):
         else:
             self.r = None
 
+    def update(self):
+        if self.r is not None:
+            self.r.update()
+
     def copy_to(self, text):
         if self.r is not None:
             self.r.clipboard_clear()
             self.r.clipboard_append(text)
-            self.r.update()
         else:
             print(text)
 
     def copy_from(self):
         text = ''
         if self.r is not None:
-            self.r.update()
-            text = self.r.selection_get(selection="CLIPBOARD")
+            try:
+                text = self.r.clipboard_get()
+            except:
+                pass
         return text
 
 class WinClipboard(Clipboard):
@@ -73,6 +82,7 @@ class WinClipboard(Clipboard):
             import win32con
             self.w = win32clipboard
             self.type = win32con.CF_UNICODETEXT
+            print("Using win32 clipboard")
         except ImportError:
             print("Could not import pywin32, no Windows copy&paste available")
             self.w = None
@@ -109,9 +119,11 @@ class XClipboard(Clipboard):
         self.cmd_read = None
         self.cmd_write = None
         if os.path.isfile('/usr/bin/xclip'):
+            print("Using xclip clipboard")
             self.cmd_read = '/usr/bin/xclip -selection "clipboard" -o'
             self.cmd_write = '/usr/bin/xclip -selection "clipboard" -i'
         elif os.path.isfile('/usr/bin/xsel'):
+            print("Using xsel clipboard")
             self.cmd_read = '/usr/bin/xsel -b -o'
             self.cmd_write = '/usr/bin/xsel -b'
         else:
