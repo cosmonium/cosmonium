@@ -35,7 +35,7 @@ class Window():
     def __init__(self, title_text, scale, parent=None, child=None, transparent=False, owner=None):
         self.title_text = title_text
         self.scale = scale
-        self.title_size = settings.window_title_size
+        self.title_size = settings.ui_font_size
         self.owner = owner
         self.child = None
         self.last_pos = None

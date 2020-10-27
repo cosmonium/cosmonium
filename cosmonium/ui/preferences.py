@@ -21,10 +21,10 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..bodyclass import bodyClasses
-from ..parameters import ParametersGroup, SettingParameter, ParametricFunctionParameter
-from .. import settings
+from ..parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
 
 from .editor import ParamEditor
+from cosmonium import settings
 
 class Preferences(ParamEditor):
     def __init__(self, cosmonium, font_family, font_size = 14, owner=None):
@@ -51,12 +51,20 @@ class Preferences(ParamEditor):
                                 ParametersGroup('Orbits', self.make_orbits()),
                                 ParametersGroup('Labels', self.make_labels()),
                                 ParametersGroup('Render', self.make_render()),
+                                ParametersGroup('Advanced', self.make_advanced())
                                 ])
 
 
     def make_general(self):
-        return [
-                SettingParameter('Invert mouse wheel', 'invert_wheel', SettingParameter.TYPE_BOOL)
+        return [ParametersGroup('UI',
+                                []),
+                ParametersGroup('Mouse',
+                                [SettingParameter('Invert mouse wheel', 'invert_wheel', SettingParameter.TYPE_BOOL),
+                                 ]),
+                ParametersGroup('Keyboard',
+                                [SettingParameter('Damped navigation keys', 'damped_nav', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Invert Up/Down', 'celestia_nav', SettingParameter.TYPE_BOOL),
+                                 ])
                ]
 
     def make_orbits(self):
@@ -94,8 +102,14 @@ class Preferences(ParamEditor):
                   ('Constellations', 'constellation'),
                   #('Locations', 'location'),
                 ]
-        return [ParametricFunctionParameter(label, param_name, bodyClasses.set_show_label, bodyClasses.get_show_label, SettingParameter.TYPE_BOOL)
-                for (label, param_name) in labels]
+        return [ParametersGroup('Labels',
+                                [ParametricFunctionParameter(label, param_name, bodyClasses.set_show_label, bodyClasses.get_show_label, SettingParameter.TYPE_BOOL)
+                                 for (label, param_name) in labels]),
+                ParametersGroup('Fonts',
+                                [SettingParameter("Label size", 'label_size', UserParameter.TYPE_INT, [4, 32]),
+                                 SettingParameter("Constellation label size", 'constellations_label_size', UserParameter.TYPE_INT, [4, 32]),
+                                 ]),
+                ]
 
     def make_render(self):
         return [
@@ -123,4 +137,34 @@ class Preferences(ParamEditor):
                                 [SettingParameter('Rotation axis', 'show_rotation_axis', SettingParameter.TYPE_BOOL),
                                  SettingParameter('Reference frame', 'show_reference_axis', SettingParameter.TYPE_BOOL),
                                  ]),
+                ]
+
+    def get_ui_scale(self):
+        return settings.ui_scale[0]
+
+    def set_ui_scale(self, scale):
+        settings.ui_scale = (scale, scale)
+
+    def make_advanced(self):
+        return [ParametersGroup('UI',
+                                [UserParameter("UI Scale", self.set_ui_scale, self.get_ui_scale, UserParameter.TYPE_FLOAT, [0.5, 2]),
+                                 SettingParameter("Menu text size", 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
+                                 SettingParameter("UI text size", 'ui_font_size', UserParameter.TYPE_INT, [4, 32]),
+                                ]),
+                ParametersGroup('HUD',
+                                [SettingParameter("HUD text size", 'hud_text_size', UserParameter.TYPE_INT, [4, 32]),
+                                 SettingParameter("HUD info size", 'hud_info_text_size', UserParameter.TYPE_INT, [4, 32]),
+                                 SettingParameter("HUD color", 'hud_color', UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                                ]),
+                ParametersGroup('Query',
+                                [SettingParameter("Query size", 'query_text_size', UserParameter.TYPE_INT, [4, 32]),
+                                 SettingParameter("Suggestion size", 'query_suggestion_text_size', UserParameter.TYPE_INT, [4, 32]),
+                                ]),
+                ParametersGroup('Render',
+                                [SettingParameter("Shadow PCF", 'shadows_pcf_16', UserParameter.TYPE_BOOL),
+                                 SettingParameter("Shadow slope bias", 'shadows_slope_scale_bias', UserParameter.TYPE_BOOL),
+                                ]),
+                ParametersGroup('OpenGL',
+                                [SettingParameter("Multisampling", 'multisamples', UserParameter.TYPE_INT, [0, 16])
+                                ]),
                 ]

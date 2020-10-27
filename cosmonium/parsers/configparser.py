@@ -92,31 +92,49 @@ class ConfigParser(YamlParser):
     def decode_ui_general(self, data):
         settings.ui_scale = data.get('scale', settings.ui_scale)
         settings.last_script_path = data.get('last-script-path', settings.last_script_path)
+        settings.ui_font_size = data.get('text-size', settings.ui_font_size)
 
     def encode_ui_general(self):
         data = {}
         data['scale'] = list(settings.ui_scale)
         data['last-script-path'] = settings.last_script_path
+        data['text-size'] = settings.ui_font_size
         return data
 
     def decode_ui_hud(self, data):
         settings.show_hud = data.get('visible', settings.show_hud)
         settings.hud_font = data.get('font', settings.hud_font)
         settings.hud_color = data.get('color', settings.hud_color)
+        settings.hud_text_size = data.get('text-size', settings.hud_text_size)
+        settings.hud_info_text_size = data.get('info-size', settings.hud_info_text_size)
 
     def encode_ui_hud(self):
         data = {}
         data['visible'] = settings.show_hud
         data['font'] = settings.hud_font
         data['color'] = list(settings.hud_color)
+        data['text-size'] = settings.hud_text_size
+        data['info-size'] = settings.hud_info_text_size
+        return data
+
+    def decode_ui_query(self, data):
+        settings.query_text_size = data.get('text-size', settings.query_text_size)
+        settings.query_suggestion_text_size = data.get('suggestion-text-size', settings.query_suggestion_text_size)
+
+    def encode_ui_query(self):
+        data = {}
+        data['text-size'] = settings.query_text_size
+        data['suggestion-text-size'] = settings.query_suggestion_text_size
         return data
 
     def decode_ui_menu(self, data):
         settings.show_menubar = data.get('visible', settings.show_menubar)
+        settings.menu_text_size = data.get('text-size', settings.menu_text_size)
 
     def encode_ui_menu(self):
         data = {}
         data['visible'] = settings.show_menubar
+        data['text-size'] = settings.menu_text_size
         return data
 
     def decode_ui_nav(self, data):
@@ -152,6 +170,7 @@ class ConfigParser(YamlParser):
     def decode_ui(self, data):
         self.decode_ui_general(data.get('general', {}))
         self.decode_ui_hud(data.get('hud', {}))
+        self.decode_ui_query(data.get('query', {}))
         self.decode_ui_menu(data.get('menu', {}))
         self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
@@ -161,6 +180,7 @@ class ConfigParser(YamlParser):
         data = {}
         data['general'] = self.encode_ui_general()
         data['hud'] = self.encode_ui_hud()
+        data['query'] = self.encode_ui_query()
         data['menu'] = self.encode_ui_menu()
         data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()

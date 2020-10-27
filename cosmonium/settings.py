@@ -203,7 +203,7 @@ default_distance = 5.0
 ui_scale = (1, 1)
 show_hud = True
 hud_text_size = 12
-info_text_size = 18
+hud_info_text_size = 18
 show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
@@ -222,7 +222,6 @@ query_delay = 0.333
 query_text_size = 18
 query_suggestion_text_size = 12
 
-window_title_size = 14
 default_window_width = 800
 default_window_height = 600
 

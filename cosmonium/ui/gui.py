@@ -110,15 +110,15 @@ class Gui(object):
         self.opened_windows = []
         self.editor = ObjectEditor(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.info = InfoPanel(self.scale, settings.markdown_font, owner=self)
-        self.preferences = Preferences(self.cosmonium, settings.markdown_font, owner=self)
-        self.help = TextWindow('Help', self.scale, settings.markdown_font, owner=self)
+        self.info = InfoPanel(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.preferences = Preferences(self.cosmonium, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.help = TextWindow('Help', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.help.load('control.md')
-        self.license = TextWindow('License', self.scale, settings.markdown_font, owner=self)
+        self.license = TextWindow('License', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.license.load('COPYING.md')
-        self.about = TextWindow('About', self.scale, settings.markdown_font, owner=self)
+        self.about = TextWindow('About', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.about.set_text(about_text)
-        self.filewindow = FileWindow('Select', self.scale, settings.markdown_font, owner=self)
+        self.filewindow = FileWindow('Select', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.create_menubar()
         self.browser = Browser(self.scale, owner=self)
         if settings.show_hud:
@@ -925,7 +925,7 @@ class Gui(object):
         self.hud.info.set(text, duration, fade)
 
     def update_scale(self):
-        self.hud.update_scale()
+        self.hud.set_scale()
 
     def update_size(self, width, height):
         if self.width == width and self.height == height:

@@ -182,14 +182,14 @@ class HUD():
     def __init__(self, scale, font):
         self.scale = scale
         self.font = font
-        self.title = TextLine(base.a2dTopLeft, self.scale, 0, TextNode.ALeft, True, 0, self.font, settings.info_text_size, settings.hud_color)
+        self.title = TextLine(base.a2dTopLeft, self.scale, 0, TextNode.ALeft, True, 0, self.font, settings.hud_info_text_size, settings.hud_color)
         title_height = self.title.get_height()
         self.topLeft = TextBlock(base.a2dTopLeft, self.scale, title_height, TextNode.ALeft, True, 10, self.font, settings.hud_text_size)
         self.bottomLeft = TextBlock(base.a2dBottomLeft, self.scale, 0, TextNode.ALeft, False, 5, self.font, settings.hud_text_size)
         self.topRight = TextBlock(base.a2dTopRight, self.scale, 0, TextNode.ARight, True, 5, self.font, settings.hud_text_size)
         self.bottomRight = TextBlock(base.a2dBottomRight, self.scale, 0, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
         #TODO: Info should be moved out of HUD
-        self.info = FadeTextLine(base.a2dBottomLeft, self.scale, 0, TextNode.ALeft, False, 6, self.font, settings.info_text_size)
+        self.info = FadeTextLine(base.a2dBottomLeft, self.scale, 0, TextNode.ALeft, False, 6, self.font, settings.hud_info_text_size)
         self.shown = True
 
     def hide(self):

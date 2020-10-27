@@ -93,7 +93,7 @@ class ParamEditor():
             scaled_value = param.get_param(scale=True)
         hsizer = Sizer("horizontal")
         slider = DirectSlider(parent=frame,
-                              scale=(self.font_size * 16, 1, self.font_size * 2),
+                              scale=(self.font_size * 16, 1, self.font_size * 6),
                               value=scaled_value,
                               range=param.get_range(scale=True),
                               suppressKeys=1,
@@ -201,7 +201,8 @@ class ParamEditor():
                                                         tab_text_pos = (0.2, 0.6),
                                                         tabUnselectedColor = settings.tab_background,
                                                         tabSelectedColor = settings.panel_background,
-                                                        scroll_scrollBarWidth=self.font_size))
+                                                        scroll_scrollBarWidth=self.font_size,
+                                                        scroll_verticalScroll_pageSize=self.font_size))
         self.layout.frame.setPos(0, 0, -buttonSize)
         for section in group.parameters:
             sizer = Sizer("vertical")
