@@ -886,7 +886,10 @@ class Cosmonium(CosmoniumBase):
         self.gui.update_status()
 
     def time_task(self, task):
-        dt = globalClock.getDt()
+        if task is not None:
+            dt = globalClock.getDt()
+        else:
+            dt = 0
 
         self.gui.update()
 
