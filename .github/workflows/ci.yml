@@ -35,7 +35,7 @@ jobs:
         name: linux-logs
         path: ~/.local/share/cosmonium/output.log
     - name: 'Upload development build'
-      if: github.ref == 'refs/heads/develop'
+      if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -77,7 +77,7 @@ jobs:
         name: macos-logs
         path: ~/Documents/cosmonium/output.log
     - name: 'Upload development build'
-      if: github.ref == 'refs/heads/develop'
+      if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -121,7 +121,7 @@ jobs:
         name: windows-logs
         path: ~/AppData/Local/cosmonium/output.log
     - name: 'Upload development build'
-      if: github.ref == 'refs/heads/develop'
+      if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
