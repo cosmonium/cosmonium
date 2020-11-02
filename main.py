@@ -73,7 +73,7 @@ class CosmoniumConfig(object):
             self.celestia_data_list.append("C:\\Program Files\\Celestia")
         else:
             self.celestia_data_list.append("/usr/share/celestia")
-        self.celestia_support = ['data/solar-system/ssd.yaml', 'data/solar-system/manual-orbits.yaml', 'data/solar-system/celestia.yaml']
+        self.celestia_support = ['data/solar-system/frames.yaml', 'data/solar-system/ssd.yaml', 'data/solar-system/manual-orbits.yaml', 'data/solar-system/celestia.yaml']
         self.celestia_ssc = ["solarsys.ssc", "minormoons.ssc", "numberedmoons.ssc", "asteroids.ssc", "outersys.ssc"]#, "extrasolar.ssc"]
         self.celestia_stc = ["nearstars.stc", "revised.stc", "spectbins.stc", "visualbins.stc", "extrasolar.stc"]
         self.celestia_dsc = ["galaxies.dsc"]
