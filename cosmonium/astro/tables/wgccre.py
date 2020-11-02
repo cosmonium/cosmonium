@@ -139,6 +139,7 @@ wgccre_simple = { 'sun':     WgccreSimpleRotation(286.13, 63.87, 84.176, 14.1844
 
 rotation_elements_db.register_category('wgccre-mean', 1)
 rotation_elements_db.register_category('wgccre', 100)
+rotation_elements_db.register_alias('wgccre', 'iau')
 
 for (element_name, element) in wgccre_simple.items():
     rotation_elements_db.register_element('wgccre-mean', element_name, element)

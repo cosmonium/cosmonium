@@ -41,6 +41,10 @@ class ElementsDB(object):
         self.db_list.append(category)
         self.db_list.sort(key=lambda x: x.priority, reverse=True)
 
+    def register_alias(self, category_name, alias):
+        category = self.db_map[category_name]
+        self.db_map[alias] = category
+
     def register_element(self, category_name, element_name, element):
         category = self.db_map[category_name]
         category.elements[element_name] = element
