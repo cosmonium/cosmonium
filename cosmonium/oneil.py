@@ -293,6 +293,7 @@ class ONeilScatteringBase(AtmosphericScattering):
             code.append("uniform float fg;")
             code.append("uniform float fg2;")
         code.append("uniform float fExposure;")
+        code.append("uniform float global_ambient;")
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -336,7 +337,7 @@ class ONeilScatteringBase(AtmosphericScattering):
             if self.extinction_only:
                 code.append("  total_diffuse_color.rgb = total_diffuse_color.rgb * transmittance;")
             else:
-                code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance;")
+                code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance * (1.0 - global_ambient) + surface_color.rgb * global_ambient;")
             if self.hdr:
                 code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 

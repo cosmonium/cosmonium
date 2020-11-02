@@ -770,6 +770,7 @@ class Cosmonium(CosmoniumBase):
         self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
         self.globalAmbientPath = self.world.attachNewNode(self.globalAmbient)
         self.world.setLight(self.globalAmbientPath)
+        self.render.set_shader_input("global_ambient", settings.corrected_global_ambient)
         configParser.save()
 
     def incr_ambient(self, ambient_incr):

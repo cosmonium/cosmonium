@@ -115,6 +115,8 @@ uniform vec3  invScatterCoeffSum;
 
 uniform vec3 v3LightDir;
 ''']
+        if not self.atmosphere:
+            code.append("uniform float global_ambient;")
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -209,7 +211,7 @@ uniform vec3 v3LightDir;
             if self.extinction_only:
                 code.append("    total_diffuse_color = vec4(total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
             else:
-                code.append("    total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
+                code.append("    total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx * (1.0 - global_ambient) + surface_color.rgb * global_ambient, total_diffuse_color.a);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:

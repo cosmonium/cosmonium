@@ -2567,10 +2567,10 @@ class LambertPhongLightingModel(LightingModel):
         code.append("  float diffuse_coef = clamp(n_dot_l, 0.0, 1.0) * shadow;")
         code.append("  total_diffuse += light_color * diffuse_coef;")
         code.append("}")
-        code.append("vec4 ambient = ambient_color * ambient_coef;")
-        if self.appearance.has_occlusion:
-            code.append("ambient *= surface_occlusion;")
-        code.append("total_diffuse += ambient;")
+        #code.append("vec4 ambient = ambient_color * ambient_coef;")
+        #if self.appearance.has_occlusion:
+        #    code.append("ambient *= surface_occlusion;")
+        #code.append("total_diffuse += ambient;")
         code.append("total_diffuse.a = 1.0;")
         code.append("total_diffuse_color += surface_color * total_diffuse;")
         self.apply_emission(code, 'n_dot_l')
@@ -2626,8 +2626,8 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("  vec4 diffuse = light_color * shadow * diffuse_coef;")
         code.append("  total_diffuse += diffuse;")
         code.append("}")
-        code.append("vec4 ambient = ambient_color * ambient_coef;")
-        code.append("total_diffuse += ambient;")
+        #code.append("vec4 ambient = ambient_color * ambient_coef;")
+        #code.append("total_diffuse += ambient;")
         code.append("total_diffuse.a = 1.0;")
         code.append("total_diffuse_color += surface_color * total_diffuse;")
         self.apply_emission(code, 'l_dot_n')
@@ -2643,7 +2643,11 @@ class OrenNayarPhongLightingModel(LightingModel):
         shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
 
 class AtmosphericScattering(ShaderComponent):
-    pass
+    def fragment_uniforms(self, code):
+        code.append("uniform float global_ambient;")
+
+    def fragment_shader(self, code):
+        code.append("  total_diffuse_color.rgb = total_diffuse_color.rgb * (1.0 - global_ambient) + surface_color.rgb * global_ambient;")
 
 class Fog(ShaderComponent):
     use_vertex = True
