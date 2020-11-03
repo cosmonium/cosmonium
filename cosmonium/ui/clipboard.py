@@ -145,17 +145,17 @@ class XClipboard(Clipboard):
         return result
 
 def create_clipboard():
-    clipboard = TkClipboard()
-    if clipboard.r is None:
-        if sys.platform == 'darwin':
-            clipboard = DarwinClipboard()
-        elif sys.platform == 'win32':
+    if sys.platform == 'darwin':
+        clipboard = DarwinClipboard()
+    elif sys.platform == 'win32':
+        clipboard = TkClipboard()
+        if clipboard.r is None:
             clipboard = WinClipboard()
             if clipboard.w is None:
                 clipboard = Clipboard()
-        elif sys.platform.startswith('linux'):
-            clipboard = XClipboard() 
-        else:
-            print("No support for clipboard detected for platform", sys.platform)
-            clipboard = Clipboard()
+    elif sys.platform.startswith('linux'):
+        clipboard = XClipboard()
+    else:
+        print("No support for clipboard detected for platform", sys.platform)
+        clipboard = Clipboard()
     return clipboard
