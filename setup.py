@@ -38,6 +38,13 @@ if '--cosmonium-test' in sys.argv:
     log_filename = None
 
 for (index, arg) in enumerate(sys.argv):
+    if arg == '-p':
+        platform = sys.argv[index + 1]
+        if platform.startswith('macos'):
+            log_filename = '$HOME/Library/Logs/cosmonium/output.log'
+        break
+
+for (index, arg) in enumerate(sys.argv):
     if arg == '-r':
         requirements_path = sys.argv[index + 1]
         sys.argv.pop(index)
