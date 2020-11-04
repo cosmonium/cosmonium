@@ -67,7 +67,7 @@ endif
 
 PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION)/panda3d-$(PANDA3D_VERSION)+fp64+opt-cp37-cp37m-$(PLATFORM_ARCH).whl
 
-build: build-source update-mo
+build: build-source update-mo update-data-mo
 
 build-source:
 	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON="$(PYTHON)" PYTHON_VERSION=${PYTHON_VERSION} OPTIONS="$(SOURCE_OPTIONS)"
@@ -79,6 +79,9 @@ endif
 
 update-mo:
 	@cd po && "$(MAKE)" update-mo
+
+update-data-mo:
+	@cd data/po && "$(MAKE)" update-mo
 
 clean:
 	@cd source && "$(MAKE)" clean
