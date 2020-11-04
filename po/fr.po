@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-10-02 00:39+0200\n"
+"POT-Creation-Date: 2020-11-04 18:45+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -83,6 +83,14 @@ msgstr "Atmosphère"
 msgid "Clouds"
 msgstr "Nuages"
 
+#: ../cosmonium/cosmonium.py:416
+msgid "Sol"
+msgstr "Soleil"
+
+#: ../cosmonium/cosmonium.py:650
+msgid "Magnitude limit:  %.1f"
+msgstr "Limite de magnitude: %.1f"
+
 #: ../cosmonium/stellarobject.py:188 ../cosmonium/ui/info.py:166
 #: ../cosmonium/ui/info.py:179 ../cosmonium/ui/info.py:209
 msgid "General"
@@ -93,575 +101,587 @@ msgstr "Général"
 msgid "Surface"
 msgstr "Surface"
 
-#: ../cosmonium/ui/gui.py:305
+#: ../cosmonium/ui/gui.py:314
 msgid "Invalid URL..."
 msgstr "URL invalide..."
 
-#: ../cosmonium/ui/gui.py:310
+#: ../cosmonium/ui/gui.py:319
 msgid "Instant move"
 msgstr "Déplacement instantané"
 
-#: ../cosmonium/ui/gui.py:312
+#: ../cosmonium/ui/gui.py:321
 msgid "Normal move"
 msgstr "Déplacement normal"
 
-#: ../cosmonium/ui/gui.py:317 ../cosmonium/ui/gui.py:635
+#: ../cosmonium/ui/gui.py:326 ../cosmonium/ui/gui.py:654
 msgid "Freeze LOD"
 msgstr "Gel LOD"
 
-#: ../cosmonium/ui/gui.py:319
+#: ../cosmonium/ui/gui.py:328
 msgid "Unfreeze LOD"
 msgstr "Dégel LOD"
 
-#: ../cosmonium/ui/gui.py:423 ../cosmonium/ui/gui.py:430
+#: ../cosmonium/ui/gui.py:432 ../cosmonium/ui/gui.py:439
 msgid "Screenshot not saved"
-msgstr ""
+msgstr "Capture d'écran non sauvée"
 
-#: ../cosmonium/ui/gui.py:439
+#: ../cosmonium/ui/gui.py:453
 msgid "_Find object"
 msgstr "_Trouver l'objet"
 
-#: ../cosmonium/ui/gui.py:441
+#: ../cosmonium/ui/gui.py:455
 msgid "_Save URL"
 msgstr "_Sauver l'URL"
 
-#: ../cosmonium/ui/gui.py:442
+#: ../cosmonium/ui/gui.py:456
 msgid "_Load URL"
 msgstr "_Charger l'URL"
 
-#: ../cosmonium/ui/gui.py:444
+#: ../cosmonium/ui/gui.py:458
+msgid "Load _CEL script"
+msgstr "Charger le script _CEL"
+
+#: ../cosmonium/ui/gui.py:460
 msgid "Go to _home"
 msgstr "Retour"
 
-#: ../cosmonium/ui/gui.py:446
+#: ../cosmonium/ui/gui.py:462
 msgid "_Preferences"
 msgstr "_Préférences"
 
-#: ../cosmonium/ui/gui.py:448
+#: ../cosmonium/ui/gui.py:464
 msgid "_Quit"
 msgstr "_Quitter"
 
-#: ../cosmonium/ui/gui.py:453
+#: ../cosmonium/ui/gui.py:469
 msgid "_Increase rate 10x"
 msgstr "Augmenter 10x le défilement"
 
-#: ../cosmonium/ui/gui.py:454
+#: ../cosmonium/ui/gui.py:470
 msgid "I_ncrease rate 2x"
 msgstr "Augmenter 2x le défilement"
 
-#: ../cosmonium/ui/gui.py:455
+#: ../cosmonium/ui/gui.py:471
 msgid "_Decrease rate 10x"
 msgstr "Diminuer 10x le défilement"
 
-#: ../cosmonium/ui/gui.py:456
+#: ../cosmonium/ui/gui.py:472
 msgid "D_ecrease rate 2x"
 msgstr "_Diminuer 2x le défilement"
 
-#: ../cosmonium/ui/gui.py:457
+#: ../cosmonium/ui/gui.py:473
 msgid "_Reverse time"
 msgstr "Inverser défilement"
 
-#: ../cosmonium/ui/gui.py:458
+#: ../cosmonium/ui/gui.py:474
 msgid "_Freeze time"
 msgstr "Geler le défilement"
 
-#: ../cosmonium/ui/gui.py:459
+#: ../cosmonium/ui/gui.py:475
 msgid "_Set real time"
 msgstr "Défilement temps réel"
 
-#: ../cosmonium/ui/gui.py:461
+#: ../cosmonium/ui/gui.py:477
 msgid "Set _time..."
 msgstr "Règler l'heure..."
 
-#: ../cosmonium/ui/gui.py:462
+#: ../cosmonium/ui/gui.py:478
 msgid "Set _current time"
 msgstr "Règler l'heure actuelle"
 
-#: ../cosmonium/ui/gui.py:463
+#: ../cosmonium/ui/gui.py:479
 msgid "Set _J2000 epoch"
 msgstr "Règler époque _J2000"
 
-#: ../cosmonium/ui/gui.py:471 ../cosmonium/ui/gui.py:736
+#: ../cosmonium/ui/gui.py:487 ../cosmonium/ui/gui.py:755
 msgid "_Info"
 msgstr "_Info"
 
-#: ../cosmonium/ui/gui.py:472 ../cosmonium/ui/gui.py:765
+#: ../cosmonium/ui/gui.py:488 ../cosmonium/ui/gui.py:784
 msgid "_Edit"
 msgstr "_Editer"
 
-#: ../cosmonium/ui/gui.py:474
+#: ../cosmonium/ui/gui.py:490
 msgid "_Go to"
 msgstr "_Aller à"
 
-#: ../cosmonium/ui/gui.py:475
+#: ../cosmonium/ui/gui.py:491
 msgid "Go to f_ront"
 msgstr "Aller en face"
 
-#: ../cosmonium/ui/gui.py:476
+#: ../cosmonium/ui/gui.py:492
 msgid "Go to _surface"
 msgstr "Aller à la surface"
 
-#: ../cosmonium/ui/gui.py:478 ../cosmonium/ui/gui.py:738
+#: ../cosmonium/ui/gui.py:494 ../cosmonium/ui/gui.py:757
 msgid "_Follow"
 msgstr "_Suivre"
 
-#: ../cosmonium/ui/gui.py:479 ../cosmonium/ui/gui.py:739
+#: ../cosmonium/ui/gui.py:495 ../cosmonium/ui/gui.py:758
 msgid "S_ync"
 msgstr "S_ynchro"
 
-#: ../cosmonium/ui/gui.py:481
+#: ../cosmonium/ui/gui.py:497
 msgid "_Reset navigation"
 msgstr "_Réinitialiser la navigation"
 
-#: ../cosmonium/ui/gui.py:483 ../cosmonium/ui/gui.py:761
+#: ../cosmonium/ui/gui.py:499 ../cosmonium/ui/gui.py:780
 msgid "Orbiting bodies"
 msgstr "Corps orbitants"
 
-#: ../cosmonium/ui/gui.py:484 ../cosmonium/ui/gui.py:764
+#: ../cosmonium/ui/gui.py:500 ../cosmonium/ui/gui.py:783
 msgid "Orbits"
 msgstr "Orbite"
 
-#: ../cosmonium/ui/gui.py:500
+#: ../cosmonium/ui/gui.py:516
 msgid "_Mode"
 msgstr "_Mode"
 
-#: ../cosmonium/ui/gui.py:502
+#: ../cosmonium/ui/gui.py:518
 msgid "_Center on"
 msgstr "_Centrer sur"
 
-#: ../cosmonium/ui/gui.py:504
+#: ../cosmonium/ui/gui.py:520
 msgid "_Track"
 msgstr "_Pister"
 
-#: ../cosmonium/ui/gui.py:506
+#: ../cosmonium/ui/gui.py:522
 msgid "Zoom _in"
 msgstr "Zoomer"
 
-#: ../cosmonium/ui/gui.py:507
+#: ../cosmonium/ui/gui.py:523
 msgid "Zoom _out"
 msgstr "Dézoomer"
 
-#: ../cosmonium/ui/gui.py:508
+#: ../cosmonium/ui/gui.py:524
 msgid "_Reset Zoom"
 msgstr "Réinitialiser zoom"
 
-#: ../cosmonium/ui/gui.py:510
+#: ../cosmonium/ui/gui.py:526
 msgid "_Select ship"
 msgstr "_Sélectioner vaisseau"
 
-#: ../cosmonium/ui/gui.py:511
+#: ../cosmonium/ui/gui.py:527
 msgid "_Edit ship"
 msgstr "_Editer vaisseau"
 
-#: ../cosmonium/ui/gui.py:516 ../cosmonium/ui/gui.py:548
+#: ../cosmonium/ui/gui.py:532 ../cosmonium/ui/gui.py:564
 msgid "_Galaxies"
 msgstr "_Galaxies"
 
-#: ../cosmonium/ui/gui.py:518 ../cosmonium/ui/gui.py:535
+#: ../cosmonium/ui/gui.py:534 ../cosmonium/ui/gui.py:551
 msgid "_Stars"
 msgstr "_Etoiles"
 
-#: ../cosmonium/ui/gui.py:519 ../cosmonium/ui/gui.py:536
+#: ../cosmonium/ui/gui.py:535 ../cosmonium/ui/gui.py:552
 msgid "_Planets"
 msgstr "_Planètes"
 
-#: ../cosmonium/ui/gui.py:520 ../cosmonium/ui/gui.py:537
+#: ../cosmonium/ui/gui.py:536 ../cosmonium/ui/gui.py:553
 msgid "_Dwarf planets"
 msgstr "Planètes _naines"
 
-#: ../cosmonium/ui/gui.py:521 ../cosmonium/ui/gui.py:538
+#: ../cosmonium/ui/gui.py:537 ../cosmonium/ui/gui.py:554
 msgid "_Moons"
 msgstr "_Lunes"
 
-#: ../cosmonium/ui/gui.py:522
+#: ../cosmonium/ui/gui.py:538
 msgid "M_inor Moons"
 msgstr "Lunes m_ineures"
 
-#: ../cosmonium/ui/gui.py:523
+#: ../cosmonium/ui/gui.py:539
 msgid "L_ost Moons"
 msgstr "Lunes perdues"
 
-#: ../cosmonium/ui/gui.py:524
+#: ../cosmonium/ui/gui.py:540
 msgid "C_omets"
 msgstr "C_omètes"
 
-#: ../cosmonium/ui/gui.py:525 ../cosmonium/ui/gui.py:542
+#: ../cosmonium/ui/gui.py:541 ../cosmonium/ui/gui.py:558
 msgid "_Asteroids"
 msgstr "_Astéroïdes"
 
-#: ../cosmonium/ui/gui.py:526 ../cosmonium/ui/gui.py:543
+#: ../cosmonium/ui/gui.py:542 ../cosmonium/ui/gui.py:559
 msgid "I_nterstellars"
 msgstr "I_nterstellaires"
 
-#: ../cosmonium/ui/gui.py:527 ../cosmonium/ui/gui.py:544
+#: ../cosmonium/ui/gui.py:543 ../cosmonium/ui/gui.py:560
 msgid "S_pacecrafts"
 msgstr "Vaisseaux"
 
-#: ../cosmonium/ui/gui.py:528
+#: ../cosmonium/ui/gui.py:544
 msgid "_Constellations"
 msgstr "_Constellations"
 
-#: ../cosmonium/ui/gui.py:533
+#: ../cosmonium/ui/gui.py:549
 msgid "All _orbits"
 msgstr "Toutes les _orbites"
 
-#: ../cosmonium/ui/gui.py:539
+#: ../cosmonium/ui/gui.py:555
 msgid "M_inor moons"
 msgstr "Lunes m_ineures"
 
-#: ../cosmonium/ui/gui.py:540
+#: ../cosmonium/ui/gui.py:556
 msgid "L_ost moons"
 msgstr "Lunes perdues"
 
-#: ../cosmonium/ui/gui.py:541
+#: ../cosmonium/ui/gui.py:557
 msgid "_Comets"
 msgstr "_Comètes"
 
-#: ../cosmonium/ui/gui.py:554
+#: ../cosmonium/ui/gui.py:570
 msgid "_Atmospheres"
 msgstr "_Atmosphères"
 
-#: ../cosmonium/ui/gui.py:555
+#: ../cosmonium/ui/gui.py:571
 msgid "_Clouds"
 msgstr "_Nuages"
 
-#: ../cosmonium/ui/gui.py:562
+#: ../cosmonium/ui/gui.py:578
 msgid "_Boundaries"
 msgstr "_Limites"
 
-#: ../cosmonium/ui/gui.py:563
+#: ../cosmonium/ui/gui.py:579
 msgid "_Asterisms"
 msgstr "_Astérismes"
 
-#: ../cosmonium/ui/gui.py:567
+#: ../cosmonium/ui/gui.py:583
 msgid "_Equatorial"
 msgstr "_Equatorielle"
 
-#: ../cosmonium/ui/gui.py:568
+#: ../cosmonium/ui/gui.py:584
 msgid "E_cliptic"
 msgstr "_Ecliptique"
 
-#: ../cosmonium/ui/gui.py:572
+#: ../cosmonium/ui/gui.py:588
 msgid "Hardware support"
 msgstr "Support matériel"
 
-#: ../cosmonium/ui/gui.py:573
+#: ../cosmonium/ui/gui.py:589
 msgid "Red-Blue"
 msgstr "Rouge-Bleu"
 
-#: ../cosmonium/ui/gui.py:574
+#: ../cosmonium/ui/gui.py:590
 msgid "Side by side"
 msgstr "Côte-à-côte"
 
-#: ../cosmonium/ui/gui.py:575
+#: ../cosmonium/ui/gui.py:591
 msgid "Swap eyes"
 msgstr "Echanger les yeux"
 
-#: ../cosmonium/ui/gui.py:579
+#: ../cosmonium/ui/gui.py:595
 msgid "_Decrease ambient"
 msgstr "_Diminuer lum. ambiante"
 
-#: ../cosmonium/ui/gui.py:580
+#: ../cosmonium/ui/gui.py:596
 msgid "_Increase ambient"
 msgstr "Augmenter lum. ambiante"
 
-#: ../cosmonium/ui/gui.py:582
+#: ../cosmonium/ui/gui.py:598
+msgid "Fewer _Stars Visible"
+msgstr "Moins d'étoiles visibles"
+
+#: ../cosmonium/ui/gui.py:599
+msgid "_More Stars Visible"
+msgstr "Plus d'étoiles visibles"
+
+#: ../cosmonium/ui/gui.py:601
 msgid "_Rotation axis"
 msgstr "_Axe de rotation"
 
-#: ../cosmonium/ui/gui.py:583
+#: ../cosmonium/ui/gui.py:602
 msgid "Reference _frame"
 msgstr "Cadre de référence"
 
-#: ../cosmonium/ui/gui.py:587
+#: ../cosmonium/ui/gui.py:606
 msgid "_Labels"
 msgstr "_Labels"
 
-#: ../cosmonium/ui/gui.py:588
+#: ../cosmonium/ui/gui.py:607
 msgid "_Orbits"
 msgstr "_Orbites"
 
-#: ../cosmonium/ui/gui.py:589
+#: ../cosmonium/ui/gui.py:608
 msgid "_Bodies"
 msgstr "_Corps"
 
-#: ../cosmonium/ui/gui.py:590
+#: ../cosmonium/ui/gui.py:609
 msgid "O_ptions"
 msgstr "O_ptions"
 
-#: ../cosmonium/ui/gui.py:591
+#: ../cosmonium/ui/gui.py:610
 msgid "_Grids"
 msgstr "_Grilles"
 
-#: ../cosmonium/ui/gui.py:592
+#: ../cosmonium/ui/gui.py:611
 msgid "G_uides"
 msgstr "G_uides"
 
-#: ../cosmonium/ui/gui.py:593
+#: ../cosmonium/ui/gui.py:612
 msgid "_3D"
 msgstr "_3D"
 
-#: ../cosmonium/ui/gui.py:594
+#: ../cosmonium/ui/gui.py:613
 msgid "_Advanced"
 msgstr "_Avancé"
 
-#: ../cosmonium/ui/gui.py:599
+#: ../cosmonium/ui/gui.py:618
 msgid "Toggle _fullscreen"
 msgstr "Basculer plein-écran"
 
-#: ../cosmonium/ui/gui.py:600
+#: ../cosmonium/ui/gui.py:619
 msgid "Toggle _menubar"
 msgstr "Basculer barre de menu"
 
-#: ../cosmonium/ui/gui.py:601
+#: ../cosmonium/ui/gui.py:620
 msgid "Toggle _HUD"
 msgstr "Basculer _HUD"
 
-#: ../cosmonium/ui/gui.py:603
+#: ../cosmonium/ui/gui.py:622
 msgid "Save _screenshot"
 msgstr "Capture d'écran"
 
-#: ../cosmonium/ui/gui.py:604
+#: ../cosmonium/ui/gui.py:623
 msgid "Save screenshot _without UI"
 msgstr "Capture d'écran sans interface"
 
-#: ../cosmonium/ui/gui.py:605
+#: ../cosmonium/ui/gui.py:624
 msgid "Set screenshots directory..."
 msgstr "Configurer le répertoire pour les captures..."
 
-#: ../cosmonium/ui/gui.py:610
+#: ../cosmonium/ui/gui.py:629
 msgid "Frame per second"
 msgstr "Trame par secondes"
 
-#: ../cosmonium/ui/gui.py:611
+#: ../cosmonium/ui/gui.py:630
 msgid "Render time"
 msgstr "Temps de rendu"
 
-#: ../cosmonium/ui/gui.py:612
+#: ../cosmonium/ui/gui.py:631
 msgid "None"
 msgstr "Aucun"
 
-#: ../cosmonium/ui/gui.py:615
+#: ../cosmonium/ui/gui.py:634
 msgid "Default"
 msgstr "Défaut"
 
-#: ../cosmonium/ui/gui.py:616
+#: ../cosmonium/ui/gui.py:635
 msgid "Diffuse"
 msgstr "Diffus"
 
-#: ../cosmonium/ui/gui.py:617
+#: ../cosmonium/ui/gui.py:636
 msgid "Normals"
 msgstr "Normales"
 
-#: ../cosmonium/ui/gui.py:618
+#: ../cosmonium/ui/gui.py:637
 msgid "Normal map"
 msgstr "Normal map"
 
-#: ../cosmonium/ui/gui.py:619
+#: ../cosmonium/ui/gui.py:638
 msgid "Shadows"
 msgstr "Ombres"
 
-#: ../cosmonium/ui/gui.py:620
+#: ../cosmonium/ui/gui.py:639
 msgid "Color picking"
 msgstr "Sélection par couleur"
 
-#: ../cosmonium/ui/gui.py:621
+#: ../cosmonium/ui/gui.py:640
 msgid "Ray hit"
 msgstr "Intersection rayon"
 
-#: ../cosmonium/ui/gui.py:622
+#: ../cosmonium/ui/gui.py:641
 msgid "Show slice"
 msgstr "Tranche"
 
-#: ../cosmonium/ui/gui.py:625
+#: ../cosmonium/ui/gui.py:644
 msgid "Toggle filled wireframe"
 msgstr "Basculer mode fil de fer rempli"
 
-#: ../cosmonium/ui/gui.py:626
+#: ../cosmonium/ui/gui.py:645
 msgid "Toggle wireframe"
 msgstr "Basculer mode fil de fer"
 
-#: ../cosmonium/ui/gui.py:627
+#: ../cosmonium/ui/gui.py:646
 msgid "Show render buffers"
 msgstr "Montrer buffets rendu"
 
-#: ../cosmonium/ui/gui.py:628
+#: ../cosmonium/ui/gui.py:647
 msgid "Show shadow frustum"
 msgstr "Montrer le frustum des ombres"
 
-#: ../cosmonium/ui/gui.py:630
+#: ../cosmonium/ui/gui.py:649
 msgid "Shaders"
 msgstr "Shaders"
 
-#: ../cosmonium/ui/gui.py:631
+#: ../cosmonium/ui/gui.py:650
 msgid "Instant movement"
 msgstr "Déplacement instantané"
 
-#: ../cosmonium/ui/gui.py:632
+#: ../cosmonium/ui/gui.py:651
 msgid "Connect pstats"
 msgstr "Connecter pstats"
 
-#: ../cosmonium/ui/gui.py:633
+#: ../cosmonium/ui/gui.py:652
 msgid "Render info"
 msgstr "Info rendu"
 
-#: ../cosmonium/ui/gui.py:636
+#: ../cosmonium/ui/gui.py:655
 msgid "Dump LOD tree"
 msgstr "Imprimer l'arbre LOD"
 
-#: ../cosmonium/ui/gui.py:637
+#: ../cosmonium/ui/gui.py:656
 msgid "Dump LOD flat tree"
 msgstr "Imprimer l'arbre LOD à plat"
 
-#: ../cosmonium/ui/gui.py:638
+#: ../cosmonium/ui/gui.py:657
 msgid "Log LOD events"
 msgstr "Logguer les évènements LOD"
 
-#: ../cosmonium/ui/gui.py:639
+#: ../cosmonium/ui/gui.py:658
 msgid "Show boundaries"
 msgstr "Montrer les limites"
 
-#: ../cosmonium/ui/gui.py:640
+#: ../cosmonium/ui/gui.py:659
 msgid "Show LOD bounding boxes"
 msgstr ""
 
-#: ../cosmonium/ui/gui.py:641
+#: ../cosmonium/ui/gui.py:660
 msgid "Show LOD culling frustum"
 msgstr ""
 
-#: ../cosmonium/ui/gui.py:643
+#: ../cosmonium/ui/gui.py:662
 msgid "Show octree stats"
 msgstr ""
 
-#: ../cosmonium/ui/gui.py:644
+#: ../cosmonium/ui/gui.py:663
 msgid "Dump octree"
 msgstr ""
 
-#: ../cosmonium/ui/gui.py:649
+#: ../cosmonium/ui/gui.py:668
 msgid "User _guide"
 msgstr "_Guide utilisateur"
 
-#: ../cosmonium/ui/gui.py:651
+#: ../cosmonium/ui/gui.py:670
 msgid "_Credits"
 msgstr "_Crédits"
 
-#: ../cosmonium/ui/gui.py:652
+#: ../cosmonium/ui/gui.py:671
 msgid "_License"
 msgstr "_Licence"
 
-#: ../cosmonium/ui/gui.py:654
+#: ../cosmonium/ui/gui.py:673
 msgid "_About"
 msgstr "_A propos"
 
-#: ../cosmonium/ui/gui.py:663
+#: ../cosmonium/ui/gui.py:682
 msgid "_Cosmonium"
 msgstr "_Cosmonium"
 
-#: ../cosmonium/ui/gui.py:664
+#: ../cosmonium/ui/gui.py:683
 msgid "_Select"
 msgstr "_Sélection"
 
-#: ../cosmonium/ui/gui.py:665
+#: ../cosmonium/ui/gui.py:684
 msgid "_Time"
 msgstr "_Temps"
 
-#: ../cosmonium/ui/gui.py:666
+#: ../cosmonium/ui/gui.py:685
 msgid "Camera"
 msgstr "Caméra"
 
-#: ../cosmonium/ui/gui.py:667
+#: ../cosmonium/ui/gui.py:686
 msgid "_Render"
 msgstr "Rendu"
 
-#: ../cosmonium/ui/gui.py:668
+#: ../cosmonium/ui/gui.py:687
 msgid "_Window"
 msgstr "_Fenêtre"
 
-#: ../cosmonium/ui/gui.py:669
+#: ../cosmonium/ui/gui.py:688
 msgid "_Debug"
 msgstr "_Débug"
 
-#: ../cosmonium/ui/gui.py:670
+#: ../cosmonium/ui/gui.py:689
 msgid "_Help"
 msgstr "_Aide"
 
-#: ../cosmonium/ui/gui.py:737
+#: ../cosmonium/ui/gui.py:756
 msgid "_Goto"
 msgstr "_Aller à"
 
-#: ../cosmonium/ui/gui.py:758
+#: ../cosmonium/ui/gui.py:777
 msgid "Surfaces"
 msgstr "Surfaces"
 
-#: ../cosmonium/ui/gui.py:773
+#: ../cosmonium/ui/gui.py:792
 msgid "More info"
 msgstr "Plus d'info"
 
-#: ../cosmonium/ui/gui.py:777
+#: ../cosmonium/ui/gui.py:796
 msgid "Show _menubar"
 msgstr "Montrer barre des menus"
 
-#: ../cosmonium/ui/gui.py:829
+#: ../cosmonium/ui/gui.py:848
 msgid "Distance: "
 msgstr "Distance : "
 
-#: ../cosmonium/ui/gui.py:834
+#: ../cosmonium/ui/gui.py:853
 msgid "Ground: "
 msgstr "Sol : "
 
-#: ../cosmonium/ui/gui.py:834 ../cosmonium/ui/gui.py:837
+#: ../cosmonium/ui/gui.py:853 ../cosmonium/ui/gui.py:856
 msgid "Altitude: "
 msgstr "Altitude : "
 
-#: ../cosmonium/ui/gui.py:839
+#: ../cosmonium/ui/gui.py:858
 msgid "Radius: "
 msgstr "Rayon : "
 
-#: ../cosmonium/ui/gui.py:840 ../cosmonium/ui/gui.py:854
+#: ../cosmonium/ui/gui.py:859 ../cosmonium/ui/gui.py:873
 msgid "Abs (app) magnitude: "
 msgstr "Magnitude abs (app) : "
 
-#: ../cosmonium/ui/gui.py:842
+#: ../cosmonium/ui/gui.py:861
 msgid "Luminosity: "
 msgstr "Luminosité : "
 
-#: ../cosmonium/ui/gui.py:842
+#: ../cosmonium/ui/gui.py:861
 msgid "x Sun"
 msgstr "x Soleil"
 
-#: ../cosmonium/ui/gui.py:844
+#: ../cosmonium/ui/gui.py:863
 msgid "Spectral type: "
 msgstr "Type spectral : "
 
-#: ../cosmonium/ui/gui.py:845
+#: ../cosmonium/ui/gui.py:864
 msgid "Temperature: "
 msgstr "Température : "
 
-#: ../cosmonium/ui/gui.py:850
+#: ../cosmonium/ui/gui.py:869
 msgid "Phase: "
 msgstr "Phase : "
 
-#: ../cosmonium/ui/gui.py:886
+#: ../cosmonium/ui/gui.py:905
 msgid "Travelling (%d)"
 msgstr "En route (%d)"
 
-#: ../cosmonium/ui/gui.py:890
+#: ../cosmonium/ui/gui.py:909
 msgid "Track %s"
 msgstr "Piste %s"
 
-#: ../cosmonium/ui/gui.py:894
+#: ../cosmonium/ui/gui.py:913
 msgid "Fly over %s"
 msgstr "Survol de %s"
 
-#: ../cosmonium/ui/gui.py:896
+#: ../cosmonium/ui/gui.py:915
 msgid "Follow %s"
 msgstr "Suit %s"
 
-#: ../cosmonium/ui/gui.py:898
+#: ../cosmonium/ui/gui.py:917
 msgid "Sync orbit %s"
 msgstr "Orbite synchrone de %s"
 
-#: ../cosmonium/ui/gui.py:904
+#: ../cosmonium/ui/gui.py:923
 msgid "%s (Paused)"
 msgstr "%s (Pause)"
 
@@ -853,3 +873,11 @@ msgstr "Abandon"
 #: ../cosmonium/ui/time.py:143
 msgid "Set time"
 msgstr "Règler l'heure"
+
+#: ../main.py:247
+msgid "Earth"
+msgstr "Terre"
+
+#: ../main.py:251
+msgid "Welcome to Cosmonium!"
+msgstr "Bienvenue dans Cosmonium !"
