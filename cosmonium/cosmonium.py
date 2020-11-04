@@ -147,7 +147,7 @@ class CosmoniumBase(ShowBase):
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
 
-    def load_lang(self, domain, locale):
+    def load_lang(self, domain, locale_path):
         languages = None
         if sys.platform == 'darwin':
             #TODO: This is a workaround until either Panda3D provides the locale to use
@@ -158,8 +158,17 @@ class CosmoniumBase(ShowBase):
                 languages = [output]
             else:
                 print("Could not retrieve default locale")
+        elif sys.platform == 'win32':
+            import ctypes
+            import locale
+            windll = ctypes.windll.kernel32
+            language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
+            if language is not None:
+                languages = [language]
+            else:
+                print("Could not retrieve default locale")
 
-        return gettext.translation(domain, locale, languages=languages, fallback=True)
+        return gettext.translation(domain, locale_path, languages=languages, fallback=True)
 
     def init_lang(self):
         self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
