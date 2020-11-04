@@ -75,6 +75,7 @@ from . import settings
 from . import pstats
 
 from math import pi
+import subprocess
 import platform
 import sys
 import os
@@ -147,7 +148,18 @@ class CosmoniumBase(ShowBase):
         workers.syncTextureLoader = workers.SyncTextureLoader()
 
     def load_lang(self, domain, locale):
-        return gettext.translation(domain, locale, fallback=True)
+        languages = None
+        if sys.platform == 'darwin':
+            #TODO: This is a workaround until either Panda3D provides the locale to use
+            #or we switch to pyobjc.
+            #This should be moved to its own module
+            status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
+            if status == 0:
+                languages = [output]
+            else:
+                print("Could not retrieve default locale")
+
+        return gettext.translation(domain, locale, languages=languages, fallback=True)
 
     def init_lang(self):
         self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
