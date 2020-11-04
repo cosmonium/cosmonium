@@ -13,7 +13,7 @@ update-mo: *.po
 	done
 
 update-pot:
-	@$(PYGETTEXT) -d $(DOMAIN) ../cosmonium
+	@$(PYGETTEXT) -d $(DOMAIN) ../cosmonium ../main.py
 
 update-po: *.po
 

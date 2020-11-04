@@ -62,7 +62,7 @@ class CosmoniumConfig(object):
     def __init__(self):
         self.common = 'data/defaults.yaml'
         self.main = 'data/cosmonium.yaml'
-        self.default = 'earth'
+        self.default = None
         self.script = None
         self.extra = ['data/extra', settings.data_dir]
         self.celestia = False
@@ -242,9 +242,11 @@ class CosmoniumApp(Cosmonium):
                 print("Running", self.app_config.script)
                 running = self.load_and_run_script(self.app_config.script)
         if not running:
+            if self.app_config.default is None:
+                self.app_config.default = _("Earth")
             self.select_body(self.universe.find_by_name(self.app_config.default))
             self.autopilot.go_to_front(duration=0.0)
-            self.gui.update_info("Welcome to Cosmonium!")
+            self.gui.update_info(_("Welcome to Cosmonium!"))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("script",

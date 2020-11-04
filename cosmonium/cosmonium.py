@@ -413,7 +413,7 @@ class Cosmonium(CosmoniumBase):
         #self.universe.octree.print_summary()
         #self.universe.octree.print_stats()
 
-        self.sun = self.universe.find_by_path('Sol')
+        self.sun = self.universe.find_by_path(_('Sol'))
         if not self.sun:
             print("Could not find Sun")
         self.splash.set_text("Done")
