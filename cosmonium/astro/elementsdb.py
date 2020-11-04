@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from copy import deepcopy
+from copy import copy
 
 class ElementCategory():
     def __init__(self, name, priority):
@@ -35,10 +35,15 @@ class ElementsDB(object):
         self.db_list = []
 
     def register_category(self, category_name, priority):
+        if category_name in self.db_map: return
         category = ElementCategory(category_name, priority)
         self.db_map[category_name] = category
         self.db_list.append(category)
         self.db_list.sort(key=lambda x: x.priority, reverse=True)
+
+    def register_alias(self, category_name, alias):
+        category = self.db_map[category_name]
+        self.db_map[alias] = category
 
     def register_element(self, category_name, element_name, element):
         category = self.db_map[category_name]
@@ -49,7 +54,7 @@ class ElementsDB(object):
             (category_name, element_name) = name.split(':')
             if category_name in self.db_map:
                 if element_name in self.db_map[category_name].elements:
-                    return deepcopy(self.db_map[category_name].elements[element_name])
+                    return copy(self.db_map[category_name].elements[element_name])
                 else:
                     print("DB", self.name, ':', "Element", name, "not found in category", category_name)
             else:
@@ -58,8 +63,8 @@ class ElementsDB(object):
             element_name = name
         for category in self.db_list:
             if element_name in category.elements:
-                return deepcopy(category.elements[element_name])
+                return copy(category.elements[element_name])
         print("DB", self.name, ':', "Element", name, "not found")
-            
+
 orbit_elements_db = ElementsDB('orbits')
 rotation_elements_db = ElementsDB('rotations')

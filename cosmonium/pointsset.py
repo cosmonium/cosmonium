@@ -22,10 +22,10 @@ from __future__ import absolute_import
 
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, OmniBoundingVolume
+from panda3d.core import NodePath, OmniBoundingVolume, DrawMask
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
-from .shaders import BasicShader, FlatLightingModel
+from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
 from .sprites import SimplePoint, RoundDiskPointSprite
 
 class PointsSet(VisibleObject):
@@ -34,14 +34,15 @@ class PointsSet(VisibleObject):
         self.gnode = GeomNode('starfield')
         self.use_sprites = use_sprites
         self.use_sizes = use_sizes
+        self.use_oids = True
         self.background = background
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), point_shader=False)
+            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True)
         self.shader = shader
 
         self.reset()
 
-        self.geom = self.makeGeom([], [], [])
+        self.geom = self.makeGeom([], [], [], [])
         self.gnode.addGeom(self.geom)
         self.instance = NodePath(self.gnode)
         if self.use_sprites:
@@ -50,7 +51,6 @@ class PointsSet(VisibleObject):
             self.sprite = sprite
         else:
             self.sprite = SimplePoint(points_size)
-        self.min_size = self.sprite.get_min_size()
         self.sprite.apply(self.instance)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.node().setPythonTag('owner', self)
@@ -67,6 +67,8 @@ class PointsSet(VisibleObject):
         if self.background is not None:
             self.instance.setBin('background', self.background)
         self.instance.set_depth_write(False)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.DefaultCameraMask)
 
     def jobs_done_cb(self, patch):
         pass
@@ -75,49 +77,48 @@ class PointsSet(VisibleObject):
         self.points = []
         self.colors = []
         self.sizes = []
+        self.oids = []
 
-    def add_point_scale(self, position, color, size):
-        #Observer is at position (0, 0, 0)
-        distance_to_obs = position.length()
-        vector_to_obs = -position / distance_to_obs
-        point, _, _ = self.get_real_pos_rel(position, distance_to_obs, vector_to_obs)
-        self.points.append(point)
-        self.colors.append(color)
-        self.sizes.append(size)
-
-    def add_point(self, position, color, size):
+    def add_point(self, position, color, size, oid):
         self.points.append(position)
         self.colors.append(color)
         self.sizes.append(size)
+        self.oids.append(oid)
 
     def update(self):
-        self.update_arrays(self.points, self.colors, self.sizes)
+        self.update_arrays(self.points, self.colors, self.sizes, self.oids)
 
-    def makeGeom(self, points, colors, sizes):
-        #format = GeomVertexFormat.getV3c4()
+    def makeGeom(self, points, colors, sizes, oids):
         array = GeomVertexArrayFormat()
-        array.addColumn(InternalName.make('vertex'), 3, Geom.NTFloat32, Geom.CPoint)
-        array.addColumn(InternalName.make('color'), 4, Geom.NTFloat32, Geom.CColor)
+        array.addColumn(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
+        array.addColumn(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
         if self.use_sizes:
-            array.addColumn(InternalName.make('size'), 1, Geom.NTFloat32, Geom.COther)
+            array.addColumn(InternalName.get_size(), 1, Geom.NTFloat32, Geom.COther)
+        if self.use_oids:
+            oids_column_name = InternalName.make('oid')
+            array.addColumn(oids_column_name, 4, Geom.NTFloat32, Geom.COther)
         format = GeomVertexFormat()
         format.addArray(array)
         format = GeomVertexFormat.registerFormat(format)
         vdata = GeomVertexData('vdata', format, Geom.UH_static)
         vdata.unclean_set_num_rows(len(points))
-        self.vwriter = GeomVertexWriter(vdata, 'vertex')
-        self.colorwriter = GeomVertexWriter(vdata, 'color')
+        self.vwriter = GeomVertexWriter(vdata, InternalName.get_vertex())
+        self.colorwriter = GeomVertexWriter(vdata, InternalName.get_color())
         if self.use_sizes:
-            self.sizewriter = GeomVertexWriter(vdata, 'size')
+            self.sizewriter = GeomVertexWriter(vdata, InternalName.get_size())
+        if self.use_oids:
+            self.oidwriter = GeomVertexWriter(vdata, oids_column_name)
         geompoints = GeomPoints(Geom.UH_static)
         geompoints.reserve_num_vertices(len(points))
         index = 0
-        for (point, color, size) in zip(points, colors, sizes):
+        for (point, color, size, oid) in zip(points, colors, sizes, oids):
             self.vwriter.addData3f(*point)
             #self.colorwriter.addData3f(color[0], color[1], color[2])
-            self.colorwriter.addData4f(*color)
+            self.colorwriter.addData4(color)
             if self.use_sizes:
                 self.sizewriter.addData1f(size)
+            if self.use_oids:
+                self.oidwriter.addData4(oid)
             geompoints.addVertex(index)
             geompoints.closePrimitive()
             index += 1
@@ -125,7 +126,7 @@ class PointsSet(VisibleObject):
         geom.addPrimitive(geompoints)
         return geom
 
-    def update_arrays(self, points, colors, sizes):
+    def update_arrays(self, points, colors, sizes, oids):
         self.gnode.removeAllGeoms()
-        self.geom = self.makeGeom(points, colors, sizes)
+        self.geom = self.makeGeom(points, colors, sizes, oids)
         self.gnode.addGeom(self.geom)

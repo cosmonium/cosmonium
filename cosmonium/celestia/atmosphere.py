@@ -24,7 +24,7 @@ from panda3d.core import LVector3d
 
 from ..bodyelements import Atmosphere
 from ..utils import TransparencyBlend
-from ..shaders import AtmosphericScattering
+from ..shaders import BasicShader, AtmosphericScattering
 
 from math import log
 
@@ -51,25 +51,30 @@ class CelestiaAtmosphere(Atmosphere):
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
         self.blend = TransparencyBlend.TB_AlphaAdditive
+        shader = BasicShader(lighting_model=CelestiaScattering(self, atmosphere=True, extinction_only=False))
+        self.set_shader(shader)
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
         if parent is not None:
+            self.planet = parent
             self.planet_radius = parent.get_apparent_radius()
             self.radius = self.planet_radius + self.height
             self.ratio = self.radius / self.planet_radius
 
-    def create_scattering_shader(self, atmosphere):
-        return CelestiaScattering(atmosphere)
+    def create_scattering_shader(self, atmosphere, displacement, extinction):
+        return CelestiaScattering(self, atmosphere, extinction)
 
 class CelestiaScattering(AtmosphericScattering):
     use_vertex = True
     world_vertex = True
     AtmosphereExtinctionThreshold = 0.05
 
-    def __init__(self, atmosphere=False, shader=None):
+    def __init__(self, parameters, atmosphere=False, extinction_only=False, shader=None):
         AtmosphericScattering.__init__(self, shader)
+        self.parameters = parameters
         self.atmosphere = atmosphere
+        self.extinction_only = extinction_only
         self.calc_in_fragment = False
 
     def get_id(self):
@@ -78,6 +83,8 @@ class CelestiaScattering(AtmosphericScattering):
             name += "sky"
         else:
             name += "ground"
+        if self.extinction_only:
+            name += '-ext'
         return name
 
     def uniforms_scattering(self, code):
@@ -108,6 +115,8 @@ uniform vec3  invScatterCoeffSum;
 
 uniform vec3 v3LightDir;
 ''']
+        if not self.atmosphere:
+            code.append("uniform float global_ambient;")
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -197,9 +206,12 @@ uniform vec3 v3LightDir;
     vec3 scatteredComponent = (phRayleigh * rayleighCoeff + phMie * mieCoeff) * invScatterCoeffSum * scatteredColor;
 ''']
         if self.atmosphere:
-            code.append("  total_diffuse_color = vec4(shadow * scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
+            code.append("    total_diffuse_color = vec4(shadow * scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
         else:
-            code.append("          total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
+            if self.extinction_only:
+                code.append("    total_diffuse_color = vec4(total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
+            else:
+                code.append("    total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx * (1.0 - global_ambient) + surface_color.rgb * global_ambient, total_diffuse_color.a);")
 
     def vertex_shader(self, code):
         if not self.calc_in_fragment:
@@ -211,12 +223,12 @@ uniform vec3 v3LightDir;
         self.calc_colors(code)
 
     def update_shader_shape_static(self, shape, appearance):
-        parameters = shape.owner.atmosphere
-        planet_radius = shape.owner.get_apparent_radius()
+        parameters = self.parameters
+        planet_radius = parameters.planet_radius
 
         if self.atmosphere:
             #render.cpp 7193
-            radius = planet_radius + shape.owner.atmosphere.height
+            radius = parameters.radius
             #renderglsl.cpp 557
             atmosphereRadius = radius + -parameters.mie_scale_height * log(self.AtmosphereExtinctionThreshold)
             atmPlanetRadius = radius
@@ -264,15 +276,15 @@ uniform vec3 v3LightDir;
         shape.instance.setShaderInput("extinctionCoeff", *extinctionCoeff)
 
     def update_shader_shape(self, shape, appearance):
-        planet_radius = shape.owner.get_apparent_radius()
+        planet_radius = self.parameters.planet_radius
         if self.atmosphere:
             #render.cpp 7193
-            radius = planet_radius + shape.owner.atmosphere.height
+            radius = self.parameters.radius
         else:
             radius = planet_radius
         factor = 1.0 / (shape.owner.scene_scale_factor * radius)
 
-        light_dir = shape.owner.vector_to_star
+        light_dir = self.parameters.planet.vector_to_star
         shape.instance.setShaderInput("v3OriginPos", shape.owner.rel_position * shape.owner.scene_scale_factor)
         shape.instance.setShaderInput("v3CameraPos", -shape.owner.rel_position / radius)
 

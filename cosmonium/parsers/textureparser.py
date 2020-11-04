@@ -25,8 +25,14 @@ from panda3d.core import LColor
 from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
+from ..procedural.texturecontrol import MixTextureControl
 from ..procedural.appearances import TexturesDictionary, TextureTilingMode
+from ..procedural.shaders import TextureDictionaryDataSource
 from ..astro import units
+
+from ..textures import AutoTextureSource
+from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
+from ..appearances import TexturesBlock
 
 from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import YamlParser, YamlModuleParser
@@ -81,7 +87,7 @@ class HeightColorControlYamlParser(YamlParser):
                 self.height_scale *= 2
         return self.decode_height_control(entries)
 
-class TextureControlYamlParser(YamlParser):
+class MixTextureControlYamlParser(YamlParser):
     def __init__(self):
         YamlParser.__init__(self)
         self.slope_id = 0
@@ -146,7 +152,27 @@ class TextureControlYamlParser(YamlParser):
 
     def decode(self, data, height_scale=1.0, radius=1.0):
         self.height_scale = 1.0 / radius
-        return self.decode_entry(data)
+        entry = self.decode_entry(data)
+        #TODO: get or generate name
+        return MixTextureControl("control", entry)
+
+class TextureControlYamlParser(YamlModuleParser):
+    def decode(self, data, appearance, height_scale=1.0, radius=1.0, median=True):
+        if data is None: return None
+        control_type = data.get('type', 'textures')
+        if control_type == 'textures':
+            control_parser = MixTextureControlYamlParser()
+            control = control_parser.decode(data, height_scale, radius)
+            appearance_source = TextureDictionaryDataSource(appearance)
+        elif control_type == 'colormap':
+            control_parser = HeightColorControlYamlParser()
+            control = control_parser.decode(data, height_scale, radius, median)
+            appearance_source = None
+        else:
+            print("Unknown control type '%s'" % control_type)
+            control = None
+            appearance_source = None
+        return (control, appearance_source)
 
 class TextureTilingYamlParser(YamlModuleParser):
     @classmethod
@@ -157,16 +183,74 @@ class TextureTilingYamlParser(YamlModuleParser):
         elif object_type == 'hash':
             return TextureTilingMode.F_hash
         else:
-            return None
+            print("Unknown tiling type '%s'" % object_type)
+            return TextureTilingMode.F_none
 
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
-    def decode_textures_dictionary_entry(self, data):
-        pass
+    def decode_texture_albedo(self, data, srgb):
+        if data is not None:
+            if isinstance(data, str):
+                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
+                data = {}
+            else:
+                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            srgb = data.get('srgb', srgb)
+            albedo = SurfaceTexture(texture_source, srgb)
+        else:
+            albedo = None
+        return albedo
+
+    @classmethod
+    def decode_texture_normal(self, data):
+        if data is not None:
+            if isinstance(data, str):
+                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
+                data = {}
+            else:
+                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            normal = NormalMapTexture(texture_source)
+        else:
+            normal = None
+        return normal
+
+    @classmethod
+    def decode_texture_occlusion(self, data):
+        if data is not None:
+            if isinstance(data, str):
+                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
+                data = {}
+            else:
+                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            occlusion = OcclusionMapTexture(texture_source)
+        else:
+            occlusion = None
+        return occlusion
+
+    @classmethod
+    def decode_textures_dictionary_entry(self, data, srgb):
+        entry = TexturesBlock()
+        if isinstance(data, str):
+            albedo = self.decode_texture_albedo(data, srgb)
+            entry.set_albedo(albedo)
+        else:
+            albedo = self.decode_texture_albedo(data.get('albedo'), srgb)
+            if albedo is not None:
+                entry.set_albedo(albedo)
+            normal = self.decode_texture_normal(data.get('normal'))
+            if normal is not None:
+                entry.set_normal(normal)
+            occlusion = self.decode_texture_occlusion(data.get('occlusion'))
+            if occlusion is not None:
+                entry.set_occlusion(occlusion)
+        return entry
 
     @classmethod
     def decode_textures_dictionary(cls, data):
-        entries = data.get('entries')
+        entries = {}
+        srgb = data.get('srgb')
+        for (name, entry) in data.get('entries', {}).items():
+            entries[name] = cls.decode_textures_dictionary_entry(entry, srgb)
         scale = data.get('scale')
         tiling = TextureTilingYamlParser.decode(data.get('tiling'))
         return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)

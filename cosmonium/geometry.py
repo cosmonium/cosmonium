@@ -24,7 +24,7 @@ from __future__ import print_function
 from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName,\
     LVector3d, GlobPattern, BoundingBox, LPoint3, BoundingSphere
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
-from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32
+from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
 from . import settings
@@ -41,16 +41,16 @@ def empty_node(prefix, color=False):
 
 def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=True, color=False, tanbin=False):
     array = GeomVertexArrayFormat()
-    array.addColumn(InternalName.make('vertex'), 3, Geom.NTFloat32, Geom.CPoint)
+    array.addColumn(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
     if color:
-        array.addColumn(InternalName.make('color'), 4, Geom.NTFloat32, Geom.CColor)
+        array.addColumn(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
     if texture:
-        array.addColumn(InternalName.make('texcoord'), 2, Geom.NTFloat32, Geom.CTexcoord)
+        array.addColumn(InternalName.get_texcoord(), 2, Geom.NTFloat32, Geom.CTexcoord)
     if normal:
-        array.addColumn(InternalName.make('normal'), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_normal(), 3, Geom.NTFloat32, Geom.CVector)
     if tanbin:
-        array.addColumn(InternalName.make('binormal'), 3, Geom.NTFloat32, Geom.CVector)
-        array.addColumn(InternalName.make('tangent'), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_tangent(), 3, Geom.NTFloat32, Geom.CVector)
+        array.addColumn(InternalName.get_binormal(), 3, Geom.NTFloat32, Geom.CVector)
     format = GeomVertexFormat()
     format.addArray(array)
     format = GeomVertexFormat.registerFormat(format)
@@ -58,22 +58,22 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
     if nb_data != 0:
         gvd.unclean_set_num_rows(nb_data)
     geom = Geom(gvd)
-    gvw = GeomVertexWriter(gvd, 'vertex')
+    gvw = GeomVertexWriter(gvd, InternalName.get_vertex())
     if color:
-        gcw = GeomVertexWriter(gvd, 'color')
+        gcw = GeomVertexWriter(gvd, InternalName.get_color())
     else:
         gcw = None
     if texture:
-        gtw = GeomVertexWriter(gvd, 'texcoord')
+        gtw = GeomVertexWriter(gvd, InternalName.get_texcoord())
     else:
         gtw = None
     if normal:
-        gnw = GeomVertexWriter(gvd, 'normal')
+        gnw = GeomVertexWriter(gvd, InternalName.get_normal())
     else:
         gnw = None
     if tanbin:
-        gtanw = GeomVertexWriter(gvd, 'tangent')
-        gbiw = GeomVertexWriter(gvd, 'binormal')
+        gtanw = GeomVertexWriter(gvd, InternalName.get_tangent())
+        gbiw = GeomVertexWriter(gvd, InternalName.get_binormal())
     else:
         gtanw = None
         gbiw = None
@@ -108,7 +108,36 @@ def BoundingBoxGeom(box):
     geom.add_primitive(prim)
     return path
 
-def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=True):
+def CubeGeom():
+    (path, node) = empty_node('cube')
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', 8, 12, normal=False, texture=False, tanbin=False)
+    node.add_geom(geom)
+    gvw.add_data3(-1, -1, -1)
+    gvw.add_data3(-1, -1, 1)
+    gvw.add_data3(-1, 1, -1)
+    gvw.add_data3(-1, 1, 1)
+    gvw.add_data3(1, -1, -1)
+    gvw.add_data3(1, -1, 1)
+    gvw.add_data3(1, 1, -1)
+    gvw.add_data3(1, 1, 1)
+
+    prim.add_vertices(0, 4, 5)
+    prim.add_vertices(0, 5, 1)
+    prim.add_vertices(4, 6, 7)
+    prim.add_vertices(4, 7, 5)
+    prim.add_vertices(6, 2, 3)
+    prim.add_vertices(6, 3, 7)
+    prim.add_vertices(2, 0, 1)
+    prim.add_vertices(2, 1, 3)
+    prim.add_vertices(1, 5, 7)
+    prim.add_vertices(1, 7, 3)
+    prim.add_vertices(2, 6, 4)
+    prim.add_vertices(2, 4, 0)
+
+    geom.add_primitive(prim)
+    return path
+
+def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
     node.add_geom(geom)
@@ -135,7 +164,7 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Tr
             cos_r = cos(pi * r * R)
             x = cos_s * sin_r
             y = sin_s * sin_r
-            z = cos_r
+            z = -cos_r
             u = s * S
             v = r * R
             if inv_texture_v:
@@ -148,7 +177,7 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Tr
             #Derivation wrt s and normalization (sin_r is dropped)
             gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, -sin_r)
+            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3f(*binormal)
     u = 0.0
@@ -166,12 +195,12 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Tr
     for r in range(0, rings - 1):
         for s in range(0, sectors):
             if r == 0:
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
             elif r == rings - 1:
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
             else:
-                prim.addVertices(r * sectors + s, (r+1) * sectors + s, r * sectors + (s+1))
-                prim.addVertices((r+1) * sectors + (s+1), r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + s, r * sectors + (s+1), (r+1) * sectors + s)
+                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
@@ -242,7 +271,7 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     cos_r = cos(pi * (y0 + r * dy))
     x = cos_s * sin_r * radius
     y = sin_s * sin_r * radius
-    z = cos_r * radius
+    z = -cos_r * radius
 
     if offset is not None:
         x = x - normal[0] * offset
@@ -256,10 +285,10 @@ def UVPatchNormal(x0, y0, x1, y1):
     dy = y1 - y0
     x = cos(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
     y = sin(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
-    z = sin(pi / 2 - pi * (y0 + dy / 2))
+    z = -cos(pi * (y0 + dy / 2))
     return LVector3d(x, y, z)
 
-def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=True, offset=None):
+def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
@@ -280,7 +309,7 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
             cos_r = cos(pi * (y0 + r * dy / rings))
             x = cos_s * sin_r
             y = sin_s * sin_r
-            z = cos_r
+            z = -cos_r
             if global_texture:
                 gtw.add_data2f((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:
@@ -301,7 +330,7 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
             #Derivation wrt s and normalization (sin_r is dropped)
             gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, -sin_r)
+            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3f(*binormal)
 
@@ -313,8 +342,8 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
 #                 #prim.addVertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
 #             else:
 #             if y0 >= 0.5:
-                prim.addVertices(r * r_sectors + s, (r+1) * r_sectors + s, r * r_sectors + (s+1))
-                prim.addVertices((r+1) * r_sectors + (s+1), r * r_sectors + (s+1), (r+1) * r_sectors + s)
+                prim.addVertices(r * r_sectors + s, r * r_sectors + (s+1), (r+1) * r_sectors + s)
+                prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + (s+1), (r+1) * r_sectors + s)
 #             else:
 #                 prim.addVertices((r + 1) * r_sectors + s, r * r_sectors + (s+1), r * r_sectors + s)
 #                 prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + s, (r + 1) * r_sectors + (s+1))
@@ -684,7 +713,7 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
                 prim.addVertices(skirt, v + 1, skirt + 1)
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=True, swap_uv=False):
+def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
@@ -838,7 +867,7 @@ def QuadPatch(x0, y0, x1, y1,
 
 def SquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
-                inv_u=False, inv_v=True, swap_uv=False,
+                inv_u=False, inv_v=False, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
@@ -883,7 +912,7 @@ def SquarePatch(height, inner, outer,
 
 def SquaredDistanceSquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
-                inv_u=False, inv_v=True, swap_uv=False,
+                inv_u=False, inv_v=False, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
@@ -912,26 +941,33 @@ def SquaredDistanceSquarePatch(height, inner, outer,
             x2 = x * x
             y2 = y * y
             z2 = z * z
-            x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-            y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-            z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+            xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+            yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+            zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
             if inv_u:
                 u = 1.0 - u
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
-            else:
-                gtw.add_data2f(u, v)
+                u, v = v, u
+            gtw.add_data2f(u, v)
             if offset is not None:
-                gvw.add_data3f(x * height - normal[0] * offset,
-                               y * height - normal[1] * offset,
-                               z * height - normal[2] * offset)
+                gvw.add_data3f(xp * height - normal[0] * offset,
+                               yp * height - normal[1] * offset,
+                               zp * height - normal[2] * offset)
             else:
-                gvw.add_data3f(x * height, y * height, z * height)
-            gnw.add_data3f(x, y, z)
-            gtanw.add_data3f(z, y, -x)
-            gbiw.add_data3f(x, z, -y)
+                gvw.add_data3f(xp * height, yp * height, zp * height)
+            gnw.add_data3f(xp, yp, zp)
+            tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+            tan.normalize()
+            bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+            bin.normalize()
+            if inv_u: tan = -tan
+            if inv_v: bin = -bin
+            if swap_uv:
+                tan, bin = bin, tan
+            gtanw.add_data3(tan)
+            gbiw.add_data3(bin)
 
     if settings.use_patch_skirts:
         if offset is None:
@@ -961,26 +997,33 @@ def SquaredDistanceSquarePatch(height, inner, outer,
                 x2 = x * x
                 y2 = y * y
                 z2 = z * z
-                x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-                y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-                z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+                xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+                yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+                zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
                 if inv_u:
                     u = 1.0 - u
                 if inv_v:
                     v = 1.0 - v
                 if swap_uv:
-                    gtw.add_data2f(v, u)
-                else:
-                    gtw.add_data2f(u, v)
+                    u, v = v, u
+                gtw.add_data2f(u, v)
                 if offset is not None:
-                    gvw.add_data3f(x * height - normal[0] * offset,
-                                   y * height - normal[1] * offset,
-                                   z * height - normal[2] * offset)
+                    gvw.add_data3f(xp * height - normal[0] * offset,
+                                   yp * height - normal[1] * offset,
+                                   zp * height - normal[2] * offset)
                 else:
-                    gvw.add_data3f(x * height, y * height, z * height)
-                gnw.add_data3f(x, y, z)
-                gtanw.add_data3f(z, y, -x)
-                gbiw.add_data3f(x, z, -y)
+                    gvw.add_data3f(xp * height, yp * height, zp * height)
+                gnw.add_data3f(xp, yp, zp)
+                tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+                tan.normalize()
+                bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+                bin.normalize()
+                if inv_u: tan = -tan
+                if inv_v: bin = -bin
+                if swap_uv:
+                    tan, bin = bin, tan
+                gtanw.add_data3(tan)
+                gbiw.add_data3(bin)
 
     if settings.use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
@@ -1054,7 +1097,7 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
 
 def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
-                          global_texture=False, inv_u=False, inv_v=True, swap_uv=False,
+                          global_texture=False, inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
@@ -1075,7 +1118,9 @@ def NormalizedSquarePatch(height, inner, outer,
         for j in range(0, nb_vertices):
             x = x0 + i * dx / inner
             y = y0 + j * dy / inner
-            vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+            x = 2.0 * x - 1.0
+            y = 2.0 * y - 1.0
+            vec = LVector3d(x, y, 1.0)
             vec.normalize()
             u = float(i) / inner
             v = float(j) / inner
@@ -1084,19 +1129,24 @@ def NormalizedSquarePatch(height, inner, outer,
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
-            else:
-                gtw.add_data2f(u, v)
+                u, v = v, u
+            gtw.add_data2f(u, v)
             nvec = vec
             vec = vec * height
             if offset is not None:
                 vec = vec - normal * offset
             gvw.add_data3f(*vec)
             gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-            gtanw.add_data3f(-(1.0 + y*y), x*y, x)
-            gbiw.add_data3f(x * y, -(1.0 + x*x), y)
-            #gtanw.add_data3f(vec.z, vec.y, -vec.x)
-            #gbiw.add_data3f(vec.x, vec.z, -vec.y)
+            tan = LVector3(1.0 + y*y, -x*y, -x)
+            tan.normalize()
+            bin = LVector3(x * y, 1.0 + x*x, -y)
+            bin.normalize()
+            if inv_u: tan = -tan
+            if inv_v: bin = -bin
+            if swap_uv:
+                tan, bin = bin, tan
+            gtanw.add_data3(tan)
+            gbiw.add_data3(bin)
 
     if settings.use_patch_skirts:
         if offset is None:
@@ -1118,7 +1168,9 @@ def NormalizedSquarePatch(height, inner, outer,
                     j = inner
                 x = x0 + i * dx / inner
                 y = y0 + j * dy / inner
-                vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+                x = 2.0 * x - 1.0
+                y = 2.0 * y - 1.0
+                vec = LVector3d(x, y, 1.0)
                 vec.normalize()
                 u = float(i) / inner
                 v = float(j) / inner
@@ -1127,19 +1179,24 @@ def NormalizedSquarePatch(height, inner, outer,
                 if inv_v:
                     v = 1.0 - v
                 if swap_uv:
-                    gtw.add_data2f(v, u)
-                else:
-                    gtw.add_data2f(u, v)
+                    u, v = v, u
+                gtw.add_data2f(u, v)
                 nvec = vec
                 vec = vec * height
                 if offset is not None:
                     vec = vec - normal * offset
                 gvw.add_data3f(*vec)
                 gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-                gtanw.add_data3f(-(1.0 + y*y), x*y, x)
-                gbiw.add_data3f(x * y, -(1.0 + x*x), y)
-                #gtanw.add_data3f(vec.z, vec.y, -vec.x)
-                #gbiw.add_data3f(vec.x, vec.z, -vec.y)
+                tan = LVector3(1.0 + y*y, -x*y, -x)
+                tan.normalize()
+                bin = LVector3(x * y, 1.0 + x*x, -y)
+                bin.normalize()
+                if inv_u: tan = -tan
+                if inv_v: bin = -bin
+                if swap_uv:
+                    tan, bin = bin, tan
+                gtanw.add_data3(tan)
+                gbiw.add_data3(bin)
 
     if settings.use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, ratio)

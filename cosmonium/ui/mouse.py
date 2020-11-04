@@ -22,17 +22,18 @@ from __future__ import absolute_import
 
 from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
-from panda3d.core import GeomNode
+from panda3d.core import GeomNode, LColor, Texture
 
 from direct.task.Task import Task
 
 from .. import settings
+from cosmonium.utils import color_to_int
+from cosmonium.catalogs import objectsDB
 
 class Mouse(object):
-    def __init__(self, base):
+    def __init__(self, base, oid_texture):
         self.base = base
-        if settings.mouse_over:
-            taskMgr.add(self.mouse_task, 'mouse-task')
+        self.picking_texture = oid_texture
         self.picker = CollisionTraverser()
         self.pq = CollisionHandlerQueue()
         self.pickerNode = CollisionNode('mouseRay')
@@ -42,9 +43,11 @@ class Mouse(object):
         self.pickerNode.addSolid(self.pickerRay)
         self.picker.addCollider(self.pickerNP, self.pq)
         #self.picker.showCollisions(render)
+        if settings.mouse_over:
+            taskMgr.add(self.mouse_task, 'mouse-task')
         self.over = None
 
-    def find_over(self):
+    def find_over_ray(self):
         over = None
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
@@ -62,6 +65,38 @@ class Mouse(object):
                     self.patch = None
         return over
 
+    def find_over_color(self):
+        over = None
+        if self.base.mouseWatcherNode.hasMouse():
+            mpos = self.base.mouseWatcherNode.getMouse()
+            self.base.graphicsEngine.extract_texture_data(self.picking_texture, self.base.win.gsg)
+            texture_peeker = self.picking_texture.peek()
+            if texture_peeker is not None:
+                x = (mpos.get_x() + 1) / 2
+                y = (mpos.get_y() + 1) / 2
+                value = LColor()
+                texture_peeker.lookup(value, x, y)
+                oid = color_to_int(value)
+                if oid != 0:
+                    over = objectsDB.get_oid(oid)
+                    if over is None:
+                        print("Unknown oid", oid, value)
+        return over
+
+    def find_over(self):
+        if settings.color_picking:
+            over_color = self.find_over_color()
+        else:
+            over_color = None
+        over_ray = self.find_over_ray()
+        over = over_color
+        if over_ray is not None:
+            if over is None or over.distance_to_obs > over_ray.distance_to_obs:
+                over = over_ray
+        if hasattr(over, "primary") and over.primary is not None:
+            over = over.primary
+        return over
+
     def get_over(self):
         if settings.mouse_over:
             over = self.over
@@ -70,7 +105,7 @@ class Mouse(object):
         return over
 
     def mouse_task(self, task):
-        if self.mouseWatcherNode.hasMouse():
+        if self.base.mouseWatcherNode.hasMouse():
             self.over = self.find_over()
         return Task.cont
 

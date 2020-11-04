@@ -35,6 +35,7 @@ class LunarLambertLightingModel(LightingModel):
         return "lunar"
 
     def fragment_uniforms(self, code):
+        LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")
@@ -50,15 +51,13 @@ class LunarLambertLightingModel(LightingModel):
         code.append("  diffuse_coef = clamp(light_angle / (max(view_angle, 0.001) + light_angle), 0.0, 1.0);")
         code.append("  diffuse = light_color * shadow * diffuse_coef;")
         code.append("}")
-        code.append("vec4 total_light = clamp((diffuse + (1.0 - diffuse_coef) * ambient), 0.0, 1.0);")
+        code.append("vec4 total_light = diffuse + ambient;")
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
-        if self.appearance.has_night_texture:
-            code.append("if (light_angle < 0.0) {")
-            code.append("  total_emission_color.rgb = night_color.rgb * clamp(sqrt(-light_angle), 0.0, 1.0);")
-            code.append("}")
+        self.apply_emission(code, 'light_angle')
 
     def update_shader_shape(self, shape, appearance):
+        LightingModel.update_shader_shape(self, shape, appearance)
         light_dir = shape.owner.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)

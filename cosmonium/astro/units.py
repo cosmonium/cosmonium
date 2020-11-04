@@ -127,6 +127,8 @@ def toHourMinSec(deg):
 def arcsec_to_rad(arcsec):
     return arcsec * pi / 180 / 3600
 
+Deg_Per_Day = Deg / Day
+
 J2000 = 2451545.0
 J2000_Obliquity = 23.4392911
 

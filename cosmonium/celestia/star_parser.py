@@ -25,7 +25,7 @@ from ..universe import Universe
 from ..bodies import Star
 from ..astro.spectraltype import spectralTypeStringDecoder, spectralTypeIntDecoder
 from ..astro.orbits import FixedPosition
-from ..astro.rotations import FixedRotation
+from ..astro.rotations import UnknownRotation
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -56,7 +56,7 @@ def parse_line(line, names, universe):
                     spectral_type=spectralTypeStringDecoder.decode(spectral_type),
                     abs_magnitude=abs_magnitude,
                     orbit=orbit,
-                    rotation=FixedRotation())
+                    rotation=UnknownRotation())
         universe.add_child_fast(star)
     else:
         print("Malformed line", data)
@@ -110,8 +110,8 @@ def do_load_bin(filepath, names, universe):
                     spectral_type=spectralTypeIntDecoder.decode(spectral_type),
                     abs_magnitude=abs_magnitude / 256.0,
                     orbit=orbit,
-                    rotation=FixedRotation())
-        universe.add_child_fast(star)
+                    rotation=UnknownRotation())
+        universe.add_child_star_fast(star)
     end = time()
     print("Load time:", end - start)
 

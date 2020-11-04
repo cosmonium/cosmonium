@@ -1,9 +1,15 @@
 # Compilation artifacts
 *.pyc
+*.pyd
 *.so
 *.o
+*.pdb
 build/
 dist/
+source/interrogate*
+source/interrogate*
+source/requirements*
+*.mo
 
 # Eclipse artifacts
 .project
@@ -18,7 +24,7 @@ parser.out
 genshader*
 
 #Screenshots
-screenshot-*
+screenshots/
 
 #OS Specific
 .DS_Store

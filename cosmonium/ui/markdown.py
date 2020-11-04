@@ -23,7 +23,7 @@ from __future__ import absolute_import
 
 from panda3d.core import TextProperties, TextPropertiesManager
 
-from ..support.mistune import mistune
+from mistune import mistune
 from ..fonts import fontsManager, Font
 
 class MarkdownRenderer(mistune.Renderer):

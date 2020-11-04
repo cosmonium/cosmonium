@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LColor
+from panda3d.core import LColor, LQuaterniond
 
 from . import config_parser
 from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit, \
@@ -39,7 +39,7 @@ from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LambertPhongLightingModel
 from ..astro.orbits import FixedOrbit
-from ..astro.rotations import FixedRotation, UniformRotation
+from ..astro.rotations import FixedRotation, create_uniform_rotation
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, RelativeReferenceFrame, EquatorialReferenceFrame
 from ..dircontext import defaultDirContext
@@ -103,7 +103,6 @@ def instanciate_atmosphere(data):
     if mie_phase_asymmetry != 0.0:
         atmosphere = CelestiaAtmosphere(height = atmosphere_height,
                                     appearance=Appearance(),
-                                    shader=BasicShader(lighting_model=CelestiaScattering(atmosphere=True)),
                                     mie_scale_height = mie_scale_height,
                                     mie_coef = mie_coef,
                                     mie_phase_asymmetry = mie_phase_asymmetry,
@@ -177,7 +176,9 @@ def instanciate_body(universe, names, is_planet, data):
         elif key == 'Texture':
             appearance.set_texture(value)
         elif key == 'NightTexture':
-            appearance.set_night_texture(value)
+            appearance.set_emission_texture(value)
+            appearance.emissionColor = LColor(1, 1, 1, 1)
+            appearance.set_nightscale(0.02)
         elif key == 'BumpHeight':
             bump_height = value
         elif key == 'BumpMap':
@@ -271,14 +272,14 @@ def instanciate_body(universe, names, is_planet, data):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = UniformRotation(period=rotation_period,
+        rotation = create_uniform_rotation(period=rotation_period,
                                         inclination=rotation_obliquity,
                                         ascending_node=rotation_ascending_node,
                                         meridian_angle=rotation_offset,
                                         epoch=rotation_epoch,
                                         frame=body_frame)
     elif rotation is None:
-        rotation = FixedRotation(frame=body_frame)
+        rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
     if model != None and not (model.endswith('.cmod') or model.endswith('.cms')):
@@ -306,9 +307,10 @@ def instanciate_body(universe, names, is_planet, data):
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
-    atmosphere.add_shape_object(surface)
-    if clouds is not None:
-        atmosphere.add_shape_object(clouds)
+    if atmosphere is not None:
+        atmosphere.add_shape_object(surface)
+        if clouds is not None:
+            atmosphere.add_shape_object(clouds)
     body.albedo = albedo
     body.body_class = body_class
     return body
@@ -383,14 +385,14 @@ def instanciate_reference_point(universe, names, is_planet, data):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = UniformRotation(period=rotation_period,
+        rotation = create_uniform_rotation(period=rotation_period,
                                         inclination=rotation_obliquity,
                                         ascending_node=rotation_ascending_node,
                                         meridian_angle=rotation_offset,
                                         epoch=rotation_epoch,
                                         frame=body_frame)
     elif rotation is None:
-        rotation = FixedRotation(frame=body_frame)
+        rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
     ref = ReferencePoint(names=names,
@@ -405,20 +407,7 @@ def find_parent(universe, path, item_parent):
         path = body_path(item_parent)
         body = universe.find_by_path(path)
         if body:
-            print("Creating system for", body.get_name())
-            explicit = body.orbit.frame.explicit_body
-            if explicit:
-                #TODO: This looks completely wrong !
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(body.orbit.frame.body, body.orbit.frame))
-            else:
-                orbit = body.orbit
-            system=SimpleSystem(body.get_name() + " System", primary=body, orbit=orbit)
-            body.parent.add_child_fast(system)
-            if not explicit:
-                orbit = FixedOrbit(frame=RelativeReferenceFrame(system, orbit.frame))
-                body.set_orbit(orbit)
-            system.add_child_fast(body)
-            body=system
+            body = body.get_or_create_system()
     return body
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):

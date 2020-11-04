@@ -22,18 +22,22 @@ from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
-from panda3d.core import DrawMask
+from panda3d.core import Texture, CardMaker
 from panda3d.core import AmbientLight
-from panda3d.core import LightRampAttrib
-from panda3d.core import LColor
+from panda3d.core import LightRampAttrib, AntialiasAttrib
+from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
+from panda3d.core import Camera
 
 from direct.task.Task import Task
 
 import logging
+import gettext
+
 from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
+from .stellarobject import StellarObject
 from .bodies import StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
@@ -42,20 +46,25 @@ from .pointsset import PointsSet
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
+from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
+from .celestia import cel_parser, cel_engine
 
-#import orbits and rotations elements to add them to the DB
-from .astro.tables import kepler, ssd, uniform, vsop87, wgccre
+#Initialiser parsers
+from .parsers import parsers
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
-from .camera import Camera
+from .camera import CameraHolder, FixedCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
-from .ui.splash import Splash
-from .nav import FreeNav, WalkNav
+from .ui.splash import Splash, NoSplash
+from .nav import FreeNav, WalkNav, ControlNav
+from .controllers import BodyController, SurfaceBodyMover
+from .ships import NoShip
 from .astro import units
+from .parsers.yamlparser import YamlModuleParser
 from .fonts import fontsManager
 from .pstats import pstat
 from . import utils
@@ -63,11 +72,32 @@ from . import workers
 from . import cache
 from . import mesh
 from . import settings
+from . import pstats
 
 from math import pi
+import subprocess
 import platform
 import sys
 import os
+
+# Patch gettext classes
+if sys.version_info < (3, 8):
+    def pgettext(self, context, message):
+        if self._fallback:
+            return self._fallback.pgettext(context, message)
+        return message
+    gettext.NullTranslations.pgettext = pgettext
+    gettext.GNUTranslations.CONTEXT = "%s\x04%s"
+    def pgettext(self, context, message):
+        ctxt_msg_id = self.CONTEXT % (context, message)
+        missing = object()
+        tmsg = self._catalog.get(ctxt_msg_id, missing)
+        if tmsg is missing:
+            if self._fallback:
+                return self._fallback.pgettext(context, message)
+            return message
+        return tmsg
+    gettext.GNUTranslations.pgettext = pgettext
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
@@ -77,32 +107,72 @@ class CosmoniumBase(ShowBase):
         self.wireframe = False
         self.wireframe_filled = False
         self.trigger_check_settings = True
+        self.request_fullscreen = False
 
+        self.init_lang()
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
-        create_main_window(self)
-        check_opengl_config(self)
+        if not self.app_config.test_start:
+            create_main_window(self)
+            check_opengl_config(self)
+            self.create_additional_display_regions()
+            self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask)
+        else:
+            self.buttonThrowers = [NodePath('dummy')]
+            self.camera = NodePath('dummy')
+            self.cam = self.camera.attach_new_node('dummy')
+            self.camLens = PerspectiveLens()
+            settings.shader_version = 130
 
+        #TODO: should find a better way than patching classes...
         BaseObject.context = self
+        YamlModuleParser.app = self
+        BodyController.context = self
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
-        check_and_create_rendering_buffers(self)
+        self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
 
         self.world = self.render.attachNewNode("world")
         self.annotation = self.render.attachNewNode("annotation")
-        self.annotation_shader = self.annotation.attachNewNode("annotation_shader")
-        self.annotation.node().adjust_draw_mask(DrawMask(0), DrawMask(1), DrawMask(0))
-        self.annotation_shader.node().adjust_draw_mask(DrawMask(0), DrawMask(1), DrawMask(0))
+        self.annotation.hide(BaseObject.AllCamerasMask)
+        self.annotation.show(BaseObject.DefaultCameraMask)
 
         self.world.setShaderAuto()
-        self.annotation_shader.setShaderAuto()
+        self.annotation.setShaderAuto()
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
+
+    def load_lang(self, domain, locale_path):
+        languages = None
+        if sys.platform == 'darwin':
+            #TODO: This is a workaround until either Panda3D provides the locale to use
+            #or we switch to pyobjc.
+            #This should be moved to its own module
+            status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
+            if status == 0:
+                languages = [output]
+            else:
+                print("Could not retrieve default locale")
+        elif sys.platform == 'win32':
+            import ctypes
+            import locale
+            windll = ctypes.windll.kernel32
+            language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
+            if language is not None:
+                languages = [language]
+            else:
+                print("Could not retrieve default locale")
+
+        return gettext.translation(domain, locale_path, languages=languages, fallback=True)
+
+    def init_lang(self):
+        self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
+        self.translation.install()
 
     def panda_config(self):
         data = []
@@ -112,10 +182,11 @@ class CosmoniumBase(ShowBase):
         data.append("paste-emit-keystrokes #f")
         #TODO: Still needed ?
         data.append("bounds-type box")
-        data.append("screenshot-extension png")
-        data.append("screenshot-filename %~p-%Y-%m-%d-%H-%M-%S-%~f.%~e")
-        data.append("fullscreen %d" % settings.win_fullscreen)
-        if settings.win_fullscreen:
+        data.append("screenshot-extension {}".format(settings.screenshot_format))
+        data.append("screenshot-filename %~p/{}".format(settings.screenshot_filename))
+        if settings.win_fullscreen and settings.win_fs_width != 0 and settings.win_fs_height != 0:
+            self.request_fullscreen = True
+            data.append("fullscreen %d" % settings.win_fullscreen)
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
         else:
             data.append("win-size %d %d" % (settings.win_width, settings.win_height))
@@ -137,11 +208,17 @@ class CosmoniumBase(ShowBase):
 
     def print_info(self):
         print("Python version:", platform.python_version())
-        print("Panda version: %s (%s)" % (PandaSystem.getVersionString(), PandaSystem.getGitCommit()))
+        print("Panda version: %s (%s) by %s (%s)" % (PandaSystem.getVersionString(),
+                                                     PandaSystem.getGitCommit(),
+                                                     PandaSystem.getDistributor(),
+                                                     PandaSystem.getBuildDate()))
+        print("Panda Systems:")
+        for system in PandaSystem.get_global_ptr().get_systems():
+            print("\t", system)
         print("Data type:", "double" if settings.use_double else 'float')
 
-    def exit(self):
-        sys.exit(0)
+    def create_additional_display_regions(self):
+        pass
 
     def keystroke_event(self, keyname):
         #TODO: Should be better isolated
@@ -165,14 +242,15 @@ class CosmoniumBase(ShowBase):
             ShowBase.ignore(self, event)
 
     def register_events(self):
-        self.buttonThrowers[0].node().setKeystrokeEvent('keystroke')
+        if not self.app_config.test_start:
+            self.buttonThrowers[0].node().setKeystrokeEvent('keystroke')
+            self.accept(self.win.getWindowEvent(), self.window_event)
         self.accept('keystroke', self.keystroke_event)
-        self.accept(self.win.getWindowEvent(), self.window_event)
         self.accept('panic-deactivate-gsg', self.gsg_failure)
 
     def gsg_failure(self, event):
         print("Internal error detected, see output.log for more details")
-        sys.exit(1)
+        self.userExit()
 
     def get_fullscreen_sizes(self):
         info = self.pipe.getDisplayInformation()
@@ -190,31 +268,55 @@ class CosmoniumBase(ShowBase):
         wp = WindowProperties(self.win.getProperties())
         wp.setFullscreen(settings.win_fullscreen)
         if settings.win_fullscreen:
-            resolutions = self.get_fullscreen_sizes()
-            wp.setSize(*resolutions[0])
+            if settings.win_fs_width != 0 and settings.win_fs_height != 0:
+                win_fs_width = settings.win_fs_width
+                win_fs_height = settings.win_fs_height
+            else:
+                win_fs_width = base.pipe.getDisplayWidth()
+                win_fs_height = base.pipe.getDisplayHeight()
+            wp.setSize(win_fs_width, win_fs_height)
+            # Defer config saving in case the switch fails
+            self.request_fullscreen = True
         else:
             wp.setSize(settings.win_width, settings.win_height)
+            configParser.save()
         self.win.requestProperties(wp)
-        configParser.save()
 
     def window_event(self, window):
+        if self.win is None: return
         if self.win.is_closed():
-            sys.exit(0)
-        width = self.win.getProperties().getXSize()
-        height = self.win.getProperties().getYSize()
-        if width != settings.win_width or height != settings.win_height:
-            if settings.win_fullscreen:
-                settings.win_fs_width = width
-                settings.win_fs_height = height
+            self.userExit()
+        wp = self.win.getProperties()
+        width = wp.getXSize()
+        height = wp.getYSize()
+        if settings.win_fullscreen:
+            # Only save config is the switch to FS is successful
+            if wp.getFullscreen():
+                if self.request_fullscreen or width != settings.win_fs_width or height != settings.win_fs_height:
+                    settings.win_fs_width = width
+                    settings.win_fs_height = height
+                    configParser.save()
+                if self.request_fullscreen:
+                    if self.gui is not None: self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", 0.5, 2.0)
             else:
+                if self.gui is not None: self.gui.update_info("Could not switch to fullscreen mode", 0.5, 2.0)
+                settings.win_fullscreen = False
+            self.request_fullscreen = False
+        else:
+            if width != settings.win_width or height != settings.win_height:
                 settings.win_width = width
                 settings.win_height = height
-            configParser.save()
+                configParser.save()
         if self.observer is not None:
             self.observer.set_film_size(width, height)
             self.render.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
+            self.render.setShaderInput("pixel_size", self.observer.pixel_size)
         if self.gui is not None:
             self.gui.update_size(width, height)
+        if settings.color_picking and self.oid_texture is not None:
+            self.oid_texture.clear()
+            self.oid_texture.setup_2d_texture(width, height, Texture.T_unsigned_byte, Texture.F_rgba8)
+            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
 
     def connect_pstats(self):
         PStatClient.connect()
@@ -237,12 +339,17 @@ class CosmoniumBase(ShowBase):
         if self.wireframe_filled:
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
-    def save_screenshot(self):
-        filename = self.screenshot()
+    def save_screenshot(self, filename=None):
+        if filename is None:
+            filename = self.screenshot(namePrefix=settings.screenshot_path)
+        else:
+            self.screenshot(namePrefix=filename, defaultFilename=False)
         if filename is not None:
             print("Saving screenshot into", filename)
         else:
             print("Could not save filename")
+            if self.gui is not None:
+                self.gui.update_info("Could not save filename", 1.0, 1.0)
 
 class Cosmonium(CosmoniumBase):
     def __init__(self):
@@ -270,10 +377,45 @@ class Cosmonium(CosmoniumBase):
         self.current_sequence = None
         self.autopilot = None
         self.globalAmbient = None
+        self.oid_texture = None
+        self.camera_controllers = []
+        self.camera_controller = None
+        self.controllers = []
+        self.ships = []
+        self.ship = None
+
+        if self.app_config.test_start:
+            self.near_cam = None
 
         self.universe = Universe(self)
 
-        self.splash = Splash()
+        if settings.color_picking:
+            self.oid_texture = Texture()
+            self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
+            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
+            self.render.set_shader_input("oid_store", self.oid_texture)
+        else:
+            self.oid_texture = None
+        self.observer = CameraHolder(self.camera, self.camLens)
+        self.autopilot = AutoPilot(self)
+        self.mouse = Mouse(self, self.oid_texture)
+        if self.near_cam is not None:
+            self.observer.add_linked_cam(self.near_cam)
+
+        self.add_camera_controller(FixedCameraController())
+        self.add_camera_controller(LookAroundCameraController())
+        self.add_camera_controller(FollowCameraController())
+        self.observer.init()
+
+        if self.nav is None:
+            self.nav = FreeNav()
+        ship = NoShip()
+        self.set_camera_controller(self.camera_controllers[0])
+        self.add_ship(ship)
+        self.set_ship(ship)
+
+        self.splash = Splash() if not self.app_config.test_start else NoSplash()
+
         if not settings.debug_sync_load:
             self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
         else:
@@ -290,9 +432,9 @@ class Cosmonium(CosmoniumBase):
         self.splash.set_text("Building octree...")
         self.universe.create_octree()
         #self.universe.octree.print_summary()
-        self.universe.octree.print_stats()
+        #self.universe.octree.print_stats()
 
-        self.sun = self.universe.find_by_path('Sol')
+        self.sun = self.universe.find_by_path(_('Sol'))
         if not self.sun:
             print("Could not find Sun")
         self.splash.set_text("Done")
@@ -301,11 +443,6 @@ class Cosmonium(CosmoniumBase):
         #Force frame update to render the last status of the splash screen
         base.graphicsEngine.renderFrame()
         self.splash.close()
-        self.observer = Camera(self.cam, self.camLens)
-        self.autopilot = AutoPilot(self.observer, self)
-        self.mouse = Mouse(self)
-        if self.nav is None:
-            self.nav = FreeNav()
         if self.gui is None:
             self.gui = Gui(self, self.time, self.observer, self.mouse, self.nav, self.autopilot)
         self.set_nav(self.nav)
@@ -313,21 +450,20 @@ class Cosmonium(CosmoniumBase):
         self.nav.register_events(self)
         self.gui.register_events(self)
 
-        self.observer.init()
-
-        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16))
+        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
         if settings.render_sprite_points:
             self.pointset.instance.reparentTo(self.world)
-        
+
         self.haloset = PointsSet(use_sprites=True, sprite=ExpPointSprite(size=256, max_value=0.6), background=settings.halo_depth)
         if settings.render_sprite_points:
             self.haloset.instance.reparentTo(self.world)
-        
-        #render.setAntialias(AntialiasAttrib.MAuto)#MMultisample)
+
+        render.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
-        
+        self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
+
         self.set_ambient(settings.global_ambient)
-        
+
         self.equatorial_grid = Grid("Equatorial", J2000EquatorialReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
         self.equatorial_grid.set_shown(settings.show_equatorial_grid)
 
@@ -335,25 +471,89 @@ class Cosmonium(CosmoniumBase):
         self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
 
         self.time.set_current_date()
+
+        for controller in self.controllers:
+            controller.init()
+
         self.universe.first_update()
+        self.camera_controller.update(self.time.time_full, 0)
+        self.universe.first_update_obs(self.observer)
         self.window_event(None)
         self.time_task(None)
 
         taskMgr.add(self.time_task, "time-task")
 
         self.start_universe()
+        if self.app_config.test_start:
+            #TODO: this is where the tests should be inserted
+            print("Tests done.")
+            self.userExit()
 
     def app_panda_config(self, data):
         icon = defaultDirContext.find_texture('cosmonium.ico')
         data.append("icon-filename %s" % icon)
         data.append("window-title Cosmonium")
 
+    def add_controller(self, controller):
+        self.controllers.append(controller)
+
+    def create_additional_display_regions(self):
+        self.near_dr = self.win.make_display_region()
+        self.near_dr.set_sort(1)
+        self.near_dr.set_clear_depth_active(True)
+        near_cam_node = Camera('nearcam')
+        self.near_cam = self.camera.attach_new_node(near_cam_node)
+        self.near_dr.setCamera(self.near_cam)
+        self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
+        self.near_cam.node().get_lens().set_near_far(units.m /settings.scale, float('inf'))
+
+    def add_camera_controller(self, camera_controller):
+        self.camera_controllers.append(camera_controller)
+
+    def set_camera_controller(self, camera_controller):
+        if self.camera_controller is not None:
+            self.camera_controller.deactivate()
+        self.camera_controller = camera_controller
+        self.camera_controller.activate(self.observer, self.ship)
+        if self.ship is not None:
+            self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
+        print("Switching camera to", self.camera_controller.get_name())
+
+    def add_ship(self, ship):
+        self.ships.append(ship)
+
+    def set_ship(self, ship):
+        if self.ship is not None:
+            self.universe.remove_component(self.ship)
+            self.autopilot.set_ship(None)
+            self.nav.set_ship(None)
+            self.camera_controller.set_reference_point(None)
+        old_ship = self.ship
+        self.ship = ship
+        if self.ship is not None:
+            self.universe.add_component(self.ship)
+            self.autopilot.set_ship(self.ship)
+            self.nav.set_ship(self.ship)
+            if old_ship is not None:
+                self.ship.copy(old_ship)
+            if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
+                self.camera_controller.set_reference_point(self.ship)
+                self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
+            else:
+                #Current camera controller is not supported by the ship, switch to the first one supported
+                for camera_controller in self.camera_controllers:
+                    if self.ship.supports_camera_mode(camera_controller.camera_mode):
+                        self.set_camera_controller(camera_controller)
+                        break
+                else:
+                    print("ERROR: No camera controller supported by this ship")
+
     def set_nav(self, nav):
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
-            self.nav.init(self, self.observer, self.gui)
+            self.nav.init(self, self.observer, self.ship, self.gui)
             self.nav.register_events(self)
 
     def toggle_fly_mode(self):
@@ -383,14 +583,12 @@ class Cosmonium(CosmoniumBase):
             self.world.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
-        self.gui.hide()
+        state = self.gui.hide_with_state()
         self.annotation.hide()
-        self.annotation_shader.hide()
         base.graphicsEngine.renderFrame()
-        filename = self.screenshot()
-        self.gui.show()
+        filename = self.screenshot(namePrefix=settings.screenshot_path)
+        self.gui.show_with_state(state)
         self.annotation.show()
-        self.annotation_shader.show()
         if filename is not None:
             print("Saving screenshot without annotation into", filename)
         else:
@@ -416,7 +614,8 @@ class Cosmonium(CosmoniumBase):
     def reset_nav(self):
         print("Reset nav")
         self.follow = None
-        self.observer.set_camera_frame(AbsoluteReferenceFrame())
+        self.ship.set_frame(AbsoluteReferenceFrame())
+        self.observer.set_frame(AbsoluteReferenceFrame())
         self.sync = None
         if self.fly:
             #Disable fly mode when changing body
@@ -431,6 +630,11 @@ class Cosmonium(CosmoniumBase):
         if self.current_sequence is not None:
             self.current_sequence.start()
         return self.current_sequence is not None
+
+    def load_and_run_script(self, script_path):
+        script = cel_parser.load(script_path)
+        running = self.run_script(cel_engine.build_sequence(self, script))
+        return running
 
     def reset_script(self):
         if self.current_sequence is not None:
@@ -461,6 +665,15 @@ class Cosmonium(CosmoniumBase):
     def save_settings(self):
         configParser.save()
 
+    def set_limit_magnitude(self, mag):
+        settings.lowest_app_magnitude = min(16.0, max(0.0, mag))
+        print("Magnitude limit:  %.1f" % settings.lowest_app_magnitude)
+        self.gui.update_info(_("Magnitude limit:  %.1f") % settings.lowest_app_magnitude, 0.5, 1.0)
+        self.save_settings()
+
+    def incr_limit_magnitude(self, incr):
+        self.set_limit_magnitude(settings.lowest_app_magnitude + incr)
+
     def toggle_orbits(self):
         settings.show_orbits = not settings.show_orbits
         self.update_settings()
@@ -480,16 +693,22 @@ class Cosmonium(CosmoniumBase):
     def toggle_reference_axis(self):
         settings.show_reference_axis = not settings.show_reference_axis
         self.update_settings()
-    
+
+    def set_grid_equatorial(self, status):
+        settings.show_equatorial_grid = status
+        self.equatorial_grid.set_shown(status)
+        configParser.save()
+
     def toggle_grid_equatorial(self):
-        settings.show_equatorial_grid = not settings.show_equatorial_grid
-        self.equatorial_grid.set_shown(settings.show_equatorial_grid)
+        self.set_grid_equatorial(not settings.show_equatorial_grid)
+
+    def set_grid_ecliptic(self, status):
+        settings.show_ecliptic_grid = status
+        self.ecliptic_grid.set_shown(status)
         configParser.save()
 
     def toggle_grid_ecliptic(self):
-        settings.show_ecliptic_grid = not settings.show_ecliptic_grid
-        self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
-        configParser.save()
+        self.set_grid_ecliptic(not settings.show_ecliptic_grid)
 
     def toggle_asterisms(self):
         settings.show_asterisms = not settings.show_asterisms
@@ -572,6 +791,7 @@ class Cosmonium(CosmoniumBase):
         self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
         self.globalAmbientPath = self.world.attachNewNode(self.globalAmbient)
         self.world.setLight(self.globalAmbientPath)
+        self.render.set_shader_input("global_ambient", settings.corrected_global_ambient)
         configParser.save()
 
     def incr_ambient(self, ambient_incr):
@@ -585,9 +805,11 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.observer.set_camera_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.ship.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.observer.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
         else:
-            self.observer.set_camera_frame(AbsoluteReferenceFrame())
+            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -600,9 +822,11 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.observer.set_camera_frame(SynchroneReferenceFrame(body))
+            self.ship.set_frame(SynchroneReferenceFrame(body))
+            self.observer.set_frame(SynchroneReferenceFrame(body))
         else:
-            self.observer.set_camera_frame(AbsoluteReferenceFrame())
+            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
@@ -621,6 +845,18 @@ class Cosmonium(CosmoniumBase):
         elif self.selected is not None:
             self.track_body(self.selected)
 
+    def control_selected(self):
+        if self.selected is None: return
+        if not isinstance(self.selected.orbit.frame, SurfaceReferenceFrame) or not isinstance(self.selected.rotation.frame, SurfaceReferenceFrame):
+            print("Can not take control")
+            return
+        mover = SurfaceBodyMover(self.selected)
+        print("Take control")
+        self.fly = True
+        self.follow = None
+        self.sync = None
+        self.set_nav(ControlNav(mover))
+
     def reset_visibles(self):
         self.visibles = []
 
@@ -632,23 +868,32 @@ class Cosmonium(CosmoniumBase):
             print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
         self.last_visibles = self.visibles
 
+    @pstat
     def update_octree(self):
         self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
-        self.universe.add_extra_to_list(self.selected, self.track)
+        self.universe.add_extra_to_list(self.selected, self.follow, self.sync, self.track)
 
     @pstat
-    def update_universe(self):
-        self.universe.update(self.time.time_full)
+    def update_universe(self, time, dt):
+        self.universe.update(time, dt)
+        self.controllers_to_update = []
+        for controller in self.controllers:
+            if controller.should_update(time, dt):
+                controller.update(time, dt)
+                self.controllers_to_update.append(controller)
 
     @pstat
     def update_obs(self):
         self.universe.update_obs(self.observer)
-        if self.selected is not None:
-            self.selected.calc_height_under(self.observer.get_camera_pos())
+        for controller in self.controllers_to_update:
+            controller.update_obs(self.observer)
+
     @pstat
     def update_visibility(self):
         self.reset_visibles()
         self.universe.check_visibility(self.observer.pixel_size)
+        for controller in self.controllers_to_update:
+            controller.check_visibility(self.observer.pixel_size)
         self.print_visibles()
 
     @pstat
@@ -656,37 +901,56 @@ class Cosmonium(CosmoniumBase):
         self.pointset.reset()
         self.haloset.reset()
         self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
-        self.universe.clean_octree_cells()
+        for controller in self.controllers_to_update:
+            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
         self.pointset.update()
         self.haloset.update()
         self.gui.update_status()
 
     def time_task(self, task):
-        dt = globalClock.getDt()
+        if task is not None:
+            dt = globalClock.getDt()
+        else:
+            dt = 0
+
+        self.gui.update()
 
         self.time.update_time(dt)
         self.nav.update(dt)
 
         self.update_octree()
+        update = pstats.levelpstat('update', 'Bodies')
+        obs = pstats.levelpstat('obs', 'Bodies')
+        visibility = pstats.levelpstat('visibility', 'Bodies')
+        instance = pstats.levelpstat('instance', 'Bodies')
+        StellarObject.nb_update = 0
+        StellarObject.nb_obs = 0
+        StellarObject.nb_visibility = 0
+        StellarObject.nb_instance = 0
 
         if self.trigger_check_settings:
             self.universe.check_settings()
+            #TODO: This should be done by a container object
+            self.ecliptic_grid.check_settings()
+            self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
-        self.update_universe()
-        self.observer.update_camera()
+        self.update_universe(self.time.time_full, self.time.dt)
+        self.camera_controller.update(self.time.time_full, self.time.dt)
         self.update_obs()
 
         if self.track != None:
             self.autopilot.center_on_object(self.track, duration=0, cmd=False)
-            self.observer.update_camera()
+            self.ship.update(self.time.time_full, 0)
+            self.camera_controller.update(self.time.time_full, 0)
 
         if self.universe.nearest_system != self.nearest_system:
             if self.universe.nearest_system is not None:
                 print("New nearest system:", self.universe.nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.observer.change_global(self.universe.nearest_system.get_global_position())
+                self.ship.change_global(self.universe.nearest_system.get_global_position())
+                self.camera_controller.update(self.time.time_full, 0)
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:
@@ -731,16 +995,26 @@ class Cosmonium(CosmoniumBase):
         self.update_visibility()
         self.update_instances()
 
+        update.set_level(StellarObject.nb_update)
+        obs.set_level(StellarObject.nb_obs)
+        visibility.set_level(StellarObject.nb_visibility)
+        instance.set_level(StellarObject.nb_instance)
+
+        if settings.color_picking:
+            self.oid_texture.clear_image()
+
         return Task.cont
 
     def print_debug(self):
         print("Global:")
         print("\tscale", settings.scale)
-        print("\tPlanes", self.camLens.getNear(), self.camLens.getFar())
+        print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
+        print("\tFoV", self.camLens.get_fov())
         print("Camera:")
         print("\tGlobal position", self.observer.camera_global_pos)
-        print("\tLocal position", self.observer.get_camera_pos(), '(', self.observer.camera_pos, ')')
-        print("\tRotation", self.observer.get_camera_rot(), '(', self.observer.camera_rot, ')')
+        print("\tLocal position", self.observer.get_camera_pos())
+        print("\tRotation", self.observer.get_camera_rot())
+        print("\tFrame position", self.observer._frame_position, "rotation", self.observer._frame_rotation)
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
@@ -750,13 +1024,14 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(', self.selected._orbit_position, ')')
-            print("\tRotation", self.selected.get_abs_rotation(), '(', self.selected._orbit_rotation, ')')
+            print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.orbit.get_frame_position_at(self.time.time_full), ')')
+            print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected._orientation)
             print("\tVector to obs", self.selected.vector_to_obs)
             print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
             print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
             print("\tUpdate frozen:", self.selected.update_frozen)
+            print("\tOrbit:", self.selected.orbit.__class__.__name__, self.selected.orbit.frame)
             if self.selected.label is not None:
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
@@ -765,7 +1040,7 @@ class Cosmonium(CosmoniumBase):
             if isinstance(self.selected, StellarBody):
                 if self.selected.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.scene_position, '(', self.selected.world_body_center_offset, ')', self.selected.scene_distance)
+                    print("\tPosition", self.selected.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.scene_distance)
                     print("\tOrientation", self.selected.scene_orientation)
                     print("\tScale", self.selected.scene_scale_factor, '(', self.selected.get_scale() * self.selected.scene_scale_factor, ')')
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
@@ -780,7 +1055,8 @@ class Cosmonium(CosmoniumBase):
                 else:
                     print("\tPoint")
                 projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
-                print("\tProjection:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2])
+                xy = self.selected.spherical_to_xy(projection)
+                print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
                 height = self.selected.get_height_under(self.observer.get_camera_pos())
                 print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.distance_to_obs - height))
                 if self.selected.surface is not None and self.selected.surface.shape.patchable:

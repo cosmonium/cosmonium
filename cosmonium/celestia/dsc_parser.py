@@ -27,6 +27,7 @@ from ..galaxies import Galaxy
 from ..celestia import config_parser
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation
+from ..astro.frame import J2000EquatorialReferenceFrame
 from ..astro import units
 from ..dircontext import defaultDirContext
 from .. import utils
@@ -76,7 +77,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
             print("Key of", item_type, key, "not supported")
     orbit = FixedPosition(right_asc=ra, right_asc_unit=units.HourAngle, declination=decl, distance=distance, distance_unit=units.Ly)
     rot=utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
-    rotation=FixedRotation(rot)
+    rotation=FixedRotation(rot, J2000EquatorialReferenceFrame())
     if app_magnitude != None and distance != None:
         abs_magnitude = units.app_to_abs_mag(app_magnitude, distance)
     dso = Galaxy(names,

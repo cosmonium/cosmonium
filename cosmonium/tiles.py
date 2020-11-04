@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import OmniBoundingVolume, BoundingBox
-from panda3d.core import LPoint3d, LVector3, LVector4
+from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4
 from panda3d.core import NodePath
 
 from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape
@@ -48,9 +48,9 @@ class Tile(PatchBase):
         self.y1 = y + self.size
         self.centre = LPoint3d(x + self.half_size, y + self.half_size, 0.0)
         self.flat_coord = LVector4(self.x0 * scale,
-                                    self.y0 * scale,
+                                    self.y1 * scale,
                                     (self.x1 - self.x0) * scale,
-                                    (self.y1 - self.y0) * scale)
+                                    (self.y0 - self.y1) * scale)
         self.local_bounds = geometry.PatchAABB(1.0, min_height, max_height)
         self.layers = []
         self.create_holder_instance()
@@ -104,6 +104,10 @@ class Tile(PatchBase):
             layer.create_instance(self)
         return self.instance
 
+    def patch_done(self):
+        for layer in self.layers:
+            layer.patch_done(self)
+
     def update_instance(self, shape):
         if self.instance is None: return
         #print("Update", self.str_id())
@@ -133,6 +137,10 @@ class Tile(PatchBase):
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)
 
+    def get_normals_at(self, coord):
+        vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
+        return vectors
+
 class TerrainLayer(object):
     def __init__(self):
         self.instance = None
@@ -141,6 +149,9 @@ class TerrainLayer(object):
         pass
 
     def create_instance(self, patch):
+        pass
+
+    def patch_done(self, patch):
         pass
 
     def update_instance(self, patch):
@@ -183,6 +194,9 @@ class TiledShape(PatchedShapeBase):
         self.factory = factory
         self.scale = scale
 
+    def global_to_shape_coord(self, x, y):
+        return (x / self.scale, y / self.scale)
+
     def find_patch_at(self, coord):
         (x, y) = coord
         for patch in self.root_patches:
@@ -205,6 +219,30 @@ class TiledShape(PatchedShapeBase):
             self.root_patches.append(patch)
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
+                north = self.find_root_patch(patch.x, patch.y + 1)
+                if north is not None:
+                    neighbours = north.collect_side_neighbours(PatchBase.SOUTH)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.NORTH, neighbour)
+                        neighbour.add_neighbour(PatchBase.SOUTH, patch)
+                east = self.find_root_patch(patch.x + 1, patch.y)
+                if east is not None:
+                    neighbours = east.collect_side_neighbours(PatchBase.WEST)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.EAST, neighbour)
+                        neighbour.add_neighbour(PatchBase.WEST, patch)
+                south = self.find_root_patch(patch.x, patch.y - 1)
+                if south is not None:
+                    neighbours = south.collect_side_neighbours(PatchBase.NORTH)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.SOUTH, neighbour)
+                        neighbour.add_neighbour(PatchBase.NORTH, patch)
+                west = self.find_root_patch(patch.x - 1, patch.y)
+                if west is not None:
+                    neighbours = west.collect_side_neighbours(PatchBase.EAST)
+                    for neighbour in neighbours:
+                        patch.add_neighbour(PatchBase.WEST, neighbour)
+                        neighbour.add_neighbour(PatchBase.EAST, patch)
         return patch
 
     def split_patch(self, patch):
@@ -216,28 +254,12 @@ class TiledShape(PatchedShapeBase):
     def add_root_patches(self, patch, update):
         #print("Create root patches", patch.centre, self.scale)
         self.add_root_patch(patch.x - 1, patch.y - 1)
-        south = self.find_root_patch(patch.x, patch.y - 1)
-        if south is None:
-            south = self.add_root_patch(patch.x, patch.y - 1)
-        patch.add_neighbour(PatchBase.SOUTH, south)
-        south.add_neighbour(PatchBase.NORTH, patch)
+        self.add_root_patch(patch.x, patch.y - 1)
         self.add_root_patch(patch.x + 1, patch.y - 1)
-        west = self.find_root_patch(patch.x - 1, patch.y)
-        if west is None:
-            west = self.add_root_patch(patch.x - 1, patch.y)
-        patch.add_neighbour(PatchBase.WEST, west)
-        west.add_neighbour(PatchBase.EAST, patch)
-        east = self.find_root_patch(patch.x + 1, patch.y)
-        if east is None:
-            east = self.add_root_patch(patch.x + 1, patch.y)
-        patch.add_neighbour(PatchBase.EAST, east)
-        east.add_neighbour(PatchBase.WEST, patch)
+        self.add_root_patch(patch.x - 1, patch.y)
+        self.add_root_patch(patch.x + 1, patch.y)
         self.add_root_patch(patch.x - 1, patch.y + 1)
-        north = self.find_root_patch(patch.x, patch.y + 1)
-        if north is None:
-            north = self.add_root_patch(patch.x, patch.y + 1)
-        patch.add_neighbour(PatchBase.NORTH, north)
-        north.add_neighbour(PatchBase.SOUTH, patch)
+        self.add_root_patch(patch.x, patch.y + 1)
         self.add_root_patch(patch.x + 1, patch.y + 1)
         patch.calc_outer_tessellation_level(update)
 

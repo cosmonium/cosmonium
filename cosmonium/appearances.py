@@ -20,15 +20,81 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import  Material, TextureStage, Texture, GeomNode
+from panda3d.core import  Material, TextureStage, Texture, GeomNode, InternalName
 from panda3d.core import TransparencyAttrib
 
-from .textures import TextureBase, SurfaceTexture, TransparentTexture, NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from .textures import TextureBase, WrapperTexture, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from .textures import AutoTextureSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
+from .parameters import ParametersGroup, AutoUserParameter
 
 from . import settings
+
+class TexturesBlock(object):
+    def __init__(self):
+        self.albedo = None
+        self.normal = None
+        self.bump = None
+        self.specular = None
+        self.occlusion = None
+        self.emission = None
+        self.albedo_alpha_specular = False
+        self.textures = []
+        self.textures_map = {}
+        self.nb_textures = 0
+
+    def set_target(self, panda, input_name=None):
+        if input_name is None:
+            for texture in self.textures:
+                texture.set_target(panda)
+        else:
+            for texture in self.textures:
+                texture_input_name = input_name + '_' + texture.category
+                texture.set_target(panda, texture_input_name)
+
+    def set_albedo(self, albedo):
+        self.albedo = albedo
+        self.textures.append(albedo)
+        self.nb_textures += 1
+        self.textures_map[albedo.category] = albedo
+
+    def set_transparent_albedo(self, albedo):
+        self.albedo = albedo
+        self.textures.append(albedo)
+        self.nb_textures += 1
+        self.textures_map[albedo.category] = albedo
+
+    def set_emission(self, emission):
+        self.emission = emission
+        self.textures.append(emission)
+        self.nb_textures += 1
+        self.textures_map[emission.category] = emission
+
+    def set_normal(self, normal):
+        self.normal = normal
+        self.textures.append(normal)
+        self.nb_textures += 1
+        self.textures_map[normal.category] = normal
+
+    def set_specular(self, specular):
+        self.specular = specular
+        self.textures.append(specular)
+        self.nb_textures += 1
+        self.textures_map[specular.category] = specular
+
+    def set_occlusion(self, occlusion):
+        self.occlusion = occlusion
+        self.textures.append(occlusion)
+        self.nb_textures += 1
+        self.textures_map[occlusion.category] = occlusion
+
+    def set_bump(self, bump, bump_height):
+        self.bump = bump
+        self.bump_height = bump_height
+        self.textures.append(bump)
+        self.nb_textures += 1
+        self.textures_map[bump.category] = bump
 
 class AppearanceBase:
     def __init__(self):
@@ -38,24 +104,34 @@ class AppearanceBase:
         self.normal_map_index = 0
         self.bump_map_index = 0
         self.specular_map_index = 0
-        self.night_texture_index = 0
+        self.emission_texture_index = 0
+        self.gloss_map_texture_index = 0
+        self.occlusion_map_index = 0
         self.texture = None
         self.normal_map = None
         self.bump_map = None
         self.specular_map = None
-        self.night_texture = None
+        self.emission_texture = None
+        self.gloss_map = None
+        self.occlusion_map = None
         self.has_specular_mask = False
+        self.has_occlusion_channel = False
         self.normal_map_tangent_space = False
+        self.generate_binormal = False
         self.specularColor = None
         self.transparency = False
         self.transparency_level = 0.0
         self.transparency_blend = TransparencyBlend.TB_None
+        self.alpha_mask = False
         self.has_vertex_color = False
         self.has_attribute_color = False
         self.has_material = False
-        self.shadow = None
         self.roughness = 0.0
-        self.backlit = 0.0
+        self.nightscale = None
+        self.backlit = None
+        self.shadow_normal_bias = 0.5
+        self.shadow_slope_bias = 0.5
+        self.shadow_depth_bias = 0.1
         self.attribution = None
 
     def bake(self):
@@ -70,11 +146,20 @@ class AppearanceBase:
     def apply(self, shape, owner):
         pass
 
-    def update_lod(self, nodepath, apparent_radius, distance_to_obs, pixel_size):
+    def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         pass
 
     def get_recommended_shape(self):
         return None
+
+    def get_user_parameters(self):
+        group = ParametersGroup("Appearance")
+        parameters = []
+        parameters.append(AutoUserParameter('Shadow normal bias', 'shadow_normal_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        parameters.append(AutoUserParameter('Shadow slope bias', 'shadow_slope_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        parameters.append(AutoUserParameter('Shadow depth bias', 'shadow_depth_bias', self, AutoUserParameter.TYPE_FLOAT, [0, 2]))
+        group.add_parameter(ParametersGroup("Shadows", parameters))
+        return group
 
 class Appearance(AppearanceBase):
     JOB_TEXTURE_LOAD = 0x0001
@@ -84,6 +169,7 @@ class Appearance(AppearanceBase):
                  ambientColor=None,
                  specularColor=None,
                  shininess=1.0,
+                 colorScale=None,
                  transparency=False,
                  transparency_level=0.0,
                  transparency_blend=TransparencyBlend.TB_Alpha,
@@ -92,7 +178,7 @@ class Appearance(AppearanceBase):
                  specularMap=None,
                  bumpMap=None,
                  bump_height = 10.0,
-                 night_texture=None,
+                 emission_texture=None,
                  tint=None,
                  srgb=None):
         AppearanceBase.__init__(self)
@@ -101,33 +187,27 @@ class Appearance(AppearanceBase):
         self.ambientColor = ambientColor
         self.specularColor = specularColor
         self.shininess = shininess
+        self.colorScale = colorScale
         if srgb is None:
             srgb = settings.srgb
         self.srgb = srgb
         if texture is not None:
             self.set_texture(texture, tint, transparency, transparency_level, transparency_blend)
-        if night_texture is not None:
-            self.set_night_texture(night_texture, tint)
+        if emission_texture is not None:
+            self.set_emission_texture(emission_texture, tint)
         self.set_normal_map(normalMap)
         self.set_specular_map(specularMap)
         self.set_bump_map(bumpMap, bump_height)
-        self.shadow = None
         self.normal_map_tangent_space = True
-        self.nb_textures = 0
         self.nb_textures_coord = 0
-        self.texture_index = 0
-        self.normal_map_index = 0
-        self.bump_map_index = 0
-        self.specular_map_index = 0
-        self.night_texture_index = 0
-        self.has_specular_mask = False
         self.tex_transform = True
-        self.has_vertex_color = False
-        self.has_attribute_color = False
         self.has_material = True
 
     def set_roughness(self, roughness):
         self.roughness = roughness
+
+    def set_nightscale(self, nightscale):
+        self.nightscale = nightscale
 
     def set_backlit(self, backlit):
         self.backlit = backlit
@@ -139,9 +219,6 @@ class Appearance(AppearanceBase):
     def check_transparency(self):
         if self.texture is not None:
             self.texture.check_transparency = True
-
-    def set_shadow(self, shadow):
-        self.shadow = shadow
 
     def bake(self):
         self.material=Material()
@@ -171,10 +248,10 @@ class Appearance(AppearanceBase):
         self.tint = tint
         texture.set_offset(offset)
 
-    def set_night_texture(self, night_texture, tint=None, context=defaultDirContext):
-        if night_texture is not None and not isinstance(night_texture, TextureBase):
-            night_texture = NightTexture(AutoTextureSource(night_texture, None, context), tint, srgb=self.srgb)
-        self.night_texture = night_texture
+    def set_emission_texture(self, emission_texture, tint=None, context=defaultDirContext):
+        if emission_texture is not None and not isinstance(emission_texture, TextureBase):
+            emission_texture = EmissionTexture(AutoTextureSource(emission_texture, None, context), tint, srgb=self.srgb)
+        self.emission_texture = emission_texture
 
     def set_normal_map(self, normal_map, context=defaultDirContext):
         if normal_map is not None and not isinstance(normal_map, TextureBase):
@@ -192,6 +269,11 @@ class Appearance(AppearanceBase):
         self.bump_map = bump_map
         self.bump_height = bump_height
 
+    def set_occlusion_map(self, occlusion_map, context=defaultDirContext):
+        if occlusion_map is not None and not isinstance(occlusion_map, TextureBase):
+            occlusion_map = OcclusionMapTexture(AutoTextureSource(occlusion_map, None, context))
+        self.occlusion_map = occlusion_map
+
     def calc_indexes(self):
         self.nb_textures = 0
         self.nb_textures_coord = 0
@@ -207,8 +289,11 @@ class Appearance(AppearanceBase):
         if self.specularColor is not None and self.specular_map is not None:
             self.specular_map_index = self.nb_textures
             self.nb_textures += 1
-        if self.night_texture is not None:
-            self.night_texture_index = self.nb_textures
+        if self.emission_texture is not None:
+            self.emission_texture_index = self.nb_textures
+            self.nb_textures += 1
+        if self.occlusion_map is not None:
+            self.occlusion_map_index = self.nb_textures
             self.nb_textures += 1
         if self.nb_textures > 0:
             self.nb_textures_coord = 1
@@ -240,8 +325,10 @@ class Appearance(AppearanceBase):
             self.bump_map.load(shape, self.texture_loaded_cb, (shape, owner))
         if self.specular_map:
             self.specular_map.load(shape, self.texture_loaded_cb, (shape, owner))
-        if self.night_texture:
-            self.night_texture.load(shape, self.texture_loaded_cb, (shape, owner))
+        if self.emission_texture:
+            self.emission_texture.load(shape, self.texture_loaded_cb, (shape, owner))
+        if self.occlusion_map:
+            self.occlusion_map.load(shape, self.texture_loaded_cb, (shape, owner))
 
     def apply_textures(self, patch):
         patch.instance.clearTexture()
@@ -254,8 +341,10 @@ class Appearance(AppearanceBase):
             self.bump_map.apply(patch)
         if self.specularColor is not None and self.specular_map is not None:
             self.specular_map.apply(patch)
-        if self.night_texture:
-            self.night_texture.apply(patch)
+        if self.emission_texture:
+            self.emission_texture.apply(patch)
+        if self.occlusion_map:
+            self.occlusion_map.apply(patch)
 
     def apply_patch(self, patch, owner):
         if (patch.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
@@ -268,6 +357,8 @@ class Appearance(AppearanceBase):
     def apply(self, shape, owner):
         #Override any material present on the shape (use ModelAppearance to keep it)
         shape.instance.setMaterial(self.material, 1)
+        if self.colorScale is not None:
+            shape.instance.set_color_scale(self.colorScale)
         if shape.patchable: return
         if (shape.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
             #print("APPLY", shape, self.nb_textures)
@@ -277,10 +368,8 @@ class Appearance(AppearanceBase):
                 self.load_textures(shape, owner)
 
 class ModelAppearance(AppearanceBase):
-    def __init__(self, srgb=None, vertex_color=False, attribute_color=False):
+    def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):
         AppearanceBase.__init__(self)
-        self.shadow = None
-        self.specularColor = None
         self.tex_transform = False
         if srgb is None:
             srgb = settings.srgb
@@ -288,28 +377,12 @@ class ModelAppearance(AppearanceBase):
         #TODO: Should be inferred from model
         self.has_vertex_color = vertex_color
         self.has_attribute_color = attribute_color
-        self.has_material = False
+        self.has_material = material
+        self.has_occlusion_channel = occlusion_channel
         self.offsets = None
         #TODO: This should be factored out...
         self.normal_map_tangent_space = True
-        self.nb_textures = 0
         self.nb_textures_coord = 0
-        self.texture = None
-        self.texture_index = 0
-        self.normal_map = None
-        self.normal_map_index = 0
-        self.bump_map = None
-        self.bump_map_index = 0
-        self.specular_map = None
-        self.specular_map_index = 0
-        self.night_texture = None
-        self.night_texture_index = 0
-        self.has_specular_mask = False
-        self.transparency = False
-        self.transparency_blend = TransparencyBlend.TB_None
-
-    def set_shadow(self, shadow):
-        self.shadow = shadow
 
     def scan_model(self, instance):
         stages = instance.findAllTextureStages()
@@ -318,29 +391,48 @@ class ModelAppearance(AppearanceBase):
         #Should be done like transparency for all the geoms and create a shader per geom...
         has_surface = False
         has_normal = False
+        has_glow = False
+        has_gloss = False
         for stage in stages:
             tex = instance.find_texture(stage)
             if tex:
                 mode = stage.get_mode()
+                #print("FOUND STAGE", stage.name, stage.sort, mode, tex)
                 if mode in (TextureStage.M_modulate, TextureStage.M_modulate_glow, TextureStage.M_modulate_gloss):
                     if not has_surface:
-                        self.texture = tex
+                        self.texture = WrapperTexture(tex)
                         self.texture_index = self.nb_textures
                         self.has_specular_mask = mode == TextureStage.M_modulate_gloss
                         if self.srgb:
-                            tex_format = self.texture.getFormat()
+                            tex_format = tex.getFormat()
                             if tex_format == Texture.F_rgb:
-                                self.texture.set_format(Texture.F_srgb)
+                                tex.set_format(Texture.F_srgb)
                             elif tex_format == Texture.F_rgba:
-                                self.texture.set_format(Texture.F_srgb_alpha)
+                                tex.set_format(Texture.F_srgb_alpha)
                         self.nb_textures += 1
                         has_surface = True
+                        #print("SURFACE", self.texture_index, self.texture)
                 elif mode in (TextureStage.M_normal, TextureStage.M_normal_height, TextureStage.M_normal_gloss):
                     if not has_normal:
-                        self.normal_map = tex
+                        self.normal_map = WrapperTexture(tex)
                         self.normal_map_index = self.nb_textures
                         self.nb_textures += 1
                         has_normal = True
+                        #print("NORMAL", self.normal_map_index, self.normal_map)
+                elif mode in (TextureStage.M_glow, ):
+                    if not has_glow:
+                        self.emission_texture = WrapperTexture(tex)
+                        self.emission_texture_index = self.nb_textures
+                        self.nb_textures += 1
+                        has_glow = True
+                        #print("GLOW", self.emission_texture_index, self.emission_texture)
+                elif mode in (TextureStage.M_gloss, ):
+                    if not has_gloss:
+                        self.gloss_map = WrapperTexture(tex)
+                        self.gloss_map_texture_index = self.nb_textures
+                        self.nb_textures += 1
+                        has_gloss = True
+                        #print("GLOSS", self.gloss_map_texture_index, self.gloss_map)
                 else:
                     print("Unsupported mode %d" % mode)
         transparency_mode = TransparencyAttrib.M_none
@@ -354,6 +446,11 @@ class ModelAppearance(AppearanceBase):
             if attrib is not None:
                 transparency_mode = attrib.get_mode()
             if isinstance(node, GeomNode):
+                for geom in node.get_geoms():
+                    vdata = geom.getVertexData()
+                    has_tangent= vdata.has_column(InternalName.get_tangent())
+                    has_binormal = vdata.has_column(InternalName.get_binormal())
+                    self.generate_binormal =  has_tangent and not has_binormal
                 for state in node.get_geom_states():
                     attrib = state.get_attrib(TransparencyAttrib)
                     if attrib is not None:

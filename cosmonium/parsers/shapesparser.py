@@ -20,11 +20,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d
+from panda3d.core import LVector3d, LQuaterniond
 
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
+from ..procedural.raymarching import RayMarchingShape
 
 from .yamlparser import YamlModuleParser
 
@@ -36,14 +37,30 @@ class MeshYamlParser(YamlModuleParser):
         model = data.get('model')
         create_uv = data.get('create-uv', False)
         panda = data.get('panda', False)
-        scale = data.get('scale', True)
+        auto_scale_mesh = data.get('auto-scale', True)
         offset = data.get('offset', None)
+        rotation_data = data.get('rotation', None)
+        scale = data.get('scale', None)
         if offset is not None:
             offset = LVector3d(*offset)
+        if rotation_data is not None:
+            if len(rotation_data) == 3:
+                rotation = LQuaterniond()
+                rotation.set_hpr(LVector3d(*rotation_data))
+            else:
+                rotation = LQuaterniond(*rotation_data)
+        else:
+            rotation = None
         flatten = data.get('flatten', True)
         attribution = data.get('attribution', None)
-        shape = MeshShape(model, offset, scale, flatten, panda, attribution, context=YamlModuleParser.context)
+        shape = MeshShape(model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context=YamlModuleParser.context)
         return (shape, {'create-uv': create_uv})
+
+class RayMarchingYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        shape = RayMarchingShape()
+        return (shape, {})
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
@@ -66,6 +83,8 @@ class ShapeYamlParser(YamlModuleParser):
             shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':
             shape, extra = MeshYamlParser.decode(shape_data)
+        elif shape_type == 'raymarching':
+            shape, extra = RayMarchingYamlParser.decode(shape_data)
         else:
             print("Unknown shape", shape_type)
         return shape, extra

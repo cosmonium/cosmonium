@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
 from . import units
 from math import pi
 
@@ -55,6 +55,8 @@ class ReferenceFrame(object):
         return absolute_orien * self.get_orientation().conjugate()
     def set_parent_body(self, body):
         raise Exception
+    def __str__(self):
+        raise Exception
 
 class AbsoluteReferenceFrame(ReferenceFrame):
     null_center = LPoint3d(0, 0, 0)
@@ -71,6 +73,8 @@ class AbsoluteReferenceFrame(ReferenceFrame):
         return relative_orien
     def get_rel_orientation(self, absolute_orien):
         return absolute_orien
+    def __str__(self):
+        return 'AbsoluteReferenceFrame'
 
 class BodyReferenceFrame(ReferenceFrame):
     def __init__(self, body = None):
@@ -84,16 +88,34 @@ class BodyReferenceFrame(ReferenceFrame):
     def get_center(self):
         return self.body.get_local_position()
 
+    def __str__(self):
+        return self.__class__.__name__ + '(' + self.body.get_name() +', ' + str(self.explicit_body) + ')'
+
 class J2000EclipticReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
     def get_orientation(self):
         return self.orientation
+
+class SolBarycenter():
+    def get_name(self):
+        return "Solar System Barycenter"
+
+    def get_local_position(self):
+        return LPoint3d()
+
+class J2000HeliocentricEclipticReferenceFrame(J2000EclipticReferenceFrame):
+    def __init__(self):
+        J2000EclipticReferenceFrame.__init__(self, SolBarycenter())
 
 class J2000EquatorialReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
     orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
     def get_orientation(self):
         return self.orientation
+
+class J2000HeliocentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
+    def __init__(self):
+        J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
 
 class RelativeReferenceFrame(BodyReferenceFrame):
     def __init__(self, body = None, parent_frame = None):
@@ -102,6 +124,9 @@ class RelativeReferenceFrame(BodyReferenceFrame):
 
     def get_orientation(self):
         return self.parent_frame.get_orientation()
+
+    def __str__(self):
+        return BodyReferenceFrame.__str__(self) + ' ' + str(self.parent_frame)
 
 class CelestialReferenceFrame(RelativeReferenceFrame):
     """
@@ -117,13 +142,17 @@ class CelestialReferenceFrame(RelativeReferenceFrame):
         self.right_asc = right_asc * right_asc_unit
         self.declination = declination * declination_unit
         self.longitude_at_node = longitude_at_node * longitude_at_nod_units
-        right_asc_quat=LQuaterniond()
-        right_asc_quat.setFromAxisAngleRad(self.right_asc + pi / 2, LVector3d.unitZ())
-        declination_quat = LQuaterniond()
-        declination_quat.setFromAxisAngleRad(-self.declination + pi / 2, LVector3d.unitX())
+
+        inclination = pi / 2 - self.declination
+        ascending_node = self.right_asc + pi / 2
+
+        inclination_quat = LQuaterniond()
+        inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
+        ascending_node_quat = LQuaterniond()
+        ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
         longitude_quad = LQuaterniond()
-        longitude_quad.setFromAxisAngleRad(-self.longitude_at_node + pi / 2, LVector3d.unitZ())
-        self.orientation = longitude_quad * declination_quat * right_asc_quat * J2000EquatorialReferenceFrame.orientation
+        longitude_quad.setFromAxisAngleRad(self.longitude_at_node, LVector3d.unitZ())
+        self.orientation = longitude_quad * inclination_quat * ascending_node_quat * J2000EquatorialReferenceFrame.orientation
 
     def get_orientation(self):
         return self.orientation
@@ -143,11 +172,79 @@ class SynchroneReferenceFrame(RelativeReferenceFrame):
         rot = self.body.get_sync_rotation()
         return rot
 
-class CelestiaBodyFixedReferenceFrame(RelativeReferenceFrame):
-    rotY180 = LQuaterniond()
-    rotY180.set_from_axis_angle(180, LVector3d(0, 1, 0))
-    rotZ90 = LQuaterniond()
-    rotZ90.set_from_axis_angle(-90, LVector3d(0, 0, 1))
+class SurfaceReferenceFrame(RelativeReferenceFrame):
+    def __init__(self, long, lat):
+        RelativeReferenceFrame.__init__(self)
+        self.long = long
+        self.lat = lat
+
+    def set_parent_body(self, body):
+        self.body = body
+        if self.body.primary is not None:
+            self.body = self.body.primary
+
+    def get_center(self):
+        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+
     def get_orientation(self):
-        rot = self.body.get_sync_rotation()
-        return rot
+        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+
+    #TODO: workaround until proper hierarchical frames are implemented
+    def get_center_parent_frame(self):
+        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, self.body.get_apparent_radius()))
+        return position
+
+    def get_position_parent_frame(self, relative_pos):
+        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
+
+    def get_orientation_parent_frame(self):
+        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
+        (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
+        rotation = LQuaterniond()
+        look_at(rotation, binormal, normal)
+        return rotation
+
+class CartesianSurfaceReferenceFrame(RelativeReferenceFrame):
+    def __init__(self, position):
+        RelativeReferenceFrame.__init__(self)
+        self.position = position
+
+    def set_parent_body(self, body):
+        self.body = body
+        if self.body.primary is not None:
+            self.body = self.body.primary
+
+    def get_center(self):
+        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+
+    def get_orientation(self):
+        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+
+    #TODO: workaround until proper hierarchical frames are implemented
+    def get_center_parent_frame(self):
+        position = LPoint3d(self.position[0], self.position[1], 0)
+        return position
+
+    def get_position_parent_frame(self, relative_pos):
+        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
+
+    def get_orientation_parent_frame(self):
+        (normal, tangent, binormal) = self.body.get_normals_under(self.position)
+        rotation = LQuaterniond()
+        look_at(rotation, tangent, normal)
+        return rotation
+
+class FramesDB(object):
+    def __init__(self):
+        self.frames = {}
+
+    def register_frame(self, frame_name, frame):
+        self.frames[frame_name] = frame
+
+    def get(self, name):
+        if name in self.frames:
+            return self.frames[name]
+        else:
+            print("DB frames:", "Frame", name, "not found")
+
+frames_db = FramesDB()

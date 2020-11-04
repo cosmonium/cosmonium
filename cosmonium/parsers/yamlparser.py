@@ -25,35 +25,24 @@ from ..cache import create_path_for
 from ..import settings
 
 import os
-import sys
 import hashlib
 import pickle
+import io
 
-if sys.version_info[0] < 3:
-    from ..support import yaml2 as yaml
-    try:
-        from ..support.yaml2 import CLoader as Loader
-    except ImportError:
-        from ..support.yaml2 import Loader
-else:
-    from ..support import yaml
-    try:
-        from ..support.yaml import CLoader as Loader
-    except ImportError:
-        from ..support.yaml import Loader
+import ruamel.yaml
 
 def yaml_include(loader, node):
     print("Loading", node.value)
     filepath = node.value
     if filepath is not None:
-        with file(filepath) as inputfile:
+        with io.open(filepath, encoding='utf8') as inputfile:
             data = yaml.load(inputfile)
             return data
     else:
         print("File", node.value, "not found")
         return None
 
-yaml.add_constructor("!include", yaml_include)
+#yaml.add_constructor("!include", yaml_include)
 
 class YamlParser(object):
     def __init__(self):
@@ -68,25 +57,27 @@ class YamlParser(object):
     def parse(self, stream, stream_name=None):
         data = None
         try:
-            data = yaml.load(stream, Loader=Loader)
-        #TODO: Why these are not caught ?
-        #except (yaml.scanner.ScannerError, yaml.parser.ParserError) as e:
-        except Exception as e:
+            yaml = ruamel.yaml.YAML(typ='safe')
+            yaml.allow_duplicate_keys = True
+            data = yaml.load(stream)
+        except ruamel.yaml.YAMLError as e:
             if stream_name is not None:
                 print("Syntax error in '%s' :" % stream_name, e)
             else:
                 print("Syntax error : ", e)
         return data
 
-    def store(self, data):
-        return yaml.dump(data, default_flow_style=False)
+    def store(self, data, stream):
+        yaml = ruamel.yaml.YAML(typ='safe')
+        yaml.default_flow_style = False
+        yaml.dump(data, stream)
 
     def encode_and_store(self, filename):
         try:
             stream = open(filename, 'w')
             data = self.encode()
-            data = self.store(data)
-            stream.write(data)
+            self.store(data, stream)
+            stream.close()
         except IOError as e:
             print("Could not write", filename, ':', e)
             return None
@@ -120,6 +111,28 @@ class YamlParser(object):
 
 class YamlModuleParser(YamlParser):
     context = defaultDirContext
+    translation = None
+    app = None
+
+    @classmethod
+    def set_translation(cls, translation):
+        YamlModuleParser.translation = translation
+
+    @classmethod
+    def translate_name(cls, name, context=None):
+        if context is not None:
+            return cls.translation.pgettext(context, name)
+        else:
+            return cls.translation.gettext(name)
+
+    @classmethod
+    def translate_names(cls, names, context=None):
+        if not isinstance(names, list):
+            names = [names]
+        if context is not None:
+            return list(map(lambda x: cls.translation.pgettext(context, x), names))
+        else:
+            return list(map(lambda x: cls.translation.gettext(x), names))
 
     def create_new_context(self, old_context, filepath):
         new_context = DirContext(old_context)
@@ -172,7 +185,7 @@ class YamlModuleParser(YamlParser):
                 print("Loading %s" % filepath)
                 base.splash.set_text("Loading %s" % filepath)
                 try:
-                    text = open(filepath).read()
+                    text = io.open(filepath, encoding='utf8').read()
                     data = self.parse(text, filepath)
                 except IOError as e:
                     print("Could not read", filename, filepath, ':', e)

@@ -69,14 +69,14 @@ class InfoPanel():
                 pass
             elif value is None:
                 titles.append(title)
-                infos.append('')
+                infos.append(None)
             else:
                 if isinstance(value, str):
                     titles.append(title)
                     infos.append(value)
                 else:
                     titles.append(title)
-                    infos.append('')
+                    infos.append(None)
                     for entry in value:
                         if len(entry) != 2:
                             print("Invalid entry for", title, entry)
@@ -94,7 +94,7 @@ class InfoPanel():
         self.create_layout(body, len(infos))
         for (i, (title, info)) in enumerate(zip(titles, infos)):
             if title is not None:
-                if info is not None and info != '':
+                if info is not None:
                     title_widget = DirectLabel(text=title,
                                                text_align=TextNode.ALeft,
                                                text_scale=tuple(self.scale * self.font_size),

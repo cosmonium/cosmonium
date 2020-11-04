@@ -39,8 +39,8 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
                 'neg_y',
                 ]
 
-    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None):
-        VirtualTextureSource.__init__(self, root, ext, size, attribution)
+    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=defaultDirContext):
+        VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.channel = channel
         self.alpha_channel = alpha_channel
         if channel is None:
@@ -54,16 +54,22 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
 
     def child_texture_name(self, patch):
         dir_name = self.face_str[patch.face]
-        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, patch.y * 2, patch.x * 2, self.channel_text, self.ext)
+        x = patch.x * 2
+        y = (2 << patch.lod) - patch.y * 2 - 1
+        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, y, x, self.channel_text, self.ext)
 
     def texture_name(self, patch):
         dir_name = self.face_str[patch.face]
-        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.channel_text, self.ext)
+        x = patch.x
+        y = (1 << patch.lod) - patch.y - 1
+        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, y, x, self.channel_text, self.ext)
 
     def alpha_texture_name(self, patch):
         if self.alpha_channel is not None:
             dir_name = self.face_str[patch.face]
-            return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, patch.y, patch.x, self.alpha_channel_text, self.ext)
+            x = patch.x
+            y = (1 << patch.lod) - patch.y - 1
+            return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, y, x, self.alpha_channel_text, self.ext)
 
     def get_recommended_shape(self):
         return 'se-sphere'
@@ -71,6 +77,7 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
     def create_source(self, filename, context=defaultDirContext):
         filename = context.find_texture(filename)
+        if filename is None: return None
         if os.path.isdir(filename):
             all_faces = True
             for face in SpaceEngineVirtualTextureSource.face_str:

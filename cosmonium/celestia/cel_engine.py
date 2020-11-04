@@ -21,12 +21,36 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
-from panda3d.core import LVector3d
+from panda3d.core import LVector3d, LQuaterniond
 
 from .celestia_utils import body_path
+from .bigfix import Bigfix
+
+from ..astro import units
+from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
+from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
 from .. import settings
 
 from math import pi
+
+def create_frame(coordsys, ref):
+    coordsys = coordsys.lower()
+    if coordsys == "observer":
+        return None
+    elif coordsys == "bodyfixed" or "geographic":
+        return SynchroneReferenceFrame(ref)
+    elif coordsys == "equatorial":
+        return J2000EquatorialReferenceFrame(ref)
+    elif coordsys == "ecliptical":
+        return J2000EclipticReferenceFrame(ref)
+    elif coordsys == "universal":
+        return J2000HeliocentricEclipticReferenceFrame()
+    elif coordsys == "lock":
+        return None
+    elif coordsys ==  "chase":
+        return None
+    else:
+        return None
 
 def ignore(command_name, sequence, base, parameters):
     pass
@@ -39,6 +63,17 @@ def cancel(command_name, sequence, base, parameters):
 Stop a currently running goto command . . . like pressing the ESC key.
 """
     sequence.append(Func(base.reset_nav))
+
+def capture(command_name, sequence, base, parameters):
+    """Parameters:
+string type
+string filename
+Description:
+Take a screenshot of the current window
+"""
+    file_type = parameters.get('type')
+    filename = parameters.get('filename')
+    sequence.append(Func(base.save_screenshot, filename))
 
 def center(command_name, sequence, base, parameters):
     """Parameters:
@@ -80,6 +115,12 @@ Show a line of text on the screen.
     duration = float(parameters.get('duration', '0.0'))
     sequence.append(Func(base.gui.update_info, text, duration))
 
+def exit(command_name, sequence, base, parameters):
+    """Description:
+Exit the application
+"""
+    sequence.append(Func(base.userExit))
+
 def follow(command_name, sequence, base, parameters):
     """Description:
 Follow the currently selected object.
@@ -107,6 +148,43 @@ In order for goto to complete, there should be wait commands with a combined dur
     up=LVector3d(up[0], -up[2], up[1])
     up.normalize()
     sequence.append(Func(base.autopilot.go_to_object, duration, distance, up))
+
+def gotoloc(command_name, sequence, base, parameters):
+    """Parameters:
+float time = 1.0
+vector position = [ 0 1 0 ]
+float xrot = 0
+float yrot = 0
+float zrot = 0
+or
+float x, y, z
+string ox, oy, oz, ow
+Description:
+"""
+    duration = float(parameters.get('time', '1.0'))
+    if 'position' in parameters:
+        position = parameters.get('position', [0, 1, 0])
+        position = LVector3d(position[0], -position[2], position[1])
+        xrot = float(parameters.get('xrot', '0.0'))
+        yrot = float(parameters.get('yrot', '0.0'))
+        zrot = float(parameters.get('zrot', '0.0'))
+        # HPR -> ZXY
+        # Changing CS also invert the sign of the rotation
+        orientation = quaternion_from_euler(-yrot, -xrot, zrot)
+    else:
+        x = parameters.get('x')
+        y = parameters.get('y')
+        z = parameters.get('z')
+        x = Bigfix.bigfix_to_float(x)
+        y = Bigfix.bigfix_to_float(y)
+        z = Bigfix.bigfix_to_float(z)
+        position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
+        ox = parameters.get('ox', 0.0)
+        oy = parameters.get('oy', 0.0)
+        oz = parameters.get('oz', 0.0)
+        ow = parameters.get('ow', 0.0)
+        orientation = LQuaterniond(-ow, ox, -oz, oy)
+    sequence.append(Func(base.autopilot.move_and_rotate_to, position, orientation, False, duration))
 
 def gotolonglat(command_name, sequence, base, parameters):
     """Parameters:
@@ -380,7 +458,64 @@ For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of
     sequence.append(Func(base.set_ambient, magnitude))
 
 def setframe(command_name, sequence, base, parameters):
-    not_implemented(command_name, sequence, base, parameters)
+    """Parameters:
+string ref = ""
+string target = ""
+string coordsys = "universal"
+Description:
+"""
+    ref = parameters.get('ref', "")
+    target = parameters.get('target', "")
+    coordsys = parameters.get('coordsys', "universal")
+    frame = create_frame(coordsys, ref)
+    if frame is not None:
+        sequence.append(Func(base.ship.set_frame, frame))
+
+def setorientation(command_name, sequence, base, parameters):
+    """Parameters:
+float angle = 0
+vector axis = [0 0 0]
+or
+float ox, oy, oz, ow
+Description:
+"""
+    if 'angle' in parameters:
+        angle = float(parameters.get('angle', '0.0'))
+        axis = float(parameters.get('axis', [0, 0, 0]))
+        offset = LVector3d(axis[0], -axis[2], axis[1])
+        orientation = LQuaternionromAxisAngle(angle, axis)
+    else:
+        ox = parameters.get('ox', 0.0)
+        oy = parameters.get('oy', 0.0)
+        oz = parameters.get('oz', 0.0)
+        ow = parameters.get('ow', 0.0)
+        orientation = LQuaterniond(-ow, ox, -oz, oy)
+    sequence.append(Func(base.ship.set_frame_pos, orientation))
+
+def setposition(command_name, sequence, base, parameters):
+    """Parameters:
+vector position = [ 0 0 0 ]
+vector position = [ 0 0 0 ]
+or
+string x, y, z
+Description:
+"""
+    if 'base' in parameters:
+        base = parameters.get('base', [0, 0, 0])
+        offset = parameters.get('offset', [0, 0, 0])
+        base = LVector3d(base[0], -base[2], base[1]) * units.Ly
+        offset = LVector3d(offset[0], -offset[2], offset[1])
+        # TODO: use glogal and local position
+        position = base + offset
+    else:
+        x = parameters.get('x')
+        y = parameters.get('y')
+        z = parameters.get('z')
+        x = Bigfix.bigfix_to_float(x)
+        y = Bigfix.bigfix_to_float(y)
+        z = Bigfix.bigfix_to_float(z)
+        position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
+    sequence.append(Func(base.ship.set_frame_pos, position))
 
 def seturl(command_name, sequence, base, parameters):
     """Parameters:
@@ -398,7 +533,7 @@ Description:
 Display only stars brighter than the specified magnitude.
 """
     magnitude = float(parameters.get('magnitude', '6.0'))
-    not_implemented(command_name, sequence, base, parameters)
+    sequence.append(Func(base.set_limit_magnitude, magnitude))
 
 def synchronous(command_name, sequence, base, parameters):
     """Description:
@@ -451,7 +586,7 @@ def done(base):
 
 commands = {
     "cancel": cancel,
-    "capture": not_implemented,
+    "capture": capture,
     "center": center,
     "changedistance": changedistance,
     "chase": not_implemented,
@@ -459,13 +594,13 @@ commands = {
     "constellations": not_implemented,
     "constellationcolor": not_implemented,
     "deleteview": not_implemented,
-    "exit": not_implemented,
+    "exit": exit,
     "follow": follow,
     "goto": goto,
-    "lock": not_implemented,
-    "gotoloc": not_implemented,
+    "gotoloc": gotoloc,
     "gotolonglat": gotolonglat,
     "labels": labels,
+    "lock": not_implemented,
     "lookback": lookback,
     "mark": not_implemented,
     "move": move,
@@ -485,8 +620,8 @@ commands = {
     "setgalaxylightgain": not_implemented,
     "setlabelcolor": not_implemented,
     "setlinecolor": not_implemented,
-    "setorientation": not_implemented,
-    "setposition": not_implemented,
+    "setorientation": setorientation,
+    "setposition": setposition,
     "setradius": not_implemented,
     "setsurface": not_implemented,
     "settextcolor": not_implemented,

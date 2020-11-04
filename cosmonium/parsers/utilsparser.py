@@ -21,7 +21,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame, EquatorialReferenceFrame
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
@@ -54,10 +53,14 @@ def degree_angle_decoder(text):
     return angle
 
 class DistanceUnitsYamlParser(YamlModuleParser):
-    translation = { 'km': units.Km,
+    translation = { 'm': units.m,
+                    'km': units.Km,
                     'au': units.AU,
                     'ly': units.Ly,
                     'pc': units.Parsec,
+                    'kpc': units.KParsec,
+                    'mpc': units.MParsec,
+                    'gpc': units.GParsec,
                    }
     @classmethod
     def decode(self, data, default=None):
@@ -67,7 +70,9 @@ class DistanceUnitsYamlParser(YamlModuleParser):
             return DistanceUnitsYamlParser.translation.get(data.lower(), default)
 
 class TimeUnitsYamlParser(YamlModuleParser):
-    translation = { 'hour': units.Hour,
+    translation = { 'sec': units.Sec,
+                    'min': units.Min,
+                    'hour': units.Hour,
                     'day': units.Day,
                     'year': units.JYear,
                    }
@@ -90,16 +95,12 @@ class AngleUnitsYamlParser(YamlModuleParser):
         else:
             return AngleUnitsYamlParser.translation.get(data.lower(), default)
 
-class FrameYamlParser(YamlModuleParser):
+class AngleSpeedUnitsYamlParser(YamlModuleParser):
+    translation = { 'deg/day': units.Deg_Per_Day
+                   }
     @classmethod
-    def decode(self, data):
-        name = data.lower()
-        if name == 'j2000ecliptic':
-            return J2000EclipticReferenceFrame()
-        elif name == 'j2000equatorial':
-            return J2000EquatorialReferenceFrame()
-        elif name == 'equatorial':
-            return EquatorialReferenceFrame()
+    def decode(self, data, default=None):
+        if data is None:
+            return default
         else:
-            print("Unknown reference frame", data)
-            return None
+            return AngleSpeedUnitsYamlParser.translation.get(data.lower(), default)

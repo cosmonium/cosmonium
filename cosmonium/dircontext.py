@@ -36,9 +36,11 @@ class DirContext(object):
                                 'models': [],
                                 'data': [],
                                 'scripts': [],
+                                'modules': [],
                                 'fonts': [],
                                 'shaders': [],
                                 'doc': [],
+                                'main': [],
                                 }
 
     def add_path(self, category, path):
@@ -84,6 +86,9 @@ class DirContext(object):
 
     def find_script(self, pattern):
         return self.find_file('scripts', pattern)
+
+    def find_module(self, pattern):
+        return self.find_file('modules', pattern)
 
     def find_font(self, pattern):
         return self.find_file('fonts', pattern)

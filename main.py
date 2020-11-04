@@ -21,11 +21,24 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import sys
+import os
+# Disable stdout block buffering
+sys.stdout.flush()
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
+
+# Add lib/ directory to import path to be able to load the c++ libraries
+sys.path.insert(1, 'lib')
+# Add third-party/ directory to import path to be able to load the external libraries
+sys.path.insert(1, 'third-party')
+# CEFPanda and glTF modules aree not at top level
+sys.path.insert(1, 'third-party/cefpanda')
+sys.path.insert(1, 'third-party/gltf')
+
 from cosmonium.cosmonium import Cosmonium
 
 from cosmonium.parsers.yamlparser import YamlParser
 from cosmonium.parsers.objectparser import UniverseYamlParser
-from cosmonium.celestia import cel_parser, cel_engine
 from cosmonium.celestia import ssc_parser
 from cosmonium.celestia import stc_parser
 from cosmonium.celestia import star_parser
@@ -39,16 +52,19 @@ from cosmonium.celestia import textures
 from cosmonium.spaceengine import textures
 from cosmonium import settings
 
+#import orbits and rotations elements to add them to the DB
+from cosmonium.astro.tables import uniform, vsop87, wgccre, lieske_e5, elp82, meeus, gust86, dourneau, rckin, htc20
+
 import argparse
-import os, sys
+import os
 
 class CosmoniumConfig(object):
     def __init__(self):
         self.common = 'data/defaults.yaml'
         self.main = 'data/cosmonium.yaml'
-        self.default = 'earth'
+        self.default = None
         self.script = None
-        self.extra = [settings.data_dir]
+        self.extra = ['data/extra', settings.data_dir]
         self.celestia = False
         self.celestia_data_list = ["../Celestia"]
         if sys.platform == "darwin":
@@ -57,6 +73,7 @@ class CosmoniumConfig(object):
             self.celestia_data_list.append("C:\\Program Files\\Celestia")
         else:
             self.celestia_data_list.append("/usr/share/celestia")
+        self.celestia_support = ['data/solar-system/frames.yaml', 'data/solar-system/ssd.yaml', 'data/solar-system/manual-orbits.yaml', 'data/solar-system/celestia.yaml']
         self.celestia_ssc = ["solarsys.ssc", "minormoons.ssc", "numberedmoons.ssc", "asteroids.ssc", "outersys.ssc"]#, "extrasolar.ssc"]
         self.celestia_stc = ["nearstars.stc", "revised.stc", "spectbins.stc", "visualbins.stc", "extrasolar.stc"]
         self.celestia_dsc = ["galaxies.dsc"]
@@ -66,6 +83,7 @@ class CosmoniumConfig(object):
         self.celestia_boundaries = 'boundaries.dat'
         self.celestia_start_script = 'start.cel'
         self.prc_file = 'config.prc'
+        self.test_start = False
 
     def update_from_args(self, args):
         #TODO: add input checking here
@@ -78,7 +96,7 @@ class CosmoniumConfig(object):
         if args.default is not None:
             self.default = args.default
         if args.extra is not None:
-            self.extra = args.extra
+            self.extra += args.extra
         if args.celestia is not None:
             if args.celestia != '':
                 self.celestia_data_list = [args.celestia]
@@ -87,6 +105,7 @@ class CosmoniumConfig(object):
             self.celestia = False
         if self.celestia and self.script is None and self.default is None:
             self.script = self.celestia_start_script
+        self.test_start = args.test_start
 
 class CosmoniumConfigParser(YamlParser):
     def __init__(self, config_file):
@@ -101,6 +120,7 @@ class CosmoniumConfigParser(YamlParser):
         return self.config
 
     def decode_celestia(self, data):
+        self.config.celestia_support = data.get('support', self.config.celestia_support)
         self.config.celestia_ssc = data.get('ssc', self.config.celestia_ssc)
         self.config.celestia_stc = data.get('stc', self.config.celestia_stc)
         self.config.celestia_dsc = data.get('dsc', self.config.celestia_dsc)
@@ -159,6 +179,10 @@ class CosmoniumApp(Cosmonium):
 
     def load_universe_celestia(self):
         self.find_celestia_data()
+        if len(self.app_config.celestia_support) > 0:
+            parser = UniverseYamlParser(self.universe)
+            for support in self.app_config.celestia_support:
+                self.load_file(parser, support)
         names = star_parser.load_names(self.app_config.celestia_stars_names)
         if self.app_config.celestia_stars_catalog is not None:
             if self.app_config.celestia_stars_catalog.endswith('.dat'):
@@ -184,10 +208,16 @@ class CosmoniumApp(Cosmonium):
 
     def load_dir(self, parser, path):
         for entry in os.listdir(path):
-            self.load_file(parser, os.path.join(path, entry))
+            entry_path = os.path.join(path, entry)
+            if os.path.isdir(entry_path):
+                self.load_dir(parser, entry_path)
+            else:
+                self.load_file(parser, entry_path)
 
     def load_universe_cosmonium(self):
         parser = UniverseYamlParser(self.universe)
+        locale = defaultDirContext.find_file('main', 'data/locale')
+        parser.set_translation(self.load_lang('main', locale))
         parser.load_and_parse(self.app_config.common)
         parser.load_and_parse(self.app_config.main)
         for extra in self.app_config.extra:
@@ -211,12 +241,13 @@ class CosmoniumApp(Cosmonium):
             else:
                 settings.debug_jump = False
                 print("Running", self.app_config.script)
-                script = cel_parser.load(self.app_config.script)
-                running = self.run_script(cel_engine.build_sequence(self, script))
+                running = self.load_and_run_script(self.app_config.script)
         if not running:
+            if self.app_config.default is None:
+                self.app_config.default = _("Earth")
             self.select_body(self.universe.find_by_name(self.app_config.default))
             self.autopilot.go_to_front(duration=0.0)
-            self.gui.update_info("Welcome to Cosmonium!")
+            self.gui.update_info(_("Welcome to Cosmonium!"))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("script",
@@ -241,6 +272,10 @@ parser.add_argument("--extra",
                     help="Extra configuration files or directories to load",
                     nargs='+',
                     default=None)
+parser.add_argument("--test-start",
+                    help=argparse.SUPPRESS,
+                    action='store_true',
+                    default=False)
 if sys.platform == "darwin":
     #Ignore -psn_<app_id> from MacOS
     parser.add_argument('-p', help=argparse.SUPPRESS)

@@ -20,18 +20,29 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVecBase3, LQuaternion, NodePath
-from panda3d.core import GeomNode, DecalEffect, TextNode, CardMaker, TransparencyAttrib
+from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor, DrawMask
+from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
 from .fonts import fontsManager, Font
+from .parameters import ParametersGroup
+from .utils import srgb_to_linear
 from .astro import bayer
+from .appearances import ModelAppearance
+from .shaders import FlatLightingModel, BasicShader
+from .utils import TransparencyBlend
 from . import settings
+
 from math import log
 
 class BaseObject(object):
     context = None
     default_shown = True
+    AllCamerasMask = DrawMask.all_on()
+    DefaultCameraMask = DrawMask.bit(0)
+    NearCameraMask = DrawMask.bit(1)
+    WaterCameraMask = DrawMask.bit(29)
+    ShadowCameraMask = DrawMask.bit(30)
 
     def __init__(self, names=None):
         self.set_names(names)
@@ -39,6 +50,9 @@ class BaseObject(object):
         self.visible = False
         self.light = None
         self.parent = None
+
+    def get_names(self):
+        return self.names
 
     def set_names(self, names):
         if names is None:
@@ -55,16 +69,22 @@ class BaseObject(object):
         return self.names[0]
 
     def get_ascii_name(self):
-        return str(self.names[0].encode('ascii', 'replace'))
+        return self.names[0].encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
 
-    def get_name_startswith(self, text):
+    def get_exact_name(self, text):
         text = text.upper()
         result = ''
         for name in self.names:
-            if name.upper().startswith(text):
+            if name.upper() == text:
                 result = name
                 break
         return result
+
+    def get_user_parameters(self):
+        return None
+
+    def update_user_parameters(self):
+        pass
 
     def apply_func(self, func, near_only=False):
         func(self)
@@ -103,7 +123,10 @@ class BaseObject(object):
             else:
                 self.hide()
 
-    def update(self, time):
+    def set_state(self, new_state):
+        pass
+
+    def update(self, time, dt):
         pass
 
     def update_obs(self, observer):
@@ -115,7 +138,7 @@ class BaseObject(object):
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         pass
 
     def remove_instance(self):
@@ -125,13 +148,17 @@ class BaseObject(object):
         pass
 
     def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        return self.get_real_pos_rel(abs_position - camera_pos, distance_to_obs, vector_to_obs)
+        return self.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
 
-    def get_real_pos_rel(self, rel_position, distance_to_obs, vector_to_obs):
+    def calc_scene_params(self, rel_position, abs_position, distance_to_obs, vector_to_obs):
+        if settings.camera_at_origin:
+            obj_position = rel_position
+        else:
+            obj_position = abs_position
         midPlane = self.context.observer.midPlane
         distance_to_obs /= settings.scale
         if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = rel_position / settings.scale
+            position = obj_position / settings.scale
             distance = distance_to_obs
             scale_factor = 1.0 / settings.scale
         elif settings.use_inv_scaling:
@@ -158,7 +185,7 @@ class BaseObject(object):
 
     def place_instance(self, instance, parent):
         instance.setPos(*self.parent.scene_position)
-        instance.setScale(self.get_scale() * self.parent.scene_scale_factor)
+        instance.setScale(*(self.get_scale() * self.parent.scene_scale_factor))
         instance.setQuat(LQuaternion(*self.parent.scene_orientation))
 
     def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
@@ -212,20 +239,23 @@ class VisibleObject(BaseObject):
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         if self.shown and self.visible:
             self.do_show()
-            self.update_instance(camera_pos, orientation)
+            self.update_instance(camera_pos, camera_rot)
         else:
             self.do_hide()
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         pass
 
     def set_light(self, light):
         BaseObject.set_light(self, light)
         if self.instance and not self.ignore_light:
             self.instance.setLight(self.light)
+
+    def get_oid_color(self):
+        return LColor()
 
 class CompositeObject(BaseObject):
     def __init__(self, names):
@@ -249,6 +279,21 @@ class CompositeObject(BaseObject):
             component.remove_instance()
         component.set_parent(None)
 
+    def get_user_parameters(self):
+        params = []
+        for component in self.components:
+            component_params = component.get_user_parameters()
+            if component_params is not None:
+                params.append(component_params)
+        if len(params) != 0:
+            return ParametersGroup(self.get_name(), params)
+        else:
+            return None
+
+    def update_user_parameters(self):
+        for component in self.components:
+            component.update_user_parameters()
+
     def apply_func_composite(self, func, near_only=False):
         BaseObject.apply_func(self, func, near_only)
         for component in self.components:
@@ -262,9 +307,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.do_hide()
 
-    def update(self, time):
+    def update(self, time, dt):
         for component in self.components:
-            component.update(time)
+            component.update(time, dt)
 
     def update_obs(self, observer):
         for component in self.components:
@@ -278,9 +323,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, orientation, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         for component in self.components:
-            component.check_and_update_instance(camera_pos, orientation, pointset)
+            component.check_and_update_instance(camera_pos, camera_rot, pointset)
 
     def update_shader(self):
         for component in self.components:
@@ -300,10 +345,25 @@ class ObjectLabel(VisibleObject):
     ignore_light = True
     font_init = False
     font = None
+    appearance = None
+    shader = None
 
     def __init__(self, names):
         VisibleObject.__init__(self, names)
         self.fade = 1.0
+
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance()
+        cls.appearance.has_attribute_color = True
+        cls.appearance.has_material = False
+        cls.appearance.texture = True
+        cls.appearance.texture_index = 0
+        cls.appearance.nb_textures = 1
+        cls.appearance.transparency = True
+        cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
+        cls.appearance.alpha_mask = True
+        cls.shader = BasicShader(lighting_model=FlatLightingModel())
 
     def check_settings(self):
         if self.parent.body_class is None:
@@ -329,7 +389,7 @@ class ObjectLabel(VisibleObject):
             self.label.set_font(self.font)
         name = bayer.decode_name(self.parent.get_label_text())
         self.label.setText(name)
-        self.label.setTextColor(*self.parent.get_label_color())
+        self.label.setTextColor(*srgb_to_linear(self.parent.get_label_color()))
         #node=label.generate()
         #self.instance = self.context.annotation.attachNewNode(node)
         #self.instance.setBillboardPointEye()
@@ -341,16 +401,25 @@ class ObjectLabel(VisibleObject):
         card_node = cardMaker.generate()
         self.label_instance = NodePath(card_node)
         tnp = self.label_instance.attachNewNode(self.label)
-        self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
+        #self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
         #card.setEffect(DecalEffect.make())
         #Using look_at() instead of billboard effect to also rotate the collision solid
         #card.setBillboardPointEye()
         #Using a card holder as look_at() is changing the hpr parameters
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
-        self.instance.reparentTo(self.context.annotation_shader)
+        self.instance.reparentTo(self.context.annotation)
+        self.instance_ready = True
+
+        if self.shader is None:
+            self.create_shader()
+        self.shader.apply(self, self.appearance)
+        self.shader.update(self, self.appearance)
+        TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
+
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.set_depth_write(False)
+        self.instance.set_color_scale(LColor(1, 1, 1, 1))
         card_node.setPythonTag('owner', self.parent)
         self.look_at = self.instance.attachNewNode("dummy")
 
@@ -366,7 +435,6 @@ class LabelledObject(CompositeObject):
         if self.label is None:
             self.label = self.create_label_instance()
             self.add_component(self.label)
-            self.label.check_settings()
 
     def remove_label(self):
         if self.label is not None:

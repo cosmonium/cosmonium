@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..systems import SimpleSystem, Barycenter
+from ..bodies import Star
 from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
@@ -30,15 +31,19 @@ from .rotationsparser import RotationYamlParser
 
 class SystemYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
+        star_system = data.get('star-system', False)
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))
-        system = SimpleSystem(name, orbit=orbit, rotation=rotation)
+        system = SimpleSystem(name, star_system=star_system, orbit=orbit, rotation=rotation)
         children = data.get('children', [])
         children = ObjectYamlParser.decode(children)
         for child in children:
-            system.add_child_fast(child)
+            if isinstance(child, Star):
+                system.add_child_star_fast(child)
+            else:
+                system.add_child_fast(child)
         if parent_name is not None:
             parent = objectsDB.get(parent_name)
             if parent is not None:
@@ -51,7 +56,7 @@ class SystemYamlParser(YamlModuleParser):
 
 class BarycenterYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        name = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))

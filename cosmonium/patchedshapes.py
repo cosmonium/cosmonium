@@ -89,6 +89,7 @@ class PatchBase(Shape):
         self.parent_split_pending = False
         self.instanciate_pending = False
         self.shown = False
+        self.visible = False
         self.apparent_size = None
         self.patch_in_view = False
         self.last_split = 0
@@ -108,6 +109,9 @@ class PatchBase(Shape):
                     self.bounds_shape.instance.reparent_to(self.owner.instance)
             else:
                 self.bounds_shape.remove_instance()
+
+    def patch_done(self):
+        pass
 
     def update_instance(self, shape):
         pass
@@ -153,6 +157,29 @@ class PatchBase(Shape):
 
     def get_neighbours(self, face):
         return [] + self.neighbours[face]
+
+    def _collect_side_neighbours(self, result, side):
+        if len(self.children) != 0:
+            (bl, br, tr, tl) = self.children
+            if side == PatchBase.NORTH:
+                tl._collect_side_neighbours(result, side)
+                tr._collect_side_neighbours(result, side)
+            elif side == PatchBase.EAST:
+                tr._collect_side_neighbours(result, side)
+                br._collect_side_neighbours(result, side)
+            elif side == PatchBase.SOUTH:
+                bl._collect_side_neighbours(result, side)
+                br._collect_side_neighbours(result, side)
+            elif side == PatchBase.WEST:
+                tl._collect_side_neighbours(result, side)
+                bl._collect_side_neighbours(result, side)
+        else:
+            result.append(self)
+
+    def collect_side_neighbours(self, side):
+        result = []
+        self._collect_side_neighbours(result, side)
+        return result
 
     def set_all_neighbours(self, north, east, south, west):
         self.neighbours[PatchBase.NORTH] = north
@@ -201,13 +228,15 @@ class PatchBase(Shape):
     def replace_neighbours(self, face, olds, news):
         opposite = PatchBase.opposite_face[face]
         for neighbour in self.neighbours[face]:
+            neighbour_list = neighbour.neighbours[opposite]
             for old in olds:
                 try:
-                    neighbour.neighbours[opposite].remove(old)
+                    neighbour_list.remove(old)
                 except ValueError:
                     pass
             for new in news:
-                neighbour.neighbours[opposite].append(new)
+                if not new in neighbour_list:
+                    neighbour_list.append(new)
 
     def calc_outer_tessellation_level(self, update):
         for face in range(4):
@@ -287,8 +316,8 @@ class SpherePatch(Patch):
         lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale
         long1 = self.x1 * long_scale
-        lat0 = self.y0 * lat_scale
-        lat1 = self.y1 * lat_scale
+        lat0 = self.y1 * lat_scale
+        lat1 = self.y0 * lat_scale
         self.flat_coord = LVector4((long0 % 1000.0),
                                     (lat0 % 1000.0),
                                     (long1 - long0),
@@ -363,9 +392,6 @@ class SpherePatch(Patch):
         y_tex = (self.ring // y_scale) * y_scale
         x_delta = float(self.sector - x_tex) / x_scale
         y_delta = float(self.ring - y_tex) / y_scale
-        #Y orientation is the opposite of the texture v axis
-        y_delta = 1.0 - y_delta - 1.0 / y_scale
-        if y_delta == 1.0: y_delta = 0.0
         if not patched and texture.offset != 0:
             x_delta += texture.offset / 360.0
         self.instance.setTexOffset(texture_stage, x_delta, y_delta)
@@ -436,8 +462,8 @@ class SquarePatchBase(Patch):
         lat_scale = pi * self.average_radius * 1000.0
         long0 = self.x0 * long_scale / 4
         long1 = self.x1 * long_scale / 4
-        lat0 = self.y0 * lat_scale / 4
-        lat1 = self.y1 * lat_scale / 4
+        lat0 = self.y1 * lat_scale / 4
+        lat1 = self.y0 * lat_scale / 4
         self.flat_coord = LVector4((long0 % 1000.0),
                                     (lat0 % 1000.0),
                                     (long1 - long0),
@@ -1137,12 +1163,6 @@ class PatchedShape(PatchedShapeBase):
                 patch.instance.setPos(*patch_offset)
                 if patch.bounds_shape.instance is not None:
                     patch.bounds_shape.instance.setPos(*patch_offset)
-                if False and self.parent.appearance.tex_transform:
-                    for i in range(self.parent.appearance.nb_textures):
-                        name = 'texmat_%d' % i
-                        shader_input = patch.instance.get_shader_input(name)
-                        if shader_input.getValueType() == 0:
-                            print("WARNING", self.parent.get_name(), patch.str_id(), ":", name, "not found", patch.shown, patch.instance.isStashed())
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         offset = LVector3d()
@@ -1164,10 +1184,10 @@ class PatchedShape(PatchedShapeBase):
         position = self.owner.get_local_position()
         orientation = self.owner.get_abs_rotation()
         #TODO: Should receive as parameter !
-        camera_vector = self.owner.context.observer.get_camera_rot().xform(LVector3d.forward())
+        camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.owner.get_scale())
-        (x, y, distance) = self.owner.spherical_to_longlat(self.owner.cartesian_to_spherical(camera_pos))
+        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(camera_pos))
         return (model_camera_pos, model_camera_vector, (x, y))
 
     def local_to_model(self, point, position, orientation, scale):
@@ -1311,7 +1331,7 @@ class PatchedSquareShapeBase(PatchedShape):
         return (face, u, v)
 
     def global_to_shape_coord(self, x, y):
-        theta = (1.0 - y - 0.5) * pi
+        theta = (y - 0.5) * pi
         phi = (x - 0.5) * 2 * pi
         xp = cos(theta) * cos(phi)
         yp = cos(theta) * sin(phi)
@@ -1401,7 +1421,7 @@ class PatchLodControl(object):
 #When merging, the resulting patch will be  2/2.1 smaller than the slit limit
 
 class TexturePatchLodControl(PatchLodControl):
-    def __init__(self, min_density=8, density=32, max_lod=100):
+    def __init__(self, min_density, density, max_lod=100):
         PatchLodControl.__init__(self, density, max_lod)
         self.min_density = min_density
 
@@ -1426,7 +1446,7 @@ class TexturePatchLodControl(PatchLodControl):
         return apparent_patch_size < self.patch_size / 2.1
 
 class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
-    def __init__(self, max_vertex_size, min_density=8, density=32, max_lod=100):
+    def __init__(self, max_vertex_size, min_density, density, max_lod=100):
         TexturePatchLodControl.__init__(self, min_density, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
@@ -1456,7 +1476,7 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
             return apparent_vertex_size < self.max_vertex_size / 2.1
 
 class VertexSizePatchLodControl(PatchLodControl):
-    def __init__(self, max_vertex_size, density=32, max_lod=100):
+    def __init__(self, max_vertex_size, density, max_lod=100):
         PatchLodControl.__init__(self, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
@@ -1472,7 +1492,7 @@ class VertexSizePatchLodControl(PatchLodControl):
         return to_merge
 
 class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
-    def __init__(self, max_distance, max_vertex_size, density=32, max_lod=100):
+    def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
         VertexSizePatchLodControl.__init__(self, max_vertex_size, density, max_lod)
         self.max_distance = max_distance
 

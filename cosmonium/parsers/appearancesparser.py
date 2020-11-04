@@ -23,8 +23,10 @@ from __future__ import absolute_import
 from panda3d.core import LColor
 
 from ..appearances import Appearance, ModelAppearance
-from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  NightTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from ..textures import AutoTextureSource, TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.textures import ProceduralVirtualTextureSource
+from ..procedural.shadernoise import GrayTarget, AlphaTarget
+from ..procedural.raymarching import RayMarchingAppearance
 #TODO: Should not be here but in respective packages
 from ..celestia.textures import CelestiaVirtualTextureSource
 from ..spaceengine.textures import SpaceEngineVirtualTextureSource
@@ -33,6 +35,11 @@ from ..utils import TransparencyBlend
 from .yamlparser import YamlModuleParser
 from .noiseparser import NoiseYamlParser
 from .textureparser import TextureDictionaryYamlParser
+
+def decode_bias(data, appearance):
+    appearance.shadow_normal_bias = data.get('normal-bias', appearance.shadow_normal_bias)
+    appearance.shadow_slope_bias = data.get('slope-bias', appearance.shadow_slope_bias)
+    appearance.shadow_depth_bias = data.get('depth-bias', appearance.shadow_depth_bias)
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -66,13 +73,27 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             channel = parameters.get('color', None)
             alpha_channel = parameters.get('alpha', None)
             attribution = parameters.get('attribution', None)
-            texture_source = SpaceEngineVirtualTextureSource(root, ext, size, channel, alpha_channel, attribution)
+            texture_source = SpaceEngineVirtualTextureSource(root, ext, size, channel, alpha_channel, attribution, YamlModuleParser.context)
             texture_offset = 0
         elif object_type == 'procedural':
             noise_parser = NoiseYamlParser()
-            noise = noise_parser.decode(data.get('noise'))
+            func = data.get('func')
+            if func is None:
+                func = data.get('noise')
+                print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+            func = noise_parser.decode(func)
+            target = data.get('target', 'gray')
+            if target == 'gray':
+                target = GrayTarget()
+            elif target == 'alpha':
+                target = AlphaTarget()
+            else:
+                print("Unknown noise target", target)
+                target = None
             size = int(data.get('size', 256))
-            texture_source = ProceduralVirtualTextureSource(noise, size)
+            frequency = float(data.get('frequency', 1.0))
+            scale = float(data.get('scale', 1.0))
+            texture_source = ProceduralVirtualTextureSource(func, target, size, frequency, scale)
             texture_offset = parameters.get('offset', 0)
         else:
             print("Unknown type", object_type)
@@ -95,12 +116,21 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             else:
                 texture = SurfaceTexture(texture_source)
             appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend, offset=texture_offset, context=YamlModuleParser.context)
-        night_texture = data.get('night-texture')
-        if night_texture is not None:
-            texture_source, texture_offset = self.decode_source(night_texture)
-            night_texture = NightTexture(texture_source)
+        emission_texture = data.get('night-texture')
+        if emission_texture is not None:
+            texture_source, texture_offset = self.decode_source(emission_texture)
+            emission_texture = EmissionTexture(texture_source)
             #TODO: missing texture offset
-            appearance.set_night_texture(night_texture, context=YamlModuleParser.context)
+            appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
+            nightscale = data.get('nightscale', 0.02)
+            appearance.set_nightscale(nightscale)
+        else:
+            emission_texture = data.get('emission-texture')
+            if emission_texture is not None:
+                texture_source, texture_offset = self.decode_source(emission_texture)
+                emission_texture = EmissionTexture(texture_source)
+                #TODO: missing texture offset
+                appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         normal_map = data.get('normalmap')
         if normal_map is not None:
             texture_source, texture_offset = self.decode_source(normal_map)
@@ -127,13 +157,46 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         diffuse_color = data.get('diffuse-color')
         if diffuse_color is not None:
             appearance.diffuseColor = LColor(*diffuse_color)
+        emission_color = data.get('emission-color')
+        if emission_color is not None:
+            appearance.emissionColor = LColor(*emission_color)
+        elif emission_texture is not None:
+            appearance.emissionColor = LColor(1, 1, 1, 1)
         roughness = data.get('roughness', 0.0)
         appearance.set_roughness(roughness)
-        backlit = data.get('backlit', 0.0)
+        backlit = data.get('backlit', None)
         appearance.set_backlit(backlit)
         attribution = data.get('attribution', None)
         appearance.attribution = attribution
+        decode_bias(data, appearance)
         return appearance
+
+class ModelAppearanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        material = data.get('material', True)
+        vertex_color = data.get('vertex-color', True)
+        occlusion_channel = data.get('occlusion-channel', False)
+        appearance = ModelAppearance(vertex_color=vertex_color, material=material, occlusion_channel=occlusion_channel)
+        decode_bias(data, appearance)
+        return appearance
+
+class RayMarchingAppeanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        density_coef = data.get('density-coef', 10000.0)
+        density_power = data.get('density-power', 2)
+        absorption_factor = data.get('absorption-factor', 0.00001)
+        absorption_coef = data.get('absorption-coef', [1, 1, 1])
+        mie_coef = data.get('mie-coef', 0.1)
+        phase_coef = data.get('phase-coef', 0)
+        source_power = data.get('source-power', 10000.0)
+        emission_power = data.get('emission-power', 0.0)
+        max_steps = data.get('max-steps', 16)
+        return RayMarchingAppearance(density_coef, density_power,
+                                     absorption_factor, absorption_coef,
+                                     mie_coef, phase_coef,
+                                     source_power, emission_power, max_steps)
 
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -142,7 +205,7 @@ class AppearanceYamlParser(YamlModuleParser):
         if object_type == 'textures':
             appearance = TexturesAppearanceYamlParser.decode(parameters)
         elif object_type == 'model':
-            appearance = ModelAppearance()
+            appearance = ModelAppearanceYamlParser.decode(parameters)
         elif object_type == 'textures-dict':
             appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
         else:

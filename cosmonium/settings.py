@@ -25,12 +25,12 @@ from panda3d.core import LPoint3, LPoint3d
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
-from .support.appdirs.appdirs import AppDirs
+from appdirs.appdirs import AppDirs
 
 import os
 
 app_name = 'cosmonium'
-version = '0.1.1'
+version = '0.2.0'
 
 use_double = LPoint3 == LPoint3d
 cache_yaml = True
@@ -49,6 +49,15 @@ use_hardware_tessellation = True
 use_hardware_instancing = True
 use_inverse_z = False
 instancing_use_tex = True
+use_texture_array = True
+use_aux_buffer = False
+sync_video = True
+shader_normals_use_centroid = True
+
+stereoscopic_framebuffer = False
+red_blue_stereo = False
+side_by_side_stereo = False
+stereo_swap_eyes = False
 
 #Settings
 use_hdr = False
@@ -62,16 +71,20 @@ deferred_load=True
 patch_pool_size = 4
 
 mouse_over = False
+use_color_picking = True
 celestia_nav = True
 invert_wheel = False
 damped_nav = True
 
 global_ambient = 0.0
 corrected_global_ambient = global_ambient
-allow_shadows = True
-shadow_size = 1024
-max_vertex_size_patch = 64
-max_sprite_size = 400
+max_sprite_size = 800
+
+patch_max_vertex_size = 64
+patch_min_density = 32
+patch_max_density = 64
+patch_constant_density = 32
+
 use_patch_adaptation = True
 use_patch_skirts = True
 
@@ -81,6 +94,12 @@ show_halo = True
 disable_tint = False
 software_instancing = False
 
+allow_shadows = True
+shadow_size = 1024
+shadows_slope_scale_bias = True
+shadows_pcf_16 = True
+shadows_snap_cam = False
+
 hud_font = 'DejaVuSans'
 markdown_font = 'DejaVuSans'
 label_font = 'DejaVuSans'
@@ -89,19 +108,25 @@ label_size = 12
 constellations_label_size = 16
 convert_utf8 = True
 
+screenshot_path = None
+screenshot_filename = "screenshot-%Y-%m-%d-%H-%M-%S-%~f.%~e"
+screenshot_format = "png"
+
+last_script_path = None
+
 use_inv_scaling=True
 use_log_scaling=False
 use_depth_scaling = use_inv_scaling or use_log_scaling
 auto_scale=True
 lens_far_limit = 1e-7
 scale=1000.0
-min_scale = 0.01
+min_scale = 0.02
 max_scale=1000.0
 set_frustum=True
 near_plane=1.0
 far_plane=30000.0
 infinite_far_plane = True
-infinite_plane = 50000.0
+infinite_plane = 100000.0
 auto_infinite_plane = False
 mid_plane_ratio = 1.1
 default_fov = 40.0
@@ -109,11 +134,12 @@ min_fov = 0.001
 max_fov = 120.0
 
 if use_double:
-    offset_body_center = False
+    offset_body_center = True
     shift_patch_origin = True
 else:
     offset_body_center = True
     shift_patch_origin = True
+camera_at_origin = True
 
 min_altitude = 2 * units.m
 
@@ -137,6 +163,7 @@ use_vertex_shader = False
 min_mag_scale = 0.1
 lowest_app_magnitude = 6.0
 max_app_magnitude = 0.0
+min_point_size = 4
 mag_pixel_scale = 2
 min_body_size = 2
 
@@ -173,15 +200,30 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+ui_scale = (1, 1)
 show_hud = True
+hud_text_size = 12
+hud_info_text_size = 18
 show_menubar = True
 hud_color = LColor(0.7, 0.7, 1.0, 1.0)
 help_color = LColor(1.0, 1.0, 1.0, 1.0)
 help_background = LColor(0.5, 0.5, 0.5, 0.7)
+display_fps = True
+display_ms = False
+ui_font_size = 12
+panel_background = LColor(0.8, 0.8, 0.8, 1)
+tab_background = LColor(0.7, 0.7, 0.7, 1)
+entry_background = LColor(0.9, 0.9, 0.9, 1)
 
 menu_text_size = 12
 
+query_color = LColor(0.7, 0.7, 1.0, 1.0)
 query_delay = 0.333
+query_text_size = 18
+query_suggestion_text_size = 12
+
+default_window_width = 800
+default_window_height = 600
 
 #These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
@@ -197,6 +239,7 @@ render_scene_to_buffer = False
 render_scene_to_float = False
 non_power_of_two_textures = False
 disable_multisampling = False
+framebuffer_multisampling = False
 floating_point_buffer = False
 buffer_texture = False
 hdr = False
@@ -206,13 +249,16 @@ srgb_texture = False
 software_srgb = False
 hardware_tessellation = False
 hardware_instancing = False
+texture_array = False
+aux_buffer = False
+color_picking = False
 
 # Window configuration
 win_fullscreen = False
 win_width = 1024
 win_height = 768
-win_fs_width = 1024
-win_fs_height = 768
+win_fs_width = 0
+win_fs_height = 0
 
 # Application paths and files
 appdirs = AppDirs(app_name)
@@ -220,6 +266,13 @@ cache_dir = appdirs.user_cache_dir
 config_dir = appdirs.user_config_dir
 data_dir = appdirs.user_data_dir
 config_file = os.path.join(config_dir, 'config.yaml')
+
+#Debug flags
+shader_debug_fragment_shader = 'default'
+shader_debug_coord = False
+shader_debug_coord_line_width = 0.005
+shader_debug_raymarching_canvas = False
+shader_debug_raymarching_slice = False
 
 bodyClasses.register_class("galaxy", "galaxies",
                            BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1),
@@ -253,11 +306,20 @@ bodyClasses.register_class("minormoon", "minormoons",
                            BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
                                      orbit_color=LColor(0.08, 0.407, 0.392, 1),
                                      show_label=False))
+bodyClasses.register_class("lostmoon", "lostmoons",
+                           BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
+                                     orbit_color=LColor(0.08, 0.407, 0.392, 1),
+                                     show=False,
+                                     show_label=False))
 bodyClasses.register_class("comet", "comets",
                            BodyClass(label_color=LColor(0.768, 0.607, 0.227, 1),
                                      orbit_color=LColor(0.639, 0.487, 0.168, 1),
                                      show_label=False))
 bodyClasses.register_class("asteroid", "asteroids",
+                           BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
+                                     orbit_color=LColor(0.58, 0.152, 0.08, 1),
+                                     show_label=False))
+bodyClasses.register_class("interstellar", "interstellars",
                            BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
                                      orbit_color=LColor(0.58, 0.152, 0.08, 1),
                                      show_label=False))

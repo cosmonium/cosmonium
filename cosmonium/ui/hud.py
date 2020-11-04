@@ -29,7 +29,9 @@ from direct.interval.IntervalGlobal import Sequence, Wait
 from .. import settings
 
 class HUDObject(object):
-    def __init__(self):
+    def __init__(self, anchor, scale):
+        self.anchor = anchor
+        self.scale = scale
         self.shown = True
         self.instance = None
 
@@ -41,10 +43,13 @@ class HUDObject(object):
         self.instance.show()
         self.shown = True
 
+    def set_scale(self, scale):
+        self.scale = scale
+        self.update_instance()
+
 class TextLine(HUDObject):
-    def __init__(self, anchor, y_offset, align, down, pos, font, scale, color=None):
-        HUDObject.__init__(self)
-        self.anchor = anchor
+    def __init__(self, anchor, scale, y_offset, align, down, pos, font, size, color=None):
+        HUDObject.__init__(self, anchor, scale)
         if down:
             y_offset = -y_offset
         self.y_offset = y_offset
@@ -53,8 +58,7 @@ class TextLine(HUDObject):
         self.text = ""
         self.instance = None
         self.font = font
-        self.size = 1.5
-        self.scale = scale * self.size
+        self.size = size
         if self.down:
             self.pos = -(pos + 1)
         else:
@@ -65,7 +69,7 @@ class TextLine(HUDObject):
         self.instance = self.create()
 
     def get_height(self):
-        return self.scale[1]
+        return self.scale[1] * self.size
 
     def set_font(self, font):
         self.font = font
@@ -73,11 +77,7 @@ class TextLine(HUDObject):
     def update_instance(self):
         if self.instance is not None:
             #self.instance.setScale(*self.scale)
-            self.instance.setPos(0, self.pos * self.scale[1] + self.y_offset)
-
-    def set_scale(self, scale):
-        self.scale = scale * self.size
-        self.update_instance()
+            self.instance.setPos(0, self.pos * self.get_height() + self.y_offset)
 
     def set_y_offset(self, y_offset):
         if self.down:
@@ -89,9 +89,9 @@ class TextLine(HUDObject):
         return OnscreenText(text="",
                             style=Plain,
                             fg=self.color,
-                            scale=tuple(self.scale),
+                            scale=tuple(self.scale * self.size),
                             parent=self.anchor,
-                            pos=(0, self.pos * self.scale[1] + self.y_offset),
+                            pos=(0, self.pos * self.get_height() + self.y_offset),
                             align=self.align,
                             font=self.font,
                             mayChange=True)
@@ -102,7 +102,6 @@ class TextLine(HUDObject):
 
 class FadeTextLine(TextLine):
     def __init__(self, *args, **kwargs):
-        HUDObject.__init__(self)
         TextLine.__init__(self, *args, **kwargs)
         self.fade_sequence = None
 
@@ -116,9 +115,8 @@ class FadeTextLine(TextLine):
         self.fade_sequence.start()
 
 class TextBlock(HUDObject):
-    def __init__(self, anchor, y_offset, align, down, count, font, scale, color=None):
-        HUDObject.__init__(self)
-        self.anchor = anchor
+    def __init__(self, anchor, scale, y_offset, align, down, count, font, size, color=None):
+        HUDObject.__init__(self, anchor, scale)
         if down:
             y_offset = -y_offset
         self.y_offset = y_offset
@@ -129,14 +127,14 @@ class TextBlock(HUDObject):
         self.instance = anchor.attach_new_node("anchor")
         self.instances = []
         self.font = font
-        self.scale = scale
+        self.size = size
         if color is None:
             color = settings.hud_color
         self.color = color
         self.create()
 
     def get_height(self):
-        return self.scale[1] * self.count
+        return self.scale[1] * self.size * self.count
 
     def set_font(self, font):
         self.font = font
@@ -147,12 +145,7 @@ class TextBlock(HUDObject):
                 pos = -(i + 1)
             else:
                 pos = i + 0.1
-            #self.instances[i].set_scale(*self.scale)
-            self.instances[i].setPos(0, pos * self.scale[1] + self.y_offset)
-
-    def set_scale(self, scale):
-        self.scale = scale
-        self.update_instance()
+            self.instances[i].setPos(0, pos * self.scale[1] *self.size + self.y_offset)
 
     def set_y_offset(self, y_offset):
         if self.down:
@@ -168,9 +161,9 @@ class TextBlock(HUDObject):
         return OnscreenText(text="",
                             style=Plain,
                             fg=self.color,
-                            scale=tuple(self.scale),
+                            scale=tuple(self.scale * self.size),
                             parent=self.instance,
-                            pos=(0, pos * self.scale[1] + self.y_offset),
+                            pos=(0, pos * self.scale[1] * self.size + self.y_offset),
                             align=self.align,
                             font=self.font,
                             mayChange=True)
@@ -185,21 +178,18 @@ class TextBlock(HUDObject):
             self.instances[pos].setText(text)
             self.text[pos] = text
 
-class HUD(HUDObject):
-    hud_text_size = 12
-
+class HUD():
     def __init__(self, scale, font):
-        HUDObject.__init__(self)
         self.scale = scale
         self.font = font
-        self.title = TextLine(base.a2dTopLeft, 0, TextNode.ALeft, True, 0, self.font, self.scale * self.hud_text_size, settings.hud_color)
+        self.title = TextLine(base.a2dTopLeft, self.scale, 0, TextNode.ALeft, True, 0, self.font, settings.hud_info_text_size, settings.hud_color)
         title_height = self.title.get_height()
-        self.topLeft = TextBlock(base.a2dTopLeft, title_height, TextNode.ALeft, True, 10, self.font, self.scale * self.hud_text_size)
-        self.bottomLeft = TextBlock(base.a2dBottomLeft, 0, TextNode.ALeft, False, 5, self.font, self.scale * self.hud_text_size)
-        self.topRight = TextBlock(base.a2dTopRight, 0, TextNode.ARight, True, 5, self.font, self.scale * self.hud_text_size)
-        self.bottomRight = TextBlock(base.a2dBottomRight, 0, TextNode.ARight, False, 5, self.font, self.scale * self.hud_text_size)
+        self.topLeft = TextBlock(base.a2dTopLeft, self.scale, title_height, TextNode.ALeft, True, 10, self.font, settings.hud_text_size)
+        self.bottomLeft = TextBlock(base.a2dBottomLeft, self.scale, 0, TextNode.ALeft, False, 5, self.font, settings.hud_text_size)
+        self.topRight = TextBlock(base.a2dTopRight, self.scale, 0, TextNode.ARight, True, 5, self.font, settings.hud_text_size)
+        self.bottomRight = TextBlock(base.a2dBottomRight, self.scale, 0, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
         #TODO: Info should be moved out of HUD
-        self.info = FadeTextLine(base.a2dBottomLeft, 0, TextNode.ALeft, False, 6, self.font, self.scale * self.hud_text_size)
+        self.info = FadeTextLine(base.a2dBottomLeft, self.scale, 0, TextNode.ALeft, False, 6, self.font, settings.hud_info_text_size)
         self.shown = True
 
     def hide(self):
@@ -217,6 +207,14 @@ class HUD(HUDObject):
         self.topRight.show()
         self.bottomRight.show()
         self.shown = True
+
+    def set_scale(self, scale):
+        self.title.set_scale(scale)
+        self.topLeft.set_scale(scale)
+        self.bottomLeft.set_scale(scale)
+        self.topRight.set_scale(scale)
+        self.bottomRight.set_scale(scale)
+        self.info.set_scale(scale)
 
     def set_y_offset(self, y_offset):
         self.title.set_y_offset(y_offset)

@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..procedural.shadernoise import NoiseConst, NoiseMap
+from ..procedural.shadernoise import NoiseConst, NoiseMap, PositionMap
 from ..astro import units
 
 from .yamlparser import YamlParser
@@ -36,9 +36,19 @@ class NoiseYamlParser(YamlParser):
     def register_noise_parser(cls, name, parser):
         cls.parsers[name] = parser
 
-    def add_scale(self, noise, data):
+    def add_pos_map(self, noise, data):
         if not isinstance(data, dict): return noise
-        height = data.get('height', True)
+        scale = data.get('pos-scale', None)
+        offset = data.get('pos-offset', None)
+        if scale is None and offset is None:
+            return noise
+        if scale is None: scale = 1.0
+        if offset is None: offset = 0.0
+        offset /= self.length_scale
+        return PositionMap(noise, offset, scale)
+
+    def add_noise_map(self, noise, data):
+        if not isinstance(data, dict): return noise
         min_value = data.get('min', None)
         max_value = data.get('max', None)
         if min_value is None and max_value is None:
@@ -66,7 +76,7 @@ class NoiseYamlParser(YamlParser):
         else:
             print("Unknown noise function", func)
         if result is not None:
-            result = self.add_scale(result, parameters)
+            result = self.add_noise_map(self.add_pos_map(result, parameters), parameters)
         return result
 
     def decode_noise_dict(self, data):
@@ -82,6 +92,8 @@ class NoiseYamlParser(YamlParser):
         return noises
 
     def decode(self, data):
+        if isinstance(data, str):
+            data = { 'func': data }
         aliases = data.get('aliases', {})
         for (alias, func) in aliases.items():
             parser = self.parsers.get(func, None)
@@ -89,124 +101,226 @@ class NoiseYamlParser(YamlParser):
                 self.register_noise_parser(alias, parser)
             else:
                 print("Function", func, "unknown")
-        noise = data.get('noise')
-        return self.decode_noise_dict(noise)
+        func = data.get('func')
+        if func is None:
+            func = data.get('noise')
+            print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+        return self.decode_noise_dict(func)
 
-from ..procedural.shadernoise import NoiseSourceScale, NoiseOffset, NoiseClamp
-from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseThreshold
-from ..procedural.shadernoise import RidgedNoise, TurbulenceNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
-from ..procedural.shadernoise import NoiseWarp, Noise1D
+from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
+from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseExp, NoiseThreshold
+from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
+from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
 from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
-from ..procedural.shadernoise import QuilezPerlin3D
+from ..procedural.shadernoise import QuilezPerlin3D, QuilezGradientNoise3D
+from ..procedural.shadernoise import SinCosNoise
 
 def create_add_noise(parser, data, length_scale):
-    noises = parser.decode_noise_list(data)
-    return NoiseAdd(noises)
+    if not isinstance(data, dict):
+        data = {'terms': data}
+    name = data.get('name', None)
+    noises = parser.decode_noise_list(data.get('terms'))
+    return NoiseAdd(noises, name=name)
 
 def create_sub_noise(parser, data, length_scale):
-    a = parser.decode_noise_dict(data[0])
-    b = parser.decode_noise_dict(data[1])
-    return NoiseSub(a, b)
+    if not isinstance(data, dict):
+        data = {'terms': data}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('terms')[0])
+    b = parser.decode_noise_dict(data.get('terms')[1])
+    return NoiseSub(a, b, name=name)
 
 def create_mul_noise(parser, data, length_scale):
-    noises = parser.decode_noise_list(data)
-    return NoiseMul(noises)
+    if not isinstance(data, dict):
+        data = {'factors': data}
+    name = data.get('name', None)
+    noises = parser.decode_noise_list(data.get('factors'))
+    return NoiseMul(noises, name=name)
 
 def create_pow_noise(parser, data, length_scale):
-    a = parser.decode_noise_dict(data[0])
-    b = parser.decode_noise_dict(data[1])
-    return NoisePow(a, b)
+    if not isinstance(data, dict):
+        data = {'base': data[0],
+                'power': data[1]}
+    name = data.get('name', None)
+    base = parser.decode_noise_dict(data.get('base'))
+    power = parser.decode_noise_dict(data.get('power'))
+    return NoisePow(base, power, name=name)
+
+def create_exp_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = { 'power': data }
+    name = data.get('name', None)
+    power = parser.decode_noise_dict(data.get('power'))
+    return NoiseExp(power, name=name)
 
 def create_threshold_noise(parser, data, length_scale):
-    a = parser.decode_noise_dict(data[0])
-    b = parser.decode_noise_dict(data[1])
-    return NoiseThreshold(a, b)
+    if not isinstance(data, dict):
+        data = {'a': data[0],
+                'b': data[1]}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('a'))
+    b = parser.decode_noise_dict(data.get('b'))
+    return NoiseThreshold(a, b, name=name)
 
 def create_clamp_noise(parser, data, length_scale):
+    name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     min_value = data.get('min', 0.0)
+    min_value_range = data.get('min-range')
     max_value = data.get('max', 1.0)
+    max_value_range = data.get('max-range')
     data['min'] = None
     data['max'] = None
-    return NoiseClamp(noise, min_value, max_value)
+    ranges = {
+        'min': min_value_range,
+        'max': max_value_range
+        }
+    return NoiseClamp(noise, min_value, max_value, dynamic=name is not None, name=name, ranges=ranges)
+
+def create_min_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {'a': data[0],
+                'b': data[1]}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('a'))
+    b = parser.decode_noise_dict(data.get('b'))
+    return NoiseMin(a, b, name=name)
+
+def create_max_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {'a': data[0],
+                'b': data[1]}
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('a'))
+    b = parser.decode_noise_dict(data.get('b'))
+    return NoiseMax(a, b, name=name)
 
 def create_const_noise(parser, data, length_scale):
+    name = data.get('name', None)
     value = data.get('value')
-    return NoiseConst(value)
+    value_range = data.get('value-range')
+    return NoiseConst(value, dynamic=name is not None, name=name, ranges={'value': value_range})
+
+def create_x_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return NoiseCoord('x', name=name)
+
+def create_y_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return NoiseCoord('y', name=name)
+
+def create_z_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return NoiseCoord('z', name=name)
 
 def create_gpunoise_perlin_noise(parser, data, length_scale):
-    return GpuNoiseLibPerlin3D()
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return GpuNoiseLibPerlin3D(name)
 
 def create_gpunoise_cellular_noise(parser, data, length_scale):
-    return GpuNoiseLibCellular3D()
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return GpuNoiseLibCellular3D(name)
 
 def create_gpunoise_polkadot_noise(parser, data, length_scale):
+    name = data.get('name', None)
     min_value = data.get('min', 0.0)
     max_value = data.get('max', 1.0)
     data['min'] = None
     data['max'] = None
-    return GpuNoiseLibPolkaDot3D(min_value, max_value)
+    return GpuNoiseLibPolkaDot3D(min_value, max_value, name=name)
 
 def create_stegu_perlin_noise(parser, data, length_scale):
-    return SteGuPerlin3D()
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return SteGuPerlin3D(name)
 
 def create_stegu_cellular_noise(parser, data, length_scale):
+    name = data.get('name', None)
     fast = data.get('fast', None)
-    return SteGuCellular3D(fast)
+    return SteGuCellular3D(fast, name=name)
 
 def create_stegu_cellulardiff_noise(parser, data, length_scale):
+    name = data.get('name', None)
     fast = data.get('fast', None)
-    return SteGuCellularDiff3D(fast)
+    return SteGuCellularDiff3D(fast, name=name)
 
 def create_iq_perlin_noise(parser, data, length_scale):
-    return QuilezPerlin3D()
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return QuilezPerlin3D(name)
 
-def create_scale_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data.get('noise'))
-    scale = data.get('scale', 1.0)
-    #TODO: rename this parameter to src-scale to avoid conflict ?
-    data['scale'] = None
-    return NoiseSourceScale(noise, scale)
+def create_iq_gradient_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return QuilezGradientNoise3D(name)
 
-def create_offset_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data.get('noise'))
-    offset = data.get('offset', 0.0) / length_scale
-    #TODO: rename this parameter to src-offset to avoid conflict ?
-    data['offset'] = None
-    return NoiseOffset(noise, offset)
+def create_sincos_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {}
+    name = data.get('name', None)
+    return SinCosNoise(name)
 
 def create_ridged_noise(parser, data, length_scale):
     if isinstance(data, str):
         data = {'noise': data}
+    name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     shift = data.get('shift', True)
-    return RidgedNoise(noise, shift=shift)
-
-def create_turbulence_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data)
-    return TurbulenceNoise(noise)
+    return RidgedNoise(noise, shift=shift, name=name)
 
 def create_abs_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data)
-    return AbsNoise(noise)
+    if not isinstance(data, dict):
+        data = {'noise': data}
+    name = data.get('name', None)
+    noise = parser.decode_noise_dict(data.get('noise'))
+    return AbsNoise(noise, name=name)
+
+def create_neg_noise(parser, data, length_scale):
+    if not isinstance(data, dict):
+        data = {'noise': data}
+    name = data.get('name', None)
+    noise = parser.decode_noise_dict(data.get('noise'))
+    return NegNoise(noise, name=name)
 
 def create_square_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data)
-    return SquareNoise(noise)
+    if not isinstance(data, dict):
+        data = {'noise': data}
+    name = data.get('name', None)
+    noise = parser.decode_noise_dict(data.get('noise'))
+    return SquareNoise(noise, name=name)
 
 def create_cube_noise(parser, data, length_scale):
-    noise = parser.decode_noise_dict(data)
-    return CubeNoise(noise)
+    if not isinstance(data, dict):
+        data = {'noise': data}
+    name = data.get('name', None)
+    noise = parser.decode_noise_dict(data.get('noise'))
+    return CubeNoise(noise, name=name)
 
 def create_1d_noise(parser, data, length_scale):
+    name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     axis = data.get('axis', "z")
-    return Noise1D(noise, axis)
+    return Noise1D(noise, axis, name=name)
 
 def create_fbm_noise(parser, data, length_scale):
+    name = data.get('name', None)
     noise = parser.decode_noise_dict(data.get('noise'))
     octaves = data.get('octaves', 8)
+    octaves_range = data.get('octaves-range', [1, 16])
     frequency = data.get('frequency', None)
     if frequency is None:
         length = data.get('length', length_scale)
@@ -216,39 +330,93 @@ def create_fbm_noise(parser, data, length_scale):
             frequency = length_scale / (length * 4)
         else:
             frequency = 1.0
+        frequency_range = None
+    else:
+        frequency_range = data.get('frequency-range', [0.01, 10])
     lacunarity = data.get('lacunarity', 2.0)
+    lacunarity_range = data.get('lacunarity-range', [0.01, 10])
     geometric = data.get('geometric', True)
     h = data.get('h', 0.25)
+    h_range = data.get('h-range')
     gain = data.get('gain', 0.5)
+    gain_range = data.get('gain-range', [0.01, 1])
 
-    return FbmNoise(noise, octaves, frequency, lacunarity, geometric, h, gain)
+    ranges = {
+        'octaves': octaves_range,
+        'frequency': frequency_range,
+        'lacunarity': lacunarity_range,
+        'h': h_range,
+        'gain': gain_range
+        }
+    return FbmNoise(noise, octaves, frequency, lacunarity, geometric, h, gain, name=name, ranges=ranges)
+
+def create_spiral_noise(parser, data, length_scale):
+    name = data.get('name', None)
+    noise = parser.decode_noise_dict(data.get('noise'))
+    octaves = data.get('octaves', 8)
+    octaves_range = data.get('octaves-range', [1, 16])
+    frequency = data.get('frequency', 1.0)
+    frequency_range = data.get('frequency-range', [0.01, 10])
+    lacunarity = data.get('lacunarity', 2.0)
+    lacunarity_range = data.get('lacunarity-range', [0.01, 10])
+    gain = data.get('gain', 0.5)
+    gain_range = data.get('gain-range', [0.01, 1])
+    nudge = data.get('nudge', 0.5)
+    nudge_range = data.get('nudge-range', [0.01, 1])
+
+    ranges = {
+        'octaves': octaves_range,
+        'frequency': frequency_range,
+        'lacunarity': lacunarity_range,
+        'gain': gain_range,
+        'nudge': nudge_range
+        }
+    return SpiralNoise(noise, octaves, frequency, lacunarity, gain, nudge, name=name, ranges=ranges)
 
 def create_warp_noise(parser, data, length_scale):
+    name = data.get('name', None)
     main = parser.decode_noise_dict(data.get('noise'))
     warp = parser.decode_noise_dict(data.get('warp'))
     scale = float(data.get('strength', 4.0))
-    return NoiseWarp(main, warp, scale)
+    scale_range = data.get('strength-range', [0.0, 10])
+    ranges = {
+        'scale': scale_range,
+        }
+    return NoiseWarp(main, warp, scale, name=name, ranges=ranges)
 
-NoiseYamlParser.register_noise_parser('scale', create_scale_noise)
-NoiseYamlParser.register_noise_parser('offset', create_offset_noise)
+def create_rotate_noise(parser, data, length_scale):
+    name = data.get('name', None)
+    main = parser.decode_noise_dict(data.get('noise'))
+    angle = parser.decode_noise_dict(data.get('angle'))
+    axis = data.get('axis', 'x')
+    return NoiseRotate(main, angle, axis, name=name)
 
 NoiseYamlParser.register_noise_parser('add', create_add_noise)
 NoiseYamlParser.register_noise_parser('sub', create_sub_noise)
 NoiseYamlParser.register_noise_parser('mul', create_mul_noise)
 NoiseYamlParser.register_noise_parser('pow', create_pow_noise)
+NoiseYamlParser.register_noise_parser('exp', create_exp_noise)
 NoiseYamlParser.register_noise_parser('threshold', create_threshold_noise)
 NoiseYamlParser.register_noise_parser('clamp', create_clamp_noise)
+NoiseYamlParser.register_noise_parser('min', create_min_noise)
+NoiseYamlParser.register_noise_parser('max', create_max_noise)
 NoiseYamlParser.register_noise_parser('abs', create_abs_noise)
+NoiseYamlParser.register_noise_parser('neg', create_neg_noise)
 NoiseYamlParser.register_noise_parser('1d', create_1d_noise)
 NoiseYamlParser.register_noise_parser('square', create_square_noise)
 NoiseYamlParser.register_noise_parser('cube', create_cube_noise)
 
 NoiseYamlParser.register_noise_parser('ridged', create_ridged_noise)
-NoiseYamlParser.register_noise_parser('turbulence', create_turbulence_noise)
+NoiseYamlParser.register_noise_parser('turbulence', create_abs_noise)
 NoiseYamlParser.register_noise_parser('fbm', create_fbm_noise)
+NoiseYamlParser.register_noise_parser('spiral', create_spiral_noise)
 NoiseYamlParser.register_noise_parser('warp', create_warp_noise)
+NoiseYamlParser.register_noise_parser('rot', create_rotate_noise)
 
 NoiseYamlParser.register_noise_parser('const', create_const_noise)
+NoiseYamlParser.register_noise_parser('x', create_x_noise)
+NoiseYamlParser.register_noise_parser('y', create_y_noise)
+NoiseYamlParser.register_noise_parser('z', create_z_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:perlin', create_gpunoise_perlin_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:cellular', create_gpunoise_cellular_noise)
 NoiseYamlParser.register_noise_parser('gpunoise:polkadot', create_gpunoise_polkadot_noise)
@@ -256,3 +424,5 @@ NoiseYamlParser.register_noise_parser('stegu:perlin', create_stegu_perlin_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellular', create_stegu_cellular_noise)
 NoiseYamlParser.register_noise_parser('stegu:cellulardiff', create_stegu_cellulardiff_noise)
 NoiseYamlParser.register_noise_parser('iq:perlin', create_iq_perlin_noise)
+NoiseYamlParser.register_noise_parser('iq:gradient', create_iq_gradient_noise)
+NoiseYamlParser.register_noise_parser('sincos', create_sincos_noise)

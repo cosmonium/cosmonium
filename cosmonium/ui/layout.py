@@ -24,13 +24,13 @@ from direct.gui.DirectGui import DirectFrame, DGG
 from direct.showbase.ShowBaseGlobal import aspect2d
 
 class Layout(object):
-    def __init__(self, width, height, parent=None, frameColor=(1, 1, 1, 1)):
+    def __init__(self, width, height, parent=None, frameColor=(1, 1, 1, 1), frameSize=(0, 0.5, -0.5, 0)):
         self.width = width
         self.height = height
         if parent is None:
             parent = aspect2d
         self.parent = parent
-        self.frame = DirectFrame(parent=parent, frameColor=frameColor, state=DGG.DISABLED)
+        self.frame = DirectFrame(parent=parent, frameColor=frameColor, frameSize=frameSize, state=DGG.DISABLED)
         self.frame.setPos(0, 0, 0)
         self.children = [[None for y in range(self.height)] for x in range(self.width)]
         self.children_width = [[0.0 for y in range(self.height)] for x in range(self.width)]
@@ -67,9 +67,9 @@ class Layout(object):
         for x in range(self.width):
             pos_y = 0.0
             for y in range(self.height):
+                pos_y -= max_heights[y]
                 child = self.children[x][y]
                 if child is not None:
-                    pos_y -= max_heights[y]
                     child.setPos(pos_x, 0, pos_y)
             pos_x += max_widths[x]
         self.frame['frameSize']= [0, pos_x, 0, pos_y]

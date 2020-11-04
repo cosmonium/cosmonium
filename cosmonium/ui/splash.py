@@ -28,6 +28,13 @@ from direct.gui.OnscreenImage import OnscreenImage
 
 from .. import settings
 
+class NoSplash():
+    def set_text(self, text):
+        pass
+
+    def close(self):
+        pass
+
 class Splash:
     def __init__(self):
         props = WindowProperties(base.win.getProperties())
@@ -74,6 +81,7 @@ class Splash:
 
     def set_text(self, text):
         self.text.setText(text)
+
     def close(self):
         self.text.destroy()
         self.image.destroy()

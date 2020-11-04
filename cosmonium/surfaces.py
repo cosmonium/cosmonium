@@ -21,8 +21,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from .shapes import ShapeObject
-from panda3d.core import NodePath
-from cosmonium.shadows import SphereShadowCaster
+from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
+
+from math import floor, ceil
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -49,11 +50,33 @@ class Surface(ShapeObject):
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
 
+    def get_component_name(self):
+        return _('Surface')
+
     def create_shadows(self):
-        if self.shape is not None and self.shape.is_spherical():
-            self.shadow_caster = SphereShadowCaster(self.owner)
-        else:
-            self.shadow_caster = None
+        if self.shadow_caster is None:
+            if self.shape.is_spherical():
+                self.shadow_caster = SphereShadowCaster(self.owner)
+            else:
+                self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
+                self.owner.visibility_override = True
+                self.shadow_caster.add_target(self, self_shadow=True)
+        self.shadow_caster.create()
+
+    def remove_shadows(self):
+        if self.shadow_caster is not None:
+            self.shadow_caster.remove()
+            if self.owner.visibility_override:
+                self.owner.visibility_override = False
+                #Force recheck of visibility or the body will be immediately recreated
+                self.owner.check_visibility(self.owner.context.observer.pixel_size)
+
+    def start_shadows_update(self):
+        ShapeObject.start_shadows_update(self)
+        #Add self-shadowing for non-spherical objects
+        #TODO: It's a bit convoluted to do it like that...
+        if not self.shape.is_spherical() and self.owner.visible and self.owner.resolved:
+            self.shadow_caster.add_target(self, self_shadow=True)
 
     def get_average_radius(self):
         return self.owner.get_apparent_radius()
@@ -85,6 +108,9 @@ class FlatSurface(Surface):
         return self.owner.get_apparent_radius()
 
 class MeshSurface(Surface):
+    def is_flat(self):
+        return False
+
     def get_height_at(self, x, y):
         coord = self.shape.global_to_shape_coord(x, y)
         return self.shape.get_height_at(coord)
@@ -107,6 +133,15 @@ class ProceduralSurface(FlatSurface):
             self.jobs_done_cb(patch)
         else:
             self.jobs_done_cb(None)
+
+    def patch_done(self, patch):
+        FlatSurface.patch_done(self, patch)
+        self.heightmap.apply(patch)
+
+    def shape_done(self):
+        FlatSurface.shape_done(self)
+        if not self.shape.patchable:
+            self.heightmap.apply(self.shape)
 
     def schedule_patch_jobs(self, patch):
         if (patch.jobs & ProceduralSurface.JOB_HEIGHTMAP) == 0:
@@ -134,7 +169,7 @@ class ProceduralSurface(FlatSurface):
         FlatSurface.schedule_shape_jobs(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
-    def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, average=False):
+    def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, follow_mesh=True):
         ProceduralSurface.__init__(self, name, shape, heightmap, appearance, shader, clickable)
         if radius != 0.0:
             self.height_scale = radius
@@ -153,10 +188,13 @@ class HeightmapSurface(ProceduralSurface):
         self.biome = biome
         self.scale = scale
         self.displacement = displacement
-        self.average = average
+        self.follow_mesh = follow_mesh
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
+
+    def is_flat(self):
+        return False
 
     def get_average_radius(self):
         return self.radius
@@ -169,12 +207,6 @@ class HeightmapSurface(ProceduralSurface):
 
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
-
-    def get_height(self, position):
-        #TODO: Surface coord should be 0-1, not scaled
-        x = position[0] / self.scale
-        y = position[1] / self.scale
-        return self.get_height_at(x, y)
 
     def get_height_at(self, x, y, strict=False):
         #print("get_height_at", x, y)
@@ -198,6 +230,26 @@ class HeightmapSurface(ProceduralSurface):
             #print("Patch not found for", x, y)
             return self.radius
 
+    #TODO: Should be based on how the patch is tesselated !
+    def get_mesh_height_uv(self, heightmap, u, v, density):
+        x = u * density
+        y = v * density
+        x0 = floor(x) / density * heightmap.width
+        y0 = floor(y) / density * heightmap.height
+        x1 = ceil(x) / density * heightmap.width
+        y1 = ceil(y) / density * heightmap.height
+        dx = u * heightmap.width - x0
+        if x1 != x0:
+            dx /= x1 - x0
+        dy = v * heightmap.height - y0
+        if y1 != y0:
+            dy /= y1 - y0
+        h_00 = heightmap.get_height(x0, y0)
+        h_01 = heightmap.get_height(x0, y1)
+        h_10 = heightmap.get_height(x1, y0)
+        h_11 = heightmap.get_height(x1, y1)
+        return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
+
     def get_height_patch(self, patch, u, v, recursive=False):
         if not self.displacement:
             return self.radius
@@ -211,8 +263,8 @@ class HeightmapSurface(ProceduralSurface):
         if heightmap is None:
             print("No heightmap")
             return self.radius
-        if self.average:
-            h = heightmap.get_average_height_uv(u, v)
+        if self.follow_mesh:
+            h = self.get_mesh_height_uv(heightmap, u, v, patch.density)
         else:
             h = heightmap.get_height_uv(u, v)
         height = h * self.height_scale + self.heightmap_base

@@ -24,58 +24,21 @@ from panda3d.core import Texture
 
 from ..textures import TextureSource
 from .generator import GeneratorPool
-from .shadernoise import NoiseShader, GrayTarget
+from .shadernoise import NoiseShader
 from .. import settings
-
-class ProceduralTextureSource(TextureSource):
-    cached = False
-    patched = True
-    procedural = True
-    def __init__(self, terrain):
-        self.terrain = terrain
-        self.loaded = False
-
-    def can_split(self, patch):
-        return True
-
-    def load(self, patch):
-        return None
-
-class GpuTextureSource(ProceduralTextureSource):
-    def load(self, patch):
-        heightmap = self.terrain.get_heightmap(None)
-        #TODO: heightmap has no size, but width and height
-        data = (heightmap.texture, self.terrain.width, 0)
-        return data
-
-class PatchedGpuTextureSource(ProceduralTextureSource):
-    patched=True
-    def __init__(self, terrain):
-        ProceduralTextureSource.__init__(self, terrain)
-        self.textures_map = {}
-
-    def load(self, patch):
-        if patch not in self.textures_map:
-            heightmap = self.terrain.get_heightmap(patch)
-            if heightmap is None:
-                print("NO HEIGHTMAP", patch.str_id())
-            data = (heightmap.texture, self.terrain.size, patch.lod)
-            self.textures_map[patch] = data
-            return data
-        else:
-            return self.textures_map[patch]
 
 class ProceduralVirtualTextureSource(TextureSource):
     tex_generators = {}
     cached = False
     procedural = True
-    def __init__(self, noise, size):
+    def __init__(self, noise, target, size, frequency, scale):
         TextureSource.__init__(self)
         self.noise = noise
+        self.target = target
         self.texture_size = size
         self.map_patch = {}
-        self.global_frequency = 1.0
-        self.global_scale = 1.0
+        self.global_frequency = frequency
+        self.global_scale = scale
 
     def is_patched(self):
         return True
@@ -120,12 +83,12 @@ class ProceduralVirtualTextureSource(TextureSource):
     def _make_texture(self, patch, callback, cb_args):
         if not self.texture_size in ProceduralVirtualTextureSource.tex_generators:
             ProceduralVirtualTextureSource.tex_generators[self.texture_size] = GeneratorPool(settings.patch_pool_size)
-            ProceduralVirtualTextureSource.tex_generators[self.texture_size].make_buffer(self.texture_size, self.texture_size, Texture.F_rgb)
+            ProceduralVirtualTextureSource.tex_generators[self.texture_size].make_buffer(self.texture_size, self.texture_size, Texture.F_rgba)
         self.tex_generator = ProceduralVirtualTextureSource.tex_generators[self.texture_size]
         if True:#self.shader is None:
             shader = NoiseShader(coord = patch.coord,
                                  noise_source=self.noise,
-                                 noise_target=GrayTarget(),
+                                 noise_target=self.target,
                                  offset=(patch.x0, patch.y0, 0.0),
                                  scale=(patch.lod_scale_x, patch.lod_scale_y, 1.0))
             shader.global_frequency = self.global_frequency

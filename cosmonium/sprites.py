@@ -28,32 +28,21 @@ class PointObject(object):
     def apply(self, instance):
         pass
 
-    def get_min_size(self):
-        return 1
-
 class SimplePoint(PointObject):
     def __init__(self, point_size=1):
         self.point_size = point_size
-
-    def get_min_size(self):
-        return self.point_size
 
     def apply(self, instance):
         instance.setRenderModeThickness(self.point_size)
 
 class TexturePointSprite(PointObject):
-    def __init__(self, file, min_size=5, max_size=15):
-        self.file = file
-        self.min_size = min_size
-        self.max_size = max_size
+    def __init__(self, filename):
+        self.filename = file
         self.texture = None
-
-    def get_min_size(self):
-        return self.min_size
 
     def apply(self, instance):
         if self.texture is None:
-            self.texture = loader.loadTexture(self.file)
+            self.texture = loader.loadTexture(self.filename)
         instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         instance.setTransparency(TransparencyAttrib.MAlpha)
         instance.setTexture(self.texture, 1)
@@ -83,9 +72,6 @@ class RoundDiskPointSprite(GenPointSprite):
         GenPointSprite.__init__(self, size)
         self.max_value = max_value
 
-    def get_min_size(self):
-        return 2
-
     def generate(self):
         p = PNMImage(self.size, self.size, num_channels=2, maxval=65535)
         for y in range(self.size):
@@ -111,9 +97,6 @@ class GaussianPointSprite(GenPointSprite):
         self.fwhm = fwhm
         self.max_value = max_value
 
-    def get_min_size(self):
-        return 4
-
     def generate(self):
         p = PNMImage(self.size, self.size, num_channels=2)
         sigma = self.fwhm / (2 * sqrt(2 * log(2)))
@@ -130,7 +113,8 @@ class GaussianPointSprite(GenPointSprite):
         return p
 
 class ExpPointSprite(GenPointSprite):
-    def __init__(self, size=64, factor=1.0/(256*256*256), max_value=1.0):
+    # Factor must be 1/256 squared as the value at the border is factor^0.5
+    def __init__(self, size=64, factor=1.0/(256*256), max_value=1.0):
         GenPointSprite.__init__(self, size)
         self.factor = factor
         self.max_value = max_value
@@ -155,9 +139,6 @@ class MergeSprite(GenPointSprite):
         GenPointSprite.__init__(self, size)
         self.top = top
         self.bottom = bottom
-
-    def get_min_size(self):
-        return self.top.get_min_size()
 
     def generate(self):
         pt = self.top.generate()

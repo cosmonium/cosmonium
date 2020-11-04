@@ -20,19 +20,22 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import GeomNode
+from panda3d.core import GeomNode, LQuaternion, LQuaterniond
 from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
+from direct.actor.Actor import Actor
 
 from .foundation import VisibleObject
 from .shaders import AutoShader
 from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
+from .shadows import MultiShadows
+from .parameters import ParametersGroup, AutoUserParameter, UserParameter
+
 from . import geometry
 from . import settings
-from cosmonium.shadows import MultiShadows
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -47,14 +50,19 @@ class Shape:
         self.scale = LVector3(1.0, 1.0, 1.0)
         self.radius = 1.0
         self.owner = None
-        self.inv_u = False
-        self.inv_v = False
-        self.swap_uv = False
         self.instance_ready = False
         self.jobs_pending = 0
         self.jobs = 0
         self.clickable = False
         self.attribution = None
+        #TODO: Used to fix ring textures
+        self.vanish_borders = False
+
+    def get_oid_color(self):
+        return self.owner.oid_color
+
+    def get_user_parameters(self):
+        return None
 
     def check_settings(self):
         pass
@@ -62,9 +70,15 @@ class Shape:
     def is_spherical(self):
         return True
 
+    def update_shape(self):
+        pass
+
     def create_instance(self):
         return None
-    
+
+    def update_instance(self, camera_pos, camera_rot):
+        pass
+
     def remove_instance(self):
         if self.instance is not None:
             self.instance.detach_node()
@@ -145,7 +159,7 @@ class Shape:
             else:
                 self.instance.setCollideMask(BitMask32.all_off())
 
-class CompositeShapeObject(object):
+class CompositeShapeObject(VisibleObject):
     def __init__(self):
         self.components = []
         self.owner = None
@@ -178,9 +192,9 @@ class CompositeShapeObject(object):
         for component in self.components:
             component.create_instance()
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         for component in self.components:
-            component.update_instance(camera_pos, orientation)
+            component.update_instance(camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -191,6 +205,7 @@ class CompositeShapeObject(object):
             component.remove_instance()
 
 class ShapeObject(VisibleObject):
+    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.WaterCameraMask | VisibleObject.ShadowCameraMask
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.shape = None
@@ -208,6 +223,26 @@ class ShapeObject(VisibleObject):
 
     def check_settings(self):
         self.shape.check_settings()
+        if self.shadow_caster is not None:
+            self.shadow_caster.check_settings()
+        self.update_shader()
+
+    def get_user_parameters(self):
+        group = ParametersGroup(self.get_component_name())
+        if self.shape is not None:
+            group.add_parameters(self.shape.get_user_parameters())
+        if self.appearance is not None:
+            group.add_parameters(self.appearance.get_user_parameters())
+        if self.shader is not None:
+            group.add_parameters(self.shader.get_user_parameters())
+        return group
+
+    def update_user_parameters(self):
+        self.update_shape()
+        self.update_shader()
+
+    def get_component_name(self):
+        return 'Unknown'
 
     def set_shape(self, shape):
         if self.shape is not None:
@@ -242,6 +277,9 @@ class ShapeObject(VisibleObject):
     def get_scale(self):
         return self.shape.get_scale()
 
+    def is_flat(self):
+        return True
+
     def create_instance(self, callback=None, cb_args=()):
         self.callback = callback
         self.cb_args = cb_args
@@ -262,19 +300,21 @@ class ShapeObject(VisibleObject):
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
         self.instance.reparentTo(self.context.world)
-        if self.parent.is_emissive():
-            #TODO: Should be done by the owner of the shape
-            myMaterial = Material()
-            myMaterial.setEmission((1, 1, 1, 1))
-            self.instance.setMaterial(myMaterial, 1)
+        instance.hide(self.AllCamerasMask)
+        instance.show(self.default_camera_mask)
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()
+        if self.context.observer.has_scattering:
+            self.context.observer.scattering.add_attenuated_object(self)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.schedule_jobs()
 
     def create_shadows(self):
+        pass
+
+    def remove_shadows(self):
         pass
 
     def start_shadows_update(self):
@@ -309,6 +349,23 @@ class ShapeObject(VisibleObject):
             if self.shape.jobs_pending == 0:
                 self.jobs_done_cb(None)
 
+    def patch_done(self, patch):
+        if self.first_patch:
+            if self.shader is not None:
+                self.shader.apply(self.shape, self.appearance)
+            self.first_patch = None
+        if self.appearance is not None:
+            self.appearance.apply_textures(patch)
+        if self.shader is not None:
+            self.shader.apply_patch(self.shape, patch, self.appearance)
+        patch.patch_done()
+
+    def shape_done(self):
+        if self.appearance is not None and not self.shape.patchable:
+            self.appearance.apply_textures(self.shape)
+        if self.shader is not None:
+            self.shader.apply(self.shape, self.appearance)
+
     def jobs_done_cb(self, patch):
         if patch is not None:
             patch.jobs_pending -= 1
@@ -316,15 +373,8 @@ class ShapeObject(VisibleObject):
             patch.jobs_pending = 0
             patch.jobs = 0
             if patch.instance is not None:
-                if self.first_patch:
-                    if self.shader is not None:
-                        self.shader.apply(self.shape, self.appearance)
-                    self.first_patch = None
-                if self.appearance is not None:
-                    self.appearance.apply_textures(patch)
-                if self.shader is not None:
-                    self.shader.apply_patch(self.shape, patch, self.appearance)
                 patch.instance_ready = True
+                self.patch_done(patch)
                 if self.callback is not None:
                     self.callback(self, patch, *self.cb_args)
         else:
@@ -333,11 +383,8 @@ class ShapeObject(VisibleObject):
             self.shape.jobs_pending = 0
             self.shape.jobs = 0
             if self.shape.instance is not None:
-                if self.appearance is not None and not self.shape.patchable:
-                    self.appearance.apply_textures(self.shape)
-                if self.shader is not None:
-                    self.shader.apply(self.shape, self.appearance)
                 self.shape.instance_ready = True
+                self.shape_done()
                 self.instance_ready = True
                 if self.callback is not None:
                     self.callback(self, *self.cb_args)
@@ -345,13 +392,18 @@ class ShapeObject(VisibleObject):
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
 
+    def update_shape(self):
+        if self.instance is not None and self.shape is not None and self.instance_ready:
+            self.shape.update_shape()
+
     def update_shader(self):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.apply(self.shape, self.appearance)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
         self.place_instance(self.instance, self.parent)
+        self.shape.update_instance(camera_pos, camera_rot)
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
             self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))
@@ -366,9 +418,13 @@ class ShapeObject(VisibleObject):
             self.shape.place_patches(self.parent)
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+        if self.shadow_caster is not None:
+            self.shadow_caster.update()
         if self.shadows.update_needed:
             self.update_shader()
             self.shadows.update_needed = False
+        if self.context.observer.apply_scattering > 0:
+            self.context.observer.scattering.add_attenuated_object(self)
         if self.shader is not None:
             self.shader.update(self.shape, self.appearance)
 
@@ -377,23 +433,50 @@ class ShapeObject(VisibleObject):
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
+        if self.context.observer.has_scattering:
+            self.context.observer.scattering.remove_attenuated_object(self)
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
+    def __init__(self, model, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
         Shape.__init__(self)
         self.model = model
         self.attribution = attribution
         self.context = context
-        self.scale_factor = 1.0
         if offset is None:
             offset = LPoint3d()
         self.offset = offset
-        self.scale_mesh = scale_mesh
+        if rotation is None:
+            rotation = LQuaterniond()
+        if scale is None and not auto_scale_mesh:
+            scale = LVector3d(1, 1, 1)
+        self.scale_factor = scale
+        self.rotation = rotation
+        self.auto_scale_mesh = auto_scale_mesh
         self.flatten = flatten
         self.panda = panda
+        self.mesh = None
         self.callback = None
         self.cb_args = None
+
+    def update_shape(self):
+        self.mesh.set_pos(*self.offset)
+        self.mesh.set_quat(LQuaternion(*self.rotation))
+        self.mesh.set_scale(*self.scale_factor)
+
+    def get_rotation(self):
+        return self.rotation.get_hpr()
+
+    def set_rotation(self, rotation):
+        self.rotation.set_hpr(rotation)
+
+    def get_user_parameters(self):
+        group = ParametersGroup("Mesh")
+        group.add_parameter(AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3))
+        group.add_parameter( UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3))
+        if not self.auto_scale_mesh:
+            group.add_parameter(AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3))
+        return group
 
     def is_spherical(self):
         return False
@@ -402,16 +485,17 @@ class MeshShape(Shape):
         if mesh is None: return
         #The shape has been removed from the view while the mesh was loaded
         if self.instance is None: return
-        if self.scale_mesh:
+        self.mesh = mesh
+        if self.auto_scale_mesh:
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
-            self.scale_factor = 1.0 / major
+            scale_factor = 1.0 / major
+            self.scale_factor = LVector3d(scale_factor, scale_factor, scale_factor)
         if self.flatten:
-            mesh.flattenStrong()
+            self.mesh.flattenStrong()
+        self.update_shape()
         self.apply_owner()
-        mesh.set_pos(*self.offset)
-        mesh.set_scale(self.scale_factor, self.scale_factor, self.scale_factor)
-        mesh.reparent_to(self.instance)
+        self.mesh.reparent_to(self.instance)
         self.parent.apply_instance(self.instance)
         if self.callback is not None:
             self.callback(self, *self.cb_args)
@@ -425,6 +509,39 @@ class MeshShape(Shape):
         else:
             load_model(self.model, self.create_instance_cb, self.context)
         return self.instance
+
+class ActorShape(MeshShape):
+    def __init__(self, model, animations, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, attribution=None, context=defaultDirContext):
+        MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, True, attribution, context)
+        self.animations = animations
+
+    def create_instance(self, callback=None, cb_args=()):
+        self.callback = callback
+        self.cb_args = cb_args
+        self.instance = NodePath('holder')
+        actor = Actor(self.model, self.animations)
+        self.create_instance_cb(actor)
+        return self.instance
+
+    def stop(self, animName=None, partName=None):
+        if self.mesh is not None:
+            self.mesh.stop(animName, partName)
+
+    def play(self, animName, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.play(animName, partName, fromFrame, toFrame)
+
+    def loop(self, animName, restart=1, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.loop(animName, restart, partName, fromFrame, toFrame)
+
+    def pingpong(self, animName, restart=1, partName=None, fromFrame=None, toFrame=None):
+        if self.mesh is not None:
+            self.mesh.pingpong(animName, restart, partName, fromFrame, toFrame)
+
+    def pose(self, animName, frame, partName=None, lodName=None):
+        if self.mesh is not None:
+            self.mesh.pose(animName, frame, partName, lodName)
 
 class InstanceShape(Shape):
     deferred_instance = True
@@ -441,6 +558,7 @@ class InstanceShape(Shape):
     def create_instance(self, callback=None):
         self.apply_owner()
         self.parent.apply_instance(self.instance)
+        self.instance_ready = True
         if callback is not None:
             callback(self)
         return self.instance
@@ -497,11 +615,9 @@ class DisplacementSphereShape(Shape):
         return self.instance
 
 class ScaledSphereShape(Shape):
-    def __init__(self, radius=1.0, inv_texture_u=False, inv_texture_v=False):
+    def __init__(self, radius=1.0):
         Shape.__init__(self)
         self.radius = radius
-        self.inv_u = inv_texture_u
-        self.inv_v = inv_texture_v
 
     def create_instance(self):
         self.instance=geometry.UVSphere(radius=self.radius, rings=45, sectors=90)
@@ -515,6 +631,14 @@ class RingShape(Shape):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.nbOfPoints = 360
+        #TODO: This is a big hack to make it work with ProceduralVirtualTextureSource
+        self.lod = 0
+        self.coord = 0 #TexCoord.Flat
+        self.x0 = 0
+        self.y0 = 0
+        self.lod_scale_x = 1
+        self.lod_scale_y = 1
+        self.face = -1
 
     def is_spherical(self):
         return False

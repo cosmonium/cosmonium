@@ -22,26 +22,22 @@ from __future__ import absolute_import
 
 from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader, PandaTextureDataSource
+from ..shaders import BasicShader, PandaDataSource, ShaderSphereSelfShadow
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
+from ..heightmap import heightmapRegistry
+from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
 from ..shapes import MeshShape
-from ..astro import units
-from ..procedural.shaders import DisplacementVertexControl, HeightmapDataSource, DetailMap, TextureDictionaryDataSource
-from ..procedural.textures import GpuTextureSource, PatchedGpuTextureSource
-from ..procedural.heightmap import PatchedHeightmap, heightmapRegistry
-from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
+from ..procedural.shaders import DetailMap
+from ..catalogs import objectsDB
 from .. import settings
 
 from .yamlparser import YamlModuleParser
-from .utilsparser import DistanceUnitsYamlParser
+from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
-from .shadersparser import LightingModelYamlParser
-from .noiseparser import NoiseYamlParser
-from .heightmapsparser import InterpolatorYamlParser
-from .textureparser import TextureControlYamlParser, HeightColorControlYamlParser
-
-from math import pi
+from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
+from .textureparser import TextureControlYamlParser
+from .heightmapsparser import HeightmapYamlParser
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
@@ -57,17 +53,18 @@ class SurfaceYamlParser(YamlModuleParser):
         attribution = data.get('attribution', data.get('source'))
         #The next parameters are using set_default in order to propagate
         #their manual configuration to the next surface, if any.
-        heightmap = data.setdefault('heightmap', previous.get('heightmap'))
+        heightmap_data = data.setdefault('heightmap', previous.get('heightmap'))
         shape = data.setdefault('shape', previous.get('shape'))
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
+        shader_appearance = data.setdefault('shader-appearance', previous.get('shader-appearance'))
         if shape is not None:
             shape, extra = ShapeYamlParser.decode(shape)
         if appearance is not None:
             appearance = AppearanceYamlParser.decode(appearance)
         if shape is None:
             recommended_shape = None
-            if heightmap is not None:
+            if heightmap_data is not None:
                 recommended_shape = 'sqrt-sphere'
             elif appearance is not None:
                 recommended_shape = appearance.get_recommended_shape()
@@ -81,73 +78,41 @@ class SurfaceYamlParser(YamlModuleParser):
                 appearance = 'textures'
             appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
+        shader_appearance = ShaderAppearanceYamlParser.decode(shader_appearance, appearance)
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
-                shape.set_lod_control(VertexSizePatchLodControl(settings.max_vertex_size_patch))
+                shape.set_lod_control(VertexSizePatchLodControl(settings.patch_max_vertex_size,
+                                                                density=settings.patch_constant_density))
             else:
-                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.max_vertex_size_patch))
-        if heightmap is None:
+                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.patch_max_vertex_size,
+                                                                         min_density=settings.patch_min_density,
+                                                                         density=settings.patch_max_density))
+        if heightmap_data is None:
             shader = BasicShader(lighting_model=lighting_model,
+                                 appearance=shader_appearance,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(name, category=category, resolution=resolution, attribution=attribution,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
             radius = owner.get('radius')
-            if isinstance(heightmap, dict):
-                #TODO: Refactor with HeightmapYamlParser !
+            if isinstance(heightmap_data, dict):
                 name = data.get('name', 'heightmap')
-                size = heightmap.get('size', 256)
-                raw_height_scale = heightmap.get('max-height', 1.0)
-                height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height'), units.m)
-                scale_length = heightmap.get('scale-length', None)
-                scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
-                if scale_length is not None:
-                    scale_length *= scale_length_units
-                else:
-                    scale_length = radius * 2 * pi
-                median = heightmap.get('median', True)
-                interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
-                height_scale = raw_height_scale * height_scale_units
-                relative_height_scale = height_scale / radius
-                noise_parser = NoiseYamlParser(scale_length)
-                noise = noise_parser.decode(heightmap.get('noise'))
-                if shape.patchable:
-                    max_lod = heightmap.get('max-lod', 100)
-                    heightmap = PatchedHeightmap(name, size,
-                                                 relative_height_scale, pi, pi, median,
-                                                 ShaderHeightmapPatchFactory(noise), interpolator, max_lod)
-                    heightmap_source_type = PatchedGpuTextureSource
-                    heightmap.global_scale = 1.0 / raw_height_scale
-                else:
-                    heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, noise, interpolator)
-                    heightmap_source_type = GpuTextureSource
-                #TODO: should be set using a method or in constructor
-                heightmap.global_scale = 1.0 / raw_height_scale
+                heightmap = HeightmapYamlParser.decode(heightmap_data, name, shape.patchable, radius)
             else:
                 if shape.patchable:
-                    heightmap = heightmapRegistry.get(heightmap + '-patched')
-                    heightmap_source_type = PatchedGpuTextureSource
+                    heightmap = heightmapRegistry.get(heightmap_data + '-patched')
                 else:
-                    heightmap = heightmapRegistry.get(heightmap)
-                    heightmap_source_type = GpuTextureSource
+                    heightmap = heightmapRegistry.get(heightmap_data)
             control = data.get('control', None)
             if control is not None:
-                control_type = control.get('type', 'textures')
-                if control_type == 'textures':
-                    control_parser = TextureControlYamlParser()
-                    control = control_parser.decode(control, height_scale, radius)
-                    appearance_source = TextureDictionaryDataSource(appearance)
-                elif control_type == 'colormap':
-                    control_parser = HeightColorControlYamlParser()
-                    control = control_parser.decode(control, height_scale, radius, median)
-                    appearance_source = None
-                else:
-                    print("Unknown control type '%'" % control_type)
-                shader_appearance = DetailMap(control, heightmap, create_normals=True)
+                control_parser = TextureControlYamlParser()
+                (control, appearance_source) = control_parser.decode(control, appearance, heightmap.height_scale, radius, heightmap.median)
+                if control is not None:
+                    shader_appearance = DetailMap(control, heightmap, create_normals=True)
             else:
                 shader_appearance = None
-                appearance_source = PandaTextureDataSource()
-            data_source = [HeightmapDataSource(heightmap, heightmap_source_type)]
+                appearance_source = PandaDataSource()
+            data_source = [HeightmapDataSource(heightmap, normals=True)]
             if appearance_source is not None:
                 data_source.append(appearance_source)
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
@@ -160,6 +125,8 @@ class SurfaceYamlParser(YamlModuleParser):
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         if atmosphere is not None:
             atmosphere.add_shape_object(surface)
+        if shape.is_spherical() and atmosphere is None:
+            shader.add_shadows(ShaderSphereSelfShadow())
         return surface
 
     @classmethod
@@ -173,3 +140,20 @@ class SurfaceYamlParser(YamlModuleParser):
             previous = entry
         return surfaces
 
+class StandaloneSurfaceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        name = data.get('name', None)
+        parent_name = data.get('parent')
+        parent = objectsDB.get(parent_name)
+        if parent is None:
+            print("ERROR: Parent '%s' of surface '%s' not found" % (parent_name, name))
+            return None
+        active = data.get('active', 'True')
+        surface = SurfaceYamlParser.decode_surface(data, parent.atmosphere, {}, parent)
+        parent.add_surface(surface)
+        if active:
+            parent.set_surface(surface)
+        return None
+
+ObjectYamlParser.register_object_parser('surface', StandaloneSurfaceYamlParser())

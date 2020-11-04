@@ -21,9 +21,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
+from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName
 from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath, AntialiasAttrib
+from panda3d.core import NodePath
 
 from .foundation import VisibleObject, ObjectLabel, LabelledObject
 from .astro.orbits import FixedOrbit, InfinitePosition
@@ -32,25 +32,25 @@ from .bodyclass import bodyClasses
 from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
 from .appearances import ModelAppearance
 from .mesh import load_panda_model
+from .utils import srgb_to_linear
 from . import settings
 
 from math import sin, cos, atan2, pi
 
 class AnnotationLabel(ObjectLabel):
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         position = self.parent.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
         if position != None:
             self.instance.setPos(*position)
             scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.context.observer.infinity)
         else:
             scale = 0.0
-        self.label.setTextColor(self.parent.get_label_color())
         if scale < 1e-7:
             print("Label too far", self.get_name())
             scale = 1e-7
         self.instance.setScale(scale)
-        self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
-        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
+        self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
+        self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
 
 class BackgroundLabel(AnnotationLabel):
     def create_instance(self):
@@ -61,10 +61,13 @@ class Orbit(VisibleObject):
     ignore_light = True
     default_shown = False
     selected_color = LColor(1.0, 0.0, 0.0, 1.0)
+    appearance = None
+    shader = None
 
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
         self.body = body
+        self.owner = body
         self.nbOfPoints = 360
         self.orbit = self.find_orbit(self.body)
         self.color = None
@@ -72,7 +75,21 @@ class Orbit(VisibleObject):
         if not self.orbit:
             print("No orbit for", self.get_name())
             self.visible = False
-        self.check_settings()
+
+    def get_oid_color(self):
+        if self.body is not None:
+            return self.body.oid_color
+        else:
+            return LColor()
+
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance(attribute_color=True)
+        if settings.use_inv_scaling:
+            vertex_control = LargeObjectVertexControl()
+        else:
+            vertex_control = None
+        cls.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
 
     def check_settings(self):
         if self.body.body_class is None:
@@ -95,28 +112,30 @@ class Orbit(VisibleObject):
         else:
             self.color = self.parent.get_orbit_color()
         if self.instance:
-            self.instance.setColor(self.color * self.fade)
+            self.instance.setColor(srgb_to_linear(self.color * self.fade))
 
     def create_instance(self):
-        if not self.orbit:
-            return
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         delta = self.body.parent.get_local_position()
+        if self.orbit.is_periodic():
+            epoch = self.context.time.time_full - self.orbit.period / 2
+            step = self.orbit.period / (self.nbOfPoints - 1)
+        else:
+            #TODO: Properly calculate orbit start and end time
+            epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
+            step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
-            time = self.orbit.period / self.nbOfPoints * i
-            pos = self.orbit.get_position_at(time)
-            rot = self.orbit.get_rotation_at(time)
-            pos = self.orbit.frame.get_local_position(rot.xform(pos)) - delta
+            time = epoch + step * i
+            pos = self.orbit.get_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):
             self.lines.addVertex(i)
             self.lines.addVertex(i+1)
-            self.lines.closePrimitive()
-        self.lines.addVertex(self.nbOfPoints-1)
-        self.lines.addVertex(0)
-        self.lines.closePrimitive()
+        if self.orbit.is_periodic() and self.orbit.is_closed():
+            self.lines.addVertex(self.nbOfPoints-1)
+            self.lines.addVertex(0)
         self.geom = Geom(self.vertexData)
         self.geom.addPrimitive(self.lines)
         self.node = GeomNode(self.body.get_ascii_name() + '-orbit')
@@ -125,23 +144,36 @@ class Orbit(VisibleObject):
         self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.node().setPythonTag('owner', self)
-        self.instance.reparentTo(self.context.annotation_shader)
+        self.instance.reparentTo(self.context.annotation)
         if self.color is None:
             self.color = self.parent.get_orbit_color()
-        self.instance.setColor(self.color * self.fade)
-        self.instance.setAntialias(AntialiasAttrib.MMultisample)
-        self.appearance = ModelAppearance(attribute_color=True)
-        if settings.use_inv_scaling:
-            vertex_control = LargeObjectVertexControl()
-        else:
-            vertex_control = None
+        self.instance.setColor(srgb_to_linear(self.color * self.fade))
         self.instance_ready = True
-        self.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
+        if self.shader is None:
+            self.create_shader()
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
 
+    def update_geom(self):
+        geom = self.node.modify_geom(0)
+        vdata = geom.modify_vertex_data()
+        vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
+        #TODO: refactor with above code !!!
+        delta = self.body.parent.get_local_position()
+        if self.orbit.is_periodic():
+            epoch = self.context.time.time_full - self.orbit.period
+            step = self.orbit.period / (self.nbOfPoints - 1)
+        else:
+            #TODO: Properly calculate orbit start and end time
+            epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
+            step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
+        for i in range(self.nbOfPoints):
+            time = epoch + step * i
+            pos = self.orbit.get_position_at(time) - delta
+            vwriter.setData3f(*pos)
+
     def check_visibility(self, pixel_size):
-        if self.parent.shown and self.orbit:
+        if self.parent.parent.visible and self.parent.shown and self.orbit:
             distance_to_obs = self.parent.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)
@@ -150,17 +182,21 @@ class Orbit(VisibleObject):
             self.visible = size > settings.orbit_fade
             self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
             if self.color is not None and self.instance is not None:
-                self.instance.setColor(self.color * self.fade)
+                self.instance.setColor(srgb_to_linear(self.color * self.fade))
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance_params(self.instance,
                                        self.body.parent.scene_position,
                                        self.body.parent.scene_scale_factor,
                                        LQuaternion())
             self.shader.update(self, self.appearance)
+
+    def update_user_parameters(self):
+        if self.instance is not None:
+            self.update_geom()
 
 class RotationAxis(VisibleObject):
     default_shown = False
@@ -193,8 +229,7 @@ class RotationAxis(VisibleObject):
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
-        self.instance.setColor(self.parent.get_orbit_color())
-        self.instance.setAntialias(AntialiasAttrib.MMultisample)
+        self.instance.setColor(srgb_to_linear(self.parent.get_orbit_color()))
         self.instance.reparentTo(self.context.annotation)
 
     def check_settings(self):
@@ -211,7 +246,7 @@ class RotationAxis(VisibleObject):
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance(self.instance, self.parent)
 
@@ -237,7 +272,7 @@ class ReferenceAxis(VisibleObject):
     def check_visibility(self, pixel_size):
         self.visible = self.parent is not None and self.parent.shown and self.parent.visible and self.parent.resolved
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance(self.instance, self.parent)
 
@@ -256,6 +291,12 @@ class Grid(VisibleObject):
         self.points_to_remove = (self.nbOfPoints // (self.nbOfRings + 1)) // 2
         self.orientation = orientation
         self.color = color
+        self.settings_attr = 'show_' + name.lower() + '_grid'
+
+    def check_settings(self):
+        show = getattr(settings, self.settings_attr)
+        if show is not None:
+            self.set_shown(show)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
@@ -270,9 +311,9 @@ class Grid(VisibleObject):
 
                 self.vertexWriter.addData3f((self.context.observer.infinity * x, self.context.observer.infinity * y, self.context.observer.infinity * z))
                 if r == self.nbOfRings / 2 + 1:
-                    self.colorwriter.addData4f(self.color.x * 1.5, 0, 0, 1)
+                    self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
-                    self.colorwriter.addData4f(*self.color)
+                    self.colorwriter.addData4(srgb_to_linear(self.color))
         for s in range(self.nbOfSectors):
             for i in range(self.points_to_remove, self.nbOfPoints // 2 - self.points_to_remove + 1):
                 angle = 2 * pi / self.nbOfPoints * i
@@ -282,9 +323,9 @@ class Grid(VisibleObject):
 
                 self.vertexWriter.addData3f((self.context.observer.infinity * x , self.context.observer.infinity * y, self.context.observer.infinity * z))
                 if s == 0:
-                    self.colorwriter.addData4f(self.color.x * 1.5, 0, 0, 1)
+                    self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
-                    self.colorwriter.addData4f(*self.color)
+                    self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for r in range(self.nbOfRings):
@@ -310,9 +351,6 @@ class Grid(VisibleObject):
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.grid_thickness)
-        #myMaterial = Material()
-        #myMaterial.setEmission((1.0, 1.0, 1.0, 1))
-        #self.instance.setMaterial(myMaterial)
         self.instance.reparentTo(self.context.annotation)
         self.instance.setQuat(LQuaternion(*self.orientation))
 
@@ -360,11 +398,11 @@ class Asterism(VisibleObject):
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.update(0)
+                star.update(0, 0)
                 star.update_obs(self.context.observer)
-                position, distance, scale_factor = self.get_real_pos_rel(star.rel_position, star.distance_to_obs, star.vector_to_obs)
+                position, distance, scale_factor = self.calc_scene_params(star.rel_position, star._position, star.distance_to_obs, star.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
-                self.colorwriter.addData4f(*self.color)
+                self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.camera_global_pos = old_cam_pos
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
@@ -444,7 +482,7 @@ class Boundary(VisibleObject):
         for point in self.points:
             position = point.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
             self.vertexWriter.addData3f(*position)
-            self.colorwriter.addData4f(*self.color)
+            self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for i in range(len(self.points)-1):

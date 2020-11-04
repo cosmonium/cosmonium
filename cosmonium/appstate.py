@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from panda3d.core import LPoint3d
+
 from .bodyclass import bodyClasses
 from . import settings
 
@@ -38,9 +40,9 @@ class AppState(object):
         self.time_full = None
         self.running = None
 
-        self.absolute = False
         self.global_position = None
-        self.local_position = None
+        self.absolute = False
+        self.position = None
         self.orientation = None
 
         self.fov = None
@@ -58,9 +60,9 @@ class AppState(object):
         self.time_full = cosmonium.time.time_full
         self.running = cosmonium.time.running
 
-        self.global_position = cosmonium.observer.camera_global_pos
-        self.local_position = cosmonium.observer.get_frame_camera_pos()
-        self.orientation = cosmonium.observer.get_frame_camera_rot()
+        self.global_position = cosmonium.ship._global_position
+        self.position = cosmonium.ship._frame_position
+        self.orientation = cosmonium.ship._frame_rotation
         self.absolute = False
 
         self.fov = cosmonium.observer.get_fov()
@@ -81,6 +83,11 @@ class AppState(object):
 
     def apply_state(self, cosmonium):
         cosmonium.reset_nav()
+
+        cosmonium.time.multiplier = self.multiplier
+        cosmonium.time.time_full = self.time_full
+        cosmonium.time.running = self.running
+
         if self.selected is not None:
             cosmonium.select_body(self.selected)
         if self.follow is not None:
@@ -90,18 +97,24 @@ class AppState(object):
         if self.track is not None:
             cosmonium.track_body(self.track)
 
-        cosmonium.time.multiplier = self.multiplier
-        cosmonium.time.time_full = self.time_full
-        cosmonium.time.running = self.running
+        #Update the universe with the new time reference and selection
+        cosmonium.time_task(None)
 
-        cosmonium.observer.camera_global_pos = self.global_position
-        if self.absolute:
-            cosmonium.observer.set_camera_pos(self.local_position)
-            cosmonium.observer.set_camera_rot(self.orientation)
+        if self.global_position is not None:
+            cosmonium.ship._global_position = self.global_position
         else:
-            cosmonium.observer.set_frame_camera_pos(self.local_position)
-            cosmonium.observer.set_frame_camera_rot(self.orientation)
-        #update_camera() will be performed next frame
+            if self.sync is not None:
+                cosmonium.ship._global_position = self.sync._global_position
+            elif self.follow:
+                cosmonium.ship._global_position = self.follow._global_position
+            else:
+                cosmonium.ship._global_position = LPoint3d()
+        if self.absolute:
+            cosmonium.ship.set_pos(self.position)
+            cosmonium.ship.set_rot(self.orientation)
+        else:
+            cosmonium.ship.set_frame_pos(self.position)
+            cosmonium.ship.set_frame_rot(self.orientation)
 
         cosmonium.observer.set_fov(self.fov)
 
@@ -110,8 +123,8 @@ class AppState(object):
             settings.show_clouds = self.render['clouds']
             settings.show_asterisms = self.render['asterisms']
             settings.show_boundaries = self.render['boundaries']
-            cosmonium.equatorial_grid.set_shown(self.render['equatorialgrid'])
-            cosmonium.ecliptic_grid.set_shown(self.render['eclipticgrid'])
+            cosmonium.set_grid_equatorial(self.render['equatorialgrid'])
+            cosmonium.set_grid_ecliptic(self.render['eclipticgrid'])
             for name, body_class in bodyClasses.classes.items():
                 show = self.render.get(name, None)
                 if show is not None:
@@ -122,3 +135,10 @@ class AppState(object):
                 body_class.show_label = self.labels.get(name, False)
 
         cosmonium.update_settings()
+
+        # Update again to detect the new nearest system
+        cosmonium.nearest_system = None
+        cosmonium.time_task(None)
+        #We have to do it twice as the current code does not add the extra object to the
+        #list of octree leaves to check
+        cosmonium.time_task(None)

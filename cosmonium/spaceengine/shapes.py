@@ -24,19 +24,13 @@ from .. import geometry
 
 class SpaceEngineTextureSquarePatch(SquarePatchBase):
     xy_params = [
-                 {'x_inverted':False, 'y_inverted':False, 'xy_swap':True}, #Right
-                 {'x_inverted':True, 'y_inverted':True, 'xy_swap':True}, #left
-                 {'x_inverted':False, 'y_inverted':True, 'xy_swap':False}, #Back
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False}, #Face
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False}, #Top
-                 {'x_inverted':True, 'y_inverted':False, 'xy_swap':False} #bottom
+                 {'x_inverted':True,  'y_inverted':False, 'xy_swap':True},  # Right  # Africa
+                 {'x_inverted':False, 'y_inverted':True,  'xy_swap':True},  # Left   # Pacific
+                 {'x_inverted':False, 'y_inverted':False, 'xy_swap':False}, # Back   # America
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}, # Face   # Asia
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}, # Top    # Arctic
+                 {'x_inverted':True,  'y_inverted':True,  'xy_swap':False}  # Bottom # Antartic
              ]
-
-    def __init__(self, *args, **kwargs):
-        SquarePatchBase.__init__(self, *args, **kwargs)
-        self.inv_u = self.xy_params[self.face]['x_inverted']
-        self.inv_v = self.xy_params[self.face]['y_inverted']
-        self.swap_uv = self.xy_params[self.face]['xy_swap']
 
     def face_normal(self, x, y):
         (x, y) = self.calc_xy(x, y)
@@ -72,7 +66,10 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
                                               float(y + 1) / self.div,
-                                              offset=self.offset)
+                                              offset=self.offset,
+                                              inv_u=self.xy_params[self.face]['x_inverted'],
+                                              inv_v=self.xy_params[self.face]['y_inverted'],
+                                              swap_uv=self.xy_params[self.face]['xy_swap'])
 
     def calc_xy(self, x, y):
         if self.xy_params[self.face]['xy_swap']:

@@ -72,6 +72,7 @@ class ConfigParser(YamlParser):
         settings.show_ecliptic_grid = data.get('ecliptic-grid', settings.show_ecliptic_grid)
         settings.show_equatorial_grid = data.get('equatorial-grid', settings.show_equatorial_grid)
         settings.global_ambient = data.get('global-ambient', settings.global_ambient)
+        settings.lowest_app_magnitude = data.get('limit-magnitude', settings.lowest_app_magnitude)
 
     def encode_render(self):
         data = {}
@@ -85,26 +86,55 @@ class ConfigParser(YamlParser):
         data['rotation-axis'] = settings.show_rotation_axis
         data['reference-axis'] = settings.show_reference_axis
         data['global-ambient'] = settings.global_ambient
+        data['limit-magnitude'] = settings.lowest_app_magnitude
+        return data
+
+    def decode_ui_general(self, data):
+        settings.ui_scale = data.get('scale', settings.ui_scale)
+        settings.last_script_path = data.get('last-script-path', settings.last_script_path)
+        settings.ui_font_size = data.get('text-size', settings.ui_font_size)
+
+    def encode_ui_general(self):
+        data = {}
+        data['scale'] = list(settings.ui_scale)
+        data['last-script-path'] = settings.last_script_path
+        data['text-size'] = settings.ui_font_size
         return data
 
     def decode_ui_hud(self, data):
         settings.show_hud = data.get('visible', settings.show_hud)
         settings.hud_font = data.get('font', settings.hud_font)
         settings.hud_color = data.get('color', settings.hud_color)
+        settings.hud_text_size = data.get('text-size', settings.hud_text_size)
+        settings.hud_info_text_size = data.get('info-size', settings.hud_info_text_size)
 
     def encode_ui_hud(self):
         data = {}
         data['visible'] = settings.show_hud
         data['font'] = settings.hud_font
         data['color'] = list(settings.hud_color)
+        data['text-size'] = settings.hud_text_size
+        data['info-size'] = settings.hud_info_text_size
+        return data
+
+    def decode_ui_query(self, data):
+        settings.query_text_size = data.get('text-size', settings.query_text_size)
+        settings.query_suggestion_text_size = data.get('suggestion-text-size', settings.query_suggestion_text_size)
+
+    def encode_ui_query(self):
+        data = {}
+        data['text-size'] = settings.query_text_size
+        data['suggestion-text-size'] = settings.query_suggestion_text_size
         return data
 
     def decode_ui_menu(self, data):
         settings.show_menubar = data.get('visible', settings.show_menubar)
+        settings.menu_text_size = data.get('text-size', settings.menu_text_size)
 
     def encode_ui_menu(self):
         data = {}
         data['visible'] = settings.show_menubar
+        data['text-size'] = settings.menu_text_size
         return data
 
     def decode_ui_nav(self, data):
@@ -138,7 +168,9 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_ui(self, data):
+        self.decode_ui_general(data.get('general', {}))
         self.decode_ui_hud(data.get('hud', {}))
+        self.decode_ui_query(data.get('query', {}))
         self.decode_ui_menu(data.get('menu', {}))
         self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
@@ -146,7 +178,9 @@ class ConfigParser(YamlParser):
 
     def encode_ui(self):
         data = {}
+        data['general'] = self.encode_ui_general()
         data['hud'] = self.encode_ui_hud()
+        data['query'] = self.encode_ui_query()
         data['menu'] = self.encode_ui_menu()
         data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()
@@ -170,25 +204,39 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_opengl(self, data):
+        settings.sync_video = data.get('sync-video', settings.sync_video)
         settings.multisamples = data.get('multisamples', settings.multisamples)
+        settings.shader_normals_use_centroid = data.get('use-centroid', settings.shader_normals_use_centroid)
         settings.use_srgb = data.get('srgb', settings.use_srgb)
         settings.use_hardware_srgb = data.get('hw-srgb', settings.use_hardware_srgb)
         settings.use_hardware_tessellation = data.get('hw-tessellation', settings.use_hardware_tessellation)
         settings.use_hardware_instancing = data.get('hw-instancing', settings.use_hardware_instancing)
         settings.use_floating_point_buffer = data.get('hw-fp-buffer', settings.use_floating_point_buffer)
+        settings.use_texture_array = data.get('texture-array', settings.use_texture_array)
         settings.use_core_profile_mac = data.get('core-profile-mac', settings.use_core_profile_mac)
         settings.use_gl_version = data.get('gl-version', settings.use_gl_version)
+        settings.stereoscopic_framebuffer = data.get('framebuffer-stereo', settings.stereoscopic_framebuffer)
+        settings.red_blue_stereo = data.get('red-blue-stereo', settings.red_blue_stereo)
+        settings.side_by_side_stereo = data.get('side-by-side-stereo', settings.side_by_side_stereo)
+        settings.stereo_swap_eyes = data.get('swap-eyes', settings.stereo_swap_eyes)
 
     def encode_opengl(self):
         data = {}
+        data['sync-video'] = settings.sync_video
         data['multisamples'] = settings.multisamples
+        data['use-centroid'] = settings.shader_normals_use_centroid
         data['srgb'] = settings.use_srgb
         data['hw-srgb'] = settings.use_hardware_srgb
         data['hw-tessellation'] = settings.use_hardware_tessellation
         data['hw-instancing'] = settings.use_hardware_instancing
         data['hw-fp-buffer'] = settings.use_floating_point_buffer
+        data['texture-array'] = settings.use_texture_array
         data['core-profile-mac'] = settings.use_core_profile_mac
         data['gl-version'] = settings.use_gl_version
+        data['framebuffer-stereo'] = settings.stereoscopic_framebuffer
+        data['red-blue-stereo'] = settings.red_blue_stereo
+        data['side-by-side-stereo'] = settings.side_by_side_stereo
+        data['swap-eyes'] = settings.stereo_swap_eyes
         return data
 
     def decode_debug(self, data):
@@ -199,6 +247,21 @@ class ConfigParser(YamlParser):
         data = {}
         data['instant-jump'] = settings.debug_jump
         data['sync-load'] = settings.debug_sync_load
+        return data
+
+    def decode_screenshots(self, data):
+        settings.screenshot_path = data.get('path', settings.screenshot_path)
+        #TODO: improve data validation...
+        if settings.screenshot_path == '': settings.screenshot_path = '.'
+        settings.screenshot_filename = data.get('filename', settings.screenshot_filename)
+        settings.screenshot_format = data.get('format', settings.screenshot_format)
+
+    def encode_screenshots(self):
+        data = {}
+        if settings.screenshot_path is not None:
+            data['path'] = settings.screenshot_path
+        data['filename'] = settings.screenshot_filename
+        data['format'] = settings.screenshot_format
         return data
 
     def decode(self, data):
@@ -212,6 +275,7 @@ class ConfigParser(YamlParser):
         self.decode_win(data.get('win', {}))
         self.decode_opengl(data.get('opengl', {}))
         self.decode_debug(data.get('debug', {}))
+        self.decode_screenshots(data.get('screenshots', {}))
 
     def encode(self):
         data = {}
@@ -221,7 +285,7 @@ class ConfigParser(YamlParser):
         data['ui'] = self.encode_ui()
         data['win'] = self.encode_win()
         data['opengl'] = self.encode_opengl()
-        data['debug'] = self.encode_debug()
+        data['screenshots'] = self.encode_screenshots()
         return data
 
 configParser = ConfigParser(settings.config_file)

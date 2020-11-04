@@ -20,11 +20,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LColor
-
 from ..shaders import FlatLightingModel, LambertPhongLightingModel, OrenNayarPhongLightingModel, CustomShaderComponent
+from ..pbr import PbrLightingModel
+from ..shaders import TextureAppearance
 from ..celestia.shaders import LunarLambertLightingModel
-
+from .noiseparser import NoiseYamlParser
 from .yamlparser import YamlModuleParser
 
 class CustomShaderComponentYamlParser(YamlModuleParser):
@@ -42,6 +42,10 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         custom.model_normal = data.get('model-normal', False)
         custom.world_normal = data.get('world-normal', False)
         custom.use_tangent = data.get('use-tangent', False)
+        if data.get('update-vertex') is not None:
+            custom.has_vertex = True
+        if data.get('update-normal') is not None:
+            custom.has_normal = True
 
         custom.vertex_uniforms_data = [data.get('vertex-uniforms', '')]
         custom.vertex_inputs_data = [data.get('vertex-inputs', '')]
@@ -72,17 +76,41 @@ class LightingModelYamlParser(YamlModuleParser):
                 appearance.roughness = 0.9
         elif object_type == 'lunar-lambert':
             model = LunarLambertLightingModel()
+        elif object_type == 'pbr':
+            model = PbrLightingModel()
         elif object_type == 'flat':
             model = FlatLightingModel()
-            #TODO: This should be done a better way...
-            if appearance.emissionColor is None:
-                appearance.emissionColor = LColor(1, 1, 1, 1)
         elif object_type == 'custom':
             model = CustomShaderComponentYamlParser.decode(parameters)
         else:
             print("Lighting model type", object_type, "unknown")
             model = None
         return model
+
+class ShaderTextureAppearanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, appearance):
+            return TextureAppearance()
+
+class ShaderAppearanceYamlParser(YamlModuleParser):
+    parsers = {}
+    @classmethod
+    def register(cls, name, parser):
+        cls.parsers[name] = parser
+
+    @classmethod
+    def decode(cls, data, appearance):
+        (object_type, parameters) = cls.get_type_and_data(data, 'texture')
+        if object_type in cls.parsers:
+            parser = cls.parsers[object_type]
+            return parser.decode(parameters, appearance)
+            appearance = TextureAppearance()
+        else:
+            print("Shader appearance", object_type, "unknown")
+            appearance = None
+        return appearance
+
+ShaderAppearanceYamlParser.register('texture', ShaderTextureAppearanceYamlParser)
 
 class VertexControlYamlParser(YamlModuleParser):
     @classmethod

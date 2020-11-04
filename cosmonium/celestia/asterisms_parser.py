@@ -25,8 +25,8 @@ from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro import bayer
 from ..dircontext import defaultDirContext
-from ..support.ply import lex
-from ..support.ply import yacc
+from ply import lex
+from ply import yacc
 from .. import utils
 
 import sys

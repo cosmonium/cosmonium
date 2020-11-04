@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LQuaterniond, LVector3d
+from panda3d.core import LQuaterniond, LVector3d, LPoint3d
 
 from ..appstate import AppState
 from ..astro import units
@@ -243,11 +243,13 @@ class CelUrl(object):
         state.time_full = self.time
         state.multiplier = self.timescale
         state.running = not self.paused
-        state.global_position = LVector3d()
-        state.local_position = self.position
+        state.global_position = None
+        state.position = self.position
         state.orientation = self.orientation
         if self.version == 2:
             state.absolute = True
+        else:
+            state.absolute = False
         state.fov = self.fov
         state.render = self.render_flags
         state.labels = self.label_flags
@@ -272,7 +274,10 @@ class CelUrl(object):
         self.time = state.time_full
         self.timescale = state.multiplier
         self.paused = not state.running
-        self.position = state.global_position + state.local_position
+        if self.target is None:
+            self.position = state.global_position + state.position
+        else:
+            self.position = state.position
         self.orientation = state.orientation
         self.fov = state.fov
         self.render_flags = state.render
