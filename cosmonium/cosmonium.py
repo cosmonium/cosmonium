@@ -150,7 +150,7 @@ class CosmoniumBase(ShowBase):
         return gettext.translation(domain, locale, fallback=True)
 
     def init_lang(self):
-        self.translation = self.load_lang('cosmonium', 'locale')
+        self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
         self.translation.install()
 
     def panda_config(self):

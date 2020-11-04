@@ -40,6 +40,7 @@ class DirContext(object):
                                 'fonts': [],
                                 'shaders': [],
                                 'doc': [],
+                                'main': [],
                                 }
 
     def add_path(self, category, path):
