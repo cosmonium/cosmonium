@@ -20,13 +20,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import loadPrcFileData, Filename
+from panda3d.core import loadPrcFileData, Filename, get_model_path
 
 import sys
+import os
+
 if sys.version_info[0] >= 3:
     import gltf
 
-from .dircontext import defaultDirContext
+from .dircontext import defaultDirContext, main_dir
 from . import cache
 from . import settings
 
@@ -40,6 +42,7 @@ def init_mesh_loader():
         gltf.patch_loader(None)
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
+    get_model_path().prepend_directory(os.path.join(main_dir, 'models'))
 
 def load_model(pattern, callback=None, context=defaultDirContext):
     filename = context.find_model(pattern)
@@ -51,4 +54,4 @@ def load_model(pattern, callback=None, context=defaultDirContext):
         return None
 
 def load_panda_model(pattern, callback=None):
-    return loader.loadModel(Filename.from_os_specific(pattern).get_fullpath(), callback=callback)
+    return loader.loadModel(pattern, callback=callback)
