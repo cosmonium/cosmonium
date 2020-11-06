@@ -411,7 +411,7 @@ class FixedCameraController(CameraController):
         self.reference_rot = LQuaterniond()
 
     def get_name(self):
-        return 'Fixed camera'
+        return _('Fixed camera')
 
     def set_camera_hints(self, **kwargs):
         self.reference_pos = kwargs.get('position',  None)
@@ -447,7 +447,7 @@ class LookAroundCameraController(CameraController):
         self.reference_rot = LQuaterniond()
 
     def get_name(self):
-        return 'Look around camera'
+        return _('Look around camera')
 
     def set_camera_hints(self, **kwargs):
         self.reference_pos = kwargs.get('position',  self.reference_pos)
@@ -479,7 +479,7 @@ class FollowCameraController(CameraController):
         self.max_distance = 2.0
 
     def get_name(self):
-        return 'Follow camera'
+        return _('Follow camera')
 
     def set_camera_hints(self, **kwargs):
         self.distance = kwargs.get('distance', self.distance)
@@ -535,7 +535,7 @@ class SurfaceFollowCameraController(CameraController):
         self.reference_distance = self.min_distance
 
     def get_name(self):
-        return 'Follow camera'
+        return _('Follow camera')
 
     def set_camera_hints(self, **kwargs):
         self.distance = kwargs.get('distance', self.distance)
