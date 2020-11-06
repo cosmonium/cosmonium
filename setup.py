@@ -66,6 +66,7 @@ config = {
             'include_patterns': [
                 'shaders/**',
                 'data/**',
+                'models/**',
                 'doc/**',
                 'fonts/**',
                 'ralph-data/**',
