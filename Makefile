@@ -77,8 +77,20 @@ else
 	@mv -f source/*.so lib/
 endif
 
+update-pot:
+	@cd po && "$(MAKE)" update-pot
+
+update-po:
+	@cd po && "$(MAKE)" update-po
+
 update-mo:
 	@cd po && "$(MAKE)" update-mo
+
+update-data-pot:
+	@cd data/po && "$(MAKE)" update-pot
+
+update-data-po:
+	@cd data/po && "$(MAKE)" update-po
 
 update-data-mo:
 	@cd data/po && "$(MAKE)" update-mo
