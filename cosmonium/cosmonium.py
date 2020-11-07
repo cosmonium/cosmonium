@@ -149,25 +149,32 @@ class CosmoniumBase(ShowBase):
 
     def load_lang(self, domain, locale_path):
         languages = None
-        if sys.platform == 'darwin':
-            #TODO: This is a workaround until either Panda3D provides the locale to use
-            #or we switch to pyobjc.
-            #This should be moved to its own module
-            status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
-            if status == 0:
-                languages = [output]
-            else:
-                print("Could not retrieve default locale")
-        elif sys.platform == 'win32':
-            import ctypes
-            import locale
-            windll = ctypes.windll.kernel32
-            language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
-            if language is not None:
-                languages = [language]
-            else:
-                print("Could not retrieve default locale")
+        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            val = os.environ.get(envar)
+            if val:
+                languages = val.split(':')
+                break
+        if languages is None:
+            if sys.platform == 'darwin':
+                #TODO: This is a workaround until either Panda3D provides the locale to use
+                #or we switch to pyobjc.
+                #This should be moved to its own module
+                status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
+                if status == 0:
+                    languages = [output]
+                else:
+                    print("Could not retrieve default locale")
+            elif sys.platform == 'win32':
+                import ctypes
+                import locale
+                windll = ctypes.windll.kernel32
+                language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
+                if language is not None:
+                    languages = [language]
+                else:
+                    print("Could not retrieve default locale")
 
+        print("Found languages", ', '.join(languages))
         return gettext.translation(domain, locale_path, languages=languages, fallback=True)
 
     def init_lang(self):
