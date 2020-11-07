@@ -424,7 +424,9 @@ class AutoPilot(object):
         rot.setFromAxisAngleRad(rate * delta, axis)
         rot2 = self.ship._frame_rotation.conjugate() * rot * self.ship._frame_rotation
         rot2.normalize()
-        new_pos = rot2.conjugate().xform(relative_pos)
+        distance = relative_pos.length()
+        relative_pos.normalize()
+        new_pos = rot2.xform(relative_pos) * distance
         self.ship.set_frame_pos(new_pos + center)
         self.ship.turn(self.ship._frame_rotation * rot2, absolute=False)
 
