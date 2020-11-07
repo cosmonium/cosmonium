@@ -29,6 +29,7 @@ from .bigfix import Bigfix
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
+from ..bodyclass import bodyClasses
 from .. import settings
 
 from math import pi
@@ -303,7 +304,7 @@ def do_renderflags(base, set_flags, clear_flags):
         elif name == "constellations":
             settings.show_asterisms = value
         elif name == "galaxies":
-            pass
+            bodyClasses.set_show('galaxy', value)
         elif name == "globulars":
             pass
         elif name == "planets":
@@ -327,7 +328,7 @@ def do_renderflags(base, set_flags, clear_flags):
         elif name == "automag":
             pass
         elif name == "atmospheres":
-            pass
+            settings.show_atmospheres = value
         elif name == "grid" or name == "equatorialgrid":
             if value:
                 base.equatorial_grid.show()
@@ -361,7 +362,7 @@ def do_renderflags(base, set_flags, clear_flags):
         apply_setting(setting, True)
     for setting in clear_flags:
         apply_setting(setting, False)
-    base.trigger_check_settings = True
+    base.update_settings()
 
 def renderflags(command_name, sequence, base, parameters):
     """Parameters:
