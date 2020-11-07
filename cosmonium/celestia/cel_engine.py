@@ -102,19 +102,34 @@ A negative rate will move closer to the object, a positive rate moves farther ou
 def cls(command_name, sequence, base, parameters):
     pass
 
+
 def display(command_name, sequence, base, parameters):
     """Parameters:
 string text = ""
 Description:
 Show a line of text on the screen.
 """
+    origin_map = {
+        'bottomleft': base.a2dBottomLeft,
+        'bottom': base.a2dBottomCenter,
+        'bottomright': base.a2dBottomRight,
+        'left': base.a2dLeftCenter,
+        'center': base.aspect2d,
+        'right': base.a2dRightCenter,
+        'topleft': base.a2dTopLeft,
+        'top': base.a2dTopCenter,
+        'topright': base.a2dTopRight
+    }
     text = parameters.get('text', '')
     text = text.replace('\\n', '\n')
     origin = parameters.get('origin', 'bottomleft')
+    anchor = origin_map.get(origin, None)
     row = float(parameters.get('row', '0.0'))
     column = float(parameters.get('column', '0.0'))
-    duration = float(parameters.get('duration', '0.0'))
-    sequence.append(Func(base.gui.update_info, text, duration))
+    duration = float(parameters.get('duration', '1.0e6'))
+    color = (1, 1, 1, 1)
+    fade = 1.0
+    sequence.append(Func(base.gui.update_info, text, (column, row), color, anchor, duration, fade))
 
 def exit(command_name, sequence, base, parameters):
     """Description:

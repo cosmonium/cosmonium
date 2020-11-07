@@ -429,14 +429,14 @@ class Gui(object):
         if settings.screenshot_path is not None:
             self.cosmonium.save_screenshot()
         else:
-            self.update_info(_("Screenshot not saved"), 0.5, 1.0)
+            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.show_select_screenshots()
 
     def save_screenshot_no_annotation(self):
         if settings.screenshot_path is not None:
             self.cosmonium.save_screenshot_no_annotation()
         else:
-            self.update_info(_("Screenshot not saved"), 0.5, 1.0)
+            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.show_select_screenshots()
 
     def set_screenshots_path(self, path):
@@ -842,7 +842,7 @@ class Gui(object):
         date="%02d:%02d:%02d %2d:%02d:%02d UTC" % (years, months, days, hours, mins, secs)
         if selected is not None:
             names = utils.join_names(bayer.decode_names(selected.get_names()))
-            self.hud.title.set(names)
+            self.hud.title.set_text(names)
             radius = selected.get_apparent_radius()
             if selected.virtual_object or selected.distance_to_obs > 10 * radius:
                 self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.distance_to_obs, units.lengths_scale))
@@ -876,7 +876,7 @@ class Gui(object):
                 self.hud.topLeft.set(4, "")
                 self.hud.topLeft.set(5, "")
         else:
-            self.hud.title.set("")
+            self.hud.title.set_text("")
             self.hud.topLeft.set(0, "")
             self.hud.topLeft.set(1, "")
             self.hud.topLeft.set(2, "")
@@ -924,8 +924,8 @@ class Gui(object):
         #self.hud.bottomRight.set(1, "FOV: %.0f°/%.0f°" % (self.cosmonium.realCamLens.getHfov(), self.cosmonium.realCamLens.getVfov()))
         self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.realCamLens.getVfov()) + (self.camera.zoom_factor, )))
 
-    def update_info(self, text, duration=3.0, fade=1.0):
-        self.hud.info.set(text, duration, fade)
+    def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
+        self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
 
     def update_scale(self):
         self.hud.set_scale()
