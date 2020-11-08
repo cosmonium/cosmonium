@@ -28,8 +28,8 @@ class StellarSystem(StellarObject):
     virtual_object = True
     support_offset_body_center = False
 
-    def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
-        StellarObject.__init__(self, names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.children = []
         self.children_map = ObjectsDB()
         #Not used by StellarSystem, but used to detect SimpleSystem
@@ -257,8 +257,8 @@ class StellarSystem(StellarObject):
         return self.abs_magnitude
 
 class SimpleSystem(StellarSystem):
-    def __init__(self, names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
-        StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
+        StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.star_system = star_system
         self.set_primary(primary)
 

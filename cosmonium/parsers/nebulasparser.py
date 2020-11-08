@@ -31,7 +31,7 @@ from .surfacesparser import SurfaceYamlParser
 
 class NebulaYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', 'nebula')
         radius = data.get('radius')
@@ -44,7 +44,8 @@ class NebulaYamlParser(YamlModuleParser):
         else:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, data)
             surface = surfaces.pop(0)
-        nebula = EmissiveBody(name,
+        nebula = EmissiveBody(translated_names,
+                    source_names,
                     body_class=body_class,
                     abs_magnitude=abs_magnitude,
                     radius=radius,

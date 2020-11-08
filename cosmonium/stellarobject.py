@@ -108,8 +108,9 @@ class StellarObject(LabelledObject):
     nb_visibility = 0
     nb_instance = 0
 
-    def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         LabelledObject.__init__(self, names)
+        self.source_names = source_names
         self.description = description
         self.system = None
         self.body_class = body_class
@@ -296,8 +297,10 @@ class StellarObject(LabelledObject):
         for name in self.names:
             if name.upper() == name_up:
                 return True
-        else:
-            return False
+        for name in self.source_names:
+            if name.upper() == name_up:
+                return True
+        return False
 
     def set_selected(self, selected):
         self.selected = selected

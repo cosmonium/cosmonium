@@ -40,7 +40,6 @@ from .shaders import BasicShader, FlatLightingModel
 from . import settings
 
 from math import asin, pi
-from copy import deepcopy
 
 class ReferencePoint(StellarObject):
     virtual_object = True
@@ -53,13 +52,13 @@ class StellarBody(StellarObject):
     has_rotation_axis = True
     has_reference_axis = True
 
-    def __init__(self, names, radius, oblateness=None, scale=None,
+    def __init__(self, names, source_names, radius, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  atmosphere=None, ring=None, clouds=None,
                  body_class=None, point_color=None,
                  description=''):
-        StellarObject.__init__(self, names, orbit, rotation, body_class, point_color, description)
+        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.surface = None
         self.ring = ring
         self.clouds = clouds
@@ -409,7 +408,7 @@ class StarTexSurfaceFactory(SurfaceFactory):
         return FlatSurface('surface', shape=shape, appearance=appearance, shader=shader)
 
 class Star(EmissiveBody):
-    def __init__(self, names, radius=None, oblateness=None, scale=None,
+    def __init__(self, names, source_names, radius=None, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  abs_magnitude=None, temperature=None, spectral_type=None,
@@ -438,7 +437,8 @@ class Star(EmissiveBody):
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
         self._extend = radius #TODO: Optim for octree
-        EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness, scale=scale,
+        EmissiveBody.__init__(self, names=names, source_names=source_names,
+                              radius=radius, oblateness=oblateness, scale=scale,
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
@@ -453,14 +453,14 @@ class DeepSpaceObject(EmissiveBody):
     has_resolved_halo = False
     support_offset_body_center = False
 
-    def __init__(self, name, radius, radius_units=units.Ly,
+    def __init__(self, names, source_names, radius, radius_units=units.Ly,
                  abs_magnitude=None,
                  surface=None,
                  orbit=None, rotation=None,
                  body_class=None, point_color=None,
                  description=''):
         radius = radius * radius_units
-        EmissiveBody.__init__(self, name, radius,
+        EmissiveBody.__init__(self, names, source_names, radius,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,

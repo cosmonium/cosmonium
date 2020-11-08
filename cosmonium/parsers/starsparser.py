@@ -37,7 +37,7 @@ from .elementsparser import CloudsYamlParser, RingsYamlParser
 
 class StarYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = self.translate_names(data.get('name'))
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', 'star')
         radius = data.get('radius', None)
@@ -74,7 +74,8 @@ class StarYamlParser(YamlModuleParser):
             surfaces = []
         clouds = CloudsYamlParser.decode(data.get('clouds'), None)
         rings = RingsYamlParser.decode(data.get('rings'))
-        star = Star(name,
+        star = Star(translated_names,
+                    source_names=source_names,
                     body_class=body_class,
                     radius=radius,
                     oblateness=ellipticity,

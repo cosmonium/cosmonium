@@ -40,7 +40,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         self.body_class = body_class
 
     def decode(self, data):
-        name = self.translate_names(data.get('name'))
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         body_class = data.get('body-class', self.body_class)
         radius = data.get('radius', None)
@@ -74,7 +74,8 @@ class ReflectiveYamlParser(YamlModuleParser):
         frame = FrameYamlParser.decode(data.get('frame', None))
         orbit = OrbitYamlParser.decode(data.get('orbit'), frame)
         rotation = RotationYamlParser.decode(data.get('rotation'), frame)
-        body = ReflectiveBody(names=name,
+        body = ReflectiveBody(names=translated_names,
+                              source_names=source_names,
                               body_class=body_class,
                               radius=radius,
                               oblateness=ellipticity,

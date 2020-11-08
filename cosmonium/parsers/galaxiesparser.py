@@ -159,7 +159,7 @@ class GalaxyShapeYamlParser(YamlModuleParser):
 
 class GalaxyYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = self.translate_names(data.get('name'))
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         body_class = data.get('body-class', 'galaxy')
         radius = float(data.get('radius'))
         radius_units = DistanceUnitsYamlParser.decode(data.get('radius-units', 'Ly'))
@@ -169,7 +169,8 @@ class GalaxyYamlParser(YamlModuleParser):
         rotation = RotationYamlParser.decode(data.get('rotation'))
         appearance = GalaxyAppearanceYamlParser.decode(data)
         shape = GalaxyShapeYamlParser.decode(data, shape_type)
-        galaxy = Galaxy(name,
+        galaxy = Galaxy(translated_names,
+                    source_names=source_names,
                     body_class=body_class,
                     shape_type=shape_type,
                     shape=shape,
