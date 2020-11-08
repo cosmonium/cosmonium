@@ -170,7 +170,7 @@ def load(filename, context=defaultDirContext, debug=0):
     filepath = context.find_script(filename)
     if filepath is not None:
         print("Loading", filepath)
-        data = io.open(filepath, encoding='latin-1').read()
+        data = io.open(filepath, encoding='utf-8', errors='surrogateescape').read()
         struct = parse(data, debug)
         return struct
     else:
