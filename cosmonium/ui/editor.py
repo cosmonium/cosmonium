@@ -48,7 +48,8 @@ class ParamEditor():
         self.owner = owner
         self.scale = LVector2(*settings.ui_scale)
         self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
-        self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
+        border = round(self.font_size / 4.0)
+        self.borders = (round(self.font_size), 0, border, border)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
 
@@ -91,7 +92,6 @@ class ParamEditor():
             scaled_value = param.get_param_component(component, scale=True)
         else:
             scaled_value = param.get_param(scale=True)
-        hsizer = Sizer("horizontal")
         slider = DirectSlider(parent=frame,
                               scale=(self.font_size * 16, 1, self.font_size * 6),
                               value=scaled_value,
@@ -99,12 +99,10 @@ class ParamEditor():
                               suppressKeys=1,
                               command=self.do_update_slider
                               )
-        widget = SizerWidget(slider)
-        hsizer.add(widget, alignments=("expand", "center"), borders=self.borders)
-        widget = self.create_spin_entry(frame, param, slider, component)
-        hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
-        slider['extraArgs'] = [slider, widget.dgui_obj, param, component]
-        return hsizer
+        widget1 = SizerWidget(slider)
+        widget2 = self.create_spin_entry(frame, param, slider, component)
+        slider['extraArgs'] = [slider, widget2.dgui_obj, param, component]
+        return widget1, widget2
 
     def create_spin_entry(self, frame, param, slider=None, component=None):
         scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
@@ -134,10 +132,9 @@ class ParamEditor():
                               valueEntry_frameColor=settings.entry_background,
                               scale=scale3)
         widget = SizerWidget(entry)
-        return widget
+        return widget, (0, 0)
 
-    def add_parameter(self, frame, sizer, param):
-        hsizer = Sizer("horizontal")
+    def add_parameter(self, frame, hsizer, param):
         label = DirectLabel(parent=frame,
                             text=param.name,
                             textMayChange=True,
@@ -148,37 +145,45 @@ class ParamEditor():
         if param.param_type == UserParameter.TYPE_BOOL:
             widget = self.create_bool_entry(frame, param)
             hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+            hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_STRING:
             widget = self.create_text_entry(frame, param)
             hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+            hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_INT:
             if param.value_range is not None:
-                widget = self.create_slider_entry(frame, param)
+                widget1, widget2 = self.create_slider_entry(frame, param)
             else:
-                widget = self.create_spin_entry(frame, param)
-            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+                widget1, widget2 = self.create_spin_entry(frame, param)
+            hsizer.add(widget1, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget2, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_FLOAT:
             if param.value_range is not None:
-                widget = self.create_slider_entry(frame, param)
+                widget1, widget2 = self.create_slider_entry(frame, param)
             else:
-                widget = self.create_spin_entry(frame, param)
-            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+                widget1, widget2 = self.create_spin_entry(frame, param)
+            hsizer.add(widget1, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget2, alignments=("min", "center"), borders=self.borders)
         elif param.param_type == UserParameter.TYPE_VEC:
-            vsizer = Sizer("vertical")
+            borders = (0, 0, round(self.font_size / 4.0), round(self.font_size / 4.0))
+            vsizer1 = Sizer("vertical", gaps=(0, round(self.font_size * .25)))
+            vsizer2 = Sizer("vertical", gaps=(0, round(self.font_size * .25)))
             for component in range(param.nb_components):
-                widget = self.create_slider_entry(frame, param, component)
-                vsizer.add(widget, borders=self.borders)
-            hsizer.add(vsizer, borders=self.borders, alignments=("min", "center"))
+                widget1, widget2 = self.create_slider_entry(frame, param, component)
+                vsizer1.add(widget1, proportions=(0., 1.), alignments=("min", "center"), borders=borders)
+                vsizer2.add(widget2, borders=borders)
+            hsizer.add(vsizer1, proportions=(0., 1.), borders=self.borders)
+            hsizer.add(vsizer2, borders=self.borders)
         else:
             print("Unknown entry type", param.param_type)
-        sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
 
-    def add_parameters(self, frame, sizer, parameters):
+    def add_parameters(self, frame, sizer, parameters, hsizer=None):
         for param in parameters:
             if param is None: continue
             if param.is_group():
                 if param.is_empty(): continue
-                borders = (self.font_size / 2, 0, self.font_size / 4.0, self.font_size / 4.0)
+                border = round(self.font_size / 4.0)
+                borders = (round(self.font_size / 2), 0, border, border)
                 if param.name is not None:
                     label = DirectLabel(parent=frame,
                                         text=param.name,
@@ -187,9 +192,14 @@ class ParamEditor():
                                         text_align=TextNode.A_left)
                     widget = SizerWidget(label)
                     sizer.add(widget, borders=borders)
-                self.add_parameters(frame, sizer, param.parameters)
+                hsizer = Sizer("horizontal", prim_limit=3, gaps=(0, round(self.font_size * .75)))
+                sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
+                self.add_parameters(frame, sizer, param.parameters, hsizer)
             else:
-                self.add_parameter(frame, sizer, param)
+                if not hsizer:
+                    hsizer = Sizer("horizontal", prim_limit=3, gaps=(0, round(self.font_size * .75)))
+                    sizer.add(hsizer, proportions=(1., 0.), borders=self.borders)
+                self.add_parameter(frame, hsizer, param)
 
     def create_layout(self, group):
         scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
