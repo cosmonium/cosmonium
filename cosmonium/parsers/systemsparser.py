@@ -31,12 +31,12 @@ from .rotationsparser import RotationYamlParser
 
 class SystemYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = self.translate_names(data.get('name'))
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         star_system = data.get('star-system', False)
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))
-        system = SimpleSystem(name, star_system=star_system, orbit=orbit, rotation=rotation)
+        system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
         children = data.get('children', [])
         children = ObjectYamlParser.decode(children)
         for child in children:
@@ -56,11 +56,11 @@ class SystemYamlParser(YamlModuleParser):
 
 class BarycenterYamlParser(YamlModuleParser):
     def decode(self, data):
-        name = self.translate_names(data.get('name'))
+        (translated_names, source_names) = self.translate_names(data.get('name'))
         parent_name = data.get('parent')
         orbit = OrbitYamlParser.decode(data.get('orbit'))
         rotation = RotationYamlParser.decode(data.get('rotation'))
-        system = Barycenter(name, orbit=orbit, rotation=rotation)
+        system = Barycenter(translated_names, source_names, orbit=orbit, rotation=rotation)
         for child in data.get('children', []):
             if child is None: continue
             body = ObjectYamlParser.decode_object_dict(child)

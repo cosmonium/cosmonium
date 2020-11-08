@@ -127,12 +127,23 @@ class YamlModuleParser(YamlParser):
 
     @classmethod
     def translate_names(cls, names, context=None):
+        translated_names = []
+        source_names = []
         if not isinstance(names, list):
             names = [names]
         if context is not None:
-            return list(map(lambda x: cls.translation.pgettext(context, x), names))
+            for name in names:
+                translated = cls.translation.pgettext(context, name)
+                translated_names.append(translated)
+                if translated != name:
+                    source_names.append(name)
         else:
-            return list(map(lambda x: cls.translation.gettext(x), names))
+            for name in names:
+                translated = cls.translation.gettext(name)
+                translated_names.append(translated)
+                if translated != name:
+                    source_names.append(name)
+        return (translated_names, source_names)
 
     def create_new_context(self, old_context, filepath):
         new_context = DirContext(old_context)

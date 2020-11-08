@@ -78,6 +78,11 @@ class BaseObject(object):
             if name.upper() == text:
                 result = name
                 break
+        else:
+            for name in self.source_names:
+                if name.upper() == text:
+                    result = name
+                    break
         return result
 
     def get_user_parameters(self):

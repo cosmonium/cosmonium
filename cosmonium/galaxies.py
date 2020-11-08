@@ -50,7 +50,7 @@ class Galaxy(DeepSpaceObject):
     has_resolved_halo = False
     support_offset_body_center = False
 
-    def __init__(self, name, radius=None, radius_units=units.Ly, 
+    def __init__(self, names, source_names, radius=None, radius_units=units.Ly,
                  abs_magnitude=None,
                  shape_type=None,
                  shape=None,
@@ -67,7 +67,7 @@ class Galaxy(DeepSpaceObject):
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = FlatSurface(shape=shape, appearance=appearance, shader=shader)
-        DeepSpaceObject.__init__(self, name, radius, radius_units,
+        DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude, body_class=body_class)
