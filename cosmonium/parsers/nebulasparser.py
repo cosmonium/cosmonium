@@ -28,16 +28,19 @@ from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .surfacesparser import SurfaceYamlParser
+from .utilsparser import check_parent
 
 class NebulaYamlParser(YamlModuleParser):
-    def decode(self, data):
-        (translated_names, source_names) = self.translate_names(data.get('name'))
+    def decode(self, data, parent=None):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
+        parent, explicit_parent = check_parent(name, parent, parent_name)
         body_class = data.get('body-class', 'nebula')
         radius = data.get('radius')
         abs_magnitude = data.get('magnitude')
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         if data.get('surfaces') is None:
             surfaces = []
             surface = SurfaceYamlParser.decode_surface(data, None, {}, data)
@@ -55,12 +58,9 @@ class NebulaYamlParser(YamlModuleParser):
         nebula.has_resolved_halo = False
         for surface in surfaces:
             nebula.add_surface(surface)
+        if explicit_parent:
+            parent.add_child_fast(nebula)
         if parent_name is not None:
-            parent = objectsDB.get(parent_name)
-            if parent is not None:
-                parent.add_child_fast(nebula)
-            else:
-                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
             return None
         else:
             return nebula

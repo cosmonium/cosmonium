@@ -182,7 +182,7 @@ class YamlModuleParser(YamlParser):
         except IOError as e:
             print("Could not write cache for", filename, cache_file, ':', e)
 
-    def load_and_parse(self, filename, context=None):
+    def load_and_parse(self, filename, parent=None, context=None):
         data = None
         if context is None:
             context = YamlModuleParser.context
@@ -203,7 +203,10 @@ class YamlModuleParser(YamlParser):
                 if settings.cache_yaml and data is not None:
                     self.store_to_cache(data, filename, filepath)
             if data is not None:
-                data = self.decode(data)
+                if parent is not None:
+                    data = self.decode(data, parent)
+                else:
+                    data =self.decode(data)
             YamlModuleParser.context = saved_context
         else:
             print("Could not find", filename)

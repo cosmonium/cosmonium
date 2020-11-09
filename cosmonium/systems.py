@@ -308,6 +308,9 @@ class SimpleSystem(StellarSystem):
     def get_label_text(self):
         return self.primary.get_label_text()
 
+    def get_normals_under_xy(self, x, y):
+        return self.primary.get_normals_under_xy(x, y)
+
     def get_abs_magnitude(self):
         if self.star_system:
             return StellarSystem.get_abs_magnitude(self)

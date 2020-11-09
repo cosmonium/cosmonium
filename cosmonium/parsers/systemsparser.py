@@ -22,55 +22,52 @@ from __future__ import absolute_import
 
 from ..systems import SimpleSystem, Barycenter
 from ..bodies import Star
-from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
+from .utilsparser import check_parent
 
 class SystemYamlParser(YamlModuleParser):
-    def decode(self, data):
-        (translated_names, source_names) = self.translate_names(data.get('name'))
+    def decode(self, data, parent=None):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
         star_system = data.get('star-system', False)
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        parent, explicit_parent = check_parent(name, parent, parent_name)
+        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
         children = data.get('children', [])
-        children = ObjectYamlParser.decode(children)
+        children = ObjectYamlParser.decode(children, system)
         for child in children:
             if isinstance(child, Star):
                 system.add_child_star_fast(child)
             else:
                 system.add_child_fast(child)
-        if parent_name is not None:
-            parent = objectsDB.get(parent_name)
-            if parent is not None:
-                parent.add_child_fast(system)
-            else:
-                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
+            system.add_child_fast(child)
+        if explicit_parent:
+            parent.add_child_fast(system)
             return None
         else:
             return system
 
 class BarycenterYamlParser(YamlModuleParser):
-    def decode(self, data):
-        (translated_names, source_names) = self.translate_names(data.get('name'))
+    def decode(self, data, parent=None):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        parent, explicit_parent = check_parent(name, parent, parent_name)
+        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = Barycenter(translated_names, source_names, orbit=orbit, rotation=rotation)
-        for child in data.get('children', []):
-            if child is None: continue
-            body = ObjectYamlParser.decode_object_dict(child)
-            system.add_child_fast(body)
-        if parent_name is not None:
-            parent = objectsDB.get(parent_name)
-            if parent is not None:
-                parent.add_child_fast(system)
-            else:
-                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
+        children = data.get('children', [])
+        children = ObjectYamlParser.decode(children, system)
+        for child in children:
+            system.add_child_fast(child)
+        if explicit_parent:
+            parent.add_child_fast(system)
             return None
         else:
             return system

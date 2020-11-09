@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
 from . import units
 from math import pi
+from copy import copy
 
 # Coordinate System
 # Panda3D Coordinate system : Z-Up Right-handed
@@ -53,8 +54,6 @@ class ReferenceFrame(object):
         return relative_orien * self.get_orientation()
     def get_rel_orientation(self, absolute_orien):
         return absolute_orien * self.get_orientation().conjugate()
-    def set_parent_body(self, body):
-        raise Exception
     def __str__(self):
         raise Exception
 
@@ -79,17 +78,15 @@ class AbsoluteReferenceFrame(ReferenceFrame):
 class BodyReferenceFrame(ReferenceFrame):
     def __init__(self, body = None):
         self.body = body
-        self.explicit_body = body is not None
 
-    def set_parent_body(self, body):
-        if not self.explicit_body:
-            self.body = body
+    def set_body(self, body):
+        self.body = body
 
     def get_center(self):
         return self.body.get_local_position()
 
     def __str__(self):
-        return self.__class__.__name__ + '(' + self.body.get_name() +', ' + str(self.explicit_body) + ')'
+        return self.__class__.__name__ + '(' + self.body.get_name() + ')'
 
 class J2000EclipticReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
@@ -173,15 +170,10 @@ class SynchroneReferenceFrame(RelativeReferenceFrame):
         return rot
 
 class SurfaceReferenceFrame(RelativeReferenceFrame):
-    def __init__(self, long, lat):
-        RelativeReferenceFrame.__init__(self)
+    def __init__(self, body, long, lat):
+        RelativeReferenceFrame.__init__(self, body)
         self.long = long
         self.lat = lat
-
-    def set_parent_body(self, body):
-        self.body = body
-        if self.body.primary is not None:
-            self.body = self.body.primary
 
     def get_center(self):
         return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
@@ -205,14 +197,9 @@ class SurfaceReferenceFrame(RelativeReferenceFrame):
         return rotation
 
 class CartesianSurfaceReferenceFrame(RelativeReferenceFrame):
-    def __init__(self, position):
-        RelativeReferenceFrame.__init__(self)
+    def __init__(self, body, position):
+        RelativeReferenceFrame.__init__(self, body)
         self.position = position
-
-    def set_parent_body(self, body):
-        self.body = body
-        if self.body.primary is not None:
-            self.body = self.body.primary
 
     def get_center(self):
         return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
@@ -243,7 +230,7 @@ class FramesDB(object):
 
     def get(self, name):
         if name in self.frames:
-            return self.frames[name]
+            return copy(self.frames[name])
         else:
             print("DB frames:", "Frame", name, "not found")
 

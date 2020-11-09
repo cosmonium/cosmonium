@@ -33,7 +33,7 @@ import re
 
 class ConstellationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, parent=None):
         constellation = None
         name = cls.translate_name(data.get('name'), context='constellation')
         genitive = data.get('genitive')
@@ -51,6 +51,10 @@ class ConstellationYamlParser(YamlModuleParser):
         boundaries = boundariesparser.load(boundaries, cls.context)
         if boundaries is not None:
             constellation = Constellation(name, center, list(boundaries.values())[0])
-        return constellation
+        if parent is not None:
+            parent.add_component(constellation)
+            return None
+        else:
+            return constellation
 
 ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser())

@@ -28,7 +28,7 @@ from .objectparser import ObjectYamlParser
 
 class AsterismYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, parent=None):
         name = data.get('name', "dummy")
         text_segments = data.get('segments', [])
         segments = []
@@ -45,6 +45,10 @@ class AsterismYamlParser(YamlModuleParser):
             segments.append(segment)
         asterism = Asterism(name)
         asterism.set_segments_list(segments)
-        return asterism
+        if parent is not None:
+            parent.add_component(asterism)
+            return None
+        else:
+            return asterism
 
 ObjectYamlParser.register_object_parser('asterism', AsterismYamlParser())
