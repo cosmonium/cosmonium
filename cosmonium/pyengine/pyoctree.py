@@ -178,17 +178,42 @@ class VisibleObjectsTraverser(object):
         else:
             faintest = 99.0
         for leaf in leaves:
-            abs_magnitude = leaf.get_abs_magnitude()
+            anchor = leaf.anchor
+            abs_magnitude = anchor._abs_magnitude
             add = False
             if abs_magnitude < faintest:
-                direction = leaf._global_position - frustum_position
+                direction = anchor._global_position - frustum_position
                 distance = direction.length()
                 if distance > 0.0:
                     app_magnitude = abs_to_app_mag(abs_magnitude, distance)
                     if app_magnitude < self.limit:
-                        add = self.frustum.is_sphere_in(leaf._global_position, leaf._extend)
+                        add = self.frustum.is_sphere_in(anchor._global_position, leaf._extend)
                 else:
                     add = True
             if add:
                 self.collected_leaves.append(leaf)
                 leaf.update_id = self.update_id
+
+    def update_pos_and_visibility(self, camera_global_pos, camera_position, pixel_size, min_body_size):
+        for leaf in self.collected_leaves:
+            anchor = leaf.anchor
+            global_delta = anchor._global_position - camera_global_pos
+            local_delta = anchor._local_position - camera_position
+            rel_position = global_delta + local_delta
+            distance_to_obs = rel_position.length()
+            vector_to_obs = -rel_position / distance_to_obs
+            leaf.vector_to_obs = vector_to_obs
+            leaf.distance_to_obs = distance_to_obs
+            leaf.rel_position = rel_position
+            if distance_to_obs > 0.0:
+                visible_size = leaf._extend / (distance_to_obs * pixel_size)
+            else:
+                visible_size = 0.0
+            leaf.visible = True
+            leaf.resolved = visible_size > min_body_size
+            leaf.visible_size = visible_size
+            leaf._app_magnitude = leaf.get_app_magnitude()
+
+    def update_scene_info(self, midPlane, scale):
+        for leaf in self.to_update:
+            leaf.anchor.update_scene()

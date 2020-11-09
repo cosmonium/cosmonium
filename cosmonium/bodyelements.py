@@ -133,7 +133,7 @@ class Atmosphere(ShapeObject):
                 self.remove_scattering_on(shape_object)
 
     def get_pixel_height(self):
-        return self.parent.visible_size * (self.ratio - 1.0)
+        return self.parent.anchor.visible_size * (self.ratio - 1.0)
 
     def check_visibility(self, frustum, pixel_size):
         ShapeObject.check_visibility(self, frustum, pixel_size)
@@ -154,7 +154,7 @@ class Atmosphere(ShapeObject):
 
     def update_obs(self, observer):
         ShapeObject.update_obs(self, observer)
-        inside = self.owner.distance_to_obs < self.radius
+        inside = self.owner.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             self.inside = inside
             self.update_shader_params()
@@ -220,7 +220,7 @@ class Clouds(FlatSurface):
         self.set_shown(settings.show_clouds)
 
     def update_instance(self, camera_pos, camera_rot):
-        inside = self.parent.distance_to_obs < self.radius
+        inside = self.parent.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))

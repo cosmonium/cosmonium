@@ -175,7 +175,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         #So the near plane is 0 to coincide with the boundary of the object
         self.shadow_caster.get_lens().setNear(0)
         self.shadow_caster.get_lens().setFar(radius*2)
-        self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.body.vector_to_star), LVector3.up())
+        self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.body.anchor.vector_to_star), LVector3.up())
 
 class PandaShadowCaster(ShadowMapShadowCaster):
     def create_camera(self):

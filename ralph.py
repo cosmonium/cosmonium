@@ -408,8 +408,8 @@ class RalphShip(ActorShip):
             self.ship_object.shape.pose("walk", 5)
         self.current_state = new_state
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
-        ActorShip.check_and_update_instance(self, camera_pos, camera_rot, pointset)
+    def check_and_update_instance(self, camera_pos, camera_rot):
+        ActorShip.check_and_update_instance(self, camera_pos, camera_rot)
         if self.enable_physics and self.physics_instance is None:
             bounds = self.instance.get_tight_bounds()
             dims = bounds[1] - bounds[0]

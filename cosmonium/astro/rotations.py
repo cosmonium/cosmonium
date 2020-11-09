@@ -224,7 +224,7 @@ class SynchronousRotation(FixedRotation):
         return group
 
     def get_frame_rotation_at(self, time):
-        angle = (time - self.epoch) * self.body.orbit.get_mean_motion() + self.meridian_angle
+        angle = (time - self.epoch) * self.body.anchor.orbit.get_mean_motion() + self.meridian_angle
         local = LQuaterniond()
         local.setFromAxisAngleRad(angle, LVector3d.unitZ())
         rotation = local * self.get_frame_equatorial_orientation_at(time)

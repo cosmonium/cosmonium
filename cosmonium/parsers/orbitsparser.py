@@ -31,6 +31,8 @@ from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser, AngleSpeedUnitsYamlParser
 from .framesparser import FrameYamlParser
+from copy import deepcopy
+from cosmonium.astro.frame import J2000HeliocentricEclipticReferenceFrame
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod

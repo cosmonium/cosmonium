@@ -20,9 +20,20 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from panda3d.core import LPoint3d, LColor
+
 from .stellarobject import StellarObject
 from .catalogs import ObjectsDB, objectsDB
-from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
+from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, app_to_abs_mag
+from .foundation import CompositeObject
+from .octree import OctreeNode, OctreeLeaf, VisibleObjectsTraverser, hasOctreeLeaf
+from .pstats import pstat
+from .astro import units
+
+from . import settings
+
+from math import sqrt
+from time import time
 
 class StellarSystem(StellarObject):
     virtual_object = True
@@ -35,7 +46,7 @@ class StellarSystem(StellarObject):
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
-        self.was_visible = True
+        self.was_visible = False
         self.abs_magnitude = None
 
     def is_system(self):
@@ -108,8 +119,8 @@ class StellarSystem(StellarObject):
             if isinstance(child, StellarSystem):
                 (distance, body) = child.find_closest(distance, body)
             else:
-                if child.distance_to_obs is not None and (distance is None or child.distance_to_obs - child._height_under < distance):
-                    distance = child.distance_to_obs - child._height_under
+                if child.anchor.distance_to_obs is not None and (distance is None or child.anchor.distance_to_obs - child.anchor._height_under < distance):
+                    distance = child.anchor.distance_to_obs - child.anchor._height_under
                     body = child
         return (distance, body)
 
@@ -150,6 +161,7 @@ class StellarSystem(StellarObject):
             orbit_size = child.orbit.get_apparent_radius()
             if orbit_size > self._extend:
                 self._extend = orbit_size
+                self.anchor._extend = self._extend
         #TODO: Calc consolidated abs magnitude here
 
     def remove_child_fast(self, child):
@@ -167,11 +179,12 @@ class StellarSystem(StellarObject):
         extend = 0.0
         for child in self.children:
             size = child.get_extend()
-            if child.orbit is not None:
-                size += child.orbit.get_apparent_radius()
+            if child.anchor.orbit is not None:
+                size += child.anchor.orbit.get_apparent_radius()
             if size > extend:
                 extend = size
         self._extend = extend
+        self.anchor._extend = self._extend
 
     def recalc_recursive(self):
         for child in self.children:
@@ -184,51 +197,46 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.set_star(star)
 
-    def first_update(self, time):
-        StellarObject.update(self, time, 0)
-        for child in self.children:
-            child.first_update(time)
-
-    def update(self, time, dt):
-        StellarObject.update(self, time, dt)
+    @pstat
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        StellarObject.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
         #No need to update the children if not visible
-        if not self.visible or not self.resolved: return
+        if not self.anchor.visible or not self.anchor.resolved: return
         for child in self.children:
-            child.update(time, dt)
+            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
-    def first_update_obs(self, observer):
-        StellarObject.update_obs(self, observer)
-        for child in self.children:
-            child.first_update_obs(observer)
+    def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        StellarObject.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
-    def update_obs(self, observer):
-        StellarObject.update_obs(self, observer)
-        #No need to check the children if not visible
-        if not self.visible or not self.resolved: return
+    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         for child in self.children:
-            child.update_obs(observer)
-
-    def check_visibility(self, frustum, pixel_size):
-        self.was_visible = self.visible and self.resolved
-        StellarObject.check_visibility(self, frustum, pixel_size)
-        #No need to check the children if not visible
-        if (not self.visible or not self.resolved) and not self.was_visible: return
-        for child in self.children:
-            child.check_visibility(frustum, pixel_size)
+            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def check_settings(self):
         StellarObject.check_settings(self)
         #No need to check the children if not visible
-        if not self.visible or not self.resolved: return
+        if not self.anchor.visible or not self.anchor.resolved: return
         for child in self.children:
             child.check_settings()
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
-        StellarObject.check_and_update_instance(self, camera_pos, camera_rot, pointset)
-        #No need to check the children if not visible
-        if (not self.visible or not self.resolved) and not self.was_visible: return
+    @pstat
+    def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
+        if not self.anchor.visible or not self.anchor.resolved: return
+        pixel_size = observer.pixel_size
+        camera_position = observer._position
         for child in self.children:
-            child.check_and_update_instance(camera_pos, camera_rot, pointset)
+            child.anchor.update_scene(camera_position)
+            if child.has_orbit and child.anchor.orbit.dynamic and child.anchor.orbit.get_apparent_radius() / (child.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
+                orbits_renderer.add_orbit(child)
+            if child.anchor.visible:
+                points_renderer.add_point(child.anchor.point_color, child.anchor.scene_position, child.anchor.visible_size, child.anchor._app_magnitude, child.oid_color)
+                if child.has_resolved_halo:
+                    points_renderer.add_halo(child.anchor.point_color, child.anchor.scene_position, child.anchor.visible_size, child.anchor._app_magnitude, child.oid_color)
+                if child.anchor.resolved:
+                    if not child.virtual_object:
+                        resolved_renderer.add_body(child)
+                    child.update_scene_and_render(observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer)
+            labels_renderer.add_label(child)
 
     def remove_components(self):
         StellarObject.remove_components(self)
@@ -256,6 +264,135 @@ class StellarSystem(StellarObject):
                 self.abs_magnitude = 99.0
         return self.abs_magnitude
 
+class OctreeSystem(StellarSystem):
+    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+        StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+        #TODO: Size and magnitude should not be hardcoded
+        self.octree_width = 100000.0 * units.Ly
+        abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
+        #TODO: position should be extracted from orbit
+        self.octree = OctreeNode(0,
+                             LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
+                             self.octree_width,
+                             abs_mag)
+        self.update_id = 0
+        self.previous_leaves = []
+        self.to_update_leaves = []
+        self.to_update = []
+        self.to_remove = []
+        self.nb_cells = 0
+        self.nb_leaves = 0
+        self.nb_leaves_in_cells = 0
+        self.dump_octree = False
+        self.dump_octree_stats = False
+
+    def dumpOctree(self):
+        self.octree.dump_octree()
+
+    def log_octree(self):
+        self.dump_octree = True
+
+    def dumpOctreeStats(self):
+        self.dump_octree_stats = not self.dump_octree_stats
+
+    def create_octree(self):
+        print("Creating octree...")
+        start = time()
+        for child in self.children:
+            self.octree.add(OctreeLeaf(child, child.get_global_position(), child.get_abs_magnitude(), child.get_extend(), child.anchor.point_color))
+        end = time()
+        print("Creation time:", end - start)
+
+    @pstat
+    def build_octree_cells_list(self, observer, limit):
+        self.update_id += 1
+        self.previous_leaves = self.to_update
+        self.traverser = VisibleObjectsTraverser(observer.frustum, limit, self.update_id)
+        self.octree.traverse(self.traverser)
+        self.to_update_leaves = self.traverser.get_leaves()
+        self.to_remove = []
+        self.resolved = []
+        if hasOctreeLeaf:
+            self.to_update = []
+            for leaf in self.to_update_leaves:
+                obj = leaf.get_object()
+                self.to_update.append(obj)
+                obj.update_id = leaf.get_update_id()
+        else:
+            self.to_update = self.to_update_leaves
+        for old in self.previous_leaves:
+            if old.update_id != self.update_id:
+                self.to_remove.append(old)
+
+    def update_pos_and_visibility(self, observer):
+        pixel_size = observer.pixel_size
+        camera_global_pos = observer.camera_global_pos
+        camera_position = observer._position
+        self.traverser.update_pos_and_visibility(camera_global_pos, camera_position, pixel_size, settings.min_body_size)
+        if hasOctreeLeaf:
+            for leaf in self.to_update_leaves:
+                obj = leaf.get_object().anchor
+                obj.vector_to_obs = leaf.vector_to_obs
+                obj.distance_to_obs = leaf.distance_to_obs
+                obj.rel_position = leaf.rel_position
+                obj._app_magnitude = leaf.app_magnitude
+                obj.visible = leaf.visible
+                obj.resolved = leaf.resolved
+                obj.visible_size = leaf.visible_size
+
+    def get_nearest_system(self):
+        nearest_system = None
+        nearest_system_distance = float('inf')
+        for leaf in self.to_update:
+            if leaf.anchor.distance_to_obs < nearest_system_distance:
+                nearest_system = leaf
+                nearest_system_distance = leaf.anchor.distance_to_obs
+        return nearest_system
+
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        CompositeObject.update(self, time, 0) #TODO: Add dt !
+        CompositeObject.update_obs(self, observer)
+        CompositeObject.check_visibility(self, frustum, pixel_size)
+        self.build_octree_cells_list(observer, settings.lowest_app_magnitude)
+        self.update_pos_and_visibility(observer)
+        for leaf in self.to_update:
+            if isinstance(leaf, StellarSystem) and leaf.anchor.resolved:
+                leaf.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+            elif not leaf.anchor.update_frozen:
+                leaf.update_and_update_observer_simple(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def check_settings(self):
+        CompositeObject.check_settings(self)
+        for leaf in self.to_update:
+            leaf.check_settings()
+        for component in self.components:
+            component.check_settings()
+
+    def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
+        self.traverser.update_scene_info(observer.midPlane, settings.scale)
+        pixel_size = observer.pixel_size
+        camera_position = observer._position
+        if hasOctreeLeaf:
+            for leaf in self.to_update_leaves:
+                obj = leaf.get_object().anchor
+                obj.scene_position = leaf.scene_position
+                obj.scene_distance = leaf.scene_distance
+                obj.scene_scale_factor = leaf.scene_scale_factor
+                obj.scene_orientation = leaf.scene_orientation
+        for leaf in self.to_update:
+            points_renderer.add_point(leaf.anchor.point_color, leaf.anchor.scene_position, leaf.anchor.visible_size, leaf.anchor._app_magnitude, leaf.oid_color)
+            if leaf.has_resolved_halo:
+                points_renderer.add_halo(leaf.anchor.point_color, leaf.anchor.scene_position, leaf.anchor.visible_size, leaf.anchor._app_magnitude, leaf.oid_color)
+            if leaf.has_orbit and leaf.anchor.orbit.dynamic and leaf.anchor.orbit.get_apparent_radius() / (leaf.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
+                orbits_renderer.add_orbit(leaf)
+            if leaf.anchor.resolved:
+                self.resolved.append(leaf)
+                if not leaf.virtual_object:
+                    leaf.anchor.update_scene(camera_position)
+                    resolved_renderer.add_body(leaf)
+                leaf.update_scene_and_render(observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer)
+            labels_renderer.add_label(leaf)
+
 class SimpleSystem(StellarSystem):
     def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
@@ -272,7 +409,7 @@ class SimpleSystem(StellarSystem):
             self.body_class = primary.body_class
             if not self.star_system:
                 self.abs_magnitude = self.primary.get_abs_magnitude()
-            self.point_color = primary.point_color
+            self.anchor.point_color = primary.anchor.point_color
 
     def add_child(self, child):
         StellarSystem.add_child(self, child)
@@ -329,21 +466,22 @@ class SimpleSystem(StellarSystem):
     def add_shadow_target(self, target):
         self.primary.add_shadow_target(target)
 
-    def update(self, time, dt):
-        if not self.visible or not self.resolved:
-            StellarSystem.update(self, time, dt)
-            self.primary.update(time, dt)
+    @pstat
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        if not self.anchor.visible or not self.anchor.resolved:
+            StellarSystem.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+            self.primary.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
             return
         primary = self.primary
         for child in self.children:
             child.start_shadows_update()
-        StellarSystem.update(self, time, dt)
+        StellarSystem.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
         if primary is not None and not primary.is_emissive():
-            check_primary = primary.visible and primary.resolved and primary.in_view
+            check_primary = primary.anchor.visible and primary.anchor.resolved
             for child in self.children:
                 if child == primary: continue
-                if child.visible and child.resolved and child.in_view:
-                    if primary.atmosphere is not None and primary.init_components and (child._local_position - self.primary._local_position).length() < primary.atmosphere.radius:
+                if child.anchor.visible and child.anchor.resolved:
+                    if primary.atmosphere is not None and primary.init_components and (child.anchor._local_position - self.primary.anchor._local_position).length() < primary.atmosphere.radius:
                         primary.atmosphere.add_shape_object(child.surface)
                     if primary.check_cast_shadow_on(child):
                         #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())

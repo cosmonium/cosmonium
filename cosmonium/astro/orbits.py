@@ -25,7 +25,7 @@ from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
 
 from . import units
-from .frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from .frame import J2000EquatorialReferenceFrame
 from .kepler import kepler_pos
 from .astro import calc_orientation
 
@@ -33,9 +33,7 @@ from math import pi, asin, atan2
 
 class Orbit(object):
     dynamic = False
-    def __init__(self, frame=None):
-        if frame is None:
-            frame = J2000EclipticReferenceFrame()
+    def __init__(self, frame):
         self.frame = frame
         self.origin = LPoint3d()
         self.body = None

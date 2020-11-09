@@ -94,13 +94,13 @@ class GalaxyAppearance(AppearanceBase):
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             if shape.is_flat():
-                axis = owner.scene_orientation.xform(LVector3d.up())
-                cosa = abs(axis.dot(owner.vector_to_obs))
+                axis = owner.anchor.scene_orientation.xform(LVector3d.up())
+                cosa = abs(axis.dot(owner.anchor.vector_to_obs))
                 coef = max(self.min_coef, sqrt(cosa))
             else:
                 coef = 1.0
             scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
-            size = owner.get_apparent_radius() / owner.distance_to_obs
+            size = owner.get_apparent_radius() / owner.anchor.distance_to_obs
             if size > 1.0:
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
@@ -592,4 +592,4 @@ class GalaxyPointControl(PointControl):
         shape.instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
 
     def update_shader_shape(self, shape, appearance):
-        shape.instance.setShaderInput("scale_factor", shape.owner.scene_scale_factor)
+        shape.instance.setShaderInput("scale_factor", shape.owner.anchor.scene_scale_factor)

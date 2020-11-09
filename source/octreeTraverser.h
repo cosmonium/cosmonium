@@ -49,6 +49,9 @@ PUBLISHED:
 
   MAKE_SEQ(get_leaves, get_num_leaves, get_leaf);
 
+  void update_pos_and_visibility(LPoint3d camera_global_pos, LPoint3d camera_position, double pixel_size, double min_body_size);
+  void update_scene_info(double midPlane, double scale);
+
 public:
   virtual bool enter(OctreeNode const &octree) const;
   virtual void traverse(OctreeNode &octree, std::vector<PT(OctreeLeaf)> &leaves);

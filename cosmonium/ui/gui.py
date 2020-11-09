@@ -173,6 +173,7 @@ class Gui(object):
         event_ctrl.accept('f11', render.ls)
         event_ctrl.accept('shift-f11', render.explore)
         event_ctrl.accept('f12', render.analyze)
+        event_ctrl.accept('shift-f12', self.print_tasks)
 
         event_ctrl.accept('f', self.cosmonium.follow_selected)
         event_ctrl.accept('y', self.cosmonium.sync_selected)
@@ -456,6 +457,9 @@ class Gui(object):
         else:
             self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.show_select_screenshots()
+
+    def print_tasks(self):
+        print(taskMgr)
 
     def set_screenshots_path(self, path):
         settings.screenshot_path = path
@@ -741,7 +745,7 @@ class Gui(object):
                 if child != body:
                     children.append(child)
             if len(children) > 0:
-                children.sort(key=lambda x: x.orbit.get_apparent_radius())
+                children.sort(key=lambda x: x.anchor.orbit.get_apparent_radius())
                 subitems = []
                 for child in children:
                     if isinstance(child, SimpleSystem):
@@ -862,15 +866,15 @@ class Gui(object):
             names = utils.join_names(bayer.decode_names(selected.get_names()))
             self.hud.title.set_text(names)
             radius = selected.get_apparent_radius()
-            if selected.virtual_object or selected.distance_to_obs > 10 * radius:
-                self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.distance_to_obs, units.lengths_scale))
+            if selected.virtual_object or selected.anchor.distance_to_obs > 10 * radius:
+                self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.anchor.distance_to_obs, units.lengths_scale))
             else:
                 if selected.surface is not None and not selected.surface.is_flat():
-                    distance = selected.distance_to_obs - selected._height_under
-                    altitude = selected.distance_to_obs - radius
+                    distance = selected.anchor.distance_to_obs - selected.anchor._height_under
+                    altitude = selected.anchor.distance_to_obs - radius
                     self.hud.topLeft.set(0, _("Altitude: ") + toUnit(altitude, units.lengths_scale) + " (" + _("Ground: ")  + toUnit(distance, units.lengths_scale) + ")")
                 else:
-                    altitude = selected.distance_to_obs - radius
+                    altitude = selected.anchor.distance_to_obs - radius
                     self.hud.topLeft.set(0, _("Altitude: ")  + toUnit(altitude, units.lengths_scale))
             if not selected.virtual_object:
                 self.hud.topLeft.set(1, _("Radius: ") + "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))

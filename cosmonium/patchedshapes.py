@@ -978,8 +978,8 @@ class PatchedShapeBase(Shape):
             print("Too low !")
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
-        altitude_to_ground = self.owner.distance_to_obs - self.owner._height_under
-        altitude_to_min_radius = self.owner.distance_to_obs - min_radius
+        altitude_to_ground = self.owner.anchor.distance_to_obs - self.owner.anchor._height_under
+        altitude_to_min_radius = self.owner.anchor.distance_to_obs - min_radius
         self.create_culling_frustum(altitude_to_ground, altitude_to_min_radius)
         self.to_split = []
         self.to_merge = []

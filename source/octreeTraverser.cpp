@@ -75,8 +75,8 @@ VisibleObjectsTraverser::traverse(OctreeNode &octree, std::vector<PT(OctreeLeaf)
       LVector3d direction = leaf->get_global_position() - frustum.get_position();
       double distance = direction.length();
       if (distance > 0.0) {
-        double app_magnitude = abs_to_app_mag(abs_magnitude, distance);
-        if (app_magnitude < limit) {
+        leaf->app_magnitude = abs_to_app_mag(abs_magnitude, distance);
+        if (leaf->app_magnitude < limit) {
           add = frustum.is_sphere_in(leaf->get_global_position(), leaf->get_extend());
         }
       } else {
@@ -87,5 +87,21 @@ VisibleObjectsTraverser::traverse(OctreeNode &octree, std::vector<PT(OctreeLeaf)
       collected_leaves.push_back(leaf);
       leaf->set_update_id(update_id);
     }
+  }
+}
+
+void
+VisibleObjectsTraverser::update_pos_and_visibility(LPoint3d camera_global_pos, LPoint3d camera_position, double pixel_size, double min_body_size)
+{
+  for (auto leaf : collected_leaves) {
+    leaf->update_pos_and_visibility(camera_global_pos, camera_position, pixel_size, min_body_size);
+  }
+}
+
+void
+VisibleObjectsTraverser::update_scene_info(double midPlane, double scale)
+{
+  for (auto leaf : collected_leaves) {
+    leaf->update_scene_info(midPlane, scale);
   }
 }

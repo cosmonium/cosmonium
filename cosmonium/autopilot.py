@@ -285,7 +285,7 @@ class AutoPilot(object):
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
                 distance_unit = target.get_extend()
-            distance = target.distance_to_obs / distance_unit
+            distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, lat, duration, distance)
 
     def go_north(self, duration=None, zoom=False):
@@ -313,7 +313,7 @@ class AutoPilot(object):
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
                 distance_unit = target.get_extend()
-            distance = target.distance_to_obs / distance_unit
+            distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, 0, duration, distance)
 
     def align_on_ecliptic(self, duration=None):
@@ -348,13 +348,13 @@ class AutoPilot(object):
         natural_distance = 4.0 * min_distance
         relative_pos = self.ship.get_pos() - center
 
-        if target.distance_to_obs < min_distance:
-            min_distance = target.distance_to_obs * 0.5
+        if target.anchor.distance_to_obs < min_distance:
+            min_distance = target.anchor.distance_to_obs * 0.5
 
-        if target.distance_to_obs >= min_distance and natural_distance != 0:
-            r = (target.distance_to_obs - min_distance) / natural_distance
+        if target.anchor.distance_to_obs >= min_distance and natural_distance != 0:
+            r = (target.anchor.distance_to_obs - min_distance) / natural_distance
             new_distance = min_distance + natural_distance * exp(log(r) + rate * delta)
-            new_pos = relative_pos * (new_distance / target.distance_to_obs)
+            new_pos = relative_pos * (new_distance / target.anchor.distance_to_obs)
             self.ship.set_pos(center + new_pos)
 
     def change_distance(self, rate, duration=None):

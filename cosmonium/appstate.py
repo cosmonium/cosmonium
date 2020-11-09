@@ -104,9 +104,9 @@ class AppState(object):
             cosmonium.ship._global_position = self.global_position
         else:
             if self.sync is not None:
-                cosmonium.ship._global_position = self.sync._global_position
+                cosmonium.ship._global_position = self.sync.anchor._global_position
             elif self.follow:
-                cosmonium.ship._global_position = self.follow._global_position
+                cosmonium.ship._global_position = self.follow.anchor._global_position
             else:
                 cosmonium.ship._global_position = LPoint3d()
         if self.absolute:

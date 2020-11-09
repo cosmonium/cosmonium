@@ -106,8 +106,8 @@ class Orbit(VisibleObject):
 
     def find_orbit(self, body):
         if body != None:
-            if not isinstance(body.orbit, FixedOrbit):
-                return body.orbit
+            if not isinstance(body.anchor.orbit, FixedOrbit):
+                return body.anchor.orbit
             else:
                 return None, None
         else:
@@ -117,7 +117,7 @@ class Orbit(VisibleObject):
         if selected:
             self.color = self.selected_color
         else:
-            self.color = self.parent.get_orbit_color()
+            self.color = self.body.get_orbit_color()
         if self.instance:
             self.instance.setColor(srgb_to_linear(self.color * self.fade))
 
@@ -153,7 +153,7 @@ class Orbit(VisibleObject):
         self.instance.node().setPythonTag('owner', self)
         self.instance.reparentTo(self.context.annotation)
         if self.color is None:
-            self.color = self.parent.get_orbit_color()
+            self.color = self.body.get_orbit_color()
         self.instance.setColor(srgb_to_linear(self.color * self.fade))
         self.instance_ready = True
         if self.shader is None:
@@ -180,8 +180,8 @@ class Orbit(VisibleObject):
             vwriter.setData3f(*pos)
 
     def check_visibility(self, frustum, pixel_size):
-        if self.parent.parent.visible and self.parent.shown and self.orbit:
-            distance_to_obs = self.parent.distance_to_obs
+        if self.body.parent.visible and self.body.shown and self.orbit:
+            distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)
             else:
@@ -196,8 +196,8 @@ class Orbit(VisibleObject):
     def update_instance(self, camera_pos, camera_rot):
         if self.instance:
             self.place_instance_params(self.instance,
-                                       self.body.parent.scene_position,
-                                       self.body.parent.scene_scale_factor,
+                                       self.body.parent.anchor.scene_position,
+                                       self.body.parent.anchor.scene_scale_factor,
                                        LQuaternion())
             self.shader.update(self, self.appearance)
 
@@ -244,7 +244,7 @@ class RotationAxis(VisibleObject):
 
     def check_visibility(self, frustum, pixel_size):
         if self.parent.shown:
-            distance_to_obs = self.parent.distance_to_obs
+            distance_to_obs = self.parent.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.parent.get_apparent_radius() / (distance_to_obs * pixel_size)
             else:
@@ -277,7 +277,7 @@ class ReferenceAxis(VisibleObject):
         return self.instance
 
     def check_visibility(self, frustum, pixel_size):
-        self.visible = self.parent is not None and self.parent.shown and self.parent.visible and self.parent.resolved
+        self.visible = self.parent is not None and self.parent.shown and self.parent.anchor.visible and self.parent.anchor.resolved
 
     def update_instance(self, camera_pos, camera_rot):
         if self.instance:
@@ -385,10 +385,10 @@ class Asterism(VisibleObject):
         decl = 0
         if len(self.segments) > 0 and len(self.segments[0]) > 0:
             for star in self.segments[0]:
-                asc = star.orbit.get_right_asc()
+                asc = star.anchor.orbit.get_right_asc()
                 ra_sin += sin(asc)
                 ra_cos += cos(asc)
-                decl += star.orbit.get_declination()
+                decl += star.anchor.orbit.get_declination()
             ra = atan2(ra_sin, ra_cos)
             decl /= len(self.segments[0])
             self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
@@ -405,9 +405,17 @@ class Asterism(VisibleObject):
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.update(0, 0)
-                star.update_obs(self.context.observer)
-                position, distance, scale_factor = self.calc_scene_params(star.rel_position, star._position, star.distance_to_obs, star.vector_to_obs)
+                frustum = self.context.observer.rel_frustum
+                pixel_size = self.context.observer.pixel_size
+                camera_global_position = self.context.observer.camera_global_pos
+                camera_local_position = self.context.observer._position
+                star.update_and_update_observer_simple(0,
+                                                       self.context.observer,
+                                                       frustum,
+                                                       camera_global_position,
+                                                       camera_local_position,
+                                                       pixel_size)
+                position, distance, scale_factor = self.calc_scene_params(star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.camera_global_pos = old_cam_pos
@@ -521,7 +529,7 @@ class Constellation(LabelledObject):
         self.create_components()
 
     def create_label_instance(self):
-        return BackgroundLabel(self.get_ascii_name() + '-label')
+        return BackgroundLabel(self.get_ascii_name() + '-label', self)
 
     def create_components(self):
         self.create_label()

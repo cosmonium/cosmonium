@@ -143,7 +143,7 @@ class BaseObject(object):
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -152,15 +152,17 @@ class BaseObject(object):
     def update_shader(self):
         pass
 
-    def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        return self.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
+    @classmethod
+    def get_real_pos(cls, abs_position, camera_pos, distance_to_obs, vector_to_obs):
+        return cls.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
 
-    def calc_scene_params(self, rel_position, abs_position, distance_to_obs, vector_to_obs):
+    @classmethod
+    def calc_scene_params(cls, rel_position, abs_position, distance_to_obs, vector_to_obs):
         if settings.camera_at_origin:
             obj_position = rel_position
         else:
             obj_position = abs_position
-        midPlane = self.context.observer.midPlane
+        midPlane = cls.context.observer.midPlane
         distance_to_obs /= settings.scale
         if not settings.use_depth_scaling or distance_to_obs <= midPlane:
             position = obj_position / settings.scale
@@ -184,14 +186,15 @@ class BaseObject(object):
             scale_factor = ratio / settings.scale
         return position, distance, scale_factor
 
-    def place_pos_only(self, instance, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        position, distance, scale_factor = self.get_real_pos(abs_position, camera_pos, distance_to_obs, vector_to_obs)
+    @classmethod
+    def place_pos_only(cls, instance, abs_position, camera_pos, distance_to_obs, vector_to_obs):
+        position, distance, scale_factor = cls.get_real_pos(abs_position, camera_pos, distance_to_obs, vector_to_obs)
         instance.setPos(*position)
 
     def place_instance(self, instance, parent):
-        instance.setPos(*self.parent.scene_position)
-        instance.setScale(*(self.get_scale() * self.parent.scene_scale_factor))
-        instance.setQuat(LQuaternion(*self.parent.scene_orientation))
+        instance.setPos(*self.parent.anchor.scene_position)
+        instance.setScale(self.get_scale() * self.parent.anchor.scene_scale_factor)
+        instance.setQuat(LQuaternion(*self.parent.anchor.scene_orientation))
 
     def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
         instance.setPos(*scene_position)
@@ -244,7 +247,7 @@ class VisibleObject(BaseObject):
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot):
         if self.shown and self.visible:
             self.do_show()
             self.update_instance(camera_pos, camera_rot)
@@ -328,9 +331,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, camera_pos, camera_rot):
         for component in self.components:
-            component.check_and_update_instance(camera_pos, camera_rot, pointset)
+            component.check_and_update_instance(camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -353,9 +356,10 @@ class ObjectLabel(VisibleObject):
     appearance = None
     shader = None
 
-    def __init__(self, names):
+    def __init__(self, names, parent):
         VisibleObject.__init__(self, names)
         self.fade = 1.0
+        self.parent = parent
 
     @classmethod
     def create_shader(cls):
@@ -433,18 +437,22 @@ class LabelledObject(CompositeObject):
         CompositeObject.__init__(self, names)
         self.label = None
 
+    def check_settings(self):
+        CompositeObject.check_settings(self)
+        if self.label is not None: self.label.check_settings()
+
     def create_label_instance(self):
-        return ObjectLabel(self.get_ascii_name() + '-label')
+        return ObjectLabel(self.get_ascii_name() + '-label', self)
 
     def create_label(self):
         if self.label is None:
             self.label = self.create_label_instance()
-            self.add_component(self.label)
+            #self.add_component(self.label)
 
     def remove_label(self):
         if self.label is not None:
             self.label.remove_instance()
-            self.remove_component(self.label)
+            #self.remove_component(self.label)
             self.label = None
 
     def show_label(self):

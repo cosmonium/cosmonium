@@ -42,13 +42,13 @@ class BodyController():
         If the reference frame is linked to the surface of an object, a surface mover will be created,
         otherwise a generic cartesian mover will be createDd
         """
-        if not isinstance(self.body.orbit, (FixedOrbit, FixedPosition)):
-            print("Can not create a mover with dynamic orbit", self.body.orbit)
+        if not isinstance(self.body.anchor.orbit, (FixedOrbit, FixedPosition)):
+            print("Can not create a mover with dynamic orbit", self.body.anchor.orbit)
             return
-        if not isinstance(self.body.rotation, FixedRotation):
-            print("Can not create a mover with dynamic rotation", self.body.rotation)
+        if not isinstance(self.body.anchor.rotation, FixedRotation):
+            print("Can not create a mover with dynamic rotation", self.body.anchor.rotation)
             return
-        if isinstance(self.body.orbit.frame, SurfaceReferenceFrame) and isinstance(self.body.rotation.frame, SurfaceReferenceFrame):
+        if isinstance(self.body.anchor.orbit.frame, SurfaceReferenceFrame) and isinstance(self.body.anchor.rotation.frame, SurfaceReferenceFrame):
             self.mover = SurfaceBodyMover(self.body)
         else:
             self.mover = CartesianBodyMover(self.body)
@@ -184,16 +184,16 @@ class BodyMover():
 
 class CartesianBodyMover(BodyMover):
     def set_pos(self, position):
-        self.body.orbit.set_frame_position(position)
+        self.body.anchor.orbit.set_frame_position(position)
 
     def get_pos(self):
-        return self.body.orbit.get_frame_position_at(0)
+        return self.body.anchor.orbit.get_frame_position_at(0)
 
     def set_rot(self, rotation):
-        self.body.rotation.reference_axis.set_rotation(rotation)
+        self.body.anchor.rotation.reference_axis.set_rotation(rotation)
 
     def get_rot(self):
-        return self.body.rotation.reference_axis.get_rotation_at(0)
+        return self.body.anchor.rotation.reference_axis.get_rotation_at(0)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
@@ -205,7 +205,7 @@ class CartesianBodyMover(BodyMover):
         self.delta(delta)
 
     def step_relative(self, distance):
-        rotation = self.body.rotation.get_frame_rotation_at(0) #TODO: retrieve simulation time
+        rotation = self.body.anchor.rotation.get_frame_rotation_at(0) #TODO: retrieve simulation time
         direction = rotation.xform(LVector3d.forward())
         self.step(direction, distance)
 
@@ -225,11 +225,11 @@ class SurfaceBodyMover(CartesianBodyMover):
     def __init__(self, body):
         CartesianBodyMover.__init__(self, body)
         #TODO: Should create dynamicOrbit and DynamicRotation instead
-        self.body.orbit.dynamic = True
-        self.body.rotation.dynamic = True
+        self.body.anchor.orbit.dynamic = True
+        self.body.anchor.rotation.dynamic = True
         #TODO: We assume the frame is shared between the orbit and the rotation
         #This will be simplified when the orbit and rotation will disappear for anchors
-        self.frame = self.body.orbit.frame
+        self.frame = self.body.anchor.orbit.frame
         self.altitude = 0.0
 
     def update(self):
@@ -239,31 +239,31 @@ class SurfaceBodyMover(CartesianBodyMover):
     def set_pos(self, position):
         (x, y, altitude) = position
         new_orbit_pos = LPoint3d(x, y, 1.0)
-        self.body.orbit.position = new_orbit_pos
-        new_pos = self.body.orbit.get_position_at(0)
+        self.body.anchor.orbit.position = new_orbit_pos
+        new_pos = self.body.anchor.orbit.get_position_at(0)
         distance = self.frame.body.get_height_under(new_pos) - self.frame.body.get_apparent_radius()
         new_orbit_pos[2] = distance + altitude
         self.altitude = altitude
 
     def get_pos(self):
-        position = LPoint3d(self.body.orbit.position)
+        position = LPoint3d(self.body.anchor.orbit.position)
         position[2] = self.altitude
         return position
 
     def get_rot(self):
         #TODO: It's not really a reference axis...
-        return self.body.rotation.reference_axis.rotation
+        return self.body.anchor.rotation.reference_axis.rotation
 
     def set_rot(self, rotation):
-        self.body.rotation.reference_axis.rotation = rotation
+        self.body.anchor.rotation.reference_axis.rotation = rotation
 
     def get_altitude(self):
         return self.altitude
 
     def set_altitude(self, altitude):
-        pos = self.body.orbit.get_position_at(0)
+        pos = self.body.anchor.orbit.get_position_at(0)
         distance = self.body.frame.body.get_height_under(pos) - self.frame.body.get_apparent_radius()
-        frame_pos = self.body.orbit.position
+        frame_pos = self.body.anchor.orbit.position
         frame_pos[2] = distance + altitude
         self.altitude = altitude
 

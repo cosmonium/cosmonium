@@ -399,7 +399,7 @@ class ShapeObject(VisibleObject):
                     self.callback(self, *self.cb_args)
 
     def check_visibility(self, frustum, pixel_size):
-        self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
+        self.visible = self.parent is not None and self.parent.shown and self.parent.anchor.visible and self.parent.anchor.resolved
 
     def update_shape(self):
         if self.instance is not None and self.shape is not None and self.instance_ready:
@@ -415,18 +415,18 @@ class ShapeObject(VisibleObject):
         self.shape.update_instance(camera_pos, camera_rot)
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
-            self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))
+            self.instance.setPos(*(self.parent.anchor.scene_position + self.parent.world_body_center_offset))
         if self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #In case of oblate shape, the offset can not be used directly to retrieve the body center
             #The scale must be applied to the offset to retrieve the real center
             offset = self.shape.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
             self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
-        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.shape.patchable:
             self.shape.place_patches(self.parent)
         if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.anchor.distance_to_obs, self.context.observer.pixel_size)
         if self.shadow_caster is not None:
             self.shadow_caster.update()
         if self.shadows.update_needed:

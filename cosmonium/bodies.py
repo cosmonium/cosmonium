@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32
+from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond
 from panda3d.core import DirectionalLight
 
 from .stellarobject import StellarObject
@@ -29,9 +29,9 @@ from .foundation import VisibleObject
 from .shapes import SphereShape, ScaledSphereShape
 from .surfaces import FlatSurface
 from .appearances import Appearance
-from .astro.frame import RelativeReferenceFrame, SynchroneReferenceFrame
+from .astro.frame import RelativeReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from .astro.orbits import FixedOrbit
-from .astro.rotations import UnknownRotation
+from .astro.rotations import FixedRotation, UnknownRotation
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, temp_to_radius
 from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
 from .astro.blackbody import temp_to_RGB
@@ -72,7 +72,7 @@ class StellarBody(StellarObject):
             surface.owner = self
             self.surfaces.append(surface)
         self.radius = radius
-        self._height_under = radius
+        self.anchor._height_under = radius
         self.oblateness = oblateness
         self.scale = scale
         if self.clouds is not None:
@@ -82,13 +82,15 @@ class StellarBody(StellarObject):
         if self.ring is not None:
             self.ring.owner = self
         self._extend = self.get_extend()
+        self.anchor._extend = self._extend
 
     def get_or_create_system(self):
         if self.system is None:
             print("Creating system for", self.get_name())
-            system_orbit = self.orbit
+            system_orbit = self.anchor.orbit
+            system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
             #TODO: The system name should be translated correctly
-            self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit)
+            self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
             self.parent.add_child_fast(self.system)
             system_orbit.set_body(self.system)
             orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, system_orbit.frame))
@@ -299,9 +301,9 @@ class ReflectiveBody(StellarBody):
             return 99.0
 
     def get_luminosity(self):
-        if self.star is None or self.distance_to_star is None: return 0.0
+        if self.star is None or self.anchor.distance_to_star is None: return 0.0
         star_power = self.star.get_luminosity()
-        area = 4 * pi * self.distance_to_star * self.distance_to_star * 1000 * 1000
+        area = 4 * pi * self.anchor.distance_to_star * self.anchor.distance_to_star * 1000 * 1000
         if area > 0.0:
             irradiance = star_power / area
             surface = 4 * pi * self.get_apparent_radius() * self.get_apparent_radius() * 1000 * 1000
@@ -309,27 +311,27 @@ class ReflectiveBody(StellarBody):
             reflected_energy = received_energy * self.albedo
             return reflected_energy
         else:
-            print("No area")
+            print("No area", self.get_name())
             return 0.0
 
     def get_phase(self):
-        if self.vector_to_obs is None or self.vector_to_star is None: return 0.0
-        angle = self.vector_to_obs.dot(self.vector_to_star)
+        if self.anchor.vector_to_obs is None or self.anchor.vector_to_star is None: return 0.0
+        angle = self.anchor.vector_to_obs.dot(self.anchor.vector_to_star)
         phase = (1.0 + angle) / 2.0
         return phase
 
     def check_cast_shadow_on(self, body):
-        vector_to_star = self.vector_to_star
+        vector_to_star = self.anchor.vector_to_star
         self_radius = self.get_apparent_radius()
         body_radius = body.get_apparent_radius()
-        position = self._local_position
-        body_position = body._local_position
+        position = self.anchor._local_position
+        body_position = body.anchor._local_position
         pa = body_position - position
         #TODO: should be refactored somehow
         distance = abs(pa.length() - body_radius)
         if distance != 0:
             self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-            star_ar = asin(self.star.get_apparent_radius() / ((self.star._local_position - body_position).length() - body_radius))
+            star_ar = asin(self.star.get_apparent_radius() / ((self.star.anchor._local_position - body_position).length() - body_radius))
             ar_ratio = self_ar / star_ar
             #TODO: No longer valid if we are using HDR
             if ar_ratio * ar_ratio < 1.0 / 255:
@@ -366,15 +368,15 @@ class ReflectiveBody(StellarBody):
     def create_light(self):
         print("Create light for", self.get_name())
         self.directional_light = DirectionalLight('light_source')
-        self.directional_light.setDirection(LVector3(*-self.vector_to_star))
+        self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
         self.directional_light.setColor((1, 1, 1, 1))
         self.light_source = self.context.world.attachNewNode(self.directional_light)
         self.set_light(self.light_source)
 
     def update_light(self, camera_pos):
-        pos = self.get_local_position() + self.vector_to_star * self.get_extend()
-        self.place_pos_only(self.light_source, pos, camera_pos, self.distance_to_obs, self.vector_to_obs)
-        self.directional_light.setDirection(LVector3(*-self.vector_to_star))
+        pos = self.get_local_position() + self.anchor.vector_to_star * self.get_extend()
+        self.place_pos_only(self.light_source, pos, camera_pos, self.anchor.distance_to_obs, self.anchor.vector_to_obs)
+        self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
 
     def remove_light(self):
         self.light_source.remove_node()
@@ -497,10 +499,13 @@ class DeepSpaceObject(EmissiveBody):
                               body_class=body_class, point_color=point_color,
                               description=description)
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
-        EmissiveBody.check_and_update_instance(self, camera_pos, camera_rot, pointset)
+    def get_height_under(self, position):
+        return 0.0
+
+    def check_and_update_instance(self, camera_pos, camera_rot):
+        EmissiveBody.check_and_update_instance(self, camera_pos, camera_rot)
         app_magnitude = self.get_app_magnitude()
-        self.surface.appearance.set_magnitude(self, self.surface.shape, self.surface.shader, self.abs_magnitude, app_magnitude, self.visible_size)
+        self.surface.appearance.set_magnitude(self, self.surface.shape, self.surface.shader, self.abs_magnitude, app_magnitude, self.anchor.visible_size)
 
 class SkySphere(VisibleObject):
     def __init__(self, names, shape=None, appearance=None, shader=None, orientation=None):

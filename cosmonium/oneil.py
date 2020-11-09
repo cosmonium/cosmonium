@@ -348,21 +348,21 @@ class ONeilScatteringBase(AtmosphericScattering):
 
     def update_shader_shape(self, shape, appearance):
         planet = self.parameters.planet
-        factor = 1.0 / shape.owner.scene_scale_factor
+        factor = 1.0 / shape.owner.anchor.scene_scale_factor
         inner_radius = self.parameters.planet_radius
 
         #TODO: We should get the oblateness correctly
         planet_scale = self.parameters.planet.surface.get_scale()
         descale = LMatrix4.scale_mat(inner_radius / planet_scale[0], inner_radius / planet_scale[1], inner_radius / planet_scale[2])
         rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.owner.scene_orientation)
+        orientation = LQuaternion(*shape.owner.anchor.scene_orientation)
         orientation.extract_to_matrix(rotation_mat)
         rotation_mat_inv = LMatrix4()
         rotation_mat_inv.invert_from(rotation_mat)
         descale_mat = rotation_mat_inv * descale * rotation_mat
-        pos = planet.rel_position
+        pos = planet.anchor.rel_position
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = planet.star._local_position - planet._local_position
+        star_pos = planet.star.anchor._local_position - planet.anchor._local_position
         scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
         scaled_star_pos.normalize()
         camera_height = scaled_pos.length()

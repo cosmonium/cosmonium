@@ -169,8 +169,8 @@ def stellar_object(body):
     general.append([_("Category"), body.body_class])
     if body.description != '':
         general.append([_("Description"), body.description])
-    texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+    texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     return texts
 
 def stellar_body(body):
@@ -194,11 +194,11 @@ def stellar_body(body):
     general.append([_("Rings"), _("Yes") if body.ring is not None else _("No")])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedOrbit):
-        texts.append(ObjectInfo.get_info_for(body.system.orbit))
+    if body.system is not None and isinstance(body.anchor.orbit, FixedOrbit):
+        texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
     else:
-        texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+        texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     if body.surface is not None:
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
@@ -217,11 +217,11 @@ def star(body):
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedOrbit):
+    if body.system is not None and isinstance(body.anchor.orbit, FixedOrbit):
         texts.append(ObjectInfo.get_info_for(body.system.orbit))
     else:
-        texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+        texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     if body.surface is not None:
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts

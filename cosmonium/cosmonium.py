@@ -39,11 +39,14 @@ from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
 from .stellarobject import StellarObject
 from .bodies import StellarBody, ReflectiveBody
+from .renderers.pointsrenderer import PointsRenderer
+from .renderers.resolvedrenderer import ResolvedRenderer
+from .renderers.labelsrenderer import LabelsRenderer
+from .renderers.orbitsrenderer import OrbitsRenderer
+from .bodies import StellarObject, StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
 from .annotations import Grid
-from .pointsset import PointsSet
-from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
 from .astro.frame import SurfaceReferenceFrame
@@ -470,14 +473,11 @@ class Cosmonium(CosmoniumBase):
         self.nav.register_events(self)
         self.gui.register_events(self)
 
-        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
-        if settings.render_sprite_points:
-            self.pointset.instance.reparentTo(self.world)
-
-        self.haloset = PointsSet(use_sprites=True, sprite=ExpPointSprite(size=256, max_value=0.6), background=settings.halo_depth)
-        if settings.render_sprite_points:
-            self.haloset.instance.reparentTo(self.world)
-
+        self.points_renderer = PointsRenderer(self)
+        self.resolved_renderer = ResolvedRenderer(self)
+        self.labels_renderer = LabelsRenderer(self)
+        self.orbits_renderer = OrbitsRenderer(self)
+        
         render.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
         self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
@@ -495,14 +495,14 @@ class Cosmonium(CosmoniumBase):
         for controller in self.body_controllers:
             controller.init()
 
-        self.universe.first_update()
+        #self.universe.first_update()
         self.camera_controller.update(self.time.time_full, 0)
-        self.universe.first_update_obs(self.observer)
+        #self.universe.first_update_obs(self.observer)
         self.window_event(None)
+
+        taskMgr.add(self.time_task, "time-task", sort=10)
+
         self.time_task(None)
-
-        taskMgr.add(self.time_task, "time-task")
-
         self.start_universe()
         if self.app_config.test_start:
             #TODO: this is where the tests should be inserted
@@ -589,7 +589,6 @@ class Cosmonium(CosmoniumBase):
         old_ship = self.ship
         self.ship = ship
         if self.ship is not None:
-            self.universe.add_component(self.ship)
             self.autopilot.set_ship(self.ship)
             self.nav.set_ship(self.ship)
             if old_ship is not None:
@@ -682,6 +681,7 @@ class Cosmonium(CosmoniumBase):
             self.selected.set_selected(False)
         if body is not None:
             print("Select", body.get_name())
+            self.update_extra(body)
             body.set_selected(True)
         self.selected = body
         if self.fly:
@@ -892,8 +892,9 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
-            self.observer.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.ship.set_frame(RelativeReferenceFrame(body, body.anchor.orbit.frame))
+            self.update_extra(self.follow)
+            self.observer.set_frame(RelativeReferenceFrame(body, body.anchor.orbit.frame))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -910,6 +911,7 @@ class Cosmonium(CosmoniumBase):
         if self.sync is not None:
             print("Sync", self.sync.get_name())
             self.ship.set_frame(SynchroneReferenceFrame(body))
+            self.update_extra(self.sync)
             self.observer.set_frame(SynchroneReferenceFrame(body))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
@@ -963,95 +965,83 @@ class Cosmonium(CosmoniumBase):
             else:
                 print("ERROR: surface '{}' not found".format(surface_name))
 
-    def reset_visibles(self):
-        self.visibles = []
-
-    def add_visible(self, body):
-        self.visibles.append(body)
-
-    def print_visibles(self):
-        if self.last_visibles != self.visibles:
-            print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
-        self.last_visibles = self.visibles
-
-    @pstat
-    def update_octree(self):
-        self.universe.build_octree_cells_list(self.observer.frustum, settings.lowest_app_magnitude)
-        self.universe.add_extra_to_list(self.selected, self.follow, self.sync, self.track)
-
     @pstat
     def update_universe(self, time, dt):
-        self.universe.update(time, dt)
+        frustum = self.observer.rel_frustum
+        pixel_size = self.observer.pixel_size
+        camera_global_position = self.observer.camera_global_pos
+        camera_local_position = self.observer._position
+        self.universe.update_and_update_observer(time,
+                                                 self.observer,
+                                                 frustum,
+                                                 camera_global_position,
+                                                 camera_local_position,
+                                                 pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
                 controller.update(time, dt)
                 self.controllers_to_update.append(controller)
-
-    @pstat
-    def update_obs(self):
-        self.universe.update_obs(self.observer)
+        #TODO: Should be done in update_extra
+        #if self.selected is not None:
+        #    self.selected.calc_height_under(self.observer.get_camera_pos())
         for controller in self.controllers_to_update:
             controller.update_obs(self.observer)
-
-    @pstat
-    def update_visibility(self):
-        self.reset_visibles()
-        self.universe.check_visibility(self.observer.rel_frustum, self.observer.pixel_size)
         for controller in self.controllers_to_update:
-            controller.check_visibility(self.observer.rel_frustum, self.observer.pixel_size)
-        self.print_visibles()
+            controller.check_visibility(frustum, pixel_size)
+
+    def update_ship(self, time, dt):
+        frustum = self.observer.rel_frustum
+        pixel_size = self.observer.pixel_size
+        self.ship.update(time, dt)
+        self.ship.update_obs(self.observer)
+        self.ship.check_visibility(frustum, pixel_size)
+
+    def update_extra(self, *args):
+        frustum = self.observer.rel_frustum
+        pixel_size = self.observer.pixel_size
+        camera_global_position = self.observer.camera_global_pos
+        camera_local_position = self.observer._position
+        extra = []
+        for body in args:
+            to_add = body
+            while to_add is not None and to_add is not self.universe:
+                if to_add not in extra:
+                    extra.append(to_add)
+                to_add = to_add.parent
+        for body in reversed(extra):
+            body.update_and_update_observer_simple(self.time.time_full,
+                                                   self.observer,
+                                                   frustum,
+                                                   camera_global_position,
+                                                   camera_local_position,
+                                                   pixel_size)
 
     @pstat
     def update_instances(self):
-        self.pointset.reset()
-        self.haloset.reset()
-        self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
+        self.universe.update_scene_and_render(self.observer,
+                                              self.points_renderer,
+                                              self.resolved_renderer,
+                                              self.labels_renderer,
+                                              self.orbits_renderer)
+        self.points_renderer.update(self.observer)
+        self.resolved_renderer.update(self.observer)
+        self.labels_renderer.update(self.observer)
+        self.orbits_renderer.update(self.observer)
+        self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for controller in self.controllers_to_update:
-            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
-        self.pointset.update()
-        self.haloset.update()
+            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         self.gui.update_status()
 
-    def time_task(self, task):
-        if task is not None:
-            dt = globalClock.getDt()
-        else:
-            dt = 0
-
-        self.gui.update()
-
-        self.time.update_time(dt)
-        self.nav.update(self.time.time_full, dt)
-
-        self.update_octree()
-        update = pstats.levelpstat('update', 'Bodies')
-        obs = pstats.levelpstat('obs', 'Bodies')
-        visibility = pstats.levelpstat('visibility', 'Bodies')
-        instance = pstats.levelpstat('instance', 'Bodies')
-        StellarObject.nb_update = 0
-        StellarObject.nb_obs = 0
-        StellarObject.nb_visibility = 0
-        StellarObject.nb_instance = 0
-
-        if self.trigger_check_settings:
-            self.universe.check_settings()
-            #TODO: This should be done by a container object
-            self.ecliptic_grid.check_settings()
-            self.equatorial_grid.check_settings()
-            self.trigger_check_settings = False
-
-        self.update_universe(self.time.time_full, self.time.dt)
-        self.camera_controller.update(self.time.time_full, self.time.dt)
-        self.update_obs()
-
-        if self.universe.nearest_system != self.nearest_system:
-            if self.universe.nearest_system is not None:
-                print("New nearest system:", self.universe.nearest_system.get_name())
+    def update_nearest_system(self, nearest_system):
+        if nearest_system != self.nearest_system:
+            if nearest_system is not None:
+                print("New nearest system:", nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.ship.change_global(self.universe.nearest_system.get_global_position())
+                self.ship.change_global(nearest_system.get_global_position())
                 self.camera_controller.update(self.time.time_full, 0)
+                self.observer.change_global(nearest_system.get_global_position())
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:
@@ -1060,15 +1050,14 @@ class Cosmonium(CosmoniumBase):
                 pass#self.nearest_system.remove_instance()
                 #self.nearest_system.update_obs(self.observer.get_camera_pos())
                 #self.universe.to_update.append(self.nearest_system)
-            self.nearest_system = self.universe.nearest_system
-
+            self.nearest_system = nearest_system
         if self.nearest_system is not None:
             if isinstance(self.nearest_system, StellarSystem):
                 (distance, body) = self.nearest_system.find_closest()
             else:
                 body = self.nearest_system
             if body is not None:
-                distance = body.distance_to_obs - body._height_under
+                distance = body.anchor.distance_to_obs - body.anchor._height_under
             if body is not None and self.nearest_body != body:
                 self.nearest_body = body
                 print("New nearest object:", body.get_name())
@@ -1092,7 +1081,48 @@ class Cosmonium(CosmoniumBase):
                 else:
                     near_plane = settings.near_plane
                 self.observer.update_near_plane(near_plane)
-        self.update_visibility()
+
+    def time_task(self, task):
+        # Reset all states
+        self.to_update_extra = []
+        self.points_renderer.reset()
+        self.resolved_renderer.reset()
+        self.labels_renderer.reset()
+        self.orbits_renderer.reset()
+
+        #Update time and camera
+        if task is not None:
+            dt = globalClock.getDt()
+        else:
+            dt = 0
+
+        self.gui.update()
+        self.time.update_time(dt)
+        self.nav.update(self.time.time_full, dt)
+
+        self.update_extra(self.selected, self.follow, self.sync, self.track)
+        #self.ship.update(self.time.time_full, dt)
+        self.update_ship(self.time.time_full, dt)
+        self.camera_controller.update(self.time.time_full, dt)
+
+        update = pstats.levelpstat('update', 'Bodies')
+        obs = pstats.levelpstat('obs', 'Bodies')
+        visibility = pstats.levelpstat('visibility', 'Bodies')
+        instance = pstats.levelpstat('instance', 'Bodies')
+        StellarObject.nb_update = 0
+        StellarObject.nb_obs = 0
+        StellarObject.nb_visibility = 0
+        StellarObject.nb_instance = 0
+
+        self.update_universe(self.time.time_full, dt)
+
+        if self.trigger_check_settings:
+            self.universe.check_settings()
+            #TODO: This should be done by a container object
+            self.ecliptic_grid.check_settings()
+            self.equatorial_grid.check_settings()
+            self.trigger_check_settings = False
+
         self.update_instances()
 
         update.set_level(StellarObject.nb_update)
@@ -1102,6 +1132,9 @@ class Cosmonium(CosmoniumBase):
 
         if settings.color_picking:
             self.oid_texture.clear_image()
+
+        nearest_system = self.universe.get_nearest_system()
+        self.update_nearest_system(nearest_system)
 
         return Task.cont
 
@@ -1118,31 +1151,31 @@ class Cosmonium(CosmoniumBase):
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
-            print("\tDistance:", self.selected.distance_to_obs / units.Km, 'Km')
-            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_extend(), "Km", "Visible:", self.selected.visible, self.selected.visible_size, "px")
+            print("\tDistance:", self.selected.anchor.distance_to_obs / units.Km, 'Km')
+            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_extend(), "Km", "Visible:", self.selected.anchor.visible, self.selected.anchor.visible_size, "px")
             print("\tApp magnitude:", self.selected.get_app_magnitude(), '(', self.selected.get_abs_magnitude(), ')')
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.orbit.get_frame_position_at(self.time.time_full), ')')
+            print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.anchor.orbit.get_frame_position_at(self.time.time_full), ')')
             print("\tRotation", self.selected.get_abs_rotation())
-            print("\tOrientation", self.selected._orientation)
-            print("\tVector to obs", self.selected.vector_to_obs)
-            print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
-            print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
-            print("\tUpdate frozen:", self.selected.update_frozen)
-            print("\tOrbit:", self.selected.orbit.__class__.__name__, self.selected.orbit.frame)
+            print("\tOrientation", self.selected.anchor._orientation)
+            print("\tVector to obs", self.selected.anchor.vector_to_obs)
+            print("\tVector to star", self.selected.anchor.vector_to_star, "Distance:", self.selected.anchor.distance_to_star)
+            print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ')')
+            print("\tUpdate frozen:", self.selected.anchor.update_frozen)
+            print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
             if self.selected.label is not None:
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
                 print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
                 print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(self.selected, StellarBody):
-                if self.selected.scene_scale_factor is not None:
+                if self.selected.anchor.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.scene_distance)
-                    print("\tOrientation", self.selected.scene_orientation)
-                    print("\tScale", self.selected.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.scene_scale_factor, ')')
+                    print("\tPosition", self.selected.anchor.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.anchor.scene_distance)
+                    print("\tOrientation", self.selected.anchor.scene_orientation)
+                    print("\tScale", self.selected.anchor.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.anchor.scene_scale_factor, ')')
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
@@ -1157,8 +1190,8 @@ class Cosmonium(CosmoniumBase):
                 projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
                 xy = self.selected.spherical_to_xy(projection)
                 print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
-                height = self.selected._height_under
-                print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.distance_to_obs - height))
+                height = self.selected.anchor._height_under
+                print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.anchor.distance_to_obs - height))
                 if self.selected.surface is not None and self.selected.surface.shape.patchable:
                     x = projection[0] / pi / 2 + 0.5
                     y = 1.0 - (projection[1] / pi + 0.5)
@@ -1179,11 +1212,11 @@ class Cosmonium(CosmoniumBase):
                             if patch.offset is not None:
                                 print("\tOffset:", patch.offset, patch.offset * self.selected.get_apparent_radius())
             else:
-                if self.selected.scene_scale_factor is not None:
+                if self.selected.anchor.scene_scale_factor is not None:
                     print("Scene:")
-                    print("\tPosition:", self.selected.scene_position, self.selected.scene_distance)
-                    print("\tOrientation:", self.selected.scene_orientation)
-                    print("\tScale:", self.selected.scene_scale_factor)
+                    print("\tPosition:", self.selected.anchor.scene_position, self.selected.anchor.scene_distance)
+                    print("\tOrientation:", self.selected.anchor.scene_orientation)
+                    print("\tScale:", self.selected.anchor.scene_scale_factor)
 
     def init_universe(self):
         pass

@@ -2289,27 +2289,27 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
 
     def update_shader_shape(self, shape, appearance):
         if self.use_bias:
-            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
-            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
-            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.scene_scale_factor * shape.owner.get_apparent_radius()
-            #print(normal_bias, slope_bias, depth_bias, shape.owner.scene_scale_factor, shape.owner.get_apparent_radius())
+            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            #print(normal_bias, slope_bias, depth_bias, shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
             shape.instance.setShaderInput('%s_shadow_normal_bias' % self.name, normal_bias)
             shape.instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
             shape.instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
-            light_dir = shape.owner.vector_to_star
+            light_dir = shape.owner.anchor.vector_to_star
             shape.instance.setShaderInput("%s_light_dir" % self.name, *light_dir)
         if self.caster_body is not None:
             caster = self.caster_body
             body = shape.owner
             self_radius = caster.get_apparent_radius()
             body_radius = body.get_apparent_radius()
-            position = caster._local_position
-            body_position = body._local_position
+            position = caster.anchor._local_position
+            body_position = body.anchor._local_position
             pa = body_position - position
             distance = abs(pa.length() - body_radius)
             if distance != 0:
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(caster.star.get_apparent_radius() / ((caster.star._local_position - body_position).length() - body_radius))
+                star_ar = asin(caster.star.get_apparent_radius() / ((caster.star.anchor._local_position - body_position).length() - body_radius))
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
@@ -2403,11 +2403,12 @@ class ShaderSphereShadow(ShaderShadow):
     def update_shader_shape(self, shape, appearance):
         #TODO: This is quite ugly....
         star = shape.owner.star
+        anchor = shape.owner.anchor
         observer = shape.owner.context.observer._position
-        scale = shape.owner.scene_scale_factor
+        scale = shape.owner.anchor.scene_scale_factor
         if self.far_sun:
-            shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.distance_to_star))
-        star_center = (star._local_position - observer) * scale
+            shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.anchor.distance_to_star))
+        star_center = (star.anchor._local_position - observer) * scale
         star_radius = star.get_apparent_radius() * scale
         shape.instance.setShaderInput('star_center', star_center)
         shape.instance.setShaderInput('star_radius', star_radius)
@@ -2415,7 +2416,7 @@ class ShaderSphereShadow(ShaderShadow):
         radii = []
         occluder_transform = PTA_LMatrix4()
         for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
-            centers.append((shadow_caster.body._local_position - observer) * scale)
+            centers.append((shadow_caster.body.anchor._local_position - observer) * scale)
             radius = shadow_caster.body.get_apparent_radius()
             radii.append(radius * scale)
             if self.oblate_occluder:
@@ -2423,7 +2424,7 @@ class ShaderSphereShadow(ShaderShadow):
                 planet_scale = shadow_caster.body.surface.get_scale()
                 descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
                 rotation_mat = LMatrix4()
-                orientation = LQuaternion(*shadow_caster.body._orientation)
+                orientation = LQuaternion(*shadow_caster.body.anchor._orientation)
                 orientation.extract_to_matrix(rotation_mat)
                 rotation_mat_inv = LMatrix4()
                 rotation_mat_inv.invert_from(rotation_mat)
@@ -2472,14 +2473,14 @@ class ShaderRingShadow(ShaderShadow):
         (texture, texture_size, texture_lod) = ring.appearance.texture.source.get_texture(ring.shape)
         if texture is not None:
             shape.instance.setShaderInput('shadow_ring_tex',texture)
-        normal = shape.owner.scene_orientation.xform(LVector3d.up())
+        normal = shape.owner.anchor.scene_orientation.xform(LVector3d.up())
         shape.instance.setShaderInput('ring_normal', normal)
-        shape.instance.setShaderInput('ring_inner_radius', ring.inner_radius * shape.owner.scene_scale_factor)
-        shape.instance.setShaderInput('ring_outer_radius', ring.outer_radius * shape.owner.scene_scale_factor)
+        shape.instance.setShaderInput('ring_inner_radius', ring.inner_radius * shape.owner.anchor.scene_scale_factor)
+        shape.instance.setShaderInput('ring_outer_radius', ring.outer_radius * shape.owner.anchor.scene_scale_factor)
         if shape.owner.support_offset_body_center and settings.offset_body_center:
-            body_center = shape.owner.scene_position + shape.owner.projected_world_body_center_offset
+            body_center = shape.owner.anchor.scene_position + shape.owner.projected_world_body_center_offset
         else:
-            body_center = shape.owner.scene_position
+            body_center = shape.owner.anchor.scene_position
         shape.instance.setShaderInput('body_center', body_center)
 
 class ShaderSphereSelfShadow(ShaderShadow):
@@ -2577,7 +2578,7 @@ class LambertPhongLightingModel(LightingModel):
 
     def update_shader_shape(self, shape, appearance):
         LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.vector_to_star
+        light_dir = shape.owner.anchor.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
@@ -2634,7 +2635,7 @@ class OrenNayarPhongLightingModel(LightingModel):
 
     def update_shader_shape(self, shape, appearance):
         LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.vector_to_star
+        light_dir = shape.owner.anchor.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)

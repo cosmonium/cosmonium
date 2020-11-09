@@ -112,11 +112,11 @@ class PointsSet(VisibleObject):
         geompoints.reserve_num_vertices(len(points))
         index = 0
         for (point, color, size, oid) in zip(points, colors, sizes, oids):
-            self.vwriter.addData3f(*point)
+            self.vwriter.addData3(*point)
             #self.colorwriter.addData3f(color[0], color[1], color[2])
             self.colorwriter.addData4(color)
             if self.use_sizes:
-                self.sizewriter.addData1f(size)
+                self.sizewriter.addData1(size)
             if self.use_oids:
                 self.oidwriter.addData4(oid)
             geompoints.addVertex(index)
