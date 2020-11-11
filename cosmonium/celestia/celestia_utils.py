@@ -22,9 +22,9 @@ from __future__ import absolute_import
 
 from ..astro import bayer
 from ..astro import units
-from ..astro.orbits import create_elliptical_orbit
+from ..astro.orbits import FixedOrbit, create_elliptical_orbit
 from ..astro.rotations import UnknownRotation, create_uniform_rotation
-from ..astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from ..astro.frame import BodyReferenceFrame, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 
 def names_list(name):
@@ -35,13 +35,19 @@ def body_path(parent):
     return path
 
 
-def instanciate_custom_orbit(data):
+def instanciate_custom_orbit(data, parent):
     if '-' in data:
         (category, name) = data.split('-')
         element_name = category + ':' + name
     else:
         element_name = "celestia:" + data
-    return orbit_elements_db.get(element_name)
+    orbit = orbit_elements_db.get(element_name)
+    if orbit is None:
+        orbit = FixedOrbit(frame = J2000EclipticReferenceFrame())
+    #TODO: this should not be done arbitrarily
+    if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.body is None:
+        orbit.frame.set_body(parent)
+    return orbit
 
 def instanciate_elliptical_orbit(data, global_coord):
     semi_major_axis=None
@@ -51,7 +57,7 @@ def instanciate_elliptical_orbit(data, global_coord):
         period_units=units.JYear
     else:
         semi_major_axis_units=units.Km
-        pericenter_distance_units=units.Km        
+        pericenter_distance_units=units.Km
         period_units=units.Day
     pericenter_distance=None
     period=None
@@ -101,8 +107,8 @@ def instanciate_elliptical_orbit(data, global_coord):
         mean_anomaly=mean_anomaly,
         mean_longitude=mean_longitude)
 
-def instanciate_frame(universe, data, global_coord):
-    frame_center = None
+def instanciate_frame(universe, data, parent, global_coord):
+    frame_center = parent
     if data is not None:
         for (key, value) in data.items():
             if key == 'Center':
@@ -119,23 +125,23 @@ def instanciate_frame(universe, data, global_coord):
                 print("Frame", key, "not supported")
     return frame_center, global_coord
 
-def instanciate_reference_frame(universe, data, global_coord):
+def instanciate_reference_frame(universe, data, parent,global_coord):
     frame_type = J2000EclipticReferenceFrame
     frame_center = None
     for (key, value) in data.items():
         if key == 'EquatorJ2000':
             frame_type = J2000EquatorialReferenceFrame
-            frame_center, global_coord = instanciate_frame(universe, value, global_coord)
+            frame_center, global_coord = instanciate_frame(universe, value, parent, global_coord)
         elif key == 'EclipticJ2000':
             frame_type = J2000EclipticReferenceFrame
-            frame_center, global_coord = instanciate_frame(universe, value, global_coord)
+            frame_center, global_coord = instanciate_frame(universe, value, parent, global_coord)
         else:
             print("Reference frame type", key, "not supported")
 #     if frame_center:
 #         print("Found center", frame_center.get_name())
     return frame_type(frame_center), global_coord
 
-def instanciate_custom_rotation(data):
+def instanciate_custom_rotation(data, parent):
     if '-' in data:
         (category, name) = data.split('-')
         if name == 'p03lp':
@@ -143,7 +149,13 @@ def instanciate_custom_rotation(data):
         element_name = category + ':' + name
     else:
         element_name = "celestia:" + data
-    return rotation_elements_db.get(element_name)
+    rotation = rotation_elements_db.get(element_name)
+    if rotation is None:
+        rotation = UnknownRotation()
+    #TODO: this should not be done arbitrarily
+    if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.body is None:
+        rotation.frame.set_body(parent)
+    return rotation
 
 def instanciate_uniform_rotation(data, global_coord):
     period=None

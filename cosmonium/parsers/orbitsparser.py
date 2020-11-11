@@ -24,15 +24,13 @@ from panda3d.core import LPoint3d
 
 from ..astro.elementsdb import orbit_elements_db
 from ..astro.orbits import FixedPosition, FixedOrbit, create_elliptical_orbit
-from ..astro.frame import BodyReferenceFrame
+from ..astro.frame import BodyReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EclipticReferenceFrame
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser, AngleSpeedUnitsYamlParser
 from .framesparser import FrameYamlParser
-from copy import deepcopy
-from cosmonium.astro.frame import J2000HeliocentricEclipticReferenceFrame
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod
@@ -134,9 +132,11 @@ class OrbitYamlParser(YamlModuleParser):
         elif object_type == 'global':
             orbit = GlobalPositionYamlParser.decode(parameters, frame, parent)
         else:
-            orbit = deepcopy(orbit_elements_db.get(data))
+            orbit = orbit_elements_db.get(data)
+            if orbit is None:
+                orbit = FixedOrbit(frame = J2000EclipticReferenceFrame())
             #TODO: this should not be done arbitrarily
-            if isinstance(orbit.frame, BodyReferenceFrame):
+            if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.body is None:
                 orbit.frame.set_body(parent)
         return orbit
 

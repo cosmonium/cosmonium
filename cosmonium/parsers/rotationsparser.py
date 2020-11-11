@@ -102,7 +102,7 @@ class RotationYamlParser(YamlModuleParser):
             if rotation is None:
                 rotation = UnknownRotation()
             #TODO: this should not be done arbitrarily
-            if isinstance(rotation.frame, BodyReferenceFrame):
+            if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.body is None:
                 rotation.frame.set_body(parent)
         return rotation
 

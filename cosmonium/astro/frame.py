@@ -100,6 +100,13 @@ class SolBarycenter():
     def get_local_position(self):
         return LPoint3d()
 
+class J2000BarycentricEclipticReferenceFrame(J2000EclipticReferenceFrame):
+    def __init__(self):
+        J2000EclipticReferenceFrame.__init__(self, SolBarycenter())
+
+j2000BarycentricEclipticReferenceFrame = J2000BarycentricEclipticReferenceFrame()
+
+#TODO: This reference frame is wrong and will be removed in te future
 class J2000HeliocentricEclipticReferenceFrame(J2000EclipticReferenceFrame):
     def __init__(self):
         J2000EclipticReferenceFrame.__init__(self, SolBarycenter())
@@ -110,6 +117,13 @@ class J2000EquatorialReferenceFrame(BodyReferenceFrame):
     def get_orientation(self):
         return self.orientation
 
+class J2000BarycentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
+    def __init__(self):
+        J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
+
+j2000BarycentricEquatorialReferenceFrame = J2000BarycentricEquatorialReferenceFrame()
+
+#TODO: This reference frame is wrong and will be removed in te future
 class J2000HeliocentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
     def __init__(self):
         J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
