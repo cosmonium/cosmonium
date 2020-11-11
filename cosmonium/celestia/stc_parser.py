@@ -122,7 +122,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         surface_factory=StarTexSurfaceFactory(texture)
     else:
         surface_factory=celestiaStarSurfaceFactory
-    star = Star(names,
+    star = Star(names, source_names=[],
                 surface_factory=surface_factory,
                 abs_magnitude=abs_magnitude,
                 temperature=temperature,
@@ -168,7 +168,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
     if parent is None:
         parent = universe
-    barycenter = Barycenter(names, orbit=orbit, rotation=rotation)
+    barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_star_fast(barycenter)
     return barycenter
 

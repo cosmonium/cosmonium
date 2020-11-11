@@ -297,7 +297,7 @@ def instanciate_body(universe, names, is_planet, data):
                           shape=shape,
                           appearance=appearance,
                           shader=BasicShader(lighting_model=lighting_model))
-    body = ReflectiveBody(names=names,
+    body = ReflectiveBody(names=names, source_names=[],
                           radius=radius,
                           surface=surface,
                           oblateness=oblateness,
@@ -395,7 +395,7 @@ def instanciate_reference_point(universe, names, is_planet, data):
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    ref = ReferencePoint(names=names,
+    ref = ReferencePoint(names=names, source_names=[],
                          orbit=orbit,
                          rotation=rotation,
                          body_class=body_class)

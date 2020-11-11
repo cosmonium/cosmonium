@@ -50,7 +50,7 @@ def parse_line(line, names, universe):
             name = "HIP %d" % catNo
         orbit = FixedPosition(right_asc=float(ra), declination=float(decl), distance=float(distance), distance_unit=units.Ly)
         abs_magnitude = app_to_abs_mag(float(app_magnitude), float(distance) * units.KmPerLy)
-        star = Star(name,
+        star = Star(name, source_names=[],
                     radius=None,
                     surface_factory=celestiaStarSurfaceFactory,
                     spectral_type=spectralTypeStringDecoder.decode(spectral_type),
@@ -105,7 +105,7 @@ def do_load_bin(filepath, names, universe):
             name = "HIP %d" % catNo
         position = LVector3d(x * units.Ly, -z * units.Ly, y * units.Ly)
         orbit = FixedPosition(position=position)
-        star = Star(name,
+        star = Star(name, source_names=[],
                     surface_factory=celestiaStarSurfaceFactory,
                     spectral_type=spectralTypeIntDecoder.decode(spectral_type),
                     abs_magnitude=abs_magnitude / 256.0,

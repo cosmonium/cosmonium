@@ -87,7 +87,8 @@ class StellarBody(StellarObject):
         if self.system is None:
             print("Creating system for", self.get_name())
             system_orbit = self.orbit
-            self.system = SimpleSystem(self.get_name() + " System", primary=self, orbit=system_orbit)
+            #TODO: The system name should be translated correctly
+            self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit)
             self.parent.add_child_fast(self.system)
             system_orbit.set_body(self.system)
             orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, system_orbit.frame))
