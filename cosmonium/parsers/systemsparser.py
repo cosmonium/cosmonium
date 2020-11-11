@@ -36,6 +36,7 @@ class SystemYamlParser(YamlModuleParser):
         parent_name = data.get('parent')
         star_system = data.get('star-system', False)
         parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
@@ -59,6 +60,7 @@ class BarycenterYamlParser(YamlModuleParser):
         (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
         parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = Barycenter(translated_names, source_names, orbit=orbit, rotation=rotation)

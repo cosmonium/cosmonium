@@ -36,6 +36,7 @@ class NebulaYamlParser(YamlModuleParser):
         (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
         parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         body_class = data.get('body-class', 'nebula')
         radius = data.get('radius')
         abs_magnitude = data.get('magnitude')

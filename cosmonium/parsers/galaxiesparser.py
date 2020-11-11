@@ -164,6 +164,7 @@ class GalaxyYamlParser(YamlModuleParser):
         (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
         parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         body_class = data.get('body-class', 'galaxy')
         radius = float(data.get('radius'))
         radius_units = DistanceUnitsYamlParser.decode(data.get('radius-units', 'Ly'))
