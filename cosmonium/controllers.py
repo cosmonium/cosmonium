@@ -103,16 +103,16 @@ class BodyMover():
 
 class CartesianBodyMover(BodyMover):
     def set_pos(self, position):
-        self.body.set_frame_pos(position)
+        self.body.orbit.set_frame_position(position)
 
     def get_pos(self):
-        return self.body.get_frame_pos()
-
-    def get_rot(self):
-        return self.body.get_frame_rot()
+        return self.body.orbit.get_frame_position_at(0)
 
     def set_rot(self, rotation):
-        self.body.set_frame_rot(rotation)
+        self.body.rotation.reference_axis.set_rotation(rotation)
+
+    def get_rot(self):
+        return self.body.rotation.reference_axis.get_rotation_at(0)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
