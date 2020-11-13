@@ -46,6 +46,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         parent_name = data.get('parent')
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None: return None
+        actual_parent = parent.primary or parent
         body_class = data.get('body-class', self.body_class)
         radius = data.get('radius', None)
         if radius is None:
@@ -75,9 +76,9 @@ class ReflectiveYamlParser(YamlModuleParser):
         rings = RingsYamlParser.decode(data.get('rings'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
-        frame = FrameYamlParser.decode(data.get('frame'), parent)
-        orbit = OrbitYamlParser.decode(data.get('orbit'), frame, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), frame, parent)
+        frame = FrameYamlParser.decode(data.get('frame'), actual_parent)
+        orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent)
         body = ReflectiveBody(names=translated_names,
                               source_names=source_names,
                               body_class=body_class,
