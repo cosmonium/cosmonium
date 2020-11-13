@@ -144,6 +144,19 @@ class StellarBody(StellarObject):
         self.remove_component(self.clouds)
         self.remove_component(self.atmosphere)
 
+    def get_components(self):
+        #TODO: This is a hack to be fixed in v0.3.0
+        components = []
+        if self.surface is not None:
+            components.append(self.surface)
+        if self.ring is not None:
+            components.append(self.ring)
+        if self.clouds is not None:
+            components.append(self.clouds)
+        if self.atmosphere is not None:
+            components.append(self.atmosphere)
+        return components
+
     def configure_shape(self):
         if self.scale is not None:
             scale = self.scale
@@ -307,26 +320,16 @@ class ReflectiveBody(StellarBody):
         return face < 0.0 and distance < radius
 
     def start_shadows_update(self):
-        self.surface.start_shadows_update()
-        #TODO: this should be done by looping over components
-        if self.clouds is not None:
-            self.clouds.start_shadows_update()
-        if self.atmosphere is not None:
-            self.atmosphere.start_shadows_update()
+        for component in self.get_components():
+            component.start_shadows_update()
 
     def add_shadow_target(self, target):
-        self.surface.add_shadow_target(target.surface)
-        if target.clouds is not None:
-            self.surface.add_shadow_target(target.clouds)
-        if target.atmosphere is not None:
-            self.surface.add_shadow_target(target.atmosphere)
+        for component in target.get_components():
+            self.surface.add_shadow_target(component)
 
     def end_shadows_update(self):
-        self.surface.end_shadows_update()
-        if self.clouds is not None:
-            self.clouds.end_shadows_update()
-        if self.atmosphere is not None:
-            self.atmosphere.end_shadows_update()
+        for component in self.get_components():
+            component.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())

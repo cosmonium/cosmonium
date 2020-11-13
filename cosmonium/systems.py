@@ -308,23 +308,35 @@ class SimpleSystem(StellarSystem):
     def get_label_text(self):
         return self.primary.get_label_text()
 
-    def get_normals_under_xy(self, x, y):
-        return self.primary.get_normals_under_xy(x, y)
-
     def get_abs_magnitude(self):
         if self.star_system:
             return StellarSystem.get_abs_magnitude(self)
         else:
             return self.primary.get_abs_magnitude()
 
+    def get_components(self):
+        return self.primary.get_components()
+
+    def check_cast_shadow_on(self, body):
+        return self.primary.check_cast_shadow_on(body)
+
+    def start_shadows_update(self):
+        self.primary.start_shadows_update()
+
+    def end_shadows_update(self):
+        self.primary.end_shadows_update()
+
+    def add_shadow_target(self, target):
+        self.primary.add_shadow_target(target)
+
     def update(self, time, dt):
-        StellarSystem.update(self, time, dt)
-        if not self.visible or not self.resolved: return
         primary = self.primary
-        if primary is None or primary.is_emissive(): return
+        if self.visible and self.resolved and primary is not None and not primary.is_emissive():
+            for child in self.children:
+                child.start_shadows_update()
+        StellarSystem.update(self, time, dt)
+        if not self.visible or not self.resolved or primary is None or primary.is_emissive(): return
         check_primary = primary.visible and primary.resolved and primary.in_view
-        for child in self.children:
-            child.start_shadows_update()
         for child in self.children:
             if child == primary: continue
             if child.visible and child.resolved and child.in_view:
