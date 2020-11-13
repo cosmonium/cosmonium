@@ -114,6 +114,18 @@ class FixedPosition(Orbit):
             self.position = position
         self.rotation=LQuaterniond()
 
+    def set_frame_position(self, position):
+        self.position = position
+
+    def set_frame_rotation(self, rotation):
+        self.rotation = rotation
+
+    def get_frame_position_at(self, time):
+        return self.position
+
+    def get_frame_rotation_at(self, time):
+        return self.rotation
+
     def calc_asc_decl(self):
         distance = self.global_position.length()
         if distance > 0:
@@ -177,6 +189,12 @@ class FixedOrbit(Orbit):
     def __init__(self, position=LPoint3d(0, 0, 0), rotation=LQuaterniond(), frame=None):
         Orbit.__init__(self, frame)
         self.position = position
+        self.rotation = rotation
+
+    def set_frame_position(self, position):
+        self.position = position
+
+    def set_frame_rotation(self, rotation):
         self.rotation = rotation
 
     def get_frame_position_at(self, time):

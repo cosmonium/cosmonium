@@ -44,6 +44,9 @@ class ReferenceAxis(ReferenceAxisBase):
     def __init__(self, rotation):
         self.rotation = rotation
 
+    def set_rotation(self, rotation):
+        self.rotation = rotation
+
     def get_rotation_at(self, time):
         return self.rotation
 
