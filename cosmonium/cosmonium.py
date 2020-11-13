@@ -441,9 +441,9 @@ class Cosmonium(CosmoniumBase):
         #self.universe.octree.print_summary()
         #self.universe.octree.print_stats()
 
-        self.sun = self.universe.find_by_path(_('Sol'))
-        if not self.sun:
-            print("Could not find Sun")
+        self.home = self.universe.find_by_path(self.app_config.default_home)
+        if self.home is None:
+            print("Could not find home object", self.app_config.default_home)
         self.splash.set_text("Done")
 
     def configure_scene(self):
@@ -616,7 +616,7 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def select_home(self):
-        self.select_body(self.sun)
+        self.select_body(self.home)
 
     def reset_nav(self):
         print("Reset nav")
@@ -780,7 +780,7 @@ class Cosmonium(CosmoniumBase):
             self.select_body(to_select)
 
     def go_home(self):
-        self.select_body(self.sun)
+        self.select_body(self.home)
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)

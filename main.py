@@ -62,7 +62,8 @@ class CosmoniumConfig(object):
     def __init__(self):
         self.common = 'data/defaults.yaml'
         self.main = 'data/cosmonium.yaml'
-        self.default = None
+        self.default_home = None
+        self.default_target = None
         self.script = None
         self.extra = ['data/extra', settings.data_dir]
         self.celestia = False
@@ -93,8 +94,10 @@ class CosmoniumConfig(object):
             self.main = args.main
         if args.script is not None:
             self.script = args.script
+        if args.home is not None:
+            self.default_home = args.home
         if args.default is not None:
-            self.default = args.default
+            self.default_target = args.default
         if args.extra is not None:
             self.extra += args.extra
         if args.celestia is not None:
@@ -103,7 +106,7 @@ class CosmoniumConfig(object):
             self.celestia = True
         else:
             self.celestia = False
-        if self.celestia and self.script is None and self.default is None:
+        if self.celestia and self.script is None and self.default_target is None:
             self.script = self.celestia_start_script
         self.test_start = args.test_start
 
@@ -144,7 +147,8 @@ class CosmoniumConfigParser(YamlParser):
         self.config.common = data.get('common', self.config.common)
         self.config.main = data.get('main', self.config.main)
         self.config.script = data.get('script', self.config.script)
-        self.config.default = data.get('default', self.config.default)
+        self.config.default_home = data.get('home', self.config.default_home)
+        self.config.default_target = data.get('default', self.config.default_target)
         self.config.extra = data.get('extra', self.config.extra)
         if not isinstance(self.config.extra, list):
             self.config.extra = [self.config.extra]
@@ -233,6 +237,8 @@ class CosmoniumApp(Cosmonium):
             self.load_universe_celestia()
         else:
             self.load_universe_cosmonium()
+        if self.app_config.default_home is None:
+            self.app_config.default_home = _("Sol")
 
     def start_universe(self):
         running = False
@@ -245,9 +251,9 @@ class CosmoniumApp(Cosmonium):
                 print("Running", self.app_config.script)
                 running = self.load_and_run_script(self.app_config.script)
         if not running:
-            if self.app_config.default is None:
-                self.app_config.default = _("Earth")
-            self.select_body(self.universe.find_by_name(self.app_config.default))
+            if self.app_config.default_target is None:
+                self.app_config.default_target = _("Earth")
+            self.select_body(self.universe.find_by_name(self.app_config.default_target))
             self.autopilot.go_to_front(duration=0.0)
             self.gui.update_info(_("Welcome to Cosmonium!"))
 
@@ -266,6 +272,9 @@ parser.add_argument("--common",
                     default=None)
 parser.add_argument("--main",
                     help="Path to the file with the universe configuration",
+                    default=None)
+parser.add_argument("--home",
+                    help="Default home system of body",
                     default=None)
 parser.add_argument("--default",
                     help="Default body to show when there is no start up script",
