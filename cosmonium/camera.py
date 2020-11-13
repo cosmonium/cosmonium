@@ -371,8 +371,10 @@ class EventsControllerBase(DirectObject):
 class CameraController(EventsControllerBase):
     camera_type = None
     FIXED = 'fixed'
+    TRACK = 'track'
     LOOK_AROUND = 'look-around'
     FOLLOW = 'follow'
+
     def __init__(self):
         EventsControllerBase.__init__(self)
         self.camera = None
@@ -380,6 +382,9 @@ class CameraController(EventsControllerBase):
 
     def get_name(self):
         return ''
+
+    def require_target(self):
+        return False
 
     def set_camera_hints(self, **kwargs):
         pass
@@ -393,6 +398,18 @@ class CameraController(EventsControllerBase):
         self.remove_events()
         self.camera = None
         self.reference_point = None
+
+    def get_position(self):
+        return None
+
+    def set_position(self, position):
+        pass
+
+    def get_rotation(self):
+        return None
+
+    def set_rotation(self, rotation):
+        pass
 
     def set_reference_point(self, reference_point):
         self.reference_point = reference_point
@@ -421,6 +438,13 @@ class FixedCameraController(CameraController):
     def register_events(self):
         self.accept('*', self.look_back)
 
+    def get_rotation(self):
+        return self.rotation
+
+    def set_rotation(self, rotation):
+        if rotation is not None:
+            self.rotation = rotation
+
     def look_back(self):
         self.rotation = LQuaterniond()
         if not self.is_looking_back:
@@ -436,6 +460,49 @@ class FixedCameraController(CameraController):
         self.camera.change_global(self.reference_point._global_position)
         self.camera.set_pos(local_position)
         self.camera.set_rot(orientation)
+        self.camera.update()
+
+class TrackCameraController(CameraController):
+    camera_mode = CameraController.TRACK
+
+    def __init__(self):
+        CameraController.__init__(self)
+        self.target = None
+        self.reference_pos = None
+        self.distance = 5.0
+        self.rotation = LQuaterniond()
+
+    def get_name(self):
+        return _('Track camera')
+
+    def require_target(self):
+        return True
+
+    def set_target(self, target):
+        self.target = target
+
+    def set_camera_hints(self, **kwargs):
+        self.reference_pos = kwargs.get('position',  None)
+        self.distance = kwargs.get('distance',  self.distance)
+
+    def get_rotation(self):
+        return self.rotation
+
+    def set_rotation(self, rotation):
+        if rotation is not None:
+            self.rotation = rotation
+
+    def update(self, time, dt):
+        reference_pos = self.reference_pos
+        if reference_pos is None:
+            reference_pos = -LVector3d().forward() * self.reference_point.get_apparent_radius() * self.distance
+        center = self.target.get_rel_position_to(self.reference_point._global_position)
+        self.rotation, angle = self.reference_point.calc_look_at(center, rel=False)
+
+        local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
+        self.camera.change_global(self.reference_point._global_position)
+        self.camera.set_pos(local_position)
+        self.camera.set_rot(self.rotation)
         self.camera.update()
 
 class LookAroundCameraController(CameraController):

@@ -36,7 +36,7 @@ class ShipBase(VisibleObject):
     editable = False
     def __init__(self, name):
         VisibleObject.__init__(self, name)
-        self.camera_modes = [CameraController.FIXED]
+        self.camera_modes = [CameraController.FIXED, CameraController.TRACK]
 
         self.frame = AbsoluteReferenceFrame()
         self._frame_position = LPoint3d()

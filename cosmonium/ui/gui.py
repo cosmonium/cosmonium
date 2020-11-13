@@ -504,9 +504,10 @@ class Gui(object):
         has_selected = self.cosmonium.selected is not None
         controllers = []
         for controller in self.cosmonium.camera_controllers:
+            activable = self.cosmonium.ship.supports_camera_mode(controller.camera_mode) and (not controller.require_target() or self.cosmonium.selected is not None)
             controllers.append((controller.get_name(),
                                 self.cosmonium.camera_controller is controller,
-                                self.cosmonium.set_camera_controller if self.cosmonium.ship.supports_camera_mode(controller.camera_mode) else 0,
+                                self.cosmonium.set_camera_controller if activable else 0,
                                 controller))
         ships = []
         for ship in self.cosmonium.ships:

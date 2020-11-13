@@ -55,7 +55,7 @@ from .parsers import parsers
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
-from .camera import CameraHolder, FixedCameraController, LookAroundCameraController, FollowCameraController
+from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
@@ -410,6 +410,7 @@ class Cosmonium(CosmoniumBase):
             self.observer.add_linked_cam(self.near_cam)
 
         self.add_camera_controller(FixedCameraController())
+        self.add_camera_controller(TrackCameraController())
         self.add_camera_controller(LookAroundCameraController())
         self.add_camera_controller(FollowCameraController())
         self.observer.init()
@@ -518,13 +519,35 @@ class Cosmonium(CosmoniumBase):
         self.camera_controllers.append(camera_controller)
 
     def set_camera_controller(self, camera_controller):
+        if camera_controller.require_target():
+            if self.track is None:
+                self.track = self.selected
+            if self.track is None:
+                return
         if self.camera_controller is not None:
             self.camera_controller.deactivate()
+            position = self.camera_controller.get_position()
+            rotation = self.camera_controller.get_rotation()
+        else:
+            position = None
+            rotation = None
         self.camera_controller = camera_controller
+        if camera_controller.require_target():
+            self.camera_controller.set_target(self.track)
         self.camera_controller.activate(self.observer, self.ship)
+        self.camera_controller.set_position(position)
+        self.camera_controller.set_rotation(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         print("Switching camera to", self.camera_controller.get_name())
+
+    def set_default_camera_controller(self):
+        for camera_controller in self.camera_controllers:
+            if self.ship.supports_camera_mode(camera_controller.camera_mode):
+                self.set_camera_controller(camera_controller)
+                break
+        else:
+            print("ERROR: No camera controller supported by this ship")
 
     def add_ship(self, ship):
         self.ships.append(ship)
@@ -627,7 +650,9 @@ class Cosmonium(CosmoniumBase):
         if self.fly:
             #Disable fly mode when changing body
             self.toggle_fly_mode()
-        self.track = None
+        if self.track is not None:
+            self.track = None
+            self.set_default_camera_controller()
         self.autopilot.reset()
 
     def run_script(self, sequence):
@@ -842,9 +867,18 @@ class Cosmonium(CosmoniumBase):
         self.track_body(self.selected)
 
     def track_body(self, body):
-        self.track = body
-        if self.track is not None:
-            print("Track", body.get_name())
+        if body is not None:
+            for camera_controller in self.camera_controllers:
+                if camera_controller.camera_mode == CameraController.TRACK:
+                    print("Track", body.get_name())
+                    self.track = body
+                    self.set_camera_controller(camera_controller)
+                    break
+            else:
+                print("ERROR: Can not find track camera")
+        else:
+            self.track = None
+            self.set_default_camera_controller()
 
     def toggle_track_selected(self):
         if self.track is not None:
@@ -945,11 +979,6 @@ class Cosmonium(CosmoniumBase):
         self.update_universe(self.time.time_full, self.time.dt)
         self.camera_controller.update(self.time.time_full, self.time.dt)
         self.update_obs()
-
-        if self.track != None:
-            self.autopilot.center_on_object(self.track, duration=0, cmd=False)
-            self.ship.update(self.time.time_full, 0)
-            self.camera_controller.update(self.time.time_full, 0)
 
         if self.universe.nearest_system != self.nearest_system:
             if self.universe.nearest_system is not None:
