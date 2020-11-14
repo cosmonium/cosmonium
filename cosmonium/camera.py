@@ -22,9 +22,11 @@ from __future__ import absolute_import
 
 from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
 from direct.showbase.DirectObject import DirectObject
+from direct.interval.LerpInterval import LerpFunc
 
 from .astro.frame import AbsoluteReferenceFrame
 from . import settings
+from . import utils
 
 from math import sin, cos, acos, tan, atan, sqrt, pi
 
@@ -379,6 +381,7 @@ class CameraController(EventsControllerBase):
         EventsControllerBase.__init__(self)
         self.camera = None
         self.reference_point = None
+        self.current_interval = None
 
     def get_name(self):
         return ''
@@ -399,6 +402,9 @@ class CameraController(EventsControllerBase):
         self.camera = None
         self.reference_point = None
 
+    def prepare_movement(self):
+        pass
+
     def get_position(self):
         return None
 
@@ -411,8 +417,65 @@ class CameraController(EventsControllerBase):
     def set_rotation(self, rotation):
         pass
 
+    def set_abs_rotation(self, rotation):
+        rotation = rotation * self.reference_point._orientation.conjugate()
+        self.set_rotation(rotation)
+
+    def get_abs_rotation(self):
+        rotation = self.get_rotation() * self.reference_point._orientation
+        return rotation
+
     def set_reference_point(self, reference_point):
         self.reference_point = reference_point
+
+    def calc_look_at(self, position, target):
+        abs_rotation = self.get_abs_rotation()
+        direction = LVector3d(target - position)
+        direction.normalize()
+        local_direction = abs_rotation.conjugate().xform(direction)
+        angle = LVector3d.forward().angleRad(local_direction)
+        axis = LVector3d.forward().cross(local_direction)
+        if axis.length() > 0.0:
+            new_rot = utils.relative_rotation(abs_rotation, axis, angle)
+        else:
+            new_rot = abs_rotation
+        return new_rot, angle
+
+    def do_rot(self, step, origin, delta):
+        rotation = origin + delta * step
+        rotation.normalize()
+        #TODO: should be relative to ship orientation
+        self.set_abs_rotation(rotation)
+        if step == 1.0:
+            self.current_interval = None
+
+    def lookat(self, target, duration = 2.0, proportional=True):
+        abs_rotation = self.get_abs_rotation()
+        new_rotation, angle = self.calc_look_at(self.reference_point.get_pos(), target)
+        if settings.debug_jump: duration = 0
+        if duration == 0:
+            self.set_rotation(new_rotation)
+        else:
+            if proportional:
+                duration = duration * angle / pi
+            if self.current_interval != None:
+                self.current_interval.pause()
+            self.current_interval = LerpFunc(self.do_rot,
+                fromData=0,
+                toData=1,
+                duration=duration,
+                blendType='easeInOut',
+                extraArgs=[abs_rotation, new_rotation - abs_rotation],
+                name=None)
+            self.current_interval.start()
+
+    def center_on_object(self, target, duration=None, cmd=True, proportional=True):
+        if duration is None:
+            duration = settings.fast_move
+        if target is None: return
+        if cmd: print("Center on", target.get_name())
+        center = target.get_rel_position_to(self.reference_point._global_position)
+        self.lookat(center, duration=duration, proportional=proportional)
 
     def update(self, time, dt):
         pass
@@ -433,7 +496,6 @@ class FixedCameraController(CameraController):
     def set_camera_hints(self, **kwargs):
         self.reference_pos = kwargs.get('position',  None)
         self.distance = kwargs.get('distance',  self.distance)
-        self.reference_rot = kwargs.get('rotation', self.reference_rot)
 
     def register_events(self):
         self.accept('*', self.look_back)
@@ -444,6 +506,11 @@ class FixedCameraController(CameraController):
     def set_rotation(self, rotation):
         if rotation is not None:
             self.rotation = rotation
+
+    def prepare_movement(self):
+        rotation = self.rotation * self.reference_point._orientation
+        self.reference_point.set_rot(rotation)
+        self.rotation = LQuaterniond()
 
     def look_back(self):
         self.rotation = LQuaterniond()
@@ -456,10 +523,10 @@ class FixedCameraController(CameraController):
         if reference_pos is None:
             reference_pos = -LVector3d().forward() * self.reference_point.get_apparent_radius() * self.distance
         local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
-        orientation = self.reference_rot * self.rotation * self.reference_point._orientation
+        rotation = self.rotation * self.reference_point._orientation
         self.camera.change_global(self.reference_point._global_position)
         self.camera.set_pos(local_position)
-        self.camera.set_rot(orientation)
+        self.camera.set_rot(rotation)
         self.camera.update()
 
 class TrackCameraController(CameraController):
@@ -496,8 +563,7 @@ class TrackCameraController(CameraController):
         reference_pos = self.reference_pos
         if reference_pos is None:
             reference_pos = -LVector3d().forward() * self.reference_point.get_apparent_radius() * self.distance
-        center = self.target.get_rel_position_to(self.reference_point._global_position)
-        self.rotation, angle = self.reference_point.calc_look_at(center, rel=False)
+        self.center_on_object(self.target, duration=0, cmd=False)
 
         local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
         self.camera.change_global(self.reference_point._global_position)

@@ -178,16 +178,12 @@ class Gui(object):
         event_ctrl.accept('d', self.autopilot.go_to_front, [None, None, None, False])
         event_ctrl.accept('shift-d', self.autopilot.go_to_front, [None, None, None, True])
         event_ctrl.accept('g', self.autopilot.go_to_object)
-        event_ctrl.accept('c', self.autopilot.center_on_object)
+        event_ctrl.accept('c', self.cosmonium.center_on_object)
         event_ctrl.accept('control-j', self.toggle_jump)
 
         event_ctrl.accept('shift-n', self.autopilot.go_north)
         event_ctrl.accept('shift-s', self.autopilot.go_south)
         event_ctrl.accept('shift-r', self.autopilot.go_meridian)
-
-        event_ctrl.accept('shift-t', self.autopilot.go_system_top)
-        event_ctrl.accept('shift-f', self.autopilot.go_system_front)
-        event_ctrl.accept('shift-i', self.autopilot.go_system_side)
 
         event_ctrl.accept('shift-e', self.autopilot.align_on_ecliptic)
         event_ctrl.accept('shift-q', self.autopilot.align_on_equatorial)
@@ -283,7 +279,7 @@ class Gui(object):
     def left_click(self):
         body = self.mouse.get_over()
         if body != None and self.cosmonium.selected == body:
-            self.autopilot.center_on_object(body)
+            self.cosmonium.center_on_object(body)
             return
         self.cosmonium.select_body(body)
 
@@ -516,7 +512,7 @@ class Gui(object):
         return (
                 (menu_text(_('_Mode')), 0, controllers),
                 0,
-                (menu_text(_('_Center on'), 'C'), 0, self.autopilot.center_on_object if has_selected else 0),
+                (menu_text(_('_Center on'), 'C'), 0, self.cosmonium.center_on_object if has_selected else 0),
                 #('Look _back'), '*'), 0, self.camera.camera_look_back),
                 (menu_text(_('_Track'), 'Y'), 0, self.cosmonium.track_selected if has_selected else 0),
                 0,
@@ -751,7 +747,7 @@ class Gui(object):
         items = []
         if over is not None:
             self.cosmonium.select_body(over)
-            items.append((over.get_friendly_name(), 0, self.cosmonium.autopilot.center_on_object))
+            items.append((over.get_friendly_name(), 0, self.cosmonium.center_on_object))
             items.append(0)
             items.append([_('_Info'), 0, self.show_info])
             items.append([_('_Goto'), 0, self.autopilot.go_to_object])

@@ -84,7 +84,7 @@ Center the currently selected object in the field of view.
 Time specifies how many seconds it should take to slew the camera.
 """
     duration=float(parameters.get('time', '1.0'))
-    sequence.append(Func(base.autopilot.center_on_object, duration=duration, proportional=False))
+    sequence.append(Func(base.center_on_object, duration=duration, proportional=False))
 
 def changedistance(command_name, sequence, base, parameters):
     """Parameters:
