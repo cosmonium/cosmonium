@@ -539,6 +539,7 @@ class Cosmonium(CosmoniumBase):
         self.camera_controller.set_rotation(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
+        self.autopilot.set_camera_controller(self.camera_controller)
         print("Switching camera to", self.camera_controller.get_name())
 
     def set_default_camera_controller(self):
@@ -654,6 +655,11 @@ class Cosmonium(CosmoniumBase):
             self.track = None
             self.set_default_camera_controller()
         self.autopilot.reset()
+
+    def center_on_object(self, target=None, duration=None, cmd=True, proportional=True):
+        if target is None and self.selected is not None:
+            target = self.selected
+        self.camera_controller.center_on_object(target, duration, cmd, proportional)
 
     def run_script(self, sequence):
         if self.current_sequence is not None:

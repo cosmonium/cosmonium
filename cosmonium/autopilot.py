@@ -39,6 +39,7 @@ class AutoPilot(object):
     def __init__(self, ui):
         self.ui = ui
         self.ship = None
+        self.camera_controller =None
         self.current_interval = None
         self.timed_interval = None
         self.last_interval_time = None
@@ -48,6 +49,9 @@ class AutoPilot(object):
 
     def set_ship(self, ship):
         self.ship = ship
+
+    def set_camera_controller(self, camera_controller):
+        self.camera_controller = camera_controller
 
     def reset(self):
         if self.current_interval != None:
@@ -64,33 +68,6 @@ class AutoPilot(object):
     def pop_position(self):
         self.start_pos = self.ship.get_rel_position_of(self.start_pos, local=False)
         self.end_pos = self.ship.get_rel_position_of(self.end_pos, local=False)
-
-    def do_rot(self, step, origin, delta):
-        #TODO: this is wrong, it should be replaced by do_move_and_rot()
-        rot = origin + delta * step
-        rot.normalize()
-        self.ship.set_rot(rot)
-        if step == 1.0:
-            self.current_interval = None
-
-    def lookat(self, position, rel=False, duration = 2.0, proportional=True):
-        new_rot, angle = self.ship.calc_look_at(position, rel)
-        if settings.debug_jump: duration = 0
-        if duration == 0:
-            self.ship.set_rot(new_rot)
-        else:
-            if proportional:
-                duration = duration*angle/pi
-            if self.current_interval != None:
-                self.current_interval.pause()
-            self.current_interval = LerpFunc(self.do_rot,
-                fromData=0,
-                toData=1,
-                duration=duration,
-                blendType='easeInOut',
-                extraArgs=[self.ship.get_rot(), new_rot - self.ship.get_rot()],
-                name=None)
-            self.current_interval.start()
 
     def do_move(self, step):
         position = self.end_pos * step + self.start_pos * (1.0 - step)
@@ -158,6 +135,7 @@ class AutoPilot(object):
 
     def move_and_rotate_to(self, new_pos, new_rot, absolute=True, duration=0):
         if settings.debug_jump: duration = 0
+        self.camera_controller.prepare_movement()
         if duration == 0:
             if absolute:
                 self.ship.set_pos(new_pos)
@@ -194,40 +172,6 @@ class AutoPilot(object):
             parallel = Parallel(nodepath_lerp, func_lerp)
             self.current_interval = parallel
             self.current_interval.start()
-
-    def center_on_object(self, target=None, duration=None, cmd=True, proportional=True):
-        if duration is None:
-            duration = settings.fast_move
-        if target is None and self.ui.selected:
-            target=self.ui.selected
-        if target is None: return
-        if cmd: print("Center on", target.get_name())
-        center = target.get_rel_position_to(self.ship._global_position)
-        self.lookat(center, rel=False, duration=duration, proportional=proportional)
-
-    def go_system_top(self):
-        if self.ui.nearest_system is not None:
-            distance = self.ui.nearest_system.get_extend()
-        else:
-            distance = units.AU * 4
-        self.ship.set_pos(LPoint3d(0, 0, distance))
-        self.lookat(LPoint3d(0, 0, 0))
-
-    def go_system_front(self):
-        if self.ui.nearest_system is not None:
-            distance = self.ui.nearest_system.get_extend()
-        else:
-            distance = units.AU * 4
-        self.ship.set_pos(LPoint3d(0, distance, 0))
-        self.lookat(LPoint3d(0, 0, 0))
-
-    def go_system_side(self):
-        if self.ui.nearest_system is not None:
-            distance = self.ui.nearest_system.get_extend()
-        else:
-            distance = units.AU * 4
-        self.ship.set_pos(LPoint3d(distance, 0, 0))
-        self.lookat(LPoint3d(0, 0, 0))
 
     def go_to(self, target, duration, position, direction, up):
         if up is None:
