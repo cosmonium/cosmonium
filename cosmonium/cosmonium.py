@@ -539,6 +539,7 @@ class Cosmonium(CosmoniumBase):
         self.camera_controller.set_rotation(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
+        self.nav.set_camera_controller(camera_controller)
         self.autopilot.set_camera_controller(self.camera_controller)
         print("Switching camera to", self.camera_controller.get_name())
 
@@ -584,7 +585,7 @@ class Cosmonium(CosmoniumBase):
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
-            self.nav.init(self, self.observer, self.ship, self.gui)
+            self.nav.init(self, self.observer, self.camera_controller, self.ship, self.gui)
             self.nav.register_events(self)
 
     def toggle_fly_mode(self):

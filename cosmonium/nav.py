@@ -32,6 +32,7 @@ class NavBase(object):
     def __init__(self):
         self.base = None
         self.camera = None
+        self.camera_controller = None
         self.ship = None
         self.keyMap = {}
         self.dragCenter = None
@@ -42,14 +43,18 @@ class NavBase(object):
         self.wheel_event_time = 0.0
         self.wheel_direction = 0.0
 
-    def init(self, base, camera, ship, ui):
+    def init(self, base, camera, camera_controller, ship, ui):
         self.base = base
         self.camera = camera
+        self.camera_controller = camera_controller
         self.ship = ship
         self.ui = ui
 
     def set_ship(self, ship):
         self.ship = ship
+
+    def set_camera_controller(self, camera_controller):
+        self.camera_controller = camera_controller
 
     def setKey(self, key, state, *keys):
         self.keyMap[key] = state
@@ -325,6 +330,9 @@ class FreeNav(NavBase):
             if self.keyMap['shift-down']:
                 self.drag_x -= self.drag_coef * dt
                 self.do_drag(self.drag_z, self.drag_x, True)
+
+        if self.keyMap['a'] or self.keyMap['z']:
+            self.camera_controller.prepare_movement()
 
         if self.keyMap['a']:
             if self.speed == 0:
