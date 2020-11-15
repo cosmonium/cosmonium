@@ -119,7 +119,6 @@ class FreeNav(NavBase):
     def __init__(self):
         NavBase.__init__(self)
         self.speed = 0.0
-        self.mouseSelectClick = False
         self.mouseTrackClick = False
         self.keyboardTrack = False
         self.startX = None
@@ -169,8 +168,6 @@ class FreeNav(NavBase):
         event_ctrl.accept("q", self.switchDirection)
         event_ctrl.accept("s", self.stop)
 
-        event_ctrl.accept("mouse1", self.OnSelectClick )
-        event_ctrl.accept("mouse1-up", self.OnSelectRelease )
         event_ctrl.accept("mouse3", self.OnTrackClick )
         event_ctrl.accept("mouse3-up", self.OnTrackRelease )
 
@@ -230,24 +227,6 @@ class FreeNav(NavBase):
     def stop(self):
         self.speed = 0
 
-    def OnSelectClick(self):
-        if self.base.mouseWatcherNode.hasMouse():
-            self.mouseSelectClick = True
-            mpos = self.base.mouseWatcherNode.getMouse()
-            self.startX = mpos.getX()
-            self.startY = mpos.getY()
-            self.dragCenter = self.ship.get_pos()
-            self.dragOrientation = self.ship.get_rot()
-            self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
-            self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
-
-    def OnSelectRelease(self):
-        if self.base.mouseWatcherNode.hasMouse():
-            mpos = self.base.mouseWatcherNode.getMouse()
-            if self.startX == mpos.getX() and self.startY == mpos.getY():
-                self.ui.left_click()
-        self.mouseSelectClick = False
-
     def OnTrackClick(self):
         if not self.base.mouseWatcherNode.hasMouse(): return
         mpos = self.base.mouseWatcherNode.getMouse()
@@ -285,14 +264,6 @@ class FreeNav(NavBase):
             z_angle = -deltaX * self.dragAngleX
             x_angle = deltaY * self.dragAngleY
             self.do_drag(z_angle, x_angle, True)
-
-        if self.mouseSelectClick and self.base.mouseWatcherNode.hasMouse():
-            mpos = self.base.mouseWatcherNode.getMouse()
-            deltaX = mpos.getX() - self.startX
-            deltaY = mpos.getY() - self.startY
-            z_angle = deltaX * self.camera.realCamLens.getHfov() / 180 * pi / 2
-            x_angle = -deltaY * self.camera.realCamLens.getVfov() / 180 * pi / 2
-            self.do_drag(z_angle, x_angle)
 
         if settings.celestia_nav:
             if self.keyMap['up']:
