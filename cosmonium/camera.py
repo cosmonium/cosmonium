@@ -482,8 +482,12 @@ class CameraController(EventsControllerBase):
 
 class FixedCameraController(CameraController):
     camera_mode = CameraController.FIXED
+    STATE_DEFAULT = 'default'
+    STATE_MOUSE_DRAG = 'mouse-drag'
+
     def __init__(self):
         CameraController.__init__(self)
+        self.state = self.STATE_DEFAULT
         self.rotation = LQuaterniond()
         self.is_looking_back = False
         self.reference_pos = None
@@ -499,6 +503,21 @@ class FixedCameraController(CameraController):
 
     def register_events(self):
         self.accept('*', self.look_back)
+        self.accept("mouse1", self.mouse_click_event)
+        self.accept("mouse1-up", self.mouse_release_event)
+
+    def mouse_click_event(self):
+        if not self.state == self.STATE_DEFAULT: return
+        self.mouse_control = RotateAnchorHelper(self.camera)
+        orbit_speed_z = self.camera.realCamLens.getHfov() / 180 * pi / 2
+        orbit_speed_x = self.camera.realCamLens.getVfov() / 180 * pi / 2
+        self.mouse_control.start(orbit_speed_x, orbit_speed_z)
+        self.state = self.STATE_MOUSE_DRAG
+
+    def mouse_release_event(self):
+        if self.state == self.STATE_MOUSE_DRAG:
+            self.mouse_control = None
+            self.state = self.STATE_DEFAULT
 
     def get_rotation(self):
         return self.rotation
@@ -523,10 +542,16 @@ class FixedCameraController(CameraController):
         if reference_pos is None:
             reference_pos = -LVector3d().forward() * self.reference_point.get_apparent_radius() * self.distance
         local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
-        rotation = self.rotation * self.reference_point._orientation
         self.camera.change_global(self.reference_point._global_position)
         self.camera.set_pos(local_position)
-        self.camera.set_rot(rotation)
+        if self.state == self.STATE_DEFAULT:
+            rotation = self.rotation * self.reference_point._orientation
+            self.camera.set_rot(rotation)
+        elif self.state == self.STATE_MOUSE_DRAG:
+            self.mouse_control.update()
+            self.rotation = self.camera.get_rot() * self.reference_point._orientation.conjugate()
+        else:
+            print("Unknown state", self.state)
         self.camera.update()
 
 class TrackCameraController(CameraController):
@@ -814,4 +839,4 @@ class SurfaceFollowCameraController(CameraController):
             self.camera.set_rot(camera_orientation)
             self.camera.update()
         else:
-            print("Uknown state", self.state)
+            print("Unknown state", self.state)
