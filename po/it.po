@@ -83,6 +83,18 @@ msgstr "Atmosfera"
 msgid "Clouds"
 msgstr "Nuvole"
 
+#: ../cosmonium/camera.py:414
+msgid "Fixed camera"
+msgstr "Camera fissa"
+
+#: ../cosmonium/camera.py:450
+msgid "Look around camera"
+msgstr "Camera 360°"
+
+#: ../cosmonium/camera.py:482 ../cosmonium/camera.py:538
+msgid "Follow camera"
+msgstr "Camera agganciata"
+
 #: ../cosmonium/cosmonium.py:416
 msgid "Sol"
 msgstr "Sole"
