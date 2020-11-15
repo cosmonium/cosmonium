@@ -38,7 +38,7 @@ sys.path.insert(1, 'third-party/gltf')
 from cosmonium.cosmonium import Cosmonium
 
 from cosmonium.parsers.yamlparser import YamlParser
-from cosmonium.parsers.objectparser import UniverseYamlParser
+from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser
 from cosmonium.celestia import ssc_parser
 from cosmonium.celestia import stc_parser
 from cosmonium.celestia import star_parser
@@ -180,7 +180,8 @@ class CosmoniumApp(Cosmonium):
     def load_universe_celestia(self):
         self.find_celestia_data()
         if len(self.app_config.celestia_support) > 0:
-            parser = UniverseYamlParser(self.universe)
+            parser = ObjectYamlParser()
+            universeYamlParser.set_universe(self.universe)
             for support in self.app_config.celestia_support:
                 self.load_file(parser, support)
         names = star_parser.load_names(self.app_config.celestia_stars_names)
@@ -215,11 +216,12 @@ class CosmoniumApp(Cosmonium):
                 self.load_file(parser, entry_path)
 
     def load_universe_cosmonium(self):
-        parser = UniverseYamlParser(self.universe)
+        parser = ObjectYamlParser()
         locale = defaultDirContext.find_file('main', 'data/locale')
         parser.set_translation(self.load_lang('main', locale))
+        universeYamlParser.set_universe(self.universe)
         parser.load_and_parse(self.app_config.common)
-        parser.load_and_parse(self.app_config.main)
+        parser.load_and_parse(self.app_config.main, self.universe)
         for extra in self.app_config.extra:
             if os.path.isdir(extra):
                 self.load_dir(parser, extra)

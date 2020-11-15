@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-11-04 18:45+0100\n"
+"POT-Creation-Date: 2020-11-06 18:09+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -83,11 +83,23 @@ msgstr "Atmosphère"
 msgid "Clouds"
 msgstr "Nuages"
 
-#: ../cosmonium/cosmonium.py:416
+#: ../cosmonium/camera.py:414
+msgid "Fixed camera"
+msgstr "Caméra fixe"
+
+#: ../cosmonium/camera.py:450
+msgid "Look around camera"
+msgstr "Caméra tournante"
+
+#: ../cosmonium/camera.py:482 ../cosmonium/camera.py:538
+msgid "Follow camera"
+msgstr "Caméra suiveuse"
+
+#: ../cosmonium/cosmonium.py:437
 msgid "Sol"
 msgstr "Soleil"
 
-#: ../cosmonium/cosmonium.py:650
+#: ../cosmonium/cosmonium.py:671
 msgid "Magnitude limit:  %.1f"
 msgstr "Limite de magnitude: %.1f"
 
@@ -878,6 +890,6 @@ msgstr "Règler l'heure"
 msgid "Earth"
 msgstr "Terre"
 
-#: ../main.py:251
+#: ../main.py:250
 msgid "Welcome to Cosmonium!"
 msgstr "Bienvenue dans Cosmonium !"

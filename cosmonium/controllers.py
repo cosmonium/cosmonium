@@ -26,12 +26,22 @@ from cosmonium.astro.rotations import FixedRotation
 from cosmonium.astro.frame import SurfaceReferenceFrame
 
 class BodyController():
+    """
+    Base class to control an existing body in Cosmonium.
+    """
     context = None
     def __init__(self, body):
         self.body = body
         self.mover = None
 
     def create_mover(self):
+        """
+        Create a mover helper according to the body orbit, rotation and reference frame.
+        Currently a mover will only be created if the body has a fixed orbit and rotation, which allows the mover
+        to simply update them.
+        If the reference frame is linked to the surface of an object, a surface mover will be created,
+        otherwise a generic cartesian mover will be createDd
+        """
         if not isinstance(self.body.orbit, (FixedOrbit, FixedPosition)):
             print("Can not create a mover with dynamic orbit", self.body.orbit)
             return
@@ -44,24 +54,58 @@ class BodyController():
             self.mover = CartesianBodyMover(self.body)
 
     def init(self):
+        """
+        Actual init() method called when the whole universe has been loaded and the body is ready to be controlled.
+        The default inmplementation will create a mover helper to control the position and rotation of the body.
+        """
         self.create_mover()
 
     def should_update(self, time, dt):
+        """
+        Return True if the update method should be called this cycle.
+        The default implementation returns True only if the body is visible.
+        """
         return self.body.visible
 
     def update(self, time, dt):
+        """
+        Method called each cycle to update the physical properties of the object, e.g. it's position, rotation, ...
+        :param time: The time of the simulation expressed in Julian days
+        :param dt: The interval since the last cycle in seconds.
+        """
         pass
 
     def update_obs(self, observer):
+        """
+        Method called each cycle to alter the properties of the object related to the actual position of the observer.
+        The actual update_obs() method of the body will be called before this method
+        :param observer: The current observer (camera)
+        """
         pass
 
     def check_visibility(self, pixel_size):
+        """
+        Method called each cycle to alter the visibility property of the object.
+        The actual check_visibility() method of the body will be called before this method
+        :param pixel_size: The size factor of a pixel on the screen.
+        """
         pass
 
     def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+        """
+        Method called each cycle, if the body is resolved, to alter the instance of the object in the scene
+        The actual check_and_update_instance() method of the body will be called before this method
+        :param camera_pos: Absolute position of the camera
+        :param camera_rot: Absolute rotation of the camera.
+        :param pointset: Do not use.
+        """
         pass
 
 class BodyMover():
+    """
+    Base class for the mover helper. A mover hides to the controller how to update the position and rotation of the body.
+    It also provides helper method to do basic movements.
+    """
     def __init__(self, body):
         self.body = body
 
@@ -72,30 +116,67 @@ class BodyMover():
         pass
 
     def set_pos(self, position):
+        """
+        Set the position of the body in the orbit reference frame.
+        :param position: The new position
+        """
         pass
 
     def get_pos(self):
-        pass
-
-    def get_rot(self):
+        """
+        Return the position of the body in the orbit reference frame.
+        :returns: The current position of the body
+        """
         pass
 
     def set_rot(self, rotation):
+        """
+        Set the rotation of the body in the rotation reference frame.
+        :param rotation: The new rotation as a Quaternion
+        """
+        pass
+
+    def get_rot(self):
+        """
+        Return the rotation of the body in the rotation reference frame.
+        :returns: The current rotation as a Quaternion
+        """
         pass
 
     def delta(self, delta):
+        """
+        Add delta to the position of the body in the orbit reference frame.
+        :param delta: The position offset as a Vector
+        """
         pass
 
     def step(self, direction, distance):
+        """
+        Move the body with the given direction and distance in the orbit reference frame.
+        :param direction: The direction of the movement.
+        :param distance: The amplitude of the step.
+        """
         pass
 
     def step_relative(self, distance):
+        """
+        Move the body with the given distance in the forward direction of the rotation reference frame, in the orbit reference frame.
+        :param distance: The amplitude of the step.
+        """
         pass
 
     def turn(self, angle):
+        """
+        Set the body rotation around it's vertical axis in the rotation reference frame.
+        :param angle: The new rotation angle in Radians.
+        """
         pass
 
     def turn_relative(self, step):
+        """
+        Turn the body around it's vertical axis in the rotation reference frame.
+        :param step: The rotation step in Radians.
+        """
         pass
 
     def set_state(self, new_state):
@@ -103,16 +184,16 @@ class BodyMover():
 
 class CartesianBodyMover(BodyMover):
     def set_pos(self, position):
-        self.body.set_frame_pos(position)
+        self.body.orbit.set_frame_position(position)
 
     def get_pos(self):
-        return self.body.get_frame_pos()
-
-    def get_rot(self):
-        return self.body.get_frame_rot()
+        return self.body.orbit.get_frame_position_at(0)
 
     def set_rot(self, rotation):
-        self.body.set_frame_rot(rotation)
+        self.body.rotation.reference_axis.set_rotation(rotation)
+
+    def get_rot(self):
+        return self.body.rotation.reference_axis.get_rotation_at(0)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)

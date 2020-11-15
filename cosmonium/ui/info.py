@@ -24,7 +24,7 @@ from __future__ import absolute_import
 from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
-from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FuncOrbit
+from ..astro.orbits import Orbit, FixedPosition, FixedOrbit, EllipticalOrbit, FuncOrbit
 from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation, FuncRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
 from ..astro import bayer
@@ -194,7 +194,7 @@ def stellar_body(body):
     general.append([_("Rings"), _("Yes") if body.ring is not None else _("No")])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedPosition):
+    if body.system is not None and isinstance(body.orbit, FixedOrbit):
         texts.append(ObjectInfo.get_info_for(body.system.orbit))
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))
@@ -217,7 +217,7 @@ def star(body):
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedPosition):
+    if body.system is not None and isinstance(body.orbit, FixedOrbit):
         texts.append(ObjectInfo.get_info_for(body.system.orbit))
     else:
         texts.append(ObjectInfo.get_info_for(body.orbit))

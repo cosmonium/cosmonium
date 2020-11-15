@@ -108,8 +108,9 @@ class StellarObject(LabelledObject):
     nb_visibility = 0
     nb_instance = 0
 
-    def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         LabelledObject.__init__(self, names)
+        self.source_names = source_names
         self.description = description
         self.system = None
         self.body_class = body_class
@@ -166,6 +167,8 @@ class StellarObject(LabelledObject):
         #TODO: Should be done properly
         self.orbit.body = self
         self.rotation.body = self
+        #TODO: This is temporary until v0.3.x
+        self.create_orbit_object()
         objectsDB.add(self)
 
     def is_system(self):
@@ -296,8 +299,10 @@ class StellarObject(LabelledObject):
         for name in self.names:
             if name.upper() == name_up:
                 return True
-        else:
-            return False
+        for name in self.source_names:
+            if name.upper() == name_up:
+                return True
+        return False
 
     def set_selected(self, selected):
         self.selected = selected
@@ -306,12 +311,6 @@ class StellarObject(LabelledObject):
         else:
             if self.parent:
                 self.parent.set_selected(selected)
-
-    def set_parent(self, parent):
-        CompositeObject.set_parent(self, parent)
-        self.orbit.frame.set_parent_body(self.parent)
-        self.rotation.frame.set_parent_body(self.parent)
-        self.create_orbit_object()
 
     def set_star(self, star):
         self.star = star

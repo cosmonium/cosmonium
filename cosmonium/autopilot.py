@@ -40,6 +40,8 @@ class AutoPilot(object):
         self.ui = ui
         self.ship = None
         self.current_interval = None
+        self.timed_interval = None
+        self.last_interval_time = None
         self.fake = None
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
@@ -51,6 +53,9 @@ class AutoPilot(object):
         if self.current_interval != None:
             self.current_interval.pause()
             self.current_interval = None
+        if self.timed_interval != None:
+            self.timed_interval.pause()
+            self.timed_interval = None
 
     def stash_position(self):
         self.start_pos = self.ship.get_position_of(self.start_pos)
@@ -121,25 +126,26 @@ class AutoPilot(object):
     def do_update_func(self, step, func, extra):
         delta = globalClock.getRealTime() - self.last_interval_time
         self.last_interval_time = globalClock.getRealTime()
-        func(delta, *extra)
+        if self.current_interval is None:
+            func(delta, *extra)
         if step == 1.0:
-            self.current_interval = None
+            self.timed_interval = None
 
     def update_func(self, func, duration=0, extra=()):
         if settings.debug_jump: duration = 0
         if duration == 0:
             func(duration, *extra)
         else:
-            if self.current_interval != None:
-                self.current_interval.pause()
+            if self.timed_interval != None:
+                self.timed_interval.pause()
             self.last_interval_time = globalClock.getRealTime()
-            self.current_interval = LerpFunc(self.do_update_func,
+            self.timed_interval = LerpFunc(self.do_update_func,
                 fromData=0,
                 toData=1,
                 duration=duration,
                 extraArgs=[func, extra],
                 name=None)
-            self.current_interval.start()
+            self.timed_interval.start()
 
     def do_move_and_rot(self, step):
         rot = LQuaterniond(*self.fake.getQuat())
@@ -418,7 +424,9 @@ class AutoPilot(object):
         rot.setFromAxisAngleRad(rate * delta, axis)
         rot2 = self.ship._frame_rotation.conjugate() * rot * self.ship._frame_rotation
         rot2.normalize()
-        new_pos = rot2.conjugate().xform(relative_pos)
+        distance = relative_pos.length()
+        relative_pos.normalize()
+        new_pos = rot2.xform(relative_pos) * distance
         self.ship.set_frame_pos(new_pos + center)
         self.ship.turn(self.ship._frame_rotation * rot2, absolute=False)
 

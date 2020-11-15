@@ -34,11 +34,15 @@ from .rotationsparser import RotationYamlParser
 from .noiseparser import NoiseYamlParser
 from .surfacesparser import SurfaceYamlParser
 from .elementsparser import CloudsYamlParser, RingsYamlParser
+from .utilsparser import check_parent
 
 class StarYamlParser(YamlModuleParser):
-    def decode(self, data):
-        name = self.translate_names(data.get('name'))
+    def decode(self, data, parent):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
+        parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         body_class = data.get('body-class', 'star')
         radius = data.get('radius', None)
         if radius is None:
@@ -60,8 +64,8 @@ class StarYamlParser(YamlModuleParser):
         temperature = data.get('temperature')
         abs_magnitude = data.get('magnitude')
         spectral_type = data.get('spectral-type')
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         surfaces = data.get('surfaces')
         if surfaces is not None:
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, data)
@@ -74,7 +78,8 @@ class StarYamlParser(YamlModuleParser):
             surfaces = []
         clouds = CloudsYamlParser.decode(data.get('clouds'), None)
         rings = RingsYamlParser.decode(data.get('rings'))
-        star = Star(name,
+        star = Star(translated_names,
+                    source_names=source_names,
                     body_class=body_class,
                     radius=radius,
                     oblateness=ellipticity,
@@ -90,12 +95,8 @@ class StarYamlParser(YamlModuleParser):
                     spectral_type=spectral_type)
         for surface in surfaces:
             star.add_surface(surface)
-        if parent_name is not None:
-            parent = objectsDB.get(parent_name)
-            if parent is not None:
-                parent.add_child_star_fast(star)
-            else:
-                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
+        if explicit_parent:
+            parent.add_child_fast(star)
             return None
         else:
             return star

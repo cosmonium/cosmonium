@@ -38,7 +38,7 @@ from time import time
 
 class Universe(StellarSystem):
     def __init__(self, context):
-        StellarSystem.__init__(self, 'Universe',
+        StellarSystem.__init__(self, ['Universe'], [],
                                orbit=FixedOrbit(frame=AbsoluteReferenceFrame()),
                                rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
                                description='Universe')

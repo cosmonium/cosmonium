@@ -26,6 +26,7 @@ from ..bodies import Star
 from ..astro.spectraltype import spectralTypeStringDecoder, spectralTypeIntDecoder
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import UnknownRotation
+from ..astro.frame import j2000BarycentricEclipticReferenceFrame, j2000BarycentricEquatorialReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -48,9 +49,10 @@ def parse_line(line, names, universe):
             name = names[catNo]
         else:
             name = "HIP %d" % catNo
-        orbit = FixedPosition(right_asc=float(ra), declination=float(decl), distance=float(distance), distance_unit=units.Ly)
+        orbit = FixedPosition(right_asc=float(ra), declination=float(decl), distance=float(distance), distance_unit=units.Ly,
+                              frame=j2000BarycentricEquatorialReferenceFrame)
         abs_magnitude = app_to_abs_mag(float(app_magnitude), float(distance) * units.KmPerLy)
-        star = Star(name,
+        star = Star(name, source_names=[],
                     radius=None,
                     surface_factory=celestiaStarSurfaceFactory,
                     spectral_type=spectralTypeStringDecoder.decode(spectral_type),
@@ -104,8 +106,8 @@ def do_load_bin(filepath, names, universe):
         else:
             name = "HIP %d" % catNo
         position = LVector3d(x * units.Ly, -z * units.Ly, y * units.Ly)
-        orbit = FixedPosition(position=position)
-        star = Star(name,
+        orbit = FixedPosition(position=position, frame=j2000BarycentricEclipticReferenceFrame)
+        star = Star(name, source_names=[],
                     surface_factory=celestiaStarSurfaceFactory,
                     spectral_type=spectralTypeIntDecoder.decode(spectral_type),
                     abs_magnitude=abs_magnitude / 256.0,

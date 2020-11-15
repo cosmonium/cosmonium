@@ -127,12 +127,23 @@ class YamlModuleParser(YamlParser):
 
     @classmethod
     def translate_names(cls, names, context=None):
+        translated_names = []
+        source_names = []
         if not isinstance(names, list):
             names = [names]
         if context is not None:
-            return list(map(lambda x: cls.translation.pgettext(context, x), names))
+            for name in names:
+                translated = cls.translation.pgettext(context, name)
+                translated_names.append(translated)
+                if translated != name:
+                    source_names.append(name)
         else:
-            return list(map(lambda x: cls.translation.gettext(x), names))
+            for name in names:
+                translated = cls.translation.gettext(name)
+                translated_names.append(translated)
+                if translated != name:
+                    source_names.append(name)
+        return (translated_names, source_names)
 
     def create_new_context(self, old_context, filepath):
         new_context = DirContext(old_context)
@@ -171,7 +182,7 @@ class YamlModuleParser(YamlParser):
         except IOError as e:
             print("Could not write cache for", filename, cache_file, ':', e)
 
-    def load_and_parse(self, filename, context=None):
+    def load_and_parse(self, filename, parent=None, context=None):
         data = None
         if context is None:
             context = YamlModuleParser.context
@@ -192,7 +203,10 @@ class YamlModuleParser(YamlParser):
                 if settings.cache_yaml and data is not None:
                     self.store_to_cache(data, filename, filepath)
             if data is not None:
-                data = self.decode(data)
+                if parent is not None:
+                    data = self.decode(data, parent)
+                else:
+                    data =self.decode(data)
             YamlModuleParser.context = saved_context
         else:
             print("Could not find", filename)

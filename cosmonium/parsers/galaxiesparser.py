@@ -29,6 +29,7 @@ from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .objectparser import ObjectYamlParser
 from .yamlparser import YamlModuleParser
+from .utilsparser import check_parent
 
 from math import pi
 
@@ -158,18 +159,23 @@ class GalaxyShapeYamlParser(YamlModuleParser):
             return cls.decode_shape(data)
 
 class GalaxyYamlParser(YamlModuleParser):
-    def decode(self, data):
-        name = self.translate_names(data.get('name'))
+    def decode(self, data, parent=None):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
+        parent_name = data.get('parent')
+        parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
         body_class = data.get('body-class', 'galaxy')
         radius = float(data.get('radius'))
         radius_units = DistanceUnitsYamlParser.decode(data.get('radius-units', 'Ly'))
         abs_magnitude = data.get('magnitude')
         shape_type = data.get('type')
-        orbit = OrbitYamlParser.decode(data.get('orbit'))
-        rotation = RotationYamlParser.decode(data.get('rotation'))
+        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         appearance = GalaxyAppearanceYamlParser.decode(data)
         shape = GalaxyShapeYamlParser.decode(data, shape_type)
-        galaxy = Galaxy(name,
+        galaxy = Galaxy(translated_names,
+                    source_names=source_names,
                     body_class=body_class,
                     shape_type=shape_type,
                     shape=shape,
@@ -179,6 +185,10 @@ class GalaxyYamlParser(YamlModuleParser):
                     radius_units=radius_units,
                     orbit=orbit,
                     rotation=rotation)
-        return galaxy
+        if explicit_parent:
+            parent.add_child_fast(galaxy)
+            return None
+        else:
+            return galaxy
 
 ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())

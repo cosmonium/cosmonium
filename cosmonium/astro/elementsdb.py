@@ -50,21 +50,29 @@ class ElementsDB(object):
         category.elements[element_name] = element
 
     def get(self, name):
+        element = None
         if ':' in name:
             (category_name, element_name) = name.split(':')
             if category_name in self.db_map:
                 if element_name in self.db_map[category_name].elements:
-                    return copy(self.db_map[category_name].elements[element_name])
+                    element = self.db_map[category_name].elements[element_name]
                 else:
                     print("DB", self.name, ':', "Element", name, "not found in category", category_name)
             else:
                 print("DB", self.name, ':', "Category", category_name, "not found")
         else:
             element_name = name
-        for category in self.db_list:
-            if element_name in category.elements:
-                return copy(category.elements[element_name])
-        print("DB", self.name, ':', "Element", name, "not found")
+        if element is None:
+            for category in self.db_list:
+                if element_name in category.elements:
+                    element = category.elements[element_name]
+                    break
+        if element is not None:
+            element = copy(element)
+            element.frame = copy(element.frame)
+        else:
+            print("DB", self.name, ':', "Element", name, "not found")
+        return element
 
 orbit_elements_db = ElementsDB('orbits')
 rotation_elements_db = ElementsDB('rotations')

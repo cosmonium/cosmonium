@@ -22,6 +22,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..astro import units
+from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
 
@@ -29,6 +30,23 @@ import re
 
 hour_angle_regex= re.compile('^(\d+)\:(\d+)\'(\d+\.?\d*)\"$')
 degree_angle_regex= re.compile(u'^([-+]?\d+)[d°](\d+)\'(\d+\.?\d*)\"$')
+
+def check_parent(name, parent, parent_name):
+    explicit_parent = False
+    if parent is not None:
+        if parent_name is not None:
+            print("Ignoring parent for %s" % name)
+    else:
+        if parent_name is not None:
+            explicit_parent = True
+            parent = objectsDB.get(parent_name)
+            if parent is not None:
+                parent = parent.get_or_create_system()
+            else:
+                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
+    if parent is None:
+        print("Object %s has no parent" % name)
+    return (parent, explicit_parent)
 
 def hour_angle_decoder(text):
     if text is None: return None

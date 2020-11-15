@@ -135,7 +135,7 @@ def instanciate_rings(data):
                 appearance=appearance,
                 shader=BasicShader())
 
-def instanciate_body(universe, names, is_planet, data):
+def instanciate_body(universe, names, is_planet, data, parent):
     appearance=Appearance()
     point_color=None
     radius=1.0
@@ -223,7 +223,7 @@ def instanciate_body(universe, names, is_planet, data):
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value)
+            orbit = instanciate_custom_orbit(value, parent)
             custom_orbit = True
         elif key == 'RotationPeriod':
             legacy_rotation = True
@@ -241,15 +241,15 @@ def instanciate_body(universe, names, is_planet, data):
             legacy_rotation = True
             rotation_ascending_node = value
         elif key == 'OrbitFrame':
-            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, orbit_global_coord)
+            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, parent, orbit_global_coord)
         elif key == 'BodyFrame':
-            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, rotation_global_coord)
+            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, parent, rotation_global_coord)
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, rotation_global_coord)
         elif key == 'PrecessingRotation':
             rotation = instanciate_precessing_rotation(value)
         elif key == 'CustomRotation':
-            rotation = instanciate_custom_rotation(value)
+            rotation = instanciate_custom_rotation(value, parent)
             custom_rotation = True
         elif key == 'Class':
             body_class = value
@@ -259,14 +259,14 @@ def instanciate_body(universe, names, is_planet, data):
             print("Key of body", key, "not supported")
     if orbit_frame is None and not custom_orbit:
         if is_planet:
-            orbit_frame = J2000EclipticReferenceFrame()
+            orbit_frame = J2000EclipticReferenceFrame(parent)
         else:
-            orbit_frame = EquatorialReferenceFrame()
+            orbit_frame = EquatorialReferenceFrame(parent)
     if body_frame is None and not custom_rotation:
         if is_planet:
-            body_frame = J2000EclipticReferenceFrame()
+            body_frame = J2000EclipticReferenceFrame(parent)
         else:
-            body_frame = EquatorialReferenceFrame()
+            body_frame = EquatorialReferenceFrame(parent)
     if orbit is None:
         orbit=FixedOrbit(frame=orbit_frame)
     elif not custom_orbit:
@@ -297,7 +297,7 @@ def instanciate_body(universe, names, is_planet, data):
                           shape=shape,
                           appearance=appearance,
                           shader=BasicShader(lighting_model=lighting_model))
-    body = ReflectiveBody(names=names,
+    body = ReflectiveBody(names=names, source_names=[],
                           radius=radius,
                           surface=surface,
                           oblateness=oblateness,
@@ -315,7 +315,7 @@ def instanciate_body(universe, names, is_planet, data):
     body.body_class = body_class
     return body
 
-def instanciate_reference_point(universe, names, is_planet, data):
+def instanciate_reference_point(universe, names, is_planet, data, parent):
     orbit=None
     legacy_rotation = False
     rotation_period = None
@@ -340,7 +340,7 @@ def instanciate_reference_point(universe, names, is_planet, data):
         if key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value)
+            orbit = instanciate_custom_orbit(value, parent)
             custom_orbit = True
         elif key == 'RotationPeriod':
             legacy_rotation = True
@@ -358,28 +358,28 @@ def instanciate_reference_point(universe, names, is_planet, data):
             legacy_rotation = True
             rotation_ascending_node = value
         elif key == 'OrbitFrame':
-            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, orbit_global_coord)
+            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, orbit_global_coord, parent)
         elif key == 'BodyFrame':
-            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, rotation_global_coord)
+            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, rotation_global_coord, parent)
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, rotation_global_coord)
         elif key == 'PrecessingRotation':
             rotation = instanciate_precessing_rotation(value)
         elif key == 'CustomRotation':
-            rotation = instanciate_custom_rotation(value)
+            rotation = instanciate_custom_rotation(value, parent)
             custom_rotation = True
         else:
             print("Key of ReferencePoint", key, "not supported")
     if orbit_frame is None and not custom_orbit:
         if is_planet:
-            orbit_frame = J2000EclipticReferenceFrame()
+            orbit_frame = J2000EclipticReferenceFrame(parent)
         else:
-            orbit_frame = EquatorialReferenceFrame()
+            orbit_frame = EquatorialReferenceFrame(parent)
     if body_frame is None and not custom_rotation:
         if is_planet:
-            body_frame = J2000EclipticReferenceFrame()
+            body_frame = J2000EclipticReferenceFrame(parent)
         else:
-            body_frame = EquatorialReferenceFrame()
+            body_frame = EquatorialReferenceFrame(parent)
     if orbit is None:
         orbit=FixedOrbit(frame=orbit_frame)
     elif not custom_orbit:
@@ -395,7 +395,7 @@ def instanciate_reference_point(universe, names, is_planet, data):
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    ref = ReferencePoint(names=names,
+    ref = ReferencePoint(names=names, source_names=[],
                          orbit=orbit,
                          rotation=rotation,
                          body_class=body_class)
@@ -427,9 +427,9 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
         print("Parent", item_parent, "not found")
         return
     if item_type == 'Body':
-        body = instanciate_body(universe, names, is_planet, item_data)
+        body = instanciate_body(universe, names, is_planet, item_data, parent)
     elif item_type == 'ReferencePoint':
-        body = instanciate_reference_point(universe, names, is_planet, item_data)
+        body = instanciate_reference_point(universe, names, is_planet, item_data, parent)
     parent.add_child_fast(body)
     
 def instanciate(items_list, universe):

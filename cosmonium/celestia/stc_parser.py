@@ -25,6 +25,7 @@ from ..systems import Barycenter
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import UnknownRotation
+from ..astro.frame import j2000BarycentricEquatorialReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -69,6 +70,13 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     parent = None
     surface_factory = None
     texture = None
+    parent_name = item_data.get('OrbitBarycenter')
+    if parent_name is not None:
+        parent = objectsDB.get(bayer.canonize_name(parent_name))
+        if parent is None:
+            print("Could not find parent", parent)
+    if parent is None:
+        parent = universe
     for (key, value) in item_data.items():
         if key == 'RA':
             ra = value
@@ -93,36 +101,33 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         elif key == 'Texture':
             texture = value
         elif key == 'OrbitBarycenter':
-            parent = objectsDB.get(bayer.canonize_name(value))
-            if parent is None:
-                print("Could not find parent", value)
+            pass
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, True)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value)
+            orbit = instanciate_custom_orbit(value, parent)
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, True)
         elif key == 'CustomRotation':
-            rotation = instanciate_custom_rotation(value)
+            rotation = instanciate_custom_rotation(value, parent)
         elif key == 'RotationPeriod':
             pass # = value
         else:
             print("Key of Star", key, "not supported")
     if orbit is None:
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
+    orbit.set_frame(j2000BarycentricEquatorialReferenceFrame)
     if distance is not None:
         distance *= units.Ly
     elif parent is not None:
         distance = parent.get_global_position().length()
     if app_magnitude != None and distance != None:
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
-    if parent is None:
-        parent = universe
     if texture is not None:
         surface_factory=StarTexSurfaceFactory(texture)
     else:
         surface_factory=celestiaStarSurfaceFactory
-    star = Star(names,
+    star = Star(names, source_names=[],
                 surface_factory=surface_factory,
                 abs_magnitude=abs_magnitude,
                 temperature=temperature,
@@ -141,6 +146,13 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     orbit = None
     rotation = UnknownRotation()
     parent = None
+    parent_name = item_data.get('OrbitBarycenter')
+    if parent_name is not None:
+        parent = objectsDB.get(bayer.canonize_name(parent_name))
+        if parent is None:
+            print("Could not find parent", parent)
+    if parent is None:
+        parent = universe
     for (key, value) in item_data.items():
         if key == 'RA':
             ra = value
@@ -149,13 +161,11 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         elif key == 'Distance':
             distance = value
         elif key == 'OrbitBarycenter':
-            parent = objectsDB.get(bayer.canonize_name(value))
-            if parent is None:
-                print("Could not find parent", value)
+            pass
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, True)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value)
+            orbit = instanciate_custom_orbit(value, parent)
         else:
             print("Key of Barycenter", key, "not supported")
     existing_star = objectsDB.get(names[-1])
@@ -166,9 +176,8 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
             existing_star.parent.remove_child_fast(existing_star)
     if orbit is None:
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
-    if parent is None:
-        parent = universe
-    barycenter = Barycenter(names, orbit=orbit, rotation=rotation)
+    orbit.set_frame(j2000BarycentricEquatorialReferenceFrame)
+    barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_star_fast(barycenter)
     return barycenter
 

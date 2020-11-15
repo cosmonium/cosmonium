@@ -28,8 +28,8 @@ class StellarSystem(StellarObject):
     virtual_object = True
     support_offset_body_center = False
 
-    def __init__(self, names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
-        StellarObject.__init__(self, names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.children = []
         self.children_map = ObjectsDB()
         #Not used by StellarSystem, but used to detect SimpleSystem
@@ -257,8 +257,8 @@ class StellarSystem(StellarObject):
         return self.abs_magnitude
 
 class SimpleSystem(StellarSystem):
-    def __init__(self, names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
-        StellarSystem.__init__(self, names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
+        StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.star_system = star_system
         self.set_primary(primary)
 
@@ -314,14 +314,29 @@ class SimpleSystem(StellarSystem):
         else:
             return self.primary.get_abs_magnitude()
 
+    def get_components(self):
+        return self.primary.get_components()
+
+    def check_cast_shadow_on(self, body):
+        return self.primary.check_cast_shadow_on(body)
+
+    def start_shadows_update(self):
+        self.primary.start_shadows_update()
+
+    def end_shadows_update(self):
+        self.primary.end_shadows_update()
+
+    def add_shadow_target(self, target):
+        self.primary.add_shadow_target(target)
+
     def update(self, time, dt):
-        StellarSystem.update(self, time, dt)
-        if not self.visible or not self.resolved: return
         primary = self.primary
-        if primary is None or primary.is_emissive(): return
+        if self.visible and self.resolved and primary is not None and not primary.is_emissive():
+            for child in self.children:
+                child.start_shadows_update()
+        StellarSystem.update(self, time, dt)
+        if not self.visible or not self.resolved or primary is None or primary.is_emissive(): return
         check_primary = primary.visible and primary.resolved and primary.in_view
-        for child in self.children:
-            child.start_shadows_update()
         for child in self.children:
             if child == primary: continue
             if child.visible and child.resolved and child.in_view:

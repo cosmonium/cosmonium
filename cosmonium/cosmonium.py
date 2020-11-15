@@ -149,25 +149,32 @@ class CosmoniumBase(ShowBase):
 
     def load_lang(self, domain, locale_path):
         languages = None
-        if sys.platform == 'darwin':
-            #TODO: This is a workaround until either Panda3D provides the locale to use
-            #or we switch to pyobjc.
-            #This should be moved to its own module
-            status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
-            if status == 0:
-                languages = [output]
-            else:
-                print("Could not retrieve default locale")
-        elif sys.platform == 'win32':
-            import ctypes
-            import locale
-            windll = ctypes.windll.kernel32
-            language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
-            if language is not None:
-                languages = [language]
-            else:
-                print("Could not retrieve default locale")
+        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            val = os.environ.get(envar)
+            if val:
+                languages = val.split(':')
+                break
+        if languages is None:
+            if sys.platform == 'darwin':
+                #TODO: This is a workaround until either Panda3D provides the locale to use
+                #or we switch to pyobjc.
+                #This should be moved to its own module
+                status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
+                if status == 0:
+                    languages = [output]
+                else:
+                    print("Could not retrieve default locale")
+            elif sys.platform == 'win32':
+                import ctypes
+                import locale
+                windll = ctypes.windll.kernel32
+                language = locale.windows_locale[ windll.GetUserDefaultUILanguage() ]
+                if language is not None:
+                    languages = [language]
+                else:
+                    print("Could not retrieve default locale")
 
+        print("Found languages", ', '.join(languages))
         return gettext.translation(domain, locale_path, languages=languages, fallback=True)
 
     def init_lang(self):
@@ -297,9 +304,9 @@ class CosmoniumBase(ShowBase):
                     settings.win_fs_height = height
                     configParser.save()
                 if self.request_fullscreen:
-                    if self.gui is not None: self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", 0.5, 2.0)
+                    if self.gui is not None: self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", duration=0.5, fade=2.0)
             else:
-                if self.gui is not None: self.gui.update_info("Could not switch to fullscreen mode", 0.5, 2.0)
+                if self.gui is not None: self.gui.update_info("Could not switch to fullscreen mode", duration=0.5, fade=2.0)
                 settings.win_fullscreen = False
             self.request_fullscreen = False
         else:
@@ -349,7 +356,7 @@ class CosmoniumBase(ShowBase):
         else:
             print("Could not save filename")
             if self.gui is not None:
-                self.gui.update_info("Could not save filename", 1.0, 1.0)
+                self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
 
 class Cosmonium(CosmoniumBase):
     def __init__(self):
@@ -654,7 +661,7 @@ class Cosmonium(CosmoniumBase):
             self.gui.update_info("Invalid URL...")
 
     def reset_all(self):
-        self.gui.update_info("Cancel", 0.5, 1.0)
+        self.gui.update_info("Cancel", duration=0.5, fade=1.0)
         self.reset_nav()
         self.reset_script()
 
@@ -668,7 +675,7 @@ class Cosmonium(CosmoniumBase):
     def set_limit_magnitude(self, mag):
         settings.lowest_app_magnitude = min(16.0, max(0.0, mag))
         print("Magnitude limit:  %.1f" % settings.lowest_app_magnitude)
-        self.gui.update_info(_("Magnitude limit:  %.1f") % settings.lowest_app_magnitude, 0.5, 1.0)
+        self.gui.update_info(_("Magnitude limit:  %.1f") % settings.lowest_app_magnitude, duration=0.5, fade=1.0)
         self.save_settings()
 
     def incr_limit_magnitude(self, incr):
@@ -787,7 +794,7 @@ class Cosmonium(CosmoniumBase):
             corrected_ambient = settings.global_ambient
         settings.corrected_global_ambient = corrected_ambient
         print("Ambient light level:  %.2f" % settings.global_ambient)
-        self.gui.update_info("Ambient light level:  %.2f" % settings.global_ambient, 0.5, 1.0)
+        self.gui.update_info("Ambient light level:  %.2f" % settings.global_ambient, duration=0.5, fade=1.0)
         self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
         self.globalAmbientPath = self.world.attachNewNode(self.globalAmbient)
         self.world.setLight(self.globalAmbientPath)

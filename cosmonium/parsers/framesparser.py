@@ -24,6 +24,7 @@ from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEcliptic
 from ..astro.frame import J2000EquatorialReferenceFrame, J2000HeliocentricEquatorialReferenceFrame
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
+from ..astro.frame import BodyReferenceFrame
 from ..astro.frame import frames_db
 
 from .yamlparser import YamlModuleParser
@@ -32,43 +33,45 @@ from .utilsparser import AngleUnitsYamlParser
 
 class FrameYamlParser(YamlModuleParser):
     @classmethod
-    def decode_j2000_ecliptic(cls, data):
-        body = data.get('center', None)
+    def decode_j2000_ecliptic(cls, data, parent):
+        body = data.get('center', parent)
         return J2000EclipticReferenceFrame(body)
 
     @classmethod
-    def decode_j2000_equatorial(cls, data):
-        body = data.get('center', None)
+    def decode_j2000_equatorial(cls, data, parent):
+        body = data.get('center', parent)
         return J2000EquatorialReferenceFrame(body)
 
     @classmethod
-    def decode_equatorial(cls, data):
+    def decode_equatorial(cls, data, parent):
+        body = data.get('center', parent)
         ra = data.get("ra", 0.0)
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
-        return CelestialReferenceFrame(right_asc=ra, declination=de, longitude_at_node=node)
+        return CelestialReferenceFrame(body, right_asc=ra, declination=de, longitude_at_node=node)
 
     @classmethod
-    def decode_mean_equatorial(cls, data):
-        return EquatorialReferenceFrame()
+    def decode_mean_equatorial(cls, data, parent):
+        body = data.get('center', parent)
+        return EquatorialReferenceFrame(body)
 
     @classmethod
-    def decode_surface_frame(self, data):
+    def decode_surface_frame(self, data, parent):
         long = data.get('long', 0.0)
         long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
         lat = data.get('lat', 0.0)
         lat_units = AngleUnitsYamlParser.decode(data.get('lat-units', 'Deg'))
-        return SurfaceReferenceFrame(long * long_units, lat * lat_units)
+        return SurfaceReferenceFrame(parent, long * long_units, lat * lat_units)
 
     @classmethod
-    def decode(self, data):
-        if data is None: return J2000EclipticReferenceFrame()
+    def decode(self, data, parent=None):
+        if data is None: return J2000EclipticReferenceFrame(parent)
         (object_type, parameters) = self.get_type_and_data(data)
         object_type = object_type.lower()
         if object_type == 'j2000ecliptic':
-            return self.decode_j2000_ecliptic(parameters)
+            return self.decode_j2000_ecliptic(parameters, parent)
         elif object_type == 'j2000equatorial':
-            return self.decode_j2000_equatorial(parameters)
+            return self.decode_j2000_equatorial(parameters, parent )
         elif object_type == 'j2000heliocentricecliptic':
             return J2000HeliocentricEclipticReferenceFrame()
         elif object_type == 'j2000heliocentricequatorial':
@@ -76,20 +79,24 @@ class FrameYamlParser(YamlModuleParser):
         elif object_type == 'fixed':
             return SynchroneReferenceFrame()
         elif object_type == 'surface':
-            return self.decode_surface_frame(parameters)
+            return self.decode_surface_frame(parameters, parent)
         elif object_type == 'equatorial':
-            return self.decode_equatorial(parameters)
+            return self.decode_equatorial(parameters, parent)
         elif object_type == 'mean-equatorial':
-            return self.decode_mean_equatorial(parameters)
+            return self.decode_mean_equatorial(parameters, parent)
         else:
-            return frames_db.get(object_type)
+            frame = frames_db.get(object_type)
+            #TODO: this should not be done arbitrarily
+            if isinstance(frame, BodyReferenceFrame):
+                frame.set_body(parent)
+            return frame
 
 class NamedFrameYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, parent=None):
         name = data.get('name')
         if name is None: return None
-        frame = FrameYamlParser.decode(data)
+        frame = FrameYamlParser.decode(data, None)
         frames_db.register_frame(name, frame)
         return None
 

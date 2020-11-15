@@ -52,6 +52,8 @@ class GlobalObjectsDB(object):
         self.oids.append(body)
         for name in body.names:
             self.db[name.upper()] = body
+        for name in body.source_names:
+            self.db[name.upper()] = body
 
     def get(self, name):
         return self.db.get(name.upper(), None)

@@ -29,6 +29,7 @@ from .bigfix import Bigfix
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
+from ..bodyclass import bodyClasses
 from .. import settings
 
 from math import pi
@@ -101,19 +102,34 @@ A negative rate will move closer to the object, a positive rate moves farther ou
 def cls(command_name, sequence, base, parameters):
     pass
 
+
 def display(command_name, sequence, base, parameters):
     """Parameters:
 string text = ""
 Description:
 Show a line of text on the screen.
 """
+    origin_map = {
+        'bottomleft': base.a2dBottomLeft,
+        'bottom': base.a2dBottomCenter,
+        'bottomright': base.a2dBottomRight,
+        'left': base.a2dLeftCenter,
+        'center': base.aspect2d,
+        'right': base.a2dRightCenter,
+        'topleft': base.a2dTopLeft,
+        'top': base.a2dTopCenter,
+        'topright': base.a2dTopRight
+    }
     text = parameters.get('text', '')
     text = text.replace('\\n', '\n')
     origin = parameters.get('origin', 'bottomleft')
+    anchor = origin_map.get(origin, None)
     row = float(parameters.get('row', '0.0'))
     column = float(parameters.get('column', '0.0'))
-    duration = float(parameters.get('duration', '0.0'))
-    sequence.append(Func(base.gui.update_info, text, duration))
+    duration = float(parameters.get('duration', '1.0e6'))
+    color = (1, 1, 1, 1)
+    fade = 1.0
+    sequence.append(Func(base.gui.update_info, text, (column, row), color, anchor, duration, fade))
 
 def exit(command_name, sequence, base, parameters):
     """Description:
@@ -303,7 +319,7 @@ def do_renderflags(base, set_flags, clear_flags):
         elif name == "constellations":
             settings.show_asterisms = value
         elif name == "galaxies":
-            pass
+            bodyClasses.set_show('galaxy', value)
         elif name == "globulars":
             pass
         elif name == "planets":
@@ -327,7 +343,7 @@ def do_renderflags(base, set_flags, clear_flags):
         elif name == "automag":
             pass
         elif name == "atmospheres":
-            pass
+            settings.show_atmospheres = value
         elif name == "grid" or name == "equatorialgrid":
             if value:
                 base.equatorial_grid.show()
@@ -361,7 +377,7 @@ def do_renderflags(base, set_flags, clear_flags):
         apply_setting(setting, True)
     for setting in clear_flags:
         apply_setting(setting, False)
-    base.trigger_check_settings = True
+    base.update_settings()
 
 def renderflags(command_name, sequence, base, parameters):
     """Parameters:

@@ -34,14 +34,19 @@ from .elementsparser import CloudsYamlParser, RingsYamlParser
 from .surfacesparser import SurfaceYamlParser
 from .framesparser import FrameYamlParser
 from .controllersparser import ControllerYamlParser
+from .utilsparser import check_parent
 
 class ReflectiveYamlParser(YamlModuleParser):
     def __init__(self, body_class):
         self.body_class = body_class
 
-    def decode(self, data):
-        name = self.translate_names(data.get('name'))
+    def decode(self, data, parent=None):
+        name = data.get('name')
+        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
+        parent, explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None: return None
+        actual_parent = parent.primary or parent
         body_class = data.get('body-class', self.body_class)
         radius = data.get('radius', None)
         if radius is None:
@@ -71,10 +76,11 @@ class ReflectiveYamlParser(YamlModuleParser):
         rings = RingsYamlParser.decode(data.get('rings'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
-        frame = FrameYamlParser.decode(data.get('frame', None))
-        orbit = OrbitYamlParser.decode(data.get('orbit'), frame)
-        rotation = RotationYamlParser.decode(data.get('rotation'), frame)
-        body = ReflectiveBody(names=name,
+        frame = FrameYamlParser.decode(data.get('frame'), actual_parent)
+        orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
+        rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent)
+        body = ReflectiveBody(names=translated_names,
+                              source_names=source_names,
                               body_class=body_class,
                               radius=radius,
                               oblateness=ellipticity,
@@ -89,15 +95,9 @@ class ReflectiveYamlParser(YamlModuleParser):
                               albedo=albedo)
         for surface in surfaces:
             body.add_surface(surface)
+        if explicit_parent:
+            parent.add_child_fast(body)
         controller_data = data.get('controller')
-        if parent_name is not None:
-            parent = objectsDB.get(parent_name)
-            if parent is not None:
-                system = parent.get_or_create_system()
-                system.add_child_fast(body)
-            else:
-                print("ERROR: Parent '%s' of '%s' not found" % (parent_name, name))
-                return None
         if controller_data is not None:
             controller_class = ControllerYamlParser.decode(controller_data)
             controller = controller_class(body)

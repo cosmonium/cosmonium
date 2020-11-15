@@ -627,6 +627,7 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             corrected_ambient = settings.global_ambient
         settings.corrected_global_ambient = corrected_ambient
+        render.set_shader_input("global_ambient", settings.corrected_global_ambient)
         print("Ambient light level:  %.2f" % settings.global_ambient)
 
     def incr_ambient(self, ambient_incr):

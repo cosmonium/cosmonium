@@ -40,7 +40,6 @@ from .shaders import BasicShader, FlatLightingModel
 from . import settings
 
 from math import asin, pi
-from copy import deepcopy
 
 class ReferencePoint(StellarObject):
     virtual_object = True
@@ -53,13 +52,13 @@ class StellarBody(StellarObject):
     has_rotation_axis = True
     has_reference_axis = True
 
-    def __init__(self, names, radius, oblateness=None, scale=None,
+    def __init__(self, names, source_names, radius, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  atmosphere=None, ring=None, clouds=None,
                  body_class=None, point_color=None,
                  description=''):
-        StellarObject.__init__(self, names, orbit, rotation, body_class, point_color, description)
+        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.surface = None
         self.ring = ring
         self.clouds = clouds
@@ -88,7 +87,8 @@ class StellarBody(StellarObject):
         if self.system is None:
             print("Creating system for", self.get_name())
             system_orbit = self.orbit
-            self.system = SimpleSystem(self.get_name() + " System", primary=self, orbit=system_orbit)
+            #TODO: The system name should be translated correctly
+            self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit)
             self.parent.add_child_fast(self.system)
             system_orbit.set_body(self.system)
             orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, system_orbit.frame))
@@ -143,6 +143,19 @@ class StellarBody(StellarObject):
         self.remove_component(self.ring)
         self.remove_component(self.clouds)
         self.remove_component(self.atmosphere)
+
+    def get_components(self):
+        #TODO: This is a hack to be fixed in v0.3.0
+        components = []
+        if self.surface is not None:
+            components.append(self.surface)
+        if self.ring is not None:
+            components.append(self.ring)
+        if self.clouds is not None:
+            components.append(self.clouds)
+        if self.atmosphere is not None:
+            components.append(self.atmosphere)
+        return components
 
     def configure_shape(self):
         if self.scale is not None:
@@ -307,26 +320,16 @@ class ReflectiveBody(StellarBody):
         return face < 0.0 and distance < radius
 
     def start_shadows_update(self):
-        self.surface.start_shadows_update()
-        #TODO: this should be done by looping over components
-        if self.clouds is not None:
-            self.clouds.start_shadows_update()
-        if self.atmosphere is not None:
-            self.atmosphere.start_shadows_update()
+        for component in self.get_components():
+            component.start_shadows_update()
 
     def add_shadow_target(self, target):
-        self.surface.add_shadow_target(target.surface)
-        if target.clouds is not None:
-            self.surface.add_shadow_target(target.clouds)
-        if target.atmosphere is not None:
-            self.surface.add_shadow_target(target.atmosphere)
+        for component in target.get_components():
+            self.surface.add_shadow_target(component)
 
     def end_shadows_update(self):
-        self.surface.end_shadows_update()
-        if self.clouds is not None:
-            self.clouds.end_shadows_update()
-        if self.atmosphere is not None:
-            self.atmosphere.end_shadows_update()
+        for component in self.get_components():
+            component.end_shadows_update()
 
     def create_light(self):
         print("Create light for", self.get_name())
@@ -409,7 +412,7 @@ class StarTexSurfaceFactory(SurfaceFactory):
         return FlatSurface('surface', shape=shape, appearance=appearance, shader=shader)
 
 class Star(EmissiveBody):
-    def __init__(self, names, radius=None, oblateness=None, scale=None,
+    def __init__(self, names, source_names, radius=None, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  abs_magnitude=None, temperature=None, spectral_type=None,
@@ -438,7 +441,8 @@ class Star(EmissiveBody):
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
         self._extend = radius #TODO: Optim for octree
-        EmissiveBody.__init__(self, names=names, radius=radius, oblateness=oblateness, scale=scale,
+        EmissiveBody.__init__(self, names=names, source_names=source_names,
+                              radius=radius, oblateness=oblateness, scale=scale,
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
@@ -453,14 +457,14 @@ class DeepSpaceObject(EmissiveBody):
     has_resolved_halo = False
     support_offset_body_center = False
 
-    def __init__(self, name, radius, radius_units=units.Ly,
+    def __init__(self, names, source_names, radius, radius_units=units.Ly,
                  abs_magnitude=None,
                  surface=None,
                  orbit=None, rotation=None,
                  body_class=None, point_color=None,
                  description=''):
         radius = radius * radius_units
-        EmissiveBody.__init__(self, name, radius,
+        EmissiveBody.__init__(self, names, source_names, radius,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
