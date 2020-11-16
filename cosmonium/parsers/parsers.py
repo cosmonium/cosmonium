@@ -34,3 +34,4 @@ from . import starsparser
 from . import nebulasparser
 from . import systemsparser
 from . import shipsparser
+from . import pluginparser
