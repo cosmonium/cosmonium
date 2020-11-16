@@ -26,14 +26,63 @@ from .astro import units
 from math import pi, exp
 import sys
 
-class NavBase(object):
-    wheel_event_duration = 0.1
-
+class NavigationController:
     def __init__(self):
         self.base = None
         self.camera = None
         self.camera_controller = None
         self.ship = None
+
+    def init(self, base, camera, camera_controller, ship, ui):
+        self.base = base
+        self.camera = camera
+        self.camera_controller = camera_controller
+        self.ship = ship
+        #TODO: TO be removed, see below
+        self.ui = ui
+
+    def set_target(self, target):
+        pass
+
+    def set_controller(self, controller):
+        pass
+
+    def get_name(self):
+        return ''
+
+    def require_target(self):
+        return False
+
+    def require_controller(self):
+        return False
+
+    def register_events(self, event_ctrl):
+        #TODO: Should inherit from DirectObject and use own event handler
+        pass
+
+    def remove_events(self, event_ctrl):
+        pass
+
+    def set_ship(self, ship):
+        self.ship = ship
+
+    def set_camera_controller(self, camera_controller):
+        self.camera_controller = camera_controller
+
+    def stash_position(self):
+        pass
+
+    def pop_position(self):
+        pass
+
+    def update(self, time, dt):
+        pass
+
+class InteractiveNavigationController(NavigationController):
+    wheel_event_duration = 0.1
+
+    def __init__(self):
+        NavigationController.__init__(self)
         self.keyMap = {}
         self.dragCenter = None
         self.dragDir = None
@@ -43,29 +92,13 @@ class NavBase(object):
         self.wheel_event_time = 0.0
         self.wheel_direction = 0.0
 
-    def init(self, base, camera, camera_controller, ship, ui):
-        self.base = base
-        self.camera = camera
-        self.camera_controller = camera_controller
-        self.ship = ship
-        self.ui = ui
-
-    def set_ship(self, ship):
-        self.ship = ship
-
-    def set_camera_controller(self, camera_controller):
-        self.camera_controller = camera_controller
+    def get_name(self):
+        return 'Free navigation'
 
     def setKey(self, key, state, *keys):
         self.keyMap[key] = state
         for key in keys:
             self.keyMap[key] = state
-
-    def register_events(self, event_ctrl):
-        pass
-
-    def remove_events(self, event_ctrl):
-        pass
 
     def register_wheel_events(self, event_ctrl):
         event_ctrl.accept("wheel_up", self.wheel_event, [1])
@@ -112,17 +145,14 @@ class NavBase(object):
         else:
             self.ship.set_rot(self.dragOrientation * combined)
 
-    def update(self, dt):
-        pass
-
-class FreeNav(NavBase):
+class FreeNav(InteractiveNavigationController):
     rot_step_per_sec = pi/2
     incr_speed_rot_step_per_sec = 0.7
     decr_speed_rot_step_per_sec = incr_speed_rot_step_per_sec * 2.0
     distance_speed = 2.0
 
     def __init__(self):
-        NavBase.__init__(self)
+        InteractiveNavigationController.__init__(self)
         self.speed = 0.0
         self.mouseTrackClick = False
         self.keyboardTrack = False
@@ -254,10 +284,11 @@ class FreeNav(NavBase):
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
             if self.startX == mpos.getX() and self.startY == mpos.getY():
+                #TODO: should be moved to the mouse handler class !
                 self.ui.right_click()
         self.mouseTrackClick = False
 
-    def update(self, dt):
+    def update(self, time, dt):
         rot_x = 0.0
         rot_y = 0.0
         rot_z = 0.0
@@ -420,15 +451,23 @@ class FreeNav(NavBase):
         else:
             self.ship.set_pos(target._local_position - direction * (height + settings.min_altitude))
 
-class WalkNav(NavBase):
+class WalkNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4
     speed = 10  * units.m
     distance_speed = 2.0
 
-    def __init__(self, body):
-        NavBase.__init__(self)
-        self.body = body
+    def __init__(self):
+        InteractiveNavigationController.__init__(self)
         self.speed_factor = 1.0
+
+    def get_name(self):
+        return 'Fly'
+
+    def require_target(self):
+        return True
+
+    def set_target(self, target):
+        self.body = target
 
     def register_events(self, event_ctrl):
         self.keyMap = {"left": 0, "right": 0,
@@ -499,7 +538,7 @@ class WalkNav(NavBase):
     def slow(self):
         self.speed_factor = 1.0
 
-    def update(self, dt):
+    def update(self, time, dt):
         if self.keyMap['up']:
             self.step(self.speed * self.speed_factor * dt)
 
@@ -589,15 +628,24 @@ class WalkNav(NavBase):
         rot.setFromAxisAngleRad(angle, axis)
         self.ship.step_turn(rot, absolute=False)
 
-class ControlNav(NavBase):
+class ControlNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4
     speed = 10  * units.m
     distance_speed = 2.0
 
-    def __init__(self, controller):
-        NavBase.__init__(self)
-        self.controller = controller
+    def __init__(self):
+        InteractiveNavigationController.__init__(self)
+        self.controller = None
         self.speed_factor = 1.0
+
+    def get_name(self):
+        return 'Control body'
+
+    def require_controller(self):
+        return True
+
+    def set_controller(self, controller):
+        self.controller = controller
 
     def register_events(self, event_ctrl):
         self.keyMap = {"left": 0, "right": 0,
@@ -645,7 +693,7 @@ class ControlNav(NavBase):
     def slow(self):
         self.speed_factor = 1.0
 
-    def update(self, dt):
+    def update(self, time, dt):
         is_moving = False
         if self.keyMap['up']:
             self.step(self.speed * self.speed_factor * dt)

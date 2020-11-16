@@ -359,6 +359,10 @@ class CosmoniumBase(ShowBase):
                 self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
 
 class Cosmonium(CosmoniumBase):
+    FREE_NAV = 0
+    WALK_NAV = 1
+    CONTROL_NAV = 2
+
     def __init__(self):
         CosmoniumBase.__init__(self)
 
@@ -372,6 +376,7 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         self.track = None
         self.fly = False
+        self.nav_controllers = []
         self.nav = None
         self.gui = None
         self.last_visibles = []
@@ -387,7 +392,7 @@ class Cosmonium(CosmoniumBase):
         self.oid_texture = None
         self.camera_controllers = []
         self.camera_controller = None
-        self.controllers = []
+        self.body_controllers = []
         self.ships = []
         self.ship = None
 
@@ -415,12 +420,12 @@ class Cosmonium(CosmoniumBase):
         self.add_camera_controller(FollowCameraController())
         self.observer.init()
 
-        if self.nav is None:
-            self.nav = FreeNav()
+        self.add_nav_controller(FreeNav())
+        self.add_nav_controller(WalkNav())
+        self.add_nav_controller(ControlNav())
+
         ship = NoShip()
-        self.set_camera_controller(self.camera_controllers[0])
         self.add_ship(ship)
-        self.set_ship(ship)
 
         self.splash = Splash() if not self.app_config.test_start else NoSplash()
 
@@ -452,8 +457,12 @@ class Cosmonium(CosmoniumBase):
         base.graphicsEngine.renderFrame()
         self.splash.close()
         if self.gui is None:
-            self.gui = Gui(self, self.time, self.observer, self.mouse, self.nav, self.autopilot)
-        self.set_nav(self.nav)
+            self.gui = Gui(self, self.time, self.observer, self.mouse, self.autopilot)
+
+        # Use the first of each controllers as default
+        self.set_nav(self.nav_controllers[0])
+        self.set_camera_controller(self.camera_controllers[0])
+        self.set_ship(self.ships[0])
 
         self.nav.register_events(self)
         self.gui.register_events(self)
@@ -480,7 +489,7 @@ class Cosmonium(CosmoniumBase):
 
         self.time.set_current_date()
 
-        for controller in self.controllers:
+        for controller in self.body_controllers:
             controller.init()
 
         self.universe.first_update()
@@ -503,7 +512,7 @@ class Cosmonium(CosmoniumBase):
         data.append("window-title Cosmonium")
 
     def add_controller(self, controller):
-        self.controllers.append(controller)
+        self.body_controllers.append(controller)
 
     def create_additional_display_regions(self):
         self.near_dr = self.win.make_display_region()
@@ -580,13 +589,26 @@ class Cosmonium(CosmoniumBase):
                 else:
                     print("ERROR: No camera controller supported by this ship")
 
-    def set_nav(self, nav):
+    def add_nav_controller(self, nav_controller):
+        self.nav_controllers.append(nav_controller)
+
+    def set_nav(self, nav, target=None, controller=None):
+        if nav.require_target() and target is None:
+            return
+        if nav.require_controller() and controller is None:
+            return
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
             self.nav.init(self, self.observer, self.camera_controller, self.ship, self.gui)
             self.nav.register_events(self)
+            if nav.require_target():
+                self.nav.set_target(target)
+            if nav.require_controller():
+                self.nav.set_controller(controller)
+            self.gui.set_nav(nav)
+            print("Switching navigation controller to", self.nav.get_name())
 
     def toggle_fly_mode(self):
         if not self.fly:
@@ -595,11 +617,11 @@ class Cosmonium(CosmoniumBase):
                 self.fly = True
                 self.follow = None
                 self.sync = None
-                self.set_nav(WalkNav(self.selected))
+                self.set_nav(self.nav_controllers[self.WALK_NAV], target=self.selected)
         else:
             print("Free mode")
             self.fly = False
-            self.set_nav(FreeNav())
+            self.set_nav(self.nav_controllers[self.FREE_NAV])
 
     def toggle_hdr(self):
         self.hdr += 1
@@ -903,7 +925,7 @@ class Cosmonium(CosmoniumBase):
         self.fly = True
         self.follow = None
         self.sync = None
-        self.set_nav(ControlNav(mover))
+        self.set_nav(self.nav_controllers[self.CONTROL_NAV], controller=mover)
 
     def reset_visibles(self):
         self.visibles = []
@@ -925,7 +947,7 @@ class Cosmonium(CosmoniumBase):
     def update_universe(self, time, dt):
         self.universe.update(time, dt)
         self.controllers_to_update = []
-        for controller in self.controllers:
+        for controller in self.body_controllers:
             if controller.should_update(time, dt):
                 controller.update(time, dt)
                 self.controllers_to_update.append(controller)
@@ -964,7 +986,7 @@ class Cosmonium(CosmoniumBase):
         self.gui.update()
 
         self.time.update_time(dt)
-        self.nav.update(dt)
+        self.nav.update(self.time.time_full, dt)
 
         self.update_octree()
         update = pstats.levelpstat('update', 'Bodies')

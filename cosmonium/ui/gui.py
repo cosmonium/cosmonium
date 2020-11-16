@@ -80,12 +80,12 @@ def menu_text(name, shortcut=None):
         return name
 
 class Gui(object):
-    def __init__(self, cosmonium, time, camera, mouse, nav, autopilot):
+    def __init__(self, cosmonium, time, camera, mouse, autopilot):
         self.cosmonium = cosmonium
         self.time = time
         self.camera = camera
         self.mouse = mouse
-        self.nav = nav
+        self.nav = None
         self.autopilot = autopilot
         if base.pipe is not None:
             self.screen_width = base.pipe.getDisplayWidth()
@@ -129,6 +129,9 @@ class Gui(object):
             self.show_menu()
         else:
             self.hide_menu()
+
+    def set_nav(self, nav):
+        self.nav = nav
 
     def calc_scale(self):
         self.scale = LVector2(settings.ui_scale[0] / self.screen_width * 2.0,  settings.ui_scale[1] / self.screen_height * 2.0)
