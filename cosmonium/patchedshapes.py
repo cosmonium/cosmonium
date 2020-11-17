@@ -26,6 +26,7 @@ from panda3d.core import NodePath, BoundingBox
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from .shapes import Shape
 from .textures import TexCoord
+from .pstats import pstat
 from . import geometry
 from . import settings
 
@@ -927,6 +928,7 @@ class PatchedShapeBase(Shape):
                 break
         return children_visible
 
+    @pstat
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         if settings.debug_lod_freeze:
             return

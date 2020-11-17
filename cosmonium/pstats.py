@@ -22,18 +22,23 @@ from functools import wraps
 
 custom_collectors = {}
 
+def named_pstat(name):
+    def pstat(func):
+        collectorName = "%s:%s" % ('Engine', name)
+        if not collectorName in custom_collectors.keys():
+            custom_collectors[collectorName] = PStatCollector(collectorName)
+        pstat = custom_collectors[collectorName]
+        @wraps(func)
+        def doPstat(*args, **kargs):
+            pstat.start()
+            returned = func(*args, **kargs)
+            pstat.stop()
+            return returned
+        return doPstat
+    return pstat
+
 def pstat(func):
-    collectorName = "%s:%s" % ('Engine', func.__name__)
-    if not collectorName in custom_collectors.keys():
-        custom_collectors[collectorName] = PStatCollector(collectorName)
-    pstat = custom_collectors[collectorName]
-    @wraps(func)
-    def doPstat(*args, **kargs):
-        pstat.start()
-        returned = func(*args, **kargs)
-        pstat.stop()
-        return returned
-    return doPstat
+    return named_pstat(func.__name__)(func)
 
 def levelpstat(name, category='Engine'):
     collectorName = category + ':' + name

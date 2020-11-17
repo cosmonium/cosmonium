@@ -27,6 +27,7 @@ from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, Colo
 from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
+from .pstats import named_pstat
 from . import settings
 
 from math import sin, cos, pi, atan2, sqrt, asin
@@ -288,6 +289,7 @@ def UVPatchNormal(x0, y0, x1, y1):
     z = -cos(pi * (y0 + dy / 2))
     return LVector3d(x, y, z)
 
+@named_pstat("geom")
 def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
@@ -865,6 +867,7 @@ def QuadPatch(x0, y0, x1, y1,
     node.addGeom(gm)
     return path
 
+@named_pstat("geom")
 def SquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=False, swap_uv=False,
@@ -910,6 +913,7 @@ def SquarePatch(height, inner, outer,
 
     return path
 
+@named_pstat("geom")
 def SquaredDistanceSquarePatch(height, inner, outer,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=False, swap_uv=False,
@@ -1095,6 +1099,7 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
     box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
     return box
 
+@named_pstat("geom")
 def NormalizedSquarePatch(height, inner, outer,
                           x0, y0, x1, y1,
                           global_texture=False, inv_u=False, inv_v=False, swap_uv=False,
@@ -1257,6 +1262,7 @@ def NormalizedSquarePatchAABB(min_radius, max_radius,
     box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
     return box
 
+@named_pstat("geom")
 def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
     format = GeomVertexFormat.getV3n3cpt2()
     vdata = GeomVertexData('ring', format, Geom.UHStatic)
