@@ -33,6 +33,7 @@ from ..bodyclass import bodyClasses
 from .. import settings
 
 from math import pi
+import re
 
 def create_frame(coordsys, ref):
     coordsys = coordsys.lower()
@@ -558,6 +559,7 @@ This causes the camera to stay in the same position and orientation relative to 
 """
     sequence.append(Func(base.sync_selected))
 
+time_regex = re.compile('^(-?\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+(?:\.\d*)?)$')
 def time(command_name, sequence, base, parameters):
     """Parameters:
 float jd = 2451545.0
@@ -568,6 +570,13 @@ Set the time to the specified Julian day.
         jd = float(parameters.get('jd', '2451545.0'))
     elif 'utc' in parameters:
         utc = parameters.get('utc', '')
+        try:
+            m = time_regex.match(utc)
+            jd = units.values_to_time(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                                      int(m.group(4)), int(m.group(5)), int(m.group(6)))
+        except ValueError:
+            print("ERROR: Invalid time '{}'".format(utc))
+            return
     else:
         jd = 2451545.0
     sequence.append(Func(base.time.set_time_jd, jd))
