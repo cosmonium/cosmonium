@@ -457,7 +457,7 @@ class CameraController(EventsControllerBase):
         new_rotation, angle = self.calc_look_at(self.reference_point.get_pos(), target)
         if settings.debug_jump: duration = 0
         if duration == 0:
-            self.set_rotation(new_rotation)
+            self.set_abs_rotation(new_rotation)
         else:
             if proportional:
                 duration = duration * angle / pi
@@ -600,9 +600,10 @@ class TrackCameraController(CameraController):
         self.center_on_object(self.target, duration=0, cmd=False)
 
         local_position = self.reference_point._local_position + self.reference_point._orientation.xform(reference_pos)
+        rotation = self.rotation * self.reference_point._orientation
         self.camera.change_global(self.reference_point._global_position)
         self.camera.set_pos(local_position)
-        self.camera.set_rot(self.rotation)
+        self.camera.set_rot(rotation)
         self.camera.update()
 
 class LookAroundCameraController(CameraController):
