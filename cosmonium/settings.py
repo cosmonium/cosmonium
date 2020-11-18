@@ -84,6 +84,8 @@ patch_max_vertex_size = 64
 patch_min_density = 32
 patch_max_density = 64
 patch_constant_density = 32
+cull_far_patches = False
+cull_far_patches_threshold = 10
 
 use_patch_adaptation = True
 use_patch_skirts = True
