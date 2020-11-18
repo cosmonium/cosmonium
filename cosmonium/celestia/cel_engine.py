@@ -164,7 +164,7 @@ In order for goto to complete, there should be wait commands with a combined dur
     up=parameters.get('up', [0, 1, 0])
     up=LVector3d(up[0], -up[2], up[1])
     up.normalize()
-    sequence.append(Func(base.autopilot.go_to_object, duration, distance, up))
+    sequence.append(Func(base.autopilot.go_to_object, duration, distance, up, 0.25, 0.75))
 
 def gotoloc(command_name, sequence, base, parameters):
     """Parameters:
@@ -224,7 +224,7 @@ Longitude is negative for the western hemisphere and position for the eastern he
     up.normalize()
     longitude=float(parameters.get('longitude', '0.0'))
     latitude=float(parameters.get('latitude', '0.0'))
-    sequence.append(Func(base.autopilot.go_to_object_long_lat, longitude * pi / 180, latitude * pi / 180, duration, distance, up))
+    sequence.append(Func(base.autopilot.go_to_object_long_lat, longitude * pi / 180, latitude * pi / 180, duration, distance, up, 0.25, 0.75))
 
 def do_labels(base, set_flags, clear_flags):
     for name in set_flags:
