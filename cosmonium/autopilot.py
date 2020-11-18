@@ -24,7 +24,8 @@ from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePat
 from panda3d.core import lookAt
 
 from direct.interval.LerpInterval import LerpFunc, LerpQuatInterval
-from direct.interval.MetaInterval import Parallel
+from direct.interval.MetaInterval import Parallel, Sequence
+from direct.interval.FunctionInterval import Wait
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .astro.frame import SynchroneReferenceFrame
@@ -133,7 +134,7 @@ class AutoPilot(object):
         if step == 1.0:
             self.current_interval = None
 
-    def move_and_rotate_to(self, new_pos, new_rot, absolute=True, duration=0):
+    def move_and_rotate_to(self, new_pos, new_rot, absolute=True, duration=0, start_rotation=0.0, end_rotation=0.5):
         if settings.debug_jump: duration = 0
         self.camera_controller.prepare_movement()
         if duration == 0:
@@ -157,12 +158,15 @@ class AutoPilot(object):
                 self.end_pos = new_pos
                 start_rot = self.ship.get_frame_rot()
                 end_rot = new_rot
-            nodepath_lerp = LerpQuatInterval(self.fake,
-                                             duration=duration,
+            self.fake.set_quat(LQuaternion(*start_rot))
+            nodepath_lerp = Sequence()
+            rotation_duration = duration * (end_rotation - start_rotation)
+            nodepath_lerp.append(Wait(duration * start_rotation))
+            nodepath_lerp.append(LerpQuatInterval(self.fake,
+                                             duration=rotation_duration,
                                              blendType='easeInOut',
                                              quat = LQuaternion(*end_rot),
-                                             startQuat = LQuaternion(*start_rot)
-                                             )
+                                             ))
             func_lerp = LerpFunc(self.do_move_and_rot,
                                  fromData=0,
                                  toData=1,
@@ -173,7 +177,7 @@ class AutoPilot(object):
             self.current_interval = parallel
             self.current_interval.start()
 
-    def go_to(self, target, duration, position, direction, up):
+    def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
         if up is None:
             up = LVector3d.up()
         frame = SynchroneReferenceFrame(target)
@@ -187,7 +191,7 @@ class AutoPilot(object):
         lookAt(orientation, direction, up)
         self.move_and_rotate_to(position, orientation, duration=duration)
 
-    def go_to_front(self, duration = None, distance=None, up=None, star=False):
+    def go_to_front(self, duration = None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
         if not self.ui.selected: return
         target = self.ui.selected
         if duration is None:
@@ -218,9 +222,9 @@ class AutoPilot(object):
         direction = center - position
         direction.normalize()
         new_position = center - direction * distance * distance_unit
-        self.go_to(target, duration, new_position, direction, up)
+        self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_object(self, duration = None, distance=None, up=None):
+    def go_to_object(self, duration = None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
         if not self.ui.selected: return
         target = self.ui.selected
         if duration is None:
@@ -236,9 +240,9 @@ class AutoPilot(object):
         direction = center - self.ship.get_pos()
         direction.normalize()
         new_position = center - direction * distance * distance_unit
-        self.go_to(target, duration, new_position, direction, up)
+        self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_object_long_lat(self, longitude, latitude, duration = None, distance=None, up=None):
+    def go_to_object_long_lat(self, longitude, latitude, duration = None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
         if not self.ui.selected: return
         target = self.ui.selected
         if duration is None:
@@ -255,7 +259,7 @@ class AutoPilot(object):
         new_position = target.spherical_to_cartesian(new_position)
         direction = center - new_position
         direction.normalize()
-        self.go_to(target, duration, new_position, direction, up)
+        self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
     def go_to_surface(self, duration = None, height=1.001):
         if not self.ui.selected: return
