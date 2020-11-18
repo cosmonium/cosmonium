@@ -851,7 +851,6 @@ class Gui(object):
         self.query.open_query(self)
 
     def update_status(self):
-        over = self.cosmonium.over
         selected = self.cosmonium.selected
         track = self.cosmonium.track
         follow = self.cosmonium.follow
@@ -903,8 +902,8 @@ class Gui(object):
             self.hud.topLeft.set(5, "")
             self.hud.topLeft.set(6, "")
         self.hud.bottomLeft.set(0, toUnit(self.nav.speed, units.speeds_scale))
-        if over:
-            names = utils.join_names(bayer.decode_names(over.names))
+        if settings.mouse_over and self.mouse.over is not None:
+            names = utils.join_names(bayer.decode_names(self.mouse.over.names))
             self.hud.bottomLeft.set(1, names)
         else:
             self.hud.bottomLeft.set(1, "")

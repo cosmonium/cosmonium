@@ -33,13 +33,11 @@ class NavigationController:
         self.camera_controller = None
         self.ship = None
 
-    def init(self, base, camera, camera_controller, ship, ui):
+    def init(self, base, camera, camera_controller, ship):
         self.base = base
         self.camera = camera
         self.camera_controller = camera_controller
         self.ship = ship
-        #TODO: TO be removed, see below
-        self.ui = ui
 
     def set_target(self, target):
         pass
@@ -247,8 +245,6 @@ class FreeNav(InteractiveNavigationController):
         event_ctrl.ignore("q")
         event_ctrl.ignore("s")
 
-        event_ctrl.ignore("mouse1")
-        event_ctrl.ignore("mouse1-up")
         event_ctrl.ignore("mouse3")
         event_ctrl.ignore("mouse3-up")
 
@@ -290,11 +286,6 @@ class FreeNav(InteractiveNavigationController):
             self.create_drag_params(target)
 
     def OnTrackRelease(self):
-        if self.base.mouseWatcherNode.hasMouse():
-            mpos = self.base.mouseWatcherNode.getMouse()
-            if self.startX == mpos.getX() and self.startY == mpos.getY():
-                #TODO: should be moved to the mouse handler class !
-                self.ui.right_click()
         self.mouseTrackClick = False
 
     def update(self, time, dt):

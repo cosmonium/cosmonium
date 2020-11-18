@@ -369,7 +369,6 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
 
-        self.over = None
         self.patch = None
         self.selected = None
         self.follow = None
@@ -458,6 +457,7 @@ class Cosmonium(CosmoniumBase):
         self.splash.close()
         if self.gui is None:
             self.gui = Gui(self, self.time, self.observer, self.mouse, self.autopilot)
+            self.mouse.set_ui(self.gui)
 
         # Use the first of each controllers as default
         self.set_nav(self.nav_controllers[0])
@@ -620,7 +620,7 @@ class Cosmonium(CosmoniumBase):
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
-            self.nav.init(self, self.observer, self.camera_controller, self.ship, self.gui)
+            self.nav.init(self, self.observer, self.camera_controller, self.ship)
             self.nav.register_events(self)
             if nav.require_target():
                 self.nav.set_target(target)
