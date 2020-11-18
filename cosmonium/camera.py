@@ -386,6 +386,9 @@ class CameraController(EventsControllerBase):
     def get_name(self):
         return ''
 
+    def get_id(self):
+        return ''
+
     def require_target(self):
         return False
 
@@ -497,6 +500,9 @@ class FixedCameraController(CameraController):
     def get_name(self):
         return _('Fixed camera')
 
+    def get_id(self):
+        return "fixed"
+
     def set_camera_hints(self, **kwargs):
         self.reference_pos = kwargs.get('position',  None)
         self.distance = kwargs.get('distance',  self.distance)
@@ -567,6 +573,9 @@ class TrackCameraController(CameraController):
     def get_name(self):
         return _('Track camera')
 
+    def get_id(self):
+        return "track"
+
     def require_target(self):
         return True
 
@@ -607,6 +616,9 @@ class LookAroundCameraController(CameraController):
     def get_name(self):
         return _('Look around camera')
 
+    def get_id(self):
+        return "look-around"
+
     def set_camera_hints(self, **kwargs):
         self.reference_pos = kwargs.get('position',  self.reference_pos)
         self.reference_rot = kwargs.get('rotation', self.reference_rot)
@@ -638,6 +650,9 @@ class FollowCameraController(CameraController):
 
     def get_name(self):
         return _('Follow camera')
+
+    def get_id(self):
+        return "follow"
 
     def set_camera_hints(self, **kwargs):
         self.distance = kwargs.get('distance', self.distance)
@@ -694,6 +709,9 @@ class SurfaceFollowCameraController(CameraController):
 
     def get_name(self):
         return _('Follow camera')
+
+    def get_id(self):
+        return "surface-follow"
 
     def set_camera_hints(self, **kwargs):
         self.distance = kwargs.get('distance', self.distance)
