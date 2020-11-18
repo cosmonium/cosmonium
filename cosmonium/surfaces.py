@@ -90,7 +90,7 @@ class Surface(ShapeObject):
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
 
-    def get_height_at(self, x, y):
+    def get_height_at(self, x, y, strict=False):
         raise NotImplementedError
 
     def get_height_patch(self, patch, u, v):
@@ -101,7 +101,7 @@ class Surface(ShapeObject):
         return self.shape.get_normals_at(coord)
 
 class FlatSurface(Surface):
-    def get_height_at(self, x, y):
+    def get_height_at(self, x, y, strict=False):
         return self.owner.get_apparent_radius()
 
     def get_height_patch(self, patch, u, v):
@@ -111,7 +111,7 @@ class MeshSurface(Surface):
     def is_flat(self):
         return False
 
-    def get_height_at(self, x, y):
+    def get_height_at(self, x, y, strict=False):
         coord = self.shape.global_to_shape_coord(x, y)
         return self.shape.get_height_at(coord)
 
