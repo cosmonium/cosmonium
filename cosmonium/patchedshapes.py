@@ -888,8 +888,8 @@ class PatchedShapeBase(Shape):
     def create_culling_frustum(self, altitude_to_ground, altitude_to_min_radius):
         self.lens = self.owner.context.observer.realCamLens.make_copy()
         if self.limit_far:
-            if self.max_lod > 10:
-                factor = 2.0 / (1 << ((self.max_lod - 10) // 2))
+            if settings.cull_far_patches and self.max_lod > settings.cull_far_patches_threshold:
+                factor = 2.0 / (1 << ((self.max_lod - settings.cull_far_patches_threshold) // 2))
             else:
                 factor = 2.0
             self.limit = sqrt(max(0.0, (factor * self.owner.surface.get_min_radius() + altitude_to_min_radius) * altitude_to_min_radius))

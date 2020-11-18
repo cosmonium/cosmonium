@@ -264,6 +264,16 @@ class ConfigParser(YamlParser):
         data['format'] = settings.screenshot_format
         return data
 
+    def decode_patches(self, data):
+        settings.cull_far_patches = data.get('cull-far-patches', settings.cull_far_patches)
+        settings.cull_far_patches_threshold = data.get('cull-far-patches-threshold', settings.cull_far_patches_threshold)
+
+    def encode_patches(self):
+        data = {}
+        data['cull-far-patches'] = settings.cull_far_patches
+        data['cull-far-patches-threshold'] = settings.cull_far_patches_threshold
+        return data
+
     def decode(self, data):
         if data is None: return
         if data.get('version', 0) != self.data_version:
@@ -276,6 +286,7 @@ class ConfigParser(YamlParser):
         self.decode_opengl(data.get('opengl', {}))
         self.decode_debug(data.get('debug', {}))
         self.decode_screenshots(data.get('screenshots', {}))
+        self.decode_patches(data.get('patches', {}))
 
     def encode(self):
         data = {}
@@ -286,6 +297,7 @@ class ConfigParser(YamlParser):
         data['win'] = self.encode_win()
         data['opengl'] = self.encode_opengl()
         data['screenshots'] = self.encode_screenshots()
+        data['patches'] = self.encode_patches()
         return data
 
 configParser = ConfigParser(settings.config_file)
