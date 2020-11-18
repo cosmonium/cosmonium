@@ -399,14 +399,17 @@ class Gui(object):
     def set_render_fps(self):
         settings.display_fps = True
         settings.display_ms = False
+        configParser.save()
 
     def set_render_ms(self):
         settings.display_fps = False
         settings.display_ms = True
+        configParser.save()
 
     def set_render_none(self):
         settings.display_fps = False
         settings.display_ms = False
+        configParser.save()
 
     def set_shader_fragment_debug(self, mode):
         settings.shader_debug_fragment_shader = mode

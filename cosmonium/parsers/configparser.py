@@ -107,6 +107,13 @@ class ConfigParser(YamlParser):
         settings.hud_color = data.get('color', settings.hud_color)
         settings.hud_text_size = data.get('text-size', settings.hud_text_size)
         settings.hud_info_text_size = data.get('info-size', settings.hud_info_text_size)
+        render_info = data.get("display-render-info", 'fps')
+        settings.display_fps = False
+        settings.display_ms = False
+        if render_info == 'fps':
+            settings.display_fps = True
+        elif render_info == 'dt':
+            settings.display_ms = True
 
     def encode_ui_hud(self):
         data = {}
@@ -115,6 +122,12 @@ class ConfigParser(YamlParser):
         data['color'] = list(settings.hud_color)
         data['text-size'] = settings.hud_text_size
         data['info-size'] = settings.hud_info_text_size
+        if settings.display_fps:
+            data["display-render-info"] = 'fps'
+        elif settings.display_ms:
+            data["display-render-info"] = 'dt'
+        else:
+            data["display-render-info"] = 'none'
         return data
 
     def decode_ui_query(self, data):
