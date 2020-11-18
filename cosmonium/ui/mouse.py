@@ -20,9 +20,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import CollisionTraverser, CollisionNode
+from panda3d.core import CollisionTraverser, CollisionNode, LPoint2
 from panda3d.core import CollisionHandlerQueue, CollisionRay
 from panda3d.core import GeomNode, LColor, Texture
+from direct.showbase.DirectObject import DirectObject
 
 from direct.task.Task import Task
 
@@ -30,10 +31,11 @@ from .. import settings
 from cosmonium.utils import color_to_int
 from cosmonium.catalogs import objectsDB
 
-class Mouse(object):
+class Mouse(DirectObject):
     def __init__(self, base, oid_texture):
         self.base = base
         self.picking_texture = oid_texture
+        self.ui = None
         self.picker = CollisionTraverser()
         self.pq = CollisionHandlerQueue()
         self.pickerNode = CollisionNode('mouseRay')
@@ -43,9 +45,41 @@ class Mouse(object):
         self.pickerNode.addSolid(self.pickerRay)
         self.picker.addCollider(self.pickerNP, self.pq)
         #self.picker.showCollisions(render)
+        self.mouse1_pos = None
+        self.mouse3_pos = None
+        self.accept('mouse1', self.mouse1_press)
+        self.accept('mouse1-up', self.mouse1_release)
+        self.accept('mouse3', self.mouse3_press)
+        self.accept('mouse3-up', self.mouse3_release)
         if settings.mouse_over:
             taskMgr.add(self.mouse_task, 'mouse-task')
         self.over = None
+
+    def set_ui(self, ui):
+        self.ui = ui
+
+    def mouse1_press(self):
+        if self.base.mouseWatcherNode.hasMouse():
+            self.mouse1_pos = LPoint2(self.base.mouseWatcherNode.get_mouse())
+
+    def mouse1_release(self):
+        if self.base.mouseWatcherNode.hasMouse():
+            mpos = self.base.mouseWatcherNode.get_mouse()
+            if self.mouse1_pos is not None and self.mouse1_pos.get_x() == mpos.get_x() and self.mouse1_pos.get_y() == mpos.get_y():
+                self.ui.left_click()
+        self.mouse1_pos = None
+
+    def mouse3_press(self):
+        if self.base.mouseWatcherNode.hasMouse():
+            self.mouse3_pos = LPoint2(self.base.mouseWatcherNode.get_mouse())
+
+    def mouse3_release(self):
+        if self.base.mouseWatcherNode.hasMouse():
+            mpos = self.base.mouseWatcherNode.get_mouse()
+            print(self.mouse3_pos, mpos)
+            if self.mouse3_pos is not None and self.mouse3_pos.get_x() == mpos.get_x() and self.mouse3_pos.get_y() == mpos.get_y():
+                self.ui.right_click()
+        self.mouse3_pos = None
 
     def find_over_ray(self):
         over = None
