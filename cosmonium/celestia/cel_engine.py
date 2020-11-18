@@ -455,6 +455,27 @@ Set the configuration parameter 'name' to 'value'. Valid parameters and values a
     name = parameters.get('name', '').lower()
     if name == 'StarStyle':
         style = parameters.get('value', '')
+    elif name == 'nav':
+        nav_name = parameters.get('value', '')
+        nav = base.get_nav(nav_name)
+        if nav is not None:
+            sequence.append(Func(base.set_nav, nav))
+        else:
+            print("ERROR: Navigation mode '{}' unknown".format(nav_name))
+    elif name == 'ship':
+        ship_name = parameters.get('value', '')
+        ship = base.get_ship(ship_name)
+        if ship is not None:
+            sequence.append(Func(base.set_ship, ship))
+        else:
+            print("ERROR: Ship '{}' unknown".format(ship_name))
+    elif name == 'camera':
+        camera_name = parameters.get('value', '')
+        camera_controller = base.get_camera_controller(camera_name)
+        if camera_controller is not None:
+            sequence.append(Func(base.set_camera_controller, camera_controller))
+        else:
+            print("ERROR: Camera mode '{}' unknown".format(camera_name))
     else:
         value = float(parameters.get('value', 0.0))
         if name == 'fov':

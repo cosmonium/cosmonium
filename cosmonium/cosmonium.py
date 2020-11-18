@@ -527,6 +527,12 @@ class Cosmonium(CosmoniumBase):
     def add_camera_controller(self, camera_controller):
         self.camera_controllers.append(camera_controller)
 
+    def get_camera_controller(self, camera_id):
+        for camera_controller in self.camera_controllers:
+            if camera_id == camera_controller.get_id():
+                return camera_controller
+        return None
+
     def set_camera_controller(self, camera_controller):
         if camera_controller.require_target():
             if self.track is None:
@@ -563,6 +569,13 @@ class Cosmonium(CosmoniumBase):
     def add_ship(self, ship):
         self.ships.append(ship)
 
+    def get_ship(self, name):
+        name = name.lower()
+        for ship in self.ships:
+            if name == ship.get_name().lower():
+                return ship
+        return None
+
     def set_ship(self, ship):
         if self.ship is not None:
             self.universe.remove_component(self.ship)
@@ -591,6 +604,12 @@ class Cosmonium(CosmoniumBase):
 
     def add_nav_controller(self, nav_controller):
         self.nav_controllers.append(nav_controller)
+
+    def get_nav_controller(self, nav_id):
+        for nav in self.nav_controllers:
+            if nav_id == nav.get_id():
+                return nav
+        return None
 
     def set_nav(self, nav, target=None, controller=None):
         if nav.require_target() and target is None:

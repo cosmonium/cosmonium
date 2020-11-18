@@ -50,6 +50,9 @@ class NavigationController:
     def get_name(self):
         return ''
 
+    def get_id(self):
+        return ''
+
     def require_target(self):
         return False
 
@@ -165,6 +168,12 @@ class FreeNav(InteractiveNavigationController):
         self.current_rot_x_speed = 0.0
         self.current_rot_y_speed = 0.0
         self.current_rot_z_speed = 0.0
+
+    def get_name(self):
+        return 'Free navigation'
+
+    def get_id(self):
+        return 'free'
 
     def register_events(self, event_ctrl):
         self.keyMap = {"left": 0, "right": 0,
@@ -463,6 +472,9 @@ class WalkNav(InteractiveNavigationController):
     def get_name(self):
         return 'Fly'
 
+    def get_id(self):
+        return 'walk'
+
     def require_target(self):
         return True
 
@@ -640,6 +652,9 @@ class ControlNav(InteractiveNavigationController):
 
     def get_name(self):
         return 'Control body'
+
+    def get_id(self):
+        return 'control'
 
     def require_controller(self):
         return True
