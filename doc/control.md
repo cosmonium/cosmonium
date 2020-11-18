@@ -148,8 +148,8 @@
 - **F7** : Dump octree statistics
 - **Shift-F7** : Dump octree content
 - **F8** : Toggle LOD freeze
-- **Shift-F8** : Dump hierarchical LOD information
-- **Shift-Ctrl-F8** : Dump flat LOD information
+- **Shift-F8** : Dump LOD statistics
+- **Shift-Ctrl-F8** : Dump LOD tree
 - **Control-F8** : Toggle LOD debug traces
 - **F9** : Toggle boundary debug
 - **Shift-F9** : Toggle Bounding Box display
