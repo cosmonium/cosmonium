@@ -160,8 +160,8 @@ class Gui(object):
         event_ctrl.accept('f7', self.cosmonium.universe.dumpOctreeStats)
         event_ctrl.accept('shift-f7', self.cosmonium.universe.dumpOctree)
         event_ctrl.accept('f8', self.toggle_lod_freeze)
-        event_ctrl.accept('shift-f8', self.dump_object_info)
-        event_ctrl.accept('shift-control-f8', self.dump_object_info_2)
+        event_ctrl.accept('shift-f8', self.dump_object_stats)
+        event_ctrl.accept('shift-control-f8', self.dump_object_info)
         event_ctrl.accept('control-f8', self.toggle_split_merge_debug)
         event_ctrl.accept('f9', self.toggle_shader_debug_coord)
         event_ctrl.accept('shift-f9', self.toggle_bb)
@@ -337,6 +337,21 @@ class Gui(object):
     def toggle_shadow_frustum(self):
         settings.debug_shadow_frustum = not settings.debug_shadow_frustum
         self.cosmonium.trigger_check_settings = True
+
+    def dump_object_stats(self):
+        selected = self.cosmonium.selected
+        if selected is None: return
+        if not isinstance(selected, StellarBody): return
+        if selected.surface is not None:
+            shape = selected.surface.shape
+            if shape.patchable:
+                print("Surface")
+                shape.dump_stats()
+        if selected.clouds is not None:
+            shape = selected.clouds.shape
+            if shape.patchable:
+                print("Clouds")
+                shape.dump_stats()
 
     def dump_object_info(self):
         selected = self.cosmonium.selected
@@ -655,8 +670,8 @@ class Gui(object):
                 (menu_text(_('Render info')), 0, fps),
                 0,
                 (menu_text(_('Freeze LOD'), 'F8'), settings.debug_lod_freeze, self.toggle_lod_freeze),
-                (menu_text(_('Dump LOD tree'), 'Shift-F8'), 0, self.dump_object_info),
-                (menu_text(_('Dump LOD flat tree'), 'Shift-Control-F8'), 0, self.dump_object_info_2),
+                (menu_text(_('Dump LOD stats'), 'Shift-F8'), 0, self.dump_object_stats),
+                (menu_text(_('Dump LOD tree'), 'Shift-Control-F8'), 0, self.dump_object_info),
                 (menu_text(_('Log LOD events'), 'Control-F8'), settings.debug_lod_split_merge, self.toggle_split_merge_debug),
                 (menu_text(_('Show boundaries'), 'F9'), settings.shader_debug_coord, self.toggle_shader_debug_coord),
                 (menu_text(_('Show LOD bounding boxes'), 'Shift-F9'), settings.debug_lod_show_bb, self.toggle_bb),

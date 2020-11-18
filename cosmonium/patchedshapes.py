@@ -1132,6 +1132,36 @@ class PatchedShapeBase(Shape):
         for patch in self.patches:
             self.dump_patch(patch, padding=False)
 
+    def _dump_stats(self, stats_array, patch):
+        stats_array[0] += patch.visible
+        stats_array[1] += patch.shown
+        stats_array[2] += patch.need_merge
+        stats_array[3] += patch.split_pending
+        stats_array[4] += patch.merge_pending
+        stats_array[5] += patch.parent_split_pending
+        stats_array[6] += patch.instanciate_pending
+        stats_array[7] += (patch.visible and not patch.instance_ready)
+        stats_array[8] += patch.jobs_pending
+        stats_array[9] += 1
+        for child in patch.children:
+            self._dump_stats(stats_array, child)
+
+    def dump_stats(self):
+        stats_array = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        for patch in self.root_patches:
+            self._dump_stats(stats_array, patch)
+        print("Nb patches:          ", stats_array[9])
+        print("Max lod:             ", self.max_lod)
+        print("Visible:             ", stats_array[0])
+        print("Shown:               ", stats_array[1])
+        print("Need merge:          ", stats_array[2])
+        print("Split pending:       ", stats_array[3])
+        print("merge pending:       ", stats_array[4])
+        print("Parent split pending:", stats_array[5])
+        print("Instanciate pending: ", stats_array[6])
+        print("Instance not ready:  ", stats_array[7])
+        print("Jobs pending:        ", stats_array[8])
+
 class PatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
