@@ -125,6 +125,7 @@ class UserParameterBase(object):
 
     def scale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
+        if self.scale == self.SCALE_LINEAR: return value
         if not scale: return value / self.units
         if self.scale == self.SCALE_LOG:
             value = log(value)
@@ -139,6 +140,7 @@ class UserParameterBase(object):
 
     def unscale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
+        if self.scale == self.SCALE_LINEAR: return value
         if not scale: return value * self.units
         if self.scale == self.SCALE_LOG:
             value = exp(value)
