@@ -162,6 +162,20 @@ class SyncTextureLoader():
             print("Could not load texture", filename)
         return texture
 
+    def load_texture_array(self, textures):
+        tex = Texture()
+        tex.setup_2d_texture_array(len(textures))
+        for (page, texture) in enumerate(textures):
+            filename = texture.source.texture_filename(None)
+            if filename is not None:
+                panda_filename = Filename.from_os_specific(filename)
+                tex.read(fullpath=panda_filename, z=page, n=0, read_pages=False, read_mipmaps=False)
+            else:
+                print("Could not find", texture.source.texture_name(None))
+                image = texture.create_default_image()
+                tex.load(image, z=page, n=0)
+        return tex
+
 if __name__ == '__main__':
     import direct.directbase.DirectStart
     import sys
