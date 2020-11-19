@@ -21,11 +21,11 @@ from __future__ import print_function
 
 from panda3d.core import Texture, Filename
 from direct.task.Task import Task
+
 try:
     import queue
 except ImportError:
     import Queue as queue
-import sys
 import traceback
 
 # These will be initialized in cosmonium base class
@@ -94,7 +94,8 @@ class AsyncLoader():
 
     def processTask(self, task):
         try:
-            job = self.in_queue.get_nowait()
+            #A small but not null timeout is required to avoid draining CPU resources
+            job = self.in_queue.get(timeout=0.001)
             (func, fargs, callback, cb_args) = job
             result = func(*fargs)
             self.cb_queue.put([callback, result, cb_args])
