@@ -254,12 +254,14 @@ class ConfigParser(YamlParser):
 
     def decode_debug(self, data):
         settings.debug_jump = data.get('instant-jump', settings.debug_jump)
-        settings.debug_sync_load = data.get('sync-load', settings.debug_sync_load)
+        settings.sync_data_load = data.get('aync-data-load', settings.sync_data_load)
+        settings.sync_texture_load = data.get('sync-texture-load', settings.sync_texture_load)
 
     def encode_debug(self):
         data = {}
         data['instant-jump'] = settings.debug_jump
-        data['sync-load'] = settings.debug_sync_load
+        data['sync-data-load'] = settings.sync_data_load
+        data['sync-texture-load'] = settings.sync_texture_load
         return data
 
     def decode_screenshots(self, data):
@@ -300,6 +302,7 @@ class ConfigParser(YamlParser):
         self.decode_debug(data.get('debug', {}))
         self.decode_screenshots(data.get('screenshots', {}))
         self.decode_patches(data.get('patches', {}))
+        self.decode_debug(data.get('debug', {}))
 
     def encode(self):
         data = {}
@@ -311,6 +314,7 @@ class ConfigParser(YamlParser):
         data['opengl'] = self.encode_opengl()
         data['screenshots'] = self.encode_screenshots()
         data['patches'] = self.encode_patches()
+        data['debug'] = self.encode_debug()
         return data
 
 configParser = ConfigParser(settings.config_file)

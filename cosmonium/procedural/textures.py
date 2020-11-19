@@ -68,7 +68,7 @@ class ProceduralVirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, color_space, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space, callback=None, cb_args=()):
         if not patch in self.map_patch:
             self._make_texture(patch, callback, cb_args)
         else:
