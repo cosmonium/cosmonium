@@ -251,7 +251,7 @@ class RotateAnchorHelper():
         x_rotation = LQuaterniond()
         x_rotation.set_from_axis_angle_rad(x_angle, self.drag_xaxis)
         combined = x_rotation * z_rotation
-        self.anchor.set_rot(self.drag_orientation * combined)
+        self.anchor.set_frame_rot(self.drag_orientation * combined)
 
     def start(self, orbit_speed_x, orbit_speed_z):
         if not base.mouseWatcherNode.hasMouse(): return

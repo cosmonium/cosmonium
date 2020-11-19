@@ -76,7 +76,6 @@ class Mouse(DirectObject):
     def mouse3_release(self):
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.get_mouse()
-            print(self.mouse3_pos, mpos)
             if self.mouse3_pos is not None and self.mouse3_pos.get_x() == mpos.get_x() and self.mouse3_pos.get_y() == mpos.get_y():
                 self.ui.right_click()
         self.mouse3_pos = None
