@@ -156,7 +156,9 @@ debug_lod_frustum = False
 dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False
-debug_sync_load = False
+
+sync_data_load = False
+sync_texture_load = False
 
 debug_jump = False
 

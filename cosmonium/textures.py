@@ -134,7 +134,7 @@ class TextureSource(object):
     def texture_filename(self, patch):
         return None
 
-    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, callback=None, cb_args=()):
         pass
 
     def can_split(self, patch):
@@ -147,7 +147,7 @@ class TextureSource(object):
         return None
 
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, callback=None, cb_args=()):
         callback(None, 0, 0, *cb_args)
 
 class AutoTextureSource(TextureSource):
@@ -207,10 +207,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, callback=None, cb_args=()):
         if self.source is None:
             self.create_source()
-        return self.source.load(patch, color_space, sync, callback, cb_args)
+        return self.source.load(patch, color_space, callback, cb_args)
 
     def can_split(self, patch):
         if self.source is None:
@@ -251,11 +251,11 @@ class TextureFileSource(TextureSource):
         if callback is not None:
             callback(self.texture, 0, 0, *cb_args)
 
-    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, callback=None, cb_args=()):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
-                if sync:
+                if settings.sync_texture_load:
                     texture = workers.syncTextureLoader.load_texture(filename)
                     self.texture_loaded_cb(texture, callback, cb_args)
                 else:
@@ -553,8 +553,7 @@ class TextureArray(TextureBase):
 
     def load(self, patch, callback=None, cb_args=None):
         if self.texture is None:
-            sync = False
-            if sync:
+            if settings.sync_texture_load:
                 texture = workers.syncTextureLoader.load_texture_array(self.textures)
                 self.texture_loaded_cb(texture, callback, cb_args)
             else:
@@ -621,14 +620,14 @@ class VirtualTextureSource(TextureSource):
                 if callback is not None:
                     callback(None, self.texture_size, patch.lod, *cb_args)
 
-    def load(self, patch, color_space=None, sync=False, callback=None, cb_args=()):
+    def load(self, patch, color_space=None, callback=None, cb_args=()):
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)
             filename = self.context.find_texture(tex_name)
             alpha_tex_name = self.alpha_texture_name(patch)
             alpha_filename = self.context.find_texture(alpha_tex_name)
             if filename is not None:
-                if sync:
+                if settings.sync_texture_load:
                     texture = workers.syncTextureLoader.load_texture(filename, alpha_filename)
                     self.texture_loaded_cb(texture, patch, callback, cb_args)
                 else:

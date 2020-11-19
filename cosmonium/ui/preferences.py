@@ -51,7 +51,8 @@ class Preferences(ParamEditor):
                                 ParametersGroup('Orbits', self.make_orbits()),
                                 ParametersGroup('Labels', self.make_labels()),
                                 ParametersGroup('Render', self.make_render()),
-                                ParametersGroup('Advanced', self.make_advanced())
+                                ParametersGroup('Advanced', self.make_advanced()),
+                                ParametersGroup('Debug', self.make_debug()),
                                 ])
 
 
@@ -171,3 +172,9 @@ class Preferences(ParamEditor):
                                 [SettingParameter("Multisampling", 'multisamples', UserParameter.TYPE_INT, [0, 16])
                                 ]),
                 ]
+    def make_debug(self):
+        return [ParametersGroup('Async',
+                                [SettingParameter("Sync data loading", 'sync_data_load', UserParameter.TYPE_BOOL),
+                                 SettingParameter("Sync texture loading", 'sync_texture_load', UserParameter.TYPE_BOOL),
+                                ])
+        ]

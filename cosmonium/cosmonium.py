@@ -428,7 +428,7 @@ class Cosmonium(CosmoniumBase):
 
         self.splash = Splash() if not self.app_config.test_start else NoSplash()
 
-        if not settings.debug_sync_load:
+        if not settings.sync_data_load:
             self.async_start = workers.AsyncMethod("async_start", self, self.load_task, self.configure_scene)
         else:
             self.load_task()
