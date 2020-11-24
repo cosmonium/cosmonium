@@ -21,38 +21,51 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..astro import units
-from ..heightmap import PatchedHeightmap, heightmapRegistry
-from ..interpolator import NearestInterpolator, BilinearInterpolator, ImprovedBilinearInterpolator, QuinticInterpolator, BSplineInterpolator
+from ..heightmap import TextureHeightmap, TextureHeightmapPatchFactory, PatchedHeightmap, heightmapRegistry
+from ..interpolators import HardwareInterpolator, SoftwareInterpolator
+from ..filters import NearestFilter, BilinearFilter, SmoothstepFilter, QuinticFilter, BSplineFilter
 from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
+from ..textures import HeightMapTexture
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser
 from .noiseparser import NoiseYamlParser
+from .appearancesparser import TexturesAppearanceYamlParser
 
 from math import pi
-from cosmonium.heightmap import TextureHeightmap, TextureHeightmapPatchFactory
-from cosmonium.textures import HeightMapTexture
-from cosmonium.parsers.appearancesparser import TexturesAppearanceYamlParser
 
 class InterpolatorYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
         interpolator = None
-        (object_type, parameters) = self.get_type_and_data(data, 'bilinear')
-        if object_type == 'nearest':
-            interpolator = NearestInterpolator()
-        elif object_type == 'bilinear':
-            interpolator = BilinearInterpolator()
-        elif object_type == 'improved-bilinear':
-            interpolator = ImprovedBilinearInterpolator()
-        elif object_type == 'quintic':
-            interpolator = QuinticInterpolator()
-        elif object_type == 'bspline':
-            interpolator = BSplineInterpolator()
+        (object_type, parameters) = self.get_type_and_data(data, 'hardware')
+        if object_type == 'hardware':
+            interpolator = HardwareInterpolator()
+        elif object_type == 'software':
+            interpolator = SoftwareInterpolator()
         else:
             print("Unknown interpolator", object_type)
         return interpolator
+
+class FilterYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        filter = None
+        (object_type, parameters) = self.get_type_and_data(data, 'bilinear')
+        if object_type == 'nearest':
+            filter = NearestFilter()
+        elif object_type == 'bilinear':
+            filter = BilinearFilter()
+        elif object_type == 'smoothstep':
+            filter = SmoothstepFilter()
+        elif object_type == 'quintic':
+            filter = QuinticFilter()
+        elif object_type == 'bspline':
+            filter = BSplineFilter()
+        else:
+            print("Unknown filter", object_type)
+        return filter
 
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
@@ -75,6 +88,8 @@ class HeightmapYamlParser(YamlModuleParser):
             relative_height_scale = height_scale
         median = data.get('median', True)
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
+        filter = FilterYamlParser.decode(data.get('filter'))
+        factory = None
         if heightmap_type == 'procedural':
             size = data.get('size', 256)
             noise_parser = NoiseYamlParser(scale_length)
@@ -82,28 +97,27 @@ class HeightmapYamlParser(YamlModuleParser):
             if func is None:
                 func = data.get('noise')
                 print("Warning: 'noise' entry is deprecated, use 'func' instead'")
-            func = noise_parser.decode(func)
+            heightmap_source = noise_parser.decode(func)
             if patched:
-                max_lod = data.get('max-lod', 100)
-                heightmap = PatchedHeightmap(name, size,
-                                             relative_height_scale, pi, pi, median,
-                                             ShaderHeightmapPatchFactory(func), interpolator, max_lod)
-            else:
-                heightmap = ShaderHeightmap(name, size, size // 2, relative_height_scale, median, func, interpolator)
+                factory = ShaderHeightmapPatchFactory(heightmap_source)
         else:
             heightmap_data = data.get('data')
             if heightmap_data is not None:
                 texture_source, texture_offset = TexturesAppearanceYamlParser.decode_source(heightmap_data)
                 heightmap_source = HeightMapTexture(texture_source)
                 #TODO: missing texture offset
-            if patched:
-                max_lod = data.get('max-lod', 100)
-                size = heightmap_source.source.texture_size
-                heightmap = PatchedHeightmap(name, size,
-                                             relative_height_scale, pi, pi, median,
-                                             TextureHeightmapPatchFactory(heightmap_source), interpolator, max_lod)
-            else:
-                heightmap = TextureHeightmap(name, 1.0, 0.5, relative_height_scale, median, heightmap_source, interpolator)
+                if patched:
+                    factory = TextureHeightmapPatchFactory(heightmap_source)
+                    size = heightmap_source.source.texture_size
+                else:
+                    size = 1.0
+        if patched:
+            max_lod = data.get('max-lod', 100)
+            heightmap = PatchedHeightmap(name, size,
+                                         relative_height_scale, pi, pi, median,
+                                         factory, interpolator, filter, max_lod)
+        else:
+            heightmap = TextureHeightmap(name, size, size / 2, relative_height_scale, median, heightmap_source, interpolator, filter)
         #TODO: should be set using a method or in constructor
         #TODO: Why raw_height_scale ???
         heightmap.global_scale = 1.0 / raw_height_scale

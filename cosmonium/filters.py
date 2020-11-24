@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2020 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from . import settings
 
 from math import floor
 
-class TexInterpolator(object):
+class TexFilter(object):
     def __init__(self):
         pass
 
@@ -72,7 +72,7 @@ class TexInterpolator(object):
     def get_data_source_filtering(self):
         return None
 
-class NearestInterpolator(TexInterpolator):
+class NearestFilter(TexFilter):
     def get_value(self, peeker, x, y):
         return self.get_single_value(peeker, x, y)
 
@@ -81,9 +81,9 @@ class NearestInterpolator(TexInterpolator):
         texture.setMagfilter(Texture.FT_nearest)
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_none
+        return HeightmapDataSource.F_nearest
 
-class BilinearInterpolator(TexInterpolator):
+class BilinearFilter(TexFilter):
     def get_value(self, peeker, x, y):
         return self.get_bilinear_value(peeker, x, y)
 
@@ -92,20 +92,31 @@ class BilinearInterpolator(TexInterpolator):
         texture.setMagfilter(Texture.FT_linear)
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_none
+        return HeightmapDataSource.F_bilinear
 
-class ImprovedBilinearInterpolator(TexInterpolator):
+class SmoothstepFilter(TexFilter):
     def get_value(self, peeker, x, y):
-        return self.get_bilinear_value(peeker, x, y)
+        x += 0.5
+        y += 0.5
+
+        i_x = floor(x)
+        i_y = floor(y)
+        f_x = x - i_x
+        f_y = y - i_y
+
+        f_x = f_x*f_x*(3.0-2.0*f_x)
+        f_y = f_y*f_y*(3.0-2.0*f_y)
+
+        return self.get_bilinear_value(peeker, i_x + f_x - 0.5, i_y + f_y - 0.5)
 
     def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_nearest)
-        texture.setMagfilter(Texture.FT_nearest)
+        texture.setMinfilter(Texture.FT_linear)
+        texture.setMagfilter(Texture.FT_linear)
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_improved_bilinear
+        return HeightmapDataSource.F_smoothstep
 
-class QuinticInterpolator(TexInterpolator):
+class QuinticFilter(TexFilter):
     def get_value(self, peeker, x, y):
         x += 0.5
         y += 0.5
@@ -127,7 +138,7 @@ class QuinticInterpolator(TexInterpolator):
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_quintic
 
-class BSplineInterpolator(TexInterpolator):
+class BSplineFilter(TexFilter):
     def configure_texture(self, texture):
         texture.setMinfilter(Texture.FT_linear)
         texture.setMagfilter(Texture.FT_linear)

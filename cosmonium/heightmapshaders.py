@@ -57,27 +57,38 @@ class DisplacementVertexControl(VertexControl):
         code.append("model_normal4 = vec4(normal, 0.0);")
 
 class HeightmapDataSource(DataSource):
-    F_none = 0
-    F_improved_bilinear = 1
-    F_quintic = 2
-    F_bspline = 3
+    I_Hardware = 0
+    I_Software = 1
+
+    F_nearest    = 0
+    F_bilinear   = 1
+    F_smoothstep = 2
+    F_quintic    = 3
+    F_bspline    = 4
 
     def __init__(self, heightmap, normals=True, shader=None):
         DataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.name = self.heightmap.name
         self.has_normal = normals
-        self.filtering = heightmap.interpolator.get_data_source_filtering()
+        self.interpolator = heightmap.interpolator.get_data_source_interpolator()
+        self.filtering = heightmap.filter.get_data_source_filtering()
 
     def get_id(self):
         str_id = self.name
         config = ''
-        if self.filtering == self.F_improved_bilinear:
-            config = 'i'
+        if self.interpolator == self.I_Software:
+            config += 'sw'
+        if self.filtering == self.F_nearest:
+            config += 'n'
+        if self.filtering == self.F_bilinear:
+            config += 'l'
+        elif self.filtering == self.F_smoothstep:
+            config += 's'
         elif self.filtering == self.F_quintic:
-            config = 'q'
+            config += 'q'
         elif self.filtering == self.F_bspline:
-            config = 'b'
+            config += 'b'
         if config != '':
             str_id += '-' + config
         return str_id
@@ -98,9 +109,17 @@ class HeightmapDataSource(DataSource):
         code.append("uniform vec2 heightmap_%s_offset;" % self.name)
         code.append("uniform vec2 heightmap_%s_scale;" % self.name)
 
-    def textureGood(self, code):
+    def hw_interpolator(self, code):
         code += ['''
-vec4 textureGood( sampler2D sam, vec2 uv )
+vec4 texture_fetch( sampler2D sam, vec2 uv )
+{
+    return texture2D( sam, uv );
+}
+''']
+
+    def sw_interpolator(self, code):
+        code += ['''
+vec4 texture_fetch( sampler2D sam, vec2 uv )
 {
     vec2 res = textureSize( sam, 0 );
 
@@ -118,20 +137,54 @@ vec4 textureGood( sampler2D sam, vec2 uv )
                 mix( c, d, fuv.x), fuv.y );
 }
 ''']
-    def textureInter(self, code):
+
+    def nearest_filter(self, code):
         code += ['''
-vec4 textureInter( sampler2D sam, vec2 p )
+vec4 texture_filter( sampler2D sam, vec2 p )
+{
+    return texture_fetch( sam, p );
+}
+''']
+
+    def bilinear_filter(self, code):
+        code += ['''
+vec4 texture_filter( sampler2D sam, vec2 p )
+{
+    return texture_fetch( sam, p );
+}
+''']
+
+    def smoothstep_filter(self, code):
+        code += ['''
+vec4 texture_filter( sampler2D sam, vec2 p )
 {
     vec2 res = textureSize( sam, 0 );
     p = p*res + 0.5;
 
     vec2 i = floor(p);
-    vec2 f = p - i;
+    vec2 f = fract(p);
+    f = smoothstep(0, 1, f);://f*f*(3.0-2.0*f);
+    p = i + f;
+
+    p = (p - 0.5)/res;
+    return texture_fetch( sam, p );
+}
+''']
+
+    def quintic_filter(self, code):
+        code += ['''
+vec4 texture_filter( sampler2D sam, vec2 p )
+{
+    vec2 res = textureSize( sam, 0 );
+    p = p*res + 0.5;
+
+    vec2 i = floor(p);
+    vec2 f = fract(p);
     f = f*f*f*(f*(f*6.0-15.0)+10.0);
     p = i + f;
 
     p = (p - 0.5)/res;
-    return texture2D( sam, p );
+    return texture_fetch( sam, p );
 }
 ''']
 
@@ -147,7 +200,7 @@ vec4 cubic(float alpha) {
     return vec4(w0, w1, w2, w3);
 }
 
-vec4 textureBSpline(sampler2D sam, vec2 pos)
+vec4 texture_filter(sampler2D sam, vec2 pos)
 {
     vec2 texSize = textureSize(sam, 0);
     pos *= texSize;
@@ -167,10 +220,10 @@ vec4 textureBSpline(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture2D(sam, offset.xz).x;
-    float p01 = texture2D(sam, offset.yz).x;
-    float p10 = texture2D(sam, offset.xw).x;
-    float p11 = texture2D(sam, offset.yw).x;
+    float p00 = texture_fetch(sam, offset.xz).x;
+    float p01 = texture_fetch(sam, offset.yz).x;
+    float p10 = texture_fetch(sam, offset.xw).x;
+    float p11 = texture_fetch(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -262,20 +315,12 @@ float decode_height(vec4 encoded) {
 }
 ''']
     def get_terrain_height(self, code):
-        if self.filtering == self.F_improved_bilinear:
-            sampler = 'textureGood'
-        elif self.filtering == self.F_quintic:
-            sampler = 'textureInter'
-        elif self.filtering == self.F_bspline:
-            sampler = 'textureBSpline'
-        else:
-            sampler = 'texture2D'
         code += ['''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, float height_scale, vec2 offset, vec2 scale) {
     vec2 pos = texcoord * scale + offset;
-    return decode_height(%s(heightmap, pos)) * height_scale;// + %g;
+    return decode_height(texture_filter(heightmap, pos)) * height_scale;// + %g;
 }
-''' % (self.name, sampler, self.heightmap.offset)]
+''' % (self.name, self.heightmap.offset)]
 
     def get_terrain_normal(self, code):
         code += ['''
@@ -307,29 +352,40 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
+    def texture_fetch_extra(self, shader, code):
+        if self.interpolator == self.I_Hardware:
+            texture_fetch = self.hw_interpolator
+        elif self.interpolator == self.I_Software:
+            texture_fetch = self.sw_interpolator
+        shader.add_function(code, 'texture_fetch', texture_fetch)
+
+    def texture_filter_extra(self, shader, code):
+        if self.filtering == self.F_nearest:
+            texture_filter = self.nearest_filter
+        elif self.filtering == self.F_bilinear:
+            texture_filter = self.bilinear_filter
+        elif self.filtering == self.F_smoothstep:
+            texture_filter = self.quintic_filter
+        elif self.filtering == self.F_quintic:
+            texture_filter = self.quintic_filter
+        elif self.filtering == self.F_bspline:
+            texture_filter = self.textureBSpline
+        shader.add_function(code, 'texture_filter', texture_filter)
+
     def vertex_extra(self, code):
         if settings.encode_float:
             self.shader.vertex_shader.add_decode_rgba(code)
         self.shader.vertex_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_bilinear:
-            self.shader.vertex_shader.add_function(code, 'textureGood', self.textureGood)
-        elif self.filtering == self.F_quintic:
-            self.shader.vertex_shader.add_function(code, 'textureInter', self.textureInter)
-        elif self.filtering == self.F_bspline:
-            self.shader.vertex_shader.add_function(code, 'textureBSpline', self.textureBSpline)
+        self.texture_fetch_extra(self.shader.vertex_shader, code)
+        self.texture_filter_extra(self.shader.vertex_shader, code)
         self.shader.vertex_shader.add_function(code, 'get_terrain_height_%s' % self.name, self.get_terrain_height)
 
     def fragment_extra(self, code):
         if settings.encode_float:
             self.shader.fragment_shader.add_decode_rgba(code)
         self.shader.fragment_shader.add_function(code, 'decode_height', self.decode_height)
-        if self.filtering == self.F_improved_bilinear:
-            self.shader.fragment_shader.add_function(code, 'textureGood', self.textureGood)
-        elif self.filtering == self.F_quintic:
-            self.shader.fragment_shader.add_function(code, 'textureInter', self.textureInter)
-        elif self.filtering == self.F_bspline:
-            self.shader.fragment_shader.add_function(code, 'textureBSpline', self.textureBSpline)
-            self.shader.fragment_shader.add_function(code, 'textureBSplineDelta', self.textureBSplineDelta)
+        self.texture_fetch_extra(self.shader.fragment_shader, code)
+        self.texture_filter_extra(self.shader.fragment_shader, code)
         self.shader.fragment_shader.add_function(code, 'get_terrain_height_%s' % self.name, self.get_terrain_height)
         self.shader.fragment_shader.add_function(code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal)
 
