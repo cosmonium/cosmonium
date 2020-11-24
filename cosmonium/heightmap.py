@@ -23,7 +23,8 @@ from panda3d.core import LVector2, Texture, LColor
 
 from .patchedshapes import PatchLodControl
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
-from .interpolator import BilinearInterpolator
+from .interpolators import HardwareInterpolator
+from .filters import BilinearFilter
 from .dircontext import defaultDirContext
 
 import traceback
@@ -157,7 +158,7 @@ class HeightmapPatch:
         new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
-        height = self.parent.interpolator.get_value(self.texture_peeker, new_x, new_y)
+        height = self.parent.filter.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale# + self.parent.offset
 
@@ -169,7 +170,7 @@ class HeightmapPatch:
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.parent.interpolator.configure_texture(self.texture)
+            self.parent.filter.configure_texture(self.texture)
             self.do_load(patch, callback, cb_args)
         else:
             if callback is not None:
@@ -257,7 +258,7 @@ class TextureHeightmapPatchFactory(HeightmapPatchFactory):
         return TextureHeightmapPatch.create_from_patch(self.data_source, *args, **kwargs)
 
 class Heightmap(object):
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None):
+    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None, filter=None):
         self.name = name
         self.width = width
         self.height = height
@@ -270,8 +271,11 @@ class Heightmap(object):
         else:
             self.offset = 0.0
         if interpolator is None:
-            interpolator = BilinearInterpolator()
+            interpolator = HardwareInterpolator()
         self.interpolator = interpolator
+        if filter is None:
+            filter = BilinearFilter()
+        self.filter = filter
         self.global_frequency = 1.0
         self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
@@ -325,8 +329,8 @@ class Heightmap(object):
         return None
 
 class TextureHeightmapBase(Heightmap):
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator):
-        Heightmap.__init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator)
+    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator, filter):
+        Heightmap.__init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator, filter)
         self.texture = None
         self.texture_offset = LVector2()
         self.texture_scale = LVector2(1, 1)
@@ -355,7 +359,7 @@ class TextureHeightmapBase(Heightmap):
         new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
-        height = self.interpolator.get_value(self.texture_peeker, new_x, new_y)
+        height = self.filter.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale# + self.offset
 
     def create_heightmap(self, shape, callback=None, cb_args=()):
@@ -366,7 +370,7 @@ class TextureHeightmapBase(Heightmap):
             self.texture = Texture()
             self.texture.set_wrap_u(Texture.WMClamp)
             self.texture.set_wrap_v(Texture.WMClamp)
-            self.interpolator.configure_texture(self.texture)
+            self.filter.configure_texture(self.texture)
             self.do_load(shape, self.heightmap_ready_cb, (callback, cb_args))
         else:
             if callback is not None:
@@ -395,8 +399,8 @@ class TextureHeightmapBase(Heightmap):
         pass
 
 class TextureHeightmap(TextureHeightmapBase):
-    def __init__(self, name, width, height, height_scale, median, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
-        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
+    def __init__(self, name, width, height, height_scale, median, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
+        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator, filter)
         self.data_source = data_source
 
     def set_data_source(self, data_source, context=defaultDirContext):
@@ -408,8 +412,8 @@ class TextureHeightmap(TextureHeightmapBase):
         self.data_source.load(shape, self.heightmap_ready_cb, (callback, cb_args))
 
 class PatchedHeightmap(Heightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, max_lod=100):
-        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median, interpolator)
+    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, filter=None, max_lod=100):
+        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median, interpolator, filter)
         self.size = size
         self.patch_factory = patch_factory
         self.max_lod = max_lod
