@@ -75,8 +75,6 @@ class ShaderHeightmap(TextureHeightmapBase):
                                       coord = self.coord,
                                       offset = self.offset,
                                       scale = self.scale)
-            self.shader.global_frequency = self.global_frequency
-            self.shader.global_scale = self.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, 0, self.texture, self.heightmap_ready_cb, (callback, cb_args))
 
@@ -122,7 +120,5 @@ class ShaderHeightmapPatch(HeightmapPatch):
                                       noise_target=FloatTarget(),
                                       offset=(self.x0, self.y0, 0.0),
                                       scale=(self.lod_scale_x, self.lod_scale_y, 1.0))
-            self.shader.global_frequency = self.parent.global_frequency
-            self.shader.global_scale = self.parent.global_scale
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, self.face, self.texture, self.heightmap_ready_cb, (callback, cb_args))

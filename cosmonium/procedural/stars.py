@@ -37,8 +37,6 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         self.size = size
         self.noise = noise
         self.target = GrayTarget()
-        self.frequency = 1.0
-        self.scale = 1.0
 
     def create(self, body):
         shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=settings.patch_max_vertex_size,
@@ -48,9 +46,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         surface = FlatSurface(appearance=Appearance(colorScale=body.point_color,
                                                     texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
                                                                                                           self.target,
-                                                                                                          self.size,
-                                                                                                          self.frequency,
-                                                                                                          self.scale))),
+                                                                                                          self.size))),
                               shape=shape,
                               shader=shader)
         return surface

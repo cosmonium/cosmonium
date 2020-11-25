@@ -81,7 +81,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 scale_length *= scale_length_units
             else:
                 scale_length = radius * 2 * pi
-                relative_height_scale = height_scale / radius
+            relative_height_scale = height_scale_units / radius
         else:
             height_scale = raw_height_scale
             scale_length = 1.0
@@ -118,9 +118,6 @@ class HeightmapYamlParser(YamlModuleParser):
                                          factory, interpolator, filter, max_lod)
         else:
             heightmap = TextureHeightmap(name, size, size / 2, relative_height_scale, median, heightmap_source, interpolator, filter)
-        #TODO: should be set using a method or in constructor
-        #TODO: Why raw_height_scale ???
-        heightmap.global_scale = 1.0 / raw_height_scale
         return heightmap
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):

@@ -31,14 +31,12 @@ class ProceduralVirtualTextureSource(TextureSource):
     tex_generators = {}
     cached = False
     procedural = True
-    def __init__(self, noise, target, size, frequency, scale):
+    def __init__(self, noise, target, size):
         TextureSource.__init__(self)
         self.noise = noise
         self.target = target
         self.texture_size = size
         self.map_patch = {}
-        self.global_frequency = frequency
-        self.global_scale = scale
 
     def is_patched(self):
         return True
@@ -91,8 +89,6 @@ class ProceduralVirtualTextureSource(TextureSource):
                                  noise_target=self.target,
                                  offset=(patch.x0, patch.y0, 0.0),
                                  scale=(patch.lod_scale_x, patch.lod_scale_y, 1.0))
-            shader.global_frequency = self.global_frequency
-            shader.global_scale = self.global_scale
             shader.create_and_register_shader(None, None)
         self.texture = Texture()
         self.texture.set_wrap_u(Texture.WMClamp)
