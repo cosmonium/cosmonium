@@ -276,8 +276,6 @@ class Heightmap(object):
         if filter is None:
             filter = BilinearFilter()
         self.filter = filter
-        self.global_frequency = 1.0
-        self.global_scale = 1.0 / self.height_scale
         self.heightmap_ready = False
 
     def set_size(self, width, height):

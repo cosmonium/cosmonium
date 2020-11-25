@@ -93,7 +93,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             size = int(data.get('size', 256))
             frequency = float(data.get('frequency', 1.0))
             scale = float(data.get('scale', 1.0))
-            texture_source = ProceduralVirtualTextureSource(func, target, size, frequency, scale)
+            texture_source = ProceduralVirtualTextureSource(func, target, size)
             texture_offset = parameters.get('offset', 0)
         else:
             print("Unknown type", object_type)

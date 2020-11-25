@@ -494,15 +494,13 @@ class RoamingRalphDemo(CosmoniumBase):
     def create_terrain_heightmap(self):
         self.heightmap = PatchedHeightmap('heightmap',
                                           self.ralph_config.heightmap_size,
-                                          self.ralph_config.height_scale,
+                                          1.0,
                                           self.ralph_config.tile_size,
                                           self.ralph_config.tile_size,
                                           True,
                                           ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
-        #TODO: should be set using a method or in constructor
-        self.heightmap.global_scale = 1.0 / self.ralph_config.noise_scale
 
     def create_terrain_biome(self):
         self.biome = PatchedHeightmap('biome',
