@@ -58,7 +58,7 @@ from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
-from cosmonium.nav import NavBase, ControlNav
+from cosmonium.nav import ControlNav
 from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
 from cosmonium.controllers import CartesianBodyMover, CartesianSurfaceBodyMover
 from cosmonium.astro.frame import CartesianSurfaceReferenceFrame
@@ -764,8 +764,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
         self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
-        frame = CartesianSurfaceReferenceFrame(LPoint3d())
-        frame.set_parent_body(self)
+        frame = CartesianSurfaceReferenceFrame(self, LPoint3d())
         self.ralph.set_frame(frame)
         self.ralph.create_own_shadow_caster = False
 
@@ -780,7 +779,8 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.mover = CartesianSurfaceBodyMover(self.ralph)
         self.mover.activate()
-        self.nav = ControlNav(self.mover)
+        self.nav = ControlNav()
+        self.nav.set_controller(self.mover)
         self.nav.register_events(self)
         self.nav.speed = 25
         self.nav.rot_step_per_sec = 2
@@ -812,7 +812,7 @@ class RoamingRalphDemo(CosmoniumBase):
             self.terrain.check_settings()
             self.trigger_check_settings = False
 
-        self.nav.update(dt)
+        self.nav.update(0, dt)
         self.ralph.update(0, dt)
         self.terrain.update(0, dt)
         self.camera_controller.update(0, dt)
