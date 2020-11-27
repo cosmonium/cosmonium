@@ -160,7 +160,7 @@ class HeightmapPatch:
         new_y = min(new_y, self.height - 1)
         height = self.parent.filter.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
-        return height * self.parent.height_scale# + self.parent.offset
+        return height * self.parent.height_scale + self.parent.height_offset
 
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
@@ -258,18 +258,16 @@ class TextureHeightmapPatchFactory(HeightmapPatchFactory):
         return TextureHeightmapPatch.create_from_patch(self.data_source, *args, **kwargs)
 
 class Heightmap(object):
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator=None, filter=None):
+    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator=None, filter=None):
         self.name = name
         self.width = width
         self.height = height
+        self.min_height = min_height
+        self.max_height = max_height
         self.height_scale = height_scale
+        self.height_offset = height_offset
         self.u_scale = float(u_scale) / width
         self.v_scale = float(v_scale) / height
-        self.median = median
-        if median:
-            self.offset = -0.5 * self.height_scale
-        else:
-            self.offset = 0.0
         if interpolator is None:
             interpolator = HardwareInterpolator()
         self.interpolator = interpolator
@@ -288,10 +286,6 @@ class Heightmap(object):
 
     def set_height_scale(self, height_scale):
         self.height_scale = height_scale
-        if self.median:
-            self.offset = -0.5 * self.height_scale
-        else:
-            self.offset = 0.0
 
     def get_height_scale(self, patch):
         return self.height_scale
@@ -327,8 +321,8 @@ class Heightmap(object):
         return None
 
 class TextureHeightmapBase(Heightmap):
-    def __init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator, filter):
-        Heightmap.__init__(self, name, width, height, height_scale, u_scale, v_scale, median, interpolator, filter)
+    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter):
+        Heightmap.__init__(self, name, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
         self.texture = None
         self.texture_offset = LVector2()
         self.texture_scale = LVector2(1, 1)
@@ -358,7 +352,7 @@ class TextureHeightmapBase(Heightmap):
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
         height = self.filter.get_value(self.texture_peeker, new_x, new_y)
-        return height * self.height_scale# + self.offset
+        return height * self.height_scale + self.height_offset
 
     def create_heightmap(self, shape, callback=None, cb_args=()):
         return self.load(shape, callback, cb_args)
@@ -397,8 +391,8 @@ class TextureHeightmapBase(Heightmap):
         pass
 
 class TextureHeightmap(TextureHeightmapBase):
-    def __init__(self, name, width, height, height_scale, median, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
-        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator, filter)
+    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
+        TextureHeightmapBase.__init__(self, name, width, height, min_height, max_height, height_scale,  height_offset, 1.0, 1.0, interpolator, filter)
         self.data_source = data_source
 
     def set_data_source(self, data_source, context=defaultDirContext):
@@ -410,8 +404,8 @@ class TextureHeightmap(TextureHeightmapBase):
         self.data_source.load(shape, self.heightmap_ready_cb, (callback, cb_args))
 
 class PatchedHeightmap(Heightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, median, patch_factory, interpolator=None, filter=None, max_lod=100):
-        Heightmap.__init__(self, name, size, size, height_scale, u_scale, v_scale, median, interpolator, filter)
+    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, patch_factory, interpolator=None, filter=None, max_lod=100):
+        Heightmap.__init__(self, name, size, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
         self.size = size
         self.patch_factory = patch_factory
         self.max_lod = max_lod

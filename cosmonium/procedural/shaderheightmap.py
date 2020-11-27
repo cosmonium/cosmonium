@@ -32,8 +32,8 @@ from .. import settings
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, median, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
-        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, median, interpolator)
+    def __init__(self, name, width, height, height_scale, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
+        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, interpolator)
         self.noise = noise
         self.offset = offset
         self.scale = scale

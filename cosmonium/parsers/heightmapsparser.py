@@ -71,22 +71,42 @@ class HeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, name, patched, radius):
         heightmap_type = data.get('type', 'procedural')
-        raw_height_scale = data.get('max-height', 1.0)
+        min_height = data.get('min-height', None)
+        max_height = data.get('max-height', None)
+        height_scale = data.get('height-scale', 1.0)
+        height_offset = data.get('height-offset', 0.0)
+        if min_height is not None:
+            min_height_units = DistanceUnitsYamlParser.decode(data.get('min-height-units'), units.m)
+            min_height *= min_height_units
+        if max_height is not None:
+            max_height_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.m)
+            max_height *= max_height_units
+        height_scale_units = DistanceUnitsYamlParser.decode(data.get('height-scale-units'), units.m)
+        height_scale *= height_scale_units
+        height_offset_units = DistanceUnitsYamlParser.decode(data.get('height-offset-units'), units.m)
+        height_offset *= height_offset_units
+        if min_height is None:
+            if max_height is None:
+                min_height = -(height_scale + height_offset)
+                max_height = height_scale + height_offset
+            else:
+                min_height = - max_height
+        else:
+            if max_height is None:
+                max_height = -min_height
         if radius is not None:
-            height_scale_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.m)
-            height_scale = raw_height_scale * height_scale_units
             scale_length = data.get('scale-length', None)
             scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
             if scale_length is not None:
                 scale_length *= scale_length_units
             else:
                 scale_length = radius * 2 * pi
-            relative_height_scale = height_scale_units / radius
+            min_height /= radius
+            max_height /= radius
+            height_scale /= radius
+            height_offset /= radius
         else:
-            height_scale = raw_height_scale
             scale_length = 1.0
-            relative_height_scale = height_scale
-        median = data.get('median', True)
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
         filter = FilterYamlParser.decode(data.get('filter'))
         factory = None
@@ -114,10 +134,13 @@ class HeightmapYamlParser(YamlModuleParser):
         if patched:
             max_lod = data.get('max-lod', 100)
             heightmap = PatchedHeightmap(name, size,
-                                         relative_height_scale, pi, pi, median,
+                                         min_height, max_height, height_scale, height_offset,
+                                         pi, pi,
                                          factory, interpolator, filter, max_lod)
         else:
-            heightmap = TextureHeightmap(name, size, size / 2, relative_height_scale, median, heightmap_source, interpolator, filter)
+            heightmap = TextureHeightmap(name, size, size / 2,
+                                         min_height, max_height, height_scale, height_offset,
+                                         heightmap_source, interpolator, filter)
         return heightmap
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):

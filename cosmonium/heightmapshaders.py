@@ -318,9 +318,9 @@ float decode_height(vec4 encoded) {
         code += ['''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, float height_scale, vec2 offset, vec2 scale) {
     vec2 pos = texcoord * scale + offset;
-    return decode_height(texture_filter(heightmap, pos)) * height_scale;// + %g;
+    return decode_height(texture_filter(heightmap, pos)) * height_scale + %g;
 }
-''' % (self.name, self.heightmap.offset)]
+''' % (self.name, self.heightmap.height_offset)]
 
     def get_terrain_normal(self, code):
         code += ['''

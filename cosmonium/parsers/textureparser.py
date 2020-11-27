@@ -71,20 +71,16 @@ class HeightColorControlYamlParser(YamlParser):
             entries.append(self.decode_height_layer(entry))
         return HeightColorMap('colormap_%d' % self.colormap_id, entries)
 
-    def decode(self, data, scale = 1.0, radius=1.0, median=True):
+    def decode(self, data, heightmap, radius=1.0):
         entries = data.get('entries', [])
         self.percentage = data.get('percentage', False)
         self.float_values = data.get('float', False)
         if self.percentage:
-            self.height_scale = scale / radius
+            self.height_scale = 1.0 / (heightmap.max_height - heightmap.min_height) / radius
+            self.height_offset = heightmap.min_height * self.height_scale
         else:
             self.height_scale = 1.0 / radius
-        if median:
-            self.height_offset = self.height_scale
-        else:
-            self.height_offset = 0.0            
-        if self.percentage and median:
-                self.height_scale *= 2
+            self.height_offset = 0.0
         return self.decode_height_control(entries)
 
 class MixTextureControlYamlParser(YamlParser):
@@ -150,23 +146,23 @@ class MixTextureControlYamlParser(YamlParser):
             else:
                 return None
 
-    def decode(self, data, height_scale=1.0, radius=1.0):
+    def decode(self, data, heightmap, radius=1.0):
         self.height_scale = 1.0 / radius
         entry = self.decode_entry(data)
         #TODO: get or generate name
         return MixTextureControl("control", entry)
 
 class TextureControlYamlParser(YamlModuleParser):
-    def decode(self, data, appearance, height_scale=1.0, radius=1.0, median=True):
+    def decode(self, data, appearance, heightmap, radius=1.0):
         if data is None: return None
         control_type = data.get('type', 'textures')
         if control_type == 'textures':
             control_parser = MixTextureControlYamlParser()
-            control = control_parser.decode(data, height_scale, radius)
+            control = control_parser.decode(data, heightmap, radius)
             appearance_source = TextureDictionaryDataSource(appearance)
         elif control_type == 'colormap':
             control_parser = HeightColorControlYamlParser()
-            control = control_parser.decode(data, height_scale, radius, median)
+            control = control_parser.decode(data, heightmap, radius)
             appearance_source = None
         else:
             print("Unknown control type '%s'" % control_type)
