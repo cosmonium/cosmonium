@@ -244,6 +244,24 @@ class StellarBody(StellarObject):
                 sync_frame.get_orientation().xform(vectors[1]),
                 sync_frame.get_orientation().xform(vectors[2]))
 
+    def get_lonlatvert_under_xy(self, x, y):
+        if self.surface is not None:
+            vectors = self.surface.get_lonlatvert_at(x, y)
+        else:
+            vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+        return vectors
+
+    def get_lonlatvert_under(self, position):
+        if self.surface is not None:
+            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
+            vectors = self.surface.get_lonlatvert_at(x, y)
+        else:
+            vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+        sync_frame = SynchroneReferenceFrame(self)
+        return (sync_frame.get_orientation().xform(vectors[0]),
+                sync_frame.get_orientation().xform(vectors[1]),
+                sync_frame.get_orientation().xform(vectors[2]))
+
     def show_clouds(self):
         if self.clouds:
             self.clouds.show()

@@ -230,9 +230,9 @@ class CartesianSurfaceReferenceFrame(RelativeReferenceFrame):
         return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
 
     def get_orientation_parent_frame(self):
-        (normal, tangent, binormal) = self.body.get_normals_under(self.position)
+        (lon, lat, vert) = self.body.get_lonlatvert_under(self.position)
         rotation = LQuaterniond()
-        look_at(rotation, tangent, normal)
+        look_at(rotation, lon, vert)
         return rotation
 
 class FramesDB(object):

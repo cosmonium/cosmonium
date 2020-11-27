@@ -417,6 +417,18 @@ class SpherePatch(Patch):
         binormal.normalize()
         return (normal, tangent, binormal)
 
+    def get_lonlatvert_at(self, coord):
+        (u, v) = self.coord_to_uv(coord)
+        normal = geometry.UVPatchPoint(1.0,
+                                       u, v,
+                                       self.x0, self.y0,
+                                       self.x1, self.y1)
+        tangent = LVector3d(-normal[1], normal[0], 0)
+        tangent.normalize()
+        binormal = normal.cross(tangent)
+        binormal.normalize()
+        return (tangent, binormal, normal)
+
 class SquarePatchBase(Patch):
     patch_cache = {}
 
@@ -623,6 +635,18 @@ class NormalizedSquarePatch(SquarePatchBase):
         binormal.normalize()
         return (normal, tangent, binormal)
 
+    def get_lonlatvert_at(self, coord):
+        (u, v) = self.coord_to_uv(coord)
+        normal = geometry.NormalizedSquarePatchPoint(u, v,
+                                                     self.x0, self.y0,
+                                                     self.x1, self.y1)
+        normal = self.rotations[self.face].xform(normal)
+        tangent = LVector3d(-normal[1], normal[0], 0)
+        tangent.normalize()
+        binormal = normal.cross(tangent)
+        binormal.normalize()
+        return (tangent, binormal, normal)
+
 class SquaredDistanceSquarePatch(SquarePatchBase):
     coord = TexCoord.SqrtCube
 
@@ -668,6 +692,19 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         binormal = normal.cross(tangent)
         binormal.normalize()
         return (normal, tangent, binormal)
+
+    def get_lonlatvert_at(self, coord):
+        (u, v) = self.coord_to_uv(coord)
+        normal = geometry.SquaredDistanceSquarePatchPoint(1.0,
+                                                          u, v,
+                                                          self.x0, self.y0,
+                                                          self.x1, self.y1)
+        normal = self.rotations[self.face].xform(normal)
+        tangent = LVector3d(-normal[1], normal[0], 0)
+        tangent.normalize()
+        binormal = normal.cross(tangent)
+        binormal.normalize()
+        return (tangent, binormal, normal)
 
 class PatchedShapeLayer(object):
     def set_parent(self, parent):
@@ -1098,6 +1135,14 @@ class PatchedShapeBase(Shape):
         else:
             print("Patch not found", coord)
             return (LVector3d.up(), LVector3d.forward(), LVector3d.left())
+
+    def get_lonlatvert_at(self, coord):
+        patch = self.find_patch_at(coord)
+        if patch is not None:
+            return patch.get_lonlatvert_at(coord)
+        else:
+            print("Patch not found", coord)
+            return (LVector3d.right(), LVector3d.forward(), LVector3d.up())
 
     def dump_patch(self, patch, padding=True):
         if padding:

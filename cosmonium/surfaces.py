@@ -104,6 +104,10 @@ class Surface(ShapeObject):
         coord = self.shape.global_to_shape_coord(x, y)
         return self.shape.get_normals_at(coord)
 
+    def get_lonlatvert_at(self, x, y):
+        coord = self.shape.global_to_shape_coord(x, y)
+        return self.shape.get_lonlatvert_at(coord)
+
 class FlatSurface(Surface):
     def get_height_at(self, x, y, strict=False):
         return self.owner.get_apparent_radius()
