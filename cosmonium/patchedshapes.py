@@ -84,7 +84,6 @@ class PatchBase(Shape):
         self.children_normal = []
         self.children_offset = []
         self.need_split = False
-        self.need_merge = False
         self.split_pending = False
         self.merge_pending = False
         self.parent_split_pending = False
@@ -144,8 +143,6 @@ class PatchBase(Shape):
             return False
         for child in self.children:
             if len(child.children) != 0:
-                return False
-            if not child.need_merge:
                 return False
         return True
 
@@ -887,14 +884,13 @@ class PatchedShapeBase(Shape):
             neighbour.calc_outer_tessellation_level(update)
 
     def check_lod(self, patch, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
-        patch.need_merge = False
         patch.check_visibility(self, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
         self.new_max_lod = max(patch.lod, self.new_max_lod)
         #TODO: Should be checked before calling check_lod
         for child in patch.children:
             self.check_lod(child, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
         if len(patch.children) != 0:
-            if not patch.merge_pending and patch.can_merge_children():
+            if not patch.merge_pending and patch.can_merge_children() and lod_control.should_merge(patch, patch.apparent_size, patch.distance):
                 self.to_merge.append(patch)
             if patch.split_pending and patch.can_show_children():
                 self.to_show_children.append(patch)
@@ -909,8 +905,6 @@ class PatchedShapeBase(Shape):
             if can_split and lod_control.should_split(patch, patch.apparent_size, patch.distance):
                 if self.are_children_visibles(patch):
                     self.to_split.append(patch)
-            if not patch.visible or lod_control.should_merge(patch, patch.apparent_size, patch.distance):
-                patch.need_merge = True
             if patch.shown and not patch.split_pending and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
                 self.to_remove.append(patch)
             if not patch.parent_split_pending:
@@ -1152,7 +1146,6 @@ class PatchedShapeBase(Shape):
         print(pad, patch.str_id(), hex(id(patch)))
         print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
         if patch.shown: print(pad, '  Shown')
-        if patch.need_merge: print(pad, '  Need merge')
         if patch.split_pending: print(pad, '  Split pending')
         if patch.merge_pending: print(pad, '  Merge pending')
         if patch.parent_split_pending: print(pad, '  Parent split pending')
@@ -1180,7 +1173,6 @@ class PatchedShapeBase(Shape):
     def _dump_stats(self, stats_array, patch):
         stats_array[0] += patch.visible
         stats_array[1] += patch.shown
-        stats_array[2] += patch.need_merge
         stats_array[3] += patch.split_pending
         stats_array[4] += patch.merge_pending
         stats_array[5] += patch.parent_split_pending
@@ -1199,7 +1191,6 @@ class PatchedShapeBase(Shape):
         print("Max lod:             ", self.max_lod)
         print("Visible:             ", stats_array[0])
         print("Shown:               ", stats_array[1])
-        print("Need merge:          ", stats_array[2])
         print("Split pending:       ", stats_array[3])
         print("merge pending:       ", stats_array[4])
         print("Parent split pending:", stats_array[5])
@@ -1496,8 +1487,8 @@ class PatchLodControl(object):
 
 #The lod control classes uses hysteresis to avoid cycle of split/merge due to
 #precision errors.
-#When splitting the resulting patch will be 1.1/2 bigger than the merge limit
-#When merging, the resulting patch will be  2/2.1 smaller than the slit limit
+#When splitting the resulting patch will be 1.1 bigger than the merge limit
+#When merging, the resulting patch will be  1.1 smaller than the slit limit
 
 class TexturePatchLodControl(PatchLodControl):
     def __init__(self, min_density, density, max_lod=100):
@@ -1522,7 +1513,7 @@ class TexturePatchLodControl(PatchLodControl):
         return self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.1 and self.appearance.texture.can_split(patch)
 
     def should_merge(self, patch, apparent_patch_size, distance):
-        return apparent_patch_size < self.patch_size / 2.1
+        return apparent_patch_size < self.patch_size / 1.1
 
 class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
     def __init__(self, max_vertex_size, min_density, density, max_lod=100):
@@ -1544,15 +1535,15 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
 
     def should_merge(self, patch, apparent_patch_size, distance):
         if self.patch_size > 0:
-            if apparent_patch_size < self.patch_size / 2.1:
+            if apparent_patch_size < self.patch_size / 1.1:
                 if patch.parent is not None and self.appearance.texture.can_split(patch.parent):
                     return True
                 else:
                     apparent_vertex_size = apparent_patch_size / patch.density
-                    return apparent_vertex_size < self.max_vertex_size / 2.1
+                    return apparent_vertex_size < self.max_vertex_size / 1.1
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
-            return apparent_vertex_size < self.max_vertex_size / 2.1
+            return apparent_vertex_size < self.max_vertex_size / 1.1
 
 class VertexSizePatchLodControl(PatchLodControl):
     def __init__(self, max_vertex_size, density, max_lod=100):
@@ -1567,7 +1558,7 @@ class VertexSizePatchLodControl(PatchLodControl):
 
     def should_merge(self, patch, apparent_patch_size, distance):
         apparent_vertex_size = apparent_patch_size / patch.density
-        to_merge = apparent_vertex_size < self.max_vertex_size / 2.1
+        to_merge = apparent_vertex_size < self.max_vertex_size / 1.1
         return to_merge
 
 class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
