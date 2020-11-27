@@ -36,7 +36,7 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
 
     def get_patch_name(self, patch, scale=1):
         sector = patch.sector
-        ring = (scale << patch.lod) - patch.ring - 1
+        ring = (1 << patch.lod) - patch.ring - 1
         if self.offset != 0:
             sector += patch.s_div // 2
             sector %= patch.s_div
