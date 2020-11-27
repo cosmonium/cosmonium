@@ -618,6 +618,9 @@ class RoamingRalphDemo(CosmoniumBase):
     def get_normals_under(self, position):
         return self.terrain_object.get_normals_at(position[0], position[1])
 
+    def get_lonlatvert_under(self, position):
+        return self.terrain_object.get_lonlatvert_under(position[0], position[1])
+
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
         if settings.srgb:

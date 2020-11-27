@@ -585,12 +585,12 @@ class WalkNav(InteractiveNavigationController):
     def step(self, distance):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
         ship_pos = self.ship.get_pos()
-        (normal, tangent, binormal) = self.body.get_normals_under(ship_pos)
+        (lon, lat, vert) = self.body.get_lonlatvert_under(ship_pos)
         direction = self.ship.get_rot().xform(LVector3d(0, distance, 0))
-        projected = direction - normal * direction.dot(normal)
+        projected = direction - vert * direction.dot(vert)
         position = self.body.cartesian_to_spherical(self.ship.get_pos())
-        delta_x = tangent.dot(projected) * arc_to_angle
-        delta_y = binormal.dot(projected) * arc_to_angle
+        delta_x = lon.dot(projected) * arc_to_angle
+        delta_y = lat.dot(projected) * arc_to_angle
         new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
         altitude = position[2] - self.body.height_under
         (x, y, distance) = self.body.spherical_to_xy(new_position)
@@ -601,16 +601,16 @@ class WalkNav(InteractiveNavigationController):
             print("Patch not found for", x, y, '->', new_position[2])
         new_position = self.body.spherical_to_cartesian(new_position)
         self.ship.set_pos(new_position)
-        target_pos = new_position + direction * 10 * units.m
-        target_pos = self.body.cartesian_to_spherical(target_pos)
-        (x, y, distance) = self.body.spherical_to_xy(target_pos)
-        target_height = self.body.surface.get_height_at(x, y, strict = True)
-        if target_height is not None:
-            target_pos = (target_pos[0], target_pos[1], target_height + altitude)
-        else:
-            print("Patch not found for", x, y, '->', target_pos[2])
-        target_pos = self.body.spherical_to_cartesian(target_pos)
-        rot, angle = self.ship.calc_look_at(target_pos, rel=False)
+#         target_pos = new_position + direction * 10 * units.m
+#         target_pos = self.body.cartesian_to_spherical(target_pos)
+#         (x, y, distance) = self.body.spherical_to_xy(target_pos)
+#         target_height = self.body.surface.get_height_at(x, y, strict = True)
+#         if target_height is not None:
+#             target_pos = (target_pos[0], target_pos[1], target_height + altitude)
+#         else:
+#             print("Patch not found for", x, y, '->', target_pos[2])
+#         target_pos = self.body.spherical_to_cartesian(target_pos)
+#         rot, angle = self.ship.calc_look_at(target_pos, rel=False)
         #self.ship.set_rot(rot)
         #print(angle)
 

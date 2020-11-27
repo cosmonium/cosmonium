@@ -141,6 +141,10 @@ class Tile(PatchBase):
         vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
         return vectors
 
+    def get_lonlatvert_at(self, coord):
+        vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+        return vectors
+
 class TerrainLayer(object):
     def __init__(self):
         self.instance = None

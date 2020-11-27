@@ -141,6 +141,9 @@ class Shape:
     def get_normals_at(self, coord):
         raise NotImplementedError
 
+    def get_lonlatvert_at(self, coord):
+        raise NotImplementedError
+
     def find_patch_at(self, coord):
         return self
 
