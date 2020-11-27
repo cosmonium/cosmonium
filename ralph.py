@@ -273,7 +273,6 @@ class RalphConfigParser(YamlModuleParser):
         height_scale_units = heightmap.get('max-height-units', 1.0)
         scale_length = heightmap.get('scale-length', 2.0)
         noise = heightmap.get('noise')
-        median = heightmap.get('median', True)
         self.height_scale = raw_height_scale * height_scale_units
         self.noise_scale = raw_height_scale
         #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
@@ -282,6 +281,7 @@ class RalphConfigParser(YamlModuleParser):
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
         self.interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
+        self.filter = InterpolatorYamlParser.decode(heightmap.get('filter'))
         self.heightmap_max_lod = heightmap.get('max-lod', 100)
 
         layers = data.get('layers', [])
@@ -494,10 +494,10 @@ class RoamingRalphDemo(CosmoniumBase):
     def create_terrain_heightmap(self):
         self.heightmap = PatchedHeightmap('heightmap',
                                           self.ralph_config.heightmap_size,
-                                          1.0,
+                                          -self.ralph_config.height_scale, self.ralph_config.height_scale,
+                                          1.0, 0.0,
                                           self.ralph_config.tile_size,
                                           self.ralph_config.tile_size,
-                                          True,
                                           ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
@@ -505,10 +505,10 @@ class RoamingRalphDemo(CosmoniumBase):
     def create_terrain_biome(self):
         self.biome = PatchedHeightmap('biome',
                                       self.ralph_config.biome_size,
-                                      1.0,
+                                      -1, 1,
+                                      1.0, 0.0,
                                       self.ralph_config.tile_size,
                                       self.ralph_config.tile_size,
-                                      False,
                                       ShaderHeightmapPatchFactory(self.ralph_config.biome))
 
     def create_terrain_shader(self):

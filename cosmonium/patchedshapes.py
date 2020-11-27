@@ -560,8 +560,8 @@ class SquarePatchBase(Patch):
             x_scale = 2 * scale
             y_scale = scale
         self.instance.setTexScale(texture_stage, 1.0 / x_scale, 1.0 / y_scale)
-        x_tex = (self.x / x_scale) * x_scale
-        y_tex = (self.y / y_scale) * y_scale
+        x_tex = (self.x // x_scale) * x_scale
+        y_tex = (self.y // y_scale) * y_scale
         x_delta = float(self.x - x_tex) / x_scale
         y_delta = float(self.y - y_tex) / y_scale
         #Y orientation is the opposite of the texture v axis
@@ -1174,10 +1174,12 @@ class PatchedShape(PatchedShapeBase):
         if self.heightmap is not None and patch is not None:
             heightmap_patch = self.heightmap.get_heightmap(patch)
             if heightmap_patch is not None:
+                #TODO: This should be done inside the heightmap patch
                 height_scale = self.heightmap.height_scale
-                min_radius = 1.0 + heightmap_patch.min_height * height_scale
-                max_radius = 1.0 + heightmap_patch.max_height * height_scale
-                mean_radius = 1.0 + heightmap_patch.mean_height * height_scale
+                height_offset = self.heightmap.height_offset
+                min_radius = 1.0 + heightmap_patch.min_height * height_scale + height_offset
+                max_radius = 1.0 + heightmap_patch.max_height * height_scale + height_offset
+                mean_radius = 1.0 + heightmap_patch.mean_height * height_scale + height_offset
         return (min_radius, max_radius, mean_radius)
 
     def place_patches(self, owner):

@@ -175,16 +175,10 @@ class HeightmapSurface(ProceduralSurface):
             self.height_scale = radius
         else:
             self.height_scale = 1.0
-        if heightmap.median:
-            self.min_radius = radius - self.height_scale * self.heightmap.height_scale
-            self.max_radius = radius + self.height_scale * self.heightmap.height_scale
-            self.radius = radius
-            self.heightmap_base = radius
-        else:
-            self.min_radius = radius
-            self.max_radius = radius + self.height_scale * self.heightmap.height_scale
-            self.radius = radius + 0.5 * self.height_scale * self.heightmap.height_scale
-            self.heightmap_base = radius
+        self.min_radius = radius + self.height_scale * self.heightmap.min_height
+        self.max_radius = radius + self.height_scale * self.heightmap.max_height
+        self.radius = radius
+        self.heightmap_base = radius
         self.biome = biome
         self.scale = scale
         self.displacement = displacement
