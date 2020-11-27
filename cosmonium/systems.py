@@ -108,8 +108,8 @@ class StellarSystem(StellarObject):
             if isinstance(child, StellarSystem):
                 (distance, body) = child.find_closest(distance, body)
             else:
-                if child.distance_to_obs is not None and (distance is None or child.distance_to_obs - child.get_apparent_radius() < distance):
-                    distance = child.distance_to_obs - child.get_apparent_radius()
+                if child.distance_to_obs is not None and (distance is None or child.distance_to_obs - child.height_under < distance):
+                    distance = child.distance_to_obs - child.height_under
                     body = child
         return (distance, body)
 
