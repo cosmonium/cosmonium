@@ -125,8 +125,6 @@ class SurfaceYamlParser(YamlModuleParser):
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         if atmosphere is not None:
             atmosphere.add_shape_object(surface)
-        if shape.is_spherical() and atmosphere is None:
-            shader.add_shadows(ShaderSphereSelfShadow())
         return surface
 
     @classmethod

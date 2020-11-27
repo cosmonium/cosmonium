@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from .shapes import ShapeObject
 from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
+from .shaders import ShaderSphereSelfShadow
 
 from math import floor, ceil
 
@@ -57,6 +58,8 @@ class Surface(ShapeObject):
         if self.shadow_caster is None:
             if self.shape.is_spherical():
                 self.shadow_caster = SphereShadowCaster(self.owner)
+                if self.owner.atmosphere is None:
+                    self.shader.add_shadows(ShaderSphereSelfShadow())
             else:
                 self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
                 self.owner.visibility_override = True
@@ -70,6 +73,7 @@ class Surface(ShapeObject):
                 self.owner.visibility_override = False
                 #Force recheck of visibility or the body will be immediately recreated
                 self.owner.check_visibility(self.owner.context.observer.pixel_size)
+            self.shadow_caster = None
 
     def start_shadows_update(self):
         ShapeObject.start_shadows_update(self)
