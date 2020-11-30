@@ -336,7 +336,7 @@ class MultiShadows(ShadowBase):
             self.ring_shadow = shadow_caster
             self.target.shader.add_shadows(ShaderRingShadow())
             self.update_needed = True
-        else:
+        elif self.ring_shadow != shadow_caster:
             print("Can not switch ring shadow caster")
 
     def add_sphere_occluder(self, shadow_caster):

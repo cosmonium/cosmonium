@@ -340,6 +340,12 @@ class ReflectiveBody(StellarBody):
     def start_shadows_update(self):
         for component in self.get_components():
             component.start_shadows_update()
+        if self.ring is not None:
+            if self.clouds is not None:
+                self.ring.shadow_caster.add_target(self.clouds)
+            if self.surface is not None:
+                self.ring.add_shadow_target(self.surface)
+                self.surface.add_shadow_target(self.ring)
 
     def add_shadow_target(self, target):
         for component in target.get_components():
@@ -370,14 +376,6 @@ class ReflectiveBody(StellarBody):
     def configure_shape(self):
         StellarBody.configure_shape(self)
         self.surface.create_shadows()
-        if self.ring is not None and self.surface is not None:
-            #TODO: This should be in start_shadow_update...
-            self.ring.shadow_caster.add_target(self.surface)
-            if self.clouds is not None:
-                self.ring.shadow_caster.add_target(self.clouds)
-            self.ring.start_shadows_update()
-            self.surface.shadow_caster.add_target(self.ring)
-            self.ring.end_shadows_update()
 
     def unconfigure_shape(self):
         StellarBody.unconfigure_shape(self)
