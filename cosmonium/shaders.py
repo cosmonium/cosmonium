@@ -606,7 +606,7 @@ class VertexShader(ShaderProgram):
                     code.append("world_normal = vec3(normalize(p3d_ModelMatrixInverseTranspose * model_normal4));")
                 else:
                     code.append("world_normal = vec3(normalize(p3d_ModelMatrix * model_normal4));")
-                if self.config.normals_use_centroid:
+                if self.config.fragment_uses_normal and self.config.normals_use_centroid:
                     code.append("centroid_world_normal = world_normal;")
         if self.config.use_tangent or self.config.fragment_uses_tangent:
             code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
