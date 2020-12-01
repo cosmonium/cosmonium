@@ -25,6 +25,7 @@ from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from .shaders import ShaderSphereSelfShadow
 
 from math import floor, ceil
+from panda3d.core import LVector3
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -43,16 +44,33 @@ class SurfaceCategoryDB(object):
 surfaceCategoryDB = SurfaceCategoryDB()
 
 class Surface(ShapeObject):
-    def __init__(self, name=None, category=None, resolution=None, attribution=None, shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(self, name=None, category=None, resolution=None, attribution=None,
+                 radius=None, oblateness=None, scale=None,
+                 shape=None, appearance=None, shader=None, clickable=True):
         ShapeObject.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
         self.attribution = attribution
+        self.radius = radius
+        self.oblateness = oblateness
+        self.scale = scale
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
 
     def get_component_name(self):
         return _('Surface')
+
+    def configure_shape(self):
+        if self.scale is not None:
+            scale = self.scale
+        elif self.oblateness is not None:
+            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
+        else:
+            scale = LVector3(self.radius, self.radius, self.radius)
+        self.shape.set_scale(scale)
+
+    def unconfigure_shape(self):
+        pass
 
     def create_shadows(self):
         if self.shadow_caster is None:
@@ -83,13 +101,13 @@ class Surface(ShapeObject):
             self.shadow_caster.add_target(self, self_shadow=True)
 
     def get_average_radius(self):
-        return self.owner.get_apparent_radius()
+        return self.radius
 
     def get_min_radius(self):
-        return self.owner.get_apparent_radius()
+        return self.radius
 
     def get_max_radius(self):
-        return self.owner.get_apparent_radius()
+        return self.radius
 
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
@@ -110,10 +128,10 @@ class Surface(ShapeObject):
 
 class FlatSurface(Surface):
     def get_height_at(self, x, y, strict=False):
-        return self.owner.get_apparent_radius()
+        return self.radius
 
     def get_height_patch(self, patch, u, v):
-        return self.owner.get_apparent_radius()
+        return self.radius
 
 class MeshSurface(Surface):
     def is_flat(self):
@@ -128,8 +146,11 @@ class MeshSurface(Surface):
 
 class ProceduralSurface(FlatSurface):
     JOB_HEIGHTMAP = 0x0002
-    def __init__(self, name, shape, heightmap, appearance, shader, clickable=True):
-        FlatSurface.__init__(self, name, shape=shape, appearance=appearance, shader=shader, clickable=clickable)
+    def __init__(self, name,
+                 radius, oblateness, scale,
+                 shape, heightmap,appearance, shader, clickable=True):
+        FlatSurface.__init__(self, name, radius=radius, oblateness=oblateness, scale=scale,
+                             shape=shape, appearance=appearance, shader=shader, clickable=clickable)
         self.heightmap = heightmap
         self.biome = None
 
@@ -177,18 +198,19 @@ class ProceduralSurface(FlatSurface):
         FlatSurface.schedule_shape_jobs(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
-    def __init__(self, name, radius, shape, heightmap, biome, appearance, shader, scale = 1.0, clickable=True, displacement=True, follow_mesh=True):
-        ProceduralSurface.__init__(self, name, shape, heightmap, appearance, shader, clickable)
+    def __init__(self, name,
+                 radius, oblateness, scale,
+                 shape, heightmap, biome, appearance, shader, clickable=True, displacement=True, follow_mesh=True):
+        ProceduralSurface.__init__(self, name,radius, oblateness, scale,
+                                   shape, heightmap, appearance, shader, clickable)
         if radius != 0.0:
             self.height_scale = radius
         else:
             self.height_scale = 1.0
         self.min_radius = radius + self.height_scale * self.heightmap.min_height
         self.max_radius = radius + self.height_scale * self.heightmap.max_height
-        self.radius = radius
         self.heightmap_base = radius
         self.biome = biome
-        self.scale = scale
         self.displacement = displacement
         self.follow_mesh = follow_mesh
         #TODO: Make a proper method for this...

@@ -2420,7 +2420,7 @@ class ShaderSphereShadow(ShaderShadow):
             radii.append(radius * scale)
             if self.oblate_occluder:
                 #TODO: This should refactored with the code in oneil and moved to the body class
-                planet_scale = shadow_caster.body.get_scale()
+                planet_scale = shadow_caster.body.surface.get_scale()
                 descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
                 rotation_mat = LMatrix4()
                 orientation = LQuaternion(*shadow_caster.body._orientation)

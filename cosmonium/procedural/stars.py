@@ -43,7 +43,8 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
                                                                                  density=settings.patch_constant_density),
                                            use_shader=False)
         shader = BasicShader(lighting_model=FlatLightingModel())
-        surface = FlatSurface(appearance=Appearance(colorScale=body.point_color,
+        surface = FlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
+                              appearance=Appearance(colorScale=body.point_color,
                                                     texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
                                                                                                           self.target,
                                                                                                           self.size))),

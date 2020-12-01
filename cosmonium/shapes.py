@@ -274,6 +274,12 @@ class ShapeObject(VisibleObject):
         if self.shader is not None:
             self.shader.add_after_effect(after_effect)
 
+    def configure_shape(self):
+        pass
+
+    def unconfigure_shape(self):
+        pass
+
     def set_scale(self, scale):
         self.shape.set_scale(scale)
 

@@ -251,7 +251,7 @@ class RotationAxis(VisibleObject):
             self.place_instance(self.instance, self.parent)
 
     def get_scale(self):
-        return self.body.get_scale()
+        return self.body.surface.get_scale()
 
 class ReferenceAxis(VisibleObject):
     default_shown = False
@@ -277,7 +277,7 @@ class ReferenceAxis(VisibleObject):
             self.place_instance(self.instance, self.parent)
 
     def get_scale(self):
-        return self.body.get_scale() / 5.0
+        return self.body.surface.get_scale() / 5.0
 
 class Grid(VisibleObject):
     ignore_light = True

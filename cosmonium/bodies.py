@@ -105,6 +105,9 @@ class StellarBody(StellarObject):
     def add_surface(self, surface):
         self.surfaces.append(surface)
         surface.owner = self
+        if self.surface is None:
+            self.surface = surface
+            self.auto_surface = False
 
     def insert_surface(self, index, surface):
         self.surfaces.insert(index, surface)
@@ -158,20 +161,24 @@ class StellarBody(StellarObject):
         return components
 
     def configure_shape(self):
-        if self.scale is not None:
-            scale = self.scale
-        elif self.oblateness is not None:
-            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
-        else:
-            scale = LVector3(self.radius, self.radius, self.radius)
-        #TODO: should be done on all components
         if self.surface is not None:
-            self.surface.set_scale(scale)
+            self.surface.configure_shape()
+        if self.ring is not None:
+            self.ring.configure_shape()
         if self.clouds is not None:
-            self.clouds.set_scale(scale)
+            self.clouds.configure_shape()
+        if self.atmosphere is not None:
+            self.atmosphere.configure_shape()
 
     def unconfigure_shape(self):
-        pass
+        if self.atmosphere is not None:
+            self.atmosphere.unconfigure_shape()
+        if self.clouds is not None:
+            self.clouds.unconfigure_shape()
+        if self.ring is not None:
+            self.ring.unconfigure_shape()
+        if self.surface is not None:
+            self.surface.unconfigure_shape()
 
     def get_apparent_radius(self):
         return self.radius
@@ -193,15 +200,6 @@ class StellarBody(StellarObject):
             return self.surface.get_max_radius()
         else:
             return self.get_apparent_radius()
-
-    def get_scale(self):
-        if self.scale is not None:
-            scale = self.scale
-        elif self.oblateness is not None:
-            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
-        else:
-            scale = LVector3(self.radius, self.radius, self.radius)
-        return scale
 
     def get_extend(self):
         if self.ring is not None:
@@ -425,7 +423,9 @@ class StarTexSurfaceFactory(SurfaceFactory):
         shape = SphereShape()
         appearance = Appearance(emissionColor=body.point_color, texture=self.texture)
         shader = BasicShader(lighting_model=FlatLightingModel())
-        return FlatSurface('surface', shape=shape, appearance=appearance, shader=shader)
+        return FlatSurface('surface',
+                           radius=body.radius, oblateness=body.oblateness, scale=body.scale,
+                           shape=shape, appearance=appearance, shader=shader)
 
 class Star(EmissiveBody):
     def __init__(self, names, source_names, radius=None, oblateness=None, scale=None,
@@ -480,7 +480,7 @@ class DeepSpaceObject(EmissiveBody):
                  body_class=None, point_color=None,
                  description=''):
         radius = radius * radius_units
-        EmissiveBody.__init__(self, names, source_names, radius,
+        EmissiveBody.__init__(self, names, source_names, radius=radius,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
