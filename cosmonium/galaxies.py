@@ -66,7 +66,7 @@ class Galaxy(DeepSpaceObject):
         shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
-        surface = FlatSurface(shape=shape, appearance=appearance, shader=shader)
+        surface = FlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,

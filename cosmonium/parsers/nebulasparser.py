@@ -42,21 +42,18 @@ class NebulaYamlParser(YamlModuleParser):
         abs_magnitude = data.get('magnitude')
         orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
-        if data.get('surfaces') is None:
-            surfaces = []
-            surface = SurfaceYamlParser.decode_surface(data, None, {}, data)
-        else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, data)
-            surface = surfaces.pop(0)
         nebula = EmissiveBody(translated_names,
                     source_names,
                     body_class=body_class,
                     abs_magnitude=abs_magnitude,
                     radius=radius,
                     orbit=orbit,
-                    rotation=rotation,
-                    surface=surface)
+                    rotation=rotation)
         nebula.has_resolved_halo = False
+        if data.get('surfaces') is None:
+            surfaces = [SurfaceYamlParser.decode_surface(data, None, {}, nebula)]
+        else:
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, nebula)
         for surface in surfaces:
             nebula.add_surface(surface)
         if explicit_parent:

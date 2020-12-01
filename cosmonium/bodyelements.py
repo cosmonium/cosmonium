@@ -142,7 +142,7 @@ class Atmosphere(ShapeObject):
 
     def create_instance(self):
         #TODO: Find a better way to retrieve ellipticity
-        scale = self.planet.get_scale() / self.planet_radius
+        scale = self.planet.surface.get_scale() / self.planet_radius
         self.set_scale(scale * self.radius)
         ShapeObject.create_instance(self)
         TransparencyBlend.apply(self.blend, self.instance)
@@ -210,17 +210,17 @@ class Clouds(FlatSurface):
     def get_component_name(self):
         return _('Clouds')
 
-    def set_scale(self, scale):
-        self.scale_base = scale
-        factor = 1.0 + self.height/self.parent.get_apparent_radius()
+    def configure_shape(self):
+        self.radius = self.parent.surface.get_average_radius() + self.height
+        scale = self.parent.surface.get_scale()
+        factor = 1.0 + self.height / self.parent.surface.get_average_radius()
         self.shape.set_scale(scale * factor)
 
     def check_settings(self):
         self.set_shown(settings.show_clouds)
 
     def update_instance(self, camera_pos, camera_rot):
-        radius = self.parent.get_apparent_radius() + self.height
-        inside = self.parent.distance_to_obs < radius
+        inside = self.parent.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
@@ -254,4 +254,4 @@ class Clouds(FlatSurface):
 
     def update_user_parameters(self):
         ShapeObject.update_user_parameters(self)
-        self.set_scale(self.scale_base)
+        self.configure_shape()

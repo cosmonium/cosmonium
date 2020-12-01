@@ -38,6 +38,7 @@ from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
 from .textureparser import TextureControlYamlParser
 from .heightmapsparser import HeightmapYamlParser
+from .utilsparser import get_radius_scale
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
@@ -51,6 +52,7 @@ class SurfaceYamlParser(YamlModuleParser):
             surfaceCategoryDB.add(category)
         resolution = data.get('resolution', None)
         attribution = data.get('attribution', data.get('source'))
+        radius, ellipticity, scale = get_radius_scale(data, owner)
         #The next parameters are using set_default in order to propagate
         #their manual configuration to the next surface, if any.
         heightmap_data = data.setdefault('heightmap', previous.get('heightmap'))
@@ -92,9 +94,9 @@ class SurfaceYamlParser(YamlModuleParser):
                                  appearance=shader_appearance,
                                  use_model_texcoord=not extra.get('create-uv', False))
             surface = FlatSurface(name, category=category, resolution=resolution, attribution=attribution,
+                                  radius=radius, oblateness=ellipticity, scale=scale,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
-            radius = owner.get('radius')
             if isinstance(heightmap_data, dict):
                 name = data.get('name', 'heightmap')
                 heightmap = HeightmapYamlParser.decode(heightmap_data, name, shape.patchable, radius)
@@ -120,8 +122,9 @@ class SurfaceYamlParser(YamlModuleParser):
                                  appearance=shader_appearance,
                                  lighting_model=lighting_model,
                                  use_model_texcoord=not extra.get('create-uv', False))
-            surface = HeightmapSurface(name, radius=radius,
+            surface = HeightmapSurface(name,
                                        #category=category, resolution=resolution, source=source,
+                                       radius=radius, oblateness=ellipticity, scale=scale,
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         if atmosphere is not None:
             atmosphere.add_shape_object(surface)

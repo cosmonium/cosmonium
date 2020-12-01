@@ -27,6 +27,7 @@ from ..catalogs import objectsDB
 from .yamlparser import YamlModuleParser
 
 import re
+from panda3d.core import LVector3
 
 hour_angle_regex= re.compile('^(\d+)\:(\d+)\'(\d+\.?\d*)\"$')
 degree_angle_regex= re.compile(u'^([-+]?\d+)[d°](\d+)\'(\d+\.?\d*)\"$')
@@ -122,3 +123,21 @@ class AngleSpeedUnitsYamlParser(YamlModuleParser):
             return default
         else:
             return AngleSpeedUnitsYamlParser.translation.get(data.lower(), default)
+
+def get_radius_scale(data, parent):
+    radius = data.get('radius', None)
+    if radius is None:
+        diameter = data.get('diameter', None)
+        if diameter is not None:
+            radius = diameter / 2.0
+    ellipticity = data.get('ellipticity', None)
+    scale = data.get('axes', None)
+    if scale is not None:
+        if radius is None:
+            radius = max(scale) / 2.0
+        scale = LVector3(*scale) / 2.0
+    if radius is None and parent is not None:
+        radius = parent.get_apparent_radius()
+        ellipticity = parent.oblateness
+        scale = parent.scale
+    return radius, ellipticity, scale

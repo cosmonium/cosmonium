@@ -1256,7 +1256,7 @@ class PatchedShape(PatchedShapeBase):
         #TODO: Should receive as parameter !
         camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)
-        model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.owner.get_scale())
+        model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.owner.surface.get_scale())
         (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(camera_pos))
         return (model_camera_pos, model_camera_vector, (x, y))
 
