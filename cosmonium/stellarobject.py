@@ -448,6 +448,12 @@ class StellarObject(LabelledObject):
         CompositeObject.update(self, time, dt)
         self.update_frozen = not self.resolved and not (self.orbit.dynamic or self.rotation.dynamic)
 
+    def start_shadows_update(self):
+        pass
+
+    def end_shadows_update(self):
+        pass
+
     def first_update_obs(self, observer):
         self.update_obs(observer)
 
