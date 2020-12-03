@@ -112,6 +112,7 @@ class HeightmapYamlParser(YamlModuleParser):
         factory = None
         if heightmap_type == 'procedural':
             size = data.get('size', 256)
+            overlap = data.get('overlap', 1)
             noise_parser = NoiseYamlParser(scale_length)
             func = data.get('func')
             if func is None:
@@ -122,6 +123,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 factory = ShaderHeightmapPatchFactory(heightmap_source)
         else:
             heightmap_data = data.get('data')
+            overlap = data.get('overlap', 0)
             if heightmap_data is not None:
                 texture_source, texture_offset = TexturesAppearanceYamlParser.decode_source(heightmap_data)
                 heightmap_source = HeightMapTexture(texture_source)
@@ -135,7 +137,7 @@ class HeightmapYamlParser(YamlModuleParser):
             max_lod = data.get('max-lod', 100)
             heightmap = PatchedHeightmap(name, size,
                                          min_height, max_height, height_scale, height_offset,
-                                         pi, pi,
+                                         pi, pi, overlap,
                                          factory, interpolator, filter, max_lod)
         else:
             heightmap = TextureHeightmap(name, size, size / 2,

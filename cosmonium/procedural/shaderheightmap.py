@@ -93,11 +93,11 @@ class ShaderHeightmapPatch(HeightmapPatch):
                  x0, y0, x1, y1,
                  width, height,
                  scale=1.0,
-                 coord=TexCoord.Cylindrical, face=0, border=1):
+                 coord=TexCoord.Cylindrical, face=0, overlap=0):
         HeightmapPatch.__init__(self, parent, x0, y0, x1, y1,
                               width, height,
                               scale,
-                              coord, face, border)
+                              coord, face, overlap)
         self.shader = None
         self.noise = noise
         self.tex_generator = None
@@ -118,7 +118,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.shader = NoiseShader(coord=self.coord,
                                       noise_source=self.noise,
                                       noise_target=FloatTarget(),
-                                      offset=(self.x0, self.y0, 0.0),
-                                      scale=(self.lod_scale_x, self.lod_scale_y, 1.0))
+                                      offset=(self.r_x0, self.r_y0, 0.0),
+                                      scale=(self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0))
             self.shader.create_and_register_shader(None, None)
         tex_generator.generate(self.shader, self.face, self.texture, self.heightmap_ready_cb, (callback, cb_args))

@@ -40,7 +40,7 @@ class HeightmapPatch:
                  x0, y0, x1, y1,
                  width, height,
                  scale = 1.0,
-                 coord=TexCoord.Cylindrical, face=-1, border=1):
+                 coord=TexCoord.Cylindrical, face=-1, overlap=0):
         self.parent = parent
         self.x0 = x0
         self.y0 = y0
@@ -51,15 +51,13 @@ class HeightmapPatch:
         self.height = height
         self.coord = coord
         self.face = face
-        self.border = border
-        self.r_width = self.width + self.border * 2
-        self.r_height = self.height + self.border * 2
-        self.r_x0 = self.x0 - float(self.border)/self.width * (self.x1 - self.x0)
-        self.r_x1 = self.x1 + float(self.border)/self.width * (self.x1 - self.x0)
-        self.r_y0 = self.y0 - float(self.border)/self.height * (self.y1 - self.y0)
-        self.r_y1 = self.y1 + float(self.border)/self.height * (self.y1 - self.y0)
-        self.dx = self.r_x1 - self.r_x0
-        self.dy = self.r_y1 - self.r_y0
+        self.overlap = overlap
+        self.r_width = self.width - self.overlap * 2
+        self.r_height = self.height - self.overlap * 2
+        self.r_x0 = self.x0 - overlap / self.r_width * (self.x1 - self.x0)
+        self.r_x1 = self.x1 + overlap / self.r_width * (self.x1 - self.x0)
+        self.r_y0 = self.y0 - overlap / self.r_height * (self.y1 - self.y0)
+        self.r_y1 = self.y1 + overlap / self.r_height * (self.y1 - self.y0)
         self.lod = None
         self.patch = None
         self.heightmap_ready = False
@@ -67,8 +65,8 @@ class HeightmapPatch:
         self.texture_peeker = None
         self.callback = None
         self.cloned = False
-        self.texture_offset = LVector2()
-        self.texture_scale = LVector2(1, 1)
+        self.texture_offset = LVector2((self.overlap + 0.5) / self.width, (self.overlap + 0.5) / self.height)
+        self.texture_scale = LVector2((self.width - self.overlap * 2 - 1) / self.width, (self.height - self.overlap * 2 - 1) / self.height)
         self.min_height = None
         self.max_height = None
         self.mean_height = None
@@ -76,7 +74,7 @@ class HeightmapPatch:
     @classmethod
     def create_from_patch(cls, noise, parent,
                           x, y, scale, lod, density,
-                          coord=TexCoord.Cylindrical, face=-1):
+                          coord=TexCoord.Cylindrical, face=-1, overlap=0):
         #TODO: Should be move to Patch/Tile
         if coord == TexCoord.Cylindrical:
             r_div = 1 << lod
@@ -106,11 +104,9 @@ class HeightmapPatch:
                     x0, y0, x1, y1,
                     width=density, height=density,
                     scale=scale,
-                    coord=coord, face=face, border=1)
+                    coord=coord, face=face, overlap=overlap)
         patch.patch_lod = lod
         patch.lod = lod
-        patch.lod_scale_x = scale / s_div
-        patch.lod_scale_y = scale / r_div
         patch.density = density
         patch.x = x
         patch.y = y
@@ -131,17 +127,19 @@ class HeightmapPatch:
         delta = self.patch.lod - self.lod
         scale = 1 << delta
         if self.patch.coord != TexCoord.Flat:
-            x_tex = int(self.x / scale) * scale
-            y_tex = int(self.y / scale) * scale
-            x_delta = float(self.x - x_tex) / scale
-            y_delta = float(self.y - y_tex) / scale
+            x_tex = (self.x // scale) * scale
+            y_tex = (self.y // scale) * scale
+            x_delta = (self.x - x_tex) / scale
+            y_delta = (self.y - y_tex) / scale
         else:
             x_tex = int(self.x * scale) / scale
             y_tex = int(self.y * scale) / scale
-            x_delta = float(self.x - x_tex)
-            y_delta = float(self.y - y_tex)
-        self.texture_offset = LVector2(x_delta, y_delta)
-        self.texture_scale = LVector2(1.0 / scale, 1.0 / scale)
+            x_delta = self.x - x_tex
+            y_delta = self.y - y_tex
+        r_scale_x = (self.width - self.overlap * 2 - 1) / self.width
+        r_scale_y = (self.height - self.overlap * 2 - 1) / self.height
+        self.texture_offset = LVector2((self.overlap + 0.5) / self.width + x_delta * r_scale_x, (self.overlap + 0.5) / self.height + y_delta * r_scale_y)
+        self.texture_scale = LVector2(r_scale_x / scale, r_scale_y / scale)
 
     def is_ready(self):
         return self.heightmap_ready
@@ -231,8 +229,8 @@ class HeightmapPatch:
         pass
 
 class TextureHeightmapPatch(HeightmapPatch):
-    def __init__(self, data_source, parent, x0, y0, x1, y1, width, height, scale, coord, face, border):
-        HeightmapPatch.__init__(self, parent, x0, y0, x1, y1, width, height, scale, coord, face, border)
+    def __init__(self, data_source, parent, x0, y0, x1, y1, width, height, scale, coord, face, overlap):
+        HeightmapPatch.__init__(self, parent, x0, y0, x1, y1, width, height, scale, coord, face, overlap)
         self.data_source = data_source
 
     def apply(self, patch):
@@ -404,9 +402,10 @@ class TextureHeightmap(TextureHeightmapBase):
         self.data_source.load(shape, self.heightmap_ready_cb, (callback, cb_args))
 
 class PatchedHeightmap(Heightmap):
-    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, patch_factory, interpolator=None, filter=None, max_lod=100):
+    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, patch_factory, interpolator=None, filter=None, max_lod=100):
         Heightmap.__init__(self, name, size, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
         self.size = size
+        self.overlap = overlap
         self.patch_factory = patch_factory
         self.max_lod = max_lod
         self.normal_scale_lod = True
@@ -452,7 +451,7 @@ class PatchedHeightmap(Heightmap):
                 face = patch.face
             #TODO: Should be done with a factory
             heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, scale=patch.scale, lod=patch.lod, density=self.size,
-                                                       coord=patch.coord, face=face)
+                                                       coord=patch.coord, face=face, overlap=self.overlap)
             self.map_patch[patch.str_id()] = heightmap
             #TODO: Should be linked properly
             heightmap.patch = patch
