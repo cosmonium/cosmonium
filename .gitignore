@@ -10,6 +10,7 @@ source/interrogate*
 source/interrogate*
 source/requirements*
 *.mo
+cosmonium/buildversion.py
 
 # Eclipse artifacts
 .project
