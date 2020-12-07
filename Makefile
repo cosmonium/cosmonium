@@ -125,11 +125,11 @@ build-req:
 	@cat requirements.txt >> $(REQUIREMENTS)
 	@cat $(REQUIREMENTS)
 
-bapp: build $(BUILD_REQ)
+bapp: $(BUILD_REQ)
 	@echo "Building for $(PLATFORM)"
 	$(PYTHON) setup.py build_apps -p $(PLATFORM) -r $(REQUIREMENTS)
 
-bdist: build $(BUILD_REQ)
+bdist: $(BUILD_REQ)
 	$(PYTHON) setup.py bdist_apps -p $(PLATFORM) -r $(REQUIREMENTS)
 else
 bapp:
