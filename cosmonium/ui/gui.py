@@ -38,6 +38,7 @@ from ..extrainfo import extra_info
 from ..celestia.cel_url import CelUrl
 from .. import utils
 from .. import settings
+from .. import version
 #TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
@@ -56,7 +57,7 @@ import os
 
 about_text = """# Cosmonium
 
-**Version**: V%s
+**Version**: %s
 Copyright 2018-2020 Laurent Deru
 
 
@@ -71,7 +72,7 @@ version.
 
 This program uses several third-party libraries which are subject to their own
 licenses, see Third-Party.md for the complete list.
-""" % settings.version
+""" % version.version
 
 def menu_text(name, shortcut=None):
     if shortcut is not None:

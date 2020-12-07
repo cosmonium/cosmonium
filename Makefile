@@ -8,6 +8,17 @@ RELEASE=0
 REQUIREMENTS=
 PANDA3D_VERSION=1.10.7.dev30
 
+TAG=v0.2.0
+COUNT=$(shell git rev-list --count $(TAG)..HEAD)
+
+ifneq ($(COUNT),)
+  ifeq ($(COUNT),0)
+    VERSION=$(TAG)
+  else
+    VERSION="$(TAG).dev$(COUNT)"
+  endif
+endif
+
 ifeq ($(RELEASE),1)
     PYTHON_VERSION=3.7
 	SOURCE_OPTIONS=--clean
@@ -120,16 +131,23 @@ ifeq ($(REQUIREMENTS),)
     BUILD_REQ:=build-req
 endif
 
+build-version:
+ifneq ($(VERSION),)
+	@echo 'version=$(VERSION)' > cosmonium/buildversion.py
+else
+	@rm -f cosmonium/buildversion.py
+endif
+
 build-req:
 	@echo "$(PANDA3D_WHEEL)" > $(REQUIREMENTS)
 	@cat requirements.txt >> $(REQUIREMENTS)
 	@cat $(REQUIREMENTS)
 
-bapp: $(BUILD_REQ)
+bapp: build-version $(BUILD_REQ)
 	@echo "Building for $(PLATFORM)"
 	$(PYTHON) setup.py build_apps -p $(PLATFORM) -r $(REQUIREMENTS)
 
-bdist: $(BUILD_REQ)
+bdist: build-version $(BUILD_REQ)
 	$(PYTHON) setup.py bdist_apps -p $(PLATFORM) -r $(REQUIREMENTS)
 else
 bapp:
