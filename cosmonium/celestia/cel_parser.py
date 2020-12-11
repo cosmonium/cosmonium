@@ -51,7 +51,7 @@ def t_STRING(t):
     return t
 
 def t_FLOAT(t):
-    r'[\+-]?((\d*\.\d+)(E[\+-]?\d+)?|[\+-]?([1-9]\d*E[\+-]?\d+))'
+    r'[\+-]?(((\d*\.\d+|\d+\.))(E[\+-]?\d+)?|[\+-]?([1-9]\d*E[\+-]?\d+))'
     try:
         t.value = float(t.value)
     except ValueError:
