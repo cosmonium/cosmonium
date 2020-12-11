@@ -42,21 +42,29 @@ def decode_bias(data, appearance):
     appearance.shadow_depth_bias = data.get('depth-bias', appearance.shadow_depth_bias)
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
+    tex_references = {}
     @classmethod
     def decode_source(cls, data):
         texture_source = None
         texture_offset = None
         if isinstance(data, str):
-            object_type = 'file'
-            parameters = {'file': data}
+            if data.startswith('ref:'):
+                object_type = 'ref'
+                parameters = {'ref': data.split(':', 2)[1]}
+            else:
+                object_type = 'file'
+                parameters = {'file': data}
         else:
             object_type = data.get('type', 'file')
             parameters = data
-        if object_type == 'file':
+        if object_type == 'ref':
+            #TODO: This is a hack, a proper reference object should be used
+            ref_name = parameters.get('ref')
+            texture_source = cls.tex_references.get(ref_name)
+        elif object_type == 'file':
             texture_attribution = parameters.get('attribution', None)
             texture_source = AutoTextureSource(parameters.get('file'), texture_attribution, YamlModuleParser.context)
             texture_offset = parameters.get('offset', 0)
-            parameters = data
         elif object_type == 'ctx':
             root = parameters.get('root', None)
             ext = parameters.get('ext', 'dds')
@@ -97,6 +105,9 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             texture_offset = parameters.get('offset', 0)
         else:
             print("Unknown type", object_type)
+        name = parameters.get('name')
+        if texture_source is not None and name is not None:
+            cls.tex_references[name] = texture_source
         return texture_source, texture_offset
 
     @classmethod
@@ -115,7 +126,9 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
                 texture = TransparentTexture(texture_source, tint=tint, level=transparency_level, blend=transparency_blend)
             else:
                 texture = SurfaceTexture(texture_source)
-            appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend, offset=texture_offset, context=YamlModuleParser.context)
+            if texture_offset is not None:
+                texture.offset = texture_offset
+            appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend)
         emission_texture = data.get('night-texture')
         if emission_texture is not None:
             texture_source, texture_offset = self.decode_source(emission_texture)

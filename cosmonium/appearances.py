@@ -241,12 +241,12 @@ class Appearance(AppearanceBase):
                 texture = TransparentTexture(AutoTextureSource(texture, None, context), tint, level=transparency_level, blend=transparency_blend, srgb=self.srgb)
             else:
                 texture = SurfaceTexture(AutoTextureSource(texture, None, context), tint, srgb=self.srgb)
+            texture.set_offset(offset)
         self.texture = texture
         self.transparency = transparency
         self.transparency_level = transparency_level
         self.transparency_blend = transparency_blend
         self.tint = tint
-        texture.set_offset(offset)
 
     def set_emission_texture(self, emission_texture, tint=None, context=defaultDirContext):
         if emission_texture is not None and not isinstance(emission_texture, TextureBase):
