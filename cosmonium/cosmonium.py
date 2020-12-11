@@ -946,6 +946,16 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         self.set_nav(self.nav_controllers[self.CONTROL_NAV], controller=mover)
 
+    def set_surface(self, body, surface_name):
+        if body is None:
+            body = self.selected
+        if body is not None:
+            surface = body.find_surface(surface_name)
+            if surface is not None:
+                body.set_surface(surface)
+            else:
+                print("ERROR: surface '{}' not found".format(surface_name))
+
     def reset_visibles(self):
         self.visibles = []
 
