@@ -555,6 +555,15 @@ Description:
         position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
     sequence.append(Func(base.ship.set_frame_pos, position))
 
+def setsurface(command_name, sequence, base, parameters):
+    """Parameters:
+string name = ""
+Description:
+Set the surface of the selected body.
+"""
+    name = parameters.get('name', '')
+    sequence.append(Func(base.set_surface, None, name))
+
 def seturl(command_name, sequence, base, parameters):
     """Parameters:
 string url = ""
@@ -669,7 +678,7 @@ commands = {
     "setorientation": setorientation,
     "setposition": setposition,
     "setradius": not_implemented,
-    "setsurface": not_implemented,
+    "setsurface": setsurface,
     "settextcolor": not_implemented,
     "settextureresolution": not_implemented,
     "seturl": seturl,

@@ -124,6 +124,16 @@ class StellarBody(StellarObject):
             self.add_component(self.surface)
             self.configure_shape()
 
+    def find_surface(self, surface_name):
+        surface_name = surface_name.lower()
+        for surface in self.surfaces:
+            if surface.get_name().lower() == surface_name:
+                return surface
+        for surface in self.surfaces:
+            if surface.category is not None and surface.category.lower() == surface_name:
+                return surface
+        return None
+
     def create_components(self):
         StellarObject.create_components(self)
         if self.surface is None:
