@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d, LQuaterniond
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond
 from . import settings
 from .astro import units
 from math import pi, exp
@@ -85,11 +85,9 @@ class InteractiveNavigationController(NavigationController):
     def __init__(self):
         NavigationController.__init__(self)
         self.keyMap = {}
-        self.dragCenter = None
-        self.dragDir = None
-        self.dragOrientation = None
-        self.dragZAxis = None
-        self.dragXAxis = None
+        self.orbit_center = LPoint3d()
+        self.orbit_start = None
+        self.orbit_orientation = None
         self.wheel_event_time = 0.0
         self.wheel_direction = 0.0
 
@@ -116,35 +114,54 @@ class InteractiveNavigationController(NavigationController):
         self.wheel_direction = direction
 
     def stash_position(self):
-        self.dragCenter = self.ship.get_position_of(self.dragCenter)
+        self.orbit_center = self.ship.get_position_of(self.orbit_center)
 
     def pop_position(self):
-        self.dragCenter = self.ship.get_rel_position_of(self.dragCenter, local=False)
+        self.orbit_center = self.ship.get_rel_position_of(self.orbit_center, local=False)
 
-    def create_drag_params(self, target):
+    def create_orbit_params(self, target):
+        cam_rot = True
+        #Orbiting around a body involve both the ship and the camera controller
+        #The orbit position is set on the ship while the camera orientation is set on the camera controller
+        #The position must be done in the ship frame otherwise the orbit point will drift away
         center = target.get_rel_position_to(self.ship._global_position)
-        self.dragCenter = self.ship.frame.get_rel_position(center)
-        dragPosition = self.ship.get_frame_pos()
-        self.dragDir = self.dragCenter - dragPosition
-        self.dragOrientation = self.ship.get_frame_rot()
-        self.dragZAxis = self.dragOrientation.xform(LVector3d.up())
-        self.dragXAxis = self.dragOrientation.xform(LVector3d.right())
-
-    def do_drag(self, z_angle, x_angle, move=False, rotate=True):
-        zRotation = LQuaterniond()
-        xRotation = LQuaterniond()
-        try:
-            zRotation.setFromAxisAngleRad(z_angle, self.dragZAxis)
-            xRotation.setFromAxisAngleRad(x_angle, self.dragXAxis)
-        except AssertionError as e:
-            print("Wrong drag axis :", e)
-        combined = xRotation * zRotation
-        if move:
-            delta = combined.xform(-self.dragDir)
-            self.ship.set_frame_pos(delta + self.dragCenter)
-            self.ship.set_frame_rot(self.dragOrientation * combined)
+        self.orbit_center = self.ship.frame.get_rel_position(center)
+        self.orbit_start = self.ship.get_frame_pos() - self.orbit_center
+        if self.ship.orbit_rot_camera:
+            self.orbit_orientation = self.camera_controller.get_rot()
         else:
-            self.ship.set_rot(self.dragOrientation * combined)
+            self.orbit_orientation = self.ship.get_frame_rot()
+
+    def do_orbit(self, z_angle, x_angle):
+        z_rotation = LQuaterniond()
+        x_rotation = LQuaterniond()
+        try:
+            orbit_z_axis = self.orbit_orientation.xform(LVector3d.up())
+            orbit_x_axis = self.orbit_orientation.xform(LVector3d.right())
+            z_rotation.set_from_axis_angle_rad(z_angle, orbit_z_axis)
+            x_rotation.set_from_axis_angle_rad(x_angle, orbit_x_axis)
+        except AssertionError as e:
+            print("Wrong orbit axis :", e)
+        combined = x_rotation * z_rotation
+        new_rot = self.orbit_orientation * combined
+        if self.ship.orbit_rot_camera:
+            self.camera_controller.set_rot(new_rot)
+        else:
+            self.ship.set_frame_rot(new_rot)
+        try:
+            if self.ship.orbit_rot_camera:
+                orbit_orientation = self.ship.get_rel_rotation_of(self.orbit_orientation)
+            else:
+                orbit_orientation = self.orbit_orientation
+            orbit_z_axis = orbit_orientation.xform(LVector3d.up())
+            orbit_x_axis = orbit_orientation.xform(LVector3d.right())
+            z_rotation.set_from_axis_angle_rad(z_angle, orbit_z_axis)
+            x_rotation.set_from_axis_angle_rad(x_angle, orbit_x_axis)
+        except AssertionError as e:
+            print("Wrong orbit axis :", e)
+        combined = x_rotation * z_rotation
+        delta = combined.xform(self.orbit_start)
+        self.ship.set_frame_pos(delta + self.orbit_center)
 
 class FreeNav(InteractiveNavigationController):
     rot_step_per_sec = pi/2
@@ -159,10 +176,9 @@ class FreeNav(InteractiveNavigationController):
         self.keyboardTrack = False
         self.startX = None
         self.startY = None
-        self.drag_coef = 0.0
-        self.drag_x = 0.0
-        self.drag_z = 0.0
-        self.dragCenter = LVector3d()
+        self.orbit_coef = 0.0
+        self.orbit_x = 0.0
+        self.orbit_z = 0.0
         self.current_rot_x_speed = 0.0
         self.current_rot_y_speed = 0.0
         self.current_rot_z_speed = 0.0
@@ -270,20 +286,20 @@ class FreeNav(InteractiveNavigationController):
     def OnTrackClick(self):
         if not self.base.mouseWatcherNode.hasMouse(): return
         mpos = self.base.mouseWatcherNode.getMouse()
-        self.startX = mpos.getX()
-        self.startY = mpos.getY()
+        self.start_x = mpos.get_x()
+        self.start_y = mpos.get_y()
         target = self.select_target()
         if target is not None:
             self.mouseTrackClick = True
             arc_length = pi * target.get_apparent_radius()
             apparent_size = arc_length / ((target.distance_to_obs - target.height_under) * self.camera.pixel_size)
             if apparent_size != 0.0:
-                self.dragAngleX = min(pi, pi / 2 / apparent_size * self.camera.height)
-                self.dragAngleY = min(pi, pi / 2 / apparent_size * self.camera.width)
+                self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
+                self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
             else:
-                self.dragAngleX = pi
-                self.dragAngleY = pi
-            self.create_drag_params(target)
+                self.orbit_angle_x = pi
+                self.orbit_angle_y = pi
+            self.create_orbit_params(target)
 
     def OnTrackRelease(self):
         self.mouseTrackClick = False
@@ -295,11 +311,11 @@ class FreeNav(InteractiveNavigationController):
         distance = 0.0
         if self.mouseTrackClick and self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
-            deltaX = mpos.getX() - self.startX
-            deltaY = mpos.getY() - self.startY
-            z_angle = -deltaX * self.dragAngleX
-            x_angle = deltaY * self.dragAngleY
-            self.do_drag(z_angle, x_angle, True)
+            delta_x = mpos.get_x() - self.start_x
+            delta_y = mpos.get_y() - self.start_y
+            z_angle = -delta_x * self.orbit_angle_x
+            x_angle = delta_y * self.orbit_angle_y
+            self.do_orbit(z_angle, x_angle)
 
         if settings.celestia_nav:
             if self.keyMap['up']:
@@ -335,32 +351,32 @@ class FreeNav(InteractiveNavigationController):
                 arc_length = pi * target.get_apparent_radius()
                 apparent_size = arc_length / (target.distance_to_obs - target.height_under)
                 if apparent_size != 0:
-                    self.drag_coef = min(pi, pi / 2 / apparent_size)
+                    self.orbit_coef = min(pi, pi / 2 / apparent_size)
                 else:
-                    self.drag_coef = pi
-                self.drag_x = 0.0
-                self.drag_z = 0.0
-                self.create_drag_params(target)
+                    self.orbit_coef = pi
+                self.orbit_x = 0.0
+                self.orbit_z = 0.0
+                self.create_orbit_params(target)
 
         if self.keyboardTrack:
             if not (self.keyMap['shift-left'] or self.keyMap['shift-right'] or self.keyMap['shift-up'] or self.keyMap['shift-down']):
                 self.keyboardTrack = False
 
             if self.keyMap['shift-left']:
-                self.drag_z += self.drag_coef * dt
-                self.do_drag(self.drag_z, self.drag_x, True)
+                self.orbit_z += self.orbit_coef * dt
+                self.do_orbit(self.orbit_z, self.orbit_x)
 
             if self.keyMap['shift-right']:
-                self.drag_z -= self.drag_coef * dt
-                self.do_drag(self.drag_z, self.drag_x, True)
+                self.orbit_z -= self.orbit_coef * dt
+                self.do_orbit(self.orbit_z, self.orbit_x)
 
             if self.keyMap['shift-up']:
-                self.drag_x += self.drag_coef * dt
-                self.do_drag(self.drag_z, self.drag_x, True)
+                self.orbit_x += self.orbit_coef * dt
+                self.do_orbit(self.orbit_z, self.orbit_x)
 
             if self.keyMap['shift-down']:
-                self.drag_x -= self.drag_coef * dt
-                self.do_drag(self.drag_z, self.drag_x, True)
+                self.orbit_x -= self.orbit_coef * dt
+                self.do_orbit(self.orbit_z, self.orbit_x)
 
         if self.keyMap['a'] or self.keyMap['z']:
             self.camera_controller.prepare_movement()

@@ -34,6 +34,7 @@ from math import pi
 
 class ShipBase(VisibleObject):
     editable = False
+    orbit_rot_camera = True
     def __init__(self, name):
         VisibleObject.__init__(self, name)
         self.camera_modes = [CameraController.FIXED, CameraController.TRACK]
@@ -219,6 +220,7 @@ class NoShip(ShipBase):
 
 class VisibleShip(ShipBase):
     editable = True
+    orbit_rot_camera = False
     def __init__(self, name, ship_object, radius):
         ShipBase.__init__(self, name)
         self.ship_object = ship_object
