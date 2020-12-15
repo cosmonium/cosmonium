@@ -461,8 +461,8 @@ class Cosmonium(CosmoniumBase):
 
         # Use the first of each controllers as default
         self.set_nav(self.nav_controllers[0])
-        self.set_camera_controller(self.camera_controllers[0])
         self.set_ship(self.ships[0])
+        self.set_camera_controller(self.camera_controllers[0])
 
         self.nav.register_events(self)
         self.gui.register_events(self)
@@ -540,9 +540,9 @@ class Cosmonium(CosmoniumBase):
             if self.track is None:
                 return
         if self.camera_controller is not None:
+            position = self.camera_controller.get_pos()
+            rotation = self.camera_controller.get_rot()
             self.camera_controller.deactivate()
-            position = self.camera_controller.get_position()
-            rotation = self.camera_controller.get_rotation()
         else:
             position = None
             rotation = None
@@ -550,8 +550,9 @@ class Cosmonium(CosmoniumBase):
         if camera_controller.require_target():
             self.camera_controller.set_target(self.track)
         self.camera_controller.activate(self.observer, self.ship)
-        self.camera_controller.set_position(position)
-        self.camera_controller.set_rotation(rotation)
+        if position is not None and rotation is not None:
+            self.camera_controller.set_pos(position)
+            self.camera_controller.set_rot(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         self.nav.set_camera_controller(camera_controller)
@@ -590,17 +591,20 @@ class Cosmonium(CosmoniumBase):
             self.nav.set_ship(self.ship)
             if old_ship is not None:
                 self.ship.copy(old_ship)
-            if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
-                self.camera_controller.set_reference_point(self.ship)
-                self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
-            else:
-                #Current camera controller is not supported by the ship, switch to the first one supported
-                for camera_controller in self.camera_controllers:
-                    if self.ship.supports_camera_mode(camera_controller.camera_mode):
-                        self.set_camera_controller(camera_controller)
-                        break
+            if self.camera_controller is not None:
+                if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
+                    self.camera_controller.set_reference_point(self.ship)
+                    self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
                 else:
-                    print("ERROR: No camera controller supported by this ship")
+                    #Current camera controller is not supported by the ship, switch to the first one supported
+                    for camera_controller in self.camera_controllers:
+                        if self.ship.supports_camera_mode(camera_controller.camera_mode):
+                            #Apply the current camera controller to be able to switch
+                            self.camera_controller.set_reference_point(self.ship)
+                            self.set_camera_controller(camera_controller)
+                            break
+                    else:
+                        print("ERROR: No camera controller supported by this ship")
 
     def add_nav_controller(self, nav_controller):
         self.nav_controllers.append(nav_controller)
