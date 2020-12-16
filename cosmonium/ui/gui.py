@@ -866,7 +866,7 @@ class Gui(object):
                 self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.distance_to_obs, units.lengths_scale))
             else:
                 if selected.surface is not None and not selected.surface.is_flat():
-                    distance = selected.distance_to_obs - selected.height_under
+                    distance = selected.distance_to_obs - selected._height_under
                     altitude = selected.distance_to_obs - radius
                     self.hud.topLeft.set(0, _("Altitude: ") + toUnit(altitude, units.lengths_scale) + " (" + _("Ground: ")  + toUnit(distance, units.lengths_scale) + ")")
                 else:

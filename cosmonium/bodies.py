@@ -72,7 +72,7 @@ class StellarBody(StellarObject):
             surface.owner = self
             self.surfaces.append(surface)
         self.radius = radius
-        self.height_under = radius
+        self._height_under = radius
         self.oblateness = oblateness
         self.scale = scale
         if self.clouds is not None:

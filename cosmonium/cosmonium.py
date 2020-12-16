@@ -1065,8 +1065,7 @@ class Cosmonium(CosmoniumBase):
             else:
                 body = self.nearest_system
             if body is not None:
-                height = body.get_height_under(self.observer.get_camera_pos())
-                distance = body.distance_to_obs - height
+                distance = body.distance_to_obs - body._height_under
             if body is not None and self.nearest_body != body:
                 self.nearest_body = body
                 print("New nearest object:", body.get_name())
@@ -1155,7 +1154,7 @@ class Cosmonium(CosmoniumBase):
                 projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
                 xy = self.selected.spherical_to_xy(projection)
                 print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
-                height = self.selected.get_height_under(self.observer.get_camera_pos())
+                height = self.selected._height_under
                 print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.distance_to_obs - height))
                 if self.selected.surface is not None and self.selected.surface.shape.patchable:
                     x = projection[0] / pi / 2 + 0.5

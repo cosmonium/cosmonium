@@ -147,7 +147,7 @@ class StellarObject(LabelledObject):
         self.vector_to_obs = None
         self.distance_to_star = None
         self.vector_to_star = None
-        self.height_under = 0.0
+        self._height_under = 0.0
         self.star = None
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         self.visible_size = 0.0
@@ -466,9 +466,9 @@ class StellarObject(LabelledObject):
         self.vector_to_obs = -self.rel_position / length
         self.distance_to_obs = length
         if self.resolved:
-            self.height_under = self.get_height_under(observer._position)
+            self._height_under = self.get_height_under(observer._position)
         else:
-            self.height_under = self.get_apparent_radius()
+            self._height_under = self.get_apparent_radius()
         CompositeObject.update_obs(self, observer)
 
     def check_visibility(self, pixel_size):
@@ -504,9 +504,8 @@ class StellarObject(LabelledObject):
     def check_and_update_instance(self, camera_pos, camera_rot, pointset):
         StellarObject.nb_instance += 1
         if self.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
-            height = self.get_height_under(camera_pos)
-            self.scene_rel_position = self.rel_position + self.vector_to_obs * height
-            distance_to_obs = self.distance_to_obs - height
+            self.scene_rel_position = self.rel_position + self.vector_to_obs * self._height_under
+            distance_to_obs = self.distance_to_obs - self._height_under
         else:
             self.scene_rel_position = self.rel_position
             distance_to_obs = self.distance_to_obs
@@ -524,9 +523,9 @@ class StellarObject(LabelledObject):
                     self.create_components()
                     self.check_settings()
                 if self.support_offset_body_center and settings.offset_body_center:
-                    self.world_body_center_offset = -self.vector_to_obs * self.height_under * self.scene_scale_factor
-                    self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self.height_under
-                    if self.height_under != 0:
+                    self.world_body_center_offset = -self.vector_to_obs * self._height_under * self.scene_scale_factor
+                    self.model_body_center_offset = self.scene_orientation.conjugate().xform(-self.vector_to_obs) * self._height_under
+                    if self._height_under != 0:
                         scale = self.surface.get_scale()
                         self.model_body_center_offset[0] /= scale[0]
                         self.model_body_center_offset[1] /= scale[1]

@@ -292,7 +292,7 @@ class FreeNav(InteractiveNavigationController):
         if target is not None:
             self.mouseTrackClick = True
             arc_length = pi * target.get_apparent_radius()
-            apparent_size = arc_length / ((target.distance_to_obs - target.height_under) * self.camera.pixel_size)
+            apparent_size = arc_length / ((target.distance_to_obs - target._height_under) * self.camera.pixel_size)
             if apparent_size != 0.0:
                 self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
                 self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
@@ -349,7 +349,7 @@ class FreeNav(InteractiveNavigationController):
             if target is not None:
                 self.keyboardTrack = True
                 arc_length = pi * target.get_apparent_radius()
-                apparent_size = arc_length / (target.distance_to_obs - target.height_under)
+                apparent_size = arc_length / (target.distance_to_obs - target._height_under)
                 if apparent_size != 0:
                     self.orbit_coef = min(pi, pi / 2 / apparent_size)
                 else:
@@ -608,7 +608,7 @@ class WalkNav(InteractiveNavigationController):
         delta_x = lon.dot(projected) * arc_to_angle
         delta_y = lat.dot(projected) * arc_to_angle
         new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
-        altitude = position[2] - self.body.height_under
+        altitude = position[2] - self.body._height_under
         (x, y, distance) = self.body.spherical_to_xy(new_position)
         new_height = self.body.surface.get_height_at(x, y, strict = True)
         if new_height is not None:
