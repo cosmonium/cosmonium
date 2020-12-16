@@ -696,7 +696,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.observer.init()
 
         self.distance_to_obs = 2.0 #Can not be 0 !
-        self.height_under = 0.0
+        self._height_under = 0.0
         self.scene_position = LVector3d()
         self.scene_scale_factor = 1
         self.scene_rel_position = LVector3d()
