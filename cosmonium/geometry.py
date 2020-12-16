@@ -24,7 +24,7 @@ from __future__ import print_function
 from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName,\
     LVector3d, GlobPattern, BoundingBox, LPoint3, BoundingSphere
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
-from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3
+from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3, LVector4i
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
 from .pstats import named_pstat
@@ -290,7 +290,7 @@ def UVPatchNormal(x0, y0, x1, y1):
     return LVector3d(x, y, z)
 
 @named_pstat("geom")
-def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=None):
+def PyUVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
@@ -540,6 +540,12 @@ def IcoSphere(radius=1, subdivisions=1):
     geom.addPrimitive(prim)
 
     return path
+
+class PyTesselationInfo():
+    def __init__(self, inner, outer):
+        self.inner = inner
+        self.outer = outer
+        self.ratio = [inner / x if inner >= x else 1 for x in outer]
 
 def make_config(inner, outer):
     nb_vertices = inner + 1
@@ -914,15 +920,18 @@ def SquarePatch(height, inner, outer,
     return path
 
 @named_pstat("geom")
-def SquaredDistanceSquarePatch(height, inner, outer,
+def PySquaredDistanceSquarePatch(height, tesselation,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=False, swap_uv=False,
-                x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
+                x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
+                use_patch_adaptation = True,
+                use_patch_skirts = True):
     (path, node) = empty_node('uv')
+    inner = tesselation.inner
+    nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
@@ -973,7 +982,7 @@ def SquaredDistanceSquarePatch(height, inner, outer,
             gtanw.add_data3(tan)
             gbiw.add_data3(bin)
 
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         if offset is None:
             offset = 0
         offset = offset + sqrt(dx * dx + dy * dy) / inner
@@ -1029,13 +1038,13 @@ def SquaredDistanceSquarePatch(height, inner, outer,
                 gtanw.add_data3(tan)
                 gbiw.add_data3(bin)
 
-    if settings.use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
-        if settings.use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    if use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        if use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
-        if settings.use_patch_skirts:
+        if use_patch_skirts:
             make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
@@ -1100,21 +1109,24 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
     return box
 
 @named_pstat("geom")
-def NormalizedSquarePatch(height, inner, outer,
+def PyNormalizedSquarePatch(height, tesselation,
                           x0, y0, x1, y1,
-                          global_texture=False, inv_u=False, inv_v=False, swap_uv=False,
-                          x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
-    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
+                          inv_u=False, inv_v=False, swap_uv=False,
+                          x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
+                          use_patch_adaptation = True,
+                          use_patch_skirts = True):
     (path, node) = empty_node('uv')
+    inner = tesselation.inner
+    nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
-    if offset is not None:
+    if has_offset:
         normal = NormalizedSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -1153,7 +1165,7 @@ def NormalizedSquarePatch(height, inner, outer,
             gtanw.add_data3(tan)
             gbiw.add_data3(bin)
 
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         if offset is None:
             offset = 0
         offset = offset + sqrt(dx * dx + dy * dy) / inner
@@ -1188,7 +1200,7 @@ def NormalizedSquarePatch(height, inner, outer,
                 gtw.add_data2f(u, v)
                 nvec = vec
                 vec = vec * height
-                if offset is not None:
+                if has_offset:
                     vec = vec - normal * offset
                 gvw.add_data3f(*vec)
                 gnw.add_data3f(nvec.x, nvec.y, nvec.z)
@@ -1203,13 +1215,13 @@ def NormalizedSquarePatch(height, inner, outer,
                 gtanw.add_data3(tan)
                 gbiw.add_data3(bin)
 
-    if settings.use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
-        if settings.use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    if use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        if use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
-        if settings.use_patch_skirts:
+        if use_patch_skirts:
             make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
@@ -1325,3 +1337,21 @@ def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
     geom = Geom(vdata)
     geom.addPrimitive(triangles)
     return geom
+
+UVPatch = PyUVPatch
+SquaredDistanceSquarePatch = PySquaredDistanceSquarePatch
+NormalizedSquarePatch = PyNormalizedSquarePatch
+TesselationInfo = PyTesselationInfo
+
+try:
+    from cosmonium_engine import TesselationInfo as CTesselationInfo
+    from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator
+    TesselationInfo = CTesselationInfo
+    uv_patch_generator = UVPatchGenerator()
+    UVPatch = uv_patch_generator.make
+    qcs_patch_generator = QCSPatchGenerator()
+    NormalizedSquarePatch = qcs_patch_generator.make
+    improved_qcs_patch_generator = ImprovedQCSPatchGenerator()
+    SquaredDistanceSquarePatch = improved_qcs_patch_generator.make
+except ImportError:
+    pass

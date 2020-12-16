@@ -169,7 +169,8 @@ class Preferences(ParamEditor):
                                  SettingParameter("Shadow slope bias", 'shadows_slope_scale_bias', UserParameter.TYPE_BOOL),
                                 ]),
                 ParametersGroup('OpenGL',
-                                [SettingParameter("Multisampling", 'multisamples', UserParameter.TYPE_INT, [0, 16])
+                                [SettingParameter("Sync video", 'sync_video', UserParameter.TYPE_BOOL),
+                                SettingParameter("Multisampling", 'multisamples', UserParameter.TYPE_INT, [0, 16])
                                 ]),
                 ]
     def make_debug(self):

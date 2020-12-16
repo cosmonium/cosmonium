@@ -292,3 +292,5 @@ elp82_truncated_pos(double jd)
                   sin(lon) * cos(lat) * r,
                   sin(lat) * r);
 }
+
+#undef T

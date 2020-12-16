@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode
-from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4
+from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
 from panda3d.core import NodePath, BoundingBox
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from .shapes import Shape
@@ -77,7 +77,7 @@ class PatchBase(Shape):
         self.bounds = None
         self.bounds_shape = None
         self.tessellation_inner_level = density
-        self.tessellation_outer_level = [density, density, density, density]
+        self.tessellation_outer_level = LVecBase4i(density, density, density, density)
         self.neighbours = [[], [], [], []]
         self.children = []
         self.children_bb = []
@@ -350,6 +350,7 @@ class SpherePatch(Patch):
                                                    self.density, self.density,
                                                    0.0, self.y0,
                                                    1.0 / self.s_div,self.y1,
+                                                   has_offset=self.offset is not None,
                                                    offset=self.offset)
             self.instance = NodePath('patch')
             child = self.instance.attach_new_node('instance')
@@ -363,6 +364,7 @@ class SpherePatch(Patch):
                                                    self.density, self.density,
                                                    self.x0, self.y0,
                                                    self.x1, self.y1,
+                                                   has_offset=self.offset is not None,
                                                    offset=self.offset)
             self.instance = cache[patch_id]
         self.instance.setPythonTag('patch', self)
@@ -612,17 +614,20 @@ class NormalizedSquarePatch(SquarePatchBase):
                                                   float(y + 1) / self.div)
     def create_patch_instance(self, x, y):
         return geometry.NormalizedSquarePatch(1.0,
-                                              self.density,
-                                              self.tessellation_outer_level,
+                                              geometry.TesselationInfo(self.density, self.tessellation_outer_level),
                                               float(x) / self.div,
                                               float(y) / self.div,
                                               float(x + 1) / self.div,
                                               float(y + 1) / self.div,
-                                              offset=self.offset)
+                                              has_offset=self.offset is not None,
+                                              offset=self.offset,
+                                              use_patch_adaptation=settings.use_patch_adaptation,
+                                              use_patch_skirts=settings.use_patch_skirts)
 
     def get_normals_at(self, coord):
         (u, v) = self.coord_to_uv(coord)
-        normal = geometry.NormalizedSquarePatchPoint(u, v,
+        normal = geometry.NormalizedSquarePatchPoint(1.0,
+                                                     u, v,
                                                      self.x0, self.y0,
                                                      self.x1, self.y1)
         normal = self.rotations[self.face].xform(normal)
@@ -634,7 +639,8 @@ class NormalizedSquarePatch(SquarePatchBase):
 
     def get_lonlatvert_at(self, coord):
         (u, v) = self.coord_to_uv(coord)
-        normal = geometry.NormalizedSquarePatchPoint(u, v,
+        normal = geometry.NormalizedSquarePatchPoint(1.0,
+                                                     u, v,
                                                      self.x0, self.y0,
                                                      self.x1, self.y1)
         normal = self.rotations[self.face].xform(normal)
@@ -669,13 +675,15 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
 
     def create_patch_instance(self, x, y):
         return geometry.SquaredDistanceSquarePatch(1.0,
-                                                   self.density,
-                                                   self.tessellation_outer_level,
+                                                   geometry.TesselationInfo(self.density, self.tessellation_outer_level),
                                                    float(x) / self.div,
                                                    float(y) / self.div,
                                                    float(x + 1) / self.div,
                                                    float(y + 1) / self.div,
-                                                   offset=self.offset)
+                                                   has_offset=self.offset is not None,
+                                                   offset=self.offset,
+                                                   use_patch_adaptation=settings.use_patch_adaptation,
+                                                   use_patch_skirts=settings.use_patch_skirts)
 
     def get_normals_at(self, coord):
         (u, v) = self.coord_to_uv(coord)
