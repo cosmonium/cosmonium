@@ -57,9 +57,10 @@
 
 
 - **A** : Accelerate
-- **X** : Decelerate
+- **Z** : Decelerate
 - **Q** : Switch direction
 - **S** : Stop
+- **X** : Align movement with camera direction
 
 
 - **Control-T** : Take control of object

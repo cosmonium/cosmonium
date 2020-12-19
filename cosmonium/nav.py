@@ -222,6 +222,7 @@ class FreeNav(InteractiveNavigationController):
         event_ctrl.accept("z-up", self.setKey, ['z', 0])
         event_ctrl.accept("q", self.switchDirection)
         event_ctrl.accept("s", self.stop)
+        event_ctrl.accept("x", self.align_camera)
 
         event_ctrl.accept("mouse3", self.OnTrackClick )
         event_ctrl.accept("mouse3-up", self.OnTrackRelease )
@@ -279,6 +280,9 @@ class FreeNav(InteractiveNavigationController):
 
     def stop(self):
         self.speed = 0
+
+    def align_camera(self):
+        self.camera_controller.prepare_movement()
 
     def OnTrackClick(self):
         if not self.base.mouseWatcherNode.hasMouse(): return
