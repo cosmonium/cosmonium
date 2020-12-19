@@ -64,7 +64,7 @@ class Preferences(ParamEditor):
                                  ]),
                 ParametersGroup('Keyboard',
                                 [SettingParameter('Damped navigation keys', 'damped_nav', SettingParameter.TYPE_BOOL),
-                                 SettingParameter('Invert Up/Down', 'celestia_nav', SettingParameter.TYPE_BOOL),
+                                 SettingParameter('Invert Up/Down and Left/Right', 'celestia_nav', SettingParameter.TYPE_BOOL),
                                  ])
                ]
 
