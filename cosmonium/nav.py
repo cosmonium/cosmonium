@@ -164,14 +164,14 @@ class InteractiveNavigationController(NavigationController):
         self.ship.set_frame_pos(delta + self.orbit_center)
 
 class FreeNav(InteractiveNavigationController):
-    rot_step_per_sec = pi/2
-    incr_speed_rot_step_per_sec = 0.7
-    decr_speed_rot_step_per_sec = incr_speed_rot_step_per_sec * 2.0
     distance_speed = 2.0
+    rotation_speed = 2 * pi / 3
+    rotation_damping = 2.0
 
     def __init__(self):
         InteractiveNavigationController.__init__(self)
         self.speed = 0.0
+        self.rot_speed = LVector3d()
         self.mouseTrackClick = False
         self.keyboardTrack = False
         self.startX = None
@@ -179,9 +179,6 @@ class FreeNav(InteractiveNavigationController):
         self.orbit_coef = 0.0
         self.orbit_x = 0.0
         self.orbit_z = 0.0
-        self.current_rot_x_speed = 0.0
-        self.current_rot_y_speed = 0.0
-        self.current_rot_z_speed = 0.0
 
     def get_name(self):
         return 'Free navigation'
@@ -322,15 +319,19 @@ class FreeNav(InteractiveNavigationController):
                 rot_x = -1
             if self.keyMap['down']:
                 rot_x = 1
+            if self.keyMap['left']:
+                rot_y = -1
+            if self.keyMap['right']:
+                rot_y = 1
         else:
             if self.keyMap['up']:
                 rot_x = 1
             if self.keyMap['down']:
                 rot_x = -1
-        if self.keyMap['left']:
-            rot_y = 1
-        if self.keyMap['right']:
-            rot_y = -1
+            if self.keyMap['left']:
+                rot_y = 1
+            if self.keyMap['right']:
+                rot_y = -1
         if self.keyMap['control-left']:
             rot_z = 1
         if self.keyMap['control-right']:
@@ -396,50 +397,13 @@ class FreeNav(InteractiveNavigationController):
         self.stepRelative(0, y, 0)
 
         if settings.damped_nav:
-            #TODO: Refactor this wall of code...
-            if rot_x > 0:
-                self.current_rot_x_speed += self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_x_speed = min(self.current_rot_x_speed, self.rot_step_per_sec)
-            elif rot_x < 0:
-                self.current_rot_x_speed -= self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_x_speed = max(self.current_rot_x_speed, -self.rot_step_per_sec)
-            elif self.current_rot_x_speed > 0.0:
-                self.current_rot_x_speed -= self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_x_speed = max(0.0, self.current_rot_x_speed)
-            elif self.current_rot_x_speed < 0.0:
-                self.current_rot_x_speed += self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_x_speed = min(0.0, self.current_rot_x_speed)
-            if rot_y > 0:
-                self.current_rot_y_speed += self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_y_speed = min(self.current_rot_y_speed, self.rot_step_per_sec)
-            elif rot_y < 0:
-                self.current_rot_y_speed -= self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_y_speed = max(self.current_rot_y_speed, -self.rot_step_per_sec)
-            elif self.current_rot_y_speed > 0.0:
-                self.current_rot_y_speed -= self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_y_speed = max(0.0, self.current_rot_y_speed)
-            elif self.current_rot_y_speed < 0.0:
-                self.current_rot_y_speed += self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_y_speed = min(0.0, self.current_rot_y_speed)
-            if rot_z > 0:
-                self.current_rot_z_speed += self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_z_speed = min(self.current_rot_z_speed, self.rot_step_per_sec)
-            elif rot_z < 0:
-                self.current_rot_z_speed -= self.incr_speed_rot_step_per_sec * dt
-                self.current_rot_z_speed = max(self.current_rot_z_speed, -self.rot_step_per_sec)
-            elif self.current_rot_z_speed > 0.0:
-                self.current_rot_z_speed -= self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_z_speed = max(0.0, self.current_rot_z_speed)
-            elif self.current_rot_z_speed < 0.0:
-                self.current_rot_z_speed += self.decr_speed_rot_step_per_sec * dt
-                self.current_rot_z_speed = min(0.0, self.current_rot_z_speed)
+            self.rot_speed *= exp(-dt * self.rotation_damping)
+            self.rot_speed += LVector3d(rot_x, rot_y, rot_z) * self.rotation_speed * dt
         else:
-            self.current_rot_x_speed = rot_x * self.rot_step_per_sec
-            self.current_rot_y_speed = rot_y * self.rot_step_per_sec
-            self.current_rot_z_speed = rot_z * self.rot_step_per_sec
-        self.turn( LVector3d.right(), self.current_rot_x_speed * dt)
-        self.turn( LVector3d.forward(), self.current_rot_y_speed * dt)
-        self.turn( LVector3d.up(), self.current_rot_z_speed * dt)
+            self.rot_speed = LVector3d(rot_x, rot_y, rot_z) * self.rotation_speed
+        self.turn( LVector3d.right(), self.rot_speed.x * dt)
+        self.turn( LVector3d.forward(), self.rot_speed.y * dt)
+        self.turn( LVector3d.up(), self.rot_speed.z * dt)
         self.change_altitude(distance * self.distance_speed * dt)
 
     def turn(self, axis, angle):
