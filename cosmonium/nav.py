@@ -378,7 +378,7 @@ class FreeNav(InteractiveNavigationController):
                 self.orbit_x -= self.orbit_coef * dt
                 self.do_orbit(self.orbit_z, self.orbit_x)
 
-        if self.keyMap['a'] or self.keyMap['z']:
+        if self.keyMap['a'] or self.keyMap['z'] or rot_x != 0 or rot_y != 0 or rot_z != 0:
             self.camera_controller.prepare_movement()
 
         if self.keyMap['a']:
