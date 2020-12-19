@@ -9,7 +9,7 @@ update-mo: *.po
 	export lang=$${filename%.*} ; \
 	echo "Installing $$lang for $(DOMAIN)" ; \
 	mkdir -p ../locale/$$lang/LC_MESSAGES ; \
-	$(MSGFMT) $< -o ../locale/$$lang/LC_MESSAGES/$(DOMAIN).mo ; \
+	$(MSGFMT) $$filename -o ../locale/$$lang/LC_MESSAGES/$(DOMAIN).mo ; \
 	done
 
 update-pot:
