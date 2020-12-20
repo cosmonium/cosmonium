@@ -128,5 +128,5 @@ parser = TranslationYamlParser()
 TranslationYamlParser.output = open(sys.argv[1], 'w')
 parser.output_header()
 for entry in sys.argv[2:]:
-    parser.load_and_parse(entry, context)
+    parser.load_and_parse(entry, context=context)
 TranslationYamlParser.output.close()
