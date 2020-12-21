@@ -29,12 +29,16 @@
 #include <math.h>
 #include <algorithm>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 TesselationInfo::TesselationInfo(unsigned int inner, LVecBase4i outer) :
   inner(inner),
   outer(outer)
 {
   for (unsigned int i = 0; i < 4; ++i) {
-    int x = outer[i];
+    unsigned int x = outer[i];
     ratio[i] = inner >= x ? inner / x  : 1;
   }
 }
@@ -60,11 +64,11 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
       bool global_texture, bool inv_texture_u, bool inv_texture_v,
       bool has_offset, double offset)
 {
-    int r_sectors = sectors + 1;
-    int r_rings = rings + 1;
+    unsigned int r_sectors = sectors + 1;
+    unsigned int r_rings = rings + 1;
 
-    int nb_data = r_rings * r_sectors;
-    int nb_vertices = rings * sectors;
+    unsigned int nb_data = r_rings * r_sectors;
+    unsigned int nb_vertices = rings * sectors;
 
     PT(GeomNode) node = new GeomNode("uv");
 
