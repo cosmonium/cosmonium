@@ -8,14 +8,14 @@ RELEASE=0
 REQUIREMENTS=
 PANDA3D_VERSION=1.10.7.dev57
 
-TAG=v0.2.1
-COUNT=$(shell git rev-list --count $(TAG)..HEAD)
+TAG_VERSION=0.2.1
+COUNT=$(shell git rev-list --count v$(TAG_VERSION)..HEAD)
 
 ifneq ($(COUNT),)
   ifeq ($(COUNT),0)
-    VERSION="$(TAG)"
+    VERSION="$(TAG_VERSION)"
   else
-    VERSION="$(TAG).dev$(COUNT)"
+    VERSION="$(TAG_VERSION).dev$(COUNT)"
   endif
 endif
 

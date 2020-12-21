@@ -73,6 +73,7 @@ from . import cache
 from . import mesh
 from . import settings
 from . import pstats
+from . import version
 
 from math import pi
 import subprocess
@@ -214,6 +215,7 @@ class CosmoniumBase(ShowBase):
         pass
 
     def print_info(self):
+        print("Cosmonium version: V" + version.version)
         print("Python version:", platform.python_version())
         print("Panda version: %s (%s) by %s (%s)" % (PandaSystem.getVersionString(),
                                                      PandaSystem.getGitCommit(),

@@ -28,7 +28,7 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-version = '0.2.0'
+from cosmonium.version import version
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
 requirements_path = None
