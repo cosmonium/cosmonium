@@ -13,7 +13,7 @@ COUNT=$(shell git rev-list --count $(TAG)..HEAD)
 
 ifneq ($(COUNT),)
   ifeq ($(COUNT),0)
-    VERSION=$(TAG)
+    VERSION="$(TAG)"
   else
     VERSION="$(TAG).dev$(COUNT)"
   endif
