@@ -42,7 +42,7 @@ class UVPatchGenerator
 PUBLISHED:
   UVPatchGenerator();
 
-  LVector3
+  LVector3d
   make_normal(double x0, double y0, double x1, double y1);
 
   NodePath
@@ -85,7 +85,7 @@ PUBLISHED:
 
 private:
   inline void
-  make_point(double radius, unsigned int inner, LVector3 patch_normal,
+  make_point(double radius, unsigned int inner, LVector3d patch_normal,
       unsigned int i, unsigned int j, double x0, double y0, double x1, double y1,
       bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, double offset,
@@ -108,7 +108,7 @@ PUBLISHED:
 
 private:
   inline void
-  make_point(double radius, unsigned int inner, LVector3 patch_normal,
+  make_point(double radius, unsigned int inner, LVector3d patch_normal,
       unsigned int i, unsigned int j, double x0, double y0, double x1, double y1,
       bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, double offset,
