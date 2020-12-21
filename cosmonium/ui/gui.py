@@ -57,7 +57,7 @@ import os
 
 about_text = """# Cosmonium
 
-**Version**: %s
+**Version**: V%s
 Copyright 2018-2020 Laurent Deru
 
 
