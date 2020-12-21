@@ -110,6 +110,7 @@ class CosmoniumBase(ShowBase):
         self.trigger_check_settings = True
         self.request_fullscreen = False
 
+        configParser.load()
         self.init_lang()
         self.print_info()
         self.panda_config()
