@@ -152,11 +152,11 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
         v = 1.0 - v
     if inv_texture_u:
         u = 1.0 - u
-    gtw.add_data2f(u, v)
-    gvw.add_data3f(0, 0, radius)
-    gnw.add_data3f(0, 0, 1)
-    gtanw.add_data3f(0, 1, 0)
-    gbiw.add_data3f(1, 0, 0)
+    gtw.add_data2(u, v)
+    gvw.add_data3(0, 0, radius)
+    gnw.add_data3(0, 0, 1)
+    gtanw.add_data3(0, 1, 0)
+    gbiw.add_data3(1, 0, 0)
     for r in range(0, rings):
         for s in range(0, sectors):
             cos_s = cos(2*pi * s * S + pi)
@@ -172,26 +172,26 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
                 v = 1.0 - v
             if inv_texture_u:
                 u = 1.0 - u
-            gtw.add_data2f(u, v)
-            gvw.add_data3f(x * radius, y * radius, z * radius)
-            gnw.add_data3f(x, y, z)
+            gtw.add_data2(u, v)
+            gvw.add_data3(x * radius, y * radius, z * radius)
+            gnw.add_data3(x, y, z)
             #Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
+            gtanw.add_data3(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
             binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
-            gbiw.add_data3f(*binormal)
+            gbiw.add_data3d(binormal)
     u = 0.0
     v = 0.0
     if inv_texture_v:
         v = 1.0 - v
     if inv_texture_u:
         u = 1.0 - u
-    gtw.add_data2f(u, v)
-    gvw.add_data3f(0, 0, -radius)
-    gnw.add_data3f(0, 0, -1)
-    gtanw.add_data3f(1, 0, 0)
-    gbiw.add_data3f(0, 1, 0)
+    gtw.add_data2(u, v)
+    gvw.add_data3(0, 0, -radius)
+    gnw.add_data3(0, 0, -1)
+    gtanw.add_data3(1, 0, 0)
+    gbiw.add_data3(0, 1, 0)
 
     for r in range(0, rings - 1):
         for s in range(0, sectors):
@@ -313,7 +313,7 @@ def PyUVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_
             y = sin_s * sin_r
             z = -cos_r
             if global_texture:
-                gtw.add_data2f((x0 + s * dx / sectors), (y0 + r * dy / rings))
+                gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:
                 u = s / sectors
                 v = r / rings
@@ -321,20 +321,20 @@ def PyUVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_
                     v = 1.0 - v
                 if inv_texture_u:
                     u = 1.0 - u
-                gtw.add_data2f(u, v)
+                gtw.add_data2(u, v)
             if offset is not None:
-                gvw.add_data3f(x * radius - normal[0] * offset,
-                               y * radius - normal[1] * offset,
-                               z * radius - normal[2] * offset)
+                gvw.add_data3(x * radius - normal[0] * offset,
+                              y * radius - normal[1] * offset,
+                              z * radius - normal[2] * offset)
             else:
-                gvw.add_data3f(x * radius, y * radius, z * radius)
+                gvw.add_data3(x * radius, y * radius, z * radius)
             gnw.add_data3f(x, y, z)
             #Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3f(-sin_s, cos_s, 0) #-y, x, 0
+            gtanw.add_data3(-sin_s, cos_s, 0) #-y, x, 0
             #Derivation wrt r
             binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
-            gbiw.add_data3f(*binormal)
+            gbiw.add_data3d(binormal)
 
     for r in range(0, r_rings - 1):
         for s in range(0, r_sectors - 1):
@@ -527,9 +527,9 @@ def IcoSphere(radius=1, subdivisions=1):
         faces[i * 3 + 1] = i2
         faces[i * 3 + 2] = i3
     for i in range(0, len(vertices)):
-        gvw.addData3f(*vertices[i])
-        gnw.addData3f(*norms[i])
-        gtw.add_data2f(*texs[i])
+        gvw.add_data3(vertices[i])
+        gnw.add_data3(norms[i])
+        gtw.add_data2(*texs[i])
     for i in range(0, int(len(faces) / 3)):
         i1 = faces[i * 3]
         i2 = faces[i * 3 + 1]
@@ -545,7 +545,7 @@ class PyTesselationInfo():
     def __init__(self, inner, outer):
         self.inner = inner
         self.outer = outer
-        self.ratio = [inner / x if inner >= x else 1 for x in outer]
+        self.ratio = [inner // x if inner >= x else 1 for x in outer]
 
 def make_config(inner, outer):
     nb_vertices = inner + 1
@@ -745,13 +745,13 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
+                gtw.add_data2(v, u)
             else:
-                gtw.add_data2f(u, v)
-            gvw.add_data3f(x * size, y * size, 0)
-            gnw.add_data3f(0, 0, 1.0)
-            gtanw.add_data3f(1, 0, 0)
-            gbiw.add_data3f(0, 1, 0)
+                gtw.add_data2(u, v)
+            gvw.add_data3(x * size, y * size, 0)
+            gnw.add_data3(0, 0, 1.0)
+            gtanw.add_data3(1, 0, 0)
+            gbiw.add_data3(0, 1, 0)
 
     if settings.use_patch_skirts:
         for a in range(0, 4):
@@ -779,13 +779,13 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
                 if inv_v:
                     v = 1.0 - v
                 if swap_uv:
-                    gtw.add_data2f(v, u)
+                    gtw.add_data2(v, u)
                 else:
-                    gtw.add_data2f(u, v)
-                gvw.add_data3f(x * size, y * size, -size)
-                gnw.add_data3f(0, 0, 1.0)
-                gtanw.add_data3f(1, 0, 0)
-                gbiw.add_data3f(0, 1, 0)
+                    gtw.add_data2(u, v)
+                gvw.add_data3(x * size, y * size, -size)
+                gnw.add_data3(0, 0, 1.0)
+                gtanw.add_data3(1, 0, 0)
+                gbiw.add_data3(0, 1, 0)
 
     if settings.use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
@@ -809,10 +809,10 @@ def Patch(size=1.0):
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
     vertexWriter = GeomVertexWriter(vdata, "vertex")
-    vertexWriter.addData3f(0, 0, 0)
-    vertexWriter.addData3f(size, 0, 0)
-    vertexWriter.addData3f(size, size, 0)
-    vertexWriter.addData3f(0, size, 0)
+    vertexWriter.add_data3(0, 0, 0)
+    vertexWriter.add_data3(size, 0, 0)
+    vertexWriter.add_data3(size, size, 0)
+    vertexWriter.add_data3(0, size, 0)
     patches = GeomPatches(4, Geom.UHStatic)
 
     patches.addConsecutiveVertices(0, 4) #South, west, north, east
@@ -858,10 +858,10 @@ def QuadPatch(x0, y0, x1, y1,
     x1 = 2.0 * x1 - 1.0
     y0 = 2.0 * y0 - 1.0
     y1 = 2.0 * y1 - 1.0
-    vertexWriter.addData3f(x0, y0, offset)
-    vertexWriter.addData3f(x1, y0, offset)
-    vertexWriter.addData3f(x1, y1, offset)
-    vertexWriter.addData3f(x0, y1, offset)
+    vertexWriter.add_data3(x0, y0, offset)
+    vertexWriter.add_data3(x1, y0, offset)
+    vertexWriter.add_data3(x1, y1, offset)
+    vertexWriter.add_data3(x0, y1, offset)
     patches = GeomPatches(4, Geom.UHStatic)
 
     patches.addConsecutiveVertices(0, 4) #South, west, north, east
@@ -905,13 +905,13 @@ def SquarePatch(height, inner, outer,
             if inv_v:
                 v = 1.0 - v
             if swap_uv:
-                gtw.add_data2f(v, u)
+                gtw.add_data2(v, u)
             else:
-                gtw.add_data2f(u, v)
-            gvw.add_data3f(x * height, y * height, height)
-            gnw.add_data3f(0, 0, 1.0)
-            gtanw.add_data3f(1, 0, 0)
-            gbiw.add_data3f(0, 1, 0)
+                gtw.add_data2(u, v)
+            gvw.add_data3(x * height, y * height, height)
+            gnw.add_data3(0, 0, 1.0)
+            gtanw.add_data3(1, 0, 0)
+            gbiw.add_data3(0, 1, 0)
 
     make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
     prim.closePrimitive()
@@ -963,24 +963,24 @@ def PySquaredDistanceSquarePatch(height, tesselation,
                 v = 1.0 - v
             if swap_uv:
                 u, v = v, u
-            gtw.add_data2f(u, v)
+            gtw.add_data2(u, v)
             if offset is not None:
-                gvw.add_data3f(xp * height - normal[0] * offset,
-                               yp * height - normal[1] * offset,
-                               zp * height - normal[2] * offset)
+                gvw.add_data3(xp * height - normal[0] * offset,
+                              yp * height - normal[1] * offset,
+                              zp * height - normal[2] * offset)
             else:
-                gvw.add_data3f(xp * height, yp * height, zp * height)
-            gnw.add_data3f(xp, yp, zp)
-            tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+                gvw.add_data3(xp * height, yp * height, zp * height)
+            gnw.add_data3(xp, yp, zp)
+            tan = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
             tan.normalize()
-            bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+            bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
             bin.normalize()
             if inv_u: tan = -tan
             if inv_v: bin = -bin
             if swap_uv:
                 tan, bin = bin, tan
-            gtanw.add_data3(tan)
-            gbiw.add_data3(bin)
+            gtanw.add_data3d(tan)
+            gbiw.add_data3d(bin)
 
     if use_patch_skirts:
         if offset is None:
@@ -1019,24 +1019,24 @@ def PySquaredDistanceSquarePatch(height, tesselation,
                     v = 1.0 - v
                 if swap_uv:
                     u, v = v, u
-                gtw.add_data2f(u, v)
+                gtw.add_data2(u, v)
                 if offset is not None:
-                    gvw.add_data3f(xp * height - normal[0] * offset,
-                                   yp * height - normal[1] * offset,
-                                   zp * height - normal[2] * offset)
+                    gvw.add_data3(xp * height - normal[0] * offset,
+                                  yp * height - normal[1] * offset,
+                                  zp * height - normal[2] * offset)
                 else:
-                    gvw.add_data3f(xp * height, yp * height, zp * height)
-                gnw.add_data3f(xp, yp, zp)
-                tan = LVector3(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+                    gvw.add_data3(xp * height, yp * height, zp * height)
+                gnw.add_data3(xp, yp, zp)
+                tan = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
                 tan.normalize()
-                bin = LVector3(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
+                bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
                 bin.normalize()
                 if inv_u: tan = -tan
                 if inv_v: bin = -bin
                 if swap_uv:
                     tan, bin = bin, tan
-                gtanw.add_data3(tan)
-                gbiw.add_data3(bin)
+                gtanw.add_data3d(tan)
+                gbiw.add_data3d(bin)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
@@ -1147,23 +1147,23 @@ def PyNormalizedSquarePatch(height, tesselation,
                 v = 1.0 - v
             if swap_uv:
                 u, v = v, u
-            gtw.add_data2f(u, v)
+            gtw.add_data2(u, v)
             nvec = vec
             vec = vec * height
             if offset is not None:
                 vec = vec - normal * offset
-            gvw.add_data3f(*vec)
-            gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-            tan = LVector3(1.0 + y*y, -x*y, -x)
+            gvw.add_data3d(vec)
+            gnw.add_data3d(nvec)
+            tan = LVector3d(1.0 + y*y, -x*y, -x)
             tan.normalize()
-            bin = LVector3(x * y, 1.0 + x*x, -y)
+            bin = LVector3d(x * y, 1.0 + x*x, -y)
             bin.normalize()
             if inv_u: tan = -tan
             if inv_v: bin = -bin
             if swap_uv:
                 tan, bin = bin, tan
-            gtanw.add_data3(tan)
-            gbiw.add_data3(bin)
+            gtanw.add_data3d(tan)
+            gbiw.add_data3d(bin)
 
     if use_patch_skirts:
         if offset is None:
@@ -1197,23 +1197,23 @@ def PyNormalizedSquarePatch(height, tesselation,
                     v = 1.0 - v
                 if swap_uv:
                     u, v = v, u
-                gtw.add_data2f(u, v)
+                gtw.add_data2(u, v)
                 nvec = vec
                 vec = vec * height
                 if has_offset:
                     vec = vec - normal * offset
-                gvw.add_data3f(*vec)
-                gnw.add_data3f(nvec.x, nvec.y, nvec.z)
-                tan = LVector3(1.0 + y*y, -x*y, -x)
+                gvw.add_data3d(vec)
+                gnw.add_data3d(nvec)
+                tan = LVector3d(1.0 + y*y, -x*y, -x)
                 tan.normalize()
-                bin = LVector3(x * y, 1.0 + x*x, -y)
+                bin = LVector3d(x * y, 1.0 + x*x, -y)
                 bin.normalize()
                 if inv_u: tan = -tan
                 if inv_v: bin = -bin
                 if swap_uv:
                     tan, bin = bin, tan
-                gtanw.add_data3(tan)
-                gbiw.add_data3(bin)
+                gtanw.add_data3d(tan)
+                gbiw.add_data3d(bin)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
@@ -1287,14 +1287,14 @@ def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
         angle = 2 * pi / nbOfPoints * i
         x = cos(angle)
         y = sin(angle)
-        vertex.addData3f(outer_radius * x, outer_radius * y, 0)
-        normal.addData3f(0, 0, up)
-        color.addData4f(1, 1, 1, 1)
-        texcoord.addData2f(1, 0)
-        vertex.addData3f(inner_radius * x, inner_radius * y, 0)
-        normal.addData3f(0, 0, up)
-        color.addData4f(1, 1, 1, 1)
-        texcoord.addData2f(0, 0)
+        vertex.add_data3(outer_radius * x, outer_radius * y, 0)
+        normal.add_data3(0, 0, up)
+        color.add_data4(1, 1, 1, 1)
+        texcoord.add_data2(1, 0)
+        vertex.add_data3(inner_radius * x, inner_radius * y, 0)
+        normal.add_data3(0, 0, up)
+        color.add_data4(1, 1, 1, 1)
+        texcoord.add_data2(0, 0)
     triangles = GeomTriangles(Geom.UHStatic)
     triangles.reserve_num_vertices(nbOfPoints - 1)
     for i in range(nbOfPoints-1):
@@ -1353,5 +1353,6 @@ try:
     NormalizedSquarePatch = qcs_patch_generator.make
     improved_qcs_patch_generator = ImprovedQCSPatchGenerator()
     SquaredDistanceSquarePatch = improved_qcs_patch_generator.make
-except ImportError:
-    pass
+except ImportError as e:
+    print("WARNING: Could not load geometry C implementation, fallback on python implementation")
+    print("\t", e)

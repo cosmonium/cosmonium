@@ -43,7 +43,7 @@ UVPatchGenerator::UVPatchGenerator()
 {
 }
 
-LVector3
+LVector3d
 UVPatchGenerator::make_normal(double x0, double y0, double x1, double y1)
 {
     double dx = x1 - x0;
@@ -96,7 +96,7 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
     double dx = x1 - x0;
     double dy = y1 - y0;
 
-    LVector3 normal;
+    LVector3d normal;
     if (has_offset) {
         normal = make_normal(x0, y0, x1, y1);
     }
@@ -132,11 +132,11 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
             }
             gnw.add_data3(x, y, z);
             // Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3f(-sin_s, cos_s, 0); // -y, x, 0
+            gtanw.add_data3(-sin_s, cos_s, 0); // -y, x, 0
             // Derivation wrt r
             LVector3d binormal(cos_s * cos_r, sin_s * cos_r, sin_r);
             binormal.normalize();
-            gbiw.add_data3(binormal);
+            gbiw.add_data3d(binormal);
         }
     }
 
@@ -368,7 +368,7 @@ QCSPatchGenerator::QCSPatchGenerator()
 }
 
 void
-QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3 patch_normal,
+QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3d patch_normal,
     unsigned int i, unsigned int j, double x0, double y0, double dx, double dy,
     bool inv_u, bool inv_v, bool swap_uv,
     bool has_offset, double offset,
@@ -378,9 +378,9 @@ QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3 patch_
   double y = y0 + j * dy / inner;
   x = 2.0 * x - 1.0;
   y = 2.0 * y - 1.0;
-  LVector3 vec(x, y, 1.0);
+  LVector3d vec(x, y, 1.0);
   vec.normalize();
-  LVector3 nvec = vec;
+  LVector3d nvec = vec;
 
   double u = double(i) / inner;
   double v = double(j) / inner;
@@ -398,19 +398,19 @@ QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3 patch_
   if (has_offset) {
       vec = vec - patch_normal * offset;
   }
-  gvw.add_data3(vec);
-  gnw.add_data3(nvec);
-  LVector3 tan(1.0 + y*y, -x*y, -x);
+  gvw.add_data3d(vec);
+  gnw.add_data3d(nvec);
+  LVector3d tan(1.0 + y*y, -x*y, -x);
   tan.normalize();
-  LVector3 bin(x * y, 1.0 + x*x, -y);
+  LVector3d bin(x * y, 1.0 + x*x, -y);
   bin.normalize();
   if (inv_u) tan = -tan;
   if (inv_v) bin = -bin;
   if (swap_uv) {
     std::swap(tan, bin);
   }
-  gtanw.add_data3(tan);
-  gbiw.add_data3(bin);
+  gtanw.add_data3d(tan);
+  gbiw.add_data3d(bin);
 }
 
 NodePath
@@ -476,7 +476,7 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   double dx = x1 - x0;
   double dy = y1 - y0;
 
-  LVector3 normal;
+  LVector3d normal;
   if (has_offset) {
       double x = x0 + 0.5 * dx;
       double y = y0 + 0.5 * dy;
@@ -548,7 +548,7 @@ ImprovedQCSPatchGenerator::ImprovedQCSPatchGenerator()
 }
 
 void
-ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3 patch_normal,
+ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3d patch_normal,
     unsigned int i, unsigned int j, double x0, double y0, double dx, double dy,
     bool inv_u, bool inv_v, bool swap_uv,
     bool has_offset, double offset,
@@ -586,17 +586,17 @@ ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector
     gvw.add_data3(xp * radius, yp * radius, zp * radius);
   }
   gnw.add_data3(xp, yp, zp);
-  LVector3 tan(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
+  LVector3d tan(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
   tan.normalize();
-  LVector3 bin(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5));
+  LVector3d bin(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5));
   bin.normalize();
   if (inv_u) tan = -tan;
   if (inv_v) bin = -bin;
   if (swap_uv) {
     std::swap(tan, bin);
   }
-  gtanw.add_data3(tan);
-  gbiw.add_data3(bin);
+  gtanw.add_data3d(tan);
+  gbiw.add_data3d(bin);
 }
 
 NodePath
@@ -662,7 +662,7 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   double dx = x1 - x0;
   double dy = y1 - y0;
 
-  LVector3 normal;
+  LVector3d normal;
   if (has_offset) {
     double x = x0 + 0.5 * dx;
     double y = y0 + 0.5 * dy;
