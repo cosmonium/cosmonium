@@ -130,6 +130,8 @@ def get_radius_scale(data, parent):
         diameter = data.get('diameter', None)
         if diameter is not None:
             radius = diameter / 2.0
+    else:
+        radius = float(radius)
     ellipticity = data.get('ellipticity', None)
     scale = data.get('axes', None)
     if scale is not None:
