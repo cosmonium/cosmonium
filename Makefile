@@ -6,7 +6,8 @@ SOURCE_OPTIONS=
 OS_SDK=
 RELEASE=0
 REQUIREMENTS=
-PANDA3D_VERSION=1.10.7.dev57
+PANDA3D_BASE_VERSION=1.10.7
+PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev57
 
 TAG_VERSION=0.2.1
 COUNT=$(shell git rev-list --count v$(TAG_VERSION)..HEAD)
@@ -58,14 +59,14 @@ ifeq ($(PLATFORM),)
 endif
 
 ifeq ($(PLATFORM),win_amd64)
-    PYTHON=C:/Panda3D-1.10.7-x64/python/python.exe
+    PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)-x64/python/python.exe
     OS_SDK=7.1
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
 endif
 
 ifeq ($(PLATFORM),win32)
-    PYTHON=C:/Panda3D-1.10.7/python/python.exe
+    PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)/python/python.exe
     OS_SDK=7.1
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
@@ -139,7 +140,11 @@ else
 endif
 
 build-req:
+ifneq ($(PANDA3D_WHEEL),)
 	@echo "$(PANDA3D_WHEEL)" > $(REQUIREMENTS)
+else
+	@echo panda3d > $(REQUIREMENTS)
+endif
 	@cat requirements.txt >> $(REQUIREMENTS)
 	@cat $(REQUIREMENTS)
 
