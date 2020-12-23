@@ -90,7 +90,6 @@ config = {
             ],
             'package_data_dirs':
             {
-             'numpy': [('numpy.libs/*', '', {'PKG_DATA_MAKE_EXECUTABLE'})],
              'win32': [('pywin32_system32/*', '', {}),
                        ('win32/*.pyd', '', {}),
                        ('win32/lib/win32con.py', '', {})],
