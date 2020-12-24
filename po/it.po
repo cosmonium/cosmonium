@@ -867,27 +867,27 @@ msgstr "Debug"
 
 #: ../cosmonium/ui/preferences.py:60 ../cosmonium/ui/preferences.py:150
 msgid "UI"
-msgstr ""
+msgstr "UI"
 
 #: ../cosmonium/ui/preferences.py:62
 msgid "Mouse"
-msgstr ""
+msgstr "Mouse"
 
 #: ../cosmonium/ui/preferences.py:63
 msgid "Invert mouse wheel"
-msgstr ""
+msgstr "Inverti mouse wheel"
 
 #: ../cosmonium/ui/preferences.py:65
 msgid "Keyboard"
-msgstr ""
+msgstr "Tastiera"
 
 #: ../cosmonium/ui/preferences.py:66
 msgid "Damped navigation keys"
-msgstr ""
+msgstr "Tasti navigazione damped"
 
 #: ../cosmonium/ui/preferences.py:67
 msgid "Invert Up/Down and Left/Right"
-msgstr ""
+msgstr "Inverti Su/Giù e Sinistra/Destra"
 
 #: ../cosmonium/ui/preferences.py:73 ../cosmonium/ui/preferences.py:93
 msgid "Stars"
@@ -943,23 +943,23 @@ msgstr "Costellazioni"
 
 #: ../cosmonium/ui/preferences.py:109
 msgid "Fonts"
-msgstr ""
+msgstr "Font"
 
 #: ../cosmonium/ui/preferences.py:110
 msgid "Label size"
-msgstr ""
+msgstr "Dimensione scritte"
 
 #: ../cosmonium/ui/preferences.py:111
 msgid "Constellation label size"
-msgstr ""
+msgstr "Dimensione scritte costellazioni"
 
 #: ../cosmonium/ui/preferences.py:117
 msgid "Objects"
-msgstr ""
+msgstr "Oggetti"
 
 #: ../cosmonium/ui/preferences.py:122
 msgid "Components"
-msgstr ""
+msgstr "Componenti"
 
 #: ../cosmonium/ui/preferences.py:123
 msgid "Atmospheres"
@@ -999,83 +999,83 @@ msgstr "Frame di riferimento"
 
 #: ../cosmonium/ui/preferences.py:151
 msgid "UI Scale"
-msgstr ""
+msgstr "Scala UI"
 
 #: ../cosmonium/ui/preferences.py:152
 msgid "Menu text size"
-msgstr ""
+msgstr "Dimensione testi menu"
 
 #: ../cosmonium/ui/preferences.py:153
 msgid "UI text size"
-msgstr ""
+msgstr "Dimensione testi UI"
 
 #: ../cosmonium/ui/preferences.py:155
 msgid "HUD"
-msgstr ""
+msgstr "HUD"
 
 #: ../cosmonium/ui/preferences.py:156
 msgid "HUD text size"
-msgstr ""
+msgstr "Dimensione testi HUD"
 
 #: ../cosmonium/ui/preferences.py:157
 msgid "HUD info size"
-msgstr ""
+msgstr "Dimensione info HUD"
 
 #: ../cosmonium/ui/preferences.py:158
 msgid "HUD color"
-msgstr ""
+msgstr "Colore HUD"
 
 #: ../cosmonium/ui/preferences.py:160
 msgid "Query"
-msgstr ""
+msgstr "Query"
 
 #: ../cosmonium/ui/preferences.py:161
 msgid "Query size"
-msgstr ""
+msgstr "Dimensione query"
 
 #: ../cosmonium/ui/preferences.py:162
 msgid "Suggestion size"
-msgstr ""
+msgstr "Dimensione suggerimento"
 
 #: ../cosmonium/ui/preferences.py:165
 msgid "Cull far patches"
-msgstr ""
+msgstr "Nascondi patch distanti"
 
 #: ../cosmonium/ui/preferences.py:166
 msgid "Cull far patches threshold"
-msgstr ""
+msgstr "Soglia patch distanti"
 
 #: ../cosmonium/ui/preferences.py:167 ../cosmonium/ui/preferences.py:169
 msgid "Shadow slope bias"
-msgstr ""
+msgstr "Bias ombra"
 
 #: ../cosmonium/ui/preferences.py:168
 msgid "Shadow PCF"
-msgstr ""
+msgstr "Ombra PCF"
 
 #: ../cosmonium/ui/preferences.py:171
 msgid "OpenGL"
-msgstr ""
+msgstr "OpenGL"
 
 #: ../cosmonium/ui/preferences.py:172
 msgid "Sync video"
-msgstr ""
+msgstr "Sincronizza video"
 
 #: ../cosmonium/ui/preferences.py:173
 msgid "Multisampling"
-msgstr ""
+msgstr "Multisampling"
 
 #: ../cosmonium/ui/preferences.py:177
 msgid "Async"
-msgstr ""
+msgstr "Ansincrono"
 
 #: ../cosmonium/ui/preferences.py:178
 msgid "Sync data loading"
-msgstr ""
+msgstr "Caricamento dati sincrono"
 
 #: ../cosmonium/ui/preferences.py:179
 msgid "Sync texture loading"
-msgstr ""
+msgstr "Caricamento texture sincrono"
 
 #: ../cosmonium/ui/query.py:132
 msgid "Target name:"
