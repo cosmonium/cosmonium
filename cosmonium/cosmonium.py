@@ -1142,7 +1142,7 @@ class Cosmonium(CosmoniumBase):
                     print("Scene")
                     print("\tPosition", self.selected.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.scene_distance)
                     print("\tOrientation", self.selected.scene_orientation)
-                    print("\tScale", self.selected.scene_scale_factor, '(', self.selected.get_scale() * self.selected.scene_scale_factor, ')')
+                    print("\tScale", self.selected.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.scene_scale_factor, ')')
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
