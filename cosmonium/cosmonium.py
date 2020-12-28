@@ -47,6 +47,7 @@ from .bodies import StellarObject, StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
 from .annotations import Grid
+from .astro.frame import BodyReferenceFrame, SolBarycenter
 from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
 from .astro.frame import SurfaceReferenceFrame
@@ -1000,8 +1001,14 @@ class Cosmonium(CosmoniumBase):
 
     def _add_extra(self, to_add):
         if to_add is None: return
-        if to_add.parent is not None and to_add.parent is not self.universe:
-            self._add_extra(to_add.parent)
+        if isinstance(to_add, SolBarycenter): return
+        if to_add is self.universe: return
+        self._add_extra(to_add.parent)
+        #TODO: There should be a mechanism to retrieve them
+        if isinstance(to_add.anchor.orbit.frame, BodyReferenceFrame):
+            self._add_extra(to_add.anchor.orbit.frame.body)
+        if isinstance(to_add.anchor.rotation.frame, BodyReferenceFrame):
+            self._add_extra(to_add.anchor.rotation.frame.body)
         if not to_add in self.extra:
             self.extra.append(to_add)
 
