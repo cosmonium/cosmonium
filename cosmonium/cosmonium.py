@@ -216,7 +216,7 @@ class CosmoniumBase(ShowBase):
         pass
 
     def print_info(self):
-        print("Cosmonium version: V" + version.version)
+        print("Cosmonium version: V" + version.version_str)
         print("Python version:", platform.python_version())
         print("Panda version: %s (%s) by %s (%s)" % (PandaSystem.getVersionString(),
                                                      PandaSystem.getGitCommit(),

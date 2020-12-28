@@ -72,7 +72,7 @@ version.
 
 This program uses several third-party libraries which are subject to their own
 licenses, see Third-Party.md for the complete list.
-""" % version.version
+""" % version.version_str
 
 def menu_text(name, shortcut=None):
     if shortcut is not None:
