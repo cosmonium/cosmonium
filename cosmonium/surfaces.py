@@ -80,17 +80,14 @@ class Surface(ShapeObject):
                     self.shader.add_shadows(ShaderSphereSelfShadow())
             else:
                 self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
-                self.owner.visibility_override = True
                 self.shadow_caster.add_target(self, self_shadow=True)
+        self.owner.set_visibility_override(True)
         self.shadow_caster.create()
 
     def remove_shadows(self):
         if self.shadow_caster is not None:
             self.shadow_caster.remove()
-            if self.owner.visibility_override:
-                self.owner.visibility_override = False
-                #Force recheck of visibility or the body will be immediately recreated
-                self.owner.check_visibility(self.owner.context.observer.pixel_size)
+            self.owner.set_visibility_override(False)
             self.shadow_caster = None
 
     def start_shadows_update(self):

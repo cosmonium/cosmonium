@@ -433,6 +433,19 @@ class StellarObject(LabelledObject):
         else:
             return 0.0
 
+    def set_visibility_override(self, override):
+        if override == self.visibility_override: return
+        if override:
+            self.visibility_override = True
+            if self.system is not None:
+                self.system.set_visibility_override(override)
+        else:
+            self.visibility_override = False
+            if self.system is not None:
+                self.system.set_visibility_override(override)
+            #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
+            self.check_visibility(self.context.observer.pixel_size)
+
     def first_update(self, time):
         self.update(time, 0)
 
