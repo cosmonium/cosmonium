@@ -332,6 +332,7 @@ class SimpleSystem(StellarSystem):
     def update(self, time, dt):
         if not self.visible or not self.resolved:
             StellarSystem.update(self, time, dt)
+            self.primary.update(time, dt)
             return
         primary = self.primary
         for child in self.children:
@@ -349,11 +350,16 @@ class SimpleSystem(StellarSystem):
                         primary.add_shadow_target(child)
                 if check_primary:
                     #TODO: The test should be done on the actual shadow size, not the resolved state of the child
-                    if child.resolved and child.check_cast_shadow_on(primary):
+                    if child.check_cast_shadow_on(primary):
                         #print(child.get_friendly_name(), "casts shadow on", primary.get_friendly_name())
                         child.add_shadow_target(primary)
         for child in self.children:
             child.end_shadows_update()
+
+    def update_obs(self, observer):
+        StellarSystem.update_obs(self, observer)
+        if not self.visible or not self.resolved:
+            self.primary.update_obs(observer)
 
 class Barycenter(StellarSystem):
     def __init__(self, *args, **kwargs):
