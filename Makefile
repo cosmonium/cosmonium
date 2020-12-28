@@ -93,7 +93,7 @@ endif
 
 PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION)/panda3d-$(PANDA3D_VERSION)+fp64+opt-cp37-cp37m-$(PLATFORM).whl
 
-build: build-source update-mo update-data-mo
+build: build-source build-version update-mo update-data-mo
 
 build-source:
 	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON="$(PYTHON)" PYTHON_VERSION=${PYTHON_VERSION} OPTIONS="$(SOURCE_OPTIONS)"
@@ -121,6 +121,13 @@ update-data-po:
 update-data-mo:
 	@cd data/po && "$(MAKE)" update-mo
 
+build-version:
+ifneq ($(VERSION),)
+	@echo 'version=$(VERSION)' > cosmonium/buildversion.py
+else
+	@rm -f cosmonium/buildversion.py
+endif
+
 clean:
 	@cd source && "$(MAKE)" clean
 
@@ -130,13 +137,6 @@ BUILD_REQ:=
 ifeq ($(REQUIREMENTS),)
     REQUIREMENTS=source/requirements-$(PLATFORM).txt
     BUILD_REQ:=build-req
-endif
-
-build-version:
-ifneq ($(VERSION),)
-	@echo 'version=$(VERSION)' > cosmonium/buildversion.py
-else
-	@rm -f cosmonium/buildversion.py
 endif
 
 build-req:
