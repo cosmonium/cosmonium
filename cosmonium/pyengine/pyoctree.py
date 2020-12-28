@@ -27,6 +27,8 @@ from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 from math import sqrt
 
 def OctreeLeaf(ref_object, *args):
+    #TODO: We should use the actual anchor as leaf...
+    ref_object.anchor._global_position = args[0]
     ref_object.anchor._abs_magnitude = args[1]
     return ref_object
 
