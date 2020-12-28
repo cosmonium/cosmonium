@@ -65,7 +65,7 @@ class BodyController():
         Return True if the update method should be called this cycle.
         The default implementation returns True only if the body is visible.
         """
-        return self.body.visible
+        return self.body.anchor.visible
 
     def update(self, time, dt):
         """
