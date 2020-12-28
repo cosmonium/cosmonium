@@ -28,7 +28,7 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from cosmonium.version import version
+from cosmonium.version import version_str
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
 requirements_path = None
@@ -57,7 +57,7 @@ if requirements_path is None:
 
 config = {
     'name': "cosmonium",
-    'version': version,
+    'version': version_str,
     'license': 'GPLv3+',
     'options': {
         'build_apps': {
