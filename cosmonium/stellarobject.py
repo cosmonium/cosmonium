@@ -179,7 +179,7 @@ class StellarAnchor():
         self.resolved = resolved
         self.visible_size = visible_size
 
-    def update_scene(self, camera_pos):
+    def update_scene(self):
         if self.body.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             self.scene_rel_position = self.rel_position + self.vector_to_obs * self._height_under
             distance_to_obs = self.distance_to_obs - self._height_under

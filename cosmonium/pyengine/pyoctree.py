@@ -27,6 +27,7 @@ from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 from math import sqrt
 
 def OctreeLeaf(ref_object, *args):
+    ref_object.anchor._abs_magnitude = args[1]
     return ref_object
 
 class OctreeNode(object):
@@ -202,18 +203,21 @@ class VisibleObjectsTraverser(object):
             rel_position = global_delta + local_delta
             distance_to_obs = rel_position.length()
             vector_to_obs = -rel_position / distance_to_obs
-            leaf.vector_to_obs = vector_to_obs
-            leaf.distance_to_obs = distance_to_obs
-            leaf.rel_position = rel_position
+            anchor.vector_to_obs = vector_to_obs
+            anchor.distance_to_obs = distance_to_obs
+            anchor.rel_position = rel_position
             if distance_to_obs > 0.0:
                 visible_size = leaf._extend / (distance_to_obs * pixel_size)
+                resolved = visible_size > min_body_size
             else:
                 visible_size = 0.0
+                resolved = True
             leaf.visible = True
-            leaf.resolved = visible_size > min_body_size
-            leaf.visible_size = visible_size
-            leaf._app_magnitude = leaf.get_app_magnitude()
+            anchor.visible = True
+            anchor.resolved = resolved
+            anchor.visible_size = visible_size
+            anchor._app_magnitude = leaf.get_app_magnitude()
 
     def update_scene_info(self, midPlane, scale):
-        for leaf in self.to_update:
+        for leaf in self.collected_leaves:
             leaf.anchor.update_scene()

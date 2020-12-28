@@ -223,9 +223,8 @@ class StellarSystem(StellarObject):
     def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
         if not self.anchor.visible or not self.anchor.resolved: return
         pixel_size = observer.pixel_size
-        camera_position = observer._position
         for child in self.children:
-            child.anchor.update_scene(camera_position)
+            child.anchor.update_scene()
             if child.has_orbit and child.anchor.orbit.dynamic and child.anchor.orbit.get_apparent_radius() / (child.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
                 orbits_renderer.add_orbit(child)
             if child.anchor.visible:
@@ -371,7 +370,6 @@ class OctreeSystem(StellarSystem):
     def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
         self.traverser.update_scene_info(observer.midPlane, settings.scale)
         pixel_size = observer.pixel_size
-        camera_position = observer._position
         if hasOctreeLeaf:
             for leaf in self.to_update_leaves:
                 obj = leaf.get_object().anchor
@@ -388,7 +386,7 @@ class OctreeSystem(StellarSystem):
             if leaf.anchor.resolved:
                 self.resolved.append(leaf)
                 if not leaf.virtual_object:
-                    leaf.anchor.update_scene(camera_position)
+                    leaf.anchor.update_scene()
                     resolved_renderer.add_body(leaf)
                 leaf.update_scene_and_render(observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer)
             labels_renderer.add_label(leaf)
