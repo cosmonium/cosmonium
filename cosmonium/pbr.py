@@ -190,7 +190,7 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
 
     def update_shader_shape(self, shape, appearance):
         LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.vector_to_star
+        light_dir = shape.owner.anchor.vector_to_star
         light_color = shape.owner.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
