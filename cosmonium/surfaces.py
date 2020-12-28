@@ -95,6 +95,9 @@ class Surface(ShapeObject):
         #Add self-shadowing for non-spherical objects
         #TODO: It's a bit convoluted to do it like that...
         if not self.shape.is_spherical() and self.owner.anchor.visible and self.owner.anchor.resolved:
+            #TODO: This should be done in a stage between update_obs and update_scene
+            if self.shadow_caster is None:
+                self.create_shadows()
             self.shadow_caster.add_target(self, self_shadow=True)
 
     def get_average_radius(self):
