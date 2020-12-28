@@ -380,6 +380,7 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         self.sync = None
         self.track = None
+        self.extre = []
         self.fly = False
         self.nav_controllers = []
         self.nav = None
@@ -997,25 +998,31 @@ class Cosmonium(CosmoniumBase):
         self.ship.update_obs(self.observer)
         self.ship.check_visibility(frustum, pixel_size)
 
+    def _add_extra(self, to_add):
+        if to_add is None: return
+        if to_add.parent is not None and to_add.parent is not self.universe:
+            self._add_extra(to_add.parent)
+        if not to_add in self.extra:
+            self.extra.append(to_add)
+
     def update_extra(self, *args):
+        self.extra = []
+        for body in args:
+            self._add_extra(body)
+        for body in self.extra:
+            body.update_simple(self.time.time_full)
+
+    def update_extra_observer(self):
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
         camera_global_position = self.observer.camera_global_pos
         camera_local_position = self.observer._position
-        extra = []
-        for body in args:
-            to_add = body
-            while to_add is not None and to_add is not self.universe:
-                if to_add not in extra:
-                    extra.append(to_add)
-                to_add = to_add.parent
-        for body in reversed(extra):
-            body.update_and_update_observer_simple(self.time.time_full,
-                                                   self.observer,
-                                                   frustum,
-                                                   camera_global_position,
-                                                   camera_local_position,
-                                                   pixel_size)
+        for body in self.extra:
+            body.update_observer_simple(self.observer,
+                                        frustum,
+                                        camera_global_position,
+                                        camera_local_position,
+                                        pixel_size)
 
     @pstat
     def update_instances(self):
@@ -1098,12 +1105,11 @@ class Cosmonium(CosmoniumBase):
 
         self.gui.update()
         self.time.update_time(dt)
-        self.nav.update(self.time.time_full, dt)
-
         self.update_extra(self.selected, self.follow, self.sync, self.track)
-        #self.ship.update(self.time.time_full, dt)
+        self.nav.update(self.time.time_full, dt)
         self.update_ship(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
+        self.update_extra_observer()
 
         update = pstats.levelpstat('update', 'Bodies')
         obs = pstats.levelpstat('obs', 'Bodies')

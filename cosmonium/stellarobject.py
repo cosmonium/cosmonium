@@ -523,6 +523,28 @@ class StellarObject(LabelledObject):
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.frustum, self.context.observer.pixel_size)
 
+    def update(self, time):
+        StellarObject.nb_update += 1
+        self.anchor.update(time)
+        LabelledObject.update(self, time, 0) #TODO: add dt !
+
+    def update_simple(self, time):
+        self.update(time)
+
+    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.anchor.update_observer(frustum, camera_global_position, camera_local_position, pixel_size)
+        #TODO; needed for the components
+        self.visible = self.anchor.visible
+        if self.anchor.resolved:
+            self.anchor._height_under = self.get_height_under(observer._position)
+        else:
+            self.anchor._height_under = self.get_apparent_radius()
+        LabelledObject.update_obs(self, observer)
+        LabelledObject.check_visibility(self, frustum, pixel_size)
+
+    def update_observer_simple(self,  observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
     def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         StellarObject.nb_update += 1
         self.anchor.update(time)
@@ -539,7 +561,6 @@ class StellarObject(LabelledObject):
 
     def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         self.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-
 
     def check_and_update_instance(self, camera_pos, camera_rot):
         StellarObject.nb_instance += 1
