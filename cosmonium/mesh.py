@@ -42,7 +42,7 @@ def init_mesh_loader():
         gltf.patch_loader(None)
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
-    get_model_path().prepend_directory(os.path.join(main_dir, 'models'))
+    get_model_path().prepend_directory(Filename.from_os_specific(os.path.join(main_dir, 'models')))
 
 def load_model(pattern, callback=None, context=defaultDirContext):
     filename = context.find_model(pattern)
