@@ -1,4 +1,5 @@
 PLATFORM=
+TARGET_PLATFORM=
 PYTHON_VERSION=3
 PYTHON=python$(PYTHON_VERSION)
 SOURCE_TARGET=build
@@ -91,7 +92,11 @@ ifeq ($(PLATFORM),)
     $(error "Unknown platform !")
 endif
 
-PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION)/panda3d-$(PANDA3D_VERSION)+fp64+opt-cp37-cp37m-$(PLATFORM).whl
+ifeq ($(TARGET_PLATFORM),)
+  TARGET_PLATFORM=$(PLATFORM)
+endif
+
+PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION)/panda3d-$(PANDA3D_VERSION)+fp64+opt-cp37-cp37m-$(TARGET_PLATFORM).whl
 
 build: build-source build-version update-mo update-data-mo
 
@@ -135,7 +140,7 @@ ifeq ($(RELEASE),1)
 BUILD_REQ:=
 
 ifeq ($(REQUIREMENTS),)
-    REQUIREMENTS=source/requirements-$(PLATFORM).txt
+    REQUIREMENTS=source/requirements-$(TARGET_PLATFORM).txt
     BUILD_REQ:=build-req
 endif
 
@@ -149,11 +154,12 @@ endif
 	@cat $(REQUIREMENTS)
 
 bapp: build-version $(BUILD_REQ)
-	@echo "Building for $(PLATFORM)"
-	$(PYTHON) setup.py build_apps -p $(PLATFORM) -r $(REQUIREMENTS)
+	@echo "Building for $(TARGET_PLATFORM)"
+	$(PYTHON) setup.py build_apps -p $(TARGET_PLATFORM) -r $(REQUIREMENTS)
 
 bdist: build-version $(BUILD_REQ)
-	$(PYTHON) setup.py bdist_apps -p $(PLATFORM) -r $(REQUIREMENTS)
+	@echo "Building for $(TARGET_PLATFORM)"
+	$(PYTHON) setup.py bdist_apps -p $(TARGET_PLATFORM) -r $(REQUIREMENTS)
 else
 bapp:
 	@echo "bapp can only be invoked in RELEASE mode"
