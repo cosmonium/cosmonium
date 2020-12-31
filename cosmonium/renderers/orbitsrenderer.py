@@ -30,7 +30,7 @@ class OrbitsRenderer(object):
         self.old_orbits = self.orbits
         self.orbits = []
 
-    def update(self, observer):
+    def render(self, observer):
         camera_pos = observer.get_camera_pos()
         camera_rot = observer.get_camera_rot()
         frustum = observer.rel_frustum

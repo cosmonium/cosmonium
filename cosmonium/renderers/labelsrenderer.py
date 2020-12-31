@@ -30,7 +30,7 @@ class LabelsRenderer(object):
         self.old_labels = self.labels
         self.labels = []
 
-    def update(self, observer):
+    def render(self, observer):
         camera_pos = observer.get_camera_pos()
         camera_rot = observer.get_camera_rot()
         frustum = observer.rel_frustum

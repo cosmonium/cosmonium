@@ -37,13 +37,8 @@ from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
+from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
-from .bodies import StellarBody, ReflectiveBody
-from .renderers.pointsrenderer import PointsRenderer
-from .renderers.resolvedrenderer import ResolvedRenderer
-from .renderers.labelsrenderer import LabelsRenderer
-from .renderers.orbitsrenderer import OrbitsRenderer
-from .bodies import StellarObject, StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
 from .universe import Universe
 from .annotations import Grid
@@ -475,10 +470,7 @@ class Cosmonium(CosmoniumBase):
         self.nav.register_events(self)
         self.gui.register_events(self)
 
-        self.points_renderer = PointsRenderer(self)
-        self.resolved_renderer = ResolvedRenderer(self)
-        self.labels_renderer = LabelsRenderer(self)
-        self.orbits_renderer = OrbitsRenderer(self)
+        self.renderer = Renderer(self)
         
         render.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
@@ -1033,15 +1025,8 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_instances(self):
-        self.universe.update_scene_and_render(self.observer,
-                                              self.points_renderer,
-                                              self.resolved_renderer,
-                                              self.labels_renderer,
-                                              self.orbits_renderer)
-        self.points_renderer.update(self.observer)
-        self.resolved_renderer.update(self.observer)
-        self.labels_renderer.update(self.observer)
-        self.orbits_renderer.update(self.observer)
+        self.universe.update_scene_and_render(self.observer, self.renderer)
+        self.renderer.render(self.observer)
         self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
@@ -1099,10 +1084,7 @@ class Cosmonium(CosmoniumBase):
     def time_task(self, task):
         # Reset all states
         self.to_update_extra = []
-        self.points_renderer.reset()
-        self.resolved_renderer.reset()
-        self.labels_renderer.reset()
-        self.orbits_renderer.reset()
+        self.renderer.reset()
 
         #Update time and camera
         if task is not None:

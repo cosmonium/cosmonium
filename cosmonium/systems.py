@@ -220,22 +220,15 @@ class StellarSystem(StellarObject):
             child.check_settings()
 
     @pstat
-    def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
+    def update_scene_and_render(self, observer, renderer):
+        self.anchor.update_scene()
         if not self.anchor.visible or not self.anchor.resolved: return
-        pixel_size = observer.pixel_size
         for child in self.children:
-            child.anchor.update_scene()
-            if child.has_orbit and child.anchor.orbit.dynamic and child.anchor.orbit.get_apparent_radius() / (child.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
-                orbits_renderer.add_orbit(child)
-            if child.anchor.visible:
-                points_renderer.add_point(child.anchor.point_color, child.anchor.scene_position, child.anchor.visible_size, child.anchor._app_magnitude, child.oid_color)
-                if child.has_resolved_halo:
-                    points_renderer.add_halo(child.anchor.point_color, child.anchor.scene_position, child.anchor.visible_size, child.anchor._app_magnitude, child.oid_color)
-                if child.anchor.resolved:
-                    if not child.virtual_object:
-                        resolved_renderer.add_body(child)
-                    child.update_scene_and_render(observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer)
-            labels_renderer.add_label(child)
+            child.update_scene_and_render(observer, renderer)
+
+    def update_scene_and_render_children(self, observer, renderer):
+        for child in self.children:
+            child.update_scene_and_render(observer, renderer)
 
     def remove_components(self):
         StellarObject.remove_components(self)
@@ -310,7 +303,6 @@ class OctreeSystem(StellarSystem):
         self.octree.traverse(self.traverser)
         self.to_update_leaves = self.traverser.get_leaves()
         self.to_remove = []
-        self.resolved = []
         if hasOctreeLeaf:
             self.to_update = []
             for leaf in self.to_update_leaves:
@@ -367,9 +359,8 @@ class OctreeSystem(StellarSystem):
         for component in self.components:
             component.check_settings()
 
-    def update_scene_and_render(self, observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer):
+    def update_scene_and_render(self, observer, renderer):
         self.traverser.update_scene_info(observer.midPlane, settings.scale)
-        pixel_size = observer.pixel_size
         if hasOctreeLeaf:
             for leaf in self.to_update_leaves:
                 obj = leaf.get_object().anchor
@@ -378,18 +369,9 @@ class OctreeSystem(StellarSystem):
                 obj.scene_scale_factor = leaf.scene_scale_factor
                 obj.scene_orientation = leaf.scene_orientation
         for leaf in self.to_update:
-            points_renderer.add_point(leaf.anchor.point_color, leaf.anchor.scene_position, leaf.anchor.visible_size, leaf.anchor._app_magnitude, leaf.oid_color)
-            if leaf.has_resolved_halo:
-                points_renderer.add_halo(leaf.anchor.point_color, leaf.anchor.scene_position, leaf.anchor.visible_size, leaf.anchor._app_magnitude, leaf.oid_color)
-            if leaf.has_orbit and leaf.anchor.orbit.dynamic and leaf.anchor.orbit.get_apparent_radius() / (leaf.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
-                orbits_renderer.add_orbit(leaf)
+            renderer.add_object(leaf)
             if leaf.anchor.resolved:
-                self.resolved.append(leaf)
-                if not leaf.virtual_object:
-                    leaf.anchor.update_scene()
-                    resolved_renderer.add_body(leaf)
-                leaf.update_scene_and_render(observer, points_renderer, resolved_renderer, labels_renderer, orbits_renderer)
-            labels_renderer.add_label(leaf)
+                leaf.update_scene_and_render_children(observer, renderer)
 
 class SimpleSystem(StellarSystem):
     def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):

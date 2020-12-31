@@ -32,7 +32,7 @@ class ResolvedRenderer(object):
         self.old_bodies = self.bodies
         self.bodies = []
 
-    def update(self, observer):
+    def render(self, observer):
         self.print_bodies()
         camera_pos = observer.get_camera_pos()
         orientation = observer.get_camera_rot()

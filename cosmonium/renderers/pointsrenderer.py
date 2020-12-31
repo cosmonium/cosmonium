@@ -43,7 +43,7 @@ class PointsRenderer(object):
         self.pointset.reset()
         self.haloset.reset()
 
-    def update(self, observer):
+    def render(self, observer):
         self.pointset.update()
         self.haloset.update()
         
