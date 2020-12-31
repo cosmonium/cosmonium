@@ -119,7 +119,7 @@ class StellarObject(LabelledObject):
         #if not (orbit.dynamic or rotation.dynamic):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         #else:
-        self.anchor = DynamicStellarAnchor(self, orbit, rotation, point_color)
+        self.anchor = self.create_anchor(orbit, rotation, point_color)
         self.abs_magnitude = 99.0
         self.star = None
         self.oid = None
@@ -137,6 +137,9 @@ class StellarObject(LabelledObject):
         self.reference_axis = None
         self.init_components = False
         objectsDB.add(self)
+
+    def create_anchor(self, orbit, rotation, point_color):
+        return DynamicStellarAnchor(self, orbit, rotation, point_color)
 
     def is_system(self):
         return False
@@ -383,12 +386,6 @@ class StellarObject(LabelledObject):
     def get_height_under(self, position):
         return self.get_apparent_radius()
 
-    def calc_visible_size(self, pixel_size):
-        if self.anchor.distance_to_obs > 0.0:
-            return self.get_extend() / (self.anchor.distance_to_obs * pixel_size)
-        else:
-            return 0.0
-
     def set_visibility_override(self, override):
         if override == self.anchor.visibility_override: return
         if override:
@@ -401,45 +398,6 @@ class StellarObject(LabelledObject):
                 self.system.set_visibility_override(override)
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.frustum, self.context.observer.pixel_size)
-
-    def update(self, time):
-        StellarObject.nb_update += 1
-        self.anchor.update(time)
-        LabelledObject.update(self, time, 0) #TODO: add dt !
-
-    def update_simple(self, time):
-        self.update(time)
-
-    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.anchor.update_observer(frustum, camera_global_position, camera_local_position, pixel_size)
-        #TODO; needed for the components
-        self.visible = self.anchor.visible
-        if self.anchor.resolved:
-            self.anchor._height_under = self.get_height_under(observer._position)
-        else:
-            self.anchor._height_under = self.get_apparent_radius()
-        LabelledObject.update_obs(self, observer)
-        LabelledObject.check_visibility(self, frustum, pixel_size)
-
-    def update_observer_simple(self,  observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
-
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        StellarObject.nb_update += 1
-        self.anchor.update(time)
-        self.anchor.update_observer(frustum, camera_global_position, camera_local_position, pixel_size)
-        #TODO; needed for the components
-        self.visible = self.anchor.visible
-        if self.anchor.resolved:
-            self.anchor._height_under = self.get_height_under(observer._position)
-        else:
-            self.anchor._height_under = self.get_apparent_radius()
-        LabelledObject.update(self, time, 0) #TODO: add dt !
-        LabelledObject.update_obs(self, observer)
-        LabelledObject.check_visibility(self, frustum, pixel_size)
-
-    def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def check_and_update_instance(self, camera_pos, camera_rot):
         StellarObject.nb_instance += 1

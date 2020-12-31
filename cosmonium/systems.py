@@ -27,6 +27,7 @@ from .catalogs import ObjectsDB, objectsDB
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, app_to_abs_mag
 from .foundation import CompositeObject
 from .octree import OctreeNode, OctreeLeaf, VisibleObjectsTraverser, hasOctreeLeaf
+from .anchors import SystemAnchor
 from .pstats import pstat
 from .astro import units
 
@@ -48,6 +49,9 @@ class StellarSystem(StellarObject):
         self.has_halo = False
         self.was_visible = False
         self.abs_magnitude = None
+
+    def create_anchor(self, orbit, rotation, point_color):
+        return SystemAnchor(self, orbit, rotation, point_color)
 
     def is_system(self):
         return True
@@ -132,10 +136,12 @@ class StellarSystem(StellarObject):
 
     def add_child_fast(self, child):
         if child.parent is not None:
+            child.parent.anchor.remove_child(child.anchor)
             child.parent.remove_child_fast(child)
-        self.children_map.add(child)
         #print("Add child", child.get_name(), "to", self.get_name())
+        self.children_map.add(child)
         self.children.append(child)
+        self.anchor.add_child(child.anchor)
         child.set_parent(self)
         #TODO: Temporary workaround until multiple stars are supported
         if self.star is not None:
@@ -144,10 +150,12 @@ class StellarSystem(StellarObject):
     #TODO: This is a quick workaround until stars of a system are properly managed
     def add_child_star_fast(self, child):
         if child.parent is not None:
+            child.parent.anchor.remove_child(child.anchor)
             child.parent.remove_child_fast(child)
-        self.children_map.add(child)
         #print("Add child", child.get_name(), "to", self.get_name())
+        self.children_map.add(child)
         self.children.append(child)
+        self.anchor.add_child(child.anchor)
         child.set_parent(self)
         self.star = child
         self.has_halo = True
@@ -170,6 +178,7 @@ class StellarSystem(StellarObject):
         child.set_parent(None)
         child.set_star(None)
         self.children_map.remove(child)
+        self.anchor.remove_child(child.anchor)
 
     def remove_child(self, child):
         self.remove_child_fast(child)
@@ -196,21 +205,6 @@ class StellarSystem(StellarObject):
         StellarObject.set_star(self, star)
         for child in self.children:
             child.set_star(star)
-
-    @pstat
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        StellarObject.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-        #No need to update the children if not visible
-        if not self.anchor.visible or not self.anchor.resolved: return
-        for child in self.children:
-            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-
-    def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        StellarObject.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-
-    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        for child in self.children:
-            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def check_settings(self):
         StellarObject.check_settings(self)
@@ -341,16 +335,13 @@ class OctreeSystem(StellarSystem):
         return nearest_system
 
     def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        CompositeObject.update(self, time, 0) #TODO: Add dt !
-        CompositeObject.update_obs(self, observer)
-        CompositeObject.check_visibility(self, frustum, pixel_size)
         self.build_octree_cells_list(observer, settings.lowest_app_magnitude)
         self.update_pos_and_visibility(observer)
         for leaf in self.to_update:
-            if isinstance(leaf, StellarSystem) and leaf.anchor.resolved:
-                leaf.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+            if isinstance(leaf.anchor, SystemAnchor) and leaf.anchor.resolved:
+                leaf.anchor.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
             elif not leaf.anchor.update_frozen:
-                leaf.update_and_update_observer_simple(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+                leaf.anchor.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def check_settings(self):
         CompositeObject.check_settings(self)

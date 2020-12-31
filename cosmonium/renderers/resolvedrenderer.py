@@ -36,7 +36,12 @@ class ResolvedRenderer(object):
         self.print_bodies()
         camera_pos = observer.get_camera_pos()
         orientation = observer.get_camera_rot()
+        frustum = observer.rel_frustum
+        pixel_size = observer.pixel_size
         for body in self.bodies:
+            #TODO: this will update the body's components
+            body.update_obs(observer)
+            body.check_visibility(frustum, pixel_size)
             if isinstance(body, StellarSystem):
                 body.check_and_update_instance_children(camera_pos, orientation)
             else:

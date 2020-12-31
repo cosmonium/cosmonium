@@ -40,6 +40,7 @@ from .opengl import request_opengl_config, check_opengl_config, create_main_wind
 from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
+from .bodies import StellarBody, ReflectiveBody
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame, SolBarycenter
@@ -1009,7 +1010,7 @@ class Cosmonium(CosmoniumBase):
         for body in args:
             self._add_extra(body)
         for body in self.extra:
-            body.update_simple(self.time.time_full)
+            body.anchor.update_simple(self.time.time_full)
 
     def update_extra_observer(self):
         frustum = self.observer.rel_frustum
@@ -1017,11 +1018,11 @@ class Cosmonium(CosmoniumBase):
         camera_global_position = self.observer.camera_global_pos
         camera_local_position = self.observer._position
         for body in self.extra:
-            body.update_observer_simple(self.observer,
-                                        frustum,
-                                        camera_global_position,
-                                        camera_local_position,
-                                        pixel_size)
+            body.anchor.update_observer_simple(self.observer,
+                                               frustum,
+                                               camera_global_position,
+                                               camera_local_position,
+                                               pixel_size)
 
     @pstat
     def update_instances(self):

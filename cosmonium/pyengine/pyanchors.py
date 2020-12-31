@@ -25,19 +25,14 @@ from panda3d.core import LPoint3d, LQuaterniond, LColor
 from ..foundation import BaseObject
 from .. import settings
 
-class StellarAnchor():
-    def __init__(self, body, orbit, rotation, point_color):
+class AnchorBase():
+    def __init__(self, body, point_color):
         self.body = body
-        self.orbit = orbit
-        self.rotation = rotation
-        #TODO: Should be done properly
-        orbit.body = body
-        rotation.body = body
         #TODO: To remove
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = point_color
-        self.star = None
+        self.parent = None
         #Flags
         self.visible = False
         self.visibility_override = False
@@ -76,7 +71,49 @@ class StellarAnchor():
     def update(self, time):
         pass
 
-    def update_observer(self, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_simple(self, time):
+        self.update(time)
+
+    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        pass
+
+    def update_observer_simple(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.update(time)
+        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.update_simple(time)
+        self.update_observer_simple(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_scene(self):
+        pass
+
+class CartesianAnchor(AnchorBase):
+    pass
+
+class StellarAnchor(AnchorBase):
+    def __init__(self, body, orbit, rotation, point_color):
+        AnchorBase.__init__(self, body, point_color)
+        self.orbit = orbit
+        self.rotation = rotation
+        #TODO: Should be done properly
+        orbit.body = body
+        rotation.body = body
+        self.star = None
+
+    def update(self, time):
+        self._orientation = self.rotation.get_rotation_at(time)
+        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
+        self._local_position = self.orbit.get_position_at(time)
+        self._global_position = self.body.parent.anchor._global_position + self.orbit.get_global_position_at(time)
+        self._position = self._global_position + self._local_position
+        if self.star is not None:
+            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
+
+    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         global_delta = self._global_position - camera_global_position
         local_delta = self._local_position - camera_local_position
         rel_position = global_delta + local_delta
@@ -126,21 +163,36 @@ class FixedStellarAnchor(StellarAnchor):
         #self.update_frozen = True
         #self.update(0)
 
-    def update(self, time):
-        self._orientation = self.rotation.get_rotation_at(time)
-        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
-        self._local_position = self.orbit.get_position_at(time)
-        self._global_position = self.orbit.get_global_position_at(time)
-        self._position = self._global_position + self._local_position
-        if self.star is not None:
-            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
-
 class DynamicStellarAnchor(StellarAnchor):
-    def update(self, time):
-        self._orientation = self.rotation.get_rotation_at(time)
-        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
-        self._local_position = self.orbit.get_position_at(time)
-        self._global_position = self.body.parent.anchor._global_position + self.orbit.get_global_position_at(time)
-        self._position = self._global_position + self._local_position
-        if self.star is not None:
-            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
+    pass
+
+class SystemAnchor(DynamicStellarAnchor):
+    def __init__(self, body, orbit, rotation, point_color):
+        DynamicStellarAnchor.__init__(self, body, orbit, rotation, point_color)
+        self.children = []
+
+    def add_child(self, child):
+        self.children.append(child)
+
+    def remove_child(self, child):
+        try:
+            self.children.remove(child)
+        except ValueError:
+            pass
+
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        DynamicStellarAnchor.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+        if not self.visible or not self.resolved: return
+        for child in self.children:
+            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        if not self.visible or not self.resolved: return
+        for child in self.children:
+            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_scene(self):
+        DynamicStellarAnchor.update_scene(self)
+        if not self.visible or not self.resolved: return
+        for child in self.children:
+            child.update_scene()
