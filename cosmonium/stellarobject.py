@@ -94,6 +94,7 @@ class FixedOrbitLabel(StellarBodyLabel):
         self.fade = clamp(self.fade, 0.0, 1.0)
 
 class StellarObject(LabelledObject):
+    anchor_class = 0
     has_rotation_axis = False
     has_reference_axis = False
     has_orbit = True
@@ -119,7 +120,7 @@ class StellarObject(LabelledObject):
         #if not (orbit.dynamic or rotation.dynamic):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         #else:
-        self.anchor = self.create_anchor(orbit, rotation, point_color)
+        self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
         self.abs_magnitude = 99.0
         self.star = None
         self.oid = None
@@ -138,8 +139,8 @@ class StellarObject(LabelledObject):
         self.init_components = False
         objectsDB.add(self)
 
-    def create_anchor(self, orbit, rotation, point_color):
-        return DynamicStellarAnchor(self, orbit, rotation, point_color)
+    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+        return DynamicStellarAnchor(anchor_class, self, orbit, rotation, point_color)
 
     def is_system(self):
         return False

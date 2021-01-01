@@ -24,6 +24,7 @@ from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQ
 from panda3d.core import DirectionalLight
 
 from .stellarobject import StellarObject
+from .anchors import StellarAnchor
 from .systems import SimpleSystem
 from .foundation import VisibleObject
 from .shapes import SphereShape, ScaledSphereShape
@@ -285,6 +286,7 @@ class StellarBody(StellarObject):
             self.clouds.toggle_shown()
 
 class ReflectiveBody(StellarBody):
+    anchor_class = StellarAnchor.Reflective
     def __init__(self, *args, **kwargs):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
@@ -408,6 +410,7 @@ class ReflectiveBody(StellarBody):
         StellarBody.remove_components(self)
 
 class EmissiveBody(StellarBody):
+    anchor_class = StellarAnchor.Emissive
     has_halo = True
     has_resolved_halo = True
     def __init__(self, *args, **kwargs):

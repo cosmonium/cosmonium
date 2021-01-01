@@ -37,6 +37,7 @@ from math import sqrt
 from time import time
 
 class StellarSystem(StellarObject):
+    anchor_class = SystemAnchor.System
     virtual_object = True
     support_offset_body_center = False
 
@@ -50,8 +51,8 @@ class StellarSystem(StellarObject):
         self.was_visible = False
         self.abs_magnitude = None
 
-    def create_anchor(self, orbit, rotation, point_color):
-        return SystemAnchor(self, orbit, rotation, point_color)
+    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+        return SystemAnchor(anchor_class, self, orbit, rotation, point_color)
 
     def is_system(self):
         return True

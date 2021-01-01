@@ -26,7 +26,11 @@ from ..foundation import BaseObject
 from .. import settings
 
 class AnchorBase():
-    def __init__(self, body, point_color):
+    Emissive   = 1
+    Reflective = 2
+    System     = 4
+    def __init__(self, anchor_class, body, point_color):
+        self.anchor_class = anchor_class
         self.body = body
         #TODO: To remove
         if point_color is None:
@@ -95,8 +99,8 @@ class CartesianAnchor(AnchorBase):
     pass
 
 class StellarAnchor(AnchorBase):
-    def __init__(self, body, orbit, rotation, point_color):
-        AnchorBase.__init__(self, body, point_color)
+    def __init__(self, anchor_class, body, orbit, rotation, point_color):
+        AnchorBase.__init__(self, anchor_class, body, point_color)
         self.orbit = orbit
         self.rotation = rotation
         #TODO: Should be done properly
@@ -167,8 +171,8 @@ class DynamicStellarAnchor(StellarAnchor):
     pass
 
 class SystemAnchor(DynamicStellarAnchor):
-    def __init__(self, body, orbit, rotation, point_color):
-        DynamicStellarAnchor.__init__(self, body, orbit, rotation, point_color)
+    def __init__(self, anchor_class, body, orbit, rotation, point_color):
+        DynamicStellarAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
         self.children = []
 
     def add_child(self, child):
