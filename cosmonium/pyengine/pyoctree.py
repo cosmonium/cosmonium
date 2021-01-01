@@ -146,10 +146,9 @@ class OctreeNode(object):
         print("Nb leaves:", self.nb_leaves)
 
 class VisibleObjectsTraverser(object):
-    def __init__(self, frustum, limit, update_id):
+    def __init__(self, frustum, limit):
         self.frustum = frustum
         self.limit = limit
-        self.update_id = update_id
         self.collected_leaves = []
 
     def get_num_leaves(self):
@@ -194,4 +193,3 @@ class VisibleObjectsTraverser(object):
                     add = True
             if add:
                 self.collected_leaves.append(leaf)
-                leaf.update_id = self.update_id

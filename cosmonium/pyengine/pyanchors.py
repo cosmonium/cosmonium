@@ -243,7 +243,7 @@ class OctreeAnchor(SystemAnchor):
     def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         if not self.visible or not self.resolved: return
         #TODO: Add limit in parameters
-        traverser = VisibleObjectsTraverser(observer.frustum, 6.0, self.update_id)
+        traverser = VisibleObjectsTraverser(observer.frustum, 6.0)
         self.octree.traverse(traverser)
         self.to_update = traverser.get_leaves()
         for to_update in self.to_update:
