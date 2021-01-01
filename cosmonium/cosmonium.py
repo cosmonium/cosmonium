@@ -1026,7 +1026,7 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_instances(self):
-        self.universe.update_scene_and_render(self.observer, self.renderer)
+        self.universe.update_scene_and_render_children(self.observer, self.renderer)
         self.renderer.render(self.observer)
         self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for controller in self.controllers_to_update:

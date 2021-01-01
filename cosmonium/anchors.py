@@ -20,8 +20,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 try:
-    from cosmonium_engine import StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor
+    from cosmonium_engine import UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.pyanchors import StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor
+    from .pyengine.pyanchors import UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor

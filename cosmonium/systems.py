@@ -20,21 +20,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LColor
-
 from .stellarobject import StellarObject
 from .catalogs import ObjectsDB, objectsDB
-from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, app_to_abs_mag
+from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
 from .foundation import CompositeObject
-from .octree import OctreeNode, OctreeLeaf, VisibleObjectsTraverser, hasOctreeLeaf
-from .anchors import SystemAnchor
+from .anchors import SystemAnchor, OctreeAnchor
 from .pstats import pstat
-from .astro import units
-
-from . import settings
-
-from math import sqrt
-from time import time
 
 class StellarSystem(StellarObject):
     anchor_class = SystemAnchor.System
@@ -218,6 +209,7 @@ class StellarSystem(StellarObject):
     def update_scene_and_render(self, observer, renderer):
         self.anchor.update_scene()
         if not self.anchor.visible or not self.anchor.resolved: return
+        self.update_scene_and_render_children(observer, renderer)
         for child in self.children:
             child.update_scene_and_render(observer, renderer)
 
@@ -254,24 +246,9 @@ class StellarSystem(StellarObject):
 class OctreeSystem(StellarSystem):
     def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
-        #TODO: Size and magnitude should not be hardcoded
-        self.octree_width = 100000.0 * units.Ly
-        abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
-        #TODO: position should be extracted from orbit
-        self.octree = OctreeNode(0,
-                             LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             self.octree_width,
-                             abs_mag)
-        self.update_id = 0
-        self.previous_leaves = []
-        self.to_update_leaves = []
-        self.to_update = []
-        self.to_remove = []
-        self.nb_cells = 0
-        self.nb_leaves = 0
-        self.nb_leaves_in_cells = 0
-        self.dump_octree = False
-        self.dump_octree_stats = False
+
+    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+        return OctreeAnchor(anchor_class, self, orbit, rotation, point_color)
 
     def dumpOctree(self):
         self.octree.dump_octree()
@@ -283,87 +260,28 @@ class OctreeSystem(StellarSystem):
         self.dump_octree_stats = not self.dump_octree_stats
 
     def create_octree(self):
-        print("Creating octree...")
-        start = time()
-        for child in self.children:
-            self.octree.add(OctreeLeaf(child, child.get_global_position(), child.get_abs_magnitude(), child.get_extend(), child.anchor.point_color))
-        end = time()
-        print("Creation time:", end - start)
-
-    @pstat
-    def build_octree_cells_list(self, observer, limit):
-        self.update_id += 1
-        self.previous_leaves = self.to_update
-        self.traverser = VisibleObjectsTraverser(observer.frustum, limit, self.update_id)
-        self.octree.traverse(self.traverser)
-        self.to_update_leaves = self.traverser.get_leaves()
-        self.to_remove = []
-        if hasOctreeLeaf:
-            self.to_update = []
-            for leaf in self.to_update_leaves:
-                obj = leaf.get_object()
-                self.to_update.append(obj)
-                obj.update_id = leaf.get_update_id()
-        else:
-            self.to_update = self.to_update_leaves
-        for old in self.previous_leaves:
-            if old.update_id != self.update_id:
-                self.to_remove.append(old)
-
-    def update_pos_and_visibility(self, observer):
-        pixel_size = observer.pixel_size
-        camera_global_pos = observer.camera_global_pos
-        camera_position = observer._position
-        self.traverser.update_pos_and_visibility(camera_global_pos, camera_position, pixel_size, settings.min_body_size)
-        if hasOctreeLeaf:
-            for leaf in self.to_update_leaves:
-                obj = leaf.get_object().anchor
-                obj.vector_to_obs = leaf.vector_to_obs
-                obj.distance_to_obs = leaf.distance_to_obs
-                obj.rel_position = leaf.rel_position
-                obj._app_magnitude = leaf.app_magnitude
-                obj.visible = leaf.visible
-                obj.resolved = leaf.resolved
-                obj.visible_size = leaf.visible_size
+        self.anchor.create_octree()
 
     def get_nearest_system(self):
         nearest_system = None
         nearest_system_distance = float('inf')
-        for leaf in self.to_update:
-            if leaf.anchor.distance_to_obs < nearest_system_distance:
-                nearest_system = leaf
-                nearest_system_distance = leaf.anchor.distance_to_obs
+        for leaf in self.anchor.to_update:
+            if leaf.distance_to_obs < nearest_system_distance:
+                nearest_system = leaf.body
+                nearest_system_distance = leaf.distance_to_obs
         return nearest_system
-
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.build_octree_cells_list(observer, settings.lowest_app_magnitude)
-        self.update_pos_and_visibility(observer)
-        for leaf in self.to_update:
-            if isinstance(leaf.anchor, SystemAnchor) and leaf.anchor.resolved:
-                leaf.anchor.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-            elif not leaf.anchor.update_frozen:
-                leaf.anchor.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def check_settings(self):
         CompositeObject.check_settings(self)
-        for leaf in self.to_update:
-            leaf.check_settings()
+        for leaf in self.anchor.to_update:
+            leaf.body.check_settings()
         for component in self.components:
             component.check_settings()
 
-    def update_scene_and_render(self, observer, renderer):
-        self.traverser.update_scene_info(observer.midPlane, settings.scale)
-        if hasOctreeLeaf:
-            for leaf in self.to_update_leaves:
-                obj = leaf.get_object().anchor
-                obj.scene_position = leaf.scene_position
-                obj.scene_distance = leaf.scene_distance
-                obj.scene_scale_factor = leaf.scene_scale_factor
-                obj.scene_orientation = leaf.scene_orientation
-        for leaf in self.to_update:
-            renderer.add_object(leaf)
-            if leaf.anchor.resolved:
-                leaf.update_scene_and_render_children(observer, renderer)
+    def update_scene_and_render_children(self, observer, renderer):
+        self.anchor.update_scene_children()
+        for child in self.anchor.to_update:
+            child.body.update_scene_and_render(observer, renderer)
 
 class SimpleSystem(StellarSystem):
     def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):

@@ -27,6 +27,7 @@ from .astro.rotations import FixedRotation
 from .astro.frame import AbsoluteReferenceFrame
 
 from .systems import OctreeSystem
+from .anchors import UniverseAnchor
 
 class Universe(OctreeSystem):
     def __init__(self, context):
@@ -35,6 +36,9 @@ class Universe(OctreeSystem):
                               rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
                               description='Universe')
         self.visible = True
+
+    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+        return UniverseAnchor(anchor_class, self, orbit, rotation, point_color)
 
     def get_fullname(self, separator='/'):
         return ''
@@ -47,3 +51,6 @@ class Universe(OctreeSystem):
     
     def get_abs_rotation(self):
         return self._orientation
+
+    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        self.anchor.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)

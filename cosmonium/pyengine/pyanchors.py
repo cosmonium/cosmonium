@@ -23,7 +23,13 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LQuaterniond, LColor
 
 from ..foundation import BaseObject
+from ..octree import OctreeNode, VisibleObjectsTraverser
+from ..astro import units
+from ..astro.astro import app_to_abs_mag
 from .. import settings
+
+from math import sqrt
+from time import time
 
 class AnchorBase():
     Emissive   = 1
@@ -49,6 +55,7 @@ class AnchorBase():
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
         self._equatorial = LQuaterniond()
+        self._abs_magnitude = None
         self._app_magnitude = None
         self._extend = 0.0
         #Scene parameters
@@ -61,6 +68,12 @@ class AnchorBase():
         self.scene_position = None
         self.scene_orientation = None
         self.scene_scale_factor = None
+
+    def get_global_position(self):
+        return self._global_position
+
+    def get_abs_magnitude(self):
+        return self._abs_magnitude
 
     def calc_global_distance_to(self, position):
         direction = self.get_position() - position
@@ -186,9 +199,7 @@ class SystemAnchor(DynamicStellarAnchor):
 
     def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         DynamicStellarAnchor.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-        if not self.visible or not self.resolved: return
-        for child in self.children:
-            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+        self.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
 
     def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         if not self.visible or not self.resolved: return
@@ -197,6 +208,54 @@ class SystemAnchor(DynamicStellarAnchor):
 
     def update_scene(self):
         DynamicStellarAnchor.update_scene(self)
+        self.update_scene_children()
+
+    def update_scene_children(self):
         if not self.visible or not self.resolved: return
         for child in self.children:
             child.update_scene()
+
+class OctreeAnchor(SystemAnchor):
+    def __init__(self, anchor_class, body, orbit, rotation, point_color):
+        SystemAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
+        #TODO: Turn this into a parameter or infer it from the children
+        self.octree_width = 100000.0 * units.Ly
+        #TODO: Should be configurable
+        abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
+        #TODO: position should be extracted from orbit
+        self.octree = OctreeNode(0,
+                             LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
+                             self.octree_width,
+                             abs_mag)
+        self.to_update = []
+
+    def create_octree(self):
+        print("Creating octree...")
+        start = time()
+        for child in self.children:
+            #TODO: this should be done properly at anchor creation
+            child.update(0)
+            child._abs_magnitude = child.body.get_abs_magnitude()
+            self.octree.add(child)
+        end = time()
+        print("Creation time:", end - start)
+
+    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+        if not self.visible or not self.resolved: return
+        #TODO: Add limit in parameters
+        traverser = VisibleObjectsTraverser(observer.frustum, 6.0, self.update_id)
+        self.octree.traverse(traverser)
+        self.to_update = traverser.get_leaves()
+        for to_update in self.to_update:
+            to_update.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+
+    def update_scene_children(self):
+        if not self.visible or not self.resolved: return
+        for child in self.to_update:
+            child.update_scene()
+
+class UniverseAnchor(OctreeAnchor):
+    def __init__(self, anchor_class, body, orbit, rotation, point_color):
+        OctreeAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
+        self.visible = True
+        self.resolved = True
