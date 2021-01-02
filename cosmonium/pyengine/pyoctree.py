@@ -67,6 +67,12 @@ class OctreeNode(object):
             if child is not None and traverser.enter(child):
                 child.traverse(traverser)
 
+    def traverse_new(self, traverser):
+        traverser.traverse_octree_node(self)
+        for child in self.children:
+            if child is not None and traverser.enter_octree_node(child):
+                child.traverse_new(traverser)
+
     def add(self, leaf):
         self._add(leaf, leaf._global_position, leaf._abs_magnitude)
 

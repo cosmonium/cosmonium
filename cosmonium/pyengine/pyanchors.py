@@ -25,7 +25,8 @@ from panda3d.core import LPoint3d, LQuaterniond, LColor
 from ..foundation import BaseObject
 from ..octree import OctreeNode, VisibleObjectsTraverser
 from ..astro import units
-from ..astro.astro import app_to_abs_mag
+from ..astro.astro import abs_to_app_mag, app_to_abs_mag
+
 from .. import settings
 
 from math import sqrt
@@ -68,6 +69,9 @@ class AnchorBase():
         self.scene_position = None
         self.scene_orientation = None
         self.scene_scale_factor = None
+
+    def traverse(self, visitor):
+        visitor.traverse_anchor(self)
 
     def get_global_position(self):
         return self._global_position
@@ -197,6 +201,10 @@ class SystemAnchor(DynamicStellarAnchor):
         except ValueError:
             pass
 
+    def traverse(self, visitor):
+        if visitor.enter_system(self):
+            visitor.traverse_system(self)
+
     def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         DynamicStellarAnchor.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
         self.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
@@ -229,6 +237,10 @@ class OctreeAnchor(SystemAnchor):
                              abs_mag)
         self.to_update = []
 
+    def traverse(self, visitor):
+        if visitor.enter_octree_node(self.octree):
+            self.octree.traverse_new(visitor)
+
     def create_octree(self):
         print("Creating octree...")
         start = time()
@@ -259,3 +271,65 @@ class UniverseAnchor(OctreeAnchor):
         OctreeAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
         self.visible = True
         self.resolved = True
+
+    def traverse(self, visitor):
+        self.octree.traverse_new(visitor)
+
+class AnchorTraverser:
+    def traverse_anchor(self, anchor):
+        pass
+
+    def enter_system(self, anchor):
+        pass
+
+    def traverse_system(self, anchor):
+        pass
+
+    def enter_octree_node(self, anchor):
+        pass
+
+    def traverse_octree_node(self, anchor):
+        pass
+
+class FindLightSourceTraverser(AnchorTraverser):
+    def __init__(self, limit, position):
+        self.limit = limit
+        self.position = position
+        self.anchors = []
+
+    def traverse_anchor(self, anchor):
+        if anchor._app_magnitude < self.limit:
+            self.anchors.append(anchor)
+
+    def enter_system(self, anchor):
+        return anchor._app_magnitude < self.limit
+
+    def traverse_system(self, anchor):
+        for child in anchor.children:
+            if child._app_magnitude < self.limit:
+                child.traverse(self)
+
+    def enter_octree_node(self, octree_node):
+        distance = (octree_node.center - self.position).length() - octree_node.radius
+        if distance <= 0.0:
+            return True
+        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
+            return False
+        return True
+
+    def traverse_octree_node(self, octree_node):
+        distance = (octree_node.center - self.position).length() - octree_node.radius
+        if distance > 0.0:
+            faintest = app_to_abs_mag(self.limit, distance)
+        else:
+            faintest = 99.0
+        for leaf in octree_node.leaves:
+            abs_magnitude = leaf._abs_magnitude
+            if abs_magnitude < faintest:
+                distance = (leaf._global_position - self.position).length()
+                if distance > 0.0:
+                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
+                    if app_magnitude < self.limit:
+                        leaf.traverse(self)
+                else:
+                    leaf.traverse(self)

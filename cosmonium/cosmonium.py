@@ -41,6 +41,7 @@ from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
+from .anchors import FindLightSourceTraverser
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame, SolBarycenter
@@ -985,6 +986,11 @@ class Cosmonium(CosmoniumBase):
         for controller in self.controllers_to_update:
             controller.check_visibility(frustum, pixel_size)
 
+    def find_light_sources(self):
+        traverser = FindLightSourceTraverser(-10, self.observer.camera_global_pos)
+        self.universe.anchor.traverse(traverser)
+        #print("LIGHTS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+
     def update_ship(self, time, dt):
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
@@ -1111,6 +1117,7 @@ class Cosmonium(CosmoniumBase):
         StellarObject.nb_instance = 0
 
         self.update_universe(self.time.time_full, dt)
+        self.find_light_sources()
 
         if self.trigger_check_settings:
             self.universe.check_settings()
