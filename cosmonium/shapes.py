@@ -429,9 +429,9 @@ class ShapeObject(VisibleObject):
             self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.anchor.distance_to_obs, self.context.observer.pixel_size)
         if self.shadow_caster is not None:
             self.shadow_caster.update()
-        if self.shadows.update_needed:
+        if self.shadows.rebuild_needed:
             self.update_shader()
-            self.shadows.update_needed = False
+            self.shadows.rebuild_needed = False
         if self.context.observer.apply_scattering > 0:
             self.context.observer.scattering.add_attenuated_object(self)
         if self.shader is not None:

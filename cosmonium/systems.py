@@ -43,7 +43,7 @@ class StellarSystem(StellarObject):
         self.abs_magnitude = None
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
-        return SystemAnchor(anchor_class, self, orbit, rotation, point_color)
+        return SystemAnchor(self, orbit, rotation, point_color)
 
     def is_system(self):
         return True
@@ -248,7 +248,7 @@ class OctreeSystem(StellarSystem):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
-        return OctreeAnchor(anchor_class, self, orbit, rotation, point_color)
+        return OctreeAnchor(self, orbit, rotation, point_color)
 
     def dumpOctree(self):
         self.octree.dump_octree()
@@ -259,8 +259,8 @@ class OctreeSystem(StellarSystem):
     def dumpOctreeStats(self):
         self.dump_octree_stats = not self.dump_octree_stats
 
-    def create_octree(self):
-        self.anchor.create_octree()
+    def rebuild(self):
+        self.anchor.rebuild()
 
     def get_nearest_system(self):
         nearest_system = None

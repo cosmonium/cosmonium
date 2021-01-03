@@ -37,13 +37,14 @@ class AnchorBase():
     Reflective = 2
     System     = 4
     def __init__(self, anchor_class, body, point_color):
-        self.anchor_class = anchor_class
+        self.content = anchor_class
         self.body = body
         #TODO: To remove
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = point_color
         self.parent = None
+        self.rebuild_needed = False
         #Flags
         self.visible = False
         self.visibility_override = False
@@ -69,6 +70,14 @@ class AnchorBase():
         self.scene_position = None
         self.scene_orientation = None
         self.scene_scale_factor = None
+
+    def set_rebuild_needed(self):
+        self.rebuild_needed = True
+        if self.parent is not None:
+            self.parent.set_rebuild_needed()
+
+    def rebuild(self):
+        pass
 
     def traverse(self, visitor):
         visitor.traverse_anchor(self)
@@ -188,18 +197,31 @@ class DynamicStellarAnchor(StellarAnchor):
     pass
 
 class SystemAnchor(DynamicStellarAnchor):
-    def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        DynamicStellarAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, point_color):
+        DynamicStellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color)
         self.children = []
 
     def add_child(self, child):
         self.children.append(child)
+        child.parent = self
+        if not self.rebuild_needed:
+            self.set_rebuild_needed()
 
     def remove_child(self, child):
         try:
             self.children.remove(child)
+            child.parent = None
         except ValueError:
             pass
+        self.set_rebuild_needed()
+
+    def rebuild(self):
+        self.content = self.System
+        for child in self.children:
+            if child.rebuild_needed:
+                child.rebuild()
+            self.content |= child.content
+        self.rebuild_needed = False
 
     def traverse(self, visitor):
         if visitor.enter_system(self):
@@ -224,8 +246,8 @@ class SystemAnchor(DynamicStellarAnchor):
             child.update_scene()
 
 class OctreeAnchor(SystemAnchor):
-    def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        SystemAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, point_color):
+        SystemAnchor.__init__(self, body, orbit, rotation, point_color)
         #TODO: Turn this into a parameter or infer it from the children
         self.octree_width = 100000.0 * units.Ly
         #TODO: Should be configurable
@@ -236,6 +258,13 @@ class OctreeAnchor(SystemAnchor):
                              self.octree_width,
                              abs_mag)
         self.to_update = []
+        #TODO: Right now an octree contains anything
+        self.content = ~1
+
+    def rebuild(self):
+        SystemAnchor.rebuild(self)
+        #TODO: Must add condition to rebuild the octree
+        self.create_octree()
 
     def traverse(self, visitor):
         if visitor.enter_octree_node(self.octree):
@@ -251,6 +280,7 @@ class OctreeAnchor(SystemAnchor):
             self.octree.add(child)
         end = time()
         print("Creation time:", end - start)
+        self.rebuild_needed = False
 
     def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
         if not self.visible or not self.resolved: return
@@ -267,8 +297,8 @@ class OctreeAnchor(SystemAnchor):
             child.update_scene()
 
 class UniverseAnchor(OctreeAnchor):
-    def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        OctreeAnchor.__init__(self, anchor_class, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, point_color):
+        OctreeAnchor.__init__(self, body, orbit, rotation, point_color)
         self.visible = True
         self.resolved = True
 
@@ -302,7 +332,7 @@ class FindLightSourceTraverser(AnchorTraverser):
             self.anchors.append(anchor)
 
     def enter_system(self, anchor):
-        return anchor._app_magnitude < self.limit
+        return anchor.content & AnchorBase.Emissive != 0 and anchor._app_magnitude < self.limit
 
     def traverse_system(self, anchor):
         for child in anchor.children:
@@ -310,6 +340,7 @@ class FindLightSourceTraverser(AnchorTraverser):
                 child.traverse(self)
 
     def enter_octree_node(self, octree_node):
+        #TODO: Check node content ?
         distance = (octree_node.center - self.position).length() - octree_node.radius
         if distance <= 0.0:
             return True

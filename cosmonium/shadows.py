@@ -256,7 +256,7 @@ class GenericShadows(ShadowBase):
         self.occluders = []
         self.old_occluders = []
         self.shader_components = {}
-        self.update_needed = False
+        self.rebuild_needed = False
         self.nb_updates = 0
 
     def add_occluder(self, occluder, self_shadow):
@@ -267,7 +267,7 @@ class GenericShadows(ShadowBase):
             shadow_shader =  ShaderShadowMap(occluder.name, occluder.body, occluder.shadow_caster, self_shadow)
             self.shader_components[occluder] = shadow_shader
             self.target.shader.add_shadows(shadow_shader)
-            self.update_needed = True
+            self.rebuild_needed = True
         else:
             self.old_occluders.remove(occluder)
 
@@ -275,7 +275,7 @@ class GenericShadows(ShadowBase):
         if self.nb_updates == 0:
             self.old_occluders = self.occluders
             self.occluders = []
-            self.update_needed = False
+            self.rebuild_needed = False
         self.nb_updates += 1
 
     def end_update(self):
@@ -286,9 +286,9 @@ class GenericShadows(ShadowBase):
                 shadow_shader = self.shader_components[occluder]
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
                 del self.shader_components[occluder]
-                self.update_needed = True
+                self.rebuild_needed = True
             self.old_occluders = []
-        return self.update_needed
+        return self.rebuild_needed
 
 class MultiShadows(ShadowBase):
     def __init__(self, target):
@@ -296,7 +296,7 @@ class MultiShadows(ShadowBase):
         self.ring_shadow = None
         self.sphere_shadows = SphereShadows()
         self.generic_shadows = GenericShadows(target)
-        self.update_needed = False
+        self.rebuild_needed = False
         self.had_sphere_occluder = False
         self.nb_updates = 0
 
@@ -305,7 +305,7 @@ class MultiShadows(ShadowBase):
         self.sphere_shadows.clear()
         self.shadow_map = None
         self.target.shader.clear_shadows(self.target.shape, self.target.appearance)
-        self.update_needed = True
+        self.rebuild_needed = True
         self.had_sphere_occluder = False
 
     def start_update(self):
@@ -321,21 +321,21 @@ class MultiShadows(ShadowBase):
             if self.sphere_shadows.empty() and self.had_sphere_occluder:
                 print("Remove sphere shadow component")
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.sphere_shadows.shader_component)
-                self.update_needed = True
+                self.rebuild_needed = True
             elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
                 self.target.shader.add_shadows(self.sphere_shadows.shader_component)
                 #TODO: We could check if the caster is actually oblate or not
                 self.sphere_shadows.shader_component.set_oblate_occluder(True)
                 print("Add sphere shadow component")
-                self.update_needed = True
-            self.update_needed = self.generic_shadows.end_update() or self.update_needed
+                self.rebuild_needed = True
+            self.rebuild_needed = self.generic_shadows.end_update() or self.rebuild_needed
 
     def add_ring_occluder(self, shadow_caster):
         if self.ring_shadow is None:
             print("Add ring shadow component")
             self.ring_shadow = shadow_caster
             self.target.shader.add_shadows(ShaderRingShadow())
-            self.update_needed = True
+            self.rebuild_needed = True
         elif self.ring_shadow != shadow_caster:
             print("Can not switch ring shadow caster")
 

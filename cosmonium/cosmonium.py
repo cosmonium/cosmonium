@@ -446,8 +446,8 @@ class Cosmonium(CosmoniumBase):
 
         self.universe.recalc_recursive()
 
-        self.splash.set_text("Building octree...")
-        self.universe.create_octree()
+        self.splash.set_text("Building tree...")
+        self.universe.rebuild()
         #self.universe.octree.print_summary()
         #self.universe.octree.print_stats()
 
