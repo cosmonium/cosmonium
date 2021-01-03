@@ -2,7 +2,7 @@ try:
     from . import buildversion
     version_str = buildversion.version
 except ImportError:
-    version_str = "0.2.1"
+    version_str = "0.2.1.1"
 
 version_major = int(version_str.split('.')[0])
 version_minor = int(version_str.split('.')[1])
