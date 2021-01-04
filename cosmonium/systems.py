@@ -110,16 +110,6 @@ class StellarSystem(StellarObject):
                         return None
         return None
 
-    def find_closest(self, distance=None, body=None):
-        for child in self.children:
-            if isinstance(child, StellarSystem):
-                (distance, body) = child.find_closest(distance, body)
-            else:
-                if child.anchor.distance_to_obs is not None and (distance is None or child.anchor.distance_to_obs - child.anchor._height_under < distance):
-                    distance = child.anchor.distance_to_obs - child.anchor._height_under
-                    body = child
-        return (distance, body)
-
     def find_nth_child(self, index):
         if index < len(self.children):
             return self.children[index]
@@ -198,25 +188,6 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.set_star(star)
 
-    def check_settings(self):
-        StellarObject.check_settings(self)
-        #No need to check the children if not visible
-        if not self.anchor.visible or not self.anchor.resolved: return
-        for child in self.children:
-            child.check_settings()
-
-    @pstat
-    def update_scene_and_render(self, observer, renderer):
-        self.anchor.update_scene()
-        if not self.anchor.visible or not self.anchor.resolved: return
-        self.update_scene_and_render_children(observer, renderer)
-        for child in self.children:
-            child.update_scene_and_render(observer, renderer)
-
-    def update_scene_and_render_children(self, observer, renderer):
-        for child in self.children:
-            child.update_scene_and_render(observer, renderer)
-
     def remove_components(self):
         StellarObject.remove_components(self)
         #Not really components, but that's the easiest way to remove the children's instances
@@ -261,27 +232,6 @@ class OctreeSystem(StellarSystem):
 
     def rebuild(self):
         self.anchor.rebuild()
-
-    def get_nearest_system(self):
-        nearest_system = None
-        nearest_system_distance = float('inf')
-        for leaf in self.anchor.to_update:
-            if leaf.distance_to_obs < nearest_system_distance:
-                nearest_system = leaf.body
-                nearest_system_distance = leaf.distance_to_obs
-        return nearest_system
-
-    def check_settings(self):
-        CompositeObject.check_settings(self)
-        for leaf in self.anchor.to_update:
-            leaf.body.check_settings()
-        for component in self.components:
-            component.check_settings()
-
-    def update_scene_and_render_children(self, observer, renderer):
-        self.anchor.update_scene_children()
-        for child in self.anchor.to_update:
-            child.body.update_scene_and_render(observer, renderer)
 
 class SimpleSystem(StellarSystem):
     def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):

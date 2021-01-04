@@ -41,7 +41,7 @@ from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
-from .anchors import FindLightSourceTraverser
+from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame, SolBarycenter
@@ -378,12 +378,11 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         self.sync = None
         self.track = None
-        self.extre = []
+        self.extra = []
         self.fly = False
         self.nav_controllers = []
         self.nav = None
         self.gui = None
-        self.last_visibles = []
         self.visibles = []
         self.nearest_system = None
         self.nearest_body = None
@@ -965,7 +964,9 @@ class Cosmonium(CosmoniumBase):
     def update_universe(self, time, dt):
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
-        self.universe.update_and_update_observer(time, self.observer)
+        traverser = UpdateTraverser(time, self.observer, settings.lowest_app_magnitude)
+        self.universe.anchor.traverse(traverser)
+        self.visibles = traverser.visibles
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -980,7 +981,8 @@ class Cosmonium(CosmoniumBase):
             controller.check_visibility(frustum, pixel_size)
 
     def find_light_sources(self):
-        traverser = FindLightSourceTraverser(-10, self.observer.camera_global_pos)
+        position = self.observer._global_position + self.observer._local_position
+        traverser = FindLightSourceTraverser(-10, position)
         self.universe.anchor.traverse(traverser)
         #print("LIGHTS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
 
@@ -1009,22 +1011,38 @@ class Cosmonium(CosmoniumBase):
         for body in args:
             self._add_extra(body)
         for body in self.extra:
-            body.anchor.update_simple(self.time.time_full)
+            body.anchor.update(self.time.time_full)
 
     def update_extra_observer(self):
         for body in self.extra:
-            body.anchor.update_observer_simple(self.observer)
+            body.anchor.update_observer(self.observer)
 
     @pstat
     def update_instances(self):
-        self.universe.update_scene_and_render_children(self.observer, self.renderer)
+        for visible in self.visibles:
+            visible.update_scene()
+            self.renderer.add_object(visible.body)
         self.renderer.render(self.observer)
         self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         self.gui.update_status()
 
-    def update_nearest_system(self, nearest_system):
+    def find_nearest_system(self):
+        #First iter over the visible object to have a first closest system
+        distance = float('inf')
+        closest_system = None
+        for visible in self.visibles:
+            #TODO: The test to see if the object is a root system is a bit crude...
+            if visible.distance_to_obs < distance and visible.parent.content == ~1:
+                closest_system = visible.body
+                distance = visible.distance_to_obs
+        #Use that system to boostrap the tree traversal
+        traverser = FindClosestSystemTraverser(self.observer, closest_system, distance)
+        self.universe.anchor.traverse(traverser)
+        return (traverser.closest_system, closest_system)
+
+    def update_nearest_system(self, nearest_system, nearest_visible_system):
         if nearest_system != self.nearest_system:
             if nearest_system is not None:
                 print("New nearest system:", nearest_system.get_name())
@@ -1037,25 +1055,20 @@ class Cosmonium(CosmoniumBase):
                 self.nav.pop_position()
             else:
                 print("No more near system")
-            if self.nearest_system is not None:
-                pass#self.nearest_system.remove_instance()
-                #self.nearest_system.update_obs(self.observer.get_camera_pos())
-                #self.universe.to_update.append(self.nearest_system)
             self.nearest_system = nearest_system
-        if self.nearest_system is not None:
-            if isinstance(self.nearest_system, StellarSystem):
-                (distance, body) = self.nearest_system.find_closest()
-            else:
-                body = self.nearest_system
-            if body is not None:
-                distance = body.anchor.distance_to_obs - body.anchor._height_under
-            if body is not None and self.nearest_body != body:
-                self.nearest_body = body
-                print("New nearest object:", body.get_name())
-        else:
-            body = None
+
+        nearest_body = None
+        distance = float('inf')
+        for visible in self.visibles:
+            body_distance =  visible.distance_to_obs - visible._height_under
+            if body_distance < distance:
+                nearest_body = visible.body
+                distance = body_distance
+        if nearest_body is not None and self.nearest_body != nearest_body:
+            self.nearest_body = nearest_body
+            print("New nearest visible object:", nearest_body.get_name())
         if settings.auto_scale:
-            if body is None:
+            if nearest_body is None:
                 settings.scale = settings.max_scale
             elif distance is None:
                 settings.scale = settings.max_scale
@@ -1104,8 +1117,12 @@ class Cosmonium(CosmoniumBase):
         self.update_universe(self.time.time_full, dt)
         self.find_light_sources()
 
+        nearest_system, nearest_visible_system = self.find_nearest_system()
+        self.update_nearest_system(nearest_system, nearest_visible_system)
+
         if self.trigger_check_settings:
-            self.universe.check_settings()
+            for visible in self.visibles:
+                visible.body.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
@@ -1120,9 +1137,6 @@ class Cosmonium(CosmoniumBase):
 
         if settings.color_picking:
             self.oid_texture.clear_image()
-
-        nearest_system = self.universe.get_nearest_system()
-        self.update_nearest_system(nearest_system)
 
         return Task.cont
 

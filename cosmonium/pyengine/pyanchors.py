@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LQuaterniond, LColor
 
 from ..foundation import BaseObject
-from ..octree import OctreeNode, VisibleObjectsTraverser
+from ..octree import OctreeNode
 from ..astro import units
 from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 
@@ -101,22 +101,12 @@ class AnchorBase():
     def update(self, time):
         pass
 
-    def update_simple(self, time):
-        self.update(time)
-
     def update_observer(self, observer):
         pass
-
-    def update_observer_simple(self, observer):
-        self.update_observer(observer)
 
     def update_and_update_observer(self, time, observer):
         self.update(time)
         self.update_observer(observer)
-
-    def update_and_update_observer_simple(self, time, observer):
-        self.update_simple(time)
-        self.update_observer_simple(observer)
 
     def update_scene(self):
         pass
@@ -153,6 +143,8 @@ class StellarAnchor(AnchorBase):
             visible_size = self._extend / (distance_to_obs * observer.pixel_size)
         else:
             visible_size = 0.0
+        #TODO: This should not be updated like that !
+        self._abs_magnitude = self.body.get_abs_magnitude()
         self._app_magnitude = self.body.get_app_magnitude()
         radius = self._extend
         if self.visibility_override:
@@ -227,24 +219,6 @@ class SystemAnchor(DynamicStellarAnchor):
         if visitor.enter_system(self):
             visitor.traverse_system(self)
 
-    def update_and_update_observer(self, time, observer):
-        DynamicStellarAnchor.update_and_update_observer(self, time, observer)
-        self.update_and_update_observer_children(time, observer)
-
-    def update_and_update_observer_children(self, time, observer):
-        if not self.visible or not self.resolved: return
-        for child in self.children:
-            child.update_and_update_observer(time, observer)
-
-    def update_scene(self):
-        DynamicStellarAnchor.update_scene(self)
-        self.update_scene_children()
-
-    def update_scene_children(self):
-        if not self.visible or not self.resolved: return
-        for child in self.children:
-            child.update_scene()
-
 class OctreeAnchor(SystemAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         SystemAnchor.__init__(self, body, orbit, rotation, point_color)
@@ -257,12 +231,14 @@ class OctreeAnchor(SystemAnchor):
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
                              self.octree_width,
                              abs_mag)
-        self.to_update = []
         #TODO: Right now an octree contains anything
         self.content = ~1
 
     def rebuild(self):
+        #TODO: We should not iter over all the children
         SystemAnchor.rebuild(self)
+        #TODO: This is a crude way to detect octree
+        self.content = ~1
         #TODO: Must add condition to rebuild the octree
         self.create_octree()
 
@@ -281,20 +257,6 @@ class OctreeAnchor(SystemAnchor):
         end = time()
         print("Creation time:", end - start)
         self.rebuild_needed = False
-
-    def update_and_update_observer_children(self, time, observer):
-        if not self.visible or not self.resolved: return
-        #TODO: Add limit in parameters
-        traverser = VisibleObjectsTraverser(observer.frustum, 6.0)
-        self.octree.traverse(traverser)
-        self.to_update = traverser.get_leaves()
-        for to_update in self.to_update:
-            to_update.update_and_update_observer(time, observer)
-
-    def update_scene_children(self):
-        if not self.visible or not self.resolved: return
-        for child in self.to_update:
-            child.update_scene()
 
 class UniverseAnchor(OctreeAnchor):
     def __init__(self, body, orbit, rotation, point_color):
@@ -321,6 +283,84 @@ class AnchorTraverser:
     def traverse_octree_node(self, anchor):
         pass
 
+class UpdateTraverser(AnchorTraverser):
+    def __init__(self, time, observer, limit):
+        self.time = time
+        self.observer = observer
+        self.limit = limit
+        self.visibles = []
+
+    def traverse_anchor(self, anchor):
+        anchor.update_and_update_observer(self.time, self.observer)
+        if anchor.visible:
+            self.visibles.append(anchor)
+
+    def enter_system(self, anchor):
+        anchor.update_and_update_observer(self.time, self.observer)
+        if anchor.visible:
+            self.visibles.append(anchor)
+        return anchor.visible and anchor.resolved
+
+    def traverse_system(self, anchor):
+        for child in anchor.children:
+            child.traverse(self)
+
+    def enter_octree_node(self, octree_node):
+        #TODO: Octree root must be separate from octree node. Use enter_system ?
+        frustum = self.observer.frustum
+        distance = (octree_node.center - frustum.get_position()).length() - octree_node.radius
+        if distance <= 0.0:
+            return True
+        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
+            return False
+        return frustum.is_sphere_in(octree_node.center, octree_node.radius)
+
+    def traverse_octree_node(self, octree_node):
+        frustum = self.observer.frustum
+        frustum_position = frustum.get_position()
+        distance = (octree_node.center - frustum_position).length() - octree_node.radius
+        if distance > 0.0:
+            faintest = app_to_abs_mag(self.limit, distance)
+        else:
+            faintest = 99.0
+        for leaf in octree_node.leaves:
+            abs_magnitude = leaf._abs_magnitude
+            traverse = False
+            if abs_magnitude < faintest:
+                direction = leaf._global_position - frustum_position
+                distance = direction.length()
+                if distance > 0.0:
+                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
+                    if app_magnitude < self.limit:
+                        traverse = frustum.is_sphere_in(leaf._global_position, leaf._extend)
+                else:
+                    traverse = True
+            if traverse:
+                leaf.traverse(self)
+
+class FindClosestSystemTraverser(AnchorTraverser):
+    def __init__(self, observer, system, distance):
+        self.observer = observer
+        self._global_position = observer._global_position
+        self.closest_system = system
+        self.distance = distance
+
+    def enter_octree_node(self, octree_node):
+        #TODO: Check node content ?
+        distance = (octree_node.center - self._global_position).length() - octree_node.radius
+        return distance <= self.distance
+
+    def traverse_octree_node(self, octree_node):
+        global_position = self.observer._global_position
+        local_position = self.observer._local_position
+        for leaf in octree_node.leaves:
+            global_delta = leaf._global_position - global_position
+            local_delta = leaf._local_position - local_position
+            distance = (global_delta + local_delta).length()
+            if distance <self.distance:
+                self.distance = distance
+                self.closest_system = leaf.body
+
 class FindLightSourceTraverser(AnchorTraverser):
     def __init__(self, limit, position):
         self.limit = limit
@@ -328,15 +368,21 @@ class FindLightSourceTraverser(AnchorTraverser):
         self.anchors = []
 
     def traverse_anchor(self, anchor):
-        if anchor._app_magnitude < self.limit:
-            self.anchors.append(anchor)
+        self.anchors.append(anchor)
 
     def enter_system(self, anchor):
-        return anchor.content & AnchorBase.Emissive != 0 and anchor._app_magnitude < self.limit
+        #TODO: Is global position accurate enough ?
+        global_delta = anchor._global_position - self.position
+        distance = (global_delta).length()
+        return anchor.content & AnchorBase.Emissive != 0 and (distance == 0 or abs_to_app_mag(anchor._abs_magnitude, distance) < self.limit)
 
     def traverse_system(self, anchor):
         for child in anchor.children:
-            if child._app_magnitude < self.limit:
+            if child.content & AnchorBase.Emissive == 0: continue
+            #TODO: Is global position accurate enough ?
+            global_delta = child._global_position - self.position
+            distance = (global_delta).length()
+            if distance == 0 or abs_to_app_mag(child._abs_magnitude, distance) < self.limit:
                 child.traverse(self)
 
     def enter_octree_node(self, octree_node):

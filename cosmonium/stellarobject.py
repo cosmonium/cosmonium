@@ -416,13 +416,6 @@ class StellarObject(LabelledObject):
         self.update_components(camera_pos)
         CompositeObject.check_and_update_instance(self, camera_pos, camera_rot)
 
-    def update_scene_and_render(self, observer, renderer):
-        self.anchor.update_scene()
-        renderer.add_object(self)
-
-    def update_scene_and_render_children(self, observer, renderer):
-        self.update_scene_and_render(observer, renderer)
-
     def remove_instance(self):
         CompositeObject.remove_instance(self)
         if self.init_components:
