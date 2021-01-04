@@ -965,14 +965,7 @@ class Cosmonium(CosmoniumBase):
     def update_universe(self, time, dt):
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
-        camera_global_position = self.observer.camera_global_pos
-        camera_local_position = self.observer._position
-        self.universe.update_and_update_observer(time,
-                                                 self.observer,
-                                                 frustum,
-                                                 camera_global_position,
-                                                 camera_local_position,
-                                                 pixel_size)
+        self.universe.update_and_update_observer(time, self.observer)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1019,16 +1012,8 @@ class Cosmonium(CosmoniumBase):
             body.anchor.update_simple(self.time.time_full)
 
     def update_extra_observer(self):
-        frustum = self.observer.rel_frustum
-        pixel_size = self.observer.pixel_size
-        camera_global_position = self.observer.camera_global_pos
-        camera_local_position = self.observer._position
         for body in self.extra:
-            body.anchor.update_observer_simple(self.observer,
-                                               frustum,
-                                               camera_global_position,
-                                               camera_local_position,
-                                               pixel_size)
+            body.anchor.update_observer_simple(self.observer)
 
     @pstat
     def update_instances(self):

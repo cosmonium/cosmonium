@@ -52,5 +52,5 @@ class Universe(OctreeSystem):
     def get_abs_rotation(self):
         return self._orientation
 
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.anchor.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+    def update_and_update_observer(self, time, observer):
+        self.anchor.update_and_update_observer_children(time, observer)

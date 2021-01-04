@@ -104,19 +104,19 @@ class AnchorBase():
     def update_simple(self, time):
         self.update(time)
 
-    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_observer(self, observer):
         pass
 
-    def update_observer_simple(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+    def update_observer_simple(self, observer):
+        self.update_observer(observer)
 
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_and_update_observer(self, time, observer):
         self.update(time)
-        self.update_observer(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+        self.update_observer(observer)
 
-    def update_and_update_observer_simple(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_and_update_observer_simple(self, time, observer):
         self.update_simple(time)
-        self.update_observer_simple(observer, frustum, camera_global_position, camera_local_position, pixel_size)
+        self.update_observer_simple(observer)
 
     def update_scene(self):
         pass
@@ -143,14 +143,14 @@ class StellarAnchor(AnchorBase):
         if self.star is not None:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
 
-    def update_observer(self, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        global_delta = self._global_position - camera_global_position
-        local_delta = self._local_position - camera_local_position
+    def update_observer(self, observer):
+        global_delta = self._global_position - observer._global_position
+        local_delta = self._local_position - observer._local_position
         rel_position = global_delta + local_delta
         distance_to_obs = rel_position.length()
         vector_to_obs = -rel_position / distance_to_obs
         if distance_to_obs > 0.0:
-            visible_size = self._extend / (distance_to_obs * pixel_size)
+            visible_size = self._extend / (distance_to_obs * observer.pixel_size)
         else:
             visible_size = 0.0
         self._app_magnitude = self.body.get_app_magnitude()
@@ -159,7 +159,7 @@ class StellarAnchor(AnchorBase):
             resolved = visible_size > settings.min_body_size
             visible = True
         elif distance_to_obs > radius:
-            in_view = frustum.is_sphere_in(rel_position, radius)
+            in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)
             resolved = visible_size > settings.min_body_size
             visible = in_view and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
@@ -167,7 +167,7 @@ class StellarAnchor(AnchorBase):
             resolved = True
             visible = True
         if resolved:
-            self._height_under = self.body.get_height_under(camera_local_position)
+            self._height_under = self.body.get_height_under(observer._local_position)
         else:
             self._height_under = self.body.get_apparent_radius()
         self.rel_position = rel_position
@@ -227,14 +227,14 @@ class SystemAnchor(DynamicStellarAnchor):
         if visitor.enter_system(self):
             visitor.traverse_system(self)
 
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        DynamicStellarAnchor.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-        self.update_and_update_observer_children(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+    def update_and_update_observer(self, time, observer):
+        DynamicStellarAnchor.update_and_update_observer(self, time, observer)
+        self.update_and_update_observer_children(time, observer)
 
-    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_and_update_observer_children(self, time, observer):
         if not self.visible or not self.resolved: return
         for child in self.children:
-            child.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+            child.update_and_update_observer(time, observer)
 
     def update_scene(self):
         DynamicStellarAnchor.update_scene(self)
@@ -282,14 +282,14 @@ class OctreeAnchor(SystemAnchor):
         print("Creation time:", end - start)
         self.rebuild_needed = False
 
-    def update_and_update_observer_children(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
+    def update_and_update_observer_children(self, time, observer):
         if not self.visible or not self.resolved: return
         #TODO: Add limit in parameters
         traverser = VisibleObjectsTraverser(observer.frustum, 6.0)
         self.octree.traverse(traverser)
         self.to_update = traverser.get_leaves()
         for to_update in self.to_update:
-            to_update.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
+            to_update.update_and_update_observer(time, observer)
 
     def update_scene_children(self):
         if not self.visible or not self.resolved: return
