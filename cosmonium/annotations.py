@@ -524,6 +524,7 @@ class Constellation(LabelledObject):
 
     def create_components(self):
         self.create_label()
+        self.add_component(self.label)
         self.add_component(self.boundary)
 
     def project(self, time, center, distance):

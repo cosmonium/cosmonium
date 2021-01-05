@@ -972,6 +972,7 @@ class Cosmonium(CosmoniumBase):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
         CompositeObject.update(self.universe, time, dt)
         CompositeObject.update_obs(self.universe, self.observer)
+        CompositeObject.check_visibility(self.universe, frustum, pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
