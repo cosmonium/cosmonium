@@ -47,4 +47,3 @@ class OrbitsRenderer(object):
 
     def add_orbit(self, body):
         self.orbits.append(body)
-

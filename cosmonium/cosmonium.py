@@ -41,7 +41,8 @@ from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
-from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser
+from .anchors import AnchorBase
+from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame, SolBarycenter
@@ -384,6 +385,7 @@ class Cosmonium(CosmoniumBase):
         self.nav = None
         self.gui = None
         self.visibles = []
+        self.orbits = []
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
@@ -1020,6 +1022,21 @@ class Cosmonium(CosmoniumBase):
         for body in self.extra:
             body.anchor.update_observer(self.observer)
 
+    def find_orbits(self):
+        #TODO: This is a bit crappy, this whole method should be moved in the renderer
+        top_systems = []
+        for visible in self.visibles:
+            #TODO: The test to see if the object is a root system is a bit crude...
+            if visible.resolved and visible.content & AnchorBase.System != 0 and visible.parent.content == ~1:
+                top_systems.append(visible)
+        traverser = FindObjectsInVisibleResolvedSystemsTraverser()
+        for system in top_systems:
+            system.traverse(traverser)
+        self.orbits = list(map(lambda anchor: anchor.body, traverser.anchors))
+
+    def update_orbits(self):
+        self.renderer.add_orbits(self.orbits)
+
     @pstat
     def update_instances(self):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
@@ -1121,6 +1138,7 @@ class Cosmonium(CosmoniumBase):
 
         self.update_universe(self.time.time_full, dt)
         self.find_light_sources()
+        self.find_orbits()
 
         nearest_system, nearest_visible_system = self.find_nearest_system()
         self.update_nearest_system(nearest_system, nearest_visible_system)
@@ -1128,6 +1146,8 @@ class Cosmonium(CosmoniumBase):
         if self.trigger_check_settings:
             for visible in self.visibles:
                 visible.body.check_settings()
+            for orbit in self.orbits:
+                orbit.check_settings()
             #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
             CompositeObject.check_settings(self.universe)
             #TODO: This should be done by a container object
@@ -1135,6 +1155,7 @@ class Cosmonium(CosmoniumBase):
             self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
+        self.update_orbits()
         self.update_instances()
 
         update.set_level(StellarObject.nb_update)

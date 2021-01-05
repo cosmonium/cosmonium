@@ -180,7 +180,7 @@ class Orbit(VisibleObject):
             vwriter.setData3f(*pos)
 
     def check_visibility(self, frustum, pixel_size):
-        if self.body.parent.visible and self.body.shown and self.orbit:
+        if self.body.parent.anchor.visible and self.body.shown and self.orbit:
             distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)
