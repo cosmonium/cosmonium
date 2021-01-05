@@ -34,7 +34,7 @@ import logging
 import gettext
 
 from .parsers.configparser import configParser
-from .foundation import BaseObject
+from .foundation import BaseObject, CompositeObject
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
 from .renderers.renderer import Renderer
@@ -967,6 +967,9 @@ class Cosmonium(CosmoniumBase):
         traverser = UpdateTraverser(time, self.observer, settings.lowest_app_magnitude)
         self.universe.anchor.traverse(traverser)
         self.visibles = traverser.visibles
+        #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
+        CompositeObject.update(self.universe, time, dt)
+        CompositeObject.update_obs(self.universe, self.observer)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1019,6 +1022,8 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_instances(self):
+        #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
+        CompositeObject.check_and_update_instance(self.universe, self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for visible in self.visibles:
             visible.update_scene()
             self.renderer.add_object(visible.body)
@@ -1123,6 +1128,8 @@ class Cosmonium(CosmoniumBase):
         if self.trigger_check_settings:
             for visible in self.visibles:
                 visible.body.check_settings()
+            #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
+            CompositeObject.check_settings(self.universe)
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
