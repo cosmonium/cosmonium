@@ -60,6 +60,15 @@ class Surface(ShapeObject):
     def get_component_name(self):
         return _('Surface')
 
+    def get_scale(self):
+        if self.scale is not None:
+            scale = self.scale
+        elif self.oblateness is not None:
+            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
+        else:
+            scale = LVector3(self.radius, self.radius, self.radius)
+        return scale
+
     def configure_shape(self):
         if self.scale is not None:
             scale = self.scale
@@ -81,7 +90,7 @@ class Surface(ShapeObject):
             else:
                 self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
                 self.shadow_caster.add_target(self, self_shadow=True)
-        self.owner.set_visibility_override(True)
+                self.owner.set_visibility_override(True)
         self.shadow_caster.create()
 
     def remove_shadows(self):

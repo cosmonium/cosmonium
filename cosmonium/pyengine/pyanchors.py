@@ -29,7 +29,7 @@ from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 
 from .. import settings
 
-from math import sqrt
+from math import sqrt, asin, pi
 from time import time
 
 class AnchorBase():
@@ -51,6 +51,7 @@ class AnchorBase():
         self.resolved = False
         self.update_id = 0
         self.update_frozen = False
+        self.force_update = False
         #Cached values
         self._position = LPoint3d()
         self._global_position = LPoint3d()
@@ -299,7 +300,7 @@ class UpdateTraverser(AnchorTraverser):
         anchor.update_and_update_observer(self.time, self.observer)
         if anchor.visible:
             self.visibles.append(anchor)
-        return anchor.visible and anchor.resolved
+        return (anchor.visible and anchor.resolved) or anchor.force_update
 
     def traverse_system(self, anchor):
         for child in anchor.children:
@@ -421,6 +422,59 @@ class FindObjectsInVisibleResolvedSystemsTraverser(AnchorTraverser):
     def enter_system(self, anchor):
         self.anchors.append(anchor)
         return anchor.visible and anchor.resolved
+
+    def traverse_system(self, anchor):
+        for child in anchor.children:
+            child.traverse(self)
+
+class FindShadowCastersTraverser(AnchorTraverser):
+    def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
+        self.target = target
+        self.body_position = target._local_position
+        self.body_bounding_radius = target._extend
+        self.vector_to_light_source = vector_to_light_source
+        self.distance_to_light_source = distance_to_light_source
+        self.light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - self.body_bounding_radius))
+        self.anchors = []
+        self.parent_systems = []
+        parent = target.parent
+        while parent.content != ~1:
+            self.parent_systems.append(parent)
+            parent = parent.parent
+
+    def check_cast_shadow(self, occluder):
+        cast_shadow = False
+        occluder_position = occluder._local_position
+        occluder_bounding_radius = occluder._extend
+        relative_position = occluder_position - self.body_position
+        t = self.vector_to_light_source.dot(relative_position)
+        #print(occluder.body.get_name(), t)
+        if t >= 0 and t <= self.distance_to_light_source:
+            distance = relative_position.length() - self.body_bounding_radius
+            occluder_angular_radius = asin(occluder_bounding_radius / distance) if occluder_bounding_radius < distance else pi / 2
+            ar_ratio = occluder_angular_radius / self.light_source_angular_radius
+            #print(occluder.body.get_name(), "D", distance, "AR", occluder_angular_radius, "R", ar_ratio)
+            #TODO: No longer valid if we are using HDR
+            #If the shadow coef is smaller than the min change in pixel color
+            #the umbra will have no visible impact
+            if ar_ratio * ar_ratio > 1.0 / 255:
+                distance_to_projection = (relative_position - self.vector_to_light_source * t).length()
+                penumbra_radius = (1 + ar_ratio) * occluder_bounding_radius
+                #TODO: Should check also the visible size of the penumbra
+                if distance_to_projection < penumbra_radius + self.body_bounding_radius:
+                    #print(occluder.body.get_name(), "casts shadows on", self.target.body.get_name())
+                    cast_shadow = True
+        return cast_shadow
+
+    def traverse_anchor(self, anchor):
+        if anchor != self.target and anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor):
+            self.anchors.append(anchor)
+
+    def enter_system(self, anchor):
+        enter = anchor in self.parent_systems or (anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor))
+        #TODO: We should trigger update here if needed (using update_id) instead of deferring update to next frame
+        anchor.force_update = enter
+        return enter
 
     def traverse_system(self, anchor):
         for child in anchor.children:

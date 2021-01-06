@@ -42,7 +42,7 @@ from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
 from .anchors import AnchorBase
-from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser
+from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame, SolBarycenter
@@ -386,6 +386,7 @@ class Cosmonium(CosmoniumBase):
         self.gui = None
         self.visibles = []
         self.orbits = []
+        self.shadow_casters = []
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
@@ -1038,10 +1039,30 @@ class Cosmonium(CosmoniumBase):
     def update_orbits(self):
         self.renderer.add_orbits(self.orbits)
 
+    def find_shadows(self):
+        self.shadow_casters = []
+        if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
+        for visible_object in self.visibles:
+            if not visible_object.resolved: continue
+            if visible_object.content & AnchorBase.System != 0: continue
+            if visible_object.content & AnchorBase.Reflective == 0: continue
+            visible_object.body.start_shadows_update()
+            #print("TEST", visible_object.body.get_name())
+            traverser = FindShadowCastersTraverser(visible_object, visible_object.vector_to_star, visible_object.distance_to_star, visible_object.star.get_apparent_radius())
+            self.nearest_system.anchor.traverse(traverser)
+            #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+            for occluder in traverser.anchors:
+                if not occluder in self.shadow_casters:
+                    self.shadow_casters.append(occluder)
+                occluder.body.add_shadow_target(visible_object.body)
+            visible_object.body.end_shadows_update()
+
     @pstat
     def update_instances(self):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
         CompositeObject.check_and_update_instance(self.universe, self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        for occluder in self.shadow_casters:
+            occluder.update_scene()
         for visible in self.visibles:
             visible.update_scene()
             self.renderer.add_object(visible.body)
@@ -1157,6 +1178,7 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.update_orbits()
+        self.find_shadows()
         self.update_instances()
 
         update.set_level(StellarObject.nb_update)
