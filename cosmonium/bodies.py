@@ -291,6 +291,8 @@ class ReflectiveBody(StellarBody):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
         self.light_source = None
+        #TODO: This should be done in create_anchor
+        self.anchor._albedo = self.albedo
 
     def is_emissive(self):
         return False
@@ -417,6 +419,8 @@ class EmissiveBody(StellarBody):
         abs_magnitude = kwargs.pop('abs_magnitude', None)
         StellarBody.__init__(self, *args, **kwargs)
         self.abs_magnitude = abs_magnitude
+        #TODO: This should be done in create_anchor
+        self.anchor._abs_magnitude = abs_magnitude
 
     def is_emissive(self):
         return True

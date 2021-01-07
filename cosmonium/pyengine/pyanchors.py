@@ -25,7 +25,7 @@ from panda3d.core import LPoint3d, LQuaterniond, LColor
 from ..foundation import BaseObject
 from ..octree import OctreeNode
 from ..astro import units
-from ..astro.astro import abs_to_app_mag, app_to_abs_mag
+from ..astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
 
 from .. import settings
 
@@ -61,6 +61,7 @@ class AnchorBase():
         self._abs_magnitude = None
         self._app_magnitude = None
         self._extend = 0.0
+        self._albedo = 0.5
         #Scene parameters
         self.rel_position = None
         self.distance_to_obs = None
@@ -109,6 +110,9 @@ class AnchorBase():
         self.update(time)
         self.update_observer(observer)
 
+    def update_app_magnitude(self):
+        pass
+
     def update_scene(self):
         pass
 
@@ -144,9 +148,6 @@ class StellarAnchor(AnchorBase):
             visible_size = self._extend / (distance_to_obs * observer.pixel_size)
         else:
             visible_size = 0.0
-        #TODO: This should not be updated like that !
-        self._abs_magnitude = self.body.get_abs_magnitude()
-        self._app_magnitude = self.body.get_app_magnitude()
         radius = self._extend
         if self.visibility_override:
             resolved = visible_size > settings.min_body_size
@@ -154,7 +155,7 @@ class StellarAnchor(AnchorBase):
         elif distance_to_obs > radius:
             in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)
             resolved = visible_size > settings.min_body_size
-            visible = in_view and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
+            visible = in_view# and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
             #We are in the object
             resolved = True
@@ -169,6 +170,42 @@ class StellarAnchor(AnchorBase):
         self.visible = visible
         self.resolved = resolved
         self.visible_size = visible_size
+
+    def get_luminosity(self, star):
+        vector_to_star = (star._local_position - self._local_position)
+        distance_to_star = vector_to_star.length()
+        vector_to_star /= distance_to_star
+        star_power = abs_mag_to_lum(star._abs_magnitude)
+        area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
+        if area > 0.0:
+            irradiance = star_power / area
+            surface = pi * self._extend * self._extend * 1000 * 1000 # Units are in km
+            received_energy = irradiance * surface
+            reflected_energy = received_energy * self._albedo
+            phase_angle = self.vector_to_obs.dot(self.vector_to_star)
+            fraction = (1.0 + phase_angle) / 2.0
+            return reflected_energy * fraction
+        else:
+            print("No area", self.body.get_name())
+            return 0.0
+
+    def update_app_magnitude(self, star):
+        #TODO: Should be done by inheritance ?
+        if self.distance_to_obs == 0:
+            self._app_magnitude = 99.0
+            return
+        if self.content & self.Emissive != 0:
+            self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
+        elif self.content & self.Reflective != 0:
+            if star is not None:
+                reflected = self.get_luminosity(star)
+                self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
+            else:
+                self._app_magnitude = 99.0
+        else:
+            self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
+        if not self.visibility_override:
+            self.visible = self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude
 
     def update_scene(self):
         if self.body.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
@@ -253,7 +290,6 @@ class OctreeAnchor(SystemAnchor):
         for child in self.children:
             #TODO: this should be done properly at anchor creation
             child.update(0)
-            child._abs_magnitude = child.body.get_abs_magnitude()
             self.octree.add(child)
         end = time()
         print("Creation time:", end - start)

@@ -385,6 +385,7 @@ class Cosmonium(CosmoniumBase):
         self.nav = None
         self.gui = None
         self.visibles = []
+        self.light_sources = []
         self.orbits = []
         self.shadow_casters = []
         self.nearest_system = None
@@ -991,6 +992,7 @@ class Cosmonium(CosmoniumBase):
         position = self.observer._global_position + self.observer._local_position
         traverser = FindLightSourceTraverser(-10, position)
         self.universe.anchor.traverse(traverser)
+        self.light_sources = traverser.anchors
         #print("LIGHTS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
 
     def update_ship(self, time, dt):
@@ -1023,6 +1025,14 @@ class Cosmonium(CosmoniumBase):
     def update_extra_observer(self):
         for body in self.extra:
             body.anchor.update_observer(self.observer)
+
+    def update_magnitudes(self):
+        if len(self.light_sources) > 0:
+            star = self.light_sources[0]
+        else:
+            star = None
+        for visible_object in self.visibles:
+            visible_object.update_app_magnitude(star)
 
     def find_orbits(self):
         #TODO: This is a bit crappy, this whole method should be moved in the renderer
@@ -1160,6 +1170,7 @@ class Cosmonium(CosmoniumBase):
 
         self.update_universe(self.time.time_full, dt)
         self.find_light_sources()
+        self.update_magnitudes()
         self.find_orbits()
 
         nearest_system, nearest_visible_system = self.find_nearest_system()

@@ -176,6 +176,8 @@ class StellarSystem(StellarObject):
                 extend = size
         self._extend = extend
         self.anchor._extend = self._extend
+        #TODO: must be moved to anchor
+        self.anchor._abs_magnitude = self.get_abs_magnitude()
 
     def recalc_recursive(self):
         for child in self.children:
