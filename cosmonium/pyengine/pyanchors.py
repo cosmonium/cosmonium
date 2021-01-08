@@ -61,6 +61,7 @@ class AnchorBase():
         self._abs_magnitude = None
         self._app_magnitude = None
         self._extend = 0.0
+        self._height_under = 0.0
         self._albedo = 0.5
         #Scene parameters
         self.rel_position = None
@@ -160,10 +161,6 @@ class StellarAnchor(AnchorBase):
             #We are in the object
             resolved = True
             visible = True
-        if resolved:
-            self._height_under = self.body.get_height_under(observer._local_position)
-        else:
-            self._height_under = self.body.get_apparent_radius()
         self.rel_position = rel_position
         self.vector_to_obs = vector_to_obs
         self.distance_to_obs = distance_to_obs

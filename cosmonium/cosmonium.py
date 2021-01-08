@@ -1075,6 +1075,11 @@ class Cosmonium(CosmoniumBase):
             if primary.atmosphere is not None and primary.init_components and (visible_object._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
                 primary.atmosphere.add_shape_object(visible_object.body.surface)
 
+    def update_height_under(self):
+        for visible_object in self.visibles:
+            if not visible_object.resolved: continue
+            visible_object._height_under = visible_object.body.get_height_under(self.observer._local_position)
+
     @pstat
     def update_instances(self):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
@@ -1181,6 +1186,7 @@ class Cosmonium(CosmoniumBase):
         self.update_magnitudes()
         self.find_orbits()
         self.check_scattering()
+        self.update_height_under()
 
         nearest_system, nearest_visible_system = self.find_nearest_system()
         self.update_nearest_system(nearest_system, nearest_visible_system)
