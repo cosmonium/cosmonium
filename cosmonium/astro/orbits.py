@@ -64,7 +64,7 @@ class Orbit(object):
         return 0.0
 
     def get_global_position_at(self, time):
-        return self.origin
+        return self.frame.get_global_position()
 
     def get_frame_position_at(self, time):
         return None

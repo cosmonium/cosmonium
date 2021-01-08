@@ -305,10 +305,7 @@ class StellarObject(LabelledObject):
         return 99.0
 
     def get_global_position(self):
-        #TODO: should be done in frame
-        #TODO: cache value for given time
-        global_position = self.parent.get_global_position() + self.anchor.orbit.get_global_position_at(0)
-        return global_position
+        return self.anchor._global_position
 
     def get_local_position(self):
         return self.anchor._local_position

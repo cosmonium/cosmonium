@@ -133,7 +133,7 @@ class StellarAnchor(AnchorBase):
         self._orientation = self.rotation.get_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
         self._local_position = self.orbit.get_position_at(time)
-        self._global_position = self.body.parent.anchor._global_position + self.orbit.get_global_position_at(time)
+        self._global_position = self.orbit.get_global_position_at(time)
         self._position = self._global_position + self._local_position
         if self.star is not None:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())

@@ -46,6 +46,8 @@ class ReferenceFrame(object):
         raise Exception
     def get_orientation(self):
         raise Exception
+    def get_global_position(self):
+        raise Exception
     def get_local_position(self, relative_pos):
         return self.get_center() + self.get_orientation().xform(relative_pos)
     def get_rel_position(self, absolute_pos):
@@ -64,6 +66,8 @@ class AbsoluteReferenceFrame(ReferenceFrame):
         return self.null_center
     def get_orientation(self):
         return self.null_orientation
+    def get_global_position(self):
+        raise self.null_center
     def get_local_position(self, relative_pos):
         return relative_pos
     def get_rel_position(self, absolute_pos):
@@ -85,6 +89,9 @@ class BodyReferenceFrame(ReferenceFrame):
     def get_center(self):
         return self.body.get_local_position()
 
+    def get_global_position(self):
+        return self.body.get_global_position()
+
     def __str__(self):
         return self.__class__.__name__ + '(' + self.body.get_name() + ')'
 
@@ -96,6 +103,9 @@ class J2000EclipticReferenceFrame(BodyReferenceFrame):
 class SolBarycenter():
     def get_name(self):
         return "Solar System Barycenter"
+
+    def get_global_position(self):
+        return LPoint3d()
 
     def get_local_position(self):
         return LPoint3d()
