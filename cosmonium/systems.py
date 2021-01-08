@@ -308,39 +308,6 @@ class SimpleSystem(StellarSystem):
     def add_shadow_target(self, target):
         self.primary.add_shadow_target(target)
 
-    @pstat
-    def update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size):
-        if not self.anchor.visible or not self.anchor.resolved:
-            StellarSystem.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-            self.primary.update_and_update_observer(time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-            return
-        primary = self.primary
-        for child in self.children:
-            child.start_shadows_update()
-        StellarSystem.update_and_update_observer(self, time, observer, frustum, camera_global_position, camera_local_position, pixel_size)
-        if primary is not None and not primary.is_emissive():
-            check_primary = primary.anchor.visible and primary.anchor.resolved
-            for child in self.children:
-                if child == primary: continue
-                if child.anchor.visible and child.anchor.resolved:
-                    if primary.atmosphere is not None and primary.init_components and (child.anchor._local_position - self.primary.anchor._local_position).length() < primary.atmosphere.radius:
-                        primary.atmosphere.add_shape_object(child.surface)
-                    if primary.check_cast_shadow_on(child):
-                        #print(primary.get_friendly_name(), "casts shadow on", child.get_friendly_name())
-                        primary.add_shadow_target(child)
-                if check_primary:
-                    #TODO: The test should be done on the actual shadow size, not the resolved state of the child
-                    if child.check_cast_shadow_on(primary):
-                        #print(child.get_friendly_name(), "casts shadow on", primary.get_friendly_name())
-                        child.add_shadow_target(primary)
-        for child in self.children:
-            child.end_shadows_update()
-
-    def update_obs(self, observer):
-        StellarSystem.update_obs(self, observer)
-        if not self.visible or not self.resolved:
-            self.primary.update_obs(observer)
-
 class Barycenter(StellarSystem):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('body_class', 'star')
