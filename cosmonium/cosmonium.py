@@ -1067,6 +1067,14 @@ class Cosmonium(CosmoniumBase):
                 occluder.body.add_shadow_target(visible_object.body)
             visible_object.body.end_shadows_update()
 
+    def check_scattering(self):
+        for visible_object in self.visibles:
+            if not visible_object.resolved: continue
+            primary = visible_object.parent.body.primary
+            if primary is None: continue
+            if primary.atmosphere is not None and primary.init_components and (visible_object._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
+                primary.atmosphere.add_shape_object(visible_object.body.surface)
+
     @pstat
     def update_instances(self):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
@@ -1172,6 +1180,7 @@ class Cosmonium(CosmoniumBase):
         self.find_light_sources()
         self.update_magnitudes()
         self.find_orbits()
+        self.check_scattering()
 
         nearest_system, nearest_visible_system = self.find_nearest_system()
         self.update_nearest_system(nearest_system, nearest_visible_system)
