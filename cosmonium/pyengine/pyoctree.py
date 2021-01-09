@@ -26,12 +26,6 @@ from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 
 from math import sqrt
 
-def OctreeLeaf(ref_object, *args):
-    #TODO: We should use the actual anchor as leaf...
-    ref_object.anchor._global_position = args[0]
-    ref_object.anchor._abs_magnitude = args[1]
-    return ref_object
-
 class OctreeNode(object):
     max_level = 200
     max_leaves = 75
@@ -62,16 +56,10 @@ class OctreeNode(object):
         return len(self.leaves)
 
     def traverse(self, traverser):
-        traverser.traverse(self, self.leaves)
-        for child in self.children:
-            if child is not None and traverser.enter(child):
-                child.traverse(traverser)
-
-    def traverse_new(self, traverser):
         traverser.traverse_octree_node(self)
         for child in self.children:
             if child is not None and traverser.enter_octree_node(child):
-                child.traverse_new(traverser)
+                child.traverse(traverser)
 
     def add(self, leaf):
         self._add(leaf, leaf._global_position, leaf._abs_magnitude)
@@ -150,52 +138,3 @@ class OctreeNode(object):
     def print_stats(self):
         print("Nb cells:", self.nb_cells)
         print("Nb leaves:", self.nb_leaves)
-
-class VisibleObjectsTraverser(object):
-    def __init__(self, frustum, limit):
-        self.frustum = frustum
-        self.limit = limit
-        self.collected_leaves = []
-
-    def get_num_leaves(self):
-        return len(self.collected_leaves)
-
-    def get_leaf(self, index):
-        return self.collected_leaves[index]
-
-    def get_leaves(self):
-        return self.collected_leaves
-
-    def get_objects(self):
-        return self.collected_leaves
-
-    def enter(self, octree):
-        distance = (octree.center - self.frustum.get_position()).length() - octree.radius
-        if distance <= 0.0:
-            return True
-        if abs_to_app_mag(octree.max_magnitude, distance) > self.limit:
-            return False
-        return self.frustum.is_sphere_in(octree.center, octree.radius)
-
-    def traverse(self, octree, leaves):
-        frustum = self.frustum
-        frustum_position = frustum.get_position()
-        distance = (octree.center - frustum_position).length() - octree.radius
-        if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
-        else:
-            faintest = 99.0
-        for leaf in leaves:
-            abs_magnitude = leaf._abs_magnitude
-            add = False
-            if abs_magnitude < faintest:
-                direction = leaf._global_position - frustum_position
-                distance = direction.length()
-                if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
-                        add = self.frustum.is_sphere_in(leaf._global_position, leaf._extend)
-                else:
-                    add = True
-            if add:
-                self.collected_leaves.append(leaf)

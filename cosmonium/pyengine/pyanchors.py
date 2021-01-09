@@ -279,7 +279,7 @@ class OctreeAnchor(SystemAnchor):
 
     def traverse(self, visitor):
         if visitor.enter_octree_node(self.octree):
-            self.octree.traverse_new(visitor)
+            self.octree.traverse(visitor)
 
     def create_octree(self):
         print("Creating octree...")
@@ -299,7 +299,7 @@ class UniverseAnchor(OctreeAnchor):
         self.resolved = True
 
     def traverse(self, visitor):
-        self.octree.traverse_new(visitor)
+        self.octree.traverse(visitor)
 
 class AnchorTraverser:
     def traverse_anchor(self, anchor):
