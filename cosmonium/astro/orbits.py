@@ -108,9 +108,15 @@ class FixedPosition(Orbit):
             self.global_position = position
             self.position = LPoint3d()
         else:
-            self.global_position = LPoint3d()
+            self.global_position = None
             self.position = position
         self.rotation=LQuaterniond()
+
+    def get_global_position_at(self, time):
+        if self.global_position is not None:
+            return self.global_position
+        else:
+            return self.frame.get_global_position()
 
     def set_frame_position(self, position):
         self.position = position
@@ -125,9 +131,10 @@ class FixedPosition(Orbit):
         return self.rotation
 
     def calc_asc_decl(self):
-        distance = self.global_position.length()
+        global_position = self.get_global_position_at(0)
+        distance = global_position.length()
         if distance > 0:
-            position = J2000EquatorialReferenceFrame.orientation.conjugate().xform(self.global_position)
+            position = J2000EquatorialReferenceFrame.orientation.conjugate().xform(global_position)
             self.declination = asin(position[2] / distance)
             self.right_asc = atan2(position[1], position[0])
         else:
@@ -152,15 +159,6 @@ class FixedPosition(Orbit):
 
     def get_apparent_radius(self):
         return self.position.length()
-
-    def get_global_position_at(self, time):
-        return self.global_position
-
-    def get_frame_position_at(self, time):
-        return self.position
-
-    def get_frame_rotation_at(self, time):
-        return self.rotation
 
 class InfinitePosition(Orbit):
     def __init__(self,
