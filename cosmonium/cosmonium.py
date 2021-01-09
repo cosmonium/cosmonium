@@ -1072,6 +1072,8 @@ class Cosmonium(CosmoniumBase):
             if not visible_object.resolved: continue
             primary = visible_object.parent.body.primary
             if primary is None: continue
+            #TODO: We should not do an explicit test like this here
+            if primary.anchor.content & AnchorBase.System != 0: continue
             if primary.atmosphere is not None and primary.init_components and (visible_object._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
                 primary.atmosphere.add_shape_object(visible_object.body.surface)
 
