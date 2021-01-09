@@ -240,15 +240,31 @@ class SystemAnchor(DynamicStellarAnchor):
             child.parent = None
         except ValueError:
             pass
-        self.set_rebuild_needed()
+        if not self.rebuild_needed:
+            self.set_rebuild_needed()
 
     def rebuild(self):
-        self.content = self.System
+        content = self.System
+        extend = 0
+        luminosity = 0.0
         for child in self.children:
             if child.rebuild_needed:
                 child.rebuild()
-            self.content |= child.content
+            content |= child.content
+            #TODO: Must also support anchor without orbits ?
+            orbit_size = child.orbit.get_apparent_radius()
+            if child._extend + orbit_size > extend:
+                extend = child._extend + orbit_size
+            #TODO: We should instead check if the child is emissive or not
+            if child._abs_magnitude is not None:
+                luminosity += abs_mag_to_lum(child._abs_magnitude)
         self.rebuild_needed = False
+        self.content = content
+        self._extend = extend
+        if luminosity > 0.0:
+            self._abs_magnitude = lum_to_abs_mag(luminosity)
+        else:
+            self._abs_magnitude = 99.0
 
     def traverse(self, visitor):
         if visitor.enter_system(self):
@@ -258,24 +274,24 @@ class OctreeAnchor(SystemAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         SystemAnchor.__init__(self, body, orbit, rotation, point_color)
         #TODO: Turn this into a parameter or infer it from the children
-        self.octree_width = 100000.0 * units.Ly
+        self._extend = 100000.0 * units.Ly
         #TODO: Should be configurable
-        abs_mag = app_to_abs_mag(6.0, self.octree_width * sqrt(3))
+        abs_mag = app_to_abs_mag(6.0, self._extend * sqrt(3))
         #TODO: position should be extracted from orbit
-        self.octree = OctreeNode(0,
+        self.octree = OctreeNode(0, self,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             self.octree_width,
+                             self._extend,
                              abs_mag)
         #TODO: Right now an octree contains anything
         self.content = ~1
+        self.recreate_octree = True
 
     def rebuild(self):
-        #TODO: We should not iter over all the children
-        SystemAnchor.rebuild(self)
-        #TODO: This is a crude way to detect octree
-        self.content = ~1
-        #TODO: Must add condition to rebuild the octree
-        self.create_octree()
+        if self.recreate_octree:
+            self.create_octree()
+        if self.octree.rebuild_needed:
+            self.octree.rebuild()
+        self.rebuild_needed = False
 
     def traverse(self, visitor):
         if visitor.enter_octree_node(self.octree):
@@ -287,10 +303,10 @@ class OctreeAnchor(SystemAnchor):
         for child in self.children:
             #TODO: this should be done properly at anchor creation
             child.update(0)
+            child.rebuild()
             self.octree.add(child)
         end = time()
         print("Creation time:", end - start)
-        self.rebuild_needed = False
 
 class UniverseAnchor(OctreeAnchor):
     def __init__(self, body, orbit, rotation, point_color):

@@ -22,8 +22,6 @@ from __future__ import absolute_import
 
 from panda3d.core import LPoint3d
 
-from ..astro.astro import abs_to_app_mag, app_to_abs_mag
-
 from math import sqrt
 
 class OctreeNode(object):
@@ -32,8 +30,9 @@ class OctreeNode(object):
     nb_cells = 0
     nb_leaves = 0
     child_threshold = 0.5 # + 1.5 #Correspond roughly to 1/4 less luminosity
-    def __init__(self, level, center, width, threshold, index = -1):
+    def __init__(self, level, parent, center, width, threshold, index = -1):
         self.level = level
+        self.parent = parent
         self.width = width
         self.radius = self.width / 2.0 * sqrt(3)
         self.center = center
@@ -43,6 +42,9 @@ class OctreeNode(object):
         self.children = [None, None, None, None, None, None, None, None]
         self.leaves = []
         self.max_magnitude = 99.0
+        self.rebuild_needed = False
+        #TODO: Right now an octree contains anything
+        self.content = ~1
         OctreeNode.nb_cells += 1
 
     def get_num_children(self):
@@ -54,6 +56,16 @@ class OctreeNode(object):
 
     def get_num_leaves(self):
         return len(self.leaves)
+
+    def set_rebuild_needed(self):
+        self.rebuild_needed = True
+        if self.parent is not None:
+            self.parent.set_rebuild_needed()
+
+    def rebuild(self):
+        for child in self.children:
+            if child is not None and child.rebuild_needed:
+                child.rebuild()
 
     def traverse(self, traverser):
         traverser.traverse_octree_node(self)
@@ -93,7 +105,7 @@ class OctreeNode(object):
                 child_center.z += child_offset
             else:
                 child_center.z -= child_offset
-            child = OctreeNode(self.level + 1, child_center, self.width / 2.0, self.threshold + self.child_threshold, index)
+            child = OctreeNode(self.level + 1, self, child_center, self.width / 2.0, self.threshold + self.child_threshold, index)
             self.children[index] = child
         self.children[index]._add(obj, position, magnitude)
 
@@ -103,6 +115,7 @@ class OctreeNode(object):
             self.max_magnitude = magnitude
         if not self.has_children or magnitude < self.threshold:
             self.leaves.append(obj)
+            obj.parent = self
         else:
             self._add_in_child(obj, position, magnitude)
         if self.level < self.max_level and len(self.leaves) >= self.max_leaves and not self.has_children:

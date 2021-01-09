@@ -82,8 +82,7 @@ class StellarBody(StellarObject):
             self.atmosphere.owner = self
         if self.ring is not None:
             self.ring.owner = self
-        self._extend = self.get_extend()
-        self.anchor._extend = self._extend
+        self.anchor._extend = self.get_extend()
 
     def get_or_create_system(self):
         if self.system is None:
@@ -475,7 +474,6 @@ class Star(EmissiveBody):
                 radius = 7000.0
             else:
                 radius = temp_to_radius(self.temperature, abs_magnitude)
-        self._extend = radius #TODO: Optim for octree
         EmissiveBody.__init__(self, names=names, source_names=source_names,
                               radius=radius, oblateness=oblateness, scale=scale,
                               surface=surface, surface_factory=surface_factory,

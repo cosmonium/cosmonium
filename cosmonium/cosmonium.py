@@ -447,8 +447,6 @@ class Cosmonium(CosmoniumBase):
 
         self.load_universe()
 
-        self.universe.recalc_recursive()
-
         self.splash.set_text("Building tree...")
         self.universe.rebuild()
         #self.universe.octree.print_summary()
@@ -1070,6 +1068,8 @@ class Cosmonium(CosmoniumBase):
     def check_scattering(self):
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
+            #TODO: We need to test the type of the parent anchor
+            if visible_object.parent.content == ~1: continue
             primary = visible_object.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here

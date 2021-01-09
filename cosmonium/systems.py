@@ -143,16 +143,7 @@ class StellarSystem(StellarObject):
         self.has_halo = True
 
     def add_child(self, child):
-        old_parent = child.parent
         self.add_child_fast(child)
-        if old_parent is not None:
-            old_parent.recalc_extend()
-        if child.orbit is not None:
-            orbit_size = child.orbit.get_apparent_radius()
-            if orbit_size > self._extend:
-                self._extend = orbit_size
-                self.anchor._extend = self._extend
-        #TODO: Calc consolidated abs magnitude here
 
     def remove_child_fast(self, child):
         #print("Remove child", child.get_name(), "from", self.get_name())
@@ -164,26 +155,6 @@ class StellarSystem(StellarObject):
 
     def remove_child(self, child):
         self.remove_child_fast(child)
-        self.recalc_extend()
-
-    def recalc_extend(self):
-        extend = 0.0
-        for child in self.children:
-            size = child.get_extend()
-            if child.anchor.orbit is not None:
-                size += child.anchor.orbit.get_apparent_radius()
-            if size > extend:
-                extend = size
-        self._extend = extend
-        self.anchor._extend = self._extend
-        #TODO: must be moved to anchor
-        self.anchor._abs_magnitude = self.get_abs_magnitude()
-
-    def recalc_recursive(self):
-        for child in self.children:
-            if isinstance(child, StellarSystem):
-                child.recalc_recursive()
-        self.recalc_extend()
 
     def set_star(self, star):
         StellarObject.set_star(self, star)
@@ -203,18 +174,10 @@ class StellarSystem(StellarObject):
             child.remove_instance()
 
     def get_extend(self):
-        return self._extend
+        return self.anchor._extend
 
     def get_abs_magnitude(self):
-        if self.abs_magnitude is None:
-            luminosity = 0.0
-            for child in self.children:
-                luminosity += abs_mag_to_lum(child.get_abs_magnitude())
-            if luminosity > 0.0:
-                self.abs_magnitude = lum_to_abs_mag(luminosity)
-            else:
-                self.abs_magnitude = 99.0
-        return self.abs_magnitude
+        return self.anchor._abs_magnitude
 
 class OctreeSystem(StellarSystem):
     def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
