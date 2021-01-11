@@ -131,7 +131,7 @@ class StellarAnchor(AnchorBase):
         self.star = None
 
     def update(self, time):
-        self._orientation = self.rotation.get_rotation_at(time)
+        self._orientation = self.rotation.get_absolute_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
         self._local_position = self.orbit.get_position_at(time)
         self._global_position = self.orbit.get_global_position_at(time)

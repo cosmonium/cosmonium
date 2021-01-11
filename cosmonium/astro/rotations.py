@@ -126,8 +126,8 @@ class Rotation(object):
     def get_frame_rotation_at(self, time):
         return None
 
-    def get_rotation_at(self, time):
         return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
+    def get_absolute_rotation_at(self, time):
 
 class FixedRotation(Rotation):
     def __init__(self, reference_axis, frame):
