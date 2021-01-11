@@ -366,6 +366,9 @@ class ONeilScatteringBase(AtmosphericScattering):
         scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
         scaled_star_pos.normalize()
         camera_height = scaled_pos.length()
+        if camera_height > inner_radius * 100:
+            scaled_pos *= 100.0 * inner_radius / camera_height
+            camera_height = 100.0 * inner_radius
         shape.instance.setShaderInput("v3OriginPos", pos)
         shape.instance.setShaderInput("v3CameraPos", -scaled_pos)
 
