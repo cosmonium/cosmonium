@@ -138,8 +138,8 @@ class OrbitYamlParser(YamlModuleParser):
             if orbit is None:
                 orbit = FixedOrbit(frame = J2000EclipticReferenceFrame())
             #TODO: this should not be done arbitrarily
-            if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.body is None:
-                orbit.frame.set_body(parent)
+            if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.anchor is None:
+                orbit.frame.set_anchor(parent.anchor)
         return orbit
 
 class OrbitCategoryYamlParser(YamlModuleParser):

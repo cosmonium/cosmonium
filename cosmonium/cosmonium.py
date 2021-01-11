@@ -1003,26 +1003,25 @@ class Cosmonium(CosmoniumBase):
     def _add_extra(self, to_add):
         if to_add is None: return
         if isinstance(to_add, SolBarycenter): return
-        if to_add is self.universe: return
-        self._add_extra(to_add.parent)
         #TODO: There should be a mechanism to retrieve them
-        if isinstance(to_add.anchor.orbit.frame, BodyReferenceFrame):
-            self._add_extra(to_add.anchor.orbit.frame.body)
-        if isinstance(to_add.anchor.rotation.frame, BodyReferenceFrame):
-            self._add_extra(to_add.anchor.rotation.frame.body)
+        if isinstance(to_add.orbit.frame, BodyReferenceFrame):
+            self._add_extra(to_add.orbit.frame.anchor)
+        if isinstance(to_add.rotation.frame, BodyReferenceFrame):
+            self._add_extra(to_add.rotation.frame.anchor)
         if not to_add in self.extra:
             self.extra.append(to_add)
 
     def update_extra(self, *args):
         self.extra = []
         for body in args:
-            self._add_extra(body)
-        for body in self.extra:
-            body.anchor.update(self.time.time_full)
+            if body is None: continue
+            self._add_extra(body.anchor)
+        for anchor in self.extra:
+            anchor.update(self.time.time_full)
 
     def update_extra_observer(self):
-        for body in self.extra:
-            body.anchor.update_observer(self.observer)
+        for anchor in self.extra:
+            anchor.update_observer(self.observer)
 
     def update_magnitudes(self):
         if len(self.light_sources) > 0:

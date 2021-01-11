@@ -93,7 +93,7 @@ class StellarBody(StellarObject):
             self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
             self.parent.add_child_fast(self.system)
             system_orbit.set_body(self.system)
-            orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system, system_orbit.frame))
+            orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system.anchor, system_orbit.frame))
             self.set_orbit(orbit)
             if isinstance(self, Star):
                 self.system.add_child_star_fast(self)

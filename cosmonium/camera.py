@@ -213,7 +213,7 @@ class OrbitTargetHelper():
         self.orbit_speed_x = orbit_speed_x
         self.orbit_speed_z = orbit_speed_z
         center = target.get_rel_position_to(self.anchor._global_position)
-        self.orbit_center = self.anchor.frame.get_rel_position(center)
+        self.orbit_center = self.anchor.frame.get_frame_position(center)
         orbit_position = self.anchor.get_frame_pos()
         self.orbit_dir = self.orbit_center - orbit_position
         if orientation is None:
@@ -304,7 +304,7 @@ class CameraHolder(CameraBase):
         new_local = (self._global_position - new_global_pos) + old_local
         self._global_position = new_global_pos
         self.camera_global_pos = self._global_position
-        self._frame_position = self.frame.get_rel_position(new_local)
+        self._frame_position = self.frame.get_frame_position(new_local)
 
     def get_position(self):
         return self._global_position + self._local_position
@@ -324,16 +324,16 @@ class CameraHolder(CameraBase):
     def set_pos(self, position, local=True):
         if not local:
             position -= self._global_position
-        self._frame_position = self.frame.get_rel_position(position)
+        self._frame_position = self.frame.get_frame_position(position)
 
     def get_pos(self):
         return self.frame.get_local_position(self._frame_position)
 
     def set_rot(self, orientation):
-        self._frame_rotation = self.frame.get_rel_orientation(orientation)
+        self._frame_rotation = self.frame.get_frame_orientation(orientation)
 
     def get_rot(self):
-        return self.frame.get_abs_orientation(self._frame_rotation)
+        return self.frame.get_absolute_orientation(self._frame_rotation)
 
     #TODO: Absolete API to be replaced by the above Anchor API
     def get_camera_pos(self):

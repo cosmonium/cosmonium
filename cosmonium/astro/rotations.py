@@ -121,13 +121,13 @@ class Rotation(object):
         return None
 
     def get_equatorial_orientation_at(self, time):
-        return self.frame.get_abs_orientation(self.get_frame_equatorial_orientation_at(time))
+        return self.frame.get_absolute_orientation(self.get_frame_equatorial_orientation_at(time))
 
     def get_frame_rotation_at(self, time):
         return None
 
-        return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
     def get_absolute_rotation_at(self, time):
+        return self.frame.get_absolute_orientation(self.get_frame_rotation_at(time))
 
 class FixedRotation(Rotation):
     def __init__(self, reference_axis, frame):

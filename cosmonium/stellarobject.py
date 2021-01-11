@@ -342,7 +342,7 @@ class StellarObject(LabelledObject):
 
     def cartesian_to_spherical(self, position):
         sync_frame = SynchroneReferenceFrame(self)
-        rel_position = sync_frame.get_rel_position(position)
+        rel_position = sync_frame.get_frame_position(position)
         return self.frame_cartesian_to_spherical(rel_position)
 
     def spherical_to_frame_cartesian(self, position):

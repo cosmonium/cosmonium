@@ -35,12 +35,14 @@ class FrameYamlParser(YamlModuleParser):
     @classmethod
     def decode_j2000_ecliptic(cls, data, parent):
         body = data.get('center', parent)
-        return J2000EclipticReferenceFrame(body)
+        anchor = body.anchor if body is not None else None
+        return J2000EclipticReferenceFrame(anchor)
 
     @classmethod
     def decode_j2000_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        return J2000EquatorialReferenceFrame(body)
+        anchor = body.anchor if body is not None else None
+        return J2000EquatorialReferenceFrame(anchor)
 
     @classmethod
     def decode_equatorial(cls, data, parent):
@@ -48,12 +50,14 @@ class FrameYamlParser(YamlModuleParser):
         ra = data.get("ra", 0.0)
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
-        return CelestialReferenceFrame(body, right_asc=ra, declination=de, longitude_at_node=node)
+        anchor = body.anchor if body is not None else None
+        return CelestialReferenceFrame(anchor, right_asc=ra, declination=de, longitude_at_node=node)
 
     @classmethod
     def decode_mean_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        return EquatorialReferenceFrame(body)
+        anchor = body.anchor if body is not None else None
+        return EquatorialReferenceFrame(anchor)
 
     @classmethod
     def decode_surface_frame(self, data, parent):
@@ -61,11 +65,13 @@ class FrameYamlParser(YamlModuleParser):
         long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
         lat = data.get('lat', 0.0)
         lat_units = AngleUnitsYamlParser.decode(data.get('lat-units', 'Deg'))
-        return SurfaceReferenceFrame(parent, long * long_units, lat * lat_units)
+        anchor = parent.anchor if parent is not None else None
+        return SurfaceReferenceFrame(anchor, long * long_units, lat * lat_units)
 
     @classmethod
     def decode(self, data, parent=None):
-        if data is None: return J2000EclipticReferenceFrame(parent)
+        if data is None:
+            data = {'type': 'j2000ecliptic'}
         (object_type, parameters) = self.get_type_and_data(data)
         object_type = object_type.lower()
         if object_type == 'j2000ecliptic':
@@ -87,8 +93,8 @@ class FrameYamlParser(YamlModuleParser):
         else:
             frame = frames_db.get(object_type)
             #TODO: this should not be done arbitrarily
-            if isinstance(frame, BodyReferenceFrame):
-                frame.set_body(parent)
+            if parent is not None and isinstance(frame, BodyReferenceFrame):
+                frame.set_anchor(parent.anchor)
             return frame
 
 class NamedFrameYamlParser(YamlModuleParser):

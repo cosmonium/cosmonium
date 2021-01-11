@@ -42,58 +42,77 @@ from copy import copy
 #      z    =   -y
 
 class ReferenceFrame(object):
+
     def get_center(self):
-        raise Exception
+        raise NotImplementedError()
+
     def get_orientation(self):
-        raise Exception
-    def get_global_position(self):
-        raise Exception
-    def get_local_position(self, relative_pos):
-        return self.get_center() + self.get_orientation().xform(relative_pos)
-    def get_rel_position(self, absolute_pos):
-        return self.get_orientation().conjugate().xform(absolute_pos - self.get_center()) 
-    def get_abs_orientation(self, relative_orien):
-        return relative_orien * self.get_orientation()
-    def get_rel_orientation(self, absolute_orien):
-        return absolute_orien * self.get_orientation().conjugate()
+        raise NotImplementedError()
+
+    def get_absolute_reference_point(self):
+        raise NotImplementedError()
+
+    def get_absolute_position(self, frame_position):
+        return self.get_absolute_reference_point() + self.get_local_position(frame_position)
+
+    def get_local_position(self, frame_position):
+        return self.get_center() + self.get_orientation().xform(frame_position)
+
+    def get_frame_position(self, local_position):
+        return self.get_orientation().conjugate().xform(local_position - self.get_center())
+
+    def get_absolute_orientation(self, frame_orientation):
+        return frame_orientation * self.get_orientation()
+
+    def get_frame_orientation(self, absolute_orientation):
+        return absolute_orientation * self.get_orientation().conjugate()
+
     def __str__(self):
-        raise Exception
+        raise NotImplementedError()
 
 class AbsoluteReferenceFrame(ReferenceFrame):
     null_center = LPoint3d(0, 0, 0)
     null_orientation = LQuaterniond()
+
     def get_center(self):
         return self.null_center
+
     def get_orientation(self):
         return self.null_orientation
-    def get_global_position(self):
-        raise self.null_center
-    def get_local_position(self, relative_pos):
-        return relative_pos
-    def get_rel_position(self, absolute_pos):
-        return absolute_pos
-    def get_abs_orientation(self, relative_orien):
-        return relative_orien
-    def get_rel_orientation(self, absolute_orien):
-        return absolute_orien
+
+    def get_absolute_reference_point(self):
+        return self.null_center
+
+    def get_local_position(self, frame_position):
+        return frame_position
+
+    def get_frame_position(self, local_position):
+        return local_position
+
+    def get_absolute_orientation(self, frame_orientation):
+        return frame_orientation
+
+    def get_frame_orientation(self, absolute_orientation):
+        return absolute_orientation
+
     def __str__(self):
         return 'AbsoluteReferenceFrame'
 
 class BodyReferenceFrame(ReferenceFrame):
-    def __init__(self, body = None):
-        self.body = body
+    def __init__(self, anchor = None):
+        self.anchor = anchor
 
-    def set_body(self, body):
-        self.body = body
+    def set_anchor(self, anchor):
+        self.anchor = anchor
 
     def get_center(self):
-        return self.body.get_local_position()
+        return self.anchor.get_local_position()
 
-    def get_global_position(self):
-        return self.body.get_global_position()
+    def get_absolute_reference_point(self):
+        return self.anchor.get_global_position()
 
     def __str__(self):
-        return self.__class__.__name__ + '(' + self.body.get_name() + ')'
+        return self.__class__.__name__ + '(' + self.anchor.body.get_name() + ')'
 
 class J2000EclipticReferenceFrame(BodyReferenceFrame):
     orientation = LQuaterniond()
@@ -185,12 +204,12 @@ j2000GalacticReferenceFrame = CelestialReferenceFrame(right_asc=units.J2000_Gala
 
 class EquatorialReferenceFrame(RelativeReferenceFrame):
     def get_orientation(self):
-        rot = self.body.get_equatorial_rotation()
+        rot = self.anchor.get_equatorial_rotation()
         return rot
 
 class SynchroneReferenceFrame(RelativeReferenceFrame):
     def get_orientation(self):
-        rot = self.body.get_sync_rotation()
+        rot = self.anchor.get_sync_rotation()
         return rot
 
 class SurfaceReferenceFrame(RelativeReferenceFrame):

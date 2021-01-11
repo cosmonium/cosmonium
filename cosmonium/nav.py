@@ -125,7 +125,7 @@ class InteractiveNavigationController(NavigationController):
         #The orbit position is set on the ship while the camera orientation is set on the camera controller
         #The position must be done in the ship frame otherwise the orbit point will drift away
         center = target.get_rel_position_to(self.ship._global_position)
-        self.orbit_center = self.ship.frame.get_rel_position(center)
+        self.orbit_center = self.ship.frame.get_frame_position(center)
         self.orbit_start = self.ship.get_frame_pos() - self.orbit_center
         if self.ship.orbit_rot_camera:
             self.orbit_orientation = self.camera_controller.get_rot()

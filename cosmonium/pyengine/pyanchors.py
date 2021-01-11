@@ -88,6 +88,24 @@ class AnchorBase():
     def get_global_position(self):
         return self._global_position
 
+    def get_absolute_reference_point(self):
+        return self._global_position
+
+    def get_absolute_position(self):
+        return self._global_position + self._local_position
+
+    def get_local_position(self):
+        return self._local_position
+
+    def get_absolute_orientation(self):
+        return self._orientation
+
+    def get_equatorial_rotation(self):
+        return self._equatorial
+
+    def get_sync_rotation(self):
+        return self._orientation
+
     def get_abs_magnitude(self):
         return self._abs_magnitude
 

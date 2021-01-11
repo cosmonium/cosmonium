@@ -64,7 +64,7 @@ class Orbit(object):
         return 0.0
 
     def get_global_position_at(self, time):
-        return self.frame.get_global_position()
+        return self.frame.get_absolute_reference_point()
 
     def get_frame_position_at(self, time):
         return None
@@ -76,7 +76,7 @@ class Orbit(object):
         return self.frame.get_local_position(self.get_frame_rotation_at(time).xform(self.get_frame_position_at(time)))
 
     def get_rotation_at(self, time):
-        return self.frame.get_abs_orientation(self.get_frame_rotation_at(time))
+        return self.frame.get_absolute_orientation(self.get_frame_rotation_at(time))
 
     def project(self, time, center, radius):
         return None
@@ -116,7 +116,7 @@ class FixedPosition(Orbit):
         if self.global_position is not None:
             return self.global_position
         else:
-            return self.frame.get_global_position()
+            return self.frame.get_absolute_reference_point()
 
     def set_frame_position(self, position):
         self.position = position
