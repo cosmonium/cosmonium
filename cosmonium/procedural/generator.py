@@ -50,7 +50,6 @@ class TexGenerator(object):
         self.quad = None
         self.buffer = None
         self.busy = False
-        self.first = True
         self.queue = []
         self.processed = []
 
@@ -77,6 +76,7 @@ class TexGenerator(object):
             props.set_rgba_bits(32, 32, 32, 32)
         self.buffer = base.win.make_texture_buffer("generatorBuffer", width, height, to_ram=True, fbp=props)
         #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
+        self.buffer.set_active(False)
 
         #Create the camera for the buffer
         cam = Camera("generator-cam")
@@ -124,14 +124,6 @@ class TexGenerator(object):
     def check_generation(self, task):
         if self.buffer is None:
             return Task.cont
-        if self.first and len(self.queue) > 0:
-            (shader, face, texture, callback, cb_args) = self.queue[0]
-            if not texture.has_ram_image():
-                #print("FIRST")
-                self.buffer.setOneShot(True)
-            else:
-                self.first = False
-            return Task.cont
         if len(self.queue) > 0:
             self.processed.append(self.queue.pop(0))
             if len(self.queue) > 0:
@@ -142,6 +134,7 @@ class TexGenerator(object):
 
     def prepare(self, shader, face, texture):
         self.buffer.set_one_shot(True)
+        self.buffer.set_active(True)
         self.quad.set_shader(shader.shader)
         #TODO: face should be in shader
         shader.update(self.root, face=face)
