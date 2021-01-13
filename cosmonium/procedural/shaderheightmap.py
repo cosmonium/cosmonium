@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import Texture
 
-from .generator import TexGenerator, GeneratorPool
+from .generator import GeneratorChain, GeneratorPool
 from .shadernoise import NoiseShader, FloatTarget
 
 from ..heightmap import TextureHeightmapBase, HeightmapPatch, HeightmapPatchFactory
@@ -62,7 +62,7 @@ class ShaderHeightmap(TextureHeightmapBase):
 
     def do_load(self, shape, callback, cb_args):
         if not self.tex_id in ShaderHeightmap.tex_generators:
-            ShaderHeightmap.tex_generators[self.tex_id] = TexGenerator()
+            ShaderHeightmap.tex_generators[self.tex_id] = GeneratorChain()
             if settings.encode_float:
                 texture_format = Texture.F_rgba
             else:

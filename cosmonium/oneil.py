@@ -26,7 +26,7 @@ from .bodyelements import Atmosphere
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
-from .procedural.generator import GeneratorVertexShader, TexGenerator
+from .procedural.generator import GeneratorVertexShader, GeneratorChain
 
 from math import pow, pi
 
@@ -165,7 +165,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
     @classmethod
     def get_generator(cls, size):
         if not size in cls.tex_generators:
-            cls.tex_generators[size] = TexGenerator()
+            cls.tex_generators[size] = GeneratorChain()
             texture_format = Texture.F_rgb32
             cls.tex_generators[size].make_buffer(size, size, texture_format)
         tex_generator = cls.tex_generators[size]

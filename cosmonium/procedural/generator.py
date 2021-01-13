@@ -44,14 +44,11 @@ class GeneratorVertexShader(ShaderProgram):
         code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
         code.append("texcoord = p3d_MultiTexCoord0;")
 
-class TexGenerator(object):
+class RenderTarget(object):
     def __init__(self):
         self.root = None
         self.quad = None
         self.buffer = None
-        self.busy = False
-        self.queue = []
-        self.processed = []
 
     def make_buffer(self, width, height, texture_format):
         self.width = width
@@ -100,8 +97,6 @@ class TexGenerator(object):
         dr.set_camera(cam_np)
         dr.set_scissor_enabled(False)
 
-        taskMgr.add(self.check_generation, 'check_generation', sort = -10000)
-        taskMgr.add(self.callback, 'callback', sort = -9999)
         print("Created offscreen buffer, size: %dx%d" % (width, height), "format:", Texture.formatFormat(texture_format))
 
     def remove(self):
@@ -109,28 +104,6 @@ class TexGenerator(object):
             self.buffer.set_active(False)
             base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
-
-    def callback(self, task):
-        if len(self.processed) > 0:
-            (shader, face, texture, callback, cb_args) = self.processed[0]
-            if texture.has_ram_image():
-                if callback is not None:
-                    #print(texture)
-                    #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
-                    callback(texture, *cb_args)
-                self.processed.pop(0)
-        return Task.cont
-
-    def check_generation(self, task):
-        if self.buffer is None:
-            return Task.cont
-        if len(self.queue) > 0:
-            self.processed.append(self.queue.pop(0))
-            if len(self.queue) > 0:
-                self.schedule_next()
-            else:
-                self.busy = False
-        return Task.cont
 
     def prepare(self, shader, face, texture):
         self.buffer.set_one_shot(True)
@@ -141,16 +114,46 @@ class TexGenerator(object):
         self.buffer.clear_render_textures()
         self.buffer.add_render_texture(texture, GraphicsOutput.RTM_copy_ram)
 
+class GeneratorChain():
+    def __init__(self):
+        self.stages = []
+        self.busy = False
+        self.queue = []
+        taskMgr.add(self.check_generation, 'tex_generation', sort = -10000)
+
+    def make_buffer(self, width, height, texture_format):
+        stage = RenderTarget()
+        stage.make_buffer(width, height, texture_format)
+        self.stages.append(stage)
+
+    def callback(self, stage_info):
+        (shader, face, texture, callback, cb_args) = stage_info
+        if texture.has_ram_image():
+            if callback is not None:
+                #print(texture)
+                #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
+                callback(texture, *cb_args)
+        else:
+            print("Texture has no RAM image")
+
+    def check_generation(self, task):
+        if len(self.queue) > 0:
+            stage_info = self.queue.pop(0)
+            self.callback(stage_info)
+            if len(self.queue) > 0:
+                self.schedule_next()
+            else:
+                self.busy = False
+        return Task.cont
+
     def schedule_next(self):
         (shader, face, texture, callback, cb_args) = self.queue[0]
-        self.prepare(shader, face, texture)
+        self.stages[0].prepare(shader, face, texture)
 
     def schedule(self, item):
         self.queue.append(item)
         if not self.busy:
-            #print("SCHEDULE")
-            (shader, face, texture, callback, cb_args) = item
-            self.prepare(shader, face, texture)
+            self.schedule_next()
             self.busy = True
 
     def generate(self, shader, face, texture, callback=None, cb_args=()):
@@ -162,7 +165,7 @@ class GeneratorPool(object):
         self.number = number
         self.generators = []
         for _ in range(number):
-            self.generators.append(TexGenerator())
+            self.generators.append(GeneratorChain())
 
     def make_buffer(self, width, height, texture_format):
         for generator in self.generators:
