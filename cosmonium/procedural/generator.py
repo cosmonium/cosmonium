@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import NodePath, Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture
-from panda3d.core import FrameBufferProperties
+from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
 from direct.task import Task
 
 from ..shaders import ShaderProgram
@@ -49,30 +49,36 @@ class RenderTarget(object):
         self.root = None
         self.quad = None
         self.buffer = None
+        self.mode = GraphicsOutput.RTM_copy_ram
 
     def make_buffer(self, width, height, texture_format):
         self.width = width
         self.height = height
         self.root = NodePath("root")
-        props = FrameBufferProperties()
-        props.set_srgb_color(False)
+        winprops = WindowProperties()
+        winprops.setSize(width, height)
+        fbprops = FrameBufferProperties()
+        fbprops.set_srgb_color(False)
         if texture_format == Texture.F_rgb:
-            props.set_float_color(False)
-            props.set_rgba_bits(8, 8, 8, 0)
+            fbprops.set_float_color(False)
+            fbprops.set_rgba_bits(8, 8, 8, 0)
         elif texture_format == Texture.F_rgba:
-            props.set_float_color(False)
-            props.set_rgba_bits(8, 8, 8, 8)
+            fbprops.set_float_color(False)
+            fbprops.set_rgba_bits(8, 8, 8, 8)
         elif texture_format == Texture.F_r32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 0, 0, 0)
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 0, 0, 0)
         elif texture_format == Texture.F_rgb32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 32, 32, 0)
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 32, 32, 0)
         elif texture_format == Texture.F_rgba32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 32, 32, 32)
-        self.buffer = base.win.make_texture_buffer("generatorBuffer", width, height, to_ram=True, fbp=props)
-        #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 32, 32, 32)
+        win = base.win
+        self.buffer=base.graphics_engine.make_output(
+            win.get_pipe(), "generatorBuffer", -1,
+            fbprops, winprops, GraphicsPipe.BF_refuse_window | GraphicsPipe.BF_resizeable,
+            win.get_gsg(), win)
         self.buffer.set_active(False)
 
         #Create the camera for the buffer
@@ -112,7 +118,7 @@ class RenderTarget(object):
         #TODO: face should be in shader
         shader.update(self.root, face=face)
         self.buffer.clear_render_textures()
-        self.buffer.add_render_texture(texture, GraphicsOutput.RTM_copy_ram)
+        self.buffer.add_render_texture(texture, self.mode)
 
 class GeneratorChain():
     def __init__(self):
