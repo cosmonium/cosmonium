@@ -22,12 +22,28 @@ from __future__ import absolute_import
 
 from panda3d.core import Texture
 
-from .generator import GeneratorChain, GeneratorPool
+from .generator import RenderTarget, RenderStage, GeneratorChain, GeneratorPool
 from .shadernoise import NoiseShader, FloatTarget
 
 from ..heightmap import TextureHeightmapBase, HeightmapPatch, HeightmapPatchFactory
 from ..textures import TexCoord
-from .. import settings
+
+class HeightmapGenerationStage(RenderStage):
+    def __init__(self, coord, width, height, noise_source):
+        RenderStage.__init__(self, "heightmap", (width, height))
+        self.coord = coord
+        self.noise_source = noise_source
+
+    def create_shader(self):
+        shader = NoiseShader(coord=self.coord, noise_source=self.noise_source, noise_target=FloatTarget())
+        shader.create_and_register_shader(None, None)
+        return shader
+
+    def create(self):
+        self.target = RenderTarget()
+        (width, height) = self.get_size()
+        self.target.make_buffer(width, height, Texture.F_r32, to_ram=True)
+        self.target.set_shader(self.create_shader())
 
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
@@ -62,12 +78,11 @@ class ShaderHeightmap(TextureHeightmapBase):
 
     def do_load(self, shape, callback, cb_args):
         if not self.tex_id in ShaderHeightmap.tex_generators:
-            ShaderHeightmap.tex_generators[self.tex_id] = GeneratorChain()
-            if settings.encode_float:
-                texture_format = Texture.F_rgba
-            else:
-                texture_format = Texture.F_r32
-            ShaderHeightmap.tex_generators[self.tex_id].make_buffer(self.width, self.height, texture_format)
+            chain = GeneratorChain()
+            stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
+            chain.add_stage(stage)
+            chain.create()
+            ShaderHeightmapPatch.tex_generators[self.tex_id] = chain #GeneratorPool(settings.patch_pool_size)
         tex_generator = ShaderHeightmap.tex_generators[self.tex_id]
         if self.shader is None:
             self.shader = NoiseShader(noise_source=self.noise,
@@ -110,19 +125,15 @@ class ShaderHeightmapPatch(HeightmapPatch):
 
     def do_load(self, patch, callback, cb_args):
         if not self.width in ShaderHeightmapPatch.tex_generators:
-            ShaderHeightmapPatch.tex_generators[self.width] = GeneratorPool(settings.patch_pool_size)
-            if settings.encode_float:
-                texture_format = Texture.F_rgba
-            else:
-                texture_format = Texture.F_r32
-            ShaderHeightmapPatch.tex_generators[self.width].make_buffer(self.width, self.height, texture_format)
+            chain = GeneratorChain()
+            stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
+            chain.add_stage(stage)
+            chain.create()
+            ShaderHeightmapPatch.tex_generators[self.width] = chain #GeneratorPool(settings.patch_pool_size)
         tex_generator = ShaderHeightmapPatch.tex_generators[self.width]
-        if self.shader is None:
-            self.shader = NoiseShader(coord=self.coord,
-                                      noise_source=self.noise,
-                                      noise_target=FloatTarget(),
-                                      offset=(self.r_x0, self.r_y0, 0.0),
-                                      scale=(self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0))
-            self.shader.create_and_register_shader(None, None)
+        shader_data = {'heightmap': {'offset': (self.r_x0, self.r_y0, 0.0),
+                                     'scale': (self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0),
+                                     'face': self.face
+                                    }}
         #TODO: The texture should be created in the generator
-        tex_generator.generate(self.shader, self.face, Texture(), self.heightmap_ready_cb, (callback, cb_args))
+        tex_generator.generate(shader_data, Texture(), self.heightmap_ready_cb, (callback, cb_args))

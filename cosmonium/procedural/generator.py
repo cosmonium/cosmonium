@@ -49,14 +49,11 @@ class RenderTarget(object):
         self.root = None
         self.quad = None
         self.buffer = None
-        self.mode = GraphicsOutput.RTM_copy_ram
+        self.width = None
+        self.height = None
+        self.mode = None
 
-    def make_buffer(self, width, height, texture_format):
-        self.width = width
-        self.height = height
-        self.root = NodePath("root")
-        winprops = WindowProperties()
-        winprops.setSize(width, height)
+    def format_to_props(self, texture_format):
         fbprops = FrameBufferProperties()
         fbprops.set_srgb_color(False)
         if texture_format == Texture.F_rgb:
@@ -74,6 +71,16 @@ class RenderTarget(object):
         elif texture_format == Texture.F_rgba32:
             fbprops.set_float_color(True)
             fbprops.set_rgba_bits(32, 32, 32, 32)
+        return fbprops
+
+    def make_buffer(self, width, height, texture_format, to_ram):
+        self.width = width
+        self.height = height
+        self.to_ram = to_ram
+        self.root = NodePath("root")
+        winprops = WindowProperties()
+        winprops.setSize(width, height)
+        fbprops = self.format_to_props(texture_format)
         win = base.win
         self.buffer=base.graphics_engine.make_output(
             win.get_pipe(), "generatorBuffer", -1,
@@ -105,20 +112,42 @@ class RenderTarget(object):
 
         print("Created offscreen buffer, size: %dx%d" % (width, height), "format:", Texture.formatFormat(texture_format))
 
+    def set_shader(self, shader):
+        self.shader = shader
+        self.quad.set_shader(shader.shader)
+
     def remove(self):
         if self.buffer is not None:
             self.buffer.set_active(False)
             base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
 
-    def prepare(self, shader, face, texture):
+    def prepare(self, shader_data, texture):
         self.buffer.set_one_shot(True)
         self.buffer.set_active(True)
-        self.quad.set_shader(shader.shader)
         #TODO: face should be in shader
-        shader.update(self.root, face=face)
+        self.shader.update(self.quad, **shader_data)
         self.buffer.clear_render_textures()
-        self.buffer.add_render_texture(texture, self.mode)
+        if self.to_ram:
+            mode = GraphicsOutput.RTM_copy_ram
+        else:
+            mode = GraphicsOutput.RTM_bind_or_copy
+        self.buffer.add_render_texture(texture, mode)
+
+class RenderStage():
+    def __init__(self,name, size):
+        self.name = name
+        self.size = size
+        self.target = None
+
+    def get_size(self):
+        return self.size
+
+    def create(self):
+        raise NotImplementedError()
+
+    def prepare(self, shader_data, texture):
+        self.target.prepare(shader_data, texture)
 
 class GeneratorChain():
     def __init__(self):
@@ -127,13 +156,15 @@ class GeneratorChain():
         self.queue = []
         taskMgr.add(self.check_generation, 'tex_generation', sort = -10000)
 
-    def make_buffer(self, width, height, texture_format):
-        stage = RenderTarget()
-        stage.make_buffer(width, height, texture_format)
+    def add_stage(self, stage):
         self.stages.append(stage)
 
+    def create(self):
+        for stage in self.stages:
+            stage.create()
+
     def callback(self, stage_info):
-        (shader, face, texture, callback, cb_args) = stage_info
+        (shader_data, texture, callback, cb_args) = stage_info
         if texture.has_ram_image():
             if callback is not None:
                 #print(texture)
@@ -153,8 +184,9 @@ class GeneratorChain():
         return Task.cont
 
     def schedule_next(self):
-        (shader, face, texture, callback, cb_args) = self.queue[0]
-        self.stages[0].prepare(shader, face, texture)
+        (shader_data, texture, callback, cb_args) = self.queue[0]
+        for stage in self.stages:
+            stage.prepare(shader_data.get(stage.name, {}), texture)
 
     def schedule(self, item):
         self.queue.append(item)
@@ -162,9 +194,9 @@ class GeneratorChain():
             self.schedule_next()
             self.busy = True
 
-    def generate(self, shader, face, texture, callback=None, cb_args=()):
+    def generate(self, shader_data, texture, callback=None, cb_args=()):
         #print("ADD")
-        self.schedule((shader, face, texture, callback, cb_args))
+        self.schedule((shader_data, texture, callback, cb_args))
 
 class GeneratorPool(object):
     def __init__(self, number):
