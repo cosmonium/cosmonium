@@ -20,12 +20,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import NodePath, OrthographicLens, CardMaker, GraphicsOutput, Texture
-from panda3d.core import FrameBufferProperties, GraphicsPipe, WindowProperties
+from panda3d.core import NodePath, Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture
+from panda3d.core import FrameBufferProperties
 from direct.task import Task
 
 from ..shaders import ShaderProgram
-from .. import settings
 
 class GeneratorVertexShader(ShaderProgram):
     def __init__(self):
@@ -78,23 +77,29 @@ class TexGenerator(object):
             props.set_rgba_bits(32, 32, 32, 32)
         self.buffer = base.win.make_texture_buffer("generatorBuffer", width, height, to_ram=True, fbp=props)
         #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
-        self.buffer.setOneShot(True)
-        #the camera for the buffer
-        cam = base.makeCamera(win=self.buffer)
-        cam.reparent_to(self.root)
-        cam.set_pos(width / 2, height / 2, 100)
-        cam.set_p(-90)
+
+        #Create the camera for the buffer
+        cam = Camera("generator-cam")
         lens = OrthographicLens()
-        lens.set_film_size(width, height)
-        cam.node().set_lens(lens)          
-        #plane with the texture
+        lens.set_film_size(2, 2)
+        lens.set_near_far(0, 0)
+        lens.setNearFar(-1000, 1000)
+        cam.set_lens(lens)
+        cam_np = self.root.attach_new_node(cam)
+
+        #Create the plane with the texture
         cm = CardMaker("plane")
-        cm.set_frame(0, width, 0, height)
-        x_margin = 1.0 / width / 2.0
-        y_margin = 1.0 / height / 2.0
-        cm.set_uv_range((-x_margin, -y_margin), (1 + x_margin, 1 + y_margin))
+        cm.set_frame_fullscreen_quad()
         self.quad = self.root.attach_new_node(cm.generate())
-        self.quad.look_at(0, 0, -1)
+        self.quad.set_depth_test(False)
+        self.quad.set_depth_write(False)
+
+        #Create the display region and attach the camera
+        dr = self.buffer.make_display_region((0, 1, 0, 1))
+        dr.disable_clears()
+        dr.set_camera(cam_np)
+        dr.set_scissor_enabled(False)
+
         taskMgr.add(self.check_generation, 'check_generation', sort = -10000)
         taskMgr.add(self.callback, 'callback', sort = -9999)
         print("Created offscreen buffer, size: %dx%d" % (width, height), "format:", Texture.formatFormat(texture_format))
@@ -102,7 +107,7 @@ class TexGenerator(object):
     def remove(self):
         if self.buffer is not None:
             self.buffer.set_active(False)
-            base.graphicsEngine.removeWindow(self.buffer)
+            base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
 
     def callback(self, task):
@@ -136,7 +141,7 @@ class TexGenerator(object):
         return Task.cont
 
     def prepare(self, shader, face, texture):
-        self.buffer.setOneShot(True)
+        self.buffer.set_one_shot(True)
         self.quad.set_shader(shader.shader)
         #TODO: face should be in shader
         shader.update(self.root, face=face)
