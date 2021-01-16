@@ -84,10 +84,6 @@ class PatchBase(Shape):
         self.children_normal = []
         self.children_offset = []
         self.need_split = False
-        self.split_pending = False
-        self.merge_pending = False
-        self.parent_split_pending = False
-        self.instanciate_pending = False
         self.shown = False
         self.visible = False
         self.apparent_size = None
@@ -131,12 +127,6 @@ class PatchBase(Shape):
             child.remove_instance()
             child.shown = False
         self.children = []
-
-    def can_show_children(self):
-        for child in self.children:
-            if child.visible and not child.instance_ready:
-                return False
-        return True
 
     def can_merge_children(self):
         if len(self.children) == 0:
@@ -744,8 +734,6 @@ class PatchedShapeBase(Shape):
         self.lens_bounds = None
         self.to_split = []
         self.to_merge = []
-        self.to_show_children = []
-        self.to_instanciate = []
         self.to_show = []
         self.to_remove = []
 
@@ -791,7 +779,7 @@ class PatchedShapeBase(Shape):
         patch.instance.show()
         patch.shown = True
 
-    def remove_patch_instance(self, patch, split=False):
+    def remove_patch_instance(self, patch):
         if patch in self.patches:
             self.patches.remove(patch)
         patch.remove_instance()
@@ -819,20 +807,16 @@ class PatchedShapeBase(Shape):
         self.remove_all_patches_instances()
         Shape.remove_instance(self)
 
-    def create_patch_instance(self, patch, hide=False):
+    def create_patch_instance(self, patch):
         if patch.instance is None:
             patch.create_instance()
-            patch.instance.reparentTo(self.instance)
-            if hide:
-                patch.instance.hide()
-                patch.instance.stash()
+            patch.instance.reparent_to(self.instance)
             self.patches.append(patch)
-            patch.shown = not hide
+            patch.shown = True
             if patch.bounds_shape.instance is not None:
                 patch.bounds_shape.instance.reparent_to(self.instance)
         else:
-            if not hide:
-                self.show_patch(patch)
+            self.show_patch(patch)
         patch.set_clickable(self.clickable)
 
     def place_patches(self, owner):
@@ -898,28 +882,16 @@ class PatchedShapeBase(Shape):
         for child in patch.children:
             self.check_lod(child, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
         if len(patch.children) != 0:
-            if not patch.merge_pending and patch.can_merge_children() and lod_control.should_merge(patch, patch.apparent_size, patch.distance):
+            if patch.can_merge_children() and lod_control.should_merge(patch, patch.apparent_size, patch.distance):
                 self.to_merge.append(patch)
-            if patch.split_pending and patch.can_show_children():
-                self.to_show_children.append(patch)
-            if patch.merge_pending and patch.instanciate_pending and patch.instance_ready:
-                self.to_show.append(patch)
-            if patch.shown and not patch.split_pending:
-                self.to_remove.append(patch)
         else:
-            #OLD: Split patch only when visible and when the heightmap is available, otherwise offset is wrong
-            #Split patch only when visible and when instance is ready, otherwise the parent may never be removed
-            can_split = patch.visible and patch.instance_ready and not patch.parent_split_pending
-            if can_split and lod_control.should_split(patch, patch.apparent_size, patch.distance):
+            if lod_control.should_split(patch, patch.apparent_size, patch.distance):
                 if self.are_children_visibles(patch):
                     self.to_split.append(patch)
-            if patch.shown and not patch.split_pending and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
+            if patch.shown and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
                 self.to_remove.append(patch)
-            if not patch.parent_split_pending:
-                if not patch.shown and not patch.instanciate_pending and lod_control.should_instanciate(patch, patch.apparent_size, patch.distance):
-                    self.to_instanciate.append(patch)
-                if patch.instanciate_pending and patch.instance_ready:
-                    self.to_show.append(patch)
+            if not patch.shown and lod_control.should_instanciate(patch, patch.apparent_size, patch.distance):
+                self.to_show.append(patch)
 
     def xform_cam_to_model(self, camera_pos):
         pass
@@ -983,8 +955,6 @@ class PatchedShapeBase(Shape):
         self.create_culling_frustum(altitude_to_ground, altitude_to_min_radius)
         self.to_split = []
         self.to_merge = []
-        self.to_show_children = []
-        self.to_instanciate = []
         self.to_show = []
         self.to_remove = []
         process_nb = 0
@@ -995,28 +965,10 @@ class PatchedShapeBase(Shape):
             self.check_lod(patch, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
         self.to_split.sort(key=lambda x: x.distance)
         self.to_merge.sort(key=lambda x: x.distance)
-        self.to_show_children.sort(key=lambda x: x.distance)
-        self.to_instanciate.sort(key=lambda x: x.distance)
         self.to_show.sort(key=lambda x: x.distance)
         self.to_remove.sort(key=lambda x: x.distance)
         apply_appearance = False
         update = []
-        for patch in self.to_show_children:
-            if settings.debug_lod_split_merge: print(frame, "Children loaded", patch.str_id())
-            for child in patch.children:
-                child.parent_split_pending = False
-                if child.visible and child.instance is not None and child.instance_ready:
-                    if settings.debug_lod_split_merge: print(frame, "Show", child.str_id(), child.instance_ready)
-                    child.instanciate_pending = False
-                    self.show_patch(child)
-                    for linked_object in self.linked_objects:
-                        linked_object.show_patch(child)
-            patch.split_pending = False
-            patch.instanciate_pending = False
-            for linked_object in self.linked_objects:
-                linked_object.hide_patch(patch)
-            self.remove_patch_instance(patch, split=True)
-            patch.last_split = frame
         for patch in self.to_split:
             process_nb += 1
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
@@ -1024,81 +976,49 @@ class PatchedShapeBase(Shape):
             self.split_neighbours(patch, update)
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
+                linked_object.hide_patch(patch)
+            self.remove_patch_instance(patch)
             for child in patch.children:
                 child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
                 #print(child.str_id(), child.visible)
                 if self.lod_control.should_instanciate(child, 0, 0):
-                    child.parent_split_pending = True
-                    child.instanciate_pending = True
-                    self.create_patch_instance(child, hide=True)
-                    if settings.debug_lod_split_merge: print(frame, "Instanciate child", child.str_id(), child.instance_ready)
-            patch.split_pending = True
+                    self.create_patch_instance(child)
+                    if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
+                    for linked_object in self.linked_objects:
+                        linked_object.show_patch(child)
             apply_appearance = True
+            patch.last_split = frame
             if process_nb > 2:
                 break
-        for patch in self.to_instanciate:
-            if settings.debug_lod_split_merge: print(frame, "Instanciate", patch.str_id(), patch.patch_in_view, patch.instance_ready)
+        for patch in self.to_show:
+            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
-            self.create_patch_instance(patch, hide=True)
-            patch.instanciate_pending = True
+            self.create_patch_instance(patch)
             apply_appearance = True
-        for patch in self.to_show:
-            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.instance_ready, patch.merge_pending, patch.split_pending)
-            if patch.instance is not None:
-                #Could happen that the patch has just been removed by the parent in the same batch...
-                self.show_patch(patch)
-                for linked_object in self.linked_objects:
-                    linked_object.show_patch(patch)
-            patch.instanciate_pending = False
-            if patch.merge_pending:
-                for linked_object in self.linked_objects:
-                    linked_object.merge_patch(patch)
-                for child in patch.children:
-                    for linked_object in self.linked_objects:
-                        linked_object.hide_patch(child)
-                    self.remove_patch_instance(child)
-                    child.parent_split_pending = False
-                    child.instanciate_pending = False
-                patch.remove_children()
-                patch.merge_pending = False
+            for linked_object in self.linked_objects:
+                linked_object.show_patch(patch)
         for patch in self.to_remove:
             if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view)
             for linked_object in self.linked_objects:
                 linked_object.hide_patch(patch)
             self.remove_patch_instance(patch)
-            patch.split_pending = False
-            for child in patch.children:
-                child.parent_split_pending = False
-            patch.instanciate_pending = False
         for patch in self.to_merge:
             #Dampen high frequency split-merge anomaly
             if frame - patch.last_split < 5: continue
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
             self.merge_patch(patch)
             self.merge_neighbours(patch, update)
-            if patch.shown and patch.split_pending:
-                for child in patch.children:
-                    self.remove_patch_instance(child)
-                    child.parent_split_pending = False
-                    child.instanciate_pending = False
-                patch.remove_children()
-                patch.split_pending = False
-            else:
-                if patch.visible:
-                    self.create_patch_instance(patch, hide=True)
-                    apply_appearance = True
-                    patch.merge_pending = True
-                    patch.instanciate_pending = True
-                else:
-                    for linked_object in self.linked_objects:
-                        linked_object.merge_patch(patch)
-                    for child in patch.children:
-                        self.remove_patch_instance(child)
-                        child.parent_split_pending = False
-                        child.instanciate_pending = False
-                    patch.remove_children()
-                patch.split_pending = False
+            if patch.visible:
+                self.create_patch_instance(patch)
+                apply_appearance = True
+            for linked_object in self.linked_objects:
+                linked_object.merge_patch(patch)
+            for child in patch.children:
+                for linked_object in self.linked_objects:
+                    linked_object.hide_patch(child)
+                self.remove_patch_instance(child)
+            patch.remove_children()
         self.max_lod = self.new_max_lod
         for patch in update:
             patch.update_instance(self)
@@ -1154,10 +1074,6 @@ class PatchedShapeBase(Shape):
         print(pad, patch.str_id(), hex(id(patch)))
         print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
         if patch.shown: print(pad, '  Shown')
-        if patch.split_pending: print(pad, '  Split pending')
-        if patch.merge_pending: print(pad, '  Merge pending')
-        if patch.parent_split_pending: print(pad, '  Parent split pending')
-        if patch.instanciate_pending: print(pad, '  Instanciate pending')
         if not patch.instance_ready: print(pad, '  Instance not ready')
         if patch.jobs_pending != 0: print(pad, '  Jobs', patch.jobs_pending)
         #print(pad, '  Distance', patch.distance)
@@ -1181,10 +1097,6 @@ class PatchedShapeBase(Shape):
     def _dump_stats(self, stats_array, patch):
         stats_array[0] += patch.visible
         stats_array[1] += patch.shown
-        stats_array[3] += patch.split_pending
-        stats_array[4] += patch.merge_pending
-        stats_array[5] += patch.parent_split_pending
-        stats_array[6] += patch.instanciate_pending
         stats_array[7] += (patch.visible and not patch.instance_ready)
         stats_array[8] += patch.jobs_pending
         stats_array[9] += 1
@@ -1199,10 +1111,6 @@ class PatchedShapeBase(Shape):
         print("Max lod:             ", self.max_lod)
         print("Visible:             ", stats_array[0])
         print("Shown:               ", stats_array[1])
-        print("Split pending:       ", stats_array[3])
-        print("merge pending:       ", stats_array[4])
-        print("Parent split pending:", stats_array[5])
-        print("Instanciate pending: ", stats_array[6])
         print("Instance not ready:  ", stats_array[7])
         print("Jobs pending:        ", stats_array[8])
 
