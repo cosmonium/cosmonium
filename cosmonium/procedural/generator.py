@@ -51,7 +51,8 @@ class RenderTarget(object):
         self.buffer = None
         self.width = None
         self.height = None
-        self.mode = None
+        self.texture_format = None
+        self.texture = None
 
     def format_to_props(self, texture_format):
         fbprops = FrameBufferProperties()
@@ -76,6 +77,7 @@ class RenderTarget(object):
     def make_buffer(self, width, height, texture_format, to_ram):
         self.width = width
         self.height = height
+        self.texture_format = texture_format
         self.to_ram = to_ram
         self.root = NodePath("root")
         winprops = WindowProperties()
@@ -117,37 +119,72 @@ class RenderTarget(object):
         self.quad.set_shader(shader.shader)
 
     def remove(self):
+        self.clear()
         if self.buffer is not None:
             self.buffer.set_active(False)
             base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
 
-    def prepare(self, shader_data, texture):
-        self.buffer.set_one_shot(True)
-        self.buffer.set_active(True)
-        #TODO: face should be in shader
+    def create_textures(self):
+        #TODO: Should we configure the texture here or delegate to the stage ?
+        self.texture = Texture()
+        self.texture.set_wrap_u(Texture.WM_clamp)
+        self.texture.set_wrap_v(Texture.WM_clamp)
+        self.texture.set_anisotropic_degree(0)
+        self.texture.set_minfilter(Texture.FT_linear)
+        self.texture.set_magfilter(Texture.FT_linear)
+
+    def prepare(self, shader_data):
         self.shader.update(self.quad, **shader_data)
         self.buffer.clear_render_textures()
         if self.to_ram:
             mode = GraphicsOutput.RTM_copy_ram
         else:
             mode = GraphicsOutput.RTM_bind_or_copy
-        self.buffer.add_render_texture(texture, mode)
+        self.create_textures()
+        self.buffer.add_render_texture(self.texture, mode)
+        self.buffer.set_one_shot(True)
+        self.buffer.set_active(True)
+
+    def update(self, shader_data):
+        self.shader.update(self.quad, **shader_data)
+        self.buffer.set_one_shot(True)
+
+    def clear(self):
+        #TODO: Should the buffer be deactivated too ?
+        self.texture = None
 
 class RenderStage():
+    sources = []
     def __init__(self,name, size):
         self.name = name
         self.size = size
+        self.sources_map = {}
         self.target = None
 
     def get_size(self):
         return self.size
 
+    def has_output(self, output_name):
+        return False
+
+    def get_output(self, output_name):
+        return None
+
+    def add_source(self, source_name, stage):
+        self.sources_map[source_name] = stage
+
     def create(self):
         raise NotImplementedError()
 
-    def prepare(self, shader_data, texture):
-        self.target.prepare(shader_data, texture)
+    def prepare(self, shader_data):
+        self.target.prepare(shader_data)
+
+    def update(self, shader_data):
+        self.target.update(shader_data)
+
+    def remove(self):
+        self.target.remove()
 
 class GeneratorChain():
     def __init__(self):
@@ -157,21 +194,36 @@ class GeneratorChain():
         taskMgr.add(self.check_generation, 'tex_generation', sort = -10000)
 
     def add_stage(self, stage):
+        for source in stage.sources:
+            for parent in reversed(self.stages):
+                output = parent.get_output(source)
+                if output is not None:
+                    stage.add_source(source, parent)
+                    break
+            else:
+                print("ERROR: Source {} not found".format(source))
         self.stages.append(stage)
 
     def create(self):
         for stage in self.stages:
             stage.create()
 
+    def prepare(self, shader_data):
+        for stage in self.stages:
+            stage.prepare(shader_data.get(stage.name, {}))
+
+    def update(self, shader_data):
+        for stage in self.stages:
+            stage.update(shader_data.get(stage.name, {}))
+
+    def remove(self):
+        for stage in self.stages:
+            stage.remove()
+
     def callback(self, stage_info):
-        (shader_data, texture, callback, cb_args) = stage_info
-        if texture.has_ram_image():
-            if callback is not None:
-                #print(texture)
-                #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
-                callback(texture, *cb_args)
-        else:
-            print("Texture has no RAM image")
+        (shader_data, callback, cb_args) = stage_info
+        if callback is not None:
+            callback(self, *cb_args)
 
     def check_generation(self, task):
         if len(self.queue) > 0:
@@ -184,9 +236,8 @@ class GeneratorChain():
         return Task.cont
 
     def schedule_next(self):
-        (shader_data, texture, callback, cb_args) = self.queue[0]
-        for stage in self.stages:
-            stage.prepare(shader_data.get(stage.name, {}), texture)
+        (shader_data, callback, cb_args) = self.queue[0]
+        self.prepare(shader_data)
 
     def schedule(self, item):
         self.queue.append(item)
@@ -194,24 +245,28 @@ class GeneratorChain():
             self.schedule_next()
             self.busy = True
 
-    def generate(self, shader_data, texture, callback=None, cb_args=()):
+    def generate(self, shader_data, callback=None, cb_args=()):
         #print("ADD")
-        self.schedule((shader_data, texture, callback, cb_args))
+        self.schedule((shader_data, callback, cb_args))
 
 class GeneratorPool(object):
-    def __init__(self, number):
-        self.number = number
-        self.generators = []
-        for _ in range(number):
-            self.generators.append(GeneratorChain())
+    def __init__(self, chains):
+        self.chains = chains
 
-    def make_buffer(self, width, height, texture_format):
-        for generator in self.generators:
-            generator.make_buffer(width, height, texture_format)
+    def add_chain(self, chain):
+        self.chains.append(chain)
 
-    def generate(self, shader, face, texture, callback=None, cb_args=()):
-        lowest = self.generators[0]
-        for generator in self.generators[1:]:
-            if len(generator.queue) < len(lowest.queue):
-                lowest = generator
-        lowest.generate(shader, face, texture, callback, cb_args)
+    def create(self):
+        for chain in self.chains:
+            chain.create()
+
+    def remove(self):
+        for chain in self.chains:
+            chain.remove()
+
+    def generate(self, shader_data, callback=None, cb_args=()):
+        lowest = self.chains[0]
+        for chain in self.chains[1:]:
+            if len(chain.queue) < len(lowest.queue):
+                lowest = chain
+        lowest.generate(shader_data, callback, cb_args)

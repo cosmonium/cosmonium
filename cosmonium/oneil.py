@@ -112,8 +112,6 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         return group
 
 class ONeilAtmosphere(ONeilAtmosphereBase):
-    lookuptable_generators = {}
-
     def __init__(self,
                  shape,
                  height,
@@ -158,18 +156,23 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.height = height
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
+        self.lookuptable_generator = None
         self.pbOpticalDepth = None
         shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
-    @classmethod
-    def get_generator(cls, size):
-        if not size in cls.lookuptable_generators:
-            stage = ONeilLookupTableRenderStage(size)
-            stage.create()
-            cls.lookuptable_generators[size] = stage
-        tex_generator = cls.lookuptable_generators[size]
-        return tex_generator
+    def create_generator(self):
+        self.lookuptable_generator = ONeilLookupTableRenderStage(self.lookup_size)
+        self.lookuptable_generator.create()
+        self.lookuptable_generator.prepare({'parameters': self})
+        self.pbOpticalDepth = self.lookuptable_generator.target.texture
+
+    def remove_instance(self):
+        ONeilAtmosphereBase.remove_instance(self)
+        if self.lookuptable_generator is not None:
+            self.lookuptable_generator.remove()
+            self.lookuptable_generator = None
+        self.pbOpticalDepth = None
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -188,18 +191,11 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return scattering
 
     def generate_lookup_table(self):
-        lookuptable_generator = self.get_generator(self.lookup_size)
-        self.pbOpticalDepth = Texture()
-        self.pbOpticalDepth.setWrapU(Texture.WM_clamp)
-        self.pbOpticalDepth.setWrapV(Texture.WM_clamp)
-        self.pbOpticalDepth.setMinfilter(Texture.FT_linear)
-        self.pbOpticalDepth.setMagfilter(Texture.FT_linear)
-
-        lookuptable_generator.prepare({'parameters': self}, self.pbOpticalDepth)
+        self.lookuptable_generator.update({'parameters': self})
 
     def get_lookup_table(self):
         if self.pbOpticalDepth is None:
-            self.generate_lookup_table()
+            self.create_generator()
         return self.pbOpticalDepth
 
     def set_rayleigh_scale_depth(self, rayleigh_scale_depth):
@@ -821,6 +817,12 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
+
+    def update_shader_shape(self, shape, appearance):
+        ONeilScatteringBase.update_shader_shape(self, shape, appearance)
+        parameters = self.parameters
+        pbOpticalDepth = parameters.get_lookup_table()
+        shape.instance.setShaderInput("pbOpticalDepth", pbOpticalDepth)
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters

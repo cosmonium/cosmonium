@@ -27,6 +27,7 @@ from .shadernoise import NoiseShader, FloatTarget
 
 from ..heightmap import TextureHeightmapBase, HeightmapPatch, HeightmapPatchFactory
 from ..textures import TexCoord
+from .. import settings
 
 class HeightmapGenerationStage(RenderStage):
     def __init__(self, coord, width, height, noise_source):
@@ -123,17 +124,22 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.calc_sub_patch()
         patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
 
+    def texture_generated_cb(self, render_chain, callback, cb_args):
+        self.heightmap_ready_cb(render_chain.stages[0].target.texture, callback, cb_args)
+
     def do_load(self, patch, callback, cb_args):
         if not self.width in ShaderHeightmapPatch.tex_generators:
-            chain = GeneratorChain()
-            stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
-            chain.add_stage(stage)
-            chain.create()
-            ShaderHeightmapPatch.tex_generators[self.width] = chain #GeneratorPool(settings.patch_pool_size)
+            pool = GeneratorPool([])
+            for i in range(settings.patch_pool_size):
+                chain = GeneratorChain()
+                stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
+                chain.add_stage(stage)
+                pool.add_chain(chain)
+            ShaderHeightmapPatch.tex_generators[self.width] = pool
+            pool.create()
         tex_generator = ShaderHeightmapPatch.tex_generators[self.width]
         shader_data = {'heightmap': {'offset': (self.r_x0, self.r_y0, 0.0),
                                      'scale': (self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0),
                                      'face': self.face
                                     }}
-        #TODO: The texture should be created in the generator
-        tex_generator.generate(shader_data, Texture(), self.heightmap_ready_cb, (callback, cb_args))
+        tex_generator.generate(shader_data, self.texture_generated_cb, (callback, cb_args))
