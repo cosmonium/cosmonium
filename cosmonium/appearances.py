@@ -105,14 +105,14 @@ class AppearanceBase:
         self.bump_map_index = 0
         self.specular_map_index = 0
         self.emission_texture_index = 0
-        self.gloss_map_texture_index = 0
+        self.metalroughness_map_texture_index = 0
         self.occlusion_map_index = 0
         self.texture = None
         self.normal_map = None
         self.bump_map = None
         self.specular_map = None
         self.emission_texture = None
-        self.gloss_map = None
+        self.metalroughness_map = None
         self.occlusion_map = None
         self.has_specular_mask = False
         self.has_occlusion_channel = False
@@ -392,7 +392,7 @@ class ModelAppearance(AppearanceBase):
         has_surface = False
         has_normal = False
         has_glow = False
-        has_gloss = False
+        has_metalroughness = False
         for stage in stages:
             tex = instance.find_texture(stage)
             if tex:
@@ -426,13 +426,13 @@ class ModelAppearance(AppearanceBase):
                         self.nb_textures += 1
                         has_glow = True
                         #print("GLOW", self.emission_texture_index, self.emission_texture)
-                elif mode in (TextureStage.M_gloss, ):
-                    if not has_gloss:
-                        self.gloss_map = WrapperTexture(tex)
-                        self.gloss_map_texture_index = self.nb_textures
+                elif mode in (TextureStage.M_selector, ):
+                    if not has_metalroughness:
+                        self.metalroughness_map = WrapperTexture(tex)
+                        self.metalroughness_map_texture_index = self.nb_textures
                         self.nb_textures += 1
-                        has_gloss = True
-                        #print("GLOSS", self.gloss_map_texture_index, self.gloss_map)
+                        has_metalroughness = True
+                        #print("METAL-ROUGHNESS", self.metalroughness_map_texture_index, self.metalroughness_map)
                 else:
                     print("Unsupported mode %d" % mode)
         transparency_mode = TransparencyAttrib.M_none
