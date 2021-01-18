@@ -22,11 +22,11 @@ from __future__ import absolute_import
 
 from ..procedural.appearances import TexturesDictionary, TextureTilingMode
 
-from ..textures import AutoTextureSource
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from ..appearances import TexturesBlock
 
 from .yamlparser import YamlModuleParser
+from .texturesourceparser import TextureSourceYamlParser
 
 class TextureTilingYamlParser(YamlModuleParser):
     @classmethod
@@ -44,11 +44,8 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
     def decode_texture_albedo(self, data, srgb):
         if data is not None:
-            if isinstance(data, str):
-                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
-                data = {}
-            else:
-                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            data = TextureSourceYamlParser.canonize_data(data)
+            texture_source, texture_offset = TextureSourceYamlParser.decode(data)
             srgb = data.get('srgb', srgb)
             albedo = SurfaceTexture(texture_source, srgb)
         else:
@@ -58,11 +55,8 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
     def decode_texture_normal(self, data):
         if data is not None:
-            if isinstance(data, str):
-                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
-                data = {}
-            else:
-                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            data = TextureSourceYamlParser.canonize_data(data)
+            texture_source, texture_offset = TextureSourceYamlParser.decode(data)
             normal = NormalMapTexture(texture_source)
         else:
             normal = None
@@ -71,11 +65,8 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
     def decode_texture_occlusion(self, data):
         if data is not None:
-            if isinstance(data, str):
-                texture_source = AutoTextureSource(data, context=YamlModuleParser.context)
-                data = {}
-            else:
-                texture_source = AutoTextureSource(data.get('file'), context=YamlModuleParser.context)
+            data = TextureSourceYamlParser.canonize_data(data)
+            texture_source, texture_offset = TextureSourceYamlParser.decode(data)
             occlusion = OcclusionMapTexture(texture_source)
         else:
             occlusion = None

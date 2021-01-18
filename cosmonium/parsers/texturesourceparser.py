@@ -109,23 +109,28 @@ class TextureSourceYamlParser(YamlModuleParser):
         cls.parsers[name] = parser
 
     @classmethod
-    def decode(cls, data):
+    def canonize_data(cls, data):
         if isinstance(data, str):
             if data.startswith('ref:'):
-                object_type = 'ref'
-                parameters = {'ref': data.split(':', 2)[1]}
+                parameters = {'type': 'ref',
+                              'ref': data.split(':', 2)[1]}
             else:
-                object_type = 'file'
-                parameters = {'file': data}
+                parameters = {'type': 'file',
+                              'file': data}
         else:
-            object_type = data.get('type', 'file')
             parameters = data
+        return parameters
+
+    @classmethod
+    def decode(cls, data):
+        data = cls.canonize_data(data)
+        object_type = data.get('type', 'file')
         if object_type in cls.parsers:
-            texture_source, texture_offset = cls.parsers[object_type].decode(parameters)
-            name = parameters.get('name')
+            texture_source, texture_offset = cls.parsers[object_type].decode(data)
+            name = data.get('name')
             if texture_source is not None and name is not None:
                 cls.tex_references[name] = texture_source
-            result =(texture_source, texture_offset)
+            result = (texture_source, texture_offset)
         else:
             print("Unknown object type", object_type)
             result = (None, None)
