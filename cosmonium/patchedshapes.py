@@ -1441,7 +1441,7 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
         vx = x / z
         vy = y / z
 
-        return (vx, vy)
+        return (copysign(vx, x), copysign(vy, y))
 
 class SquaredDistanceSquareShape(PatchedSquareShapeBase):
     def create_patch(self, parent, lod, face, x, y):
