@@ -31,7 +31,7 @@ from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser
 from .noiseparser import NoiseYamlParser
-from .appearancesparser import TexturesAppearanceYamlParser
+from .texturesourceparser import TextureSourceYamlParser
 
 from math import pi
 
@@ -125,7 +125,7 @@ class HeightmapYamlParser(YamlModuleParser):
             heightmap_data = data.get('data')
             overlap = data.get('overlap', 0)
             if heightmap_data is not None:
-                texture_source, texture_offset = TexturesAppearanceYamlParser.decode_source(heightmap_data)
+                texture_source, texture_offset = TextureSourceYamlParser.decode(heightmap_data)
                 heightmap_source = HeightMapTexture(texture_source)
                 #TODO: missing texture offset
                 if patched:
