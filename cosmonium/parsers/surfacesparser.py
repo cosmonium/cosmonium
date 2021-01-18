@@ -36,7 +36,7 @@ from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
-from .textureparser import TextureControlYamlParser
+from .texturecontrolparser import TextureControlYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .utilsparser import get_radius_scale
 

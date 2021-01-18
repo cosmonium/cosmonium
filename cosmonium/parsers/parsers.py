@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 from . import appearancesparser
 from . import texturesourceparser
+from . import textureparser
+from . import texturecontrolparser
 from . import shadersparser
 from . import raymarchingparser
 from . import objectparser
