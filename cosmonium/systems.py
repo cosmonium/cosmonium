@@ -259,9 +259,6 @@ class SimpleSystem(StellarSystem):
     def get_components(self):
         return self.primary.get_components()
 
-    def check_cast_shadow_on(self, body):
-        return self.primary.check_cast_shadow_on(body)
-
     def start_shadows_update(self):
         self.primary.start_shadows_update()
 
