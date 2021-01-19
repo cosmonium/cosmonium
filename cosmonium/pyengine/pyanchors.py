@@ -109,15 +109,17 @@ class AnchorBase():
     def get_abs_magnitude(self):
         return self._abs_magnitude
 
-    def calc_global_distance_to(self, position):
-        direction = self.get_position() - position
-        length = direction.length()
-        return (direction / length, length)
+    def calc_absolute_distance_to(self, anchor):
+        reference_point_delta = anchor._global_position - self._global_position
+        local_delta = anchor._local_position - self._local_position
+        delta = reference_point_delta + local_delta
+        length = delta.length()
+        return (delta / length, length)
 
-    def calc_local_distance_to(self, position):
-        direction = position - self._local_position
-        length = direction.length()
-        return (direction / length, length)
+    def calc_local_distance_to(self, anchor):
+        local_delta = anchor._local_position - self._local_position
+        length = local_delta.length()
+        return (local_delta / length, length)
 
     def update(self, time):
         pass
@@ -155,7 +157,7 @@ class StellarAnchor(AnchorBase):
         self._global_position = self.orbit.get_global_position_at(time)
         self._position = self._global_position + self._local_position
         if self.star is not None:
-            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.get_local_position())
+            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.anchor)
 
     def update_observer(self, observer):
         global_delta = self._global_position - observer._global_position
@@ -187,9 +189,7 @@ class StellarAnchor(AnchorBase):
         self.visible_size = visible_size
 
     def get_luminosity(self, star):
-        vector_to_star = (star._local_position - self._local_position)
-        distance_to_star = vector_to_star.length()
-        vector_to_star /= distance_to_star
+        (vector_to_star, distance_to_star) = self.calc_absolute_distance_to(star)
         star_power = abs_mag_to_lum(star._abs_magnitude)
         area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
         if area > 0.0:
@@ -197,7 +197,7 @@ class StellarAnchor(AnchorBase):
             surface = pi * self._extend * self._extend * 1000 * 1000 # Units are in km
             received_energy = irradiance * surface
             reflected_energy = received_energy * self._albedo
-            phase_angle = self.vector_to_obs.dot(self.vector_to_star)
+            phase_angle = self.vector_to_obs.dot(vector_to_star)
             fraction = (1.0 + phase_angle) / 2.0
             return reflected_energy * fraction
         else:

@@ -1049,13 +1049,16 @@ class Cosmonium(CosmoniumBase):
     def find_shadows(self):
         self.shadow_casters = []
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
+        if len(self.light_sources) == 0: return
+        star = self.light_sources[0]
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
             if visible_object.content & AnchorBase.System != 0: continue
             if visible_object.content & AnchorBase.Reflective == 0: continue
+            (vector_to_star, distance_to_star) = visible_object.calc_absolute_distance_to(star)
             visible_object.body.start_shadows_update()
             #print("TEST", visible_object.body.get_name())
-            traverser = FindShadowCastersTraverser(visible_object, visible_object.vector_to_star, visible_object.distance_to_star, visible_object.star.get_apparent_radius())
+            traverser = FindShadowCastersTraverser(visible_object, vector_to_star, distance_to_star, star._extend)
             self.nearest_system.anchor.traverse(traverser)
             #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
             for occluder in traverser.anchors:
@@ -1241,7 +1244,6 @@ class Cosmonium(CosmoniumBase):
             print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected.anchor._orientation)
             print("\tVector to obs", self.selected.anchor.vector_to_obs)
-            print("\tVector to star", self.selected.anchor.vector_to_star, "Distance:", self.selected.anchor.distance_to_star)
             print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ')')
             print("\tUpdate frozen:", self.selected.anchor.update_frozen)
             print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
