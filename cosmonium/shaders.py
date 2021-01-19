@@ -1390,7 +1390,7 @@ class ShaderAppearance(ShaderComponent):
         self.has_normal = False
         self.normal_texture_tangent_space = False
         self.has_bump = False
-        self.has_gloss = False
+        self.has_metalroughness = False
         self.has_specular = False
         self.has_transparency = False
         self.has_nightscale = False
@@ -1412,7 +1412,7 @@ class ShaderAppearance(ShaderComponent):
         if self.has_specular:
             code.append("float shininess;")
             code.append("vec3 specular_color;")
-        if self.has_gloss:
+        if self.has_metalroughness:
             code.append("float metallic;")
             code.append("float perceptual_roughness;")
 
@@ -1435,8 +1435,8 @@ class TextureAppearance(ShaderAppearance):
             config += "t"
             if self.transparency_blend == TransparencyBlend.TB_None:
                 config += "b"
-        if self.has_gloss:
-            config += 'g'
+        if self.has_metalroughness:
+            config += 'mr'
         if self.has_nightscale:
             config += 'i'
         if self.has_backlit:
@@ -1454,7 +1454,7 @@ class TextureAppearance(ShaderAppearance):
         self.has_specular = appearance.specularColor is not None
         self.has_emission = appearance.emission_texture is not None
 
-        self.has_gloss = appearance.gloss_map is not None
+        self.has_metalroughness = appearance.metalroughness_map is not None
         self.has_transparency = appearance.transparency
         self.transparency_blend = appearance.transparency_blend
 
@@ -1478,7 +1478,7 @@ class TextureAppearance(ShaderAppearance):
             code.append("specular_color = %s;" % self.data.get_source_for('specular-color'))
         if self.has_occlusion:
             code.append("surface_occlusion = %s;" % self.data.get_source_for('occlusion'))
-        if self.has_gloss:
+        if self.has_metalroughness:
             code.append("metallic = %s;" % self.data.get_source_for('metallic'))
             code.append("perceptual_roughness = %s;" % self.data.get_source_for('roughness'))
 
@@ -1924,7 +1924,7 @@ class PandaDataSource(DataSource):
         self.has_specular_mask = False
         self.has_emission_texture = False
         self.has_transparency = False
-        self.has_gloss_map_texture = False
+        self.has_metalroughness_map_texture = False
         self.has_occlusion_map_texture = False
         self.has_occlusion_channel = False
 
@@ -1948,7 +1948,7 @@ class PandaDataSource(DataSource):
             config += "e"
         if self.tex_transform:
             config += "r"
-        if self.has_gloss_map_texture:
+        if self.has_metalroughness_map_texture:
             config += "g"
         if self.has_occlusion_map_texture:
             config += "o"
@@ -1967,7 +1967,7 @@ class PandaDataSource(DataSource):
         self.bump_map_index = appearance.bump_map_index
         self.specular_map_index = appearance.specular_map_index
         self.emission_texture_index = appearance.emission_texture_index
-        self.gloss_map_texture_index = appearance.gloss_map_texture_index
+        self.metalroughness_map_texture_index = appearance.metalroughness_map_texture_index
         self.occlusion_map_texture_index = appearance.occlusion_map_index
         self.nb_textures = appearance.nb_textures
         self.has_surface_texture = appearance.texture is not None
@@ -1975,7 +1975,7 @@ class PandaDataSource(DataSource):
         self.has_bump_texture = appearance.bump_map is not None
         self.has_specular_texture = appearance.specular_map is not None
         self.has_emission_texture = appearance.emission_texture
-        self.has_gloss_map_texture = appearance.gloss_map is not None
+        self.has_metalroughness_map_texture = appearance.metalroughness_map is not None
         self.has_occlusion_map_texture = appearance.occlusion_map is not None
         self.has_specular_mask = appearance.has_specular_mask
         self.has_transparency = appearance.transparency
@@ -2066,8 +2066,8 @@ class PandaDataSource(DataSource):
             code += self.create_tex_coord(self.specular_map_index, texture_coord)
         if self.has_emission_texture:
             code += self.create_tex_coord(self.emission_texture_index, texture_coord)
-        if self.has_gloss_map_texture:
-            code += self.create_tex_coord(self.gloss_map_texture_index, texture_coord)
+        if self.has_metalroughness_map_texture:
+            code += self.create_tex_coord(self.metalroughness_map_texture_index, texture_coord)
         if self.has_occlusion_map_texture:
             code += self.create_tex_coord(self.occlusion_map_texture_index, texture_coord)
 
@@ -2130,16 +2130,16 @@ class PandaDataSource(DataSource):
                 data = "vec3(0.0)"
             return data
         if source == 'metallic':
-            if self.has_gloss_map_texture:
-                data = "tex%i.b" % self.gloss_map_texture_index
+            if self.has_metalroughness_map_texture:
+                data = "tex%i.b" % self.metalroughness_map_texture_index
             else:
                 data = "1.0"
             if self.has_material:
                 data = data + " * p3d_Material.metallic"
             return data
         if source == 'roughness':
-            if self.has_gloss_map_texture:
-                data = "tex%i.g" % self.gloss_map_texture_index
+            if self.has_metalroughness_map_texture:
+                data = "tex%i.g" % self.metalroughness_map_texture_index
             else:
                 data = "1.0"
             if self.has_material:
@@ -2149,7 +2149,7 @@ class PandaDataSource(DataSource):
             if self.has_occlusion_map_texture:
                 return "tex%i.r" % self.occlusion_map_texture_index
             if self.has_occlusion_channel:
-                return "tex%i.r" % self.gloss_map_texture_index
+                return "tex%i.r" % self.metalroughness_map_texture_index
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
@@ -2162,8 +2162,8 @@ class PandaDataSource(DataSource):
             code += self.create_sample_texture(self.specular_map_index)
         if self.has_emission_texture:
             code += self.create_sample_texture(self.emission_texture_index)
-        if self.has_gloss_map_texture:
-            code += self.create_sample_texture(self.gloss_map_texture_index)
+        if self.has_metalroughness_map_texture:
+            code += self.create_sample_texture(self.metalroughness_map_texture_index)
         if self.has_occlusion_map_texture:
             code += self.create_sample_texture(self.occlusion_map_texture_index)
 
