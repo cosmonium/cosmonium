@@ -47,7 +47,6 @@ class SystemYamlParser(YamlModuleParser):
                 system.add_child_star_fast(child)
             else:
                 system.add_child_fast(child)
-            system.add_child_fast(child)
         if explicit_parent:
             parent.add_child_fast(system)
             return None
