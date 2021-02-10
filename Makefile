@@ -161,4 +161,8 @@ bdist:
 	@echo "bdist can only be invoked in RELEASE mode"
 endif
 
-.PHONY: build build-req build-source update-mo bapp bdist
+DIST_FILES=$(patsubst dist/%, %, $(wildcard dist/*.zip dist/*.tar.gz dist/*.exe dist/*.toto))
+shasum:
+	cd dist && for file in $(DIST_FILES); do shasum -a 512 $$file > $$file.sha512; done
+
+.PHONY: build build-req build-source update-mo bapp bdist shasum
