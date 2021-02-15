@@ -126,7 +126,7 @@ class UserParameterBase(object):
     def scale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
         if self.scale == self.SCALE_LINEAR: return value
-        if not scale: return value / self.units
+        if not scale: return value
         if self.scale == self.SCALE_LOG:
             value = log(value)
         elif self.scale == self.SCALE_LOG_0:
@@ -134,14 +134,12 @@ class UserParameterBase(object):
                 value = log(self.value_range_0)
             else:
                 value = log(value)
-        else:
-            value = value / self.units
         return value
 
     def unscale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
         if self.scale == self.SCALE_LINEAR: return value
-        if not scale: return value * self.units
+        if not scale: return value
         if self.scale == self.SCALE_LOG:
             value = exp(value)
         elif self.scale == self.SCALE_LOG_0:
@@ -149,29 +147,37 @@ class UserParameterBase(object):
                 value = 0
             else:
                 value = exp(value)
-        else:
-            value = value * self.units
         return value
 
     def get_param(self, scale=False):
         value = self.do_get_param()
+        if self.units is not None:
+            value /= self.units
         return self.scale_value(value, scale)
 
     def set_param(self, value, scale=False):
         value = self.unscale_value(value, scale)
+        if self.units is not None:
+            value *= self.units
         self.do_set_param(value)
 
     def get_param_component(self, component, scale=False):
         param = self.do_get_param()
-        return self.scale_value(param[component], scale)
+        value = param[component]
+        if self.units is not None:
+            value /= self.units
+        return self.scale_value(value, scale)
 
     def set_param_component(self, component, value, scale=False):
         param = self.do_get_param()
-        param[component] = self.unscale_value(value, scale)
+        value = self.unscale_value(value, scale)
+        if self.units is not None:
+            value *= self.units
+        param[component] = value
         self.do_set_param(param)
 
 class UserParameter(UserParameterBase):
-    def __init__(self, name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+    def __init__(self, name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.setter = setter
         self.getter = getter
@@ -183,7 +189,7 @@ class UserParameter(UserParameterBase):
         self.setter(value)
 
 class AutoUserParameter(UserParameterBase):
-    def __init__(self, name, attribute, instance, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+    def __init__(self, name, attribute, instance, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.attribute = attribute
         self.instance = instance
@@ -195,7 +201,7 @@ class AutoUserParameter(UserParameterBase):
         setattr(self.instance, self.attribute, value)
 
 class SettingParameter(UserParameter):
-    def __init__(self, name, attribute, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+    def __init__(self, name, attribute, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.attribute = attribute
 
@@ -206,7 +212,7 @@ class SettingParameter(UserParameter):
         setattr(settings, self.attribute, value)
 
 class ParametricFunctionParameter(UserParameter):
-    def __init__(self, name, param_name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=1.0, nb_components=1, value_range_0=None):
+    def __init__(self, name, param_name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.setter = setter
         self.getter = getter
