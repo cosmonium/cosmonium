@@ -22,7 +22,6 @@ from __future__ import absolute_import
 
 from panda3d.core import LVector3d, LQuaterniond
 
-from .frame import J2000EquatorialReferenceFrame
 from . import units
 
 from math import pow, log, log10, exp, sqrt, asin, pi, atan2
@@ -80,6 +79,13 @@ def calc_orientation_from_incl_an(inclination, ascending_node, flipped=False):
     return inclination_quat * ascending_node_quat
 
 def calc_orientation(right_ascension, declination, flipped=False):
+    #Avoid invalid rotation conversion later due to declination getting above pi / 2
+    if declination == pi / 2:
+        declination -= 1e-9
+    elif declination == -pi / 2:
+        declination += 1e-9
+    if right_ascension > pi:
+        right_ascension -= 2 * pi
     inclination = pi / 2 - declination
     ascending_node = right_ascension + pi / 2
     return calc_orientation_from_incl_an(inclination, ascending_node, flipped)
@@ -98,8 +104,8 @@ def position_to_equatorial(position):
 def orientation_to_equatorial(orientation):
     axis = orientation.xform(LVector3d.up())
     projected = units.J2000_Orientation.conjugate().xform(axis)
-    declination = asin(projected[2])
-    right_asc = atan2(projected[1], projected[0])
-    if right_asc < 0:
-        right_asc += 2 * pi
-    return (right_asc, declination)
+    declination = asin(min(projected[2], 1.0))
+    right_ascension = atan2(projected[1], projected[0])
+    if right_ascension < 0:
+        right_ascension += 2 * pi
+    return (right_ascension, declination)

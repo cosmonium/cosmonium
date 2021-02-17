@@ -25,7 +25,7 @@ from panda3d.core import LQuaterniond, LVector3d
 from ..astro.elementsdb import rotation_elements_db
 from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.frame import BodyReferenceFrame
-from ..astro.astro import calc_orientation_from_incl_an
+from ..astro.astro import calc_orientation, calc_orientation_from_incl_an
 from ..astro import units
 from .. import utils
 
@@ -48,11 +48,9 @@ class OrientationYamlParser(YamlModuleParser):
         declination = data.get('de', 0.0)
         declination_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
         if right_ascension is not None:
-            inclination = pi / 2 - declination * declination_units
-            ascending_node = right_ascension * right_ascension_units + pi / 2
-            orientation = calc_orientation_from_incl_an(inclination * inclination_units,
-                                                        ascending_node * ascending_node_units,
-                                                        flipped)
+            orientation = calc_orientation(right_ascension * right_ascension_units,
+                                           declination * declination_units,
+                                           flipped)
         else:
             orientation = calc_orientation_from_incl_an(inclination * inclination_units,
                                                         ascending_node * ascending_node_units,

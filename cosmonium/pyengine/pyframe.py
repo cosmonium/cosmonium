@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
+from ..astro.astro import calc_orientation
 from ..astro import units
 from math import pi
 from copy import copy
@@ -177,16 +178,9 @@ class CelestialReferenceFrame(AnchorReferenceFrame):
         self.declination = declination * declination_unit
         self.longitude_at_node = longitude_at_node * longitude_at_nod_units
 
-        inclination = pi / 2 - self.declination
-        ascending_node = self.right_asc + pi / 2
-
-        inclination_quat = LQuaterniond()
-        inclination_quat.setFromAxisAngleRad(inclination, LVector3d.unitX())
-        ascending_node_quat = LQuaterniond()
-        ascending_node_quat.setFromAxisAngleRad(ascending_node, LVector3d.unitZ())
         longitude_quad = LQuaterniond()
         longitude_quad.setFromAxisAngleRad(self.longitude_at_node, LVector3d.unitZ())
-        self.orientation = longitude_quad * inclination_quat * ascending_node_quat * J2000EquatorialReferenceFrame.orientation
+        self.orientation = longitude_quad * calc_orientation(self.right_asc, self.declination, False) * J2000EquatorialReferenceFrame.orientation
 
     def get_orientation(self):
         return self.orientation
