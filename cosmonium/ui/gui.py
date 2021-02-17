@@ -44,7 +44,7 @@ from ..parsers.configparser import configParser
 
 from .hud import HUD
 from .query import Query
-from .objecteditor import ObjectEditor
+from .objecteditor import ObjectEditorWindow
 from .textwindow import TextWindow
 from .filewindow import FileWindow
 from .infopanel import InfoPanel
@@ -109,7 +109,7 @@ class Gui(object):
         self.update_size(self.screen_width, self.screen_height)
         self.popup_menu = None
         self.opened_windows = []
-        self.editor = ObjectEditor(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.info = InfoPanel(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, font_size=settings.ui_font_size, owner=self)

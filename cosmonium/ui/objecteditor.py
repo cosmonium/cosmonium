@@ -21,21 +21,22 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from .editor import ParamEditor
+from .editors.editors import ObjectEditors
 
-class ObjectEditor(ParamEditor):
+class ObjectEditorWindow(ParamEditor):
     def __init__(self, font_family, font_size=14, owner=None):
         ParamEditor.__init__(self, font_family, font_size=font_size, owner=owner)
-        self.body = None
+        self.editor = None
 
     def update_parameter(self, param):
-        self.body.update_user_parameters()
+        self.editor.update_user_parameters()
 
     def show(self, body):
         if self.shown():
             print("Editor already shown")
             return
-        self.body = body
-        self.create_layout(body.get_user_parameters())
+        self.editor = ObjectEditors.get_editor_for(body)
+        self.create_layout(self.editor.get_user_parameters())
         if self.last_pos is None:
             self.last_pos = (0, 0, -100)
         self.window.setPos(self.last_pos)
