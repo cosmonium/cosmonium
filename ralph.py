@@ -498,6 +498,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                           1.0, 0.0,
                                           self.ralph_config.tile_size,
                                           self.ralph_config.tile_size,
+                                          0,
                                           ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
@@ -509,7 +510,9 @@ class RoamingRalphDemo(CosmoniumBase):
                                       1.0, 0.0,
                                       self.ralph_config.tile_size,
                                       self.ralph_config.tile_size,
-                                      ShaderHeightmapPatchFactory(self.ralph_config.biome))
+                                      0,
+                                      ShaderHeightmapPatchFactory(self.ralph_config.biome),
+                                      self.ralph_config.interpolator)
 
     def create_terrain_shader(self):
 #         control4 = HeightColorMap('colormap',
@@ -557,13 +560,12 @@ class RoamingRalphDemo(CosmoniumBase):
         self.create_terrain_shader()
         self.terrain_object = HeightmapSurface(
                                'surface',
-                               0,
+                               0, None, None,
                                self.terrain_shape,
                                self.heightmap,
                                self.biome,
                                self.terrain_appearance,
                                self.terrain_shader,
-                               self.ralph_config.tile_size,
                                clickable=False,
                                follow_mesh=True)
         self.terrain = CompositeShapeObject()
@@ -619,7 +621,7 @@ class RoamingRalphDemo(CosmoniumBase):
         return self.terrain_object.get_normals_at(position[0], position[1])
 
     def get_lonlatvert_under(self, position):
-        return self.terrain_object.get_lonlatvert_under(position[0], position[1])
+        return self.terrain_object.get_lonlatvert_at(position[0], position[1])
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
