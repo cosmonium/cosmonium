@@ -18,6 +18,7 @@
  */
 
 #include "wgccre.h"
+#include "frames.h"
 #include "math.h"
 
 #ifndef M_PI
@@ -28,61 +29,31 @@ static double const deg_to_rad = M_PI / 180;
 static double const century = 36525.0;
 static double const j2000_epoch = 2451545.0;
 
-RotationBase::~RotationBase(void)
-{
-}
-
-bool RotationBase::is_flipped(void) const
-{
-  return false;
-}
-
-LQuaterniond RotationBase::calc_orientation(double a, double d, bool flipped) const
-{
-  double inclination = M_PI / 2 - d * deg_to_rad;
-  double ascending_node = a * deg_to_rad + M_PI / 2;
-
-  if (flipped) {
-    inclination += M_PI;
-  }
-  LQuaterniond inclination_quat;
-  inclination_quat.set_from_axis_angle_rad(inclination, LVector3d::unit_x());
-  LQuaterniond ascending_node_quat;
-  ascending_node_quat.set_from_axis_angle_rad(ascending_node,
-      LVector3d::unit_z());
-  return inclination_quat * ascending_node_quat;
-}
-
-CachedRotationBase::CachedRotationBase(void) :
-    last_orientation_time(INFINITY), last_rotation_time(INFINITY)
-{
-}
-
-LQuaterniond CachedRotationBase::get_frame_equatorial_orientation_at(
-    double time)
-{
-  if (last_orientation_time != time) {
-    last_orientation_time = time;
-    last_orientation = calc_frame_equatorial_orientation_at(time);
-  }
-  return last_orientation;
-}
-
-LQuaterniond CachedRotationBase::get_frame_rotation_at(double time)
-{
-  if (last_rotation_time != time) {
-    last_rotation_time = time;
-    last_rotation = calc_frame_rotation_at(time);
-  }
-  return last_rotation;
-}
+TypeHandle WGCCRESimpleRotation::_type_handle;
 
 WGCCRESimpleRotation::WGCCRESimpleRotation(double a0, double d0, double prime,
     double rate, double epoch) :
+    RotationBase(new J2000EquatorialReferenceFrame()),
     meridian_angle(prime * deg_to_rad), mean_motion(rate * deg_to_rad), epoch(epoch)
 {
   flipped = rate < 0;
   orientation = calc_orientation(a0, d0, flipped);
+}
+
+WGCCRESimpleRotation::WGCCRESimpleRotation(WGCCRESimpleRotation const &other) :
+    RotationBase(other.frame->make_copy()),
+    meridian_angle(other.meridian_angle),
+    mean_motion(other.mean_motion),
+    epoch(other.epoch),
+    flipped(other.flipped),
+    orientation(other.orientation)
+{
+}
+
+PT(RotationBase)
+WGCCRESimpleRotation::make_copy(void) const
+{
+  return new WGCCRESimpleRotation(*this);
 }
 
 LQuaterniond WGCCRESimpleRotation::get_frame_equatorial_orientation_at(
@@ -108,13 +79,31 @@ bool WGCCRESimpleRotation::is_flipped(void) const
   return flipped;
 }
 
+TypeHandle WGCCRESimplePrecessingRotation::_type_handle;
+
 WGCCRESimplePrecessingRotation::WGCCRESimplePrecessingRotation(double a0,
     double a0_rate, double d0, double d0_rate, double prime, double rate,
     double epoch, double validity) :
+    RotationBase(new J2000EquatorialReferenceFrame()),
     a0(a0), a0_rate(a0_rate), d0(d0), d0_rate(d0_rate), meridian_angle(prime * deg_to_rad), mean_motion(
         rate * deg_to_rad), epoch(epoch), validity(validity / century)
 {
   flipped = rate < 0;
+}
+
+WGCCRESimplePrecessingRotation::WGCCRESimplePrecessingRotation(WGCCRESimplePrecessingRotation const &other) :
+      RotationBase(other.frame->make_copy()),
+      a0(other.a0), a0_rate(other.a0_rate), d0(other.d0), d0_rate(other.d0_rate),
+      meridian_angle(other.meridian_angle), mean_motion(other.mean_motion),
+      epoch(other.epoch), validity(other.validity),
+      flipped(other.flipped)
+{
+}
+
+PT(RotationBase)
+WGCCRESimplePrecessingRotation::make_copy(void) const
+{
+  return new WGCCRESimplePrecessingRotation(*this);
 }
 
 double WGCCRESimplePrecessingRotation::get_T(double jd) const
@@ -154,7 +143,10 @@ bool WGCCRESimplePrecessingRotation::is_flipped(void) const
   return flipped;
 }
 
+TypeHandle WGCCREComplexRotation::_type_handle;
+
 WGCCREComplexRotation::WGCCREComplexRotation(double epoch, double validity) :
+    CachedRotationBase(new J2000EquatorialReferenceFrame()),
     epoch(epoch),
     validity(validity / century)
 {
@@ -170,6 +162,11 @@ double WGCCREComplexRotation::get_T(double jd) const
     T = validity;
   }
   return T;
+}
+
+PT(RotationBase) WGCCREMercuryRotation::make_copy(void) const
+{
+  return new WGCCREMercuryRotation(*this);
 }
 
 LQuaterniond WGCCREMercuryRotation::calc_frame_equatorial_orientation_at(
@@ -197,6 +194,11 @@ LQuaterniond WGCCREMercuryRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREMarsRotation::make_copy(void) const
+{
+  return new WGCCREMarsRotation(*this);
 }
 
 LQuaterniond WGCCREMarsRotation::calc_frame_equatorial_orientation_at(
@@ -239,6 +241,11 @@ LQuaterniond WGCCREMarsRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREJupiterRotation::make_copy(void) const
+{
+  return new WGCCREJupiterRotation(*this);
+}
+
 LQuaterniond WGCCREJupiterRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -278,6 +285,11 @@ LQuaterniond WGCCREJupiterRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCRENeptuneRotation::make_copy(void) const
+{
+  return new WGCCRENeptuneRotation(*this);
+}
+
 LQuaterniond WGCCRENeptuneRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -303,6 +315,11 @@ LQuaterniond WGCCRENeptuneRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRE9MoonRotation::make_copy(void) const
+{
+  return new WGCCRE9MoonRotation(*this);
 }
 
 LQuaterniond WGCCRE9MoonRotation::calc_frame_equatorial_orientation_at(
@@ -381,6 +398,11 @@ LQuaterniond WGCCRE9MoonRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREPhobosRotation::make_copy(void) const
+{
+  return new WGCCREPhobosRotation(*this);
+}
+
 LQuaterniond WGCCREPhobosRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -428,6 +450,11 @@ LQuaterniond WGCCREPhobosRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREDeimosRotation::make_copy(void) const
+{
+  return new WGCCREDeimosRotation(*this);
 }
 
 LQuaterniond WGCCREDeimosRotation::calc_frame_equatorial_orientation_at(
@@ -482,6 +509,11 @@ LQuaterniond WGCCREDeimosRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREAmaltheaRotation::make_copy(void) const
+{
+  return new WGCCREAmaltheaRotation(*this);
+}
+
 LQuaterniond WGCCREAmaltheaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -511,6 +543,11 @@ LQuaterniond WGCCREAmaltheaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREThebeRotation::make_copy(void) const
+{
+  return new WGCCREThebeRotation(*this);
 }
 
 LQuaterniond WGCCREThebeRotation::calc_frame_equatorial_orientation_at(
@@ -548,6 +585,11 @@ LQuaterniond WGCCREThebeRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREIoRotation::make_copy(void) const
+{
+  return new WGCCREIoRotation(*this);
+}
+
 LQuaterniond WGCCREIoRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -583,6 +625,11 @@ LQuaterniond WGCCREIoRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREEuropaRotation::make_copy(void) const
+{
+  return new WGCCREEuropaRotation(*this);
 }
 
 LQuaterniond WGCCREEuropaRotation::calc_frame_equatorial_orientation_at(
@@ -632,6 +679,11 @@ LQuaterniond WGCCREEuropaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREGanymedeRotation::make_copy(void) const
+{
+  return new WGCCREGanymedeRotation(*this);
+}
+
 LQuaterniond WGCCREGanymedeRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -672,6 +724,11 @@ LQuaterniond WGCCREGanymedeRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRECallistoRotation::make_copy(void) const
+{
+  return new WGCCRECallistoRotation(*this);
 }
 
 LQuaterniond WGCCRECallistoRotation::calc_frame_equatorial_orientation_at(
@@ -716,6 +773,11 @@ LQuaterniond WGCCRECallistoRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREEpimetheusRotation::make_copy(void) const
+{
+  return new WGCCREEpimetheusRotation(*this);
+}
+
 LQuaterniond WGCCREEpimetheusRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -748,6 +810,11 @@ LQuaterniond WGCCREEpimetheusRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREJanusRotation::make_copy(void) const
+{
+  return new WGCCREJanusRotation(*this);
 }
 
 LQuaterniond WGCCREJanusRotation::calc_frame_equatorial_orientation_at(
@@ -784,6 +851,11 @@ LQuaterniond WGCCREJanusRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREMimasRotation::make_copy(void) const
+{
+  return new WGCCREMimasRotation(*this);
+}
+
 LQuaterniond WGCCREMimasRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -815,6 +887,11 @@ LQuaterniond WGCCREMimasRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRETethysRotation::make_copy(void) const
+{
+  return new WGCCRETethysRotation(*this);
 }
 
 LQuaterniond WGCCRETethysRotation::calc_frame_equatorial_orientation_at(
@@ -850,6 +927,11 @@ LQuaterniond WGCCRETethysRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCRERheaRotation::make_copy(void) const
+{
+  return new WGCCRERheaRotation(*this);
+}
+
 LQuaterniond WGCCRERheaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -882,6 +964,11 @@ LQuaterniond WGCCRERheaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCRECordeliaRotation::make_copy(void) const
+{
+  return new WGCCRECordeliaRotation(*this);
+}
+
 LQuaterniond WGCCRECordeliaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -906,6 +993,11 @@ LQuaterniond WGCCRECordeliaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREOpheliaRotation::make_copy(void) const
+{
+  return new WGCCREOpheliaRotation(*this);
 }
 
 LQuaterniond WGCCREOpheliaRotation::calc_frame_equatorial_orientation_at(
@@ -936,6 +1028,11 @@ LQuaterniond WGCCREOpheliaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREBiancaRotation::make_copy(void) const
+{
+  return new WGCCREBiancaRotation(*this);
+}
+
 LQuaterniond WGCCREBiancaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -962,6 +1059,11 @@ LQuaterniond WGCCREBiancaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRECressidaRotation::make_copy(void) const
+{
+  return new WGCCRECressidaRotation(*this);
 }
 
 LQuaterniond WGCCRECressidaRotation::calc_frame_equatorial_orientation_at(
@@ -992,6 +1094,11 @@ LQuaterniond WGCCRECressidaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREDesdemonaRotation::make_copy(void) const
+{
+  return new WGCCREDesdemonaRotation(*this);
+}
+
 LQuaterniond WGCCREDesdemonaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1018,6 +1125,11 @@ LQuaterniond WGCCREDesdemonaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREJulietRotation::make_copy(void) const
+{
+  return new WGCCREJulietRotation(*this);
 }
 
 LQuaterniond WGCCREJulietRotation::calc_frame_equatorial_orientation_at(
@@ -1048,6 +1160,11 @@ LQuaterniond WGCCREJulietRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREPortiaRotation::make_copy(void) const
+{
+  return new WGCCREPortiaRotation(*this);
+}
+
 LQuaterniond WGCCREPortiaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1074,6 +1191,11 @@ LQuaterniond WGCCREPortiaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRERosalindRotation::make_copy(void) const
+{
+  return new WGCCRERosalindRotation(*this);
 }
 
 LQuaterniond WGCCRERosalindRotation::calc_frame_equatorial_orientation_at(
@@ -1104,6 +1226,11 @@ LQuaterniond WGCCRERosalindRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREBelindaRotation::make_copy(void) const
+{
+  return new WGCCREBelindaRotation(*this);
+}
+
 LQuaterniond WGCCREBelindaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1132,6 +1259,11 @@ LQuaterniond WGCCREBelindaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREPuckRotation::make_copy(void) const
+{
+  return new WGCCREPuckRotation(*this);
+}
+
 LQuaterniond WGCCREPuckRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1158,6 +1290,11 @@ LQuaterniond WGCCREPuckRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREMirandaRotation::make_copy(void) const
+{
+  return new WGCCREMirandaRotation(*this);
 }
 
 LQuaterniond WGCCREMirandaRotation::calc_frame_equatorial_orientation_at(
@@ -1193,6 +1330,11 @@ LQuaterniond WGCCREMirandaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREArielRotation::make_copy(void) const
+{
+  return new WGCCREArielRotation(*this);
+}
+
 LQuaterniond WGCCREArielRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1220,6 +1362,11 @@ LQuaterniond WGCCREArielRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREUmbrielRotation::make_copy(void) const
+{
+  return new WGCCREUmbrielRotation(*this);
 }
 
 LQuaterniond WGCCREUmbrielRotation::calc_frame_equatorial_orientation_at(
@@ -1251,6 +1398,11 @@ LQuaterniond WGCCREUmbrielRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCRETitaniaRotation::make_copy(void) const
+{
+  return new WGCCRETitaniaRotation(*this);
+}
+
 LQuaterniond WGCCRETitaniaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1279,6 +1431,11 @@ LQuaterniond WGCCRETitaniaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREOberonRotation::make_copy(void) const
+{
+  return new WGCCREOberonRotation(*this);
+}
+
 LQuaterniond WGCCREOberonRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1305,6 +1462,11 @@ LQuaterniond WGCCREOberonRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRENaiadRotation::make_copy(void) const
+{
+  return new WGCCRENaiadRotation(*this);
 }
 
 LQuaterniond WGCCRENaiadRotation::calc_frame_equatorial_orientation_at(
@@ -1337,6 +1499,11 @@ LQuaterniond WGCCRENaiadRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREThalassaRotation::make_copy(void) const
+{
+  return new WGCCREThalassaRotation(*this);
+}
+
 LQuaterniond WGCCREThalassaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1365,6 +1532,11 @@ LQuaterniond WGCCREThalassaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCREDespinaRotation::make_copy(void) const
+{
+  return new WGCCREDespinaRotation(*this);
 }
 
 LQuaterniond WGCCREDespinaRotation::calc_frame_equatorial_orientation_at(
@@ -1397,6 +1569,11 @@ LQuaterniond WGCCREDespinaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREGalateaRotation::make_copy(void) const
+{
+  return new WGCCREGalateaRotation(*this);
+}
+
 LQuaterniond WGCCREGalateaRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1425,6 +1602,11 @@ LQuaterniond WGCCREGalateaRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRELarissaRotation::make_copy(void) const
+{
+  return new WGCCRELarissaRotation(*this);
 }
 
 LQuaterniond WGCCRELarissaRotation::calc_frame_equatorial_orientation_at(
@@ -1457,6 +1639,11 @@ LQuaterniond WGCCRELarissaRotation::calc_frame_rotation_at(double time)
   return rotation;
 }
 
+PT(RotationBase) WGCCREProteusRotation::make_copy(void) const
+{
+  return new WGCCREProteusRotation(*this);
+}
+
 LQuaterniond WGCCREProteusRotation::calc_frame_equatorial_orientation_at(
     double time)
 {
@@ -1485,6 +1672,11 @@ LQuaterniond WGCCREProteusRotation::calc_frame_rotation_at(double time)
   local.set_from_axis_angle_rad(W * deg_to_rad, LVector3d::unit_z());
   LQuaterniond rotation = local * get_frame_equatorial_orientation_at(time);
   return rotation;
+}
+
+PT(RotationBase) WGCCRETritonRotation::make_copy(void) const
+{
+  return new WGCCRETritonRotation(*this);
 }
 
 LQuaterniond WGCCRETritonRotation::calc_frame_equatorial_orientation_at(

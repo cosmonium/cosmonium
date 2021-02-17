@@ -53,7 +53,8 @@ from cosmonium.spaceengine import textures
 from cosmonium import settings
 
 #import orbits and rotations elements to add them to the DB
-from cosmonium.astro.tables import uniform, vsop87, wgccre, lieske_e5, elp82, meeus, gust86, dourneau, rckin, htc20
+from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87
+from cosmonium.astro.tables import uniform, wgccre
 
 import argparse
 import os

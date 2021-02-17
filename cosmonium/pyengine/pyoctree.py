@@ -44,7 +44,7 @@ class OctreeNode(object):
         self.max_magnitude = 99.0
         self.rebuild_needed = False
         #TODO: Right now an octree contains anything
-        self.content = ~1
+        self.content = ~0
         OctreeNode.nb_cells += 1
 
     def get_num_children(self):
@@ -66,6 +66,7 @@ class OctreeNode(object):
         for child in self.children:
             if child is not None and child.rebuild_needed:
                 child.rebuild()
+        rebuild_needed = False
 
     def traverse(self, traverser):
         traverser.traverse_octree_node(self)

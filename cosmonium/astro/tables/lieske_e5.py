@@ -19,42 +19,19 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LQuaterniond
-
 from ..elementsdb import orbit_elements_db
-from ..orbits import FuncOrbit
-from cosmonium.astro.frame import J2000EclipticReferenceFrame
 
 try:
-    from cosmonium_engine import lieske_e5_sat_pos
+    from cosmonium_engine import LieskeE5Orbit
     loaded = True
 except ImportError as e:
-    print("WARNING: Could not load Leske E5 C implementation")
+    print("WARNING: Could not load Lieske E5 C implementation")
     print("\t", e)
     loaded = False
 
-class LieskE5(FuncOrbit):
-    def __init__(self, sat_id, period, semi_major_axis, eccentricity):
-        FuncOrbit.__init__(self, period, semi_major_axis, eccentricity, J2000EclipticReferenceFrame())
-        self.sat_id = sat_id
-
-    def is_periodic(self):
-        return True
-
-    def is_closed(self):
-        return False
-
-    def get_frame_position_at(self, time):
-        #TODO: The position is in the ecliptic plane of date, not J2000.0
-        #The precession must be taken into account
-        return lieske_e5_sat_pos(time, self.sat_id)
-
-    def get_frame_rotation_at(self, time):
-        return LQuaterniond()
-
 orbit_elements_db.register_category('e5', 100)
 if loaded:
-    orbit_elements_db.register_element('e5', 'io',       LieskE5(0,  1.769,  421800, 0.0041))
-    orbit_elements_db.register_element('e5', 'europa',   LieskE5(1,  3.551,  671100, 0.0094))
-    orbit_elements_db.register_element('e5', 'ganymede', LieskE5(2,  7.155, 1070400, 0.0013))
-    orbit_elements_db.register_element('e5', 'callisto', LieskE5(3, 16.69,  1882700, 0.0074))
+    orbit_elements_db.register_element('e5', 'io',       LieskeE5Orbit(0,  1.769,  421800, 0.0041))
+    orbit_elements_db.register_element('e5', 'europa',   LieskeE5Orbit(1,  3.551,  671100, 0.0094))
+    orbit_elements_db.register_element('e5', 'ganymede', LieskeE5Orbit(2,  7.155, 1070400, 0.0013))
+    orbit_elements_db.register_element('e5', 'callisto', LieskeE5Orbit(3, 16.69,  1882700, 0.0074))

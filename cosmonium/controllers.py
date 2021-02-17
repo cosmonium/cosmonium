@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
-from cosmonium.astro.orbits import FixedOrbit, FixedPosition
+from cosmonium.astro.orbits import FixedPosition
 from cosmonium.astro.rotations import FixedRotation
 from cosmonium.astro.frame import SurfaceReferenceFrame
 
@@ -42,7 +42,7 @@ class BodyController():
         If the reference frame is linked to the surface of an object, a surface mover will be created,
         otherwise a generic cartesian mover will be createDd
         """
-        if not isinstance(self.body.anchor.orbit, (FixedOrbit, FixedPosition)):
+        if not isinstance(self.body.anchor.orbit, FixedPosition):
             print("Can not create a mover with dynamic orbit", self.body.anchor.orbit)
             return
         if not isinstance(self.body.anchor.rotation, FixedRotation):
@@ -240,7 +240,7 @@ class SurfaceBodyMover(CartesianBodyMover):
         (x, y, altitude) = position
         new_orbit_pos = LPoint3d(x, y, 1.0)
         self.body.anchor.orbit.position = new_orbit_pos
-        new_pos = self.body.anchor.orbit.get_position_at(0)
+        new_pos = self.body.anchor.orbit.get_local_position_at(0)
         distance = self.frame.body.get_height_under(new_pos) - self.frame.body.get_apparent_radius()
         new_orbit_pos[2] = distance + altitude
         self.altitude = altitude
@@ -261,7 +261,7 @@ class SurfaceBodyMover(CartesianBodyMover):
         return self.altitude
 
     def set_altitude(self, altitude):
-        pos = self.body.anchor.orbit.get_position_at(0)
+        pos = self.body.anchor.orbit.get_local_position_at(0)
         distance = self.body.frame.body.get_height_under(pos) - self.frame.body.get_apparent_radius()
         frame_pos = self.body.anchor.orbit.position
         frame_pos[2] = distance + altitude

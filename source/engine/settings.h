@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2020 Laurent Deru.
+ * Copyright (C) 2018-2021 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,33 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VSOP87_H
-#define VSOP87_H
+#ifndef SETTINGS_H
+#define SETTINGS_H
 
 #include "pandabase.h"
 #include "luse.h"
 
-BEGIN_PUBLISH
+class Settings
+{
+public:
+  Settings(void) {}
 
-LPoint3d
-vsop87_pos(double jd, int planet);
+protected:
+  Settings(Settings const &other);
 
-END_PUBLISH
+PUBLISHED:
+  static Settings * get_global_ptr(void);
 
-#endif //VSOP87_H
+  bool use_depth_scaling;
+  bool use_inv_scaling;
+  bool use_log_scaling;
+  bool camera_at_origin;
+  double scale;
+  bool offset_body_center;
+  double min_body_size;
+  double lowest_app_magnitude;
+};
+
+extern Settings settings;
+
+#endif

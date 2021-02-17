@@ -20,40 +20,18 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LQuaterniond
-
 from ..elementsdb import orbit_elements_db
-from ..orbits import FuncOrbit
-from ..frame import J2000EclipticReferenceFrame
 
 try:
-    from cosmonium_engine import elp82_truncated_pos
+    from cosmonium_engine import ELP82Orbit
     loaded = True
 except ImportError as e:
     print("WARNING: Could not load ELP82 C implementation")
     print("\t", e)
     loaded = False
 
-class ELP82Truncated(FuncOrbit):
-    def __init__(self, period, semi_major_axis, eccentricity):
-        FuncOrbit.__init__(self, period, semi_major_axis, eccentricity, J2000EclipticReferenceFrame())
-
-    def is_periodic(self):
-        return True
-
-    def is_closed(self):
-        return False
-
-    def get_frame_position_at(self, time):
-        #TODO: The position is in the ecliptic plane of date, not J2000.0
-        #The precession must be taken into account
-        return elp82_truncated_pos(time)
-
-    def get_frame_rotation_at(self, time):
-        return LQuaterniond()
-
 orbit_elements_db.register_category('elp82-trunc', 50)
 orbit_elements_db.register_category('elp82', 100)
 
 if loaded:
-    orbit_elements_db.register_element('elp82-trunc', 'moon', ELP82Truncated(27.322, 384400, 0.0554))
+    orbit_elements_db.register_element('elp82-trunc', 'moon', ELP82Orbit(27.322, 384400, 0.0554))

@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..annotations import Constellation
-from ..astro.orbits import InfinitePosition
+from ..astro.projection import InfinitePosition
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
@@ -46,7 +46,7 @@ class ConstellationYamlParser(YamlModuleParser):
         if decl is None:
             print("Invalid de : '%s'" % data.get('de'))
             decl = 0
-        center = InfinitePosition(right_asc=ra, declination=decl)
+        center = InfinitePosition(ra * units.Deg, decl * units.Deg)
         boundaries = 'boundaries/%s.txt' % abbr.lower()
         boundaries = boundariesparser.load(boundaries, cls.context)
         if boundaries is not None:

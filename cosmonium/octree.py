@@ -21,9 +21,14 @@ from __future__ import absolute_import
 
 try:
     from cosmonium_engine import OctreeNode, InfiniteFrustum
+    from cosmonium_engine import Observer as CObserver
+    from cosmonium_engine import Settings
+    c_settings = Settings.get_global_ptr()
     print("Using C++ Engine")
 except ImportError as e:
     print("WARNING: Could not load Octree C implementation, fallback on python implementation")
     print("\t", e)
     from .pyengine.pyoctree import OctreeNode
     from .pyengine.pyfrustum import InfiniteFrustum
+    CObserver = None
+    c_settings = None

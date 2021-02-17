@@ -20,7 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond
+from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond,\
+    LPoint3d
 from panda3d.core import DirectionalLight
 
 from .stellarobject import StellarObject
@@ -31,7 +32,7 @@ from .shapes import SphereShape, ScaledSphereShape
 from .surfaces import FlatSurface
 from .appearances import Appearance
 from .astro.frame import RelativeReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
-from .astro.orbits import FixedOrbit
+from .astro.orbits import LocalFixedPosition
 from .astro.rotations import FixedRotation, UnknownRotation
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, temp_to_radius
 from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
@@ -92,8 +93,8 @@ class StellarBody(StellarObject):
             #TODO: The system name should be translated correctly
             self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
             self.parent.add_child_fast(self.system)
-            system_orbit.set_body(self.system)
-            orbit = FixedOrbit(frame=RelativeReferenceFrame(self.system.anchor, system_orbit.frame))
+            #system_orbit.set_body(self.system)
+            orbit = LocalFixedPosition(frame=RelativeReferenceFrame(system_orbit.frame, self.system.anchor), frame_position=LPoint3d())
             self.set_orbit(orbit)
             if isinstance(self, Star):
                 self.system.add_child_star_fast(self)
@@ -296,27 +297,6 @@ class ReflectiveBody(StellarBody):
     def is_emissive(self):
         return False
 
-    def get_abs_magnitude(self):
-        luminosity = self.get_luminosity() * self.get_phase()
-        if luminosity > 0.0:
-            return lum_to_abs_mag(luminosity)
-        else:
-            return 99.0
-
-    def get_luminosity(self):
-        if self.star is None or self.anchor.distance_to_star is None: return 0.0
-        star_power = self.star.get_luminosity()
-        area = 4 * pi * self.anchor.distance_to_star * self.anchor.distance_to_star * 1000 * 1000
-        if area > 0.0:
-            irradiance = star_power / area
-            surface = 4 * pi * self.get_apparent_radius() * self.get_apparent_radius() * 1000 * 1000
-            received_energy = irradiance * surface
-            reflected_energy = received_energy * self.albedo
-            return reflected_energy
-        else:
-            print("No area", self.get_name())
-            return 0.0
-
     def get_phase(self):
         if self.anchor.vector_to_obs is None or self.anchor.vector_to_star is None: return 0.0
         angle = self.anchor.vector_to_obs.dot(self.anchor.vector_to_star)
@@ -396,9 +376,6 @@ class EmissiveBody(StellarBody):
 
     def is_emissive(self):
         return True
-
-    def get_abs_magnitude(self):
-        return self.abs_magnitude
 
     def get_luminosity(self):
         return abs_mag_to_lum(self.get_abs_magnitude())

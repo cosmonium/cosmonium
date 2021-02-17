@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..annotations import Boundary
-from ..astro.orbits import InfinitePosition
+from ..astro.projection import InfinitePosition
 from ..astro import units
 from ..dircontext import defaultDirContext
 
@@ -41,9 +41,9 @@ def create_line(points, prev_ra, prev_decl, ra, decl):
         ra_incr = delta_ra / count
         decl_incr = delta_decl / count
         for i in range(count):
-            position = InfinitePosition(right_asc=prev_ra + i * ra_incr, declination=prev_decl + i * decl_incr)
+            position = InfinitePosition((prev_ra + i * ra_incr) * units.Deg, (prev_decl + i * decl_incr) * units.Deg)
             points.append(position)
-    position = InfinitePosition(right_asc=ra, declination=decl)
+    position = InfinitePosition(ra * units.Deg, decl * units.Deg)
     points.append(position)
 
 def do_load(filepath):

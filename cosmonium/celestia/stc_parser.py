@@ -25,7 +25,7 @@ from ..systems import Barycenter
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import UnknownRotation
-from ..astro.frame import j2000BarycentricEquatorialReferenceFrame
+from ..astro.frame import J2000BarycentricEquatorialReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -116,7 +116,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
             print("Key of Star", key, "not supported")
     if orbit is None:
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
-    orbit.set_frame(j2000BarycentricEquatorialReferenceFrame)
+    orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
     if distance is not None:
         distance *= units.Ly
     elif parent is not None:
@@ -176,7 +176,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
             existing_star.parent.remove_child_fast(existing_star)
     if orbit is None:
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
-    orbit.set_frame(j2000BarycentricEquatorialReferenceFrame)
+    orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
     barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_star_fast(barycenter)
     return barycenter

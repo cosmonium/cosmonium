@@ -22,21 +22,62 @@
 
 #include "math.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+const double Km = 1.0;
+const double AU = 149597870.700 * Km;
 const double KmPerLy = 9460730472580.800;
+const double Ly = KmPerLy * Km;
 const double LyPerParsec = 3.26167;
 
 const double KmPerParsec = LyPerParsec * KmPerLy;
 
+const double Day = 1.0;
+const double Hour = Day / 24.0;
+const double Min = Hour / 60.0;
+const double Sec = Min / 60.0;
+const double JYear = 365.25 * Day;
+const double JCentury = JYear * 100.0;
+
+const double J2000_Obliquity = 23.4392911;
+
+// Factor to convert luminosity to magnitude
+const double luminosity_magnitude_factor = log(10.0) / 2.5;
+
+const double sun_abs_magnitude = 4.83;
+
+inline double
+to_rad(double deg)
+{
+  return deg / 180.0 * M_PI;
+}
+
 inline double
 abs_to_app_mag(double abs_magnitude, double distance)
 {
+  // m = M + 5 * (log10(d) - 1)
   return abs_magnitude + 5 * (log10(distance / KmPerParsec) - 1);
 }
 
 inline double
 app_to_abs_mag(double app_magnitude, double distance)
 {
+  // M = m - 5 * (log10(d) - 1)
   return app_magnitude - 5 * (log10(distance / KmPerParsec) - 1);
 }
 
+inline double
+lum_to_abs_mag(double luminosity)
+{
+  // M* = M0 - 2.5 * log10(L* / L0)
+  return sun_abs_magnitude - log(luminosity) / luminosity_magnitude_factor;
+}
+inline double
+abs_mag_to_lum(double abs_magnitude)
+{
+  // L* = L0 * 10^((M0 - M*) / 2.5)
+  return exp((sun_abs_magnitude - abs_magnitude) * luminosity_magnitude_factor);
+}
 #endif

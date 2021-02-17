@@ -37,7 +37,7 @@ class Renderer:
     def render(self, observer):
         pixel_size = observer.pixel_size
         for orbit_to_render in self.orbits:
-            if orbit_to_render.has_orbit and orbit_to_render.anchor.orbit.dynamic and orbit_to_render.anchor.orbit.get_apparent_radius() / (orbit_to_render.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
+            if orbit_to_render.has_orbit and orbit_to_render.anchor.orbit.is_dynamic() and orbit_to_render.anchor.orbit.get_apparent_radius() / (orbit_to_render.anchor.distance_to_obs * pixel_size) > settings.orbit_fade:
                 self.orbits_renderer.add_orbit(orbit_to_render)
         for object_to_render in self.objects:
             if object_to_render.anchor.visible:

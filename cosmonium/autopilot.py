@@ -180,7 +180,7 @@ class AutoPilot(object):
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
         if up is None:
             up = LVector3d.up()
-        frame = SynchroneReferenceFrame(target)
+        frame = SynchroneReferenceFrame(target.anchor)
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")

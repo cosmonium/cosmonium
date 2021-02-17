@@ -20,8 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame
-from ..astro.frame import J2000EquatorialReferenceFrame, J2000HeliocentricEquatorialReferenceFrame
+from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from ..astro.frame import J2000EquatorialReferenceFrame, J2000BarycentricEquatorialReferenceFrame
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
 from ..astro.frame import BodyReferenceFrame
@@ -51,7 +51,7 @@ class FrameYamlParser(YamlModuleParser):
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
         anchor = body.anchor if body is not None else None
-        return CelestialReferenceFrame(anchor, right_asc=ra, declination=de, longitude_at_node=node)
+        return CelestialReferenceFrame(anchor, right_ascension=ra, declination=de, longitude_at_node=node)
 
     @classmethod
     def decode_mean_equatorial(cls, data, parent):
@@ -78,10 +78,10 @@ class FrameYamlParser(YamlModuleParser):
             return self.decode_j2000_ecliptic(parameters, parent)
         elif object_type == 'j2000equatorial':
             return self.decode_j2000_equatorial(parameters, parent )
-        elif object_type == 'j2000heliocentricecliptic':
-            return J2000HeliocentricEclipticReferenceFrame()
-        elif object_type == 'j2000heliocentricequatorial':
-            return J2000HeliocentricEquatorialReferenceFrame()
+        elif object_type == 'j2000barycentricecliptic':
+            return J2000BarycentricEclipticReferenceFrame()
+        elif object_type == 'j2000barycentricequatorial':
+            return J2000BarycentricEquatorialReferenceFrame()
         elif object_type == 'fixed':
             return SynchroneReferenceFrame()
         elif object_type == 'surface':

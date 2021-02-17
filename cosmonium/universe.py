@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LQuaterniond
 
-from .astro.orbits import FixedOrbit
+from .astro.orbits import AbsoluteFixedPosition
 from .astro.rotations import FixedRotation
 from .astro.frame import AbsoluteReferenceFrame
 
@@ -32,7 +32,8 @@ from .anchors import UniverseAnchor
 class Universe(OctreeSystem):
     def __init__(self, context):
         OctreeSystem.__init__(self, ['Universe'], [],
-                              orbit=FixedOrbit(frame=AbsoluteReferenceFrame()),
+                              orbit=AbsoluteFixedPosition(absolute_reference_point=LPoint3d(),
+                                                          frame=AbsoluteReferenceFrame()),
                               rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
                               description='Universe')
         self.visible = True

@@ -58,8 +58,8 @@ class AnchorBase():
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
         self._equatorial = LQuaterniond()
-        self._abs_magnitude = None
-        self._app_magnitude = None
+        self._abs_magnitude = 99.0
+        self._app_magnitude = 99.0
         self._extend = 0.0
         self._height_under = 0.0
         self._albedo = 0.5
@@ -106,15 +106,17 @@ class AnchorBase():
     def get_sync_rotation(self):
         return self._orientation
 
-    def get_abs_magnitude(self):
+    def get_absolute_magnitude(self):
         return self._abs_magnitude
 
-    def calc_absolute_distance_to(self, anchor):
+    def get_apparent_magnitude(self):
+        return self._app_magnitude
+
+    def calc_absolute_relative_position(self, anchor):
         reference_point_delta = anchor._global_position - self._global_position
         local_delta = anchor._local_position - self._local_position
         delta = reference_point_delta + local_delta
-        length = delta.length()
-        return (delta / length, length)
+        return delta
 
     def calc_local_distance_to(self, anchor):
         local_delta = anchor._local_position - self._local_position
@@ -131,10 +133,10 @@ class AnchorBase():
         self.update(time)
         self.update_observer(observer)
 
-    def update_app_magnitude(self):
+    def update_app_magnitude(self, star):
         pass
 
-    def update_scene(self):
+    def update_scene(self, observer):
         pass
 
 class CartesianAnchor(AnchorBase):
@@ -153,8 +155,8 @@ class StellarAnchor(AnchorBase):
     def update(self, time):
         self._orientation = self.rotation.get_absolute_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
-        self._local_position = self.orbit.get_position_at(time)
-        self._global_position = self.orbit.get_global_position_at(time)
+        self._local_position = self.orbit.get_local_position_at(time)
+        self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
         if self.star is not None:
             (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.anchor)
@@ -170,10 +172,7 @@ class StellarAnchor(AnchorBase):
         else:
             visible_size = 0.0
         radius = self._extend
-        if self.visibility_override:
-            resolved = visible_size > settings.min_body_size
-            visible = True
-        elif distance_to_obs > radius:
+        if distance_to_obs > radius:
             in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)
             resolved = visible_size > settings.min_body_size
             visible = in_view# and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
@@ -189,7 +188,9 @@ class StellarAnchor(AnchorBase):
         self.visible_size = visible_size
 
     def get_luminosity(self, star):
-        (vector_to_star, distance_to_star) = self.calc_absolute_distance_to(star)
+        vector_to_star = self.calc_absolute_relative_position(star)
+        distance_to_star = vector_to_star.length()
+        vector_to_star /= distance_to_star
         star_power = abs_mag_to_lum(star._abs_magnitude)
         area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
         if area > 0.0:
@@ -215,14 +216,16 @@ class StellarAnchor(AnchorBase):
             if star is not None:
                 reflected = self.get_luminosity(star)
                 self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
+                self.vector_to_star = star._local_position - self._local_position
+                self.distance_to_star = self.vector_to_star.length()
+                self.vector_to_star /= self.distance_to_star
             else:
                 self._app_magnitude = 99.0
         else:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
-        if not self.visibility_override:
-            self.visible = self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude
+        self.visible = self.visible and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
 
-    def update_scene(self):
+    def update_scene(self, observer):
         if self.body.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
             self.scene_rel_position = self.rel_position + self.vector_to_obs * self._height_under
             distance_to_obs = self.distance_to_obs - self._height_under
@@ -301,7 +304,7 @@ class OctreeAnchor(SystemAnchor):
                              self._extend,
                              abs_mag)
         #TODO: Right now an octree contains anything
-        self.content = ~1
+        self.content = ~0
         self.recreate_octree = True
 
     def rebuild(self):
@@ -334,215 +337,3 @@ class UniverseAnchor(OctreeAnchor):
 
     def traverse(self, visitor):
         self.octree.traverse(visitor)
-
-class AnchorTraverser:
-    def traverse_anchor(self, anchor):
-        pass
-
-    def enter_system(self, anchor):
-        pass
-
-    def traverse_system(self, anchor):
-        pass
-
-    def enter_octree_node(self, anchor):
-        pass
-
-    def traverse_octree_node(self, anchor):
-        pass
-
-class UpdateTraverser(AnchorTraverser):
-    def __init__(self, time, observer, limit):
-        self.time = time
-        self.observer = observer
-        self.limit = limit
-        self.visibles = []
-
-    def traverse_anchor(self, anchor):
-        anchor.update_and_update_observer(self.time, self.observer)
-        if anchor.visible:
-            self.visibles.append(anchor)
-
-    def enter_system(self, anchor):
-        anchor.update_and_update_observer(self.time, self.observer)
-        if anchor.visible:
-            self.visibles.append(anchor)
-        return (anchor.visible and anchor.resolved) or anchor.force_update
-
-    def traverse_system(self, anchor):
-        for child in anchor.children:
-            child.traverse(self)
-
-    def enter_octree_node(self, octree_node):
-        #TODO: Octree root must be separate from octree node. Use enter_system ?
-        frustum = self.observer.frustum
-        distance = (octree_node.center - frustum.get_position()).length() - octree_node.radius
-        if distance <= 0.0:
-            return True
-        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
-            return False
-        return frustum.is_sphere_in(octree_node.center, octree_node.radius)
-
-    def traverse_octree_node(self, octree_node):
-        frustum = self.observer.frustum
-        frustum_position = frustum.get_position()
-        distance = (octree_node.center - frustum_position).length() - octree_node.radius
-        if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
-        else:
-            faintest = 99.0
-        for leaf in octree_node.leaves:
-            abs_magnitude = leaf._abs_magnitude
-            traverse = False
-            if abs_magnitude < faintest:
-                direction = leaf._global_position - frustum_position
-                distance = direction.length()
-                if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
-                        traverse = frustum.is_sphere_in(leaf._global_position, leaf._extend)
-                else:
-                    traverse = True
-            if traverse:
-                leaf.traverse(self)
-
-class FindClosestSystemTraverser(AnchorTraverser):
-    def __init__(self, observer, system, distance):
-        self.observer = observer
-        self._global_position = observer._global_position
-        self.closest_system = system
-        self.distance = distance
-
-    def enter_octree_node(self, octree_node):
-        #TODO: Check node content ?
-        distance = (octree_node.center - self._global_position).length() - octree_node.radius
-        return distance <= self.distance
-
-    def traverse_octree_node(self, octree_node):
-        global_position = self.observer._global_position
-        local_position = self.observer._local_position
-        for leaf in octree_node.leaves:
-            global_delta = leaf._global_position - global_position
-            local_delta = leaf._local_position - local_position
-            distance = (global_delta + local_delta).length()
-            if distance <self.distance:
-                self.distance = distance
-                self.closest_system = leaf.body
-
-class FindLightSourceTraverser(AnchorTraverser):
-    def __init__(self, limit, position):
-        self.limit = limit
-        self.position = position
-        self.anchors = []
-
-    def traverse_anchor(self, anchor):
-        self.anchors.append(anchor)
-
-    def enter_system(self, anchor):
-        #TODO: Is global position accurate enough ?
-        global_delta = anchor._global_position - self.position
-        distance = (global_delta).length()
-        return anchor.content & AnchorBase.Emissive != 0 and (distance == 0 or abs_to_app_mag(anchor._abs_magnitude, distance) < self.limit)
-
-    def traverse_system(self, anchor):
-        for child in anchor.children:
-            if child.content & AnchorBase.Emissive == 0: continue
-            #TODO: Is global position accurate enough ?
-            global_delta = child._global_position - self.position
-            distance = (global_delta).length()
-            if distance == 0 or abs_to_app_mag(child._abs_magnitude, distance) < self.limit:
-                child.traverse(self)
-
-    def enter_octree_node(self, octree_node):
-        #TODO: Check node content ?
-        distance = (octree_node.center - self.position).length() - octree_node.radius
-        if distance <= 0.0:
-            return True
-        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
-            return False
-        return True
-
-    def traverse_octree_node(self, octree_node):
-        distance = (octree_node.center - self.position).length() - octree_node.radius
-        if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
-        else:
-            faintest = 99.0
-        for leaf in octree_node.leaves:
-            abs_magnitude = leaf._abs_magnitude
-            if abs_magnitude < faintest:
-                distance = (leaf._global_position - self.position).length()
-                if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
-                        leaf.traverse(self)
-                else:
-                    leaf.traverse(self)
-
-class FindObjectsInVisibleResolvedSystemsTraverser(AnchorTraverser):
-    def __init__(self):
-        self.anchors = []
-
-    def traverse_anchor(self, anchor):
-        self.anchors.append(anchor)
-
-    def enter_system(self, anchor):
-        self.anchors.append(anchor)
-        return anchor.visible and anchor.resolved
-
-    def traverse_system(self, anchor):
-        for child in anchor.children:
-            child.traverse(self)
-
-class FindShadowCastersTraverser(AnchorTraverser):
-    def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
-        self.target = target
-        self.body_position = target._local_position
-        self.body_bounding_radius = target._extend
-        self.vector_to_light_source = vector_to_light_source
-        self.distance_to_light_source = distance_to_light_source
-        self.light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - self.body_bounding_radius))
-        self.anchors = []
-        self.parent_systems = []
-        parent = target.parent
-        while parent.content != ~1:
-            self.parent_systems.append(parent)
-            parent = parent.parent
-
-    def check_cast_shadow(self, occluder):
-        cast_shadow = False
-        occluder_position = occluder._local_position
-        occluder_bounding_radius = occluder._extend
-        relative_position = occluder_position - self.body_position
-        t = self.vector_to_light_source.dot(relative_position)
-        #print(occluder.body.get_name(), t)
-        if t >= 0 and t <= self.distance_to_light_source:
-            distance = relative_position.length() - self.body_bounding_radius
-            occluder_angular_radius = asin(occluder_bounding_radius / distance) if occluder_bounding_radius < distance else pi / 2
-            ar_ratio = occluder_angular_radius / self.light_source_angular_radius
-            #print(occluder.body.get_name(), "D", distance, "AR", occluder_angular_radius, "R", ar_ratio)
-            #TODO: No longer valid if we are using HDR
-            #If the shadow coef is smaller than the min change in pixel color
-            #the umbra will have no visible impact
-            if ar_ratio * ar_ratio > 1.0 / 255:
-                distance_to_projection = (relative_position - self.vector_to_light_source * t).length()
-                penumbra_radius = (1 + ar_ratio) * occluder_bounding_radius
-                #TODO: Should check also the visible size of the penumbra
-                if distance_to_projection < penumbra_radius + self.body_bounding_radius:
-                    #print(occluder.body.get_name(), "casts shadows on", self.target.body.get_name())
-                    cast_shadow = True
-        return cast_shadow
-
-    def traverse_anchor(self, anchor):
-        if anchor != self.target and anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor):
-            self.anchors.append(anchor)
-
-    def enter_system(self, anchor):
-        enter = anchor in self.parent_systems or (anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor))
-        #TODO: We should trigger update here if needed (using update_id) instead of deferring update to next frame
-        anchor.force_update = enter
-        return enter
-
-    def traverse_system(self, anchor):
-        for child in anchor.children:
-            child.traverse(self)

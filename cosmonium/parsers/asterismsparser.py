@@ -37,7 +37,7 @@ class AsterismYamlParser(YamlModuleParser):
             for star_name in text_segment:
                 star = objectsDB.get(star_name)
                 if star is not None:
-                    if not isinstance(star.anchor.orbit, FixedPosition):
+                    if star.parent.system is not None and not isinstance(star.anchor.orbit, FixedPosition):
                         star = star.parent
                     segment.append(star)
                 else:

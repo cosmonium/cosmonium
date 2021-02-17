@@ -41,14 +41,13 @@ from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
-from .anchors import AnchorBase
+from .anchors import AnchorBase, StellarAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
 from .universe import Universe
 from .annotations import Grid
-from .astro.frame import BodyReferenceFrame, SolBarycenter
-from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
+from .astro.frame import BodyReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
-from .astro.frame import SurfaceReferenceFrame
+#TODO: from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 
@@ -82,6 +81,8 @@ import subprocess
 import platform
 import sys
 import os
+from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
+from cosmonium.octree import CObserver, c_settings
 
 # Patch gettext classes
 if sys.version_info < (3, 8):
@@ -448,6 +449,7 @@ class Cosmonium(CosmoniumBase):
         self.load_universe()
 
         self.splash.set_text("Building tree...")
+        print("Building tree")
         self.universe.rebuild()
         #self.universe.octree.print_summary()
         #self.universe.octree.print_stats()
@@ -481,10 +483,10 @@ class Cosmonium(CosmoniumBase):
 
         self.set_ambient(settings.global_ambient)
 
-        self.equatorial_grid = Grid("Equatorial", J2000EquatorialReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.equatorial_grid = Grid("Equatorial", J2000_Orientation, LColor(0.28,  0.28,  0.38, 1))
         self.equatorial_grid.set_shown(settings.show_equatorial_grid)
 
-        self.ecliptic_grid = Grid("Ecliptic", J2000EclipticReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.ecliptic_grid = Grid("Ecliptic", J200_EclipticOrientation, LColor(0.28,  0.28,  0.38, 1))
         self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
 
         self.time.set_current_date()
@@ -889,9 +891,9 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.set_frame(RelativeReferenceFrame(body, body.anchor.orbit.frame))
+            self.ship.set_frame(RelativeReferenceFrame(body.anchor.orbit.frame, body.anchor))
             self.update_extra(self.follow)
-            self.observer.set_frame(RelativeReferenceFrame(body, body.anchor.orbit.frame))
+            self.observer.set_frame(RelativeReferenceFrame(body.anchor.orbit.frame, body.anchor))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -962,13 +964,36 @@ class Cosmonium(CosmoniumBase):
             else:
                 print("ERROR: surface '{}' not found".format(surface_name))
 
+    def update_c_settings(self):
+        if c_settings is None: return
+        c_settings.use_depth_scaling = settings.use_depth_scaling
+        c_settings.use_inv_scaling = settings.use_inv_scaling
+        c_settings.use_log_scaling = settings.use_log_scaling
+        c_settings.camera_at_origin = settings.camera_at_origin
+        c_settings.scale = settings.scale
+        c_settings.offset_body_center = settings.offset_body_center
+        c_settings.min_body_size = settings.min_body_size
+        c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
+
+    def update_c_observer(self):
+        if CObserver is not None:
+            self.c_observer = CObserver()
+            self.c_observer.update(self.observer._global_position, self.observer._local_position, self.observer._orientation)
+            self.c_observer.frustum = self.observer.frustum
+            self.c_observer.rel_frustum = self.observer.rel_frustum
+            self.c_observer.pixel_size = self.observer.pixel_size
+            self.c_observer.midPlane = self.observer.midPlane
+        else:
+            self.c_observer = self.observer
+
     @pstat
     def update_universe(self, time, dt):
+        self.update_c_observer()
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
-        traverser = UpdateTraverser(time, self.observer, settings.lowest_app_magnitude)
+        traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude)
         self.universe.anchor.traverse(traverser)
-        self.visibles = traverser.visibles
+        self.visibles = traverser.get_collected()
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
         CompositeObject.update(self.universe, time, dt)
         CompositeObject.update_obs(self.universe, self.observer)
@@ -986,12 +1011,13 @@ class Cosmonium(CosmoniumBase):
         for controller in self.controllers_to_update:
             controller.check_visibility(frustum, pixel_size)
 
+    @pstat
     def find_light_sources(self):
         position = self.observer._global_position + self.observer._local_position
         traverser = FindLightSourceTraverser(-10, position)
         self.universe.anchor.traverse(traverser)
-        self.light_sources = traverser.anchors
-        #print("LIGHTS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+        self.light_sources = traverser.get_collected()
+        #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.light_sources)))
 
     def update_ship(self, time, dt):
         frustum = self.observer.rel_frustum
@@ -1002,7 +1028,8 @@ class Cosmonium(CosmoniumBase):
 
     def _add_extra(self, to_add):
         if to_add is None: return
-        if isinstance(to_add, SolBarycenter): return
+        #TODO: this should not be done
+        if not isinstance(to_add, StellarAnchor): return
         #TODO: There should be a mechanism to retrieve them
         if isinstance(to_add.orbit.frame, BodyReferenceFrame):
             self._add_extra(to_add.orbit.frame.anchor)
@@ -1013,6 +1040,7 @@ class Cosmonium(CosmoniumBase):
 
     def update_extra(self, *args):
         self.extra = []
+        #TODO: temporary
         for body in args:
             if body is None: continue
             self._add_extra(body.anchor)
@@ -1021,8 +1049,9 @@ class Cosmonium(CosmoniumBase):
 
     def update_extra_observer(self):
         for anchor in self.extra:
-            anchor.update_observer(self.observer)
+            anchor.update_observer(self.c_observer)
 
+    @pstat
     def update_magnitudes(self):
         if len(self.light_sources) > 0:
             star = self.light_sources[0]
@@ -1030,22 +1059,28 @@ class Cosmonium(CosmoniumBase):
             star = None
         for visible_object in self.visibles:
             visible_object.update_app_magnitude(star)
+        for anchor in self.extra:
+            #TODO: This will not work for objects in an another system
+            anchor.update_app_magnitude(star)
 
+    @pstat
     def find_orbits(self):
         #TODO: This is a bit crappy, this whole method should be moved in the renderer
         top_systems = []
         for visible in self.visibles:
             #TODO: The test to see if the object is a root system is a bit crude...
-            if visible.resolved and visible.content & AnchorBase.System != 0 and visible.parent.content == ~1:
+            if visible.resolved and visible.content & AnchorBase.System != 0 and visible.parent.content == ~0:
                 top_systems.append(visible)
         traverser = FindObjectsInVisibleResolvedSystemsTraverser()
         for system in top_systems:
             system.traverse(traverser)
-        self.orbits = list(map(lambda anchor: anchor.body, traverser.anchors))
+        self.orbits = list(map(lambda anchor: anchor.body, traverser.get_collected()))
 
+    @pstat
     def update_orbits(self):
         self.renderer.add_orbits(self.orbits)
 
+    @pstat
     def find_shadows(self):
         self.shadow_casters = []
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
@@ -1055,23 +1090,26 @@ class Cosmonium(CosmoniumBase):
             if not visible_object.resolved: continue
             if visible_object.content & AnchorBase.System != 0: continue
             if visible_object.content & AnchorBase.Reflective == 0: continue
-            (vector_to_star, distance_to_star) = visible_object.calc_absolute_distance_to(star)
+            vector_to_star = visible_object.calc_absolute_relative_position(star)
+            distance_to_star = vector_to_star.length()
+            vector_to_star /= distance_to_star
             visible_object.body.start_shadows_update()
             #print("TEST", visible_object.body.get_name())
             traverser = FindShadowCastersTraverser(visible_object, vector_to_star, distance_to_star, star._extend)
             self.nearest_system.anchor.traverse(traverser)
             #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
-            for occluder in traverser.anchors:
+            for occluder in traverser.get_collected():
                 if not occluder in self.shadow_casters:
                     self.shadow_casters.append(occluder)
                 occluder.body.add_shadow_target(visible_object.body)
             visible_object.body.end_shadows_update()
 
+    @pstat
     def check_scattering(self):
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
             #TODO: We need to test the type of the parent anchor
-            if visible_object.parent.content == ~1: continue
+            if visible_object.parent.content == ~0: continue
             primary = visible_object.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
@@ -1079,6 +1117,7 @@ class Cosmonium(CosmoniumBase):
             if primary.atmosphere is not None and primary.init_components and (visible_object._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
                 primary.atmosphere.add_shape_object(visible_object.body.surface)
 
+    @pstat
     def update_height_under(self):
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
@@ -1089,9 +1128,9 @@ class Cosmonium(CosmoniumBase):
         #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
         CompositeObject.check_and_update_instance(self.universe, self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for occluder in self.shadow_casters:
-            occluder.update_scene()
+            occluder.update_scene(self.c_observer)
         for visible in self.visibles:
-            visible.update_scene()
+            visible.update_scene(self.c_observer)
             self.renderer.add_object(visible.body)
         self.renderer.render(self.observer)
         self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
@@ -1099,19 +1138,22 @@ class Cosmonium(CosmoniumBase):
             controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         self.gui.update_status()
 
+    @pstat
     def find_nearest_system(self):
         #First iter over the visible object to have a first closest system
         distance = float('inf')
-        closest_system = None
+        closest_visible_system = None
         for visible in self.visibles:
             #TODO: The test to see if the object is a root system is a bit crude...
-            if visible.distance_to_obs < distance and visible.parent.content == ~1:
-                closest_system = visible.body
+            if visible.distance_to_obs < distance and visible.parent.content == ~0:
+                closest_visible_system = visible
                 distance = visible.distance_to_obs
         #Use that system to boostrap the tree traversal
-        traverser = FindClosestSystemTraverser(self.observer, closest_system, distance)
+        traverser = FindClosestSystemTraverser(self.c_observer, closest_visible_system, distance)
         self.universe.anchor.traverse(traverser)
-        return (traverser.closest_system, closest_system)
+        closest_system = traverser.closest_system.body if traverser.closest_system is not None else None
+        closest_visible_system = closest_visible_system.body if closest_visible_system is not None else None
+        return (closest_system, closest_visible_system)
 
     def update_nearest_system(self, nearest_system, nearest_visible_system):
         if nearest_system != self.nearest_system:
@@ -1161,6 +1203,7 @@ class Cosmonium(CosmoniumBase):
         # Reset all states
         self.to_update_extra = []
         self.renderer.reset()
+        self.update_c_settings()
 
         #Update time and camera
         if task is not None:
@@ -1247,6 +1290,7 @@ class Cosmonium(CosmoniumBase):
             print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ')')
             print("\tUpdate frozen:", self.selected.anchor.update_frozen)
             print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
+            print("\tRotation:", self.selected.anchor.rotation.__class__.__name__, self.selected.anchor.rotation.frame)
             if self.selected.label is not None:
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:

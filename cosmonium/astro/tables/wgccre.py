@@ -22,10 +22,13 @@ from __future__ import absolute_import
 
 from ..frame import J2000EquatorialReferenceFrame
 
-from ..rotations import Rotation, FuncRotation, create_uniform_rotation
+from ..rotations import UniformRotation
+from ..astro import calc_orientation
 from ..elementsdb import rotation_elements_db
 
 from .. import units
+
+from math import pi
 
 try:
     from cosmonium_engine import WGCCRESimpleRotation, WGCCRESimplePrecessingRotation
@@ -47,14 +50,11 @@ except ImportError as e:
     loaded = False
 
 def WgccreSimpleRotation(ra, d, w, p):
-    return create_uniform_rotation(
-             period=360 / p,
-             period_units=units.Day,
-             right_asc=ra, right_asc_unit=units.Deg,
-             declination=d, declination_unit=units.Deg,
-             meridian_angle=w,
-             epoch=units.J2000,
-             frame=J2000EquatorialReferenceFrame())
+    period = 360.0 / p
+    flipped = period < 0
+    orientation = calc_orientation(ra * units.Deg, d * units.Deg, flipped)
+    mean_motion = 2 * pi / (period * units.Day)
+    return UniformRotation(orientation, mean_motion, w * units.Deg, units.J2000, J2000EquatorialReferenceFrame())
 
 wgccre_simple = { 'sun':     WgccreSimpleRotation(286.13, 63.87, 84.176, 14.1844000),
                   'mercury': WgccreSimpleRotation(281.0103, 61.4155, 329.5988, 6.1385108),
@@ -228,4 +228,4 @@ if loaded:
     }
 
     for (element_name, element) in wgccre.items():
-        rotation_elements_db.register_element('wgccre', element_name, FuncRotation(element))
+        rotation_elements_db.register_element('wgccre', element_name, element)

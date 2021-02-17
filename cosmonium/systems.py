@@ -176,9 +176,6 @@ class StellarSystem(StellarObject):
     def get_extend(self):
         return self.anchor._extend
 
-    def get_abs_magnitude(self):
-        return self.anchor._abs_magnitude
-
 class OctreeSystem(StellarSystem):
     def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
@@ -212,8 +209,9 @@ class SimpleSystem(StellarSystem):
             self.primary = primary
             primary.set_system(self)
             self.body_class = primary.body_class
-            if not self.star_system:
-                self.abs_magnitude = self.primary.get_abs_magnitude()
+            #TODO: What to do ?
+            #if not self.star_system:
+            #    self.abs_magnitude = self.primary.get_abs_magnitude()
             self.anchor.point_color = primary.anchor.point_color
 
     def add_child(self, child):
@@ -250,11 +248,12 @@ class SimpleSystem(StellarSystem):
     def get_label_text(self):
         return self.primary.get_label_text()
 
-    def get_abs_magnitude(self):
-        if self.star_system:
-            return StellarSystem.get_abs_magnitude(self)
-        else:
-            return self.primary.get_abs_magnitude()
+#TODO: What to do ?
+#     def get_abs_magnitude(self):
+#         if self.star_system:
+#             return StellarSystem.get_abs_magnitude(self)
+#         else:
+#             return self.primary.get_abs_magnitude()
 
     def get_components(self):
         return self.primary.get_components()

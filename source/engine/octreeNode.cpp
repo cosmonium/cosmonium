@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2019 Laurent Deru.
+ * Copyright (C) 2018-2021 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  */
 
 #include "octreeNode.h"
-#include "octreeLeaf.h"
-#include "octreeTraverser.h"
+#include "anchors.h"
+#include "anchorTraverser.h"
 
 #include "iostream"
 #include "math.h"
@@ -28,7 +28,8 @@ int OctreeNode::max_level = 200;
 int OctreeNode::max_leaves = 75;
 double OctreeNode::child_threshold = 0.5; //1.5 Correspond roughly to 1/4 less luminosity
 
-OctreeNode::OctreeNode(int level, LPoint3d center, double width, double threshold, int index) :
+OctreeNode::OctreeNode(int level, OctreeNode *parent, LPoint3d center, double width, double threshold, int index) :
+  AnchorTreeBase(~0),
   level(level),
   center(center),
   width(width),
@@ -46,6 +47,26 @@ OctreeNode::~OctreeNode(void)
   for(auto child : children) {
     delete child;
   }
+}
+
+void
+OctreeNode::set_rebuild_needed(void)
+{
+    rebuild_needed = true;
+    if (parent != 0) {
+        parent->set_rebuild_needed();
+    }
+}
+
+void
+OctreeNode::rebuild(void)
+{
+    for (auto child : children) {
+        if (child != 0 && child->rebuild_needed) {
+            child->rebuild();
+        }
+    }
+    rebuild_needed = false;
 }
 
 size_t
@@ -67,24 +88,24 @@ OctreeNode::get_num_leaves(void) const
 }
 
 void
-OctreeNode::traverse(OctreeTraverser *traverser)
+OctreeNode::traverse(AnchorTraverser &traverser)
 {
-  traverser->traverse(*this, leaves);
+  traverser.traverse_octree_node(this, leaves);
   for(auto child : children) {
-    if (child != 0 && traverser->enter(*child)) {
+    if (child != 0 && traverser.enter_octree_node(child)) {
       child->traverse(traverser);
     }
   }
 }
 
 void
-OctreeNode::add(PT(OctreeLeaf) leaf)
+OctreeNode::add(AnchorBase *leaf)
 {
-  _add(leaf, leaf->get_global_position(), leaf->get_abs_magnitude());
+  _add(leaf, leaf->get_absolute_reference_point(), leaf->get_absolute_magnitude());
 }
 
 void
-OctreeNode::add_in_child(PT(OctreeLeaf) leaf, LPoint3d const &position, double magnitude)
+OctreeNode::add_in_child(AnchorBase *leaf, LPoint3d const &position, double magnitude)
 {
     int index = 0;
     if (position[0] >= center[0]) index |= 1;
@@ -108,20 +129,21 @@ OctreeNode::add_in_child(PT(OctreeLeaf) leaf, LPoint3d const &position, double m
         } else {
             child_center[2] -= child_offset;
         }
-        OctreeNode *child = new OctreeNode(level + 1, child_center, width / 2.0, threshold + child_threshold, index);
+        OctreeNode *child = new OctreeNode(level + 1, this, child_center, width / 2.0, threshold + child_threshold, index);
         children[index] = child;
     }
     children[index]->_add(leaf, position, magnitude);
 }
 
 void
-OctreeNode::_add(PT(OctreeLeaf) leaf, LPoint3d const &position, double magnitude)
+OctreeNode::_add(AnchorBase *leaf, LPoint3d const &position, double magnitude)
 {
     if (magnitude < max_magnitude) {
         max_magnitude = magnitude;
     }
     if (!has_children || magnitude < threshold) {
         leaves.push_back(leaf);
+        leaf->parent = this;
     } else {
         add_in_child(leaf, position, magnitude);
     }
@@ -133,13 +155,13 @@ OctreeNode::_add(PT(OctreeLeaf) leaf, LPoint3d const &position, double magnitude
 void
 OctreeNode::split(void)
 {
-    std::vector<PT(OctreeLeaf)> new_leaves;
+    std::vector<PT(AnchorBase)> new_leaves;
     for (const auto leaf : leaves) {
-        const auto position = leaf->get_global_position();
-        if (leaf->get_abs_magnitude() < threshold || (center - position).length() < leaf->get_extend()) {
+        const auto position = leaf->get_absolute_reference_point();
+        if (leaf->get_absolute_magnitude() < threshold || (center - position).length() < leaf->_extend) {
             new_leaves.push_back(leaf);
         } else {
-            add_in_child(leaf, position, leaf->get_abs_magnitude());
+            add_in_child(leaf, position, leaf->get_absolute_magnitude());
         }
     }
     leaves = new_leaves;
@@ -156,7 +178,7 @@ OctreeNode::get_child(int index)
   }
 }
 
-PT(OctreeLeaf)
+AnchorBase *
 OctreeNode::get_leaf(int index) const
 {
   return leaves[index];

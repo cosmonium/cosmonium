@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2019 Laurent Deru.
+ * Copyright (C) 2018-2021 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,25 +22,29 @@
 
 #include "pandabase.h"
 #include "luse.h"
+#include "anchors.h"
 
 #include <vector>
 
-class OctreeLeaf;
-class OctreeTraverser;
+class AnchorBase;
+class AnchorTraverser;
 
-class OctreeNode
+class OctreeNode : public AnchorTreeBase
 {
 PUBLISHED:
-  OctreeNode(int level, LPoint3d center, double width, double threshold, int index = -1);
+  OctreeNode(int level, OctreeNode *parent, LPoint3d center, double width, double threshold, int index = -1);
   ~OctreeNode(void);
 
-  void add(PT(OctreeLeaf) leaf);
+  void set_rebuild_needed(void);
+  void rebuild(void);
+  void traverse(AnchorTraverser &traverser);
+
+  void add(AnchorBase *anchor);
 
   size_t get_num_children(void) const;
   size_t get_num_leaves(void) const;
-  void traverse(OctreeTraverser *traverser);
   OctreeNode *get_child(int index);
-  PT(OctreeLeaf) get_leaf(int index) const;
+  AnchorBase *get_leaf(int index) const;
 
   MAKE_SEQ(get_leaves, get_num_leaves, get_leaf);
 
@@ -48,8 +52,8 @@ PUBLISHED:
   void write(std::ostream &out, int indent_level = 0) const;
 
 protected:
-  void add_in_child(PT(OctreeLeaf) leaf, LPoint3d const &position, double magnitude);
-  void _add(PT(OctreeLeaf) leaf, LPoint3d const &position, double magnitude);
+  void add_in_child(AnchorBase *leaf, LPoint3d const &position, double magnitude);
+  void _add(AnchorBase *leaf, LPoint3d const &position, double magnitude);
   void split(void);
 
 PUBLISHED:
@@ -68,8 +72,8 @@ PUBLISHED:
     double max_magnitude;
 
 protected:
-    OctreeNode *children[8];
-    std::vector<PT(OctreeLeaf)> leaves;
+    PT(OctreeNode) children[8];
+    std::vector<PT(AnchorBase)> leaves;
 };
 
 inline std::ostream &operator << (std::ostream &out, const OctreeNode &octree)

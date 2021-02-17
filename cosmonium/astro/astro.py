@@ -25,7 +25,7 @@ from panda3d.core import LVector3d, LQuaterniond
 from .frame import J2000EquatorialReferenceFrame
 from . import units
 
-from math import pow, log, log10, exp, sqrt, asin, pi
+from math import pow, log, log10, exp, sqrt, asin, pi, atan2
 
 # Brightness increase factor for one magnitude
 magnitude_brightness_ratio = pow(10.0, 0.4)
@@ -82,5 +82,24 @@ def calc_orientation_from_incl_an(inclination, ascending_node, flipped=False):
 def calc_orientation(right_ascension, declination, flipped=False):
     inclination = pi / 2 - declination
     ascending_node = right_ascension + pi / 2
-    orientation = calc_orientation_from_incl_an(inclination, ascending_node, flipped)
-    return orientation * J2000EquatorialReferenceFrame.orientation
+    return calc_orientation_from_incl_an(inclination, ascending_node, flipped)
+
+def position_to_equatorial(position):
+    distance = position.length()
+    if distance > 0:
+        position = units.J2000_Orientation.conjugate().xform(position)
+        declination = asin(position[2] / distance)
+        right_ascension = atan2(position[1], position[0])
+    else:
+        declination = 0.0
+        right_ascension = 0.0
+    return (right_ascension, declination)
+
+def orientation_to_equatorial(orientation):
+    axis = orientation.xform(LVector3d.up())
+    projected = units.J2000_Orientation.conjugate().xform(axis)
+    declination = asin(projected[2])
+    right_asc = atan2(projected[1], projected[0])
+    if right_asc < 0:
+        right_asc += 2 * pi
+    return (right_asc, declination)

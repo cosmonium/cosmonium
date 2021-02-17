@@ -26,7 +26,8 @@ from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
 from .foundation import VisibleObject, ObjectLabel, LabelledObject
-from .astro.orbits import FixedOrbit, InfinitePosition
+from .astro.orbits import FixedPosition
+from .astro.projection import InfinitePosition
 from .astro import units
 from .bodyclass import bodyClasses
 from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
@@ -36,6 +37,7 @@ from .utils import srgb_to_linear
 from . import settings
 
 from math import sin, cos, atan2, pi
+from cosmonium.astro.astro import position_to_equatorial
 
 class BackgroundLabel(ObjectLabel):
     def create_instance(self):
@@ -106,7 +108,7 @@ class Orbit(VisibleObject):
 
     def find_orbit(self, body):
         if body != None:
-            if not isinstance(body.anchor.orbit, FixedOrbit):
+            if not isinstance(body.anchor.orbit, FixedPosition):
                 return body.anchor.orbit
             else:
                 return None, None
@@ -134,7 +136,7 @@ class Orbit(VisibleObject):
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
             time = epoch + step * i
-            pos = self.orbit.get_position_at(time) - delta
+            pos = self.orbit.get_local_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
         for i in range(self.nbOfPoints-1):
@@ -176,7 +178,7 @@ class Orbit(VisibleObject):
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
             time = epoch + step * i
-            pos = self.orbit.get_position_at(time) - delta
+            pos = self.orbit.get_local_position_at(time) - delta
             vwriter.setData3f(*pos)
 
     def check_visibility(self, frustum, pixel_size):
@@ -385,13 +387,13 @@ class Asterism(VisibleObject):
         decl = 0
         if len(self.segments) > 0 and len(self.segments[0]) > 0:
             for star in self.segments[0]:
-                asc = star.anchor.orbit.get_right_asc()
-                ra_sin += sin(asc)
-                ra_cos += cos(asc)
-                decl += star.anchor.orbit.get_declination()
+                (right_ascension, declination) = position_to_equatorial(star.anchor.orbit.get_absolute_position_at(0))
+                ra_sin += sin(right_ascension)
+                ra_cos += cos(right_ascension)
+                decl += declination
             ra = atan2(ra_sin, ra_cos)
             decl /= len(self.segments[0])
-            self.position = InfinitePosition(right_asc=ra, right_asc_unit=units.Rad, declination=decl, declination_unit=units.Rad)
+            self.position = InfinitePosition(ra * units.Rad, decl * units.Rad)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
@@ -400,12 +402,12 @@ class Asterism(VisibleObject):
         #TODO: Ugly hack to calculate star position from the sun...
         old_cam_pos = self.context.observer.camera_global_pos
         self.context.observer.camera_global_pos = LPoint3d()
-        center = LPoint3d()
+        self.context.update_c_observer()
         for segment in self.segments:
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.anchor.update_and_update_observer(0, self.context.observer)
+                star.anchor.update_and_update_observer(0, self.context.c_observer)
                 position, distance, scale_factor = self.calc_scene_params(star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))

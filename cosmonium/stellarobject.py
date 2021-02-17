@@ -26,7 +26,7 @@ from .foundation import CompositeObject, ObjectLabel, LabelledObject
 from .annotations import ReferenceAxis, RotationAxis, Orbit
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
 from .astro.frame import SynchroneReferenceFrame
-from .astro.orbits import FixedOrbit, FixedPosition
+from .astro.orbits import FixedPosition
 from .astro.astro import abs_to_app_mag
 from .bodyclass import bodyClasses
 from .catalogs import objectsDB
@@ -155,7 +155,7 @@ class StellarObject(LabelledObject):
     def get_user_parameters(self):
         group = ParametersGroup(self.get_name())
         parameters = []
-        if isinstance(self.orbit, FixedOrbit) and self.system is not None:
+        if isinstance(self.orbit, FixedPosition) and self.system is not None:
             orbit = self.system.orbit
         else:
             orbit = self.orbit
@@ -171,7 +171,7 @@ class StellarObject(LabelledObject):
 
     def update_user_parameters(self):
         LabelledObject.update_user_parameters(self)
-        if isinstance(self.orbit, FixedOrbit) and self.system is not None:
+        if isinstance(self.orbit, FixedPosition) and self.system is not None:
             self.system.orbit.update_user_parameters()
             if self.system.orbit_object is not None:
                 self.system.orbit_object.update_user_parameters()
@@ -230,7 +230,7 @@ class StellarObject(LabelledObject):
         self.body_class = body_class
 
     def create_orbit_object(self):
-        if self.orbit_object is None and not isinstance(self.anchor.orbit, FixedOrbit) and not isinstance(self.anchor.orbit, FixedPosition):
+        if self.orbit_object is None and not isinstance(self.anchor.orbit, FixedPosition):
             self.orbit_object = Orbit(self)
             self.add_component(self.orbit_object)
             self.orbit_object.check_settings()
@@ -273,7 +273,7 @@ class StellarObject(LabelledObject):
 
     def set_star(self, star):
         self.star = star
-        self.anchor.star = star
+        #self.anchor.star = star
 
     def is_emissive(self):
         return False
@@ -297,12 +297,10 @@ class StellarObject(LabelledObject):
         return self.get_apparent_radius()
 
     def get_abs_magnitude(self):
-        return 99.0
+        return self.anchor.get_absolute_magnitude()
 
     def get_app_magnitude(self):
-        if self.anchor.distance_to_obs != None and self.anchor.distance_to_obs > 0:
-            return abs_to_app_mag(self.get_abs_magnitude(), self.anchor.distance_to_obs)
-        return 99.0
+        return self.anchor.get_apparent_magnitude()
 
     def get_global_position(self):
         return self.anchor._global_position
@@ -341,7 +339,7 @@ class StellarObject(LabelledObject):
         return (phi, theta, distance)
 
     def cartesian_to_spherical(self, position):
-        sync_frame = SynchroneReferenceFrame(self)
+        sync_frame = SynchroneReferenceFrame(self.anchor)
         rel_position = sync_frame.get_frame_position(position)
         return self.frame_cartesian_to_spherical(rel_position)
 
@@ -355,7 +353,7 @@ class StellarObject(LabelledObject):
 
     def spherical_to_cartesian(self, position):
         rel_position = self.spherical_to_frame_cartesian(position)
-        sync_frame = SynchroneReferenceFrame(self)
+        sync_frame = SynchroneReferenceFrame(self.anchor)
         position = sync_frame.get_local_position(rel_position)
         return position
 

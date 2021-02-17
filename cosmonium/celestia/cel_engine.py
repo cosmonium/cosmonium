@@ -27,7 +27,7 @@ from .celestia_utils import body_path
 from .bigfix import Bigfix
 
 from ..astro import units
-from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
+from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
 from ..bodyclass import bodyClasses
 from .. import settings
@@ -46,7 +46,7 @@ def create_frame(coordsys, ref):
     elif coordsys == "ecliptical":
         return J2000EclipticReferenceFrame(ref)
     elif coordsys == "universal":
-        return J2000HeliocentricEclipticReferenceFrame()
+        return J2000BarycentricEclipticReferenceFrame()
     elif coordsys == "lock":
         return None
     elif coordsys ==  "chase":
