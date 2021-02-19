@@ -58,6 +58,9 @@ class Shape:
         #TODO: Used to fix ring textures
         self.vanish_borders = False
 
+    def get_name(self):
+        return 'shape ' + self.owner.get_name()
+
     def get_oid_color(self):
         return self.owner.oid_color
 

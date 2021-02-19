@@ -31,6 +31,7 @@ from .sprites import SimplePoint, RoundDiskPointSprite
 class PointsSet(VisibleObject):
     tex = None
     def __init__(self, use_sprites=True, use_sizes=True, points_size=2, sprite=None, background=None, shader=None):
+        VisibleObject.__init__(self, 'pointsset')
         self.gnode = GeomNode('starfield')
         self.use_sprites = use_sprites
         self.use_sizes = use_sizes
