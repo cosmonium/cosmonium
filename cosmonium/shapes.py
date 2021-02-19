@@ -353,10 +353,17 @@ class ShapeObject(VisibleObject):
                     self.schedule_patch_jobs(patch)
                     if patch.jobs_pending == 0:
                         self.jobs_done_cb(patch)
+                    else:
+                        self.early_apply_patch(patch)
         if not self.shape.instance_ready:
             self.schedule_shape_jobs(self.shape)
             if self.shape.jobs_pending == 0:
                 self.jobs_done_cb(None)
+
+    def early_apply_patch(self, patch):
+        if not self.first_patch and patch.lod > 0:
+            patch.instance_ready = True
+            self.patch_done(patch)
 
     def patch_done(self, patch):
         if self.first_patch:
@@ -393,8 +400,8 @@ class ShapeObject(VisibleObject):
             self.shape.jobs = 0
             if self.shape.instance is not None:
                 self.shape.instance_ready = True
-                self.shape_done()
                 self.instance_ready = True
+                self.shape_done()
                 if self.callback is not None:
                     self.callback(self, *self.cb_args)
 

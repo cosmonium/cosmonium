@@ -107,7 +107,8 @@ class PatchBase(Shape):
                 self.bounds_shape.remove_instance()
 
     def patch_done(self):
-        pass
+        if self.instance is not None:
+            self.instance.unstash()
 
     def update_instance(self, shape):
         pass
@@ -812,9 +813,13 @@ class PatchedShapeBase(Shape):
             patch.create_instance()
             patch.instance.reparent_to(self.instance)
             self.patches.append(patch)
-            patch.shown = True
-            if patch.bounds_shape.instance is not None:
-                patch.bounds_shape.instance.reparent_to(self.instance)
+            if patch.lod > 0:
+                patch.shown = True
+                if patch.bounds_shape.instance is not None:
+                    patch.bounds_shape.instance.reparent_to(self.instance)
+            else:
+                patch.shown = False
+                patch.instance.stash()
         else:
             self.show_patch(patch)
         patch.set_clickable(self.clickable)
@@ -890,7 +895,7 @@ class PatchedShapeBase(Shape):
                     self.to_split.append(patch)
             if patch.shown and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
                 self.to_remove.append(patch)
-            if not patch.shown and lod_control.should_instanciate(patch, patch.apparent_size, patch.distance):
+            if not patch.shown and not patch.instance and lod_control.should_instanciate(patch, patch.apparent_size, patch.distance):
                 self.to_show.append(patch)
 
     def xform_cam_to_model(self, camera_pos):

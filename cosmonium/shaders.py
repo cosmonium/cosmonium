@@ -101,12 +101,11 @@ class ShaderBase(object):
         self.inputs = None
         if shape.patchable:
             for patch in shape.patches:
-                if not shape.instance_ready:
-                    print("shader update called on non ready patch instance")
-                self.inputs = {}
-                self.update_shader_patch(shape, patch, appearance)
-                patch.instance.set_shader_inputs(**self.inputs)
-                self.inputs = None
+                if patch.instance_ready:
+                    self.inputs = {}
+                    self.update_shader_patch(shape, patch, appearance)
+                    patch.instance.set_shader_inputs(**self.inputs)
+                    self.inputs = None
         else:
             self.inputs = {}
             self.update_shader_patch(shape, shape, appearance)
