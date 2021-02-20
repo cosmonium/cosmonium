@@ -223,7 +223,6 @@ class ShapeObject(VisibleObject):
         self.clickable = clickable
         self.instance_ready = False
         self.owner = None
-        self.first_patch = True
         self.shadows = MultiShadows(self)
         self.shadow_caster = None
 
@@ -364,15 +363,11 @@ class ShapeObject(VisibleObject):
                 self.jobs_done_cb(None)
 
     def early_apply_patch(self, patch):
-        if not self.first_patch and patch.lod > 0:
+        if patch.lod > 0:
             patch.instance_ready = True
             self.patch_done(patch)
 
     def patch_done(self, patch):
-        if self.first_patch:
-            if self.shader is not None:
-                self.shader.apply(self.shape, self.appearance)
-            self.first_patch = None
         if self.appearance is not None:
             self.appearance.apply_textures(patch)
         if self.shader is not None:
