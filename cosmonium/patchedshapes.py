@@ -888,7 +888,7 @@ class PatchedShapeBase(Shape):
             if patch.can_merge_children() and lod_control.should_merge(patch, patch.apparent_size, patch.distance):
                 self.to_merge.append(patch)
         else:
-            if lod_control.should_split(patch, patch.apparent_size, patch.distance):
+            if lod_control.should_split(patch, patch.apparent_size, patch.distance) and (patch.lod > 0 or patch.instance_ready):
                 if self.are_children_visibles(patch):
                     self.to_split.append(patch)
             if patch.shown and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
