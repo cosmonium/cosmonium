@@ -161,13 +161,13 @@ class ProceduralSurface(FlatSurface):
             self.jobs_done_cb(None)
 
     def patch_done(self, patch):
-        FlatSurface.patch_done(self, patch)
         self.heightmap.apply(patch)
+        FlatSurface.patch_done(self, patch)
 
     def shape_done(self):
-        FlatSurface.shape_done(self)
         if not self.shape.patchable:
             self.heightmap.apply(self.shape)
+        FlatSurface.shape_done(self)
 
     def schedule_patch_jobs(self, patch):
         if (patch.jobs & ProceduralSurface.JOB_HEIGHTMAP) == 0:
