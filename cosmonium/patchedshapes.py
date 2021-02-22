@@ -1026,7 +1026,7 @@ class PatchedShapeBase(Shape):
         for patch in update:
             patch.update_instance(self)
         #Return True when new instances have been created
-        return apply_appearance
+        return apply_appearance or len(update) > 0
 
     def _find_patch_at(self, patch, x, y):
         if x >= patch.x0 and x <= patch.x1 and y >= patch.y0 and y <= patch.y1:
