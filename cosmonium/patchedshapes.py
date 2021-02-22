@@ -542,10 +542,8 @@ class SquarePatchBase(Patch):
             if self.shown:
                 parent.remove_patch_instance(self)
                 parent.create_patch_instance(self)
-                parent.owner.surface.jobs_done_cb(self)
-            else:
-                parent.remove_patch_instance(self)
-                parent.create_patch_instance(self, hide=True)
+                #TODO: Check if needed ?
+                #parent.owner.surface.jobs_done_cb(self)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
