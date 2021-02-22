@@ -165,18 +165,20 @@ class HeightmapPatch:
 
     def load(self, patch, callback, cb_args=()):
         if self.texture is None:
-            self.texture = Texture()
-            self.texture.set_wrap_u(Texture.WMClamp)
-            self.texture.set_wrap_v(Texture.WMClamp)
-            self.parent.filter.configure_texture(self.texture)
             self.do_load(patch, callback, cb_args)
         else:
             if callback is not None:
                 callback(self, *cb_args)
 
+    def configure_texture(self):
+        self.texture.set_wrap_u(Texture.WMClamp)
+        self.texture.set_wrap_v(Texture.WMClamp)
+        self.parent.filter.configure_texture(self.texture)
+
     def heightmap_ready_cb(self, texture, callback, cb_args):
         if texture is not None:
             self.texture = texture
+            self.configure_texture()
             #print("READY", self.patch.str_id(), texture, self.texture)
             self.texture_peeker = texture.peek()
 #           if self.texture_peeker is None:

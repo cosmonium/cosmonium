@@ -121,4 +121,5 @@ class ShaderHeightmapPatch(HeightmapPatch):
                                       offset=(self.r_x0, self.r_y0, 0.0),
                                       scale=(self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0))
             self.shader.create_and_register_shader(None, None)
-        tex_generator.generate(self.shader, self.face, self.texture, self.heightmap_ready_cb, (callback, cb_args))
+        #TODO: The texture should be created in the generator
+        tex_generator.generate(self.shader, self.face, Texture(), self.heightmap_ready_cb, (callback, cb_args))

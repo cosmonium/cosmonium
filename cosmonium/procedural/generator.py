@@ -157,8 +157,6 @@ class TexGenerator(object):
 
     def generate(self, shader, face, texture, callback=None, cb_args=()):
         #print("ADD")
-        if texture.has_ram_image() and callback is not None:
-            print("Texture already has data")
         self.schedule((shader, face, texture, callback, cb_args))
 
 class GeneratorPool(object):
