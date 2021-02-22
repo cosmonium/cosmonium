@@ -60,6 +60,7 @@ class HeightmapPatch:
         self.r_y1 = self.y1 + overlap / self.r_height * (self.y1 - self.y0)
         self.lod = None
         self.patch = None
+        self.parent_heightmap = None
         self.heightmap_ready = False
         self.texture = None
         self.texture_peeker = None
@@ -457,11 +458,17 @@ class PatchedHeightmap(Heightmap):
             self.map_patch[patch.str_id()] = heightmap
             #TODO: Should be linked properly
             heightmap.patch = patch
-            if patch.parent is not None:
-                heightmap.parent_heightmap = self.map_patch[patch.parent.str_id()]
-            else:
-                heightmap.parent_heightmap = None
-            if patch.lod > self.max_lod and patch.parent is not None:
+            parent = patch.parent
+            # The parent heightmap is also used for early display of the patch
+            while parent is not None:
+                parent_heightmap = self.map_patch.get(parent.str_id())
+                if parent_heightmap is not None:
+                    heightmap.parent_heightmap = parent_heightmap
+                    break
+                parent = parent.parent
+            if heightmap.parent_heightmap is None and patch.lod > 0:
+                print("NO PARENT HEIGHTMAP FOR", patch.str_id())
+            if patch.lod > self.max_lod:
                 #print("CLONE", patch.str_id())
                 heightmap.calc_sub_patch()
                 #print(patch.str_id(), ':', parent_heightmap.lod, heightmap.texture_offset, heightmap.texture_scale)
