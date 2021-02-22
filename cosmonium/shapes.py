@@ -352,15 +352,20 @@ class ShapeObject(VisibleObject):
         if self.shape.patchable:
             for patch in self.shape.patches:
                 if not patch.instance_ready:
+                    # Add a fake job to avoid multiple patch_done() event if the jobs are synchronous
+                    patch.jobs_pending += 1
                     self.schedule_patch_jobs(patch)
-                    if patch.jobs_pending == 0:
-                        self.jobs_done_cb(patch)
-                    else:
+                    # Remove the fake job and so trigger the patch_done() event if needed
+                    self.jobs_done_cb(patch)
+                    if patch.jobs_pending > 0:
+                        # Patch generation is ongoing, use parent data to display the patch in the meantime
                         self.early_apply_patch(patch)
         if not self.shape.instance_ready:
+            # Add a fake job to avoid multiple shape_done() event if the jobs are synchronous
+            self.shape.jobs_pending += 1
             self.schedule_shape_jobs(self.shape)
-            if self.shape.jobs_pending == 0:
-                self.jobs_done_cb(None)
+            # Remove the fake job and so trigger the shape_done() event if needed
+            self.jobs_done_cb(None)
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
