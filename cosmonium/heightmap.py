@@ -215,9 +215,14 @@ class HeightmapPatch:
             self.min_height = np_buffer.min() / scale
             self.max_height = np_buffer.max() / scale
             self.mean_height = np_buffer.mean() / scale
+            self.lod = self.patch_lod
+            self.texture_offset = LVector2((self.overlap + 0.5) / self.width, (self.overlap + 0.5) / self.height)
+            self.texture_scale = LVector2((self.width - self.overlap * 2 - 1) / self.width, (self.height - self.overlap * 2 - 1) / self.height)
+            self.cloned = False
         else:
             if self.parent_heightmap is not None:
-                self.calc_sub_patch()
+                if not self.cloned:
+                    self.calc_sub_patch()
             else:
                 print("Make default texture for heightmap")
                 texture = Texture()
@@ -237,6 +242,9 @@ class TextureHeightmapPatch(HeightmapPatch):
         self.data_source = data_source
 
     def apply(self, patch):
+        if self.texture is None:
+            # The heightmap is not available yet, use the parent heightmap instead
+            self.calc_sub_patch()
         self.data_source.apply(patch, "heightmap_%s" % self.parent.name)
 
     def texture_loaded_cb(self, texture, patch, callback, cb_args):

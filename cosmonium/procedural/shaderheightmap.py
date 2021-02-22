@@ -103,6 +103,9 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.tex_generator = None
 
     def apply(self, patch):
+        if self.texture is None:
+            # The heightmap is not available yet, use the parent heightmap instead
+            self.calc_sub_patch()
         patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
 
     def do_load(self, patch, callback, cb_args):
