@@ -564,9 +564,6 @@ class SquarePatchBase(Patch):
         y_tex = (self.y // y_scale) * y_scale
         x_delta = float(self.x - x_tex) / x_scale
         y_delta = float(self.y - y_tex) / y_scale
-        #Y orientation is the opposite of the texture v axis
-        y_delta = 1.0 - y_delta - 1.0 / y_scale
-        if y_delta == 1.0: y_delta = 0.0
         self.instance.setTexOffset(texture_stage, x_delta, y_delta)
 
     def coord_to_uv(self, coord):
