@@ -71,25 +71,25 @@ class ProceduralVirtualTextureSource(TextureSource):
 
     def texture_loaded_cb(self, texture, patch, callback, cb_args):
         if texture is not None:
-            self.map_patch[patch] = (texture, self.texture_size, patch.lod)
+            self.map_patch[patch.str_id()] = (texture, self.texture_size, patch.lod)
             if callback is not None:
                 callback(texture, self.texture_size, patch.lod, *cb_args)
         else:
             parent_patch = patch.parent
-            while parent_patch is not None and parent_patch not in self.map_patch:
+            while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
                 parent_patch = parent_patch.parent
             if parent_patch is not None:
                 if callback is not None:
-                    callback(*(self.map_patch[parent_patch] + cb_args))
+                    callback(*(self.map_patch[parent_patch.str_id()] + cb_args))
             else:
                 if callback is not None:
                     callback(None, None, self.texture_size, patch.lod, *cb_args)
 
     def load(self, patch, color_space, callback=None, cb_args=()):
-        if not patch in self.map_patch:
+        if not patch.str_id() in self.map_patch:
             self._make_texture(patch, callback, cb_args)
         else:
-            callback(*(self.map_patch[patch] + cb_args))
+            callback(*(self.map_patch[patch.str_id()] + cb_args))
 
     def texture_ready_cb(self, chain, patch, callback, cb_args):
         #print("READY", patch.str_id())
@@ -98,9 +98,9 @@ class ProceduralVirtualTextureSource(TextureSource):
             texture.set_minfilter(Texture.FT_linear_mipmap_linear)
         else:
             texture.set_minfilter(Texture.FT_linear)
-        self.map_patch[patch] = (texture, self.texture_size, patch.lod)
+        self.map_patch[patch.str_id()] = (texture, self.texture_size, patch.lod)
         if callback is not None:
-            callback(*(self.map_patch[patch] + cb_args))
+            callback(*(self.map_patch[patch.str_id()] + cb_args))
 
     def create_generator(self, coord):
         self.tex_generator = GeneratorPool([])
@@ -118,11 +118,18 @@ class ProceduralVirtualTextureSource(TextureSource):
                                    'scale': (patch.lod_scale_x, patch.lod_scale_y, 1.0),
                                    'face': patch.face
                                   }}
-
         self.tex_generator.generate(shader_data, self.texture_ready_cb, (patch, callback, cb_args))
 
-    def get_texture(self, patch):
-        if patch in self.map_patch:
-            return self.map_patch[patch]
+    def get_texture(self, patch, strict=False):
+        if patch.str_id() in self.map_patch:
+            return self.map_patch[patch.str_id()]
+        elif not strict:
+            parent_patch = patch.parent
+            while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
+                parent_patch = parent_patch.parent
+            if parent_patch is not None:
+                return self.map_patch[parent_patch.str_id()]
+            else:
+                return (None, self.texture_size, patch.lod)
         else:
             return (None, self.texture_size, patch.lod)
