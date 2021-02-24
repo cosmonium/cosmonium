@@ -153,6 +153,7 @@ class RenderTarget(object):
     def clear(self):
         #TODO: Should the buffer be deactivated too ?
         self.texture = None
+        self.buffer.clear_render_textures()
 
 class RenderStage():
     sources = []
@@ -182,6 +183,9 @@ class RenderStage():
 
     def update(self, shader_data):
         self.target.update(shader_data)
+
+    def clear(self):
+        self.target.clear()
 
     def remove(self):
         self.target.remove()
@@ -216,6 +220,10 @@ class GeneratorChain():
         for stage in self.stages:
             stage.update(shader_data.get(stage.name, {}))
 
+    def clear(self):
+        for stage in self.stages:
+            stage.clear()
+
     def remove(self):
         for stage in self.stages:
             stage.remove()
@@ -233,6 +241,7 @@ class GeneratorChain():
                 self.schedule_next()
             else:
                 self.busy = False
+                #self.clear()
         return Task.cont
 
     def schedule_next(self):
