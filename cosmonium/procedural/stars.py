@@ -47,7 +47,8 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
                               appearance=Appearance(colorScale=body.point_color,
                                                     texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
                                                                                                           self.target,
-                                                                                                          self.size))),
+                                                                                                          self.size),
+                                                                           srgb=False)),
                               shape=shape,
                               shader=shader)
         return surface
