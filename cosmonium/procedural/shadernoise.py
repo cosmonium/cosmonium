@@ -1168,7 +1168,7 @@ class NoiseShader(StructuredShader):
                             0.0, 1.0, 0.0,
                             0.0, 0.0, 1.0)
 
-    def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_frequency=1.0, global_offset=LVector3(0, 0, 0), global_scale=1.0):
+    def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_frequency=1.0, global_offset=LVector3(0, 0, 0), global_scale=1.0, lod=None):
         instance.set_shader_input('noiseOffset', offset)
         instance.set_shader_input('noiseScale', scale)
         instance.set_shader_input('global_frequency', global_frequency)

@@ -51,8 +51,6 @@ class RenderTarget(object):
         self.buffer = None
         self.width = None
         self.height = None
-        self.texture_format = None
-        self.texture = None
 
     def format_to_props(self, texture_format):
         fbprops = FrameBufferProperties()
@@ -77,7 +75,6 @@ class RenderTarget(object):
     def make_buffer(self, width, height, texture_format, to_ram):
         self.width = width
         self.height = height
-        self.texture_format = texture_format
         self.to_ram = to_ram
         self.root = NodePath("root")
         winprops = WindowProperties()
@@ -125,24 +122,14 @@ class RenderTarget(object):
             base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
 
-    def create_textures(self):
-        #TODO: Should we configure the texture here or delegate to the stage ?
-        self.texture = Texture()
-        self.texture.set_wrap_u(Texture.WM_clamp)
-        self.texture.set_wrap_v(Texture.WM_clamp)
-        self.texture.set_anisotropic_degree(0)
-        self.texture.set_minfilter(Texture.FT_linear)
-        self.texture.set_magfilter(Texture.FT_linear)
-
-    def prepare(self, shader_data):
+    def prepare(self, textures, shader_data):
         self.shader.update(self.quad, **shader_data)
         self.buffer.clear_render_textures()
         if self.to_ram:
             mode = GraphicsOutput.RTM_copy_ram
         else:
             mode = GraphicsOutput.RTM_bind_or_copy
-        self.create_textures()
-        self.buffer.add_render_texture(self.texture, mode)
+        self.buffer.add_render_texture(textures, mode)
         self.buffer.set_one_shot(True)
         self.buffer.set_active(True)
 
@@ -152,7 +139,6 @@ class RenderTarget(object):
 
     def clear(self):
         #TODO: Should the buffer be deactivated too ?
-        self.texture = None
         self.buffer.clear_render_textures()
 
 class RenderStage():
@@ -162,6 +148,7 @@ class RenderStage():
         self.size = size
         self.sources_map = {}
         self.target = None
+        self.textures = None
 
     def get_size(self):
         return self.size
@@ -178,14 +165,19 @@ class RenderStage():
     def create(self):
         raise NotImplementedError()
 
+    def create_textures(self):
+        raise NotImplementedError()
+
     def prepare(self, shader_data):
-        self.target.prepare(shader_data)
+        self.textures = self.create_textures(shader_data)
+        self.target.prepare(self.textures, shader_data)
 
     def update(self, shader_data):
         self.target.update(shader_data)
 
     def clear(self):
         self.target.clear()
+        self.textures = None
 
     def remove(self):
         self.target.remove()

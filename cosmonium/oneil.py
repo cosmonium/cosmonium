@@ -165,7 +165,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookuptable_generator = ONeilLookupTableRenderStage(self.lookup_size)
         self.lookuptable_generator.create()
         self.lookuptable_generator.prepare({'parameters': self})
-        self.pbOpticalDepth = self.lookuptable_generator.target.texture
+        self.pbOpticalDepth = self.lookuptable_generator.textures
 
     def remove_instance(self):
         ONeilAtmosphereBase.remove_instance(self)
@@ -678,6 +678,15 @@ class ONeilLookupTableRenderStage(RenderStage):
         (width, height) = self.get_size()
         self.target.make_buffer(width, height, Texture.F_rgb32, to_ram=False)
         self.target.set_shader(self.create_shader())
+
+    def create_textures(self, shader_data):
+        texture = Texture()
+        texture.set_wrap_u(Texture.WM_clamp)
+        texture.set_wrap_v(Texture.WM_clamp)
+        texture.set_anisotropic_degree(0)
+        texture.set_minfilter(Texture.FT_linear)
+        texture.set_magfilter(Texture.FT_linear)
+        return texture
 
 class ONeilScattering(ONeilScatteringBase):
     str_id = 'oneil'

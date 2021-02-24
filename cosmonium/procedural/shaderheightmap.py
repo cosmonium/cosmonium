@@ -46,6 +46,15 @@ class HeightmapGenerationStage(RenderStage):
         self.target.make_buffer(width, height, Texture.F_r32, to_ram=True)
         self.target.set_shader(self.create_shader())
 
+    def create_textures(self, shader_data):
+        texture = Texture()
+        texture.set_wrap_u(Texture.WM_clamp)
+        texture.set_wrap_v(Texture.WM_clamp)
+        texture.set_anisotropic_degree(0)
+        texture.set_minfilter(Texture.FT_linear)
+        texture.set_magfilter(Texture.FT_linear)
+        return texture
+
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
 
@@ -125,7 +134,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
         patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
 
     def texture_generated_cb(self, render_chain, callback, cb_args):
-        self.heightmap_ready_cb(render_chain.stages[0].target.texture, callback, cb_args)
+        self.heightmap_ready_cb(render_chain.stages[0].textures, callback, cb_args)
 
     def do_load(self, patch, callback, cb_args):
         if not self.width in ShaderHeightmapPatch.tex_generators:

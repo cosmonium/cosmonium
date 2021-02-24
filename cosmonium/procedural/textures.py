@@ -42,9 +42,20 @@ class TextureGenerationStage(RenderStage):
     def create(self):
         self.target = RenderTarget()
         (width, height) = self.get_size()
-        #TODO: Is to_ram is set to False, patch at lod 0 have no texture !
-        self.target.make_buffer(width, height, Texture.F_rgba, to_ram=True)
+        self.target.make_buffer(width, height, Texture.F_rgba, to_ram=False)
         self.target.set_shader(self.create_shader())
+
+    def create_textures(self, shader_data):
+        texture = Texture()
+        texture.set_wrap_u(Texture.WM_clamp)
+        texture.set_wrap_v(Texture.WM_clamp)
+        texture.set_anisotropic_degree(0)
+        if shader_data['lod'] == 0:
+            texture.set_minfilter(Texture.FT_linear_mipmap_linear)
+        else:
+            texture.set_minfilter(Texture.FT_linear)
+        texture.set_magfilter(Texture.FT_linear)
+        return texture
 
 class ProceduralVirtualTextureSource(TextureSource):
     cached = False
@@ -93,7 +104,7 @@ class ProceduralVirtualTextureSource(TextureSource):
 
     def texture_ready_cb(self, chain, patch, callback, cb_args):
         #print("READY", patch.str_id())
-        texture = chain.stages[0].target.texture
+        texture = chain.stages[0].textures
         if patch.lod == 0:
             texture.set_minfilter(Texture.FT_linear_mipmap_linear)
         else:
@@ -116,7 +127,8 @@ class ProceduralVirtualTextureSource(TextureSource):
             self.create_generator(patch.coord)
         shader_data = {'texture': {'offset': (patch.x0, patch.y0, 0.0),
                                    'scale': (patch.lod_scale_x, patch.lod_scale_y, 1.0),
-                                   'face': patch.face
+                                   'face': patch.face,
+                                   'lod': patch.lod
                                   }}
         self.tex_generator.generate(shader_data, self.texture_ready_cb, (patch, callback, cb_args))
 
