@@ -99,6 +99,11 @@ class RenderTarget(object):
         #Create the plane with the texture
         cm = CardMaker("plane")
         cm.set_frame_fullscreen_quad()
+        #TODO: This should either be done inside the passthrough vertex shader
+        # Or in the heightmap sampler.
+        x_margin = 1.0 / width / 2.0
+        y_margin = 1.0 / height / 2.0
+        cm.set_uv_range((-x_margin, -y_margin), (1 + x_margin, 1 + y_margin))
         self.quad = self.root.attach_new_node(cm.generate())
         self.quad.set_depth_test(False)
         self.quad.set_depth_write(False)
