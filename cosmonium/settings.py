@@ -197,7 +197,7 @@ grid_thickness = 0.5
 asterism_thickness = 0.9
 boundary_thickness = 0.9
 
-wireframe_fill_color = LColor(0.5, 0.5, 0.5, 1.0)
+wireframe_fill_color = LColor(1, 0., 0., 1.0)
 
 fast_move = 2.0
 slow_move = 5.0
