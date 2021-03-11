@@ -57,6 +57,9 @@ from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
+from .events import EventsDispatcher
+from .debug import Debug
+from .appstate import AppState
 from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
@@ -102,9 +105,8 @@ if sys.version_info < (3, 8):
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
-        self.keystrokes = {}
-        self.gui = None #TODO: Temporary for keystroke below
         self.observer = None #TODO: For window_event below
+        self.debug = Debug(self)
         self.wireframe = False
         self.wireframe_filled = False
         self.trigger_check_settings = True
@@ -230,32 +232,9 @@ class CosmoniumBase(ShowBase):
     def create_additional_display_regions(self):
         pass
 
-    def keystroke_event(self, keyname):
-        #TODO: Should be better isolated
-        if self.gui is not None and self.gui.popup_menu: return
-        callback_data = self.keystrokes.get(keyname, None)
-        if callback_data is not None:
-            (method, extraArgs) = callback_data
-            method(*extraArgs)
-
-    def accept(self, event, method, extraArgs=[], direct=False):
-        if len(event) == 1 and not direct:
-            self.keystrokes[event] = [method, extraArgs]
-        else:
-            ShowBase.accept(self, event, method, extraArgs=extraArgs)
-
-    def ignore(self, event):
-        if len(event) == 1:
-            if event in self.keystrokes:
-                del self.keystrokes[event]
-        else:
-            ShowBase.ignore(self, event)
-
     def register_events(self):
         if not self.app_config.test_start:
-            self.buttonThrowers[0].node().setKeystrokeEvent('keystroke')
             self.accept(self.win.getWindowEvent(), self.window_event)
-        self.accept('keystroke', self.keystroke_event)
         self.accept('panic-deactivate-gsg', self.gsg_failure)
 
     def gsg_failure(self, event):
@@ -349,17 +328,47 @@ class CosmoniumBase(ShowBase):
         if self.wireframe_filled:
             self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
+    def toggle_stereoscopic_framebuffer(self):
+        settings.stereoscopic_framebuffer = not settings.stereoscopic_framebuffer
+        if settings.stereoscopic_framebuffer:
+            settings.red_blue_stereo = False
+            settings.side_by_side_stereo = False
+        configParser.save()
+
+    def toggle_red_blue_stereo(self):
+        settings.red_blue_stereo = not settings.red_blue_stereo
+        if settings.red_blue_stereo:
+            settings.stereoscopic_framebuffer = False
+            settings.side_by_side_stereo = False
+        configParser.save()
+
+    def toggle_side_by_side_stereo(self):
+        settings.side_by_side_stereo = not settings.side_by_side_stereo
+        if settings.side_by_side_stereo:
+            settings.red_blue_stereo = False
+            settings.stereoscopic_framebuffer = False
+        configParser.save()
+
+    def toggle_swap_eyes(self):
+        settings.stereo_swap_eyes = not settings.stereo_swap_eyes
+        configParser.save()
+
     def save_screenshot(self, filename=None):
-        if filename is None:
+        if settings.screenshot_path is not None:
             filename = self.screenshot(namePrefix=settings.screenshot_path)
+            if filename is not None:
+                print("Saving screenshot into", filename)
+            else:
+                print("Could not save filename")
+                if self.gui is not None:
+                    self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
         else:
-            self.screenshot(namePrefix=filename, defaultFilename=False)
-        if filename is not None:
-            print("Saving screenshot into", filename)
-        else:
-            print("Could not save filename")
-            if self.gui is not None:
-                self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
+            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
+            self.gui.show_select_screenshots()
+
+    def set_screenshots_path(self, path):
+        settings.screenshot_path = path
+        self.save_settings()
 
 class Cosmonium(CosmoniumBase):
     FREE_NAV = 0
@@ -461,6 +470,9 @@ class Cosmonium(CosmoniumBase):
         if self.gui is None:
             self.gui = Gui(self, self.time, self.observer, self.mouse, self.autopilot)
             self.mouse.set_ui(self.gui)
+
+        #TODO: Temporarily until event registration is split up between each class
+        self.events_dispatcher = EventsDispatcher(self, self.time, self.observer, self.autopilot, self.gui, self.debug)
 
         # Use the first of each controllers as default
         self.set_nav(self.nav_controllers[0])
@@ -663,16 +675,20 @@ class Cosmonium(CosmoniumBase):
             self.world.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
-        state = self.gui.hide_with_state()
-        self.annotation.hide()
-        base.graphicsEngine.renderFrame()
-        filename = self.screenshot(namePrefix=settings.screenshot_path)
-        self.gui.show_with_state(state)
-        self.annotation.show()
-        if filename is not None:
-            print("Saving screenshot without annotation into", filename)
+        if settings.screenshot_path is not None:
+            state = self.gui.hide_with_state()
+            self.annotation.hide()
+            base.graphicsEngine.renderFrame()
+            filename = self.screenshot(namePrefix=settings.screenshot_path)
+            self.gui.show_with_state(state)
+            self.annotation.show()
+            if filename is not None:
+                print("Saving screenshot without annotation into", filename)
+            else:
+                print("Could not save filename")
         else:
-            print("Could not save filename")
+            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
+            self.gui.show_select_screenshots()
 
     def select_body(self, body):
         if self.selected == body:
@@ -739,6 +755,29 @@ class Cosmonium(CosmoniumBase):
         else:
             print("Invalid cel://")
             self.gui.update_info("Invalid URL...")
+
+    def save_celurl(self):
+        state = AppState()
+        state.save_state(self)
+        cel_url = CelUrl()
+        cel_url.store_state(self, state)
+        url = cel_url.encode()
+        self.gui.clipboard.copy_to(url)
+        print(url)
+
+    def load_celurl(self):
+        url = self.gui.clipboard.copy_from()
+        if url is None or url == '': return
+        print(url)
+        state = None
+        cel_url = CelUrl()
+        if cel_url.parse(url):
+            state = cel_url.convert_to_state(self)
+        if state is not None:
+            state.apply_state(self)
+        else:
+            print("Invalid URL: '%s'" % url)
+            self.gui.update_info(_("Invalid URL..."))
 
     def reset_all(self):
         self.gui.update_info("Cancel", duration=0.5, fade=1.0)
