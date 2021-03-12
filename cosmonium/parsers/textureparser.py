@@ -20,7 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..procedural.appearances import TexturesDictionary, TextureTilingMode
+from ..procedural.appearances import TexturesDictionary
+from ..procedural.shaders import SimpleTextureTiling, HashTextureTiling
 
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from ..appearances import TexturesBlock
@@ -33,12 +34,12 @@ class TextureTilingYamlParser(YamlModuleParser):
     def decode(cls, data):
         (object_type, object_data) = cls.get_type_and_data(data, 'default')
         if object_type == 'default':
-            return TextureTilingMode.F_none
+            return SimpleTextureTiling()
         elif object_type == 'hash':
-            return TextureTilingMode.F_hash
+            return HashTextureTiling()
         else:
             print("Unknown tiling type '%s'" % object_type)
-            return TextureTilingMode.F_none
+            return SimpleTextureTiling()
 
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod

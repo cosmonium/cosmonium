@@ -29,12 +29,8 @@ from .. import settings
 
 from math import pi
 
-class TextureTilingMode(object):
-    F_none = 0
-    F_hash = 1
-
 class TexturesDictionary(AppearanceBase):
-    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=TextureTilingMode.F_none, srgb=None, array=True, context=defaultDirContext):
+    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=None, srgb=None, array=True, context=defaultDirContext):
         AppearanceBase.__init__(self)
         self.scale_factor = scale_factor
         self.tiling = tiling

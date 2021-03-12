@@ -26,7 +26,7 @@ from ..procedural.texturecontrol import HeightTextureControl, HeightTextureContr
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
 from ..procedural.texturecontrol import MixTextureControl
-from ..procedural.shaders import TextureDictionaryDataSource
+from ..procedural.shaders import TextureDictionaryDataSource, SimpleTextureTiling, HashTextureTiling
 from ..astro import units
 
 from .utilsparser import DistanceUnitsYamlParser

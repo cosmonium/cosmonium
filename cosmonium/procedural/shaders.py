@@ -22,31 +22,33 @@ from __future__ import absolute_import
 
 from ..shaders import DataSource, ShaderAppearance
 
-from .appearances import TextureTilingMode
+class TextureTiling:
+    def __init__(self):
+        self.shader = None
 
-class TextureDictionaryDataSource(DataSource):
-    def __init__(self, dictionary, shader=None):
-        DataSource.__init__(self, shader)
-        self.dictionary = dictionary
-        self.tiling = dictionary.tiling
-        self.nb_entries = self.dictionary.nb_blocks
-        self.nb_coefs = (self.nb_entries + 3) // 4
+    def set_shader(self, shader):
+        self.shader = shader
 
-    def get_id(self):
-        return 'dict' + str(id(self))
+    def uniforms(self, code):
+        pass
 
-    def fragment_uniforms(self, code):
-        DataSource.fragment_uniforms(self, code)
-        code.append("#define NB_COEFS_VEC %d" % self.nb_coefs)
-        if self.dictionary.texture_array:
-            for texture in self.dictionary.texture_arrays.values():
-                code.append("uniform sampler2DArray %s;" % texture.input_name)
-        else:
-            for (name, entry) in self.dictionary.blocks.items():
-                for texture in entry.textures:
-                    code.append("uniform sampler2D tex_%s_%s;" % (name, texture.category))
-        code.append("uniform vec2 detail_factor;")
+    def extra(self, code):
+        pass
 
+    def tile_texture(self, texture, coord):
+        pass
+
+    def tile_texture_array(self, texture, coord, page):
+        pass
+
+class SimpleTextureTiling(TextureTiling):
+    def tile_texture(self, texture, coord):
+        return 'texture2D({}, {})'.format(texture, coord)
+
+    def tile_texture_array(self, texture, coord, page):
+        return 'texture2D({}, vec3({}, {}))'.format(texture, coord, page)
+
+class HashTextureTiling(TextureTiling):
     def hash4(self, code):
         code.append('''
 vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
@@ -55,13 +57,10 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
                                               4.0+dot(p,vec2(23.0,31.0))))*103.0); }
 ''')
 
-    def textureNoTile(self, code):
-        if self.dictionary.texture_array:
-            code.append("vec4 textureNoTile(sampler2DArray samp, in vec3 uv)")
-        else:
-            code.append("vec4 textureNoTile(sampler2D samp, in vec2 uv)")
+    def hash_texture_tiling(self, code):
         code.append(
-'''{
+'''vec4 hash_texture_tiling(sampler2D samp, in vec2 uv)
+{
     vec2 iuv = floor(uv.xy);
     vec2 fuv = fract(uv.xy);
 
@@ -88,32 +87,91 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
 
     // fetch and blend
     vec2 b = smoothstep(0.25, 0.75, fuv);
-''')
-        if self.dictionary.texture_array:
-            code.append('''
-    return mix( mix(textureGrad(samp, vec3(uva, uv.z), ddxa, ddya),
-                    textureGrad(samp, vec3(uvb, uv.z), ddxb, ddyb), b.x),
-                mix(textureGrad(samp, vec3(uvc, uv.z), ddxc, ddyc),
-                    textureGrad(samp, vec3(uvd, uv.z), ddxd, ddyd), b.x), b.y);
-''')
-        else:
-            code.append('''
     return mix( mix(textureGrad(samp, uva, ddxa, ddya),
                     textureGrad(samp, uvb, ddxb, ddyb), b.x),
                 mix(textureGrad(samp, uvc, ddxc, ddyc),
                     textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
+}
 ''')
-        code.append("}")
+
+    def hash_texture_array_tiling(self, code):
+        code.append(
+'''vec4 hash_texture_array_tiling(sampler2DArray samp, in vec3 uv)
+{
+    vec2 iuv = floor(uv.xy);
+    vec2 fuv = fract(uv.xy);
+
+    // generate per-tile transform
+    vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
+    vec4 ofb = hash4(iuv + vec2(1.0, 0.0));
+    vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
+    vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
+
+    vec2 ddx = dFdx(uv.xy);
+    vec2 ddy = dFdy(uv.xy);
+
+    // transform per-tile uvs
+    ofa.zw = sign(ofa.zw - 0.5);
+    ofb.zw = sign(ofb.zw - 0.5);
+    ofc.zw = sign(ofc.zw - 0.5);
+    ofd.zw = sign(ofd.zw - 0.5);
+
+    // uv's, and derivarives (for correct mipmapping)
+    vec2 uva = uv.xy*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
+    vec2 uvb = uv.xy*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
+    vec2 uvc = uv.xy*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
+    vec2 uvd = uv.xy*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
+
+    // fetch and blend
+    vec2 b = smoothstep(0.25, 0.75, fuv);
+    return mix( mix(textureGrad(samp, vec3(uva, uv.z), ddxa, ddya),
+                    textureGrad(samp, vec3(uvb, uv.z), ddxb, ddyb), b.x),
+                mix(textureGrad(samp, vec3(uvc, uv.z), ddxc, ddyc),
+                    textureGrad(samp, vec3(uvd, uv.z), ddxd, ddyd), b.x), b.y);
+}
+''')
+
+    def extra(self, code):
+        self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
+        self.shader.fragment_shader.add_function(code, 'hash_texture_tiling', self.hash_texture_tiling)
+        self.shader.fragment_shader.add_function(code, 'hash_texture_array_tiling', self.hash_texture_array_tiling)
+
+    def tile_texture(self, texture, coord):
+        return 'hash_texture_tiling({}, {})'.format(texture, coord)
+
+    def tile_texture_array(self, texture, coord, page):
+        return 'hash_texture_array_tiling({}, vec3({}, {}))'.format(texture, coord, page)
+
+class TextureDictionaryDataSource(DataSource):
+    def __init__(self, dictionary, shader=None):
+        DataSource.__init__(self, shader)
+        self.dictionary = dictionary
+        self.tiling = dictionary.tiling
+        self.nb_entries = self.dictionary.nb_blocks
+        self.nb_coefs = (self.nb_entries + 3) // 4
+
+    def get_id(self):
+        return 'dict' + str(id(self))
+
+    def set_shader(self, shader):
+        DataSource.set_shader(self, shader)
+        self.tiling.set_shader(shader)
+
+    def fragment_uniforms(self, code):
+        DataSource.fragment_uniforms(self, code)
+        self.tiling.uniforms(code)
+        code.append("#define NB_COEFS_VEC %d" % self.nb_coefs)
+        if self.dictionary.texture_array:
+            for texture in self.dictionary.texture_arrays.values():
+                code.append("uniform sampler2DArray %s;" % texture.input_name)
+        else:
+            for (name, entry) in self.dictionary.blocks.items():
+                for texture in entry.textures:
+                    code.append("uniform sampler2D tex_%s_%s;" % (name, texture.category))
+        code.append("uniform vec2 detail_factor;")
 
     def resolve_coefs(self, code, category):
         code.append("vec4 resolve_%s(vec4 coefs[NB_COEFS_VEC], vec2 position) {" % category)
-        if self.tiling == TextureTilingMode.F_hash:
-            sampler = 'textureNoTile'
-        else:
-            if self.dictionary.texture_array:
-                sampler = 'texture'
-            else:
-                sampler = 'texture2D'
         code.append("    float coef;")
         code.append("    vec4 result = vec4(0.0);")
         for (block_id, block) in self.dictionary.blocks.items():
@@ -125,22 +183,24 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
             code.append("    if (coef > 0) {")
             if self.dictionary.texture_array:
                 dict_name = 'array_%s' % category
+                texture_sample = self.tiling.tile_texture_array('tex_{}'.format(dict_name), 'position.xy * detail_factor', tex_id)
                 #TODO: There should not be a link like that
                 if self.shader.appearance.resolved:
                     if category == 'normal':
-                        code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz * 2 - 1;" % (block_id, sampler, dict_name, tex_id))
+                        code.append("      vec3 tex_%s = %s.xyz * 2 - 1;" % (block_id, texture_sample))
                     else:
-                        code.append("      vec3 tex_%s = %s(tex_%s, vec3(position.xy * detail_factor, %d)).xyz;" % (block_id, sampler, dict_name, tex_id))
+                        code.append("      vec3 tex_%s = %s.xyz;" % (block_id, texture_sample))
                 else:
                     if category == 'normal':
                         code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz * 2 - 1;" % (block_id, dict_name, tex_id))
                     else:
                         code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz;" % (block_id, dict_name, tex_id))
             else:
+                texture_sample = self.tiling.tile_texture('tex_{}_{}'.format(dict_name, category), 'position.xy * detail_factor')
                 if category == 'normal':
-                    code.append("      vec3 tex_%s = %s(tex_%s_%s, position.xy * detail_factor).xyz * 2 - 1;" % (block_id, sampler, block_id, category))
+                    code.append("      vec3 tex_%s = %s.xyz * 2 - 1;" % (block_id, texture_sample))
                 else:
-                    code.append("      vec3 tex_%s = %s(tex_%s_%s, position.xy * detail_factor).xyz;" % (block_id, sampler, block_id, category))
+                    code.append("      vec3 tex_%s = %s.xyz;" % (block_id, texture_sample))
             code.append("      result.rgb = mix(result.rgb, tex_%s, coef);" % (block_id))
             code.append("    }")
         code.append("    result.w = 1.0;")
@@ -149,9 +209,7 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
 
     def fragment_extra(self, code):
         DataSource.fragment_extra(self, code)
-        if self.tiling == TextureTilingMode.F_hash:
-            self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
-            self.shader.fragment_shader.add_function(code, 'textureNoTile', self.textureNoTile)
+        self.tiling.extra(code)
         for category in self.dictionary.texture_categories.keys():
             self.resolve_coefs(code, category)
 
