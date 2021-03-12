@@ -909,9 +909,9 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.ship.set_frame(SynchroneReferenceFrame(body))
+            self.ship.set_frame(SynchroneReferenceFrame(body.anchor))
             self.update_extra(self.sync)
-            self.observer.set_frame(SynchroneReferenceFrame(body))
+            self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())

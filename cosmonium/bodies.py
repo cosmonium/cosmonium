@@ -250,7 +250,7 @@ class StellarBody(StellarObject):
             vectors = self.surface.get_normals_at(x, y)
         else:
             vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
-        sync_frame = SynchroneReferenceFrame(self)
+        sync_frame = SynchroneReferenceFrame(self.anchor)
         return (sync_frame.get_orientation().xform(vectors[0]),
                 sync_frame.get_orientation().xform(vectors[1]),
                 sync_frame.get_orientation().xform(vectors[2]))
@@ -268,7 +268,7 @@ class StellarBody(StellarObject):
             vectors = self.surface.get_lonlatvert_at(x, y)
         else:
             vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
-        sync_frame = SynchroneReferenceFrame(self)
+        sync_frame = SynchroneReferenceFrame(self.anchor)
         return (sync_frame.get_orientation().xform(vectors[0]),
                 sync_frame.get_orientation().xform(vectors[1]),
                 sync_frame.get_orientation().xform(vectors[2]))
