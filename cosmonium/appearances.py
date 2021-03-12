@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import  Material, TextureStage, Texture, GeomNode, InternalName
 from panda3d.core import TransparencyAttrib
+from direct.task.Task import gather
 
 from .textures import TextureBase, WrapperTexture, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from .textures import AutoTextureSource
@@ -140,10 +141,10 @@ class AppearanceBase:
     def apply_textures(self, patch):
         pass
 
-    def apply_patch(self, patch, owner):
+    async def apply_patch(self, patch, owner):
         pass
 
-    def apply(self, shape, owner):
+    async def apply(self, shape, owner):
         pass
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
@@ -202,6 +203,7 @@ class Appearance(AppearanceBase):
         self.nb_textures_coord = 0
         self.tex_transform = True
         self.has_material = True
+        self.check_specular_mask = False
 
     def set_roughness(self, roughness):
         self.roughness = roughness
@@ -211,10 +213,6 @@ class Appearance(AppearanceBase):
 
     def set_backlit(self, backlit):
         self.backlit = backlit
-
-    def check_specular_mask(self):
-        if self.texture is not None and self.specularColor is not None:
-            self.texture.check_specular_mask = True
 
     def check_transparency(self):
         if self.texture is not None:
@@ -232,8 +230,9 @@ class Appearance(AppearanceBase):
             self.material.setSpecular(self.specularColor)
         if self.shininess != None:
             self.material.setShininess(self.shininess)
-        self.check_specular_mask()
         self.calc_indexes()
+        if self.specular_map is None:
+            self.check_specular_mask = True
 
     def set_texture(self, texture, tint=None, transparency=False, transparency_level=0.0, transparency_blend=TransparencyBlend.TB_Alpha, offset=0, context=defaultDirContext):
         if texture is not None and not isinstance(texture, TextureBase):
@@ -304,36 +303,29 @@ class Appearance(AppearanceBase):
         else:
             return None
 
-    def texture_loaded_cb(self, texture, patch, owner):
-        shape = owner.shape
-        if self.texture is not None and self.texture.check_specular_mask:
-            self.has_specular_mask = self.texture.has_specular_mask
-            self.texture.check_specular_mask = False
-        if shape.patchable:
-            #print("CB", patch.str_id(), '-', patch.jobs_pending)
-            owner.jobs_done_cb(patch)
-        else:
-            #print("CB", shape, '-', shape.jobs_pending)
-            owner.jobs_done_cb(None)
-
     def load_textures(self, shape, owner):
+        tasks = []
         if self.texture:
-            self.texture.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.texture.load(shape))
         if self.normal_map:
-            self.normal_map.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.normal_map.load(shape))
         if self.bump_map:
-            self.bump_map.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.bump_map.load(shape))
         if self.specular_map:
-            self.specular_map.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.specular_map.load(shape))
         if self.emission_texture:
-            self.emission_texture.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.emission_texture.load(shape))
         if self.occlusion_map:
-            self.occlusion_map.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(self.occlusion_map.load(shape))
+        return gather(*tasks)
 
     def apply_textures(self, patch):
         patch.instance.clearTexture()
         if self.texture:
-            self.has_specular_mask = self.texture.has_specular_mask
+            if self.check_specular_mask:
+                self.has_specular_mask = self.texture.has_alpha_channel
+                self.check_specular_mask = False
+            self.texture.has_specular_mask = self.has_specular_mask
             self.texture.apply(patch)
         if self.normal_map:
             self.normal_map.apply(patch)
@@ -346,26 +338,29 @@ class Appearance(AppearanceBase):
         if self.occlusion_map:
             self.occlusion_map.apply(patch)
 
-    def apply_patch(self, patch, owner):
-        if (patch.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
-            #print("APPLY", patch.str_id())
+    async def apply_patch(self, patch, owner):
             if self.nb_textures > 0:
-                patch.jobs |= Appearance.JOB_TEXTURE_LOAD
-                patch.jobs_pending += self.nb_textures
-                self.load_textures(patch, owner)
+                #print("LOAD", patch.str_id())
+                await self.load_textures(patch, owner)
+                if patch.instance is not None:
+                    #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
+                    self.apply_textures(patch)
+                else:
+                    #print(globalClock.getFrameCount(), "DISCARD", patch.str_id())
+                    pass
 
-    def apply(self, shape, owner):
+    async def apply(self, shape, owner):
         #Override any material present on the shape (use ModelAppearance to keep it)
         shape.instance.setMaterial(self.material, 1)
         if self.colorScale is not None:
             shape.instance.set_color_scale(self.colorScale)
         if shape.patchable: return
-        if (shape.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
-            #print("APPLY", shape, self.nb_textures)
-            if self.nb_textures > 0:
-                shape.jobs |= Appearance.JOB_TEXTURE_LOAD
-                shape.jobs_pending += self.nb_textures
-                self.load_textures(shape, owner)
+        #print("APPLY", shape, self.nb_textures)
+        if self.nb_textures > 0:
+            await self.load_textures(shape, owner)
+            if shape.instance is not None:
+                #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
+                self.apply_textures(shape)
 
 class ModelAppearance(AppearanceBase):
     def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):
@@ -478,5 +473,5 @@ class ModelAppearance(AppearanceBase):
             self.transparency_blend = TransparencyBlend.TB_Alpha
         self.nb_textures_coord = 1
 
-    def apply(self, shape, owner):
+    async def apply(self, shape, owner):
         self.scan_model(shape.instance)

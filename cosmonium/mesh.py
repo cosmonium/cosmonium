@@ -44,14 +44,14 @@ def init_mesh_loader():
     loadPrcFileData("", "model-cache-dir %s\n" % path)
     get_model_path().prepend_directory(Filename.from_os_specific(os.path.join(main_dir, 'models')))
 
-def load_model(pattern, callback=None, context=defaultDirContext):
+async def load_model(pattern, context=defaultDirContext):
     filename = context.find_model(pattern)
     if filename is not None:
         print("Loading model", filename)
-        return loader.loadModel(Filename.from_os_specific(filename).get_fullpath(), callback=callback)
+        return await loader.loadModel(Filename.from_os_specific(filename).get_fullpath(), blocking=False)
     else:
         print("Model not found", pattern)
         return None
 
-def load_panda_model(pattern, callback=None):
-    return loader.loadModel(pattern, callback=callback)
+async def load_panda_model(pattern):
+    return await loader.loadModel(pattern, blocking=False)

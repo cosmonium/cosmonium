@@ -37,6 +37,9 @@ class Debug:
     def analyse_scene(self):
         render.analyze()
 
+    def print_tasks(self):
+        print(taskMgr)
+
     def toggle_jump(self):
         settings.debug_jump = not settings.debug_jump
         if settings.debug_jump:

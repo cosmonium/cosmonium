@@ -38,7 +38,7 @@ def decode_bias(data, appearance):
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, patched_shape=True):
         source_parser = TextureSourceYamlParser()
         appearance = Appearance()
         tint = data.get('tint', None)
@@ -49,7 +49,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         transparency_blend = data.get('transparency-blend', TransparencyBlend.TB_Alpha)
         texture = data.get('texture')
         if texture is not None:
-            texture_source, texture_offset = source_parser.decode(texture)
+            texture_source, texture_offset = source_parser.decode(texture, patched_shape)
             if transparency:
                 texture = TransparentTexture(texture_source, tint=tint, level=transparency_level, blend=transparency_blend)
             else:
@@ -59,7 +59,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend)
         emission_texture = data.get('night-texture')
         if emission_texture is not None:
-            texture_source, texture_offset = source_parser.decode(emission_texture)
+            texture_source, texture_offset = source_parser.decode(emission_texture, patched_shape)
             emission_texture = EmissionTexture(texture_source)
             #TODO: missing texture offset
             appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
@@ -68,13 +68,13 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         else:
             emission_texture = data.get('emission-texture')
             if emission_texture is not None:
-                texture_source, texture_offset = source_parser.decode(emission_texture)
+                texture_source, texture_offset = source_parser.decode(emission_texture, patched_shape)
                 emission_texture = EmissionTexture(texture_source)
                 #TODO: missing texture offset
                 appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         normal_map = data.get('normalmap')
         if normal_map is not None:
-            texture_source, texture_offset = source_parser.decode(normal_map)
+            texture_source, texture_offset = source_parser.decode(normal_map, patched_shape)
             normal_map = NormalMapTexture(texture_source)
             #TODO: missing texture offset
             appearance.set_normal_map(normal_map, context=YamlModuleParser.context)
@@ -84,13 +84,13 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             appearance.shininess = data.get('shininess', 1)
             specular_map = data.get('specularmap')
             if specular_map is not None:
-                texture_source, texture_offset = source_parser.decode(specular_map)
+                texture_source, texture_offset = source_parser.decode(specular_map, patched_shape)
                 specular_map = SpecularMapTexture(texture_source)
                 #TODO: missing texture offset
                 appearance.set_specular_map(specular_map, context=YamlModuleParser.context)
         bump_map = data.get('bumpmap')
         if bump_map is not None:
-            texture_source, texture_offset = source_parser.decode(bump_map)
+            texture_source, texture_offset = source_parser.decode(bump_map, patched_shape)
             bump_map = BumpMapTexture(texture_source)
             bump_height = data.get('bump-height', 0)
             #TODO: missing texture offset
@@ -141,10 +141,10 @@ class RayMarchingAppeanceYamlParser(YamlModuleParser):
 
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, patched_shape=True):
         (object_type, parameters) = self.get_type_and_data(data, 'textures', detect_trivial=False)
         if object_type == 'textures':
-            appearance = TexturesAppearanceYamlParser.decode(parameters)
+            appearance = TexturesAppearanceYamlParser.decode(parameters, patched_shape)
         elif object_type == 'model':
             appearance = ModelAppearanceYamlParser.decode(parameters)
         elif object_type == 'textures-dict':

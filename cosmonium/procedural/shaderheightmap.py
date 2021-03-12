@@ -86,13 +86,18 @@ class ShaderHeightmap(TextureHeightmapBase):
     def apply(self, shape):
         shape.instance.set_shader_input("heightmap_%s" % self.name, self.texture)
 
-    def do_load(self, shape, callback, cb_args):
+    async def load(self, patch):
+        result = await self.do_load(patch)
+        data = result['heightmap']
+        self.configure_heightmap(data)
+
+    def do_load(self, shape):
         if not self.tex_id in ShaderHeightmap.tex_generators:
             chain = GeneratorChain()
             stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
             chain.add_stage(stage)
             chain.create()
-            ShaderHeightmapPatch.tex_generators[self.tex_id] = chain #GeneratorPool(settings.patch_pool_size)
+            ShaderHeightmapPatch.tex_generators[self.tex_id] = chain
         tex_generator = ShaderHeightmap.tex_generators[self.tex_id]
         if self.shader is None:
             self.shader = NoiseShader(noise_source=self.noise,
@@ -101,7 +106,7 @@ class ShaderHeightmap(TextureHeightmapBase):
                                       offset = self.offset,
                                       scale = self.scale)
             self.shader.create_and_register_shader(None, None)
-        tex_generator.generate(self.shader, 0, self.texture, self.heightmap_ready_cb, (callback, cb_args))
+        return tex_generator.generate(self.shader, 0, self.texture)
 
 class ShaderHeightmapPatchFactory(HeightmapPatchFactory):
     def __init__(self, noise):
@@ -133,10 +138,12 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.calc_sub_patch()
         patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
 
-    def texture_generated_cb(self, render_chain, callback, cb_args):
-        self.heightmap_ready_cb(render_chain.stages[0].textures, callback, cb_args)
+    async def load(self, patch):
+        result = await self.do_load(patch)
+        data = result['heightmap']
+        self.configure_heightmap(data)
 
-    def do_load(self, patch, callback, cb_args):
+    def do_load(self, patch):
         if not self.width in ShaderHeightmapPatch.tex_generators:
             pool = GeneratorPool([])
             for i in range(settings.patch_pool_size):
@@ -151,4 +158,4 @@ class ShaderHeightmapPatch(HeightmapPatch):
                                      'scale': (self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0),
                                      'face': self.face
                                     }}
-        tex_generator.generate(shader_data, self.texture_generated_cb, (callback, cb_args))
+        return tex_generator.generate(shader_data)

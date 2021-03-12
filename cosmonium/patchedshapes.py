@@ -24,6 +24,8 @@ from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode
 from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
 from panda3d.core import NodePath, BoundingBox
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
+from direct.task.Task import gather
+
 from .shapes import Shape
 from .textures import TexCoord
 from .pstats import pstat
@@ -72,6 +74,7 @@ class PatchBase(Shape):
         self.scale = 1.0
         self.lod = lod
         self.density = density
+        self.geometry_instance = None
         self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
         self.flat_coord = None
         self.bounds = None
@@ -110,6 +113,23 @@ class PatchBase(Shape):
         if self.instance is not None:
             self.instance.unstash()
 
+    def create_geometry_instance(self):
+        pass
+
+    def remove_geometry_instance(self):
+        self.geometry_instance.remove_node()
+        self.geometry_instance = None
+
+    def create_instance(self):
+        self.instance = NodePath('patch')
+        self.instance.setPythonTag('patch', self)
+        self.create_geometry_instance()
+        if settings.debug_lod_show_bb:
+            self.bounds_shape = BoundingBoxShape(self.bounds)
+            self.bounds_shape.create_instance()
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(1)
+
     def update_instance(self, shape):
         pass
 
@@ -117,6 +137,8 @@ class PatchBase(Shape):
         Shape.remove_instance(self)
         if self.bounds_shape is not None:
             self.bounds_shape.remove_instance()
+        # No need to call remove_geometry_instance() as it is already removed via removal of the parent instance
+        self.geometry_instance = None
 
     def add_child(self, child):
         child.parent = self
@@ -330,7 +352,7 @@ class SpherePatch(Patch):
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.ring, self.sector)
 
-    def create_instance(self):
+    def create_geometry_instance(self):
         if not self.owner in self.patch_cache:
             self.patch_cache[self.owner] = {}
         cache = self.patch_cache[self.owner]
@@ -343,10 +365,9 @@ class SpherePatch(Patch):
                                                    1.0 / self.s_div,self.y1,
                                                    has_offset=self.offset is not None,
                                                    offset=self.offset)
-            self.instance = NodePath('patch')
-            child = self.instance.attach_new_node('instance')
+            self.geometry_instance = self.instance.attach_new_node('instance')
             template = cache[patch_id]
-            template.instanceTo(child)
+            template.instance_to(self.geometry_instance)
             self.instance.setH(360.0 * self.x0)
         else:
             patch_id = "%d-%d %d" % (self.lod, self.ring, self.sector)
@@ -357,13 +378,8 @@ class SpherePatch(Patch):
                                                    self.x1, self.y1,
                                                    has_offset=self.offset is not None,
                                                    offset=self.offset)
-            self.instance = cache[patch_id]
-        self.instance.setPythonTag('patch', self)
-        if settings.debug_lod_show_bb:
-            self.bounds_shape = BoundingBoxShape(self.bounds)
-            self.bounds_shape.create_instance()
-        self.instance.node().setBounds(OmniBoundingVolume())
-        self.instance.node().setFinal(1)
+            self.geometry_instance = cache[patch_id]
+            self.geometry_instance.reparent_to(self.instance)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         if texture_lod == self.lod and patched:
@@ -496,7 +512,7 @@ class SquarePatchBase(Patch):
     def str_id(self):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
 
-    def create_instance(self):
+    def create_geometry_instance(self):
         if self.use_shader and self.use_tessellation:
             if self.owner.face_unique:
                 patch_id = "%d : %d - %d %d" % (self.lod, self.face, self.x, self.y)
@@ -528,22 +544,16 @@ class SquarePatchBase(Patch):
             else:
                 template = self.create_patch_instance(self.x, self.y)
             cache[patch_id] = template
-        self.instance = NodePath('face')
-        cache[patch_id].instanceTo(self.instance)
+        self.geometry_instance = self.instance.attach_new_node('instance')
+        cache[patch_id].instance_to(self.geometry_instance)
         self.orientation = self.rotations[self.face]
         self.instance.setQuat(LQuaternion(*self.orientation))
-        if settings.debug_lod_show_bb:
-            self.bounds_shape.create_instance()
-        self.instance.node().setBounds(OmniBoundingVolume())
-        self.instance.node().setFinal(1)
 
     def update_instance(self, parent):
         if self.instance is not None and not self.use_tessellation:
             if self.shown:
-                parent.remove_patch_instance(self)
-                parent.create_patch_instance(self)
-                #TODO: Check if needed ?
-                #parent.owner.surface.jobs_done_cb(self)
+                self.remove_geometry_instance()
+                self.create_geometry_instance()
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         #TODO: Refactor into Patch
@@ -787,7 +797,7 @@ class PatchedShapeBase(Shape):
             patch.shown = False
         self.patches = []
 
-    def create_instance(self):
+    async def create_instance(self):
         if self.instance is None:
             self.instance = NodePath('root')
             self.create_root_patches()
@@ -797,6 +807,11 @@ class PatchedShapeBase(Shape):
                 if self.no_bounds:
                     self.instance.node().setBounds(OmniBoundingVolume())
                     self.instance.node().setFinal(1)
+            tasks = []
+            for linked_object in self.linked_objects:
+                tasks.append(linked_object.create_instance())
+            if len(tasks) > 0:
+                gather(*tasks)
         return self.instance
 
     def remove_instance(self):
@@ -1075,7 +1090,7 @@ class PatchedShapeBase(Shape):
         print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
         if patch.shown: print(pad, '  Shown')
         if not patch.instance_ready: print(pad, '  Instance not ready')
-        if patch.jobs_pending != 0: print(pad, '  Jobs', patch.jobs_pending)
+        if patch.task is not None: print(pad, '  Task running')
         #print(pad, '  Distance', patch.distance)
         print(pad, "  Tessellation", '-'.join(map(str, patch.tessellation_outer_level)))
         for i in range(4):
@@ -1098,7 +1113,7 @@ class PatchedShapeBase(Shape):
         stats_array[0] += patch.visible
         stats_array[1] += patch.shown
         stats_array[7] += (patch.visible and not patch.instance_ready)
-        stats_array[8] += patch.jobs_pending
+        if patch.task is not None: stats_array[8] += 1
         stats_array[9] += 1
         for child in patch.children:
             self._dump_stats(stats_array, child)
@@ -1112,7 +1127,7 @@ class PatchedShapeBase(Shape):
         print("Visible:             ", stats_array[0])
         print("Shown:               ", stats_array[1])
         print("Instance not ready:  ", stats_array[7])
-        print("Jobs pending:        ", stats_array[8])
+        print("Tasks running:       ", stats_array[8])
 
 class PatchedShape(PatchedShapeBase):
     offset = True

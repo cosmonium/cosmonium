@@ -32,6 +32,7 @@ from .shadows import RingShadowCaster
 from .parameters import AutoUserParameter
 
 from . import settings
+from direct.showbase.ShowBaseGlobal import globalClock
 
 class Ring(ShapeObject):
     def __init__(self, inner_radius, outer_radius, appearance=None, shader=None):
@@ -140,11 +141,11 @@ class Atmosphere(ShapeObject):
         if self.get_pixel_height() < 1.0:
             self.visible = False
 
-    def create_instance(self):
+    async def create_instance(self):
         #TODO: Find a better way to retrieve ellipticity
         scale = self.planet.surface.get_scale() / self.planet_radius
         self.set_scale(scale * self.radius)
-        ShapeObject.create_instance(self)
+        await ShapeObject.create_instance(self)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
@@ -220,6 +221,7 @@ class Clouds(FlatSurface):
         self.set_shown(settings.show_clouds)
 
     def update_instance(self, camera_pos, camera_rot):
+        if not self.instance_ready: return
         inside = self.parent.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:

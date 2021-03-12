@@ -57,6 +57,8 @@ class Shortcuts(DirectObject):
         'f11': 'debug-scene-ls',
         'shift-f11': 'debug-scene-explore',
         'f12': 'debug-scene-analyze',
+        'shift-f12': 'debug-print-tasks',
+
         'f': 'follow-selected',
         'y': 'sync-selected',
         't': 'track-selected',

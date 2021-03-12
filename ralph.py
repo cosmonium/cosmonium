@@ -575,8 +575,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain.set_owner(self)
         self.terrain.set_parent(self)
 
-    def create_instance(self):
-        self.terrain.create_instance()
+    async def create_instance(self):
+        await self.terrain.create_instance()
         #TODO: Should do init correctly
         WaterNode.z = self.water.level
         WaterNode.observer = self.observer
@@ -669,6 +669,7 @@ class RoamingRalphDemo(CosmoniumBase):
         settings.color_picking = False
         settings.scale = 1.0
         settings.use_inv_scaling = False
+        self.gui = None
 
         if args.config is not None:
             self.config_file = args.config
@@ -707,6 +708,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.model_body_center_offset = LVector3d()
         self.world_body_center_offset = LVector3d()
         self._local_position = LPoint3d()
+        self.light_color = LColor(1, 1, 1, 1)
         self.context = self
         self.oid_color = 0
         self.oid_texture = None
@@ -738,6 +740,9 @@ class RoamingRalphDemo(CosmoniumBase):
 
         base.setFrameRateMeter(True)
 
+        taskMgr.add(self.init())
+
+    async def init(self):
         self.create_terrain()
         for component in self.ralph_config.layers:
             self.terrain.add_component(component)
@@ -751,7 +756,7 @@ class RoamingRalphDemo(CosmoniumBase):
             self.fog = None
         self.surface = self.terrain_object
 
-        self.create_instance()
+        await self.create_instance()
         self.create_tile(0, 0)
 
         # Create the main character, Ralph
@@ -767,6 +772,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=True))
 
         self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
+        await self.ralph_shape_object.create_instance()
         self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
         frame = CartesianSurfaceReferenceFrame(self, LPoint3d())
         self.ralph.set_frame(frame)
@@ -801,13 +807,13 @@ class RoamingRalphDemo(CosmoniumBase):
             for physic_object in self.physic_objects:
                 physic_object.update(self.observer)
 
-        taskMgr.add(self.move, "moveTask")
-
         # Set up the camera
         self.distance_to_obs = self.camera.get_z() - self.get_height(self.camera.getPos())
         render.set_shader_input("camera", self.camera.get_pos())
 
         self.terrain.update_instance(self.observer.get_camera_pos(), None)
+
+        taskMgr.add(self.move, "moveTask")
 
     def move(self, task):
         dt = globalClock.getDt()

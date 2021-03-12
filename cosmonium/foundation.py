@@ -207,7 +207,6 @@ class VisibleObject(BaseObject):
         self.instance = None
         #TODO: Should be handled properly
         self.instance_ready = False
-        self.jobs_pending = 0
 
     def check_and_create_instance(self):
         if not self.instance:

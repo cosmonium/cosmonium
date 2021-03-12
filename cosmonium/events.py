@@ -65,6 +65,7 @@ class EventsDispatcher(DirectObject):
         self.accept('debug-scene-ls', self.debug.list_scene)
         self.accept('debug-scene-explore', self.debug.open_scene_explorer)
         self.accept('debug-scene-analyze', self.debug.analyse_scene)
+        self.accept('debug-print-tasks', self.debug.print_tasks)
         self.accept('debug-shader-fragment-mode', self.debug.set_shader_fragment_debug)
         self.accept('debug-toggle-shader-raymarching-canvas', self.debug.toggle_shader_debug_raymarching_canvas)
         self.accept('debug-toggle-shader-debug-raymarching_slice', self.debug.toggle_shader_debug_raymarching_slice)

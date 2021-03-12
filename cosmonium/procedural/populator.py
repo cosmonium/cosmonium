@@ -78,19 +78,20 @@ class TerrainPopulatorBase(object):
             count += 1
         return offsets
 
-    def create_object_template(self):
+    async def create_object_template(self):
         if self.object_template.instance is None:
-            self.object_template.create_instance(self.create_object_template_instance_cb)
+            await self.object_template.create_instance()
+            self.configure_object_template()
 
     def delete_object_template(self):
         if self.object_template.instance is not None:
             self.object_template.remove_instance()
 
-    def create_object_template_instance_cb(self):
+    def configure_object_template(self):
         pass
 
-    def create_instance(self):
-        pass
+    async def create_instance(self):
+        await self.create_object_template()
 
     def update_instance(self, camera_pos, camera_rot):
         if self.object_template.instance is not None and self.object_template.instance_ready:
@@ -187,7 +188,6 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         if not self.patch_valid(terrain_patch): return
         if settings.debug_lod_split_merge:
             print("Populator show patch", terrain_patch.str_id())
-        self.create_object_template()
         self.create_patch_for(terrain_patch)
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
@@ -211,9 +211,9 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
         PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
 
-    def create_object_template_instance_cb(self, terrain_object):
+    def configure_object_template(self):
         #Hide the main instance
-        terrain_object.instance.stash()
+        self.object_template.instance.stash()
 
     def create_patch_instances(self, patch, terrain_patch):
         instances = []
@@ -239,10 +239,10 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         self.rebuild = False
 
-    def create_object_template_instance_cb(self, terrain_object):
+    def configure_object_template(self):
         bounds = OmniBoundingVolume()
-        terrain_object.instance.node().setBounds(bounds)
-        terrain_object.instance.node().setFinal(1)
+        self.object_template.instance.node().setBounds(bounds)
+        self.object_template.instance.node().setFinal(1)
 
     def create_patch_instances(self, patch, terrain_patch):
         self.rebuild = True

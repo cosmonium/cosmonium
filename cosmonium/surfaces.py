@@ -142,7 +142,6 @@ class MeshSurface(Surface):
         return self.shape.get_height_patch(patch, u, v)
 
 class ProceduralSurface(FlatSurface):
-    JOB_HEIGHTMAP = 0x0002
     def __init__(self, name,
                  radius, oblateness, scale,
                  shape, heightmap,appearance, shader, clickable=True):
@@ -154,45 +153,42 @@ class ProceduralSurface(FlatSurface):
     def set_heightmap(self, heightmap):
         self.heightmap = heightmap
 
-    def heightmap_ready_cb(self, heightmap, patch):
-        if self.shape.patchable:
-            self.jobs_done_cb(patch)
-        else:
-            self.jobs_done_cb(None)
-
-    def patch_done(self, patch):
-        self.heightmap.apply(patch)
-        FlatSurface.patch_done(self, patch)
-
     def shape_done(self):
         if not self.shape.patchable:
             self.heightmap.apply(self.shape)
         FlatSurface.shape_done(self)
 
-    def schedule_patch_jobs(self, patch):
-        if (patch.jobs & ProceduralSurface.JOB_HEIGHTMAP) == 0:
-            #print("UPDATE", patch.str_id())
-            patch.jobs |= ProceduralSurface.JOB_HEIGHTMAP
-            patch.jobs_pending += 1
-            if self.biome is not None:
-                patch.jobs_pending += 1
-            self.heightmap.create_heightmap(patch, self.heightmap_ready_cb, [patch])
-            if self.biome is not None:
-                self.biome.create_heightmap(patch, self.heightmap_ready_cb, [patch])
-        FlatSurface.schedule_patch_jobs(self, patch)
+    async def patch_task(self, patch):
+        #TODO: We should use gather instead
+        self.heightmap.create_heightmap(patch)
+        await self.heightmap.load_heightmap(patch)
+        if self.biome is not None:
+            self.biome.create_heightmap(patch)
+            await self.biome.load_heightmap(patch)
+        if patch.instance is not None:
+            self.heightmap.apply(patch)
+        else:
+            #print("DISCARDED", patch.str_id())
+            pass
+        await FlatSurface.patch_task(self, patch)
 
-    def schedule_shape_jobs(self, shape):
+    def early_apply_patch(self, patch):
+        if patch.lod > 0:
+            self.heightmap.create_heightmap(patch)
+            self.heightmap.apply(patch)
+        FlatSurface.early_apply_patch(self, patch)
+
+    async def shape_task(self, shape):
         if not shape.patchable:
-            if (self.shape.jobs & ProceduralSurface.JOB_HEIGHTMAP) == 0:
-                #print("UPDATE SHAPE", self.shape.str_id())
-                self.shape.jobs |= ProceduralSurface.JOB_HEIGHTMAP
-                self.shape.jobs_pending += 1
-                if self.biome is not None:
-                    self.shape.jobs_pending += 1
-                self.heightmap.create_heightmap(self.shape, self.heightmap_ready_cb, [self.shape])
-                if self.biome is not None:
-                    self.biome.create_heightmap(self.shape, self.heightmap_ready_cb, [self.shape])
-        FlatSurface.schedule_shape_jobs(self, shape)
+            self.heightmap.load_heightmap(shape)
+            if self.biome is not None:
+                self.biome.load_heightmap(shape)
+            if shape.instance is not None:
+                self.heightmap.apply(shape)
+            else:
+                #print("DISCARDED", patch.str_id())
+                pass
+        await FlatSurface.shape_task(self, shape)
 
 class HeightmapSurface(ProceduralSurface):
     def __init__(self, name,

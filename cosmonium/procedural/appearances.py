@@ -20,6 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from direct.task.Task import gather
+
 from ..appearances import AppearanceBase, Appearance, TexturesBlock
 from ..textures import TextureArray
 from ..astro import units
@@ -87,29 +89,27 @@ class TexturesDictionary(AppearanceBase):
                 for texture in entry.textures:
                     texture.apply(shape)
 
-    def texture_loaded_cb(self, texture, patch, owner):
-        owner.jobs_done_cb(None)
-
     def load_textures(self, shape, owner):
+        tasks = []
         for entry in self.blocks.values():
             for texture in entry.textures:
-                texture.load(shape, self.texture_loaded_cb, (shape, owner))
+                tasks.append(texture.load(shape))
+        return gather(*tasks)
 
     def load_texture_array(self, shape, owner):
+        tasks = []
         for texture in self.texture_arrays.values():
-            texture.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(texture.load(shape))
+        return gather(*tasks)
 
-    def apply(self, shape, owner):
-        if (shape.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
-            #print("APPLY", shape, self.nb_textures)
-            if self.nb_textures > 0:
-                shape.jobs |= Appearance.JOB_TEXTURE_LOAD
-                if self.texture_array:
-                    shape.jobs_pending += self.nb_arrays
-                    self.load_texture_array(shape, owner)
-                else:
-                    shape.jobs_pending += self.nb_textures
-                    self.load_textures(shape, owner)
+    async def apply(self, shape, owner):
+        if self.nb_textures > 0:
+            if self.texture_array:
+                await self.load_texture_array(shape, owner)
+            else:
+                await self.load_textures(shape, owner)
+            if shape.instance is not None:
+                self.apply_textures(shape)
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)

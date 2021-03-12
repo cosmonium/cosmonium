@@ -51,7 +51,7 @@ class TextureBase(object):
     def set_offset(self, offset):
         pass
 
-    def load(self, patch, callback=None):
+    def load(self, patch):
         pass
 
     def apply(self, shape):
@@ -134,7 +134,7 @@ class TextureSource(object):
     def texture_filename(self, patch):
         return None
 
-    def load(self, patch, color_space=None, callback=None, cb_args=()):
+    def load(self, patch, color_space=None):
         pass
 
     def can_split(self, patch):
@@ -147,8 +147,8 @@ class TextureSource(object):
         return None
 
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, color_space=None, callback=None, cb_args=()):
-        callback(None, 0, 0, *cb_args)
+    def load(self, patch, color_space=None):
+        return (None, 0, 0)
 
 class AutoTextureSource(TextureSource):
     factories = []
@@ -207,10 +207,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, color_space=None, callback=None, cb_args=()):
+    def load(self, patch, color_space=None):
         if self.source is None:
             self.create_source()
-        return self.source.load(patch, color_space, callback, cb_args)
+        return self.source.load(patch, color_space)
 
     def can_split(self, patch):
         if self.source is None:
@@ -245,27 +245,20 @@ class TextureFileSource(TextureSource):
     def texture_filename(self, patch):
         return self.context.find_texture(self.filename)
 
-    def texture_loaded_cb(self, texture, callback, cb_args):
-        self.texture = texture
-        self.loaded = True
-        if callback is not None:
-            callback(self.texture, 0, 0, *cb_args)
-
-    def load(self, patch, color_space=None, callback=None, cb_args=()):
+    async def load(self, patch, color_space=None):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
                 if settings.sync_texture_load:
                     texture = workers.syncTextureLoader.load_texture(filename)
-                    self.texture_loaded_cb(texture, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, None, self.texture_loaded_cb, (callback, cb_args))
+                    texture = await workers.asyncTextureLoader.load_texture(filename, None)
+                if texture is not None:
+                    self.texture = texture
+                    self.loaded = True
             else:
                 print("File", self.filename, "not found")
-                self.texture_loaded_cb(None, callback, cb_args)
-        else:
-            if callback is not None:
-                callback(self.texture, 0, 0, *cb_args)
+        return (self.texture, 0, 0)
 
     def get_texture(self, shape):
         return (self.texture, 0, 0)
@@ -288,9 +281,8 @@ class DirectTextureSource(TextureSource):
     def replace(self, texture):
         self.texture = texture
 
-    def load(self, patch, callback, cb_args):
-        if callback is not None:
-            callback(self.texture, 0, 0, *cb_args)
+    def load(self, patch):
+        return (self.texture, 0, 0)
 
     def get_texture(self, shape):
         return (self.texture, 0, 0)
@@ -325,13 +317,7 @@ class SimpleTexture(TextureBase):
     def convert_texture(self, texture):
         pass
 
-    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
-        if texture is not None:
-            self.convert_texture(texture)
-        if callback is not None:
-            callback(self, *cb_args)
-
-    def load(self, patch, callback=None, cb_args=None):
+    async def load(self, patch):
         if not self.source.loaded or not self.source.cached:
             if self.srgb:
                 color_space=CS_sRGB
@@ -339,14 +325,14 @@ class SimpleTexture(TextureBase):
                 color_space=CS_linear
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            self.source.load(patch, color_space=color_space, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
-        else:
-            if callback is not None:
-                callback(self, *cb_args)
+            (texture, texture_size, texture_lod) = await self.source.load(patch, color_space=color_space)
+            if texture is not None:
+                self.convert_texture(texture)
 
     def apply(self, shape):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
+            #print("USE DEFAULT", shape.str_id())
             (texture, texture_size, texture_lod) = self.get_default_texture()
         if self.source.is_patched():
             self.clamp(texture)
@@ -382,16 +368,9 @@ class DataTexture(TextureBase):
             source = AutoTextureSource(source, attribution=None)
         self.source = source
 
-    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
-        if callback is not None:
-            callback(self, *cb_args)
-
-    def load(self, patch, callback=None, cb_args=None):
+    async def load(self, patch):
         if not self.source.loaded or not self.source.cached:
-            self.source.load(patch, callback=self.texture_loaded_cb, cb_args=(callback, cb_args))
-        else:
-            if callback is not None:
-                callback(self, *cb_args)
+            await self.source.load(patch)
 
     def apply(self, shape, input_name):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
@@ -411,9 +390,9 @@ class VisibleTexture(SimpleTexture):
             srgb = settings.srgb
         SimpleTexture.__init__(self, source, srgb=srgb)
         self.tint_color = tint
-        self.check_specular_mask = False
-        self.has_specular_mask = False
         self.transparent = False
+        self.has_alpha_channel = False
+        self.has_specular_mask = False
 
     def init_texture_stage(self, texture_stage, texture):
         if self.tint_color is not None:
@@ -429,12 +408,14 @@ class VisibleTexture(SimpleTexture):
             self.debug_borders()
 
     def convert_texture(self, texture):
+        texture_format = texture.getFormat()
         if self.srgb:
-            tex_format = texture.getFormat()
-            if tex_format == Texture.F_rgb:
+            if texture_format == Texture.F_rgb:
                 texture.set_format(Texture.F_srgb)
-            elif tex_format == Texture.F_rgba:
+            elif texture_format == Texture.F_rgba:
                 texture.set_format(Texture.F_srgb_alpha)
+        #TODO: not really convert but we need a place to detected the alpha channel
+        self.has_alpha_channel = texture_format in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
 
 class SurfaceTexture(VisibleTexture):
     category = 'albedo'
@@ -442,15 +423,6 @@ class SurfaceTexture(VisibleTexture):
         VisibleTexture.__init__(self, source, tint, srgb=srgb)
         self.check_transparency = False
         self.transparent = False
-
-    def texture_has_transparency(self, texture):
-        texture_format = texture.get_format()
-        return texture_format in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
-
-    def texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args):
-        if self.check_specular_mask and self.texture_has_transparency(texture):
-            self.has_specular_mask = True
-        VisibleTexture.texture_loaded_cb(self, texture, texture_size, texture_lod, callback, cb_args)
 
     def init_texture_stage(self, texture_stage, texture):
         VisibleTexture.init_texture_stage(self, texture_stage, texture)
@@ -542,25 +514,16 @@ class TextureArray(TextureBase):
             elif tex_format == Texture.F_rgba:
                 texture.set_format(Texture.F_srgb_alpha)
 
-    #TODO: This code is from TextureSource, a TextureArraySource should be created
-    def texture_loaded_cb(self, texture, callback, cb_args):
-        if texture is not None:
-            self.convert_texture(texture)
-        self.texture = texture
-        self.mipmap(self.texture)
-        if callback is not None:
-            callback(self, *cb_args)
-
-    def load(self, patch, callback=None, cb_args=None):
+    async def load(self, patch):
         if self.texture is None:
             if settings.sync_texture_load:
                 texture = workers.syncTextureLoader.load_texture_array(self.textures)
-                self.texture_loaded_cb(texture, callback, cb_args)
             else:
-                workers.asyncTextureLoader.load_texture_array(self.textures, self.texture_loaded_cb, (callback, cb_args))
-        else:
-            if callback is not None:
-                callback(self, *cb_args)
+                texture = await workers.asyncTextureLoader.load_texture_array(self.textures)
+            if texture is not None:
+                self.texture = texture
+                self.convert_texture(texture)
+                self.mipmap(texture)
 
     def apply(self, shape):
         self.apply_shader(shape, self.input_name, self.texture, None)
@@ -604,23 +567,15 @@ class VirtualTextureSource(TextureSource):
         exists = os.path.isfile(tex_name)
         return exists
 
-    def texture_loaded_cb(self, texture, patch, callback, cb_args):
-        if texture is not None:
-            self.map_patch[patch.str_id()] = (texture, self.texture_size, patch.lod)
-            if callback is not None:
-                callback(texture, self.texture_size, patch.lod, *cb_args)
-        else:
-            parent_patch = patch.parent
-            while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
-                parent_patch = parent_patch.parent
-            if parent_patch is not None:
-                if callback is not None:
-                    callback(*(self.map_patch[parent_patch.str_id()] + cb_args))
-            else:
-                if callback is not None:
-                    callback(None, self.texture_size, patch.lod, *cb_args)
+    def find_parent_texture_for(self, patch):
+        parent_patch = patch.parent
+        while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
+            parent_patch = parent_patch.parent
+        if parent_patch is not None:
+            return self.map_patch[parent_patch.str_id()]
 
-    def load(self, patch, color_space=None, callback=None, cb_args=()):
+    async def load(self, patch, color_space=None):
+        texture_info = None
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)
             filename = self.context.find_texture(tex_name)
@@ -629,14 +584,18 @@ class VirtualTextureSource(TextureSource):
             if filename is not None:
                 if settings.sync_texture_load:
                     texture = workers.syncTextureLoader.load_texture(filename, alpha_filename)
-                    self.texture_loaded_cb(texture, patch, callback, cb_args)
                 else:
-                    workers.asyncTextureLoader.load_texture(filename, alpha_filename, self.texture_loaded_cb, (patch, callback, cb_args))
+                    texture = await workers.asyncTextureLoader.load_texture(filename, alpha_filename)
+                if texture is not None:
+                    texture_info = (texture, self.texture_size, patch.lod)
+                    self.map_patch[patch.str_id()] = texture_info
             else:
                 print("File", tex_name, "not found")
-                self.texture_loaded_cb(None, patch, callback, cb_args)
+            if texture_info is None:
+                texture_info = self.find_parent_texture_for(patch)
         else:
-            callback(*(self.map_patch[patch.str_id()] + cb_args))
+            texture_info = self.map_patch[patch.str_id()]
+        return texture_info
 
     def get_texture(self, patch, strict=False):
         if patch.str_id() in self.map_patch:

@@ -59,7 +59,7 @@ class RingsYamlParser(YamlModuleParser):
         inner_radius = data.get('inner-radius')
         outer_radius = data.get('outer-radius')
         lighting_model = data.get('lighting-model')
-        appearance = AppearanceYamlParser.decode(data.get('appearance'))
+        appearance = AppearanceYamlParser.decode(data.get('appearance'), patched_shape=False)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model)
         rings = Ring(inner_radius, outer_radius, appearance, shader)

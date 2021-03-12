@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import NodePath, Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
+from panda3d.core import AsyncFuture
 from direct.task import Task
 
 from ..shaders import ShaderProgram
@@ -128,8 +129,8 @@ class RenderTarget(object):
             self.buffer = None
 
     def prepare(self, textures, shader_data):
-        self.shader.update(self.quad, **shader_data)
         self.buffer.clear_render_textures()
+        self.shader.update(self.quad, **shader_data)
         if self.to_ram:
             mode = GraphicsOutput.RTM_copy_ram
         else:
@@ -180,6 +181,9 @@ class RenderStage():
     def update(self, shader_data):
         self.target.update(shader_data)
 
+    def gather(self, result):
+        result[self.name] = self.textures
+
     def clear(self):
         self.target.clear()
         self.textures = None
@@ -217,6 +221,12 @@ class GeneratorChain():
         for stage in self.stages:
             stage.update(shader_data.get(stage.name, {}))
 
+    def gather_results(self):
+        result = {}
+        for stage in self.stages:
+            stage.gather(result)
+        return result
+
     def clear(self):
         for stage in self.stages:
             stage.clear()
@@ -225,15 +235,10 @@ class GeneratorChain():
         for stage in self.stages:
             stage.remove()
 
-    def callback(self, stage_info):
-        (shader_data, callback, cb_args) = stage_info
-        if callback is not None:
-            callback(self, *cb_args)
-
     def check_generation(self, task):
         if len(self.queue) > 0:
-            stage_info = self.queue.pop(0)
-            self.callback(stage_info)
+            (shader_data, future) = self.queue.pop(0)
+            future.set_result(self.gather_results())
             if len(self.queue) > 0:
                 self.schedule_next()
             else:
@@ -242,18 +247,19 @@ class GeneratorChain():
         return Task.cont
 
     def schedule_next(self):
-        (shader_data, callback, cb_args) = self.queue[0]
+        (shader_data, future) = self.queue[0]
         self.prepare(shader_data)
 
-    def schedule(self, item):
-        self.queue.append(item)
+    def schedule(self, shader_data, future):
+        self.queue.append((shader_data, future))
         if not self.busy:
             self.schedule_next()
             self.busy = True
 
-    def generate(self, shader_data, callback=None, cb_args=()):
-        #print("ADD")
-        self.schedule((shader_data, callback, cb_args))
+    def generate(self, shader_data):
+        future = AsyncFuture()
+        self.schedule(shader_data, future)
+        return future
 
 class GeneratorPool(object):
     def __init__(self, chains):
@@ -270,9 +276,9 @@ class GeneratorPool(object):
         for chain in self.chains:
             chain.remove()
 
-    def generate(self, shader_data, callback=None, cb_args=()):
+    def generate(self, shader_data):
         lowest = self.chains[0]
         for chain in self.chains[1:]:
             if len(chain.queue) < len(lowest.queue):
                 lowest = chain
-        lowest.generate(shader_data, callback, cb_args)
+        return lowest.generate(shader_data)

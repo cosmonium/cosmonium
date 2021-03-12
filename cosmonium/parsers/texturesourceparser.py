@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 
 from ..textures import AutoTextureSource
-from ..procedural.textures import ProceduralVirtualTextureSource
+from ..procedural.textures import ProceduralVirtualTextureSource, PatchedProceduralVirtualTextureSource
 from ..procedural.shadernoise import GrayTarget, AlphaTarget
 #TODO: Should not be here but in respective packages
 from ..celestia.textures import CelestiaVirtualTextureSource
@@ -33,7 +33,7 @@ from .noiseparser import NoiseYamlParser
 
 class ReferenceTextureSourceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         #TODO: This is a hack, a proper reference object should be used
         ref_name = data.get('ref')
         texture_source = TextureSourceYamlParser.tex_references.get(ref_name)
@@ -42,7 +42,7 @@ class ReferenceTextureSourceYamlParser(YamlModuleParser):
 
 class TextureFileSourceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         texture_attribution = data.get('attribution', None)
         texture_source = AutoTextureSource(data.get('file'), texture_attribution, YamlModuleParser.context)
         texture_offset = data.get('offset', 0)
@@ -51,7 +51,7 @@ class TextureFileSourceYamlParser(YamlModuleParser):
 #TODO: Should not be here but in its own package
 class CelestiaVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         root = data.get('root', None)
         ext = data.get('ext', 'dds')
         size = data.get('size', None)
@@ -65,7 +65,7 @@ class CelestiaVirtualTextureSourceYamlParser(YamlModuleParser):
 #TODO: Should not be here but in its own package
 class SpaceEngineVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         root = data.get('root', None)
         ext = data.get('ext', 'jpg')
         size = data.get('size', 258)
@@ -78,7 +78,7 @@ class SpaceEngineVirtualTextureSourceYamlParser(YamlModuleParser):
 
 class ProceduralTextureSourceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         noise_parser = NoiseYamlParser()
         func = data.get('func')
         if func is None:
@@ -96,7 +96,10 @@ class ProceduralTextureSourceYamlParser(YamlModuleParser):
         size = int(data.get('size', 256))
         frequency = float(data.get('frequency', 1.0))
         scale = float(data.get('scale', 1.0))
-        texture_source = ProceduralVirtualTextureSource(func, target, size)
+        if patched_shape:
+            texture_source = PatchedProceduralVirtualTextureSource(func, target, size)
+        else:
+            texture_source = ProceduralVirtualTextureSource(func, target, size)
         texture_offset = data.get('offset', 0)
         return texture_source, texture_offset
 
@@ -122,11 +125,11 @@ class TextureSourceYamlParser(YamlModuleParser):
         return parameters
 
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, patched_shape=True):
         data = cls.canonize_data(data)
         object_type = data.get('type', 'file')
         if object_type in cls.parsers:
-            texture_source, texture_offset = cls.parsers[object_type].decode(data)
+            texture_source, texture_offset = cls.parsers[object_type].decode(data, patched_shape)
             name = data.get('name')
             if texture_source is not None and name is not None:
                 cls.tex_references[name] = texture_source

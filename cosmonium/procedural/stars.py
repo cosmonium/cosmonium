@@ -28,7 +28,7 @@ from ..textures import SurfaceTexture
 from ..bodies import SurfaceFactory
 from .. import settings
 
-from .textures import ProceduralVirtualTextureSource
+from .textures import PatchedProceduralVirtualTextureSource
 from .shadernoise import GrayTarget
 
 class ProceduralStarSurfaceFactory(SurfaceFactory):
@@ -45,9 +45,9 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         shader = BasicShader(lighting_model=FlatLightingModel())
         surface = FlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                               appearance=Appearance(colorScale=body.point_color,
-                                                    texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
-                                                                                                          self.target,
-                                                                                                          self.size),
+                                                    texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(self.noise,
+                                                                                                                 self.target,
+                                                                                                                 self.size),
                                                                            srgb=False)),
                               shape=shape,
                               shader=shader)

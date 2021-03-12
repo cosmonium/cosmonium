@@ -108,7 +108,8 @@ class Tile(PatchBase):
         for layer in self.layers:
             layer.patch_done(self)
 
-    def update_instance(self, shape):
+    def update_instance(self, parent):
+        PatchBase.update_instance(self, parent)
         if self.instance is None: return
         #print("Update", self.str_id())
         for layer in self.layers:

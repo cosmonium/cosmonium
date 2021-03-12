@@ -64,7 +64,6 @@ class HeightmapPatch:
         self.heightmap_ready = False
         self.texture = None
         self.texture_peeker = None
-        self.callback = None
         self.cloned = False
         self.texture_offset = LVector2((self.overlap + 0.5) / self.width, (self.overlap + 0.5) / self.height)
         self.texture_scale = LVector2((self.width - self.overlap * 2 - 1) / self.width, (self.height - self.overlap * 2 - 1) / self.height)
@@ -164,19 +163,15 @@ class HeightmapPatch:
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
 
-    def load(self, patch, callback, cb_args=()):
-        if self.texture is None:
-            self.do_load(patch, callback, cb_args)
-        else:
-            if callback is not None:
-                callback(self, *cb_args)
+    async def load(self, patch):
+        pass
 
     def configure_texture(self):
         self.texture.set_wrap_u(Texture.WMClamp)
         self.texture.set_wrap_v(Texture.WMClamp)
         self.parent.filter.configure_texture(self.texture)
 
-    def heightmap_ready_cb(self, texture, callback, cb_args):
+    def configure_heightmap(self, texture):
         if texture is not None:
             self.texture = texture
             self.configure_texture()
@@ -229,12 +224,7 @@ class HeightmapPatch:
                 texture.setup_2d_texture(1, 1, Texture.T_float, Texture.F_r32)
                 texture.set_clear_color(LColor(0, 0, 0, 0))
                 texture.make_ram_image()
-                self.heightmap_ready_cb(texture, None, None)
-        if callback is not None:
-            callback(self, *cb_args)
-
-    def do_load(self, patch, callback, cb_args):
-        pass
+                self.configure_heightmap(texture)
 
 class TextureHeightmapPatch(HeightmapPatch):
     def __init__(self, data_source, parent, x0, y0, x1, y1, width, height, scale, coord, face, overlap):
@@ -247,12 +237,10 @@ class TextureHeightmapPatch(HeightmapPatch):
             self.calc_sub_patch()
         self.data_source.apply(patch, "heightmap_%s" % self.parent.name)
 
-    def texture_loaded_cb(self, texture, patch, callback, cb_args):
+    async def load(self, patch):
+        await self.data_source.load(patch)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
-        self.heightmap_ready_cb(texture_data, callback, cb_args)
-
-    def do_load(self, patch, callback, cb_args):
-        self.data_source.load(patch, self.texture_loaded_cb, (patch, callback, cb_args))
+        self.configure_heightmap(texture_data)
 
 class HeightmapPatchFactory(object):
     def create_patch(self, *args, **kwargs):
@@ -326,7 +314,7 @@ class Heightmap(object):
     def get_heightmap(self, patch):
         return self
 
-    def create_heightmap(self, patch, callback=None, cb_args=()):
+    def create_heightmap(self, patch):
         return None
 
 class TextureHeightmapBase(Heightmap):
@@ -363,41 +351,39 @@ class TextureHeightmapBase(Heightmap):
         height = self.filter.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale + self.height_offset
 
-    def create_heightmap(self, shape, callback=None, cb_args=()):
-        return self.load(shape, callback, cb_args)
+    async def load(self, patch):
+        await self.data_source.load(patch)
 
-    def load(self, shape, callback, cb_args=()):
-        if self.texture is None:
-            self.texture = Texture()
-            self.texture.set_wrap_u(Texture.WMClamp)
-            self.texture.set_wrap_v(Texture.WMClamp)
-            self.filter.configure_texture(self.texture)
-            self.do_load(shape, self.heightmap_ready_cb, (callback, cb_args))
+    def configure_texture(self, texture):
+            texture.set_wrap_u(Texture.WMClamp)
+            texture.set_wrap_v(Texture.WMClamp)
+            self.filter.configure_texture(texture)
+
+    def configure_heightmap(self, texture):
+        if texture is not None:
+            self.texture = texture
+            self.configure_texture(texture)
+            self.texture_peeker = self.texture.peek()
+#           if self.texture_peeker is None:
+#               print("NOT READY !!!")
+            self.heightmap_ready = True
+            data = self.texture.getRamImage()
+            if sys.version_info[0] < 3:
+                buf = data.getData()
+                np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
+            else:
+                np_buffer = numpy.frombuffer(data, numpy.float32)
+            np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
+            self.min_height = np_buffer.min()
+            self.max_height = np_buffer.max()
+            self.mean_height = np_buffer.mean()
         else:
-            if callback is not None:
-                callback(self, *cb_args)
-
-    def heightmap_ready_cb(self, texture, callback, cb_args):
-        #print("READY", self.patch.str_id())
-        self.texture_peeker = self.texture.peek()
-#         if self.texture_peeker is None:
-#             print("NOT READY !!!")
-        self.heightmap_ready = True
-        data = self.texture.getRamImage()
-        if sys.version_info[0] < 3:
-            buf = data.getData()
-            np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
-        else:
-            np_buffer = numpy.frombuffer(data, numpy.float32)
-        np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
-        self.min_height = np_buffer.min()
-        self.max_height = np_buffer.max()
-        self.mean_height = np_buffer.mean()
-        if callback is not None:
-            callback(self, *cb_args)
-
-    def do_load(self, shape, callback, cb_args):
-        pass
+            print("Make default texture for heightmap")
+            texture = Texture()
+            texture.setup_2d_texture(1, 1, Texture.T_float, Texture.F_r32)
+            texture.set_clear_color(LColor(0, 0, 0, 0))
+            texture.make_ram_image()
+            self.configure_heightmap(texture)
 
 class TextureHeightmap(TextureHeightmapBase):
     def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
@@ -409,8 +395,10 @@ class TextureHeightmap(TextureHeightmapBase):
             data_source = HeightMapTexture(AutoTextureSource(data_source, None, context))
         self.data_source = data_source
 
-    def do_load(self, shape, callback, cb_args):
-        self.data_source.load(shape, self.heightmap_ready_cb, (callback, cb_args))
+    async def load(self, shape):
+        await self.data_source.load(shape)
+        (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(strict=True)
+        self.configure_heightmap(texture_data)
 
 class PatchedHeightmap(Heightmap):
     def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, patch_factory, interpolator=None, filter=None, max_lod=100):
@@ -445,64 +433,62 @@ class PatchedHeightmap(Heightmap):
     def get_heightmap(self, patch):
         return self.map_patch.get(patch.str_id(), None)
 
-    def create_heightmap(self, patch, callback=None, cb_args=()):
-        if not patch.str_id() in self.map_patch:
-            #TODO: Should be done by inheritance
-            if patch.coord == TexCoord.Cylindrical:
-                x = patch.sector
-                y = patch.ring
-                face = -1
-            elif patch.coord == TexCoord.Flat:
-                x = patch.x
-                y = patch.y
-                face = -1
-            else:
-                x = patch.x
-                y = patch.y
-                face = patch.face
-            #TODO: Should be done with a factory
-            heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, scale=patch.scale, lod=patch.lod, density=self.size,
-                                                       coord=patch.coord, face=face, overlap=self.overlap)
-            self.map_patch[patch.str_id()] = heightmap
-            #TODO: Should be linked properly
-            heightmap.patch = patch
-            parent = patch.parent
-            # The parent heightmap is also used for early display of the patch
-            while parent is not None:
-                parent_heightmap = self.map_patch.get(parent.str_id())
-                if parent_heightmap is not None:
-                    heightmap.parent_heightmap = parent_heightmap
-                    break
-                parent = parent.parent
-            if heightmap.parent_heightmap is None and patch.lod > 0:
-                print("NO PARENT HEIGHTMAP FOR", patch.str_id())
+    def create_heightmap(self, patch):
+        if patch.str_id() in self.map_patch: return
+        #TODO: Should be done by inheritance
+        if patch.coord == TexCoord.Cylindrical:
+            x = patch.sector
+            y = patch.ring
+            face = -1
+        elif patch.coord == TexCoord.Flat:
+            x = patch.x
+            y = patch.y
+            face = -1
+        else:
+            x = patch.x
+            y = patch.y
+            face = patch.face
+        #TODO: Should be done with a factory
+        heightmap = self.patch_factory.create_patch(parent=self, x=x, y=y, scale=patch.scale, lod=patch.lod, density=self.size,
+                                                   coord=patch.coord, face=face, overlap=self.overlap)
+        self.map_patch[patch.str_id()] = heightmap
+        #TODO: Should be linked properly
+        heightmap.patch = patch
+        parent = patch.parent
+        # The parent heightmap is also used for early display of the patch
+        while parent is not None:
+            parent_heightmap = self.map_patch.get(parent.str_id())
+            if parent_heightmap is not None:
+                heightmap.parent_heightmap = parent_heightmap
+                break
+            parent = parent.parent
+        if heightmap.parent_heightmap is None and patch.lod > 0:
+            print("NO PARENT HEIGHTMAP FOR", patch.str_id())
+
+    async def load_heightmap(self, patch):
+        if patch.str_id() in self.map_patch:
+            heightmap = self.map_patch[patch.str_id()]
             if patch.lod > self.max_lod:
                 #print("CLONE", patch.str_id())
                 heightmap.calc_sub_patch()
                 #print(patch.str_id(), ':', parent_heightmap.lod, heightmap.texture_offset, heightmap.texture_scale)
-                if callback is not None:
-                    callback(heightmap, *cb_args)
             else:
                 #print("GEN", patch.str_id())
-                heightmap.load(patch, callback, cb_args)
+                await heightmap.load(patch)
         else:
-            #print("CACHE", patch.str_id())
-            heightmap = self.map_patch[patch.str_id()]
-            if heightmap.is_ready() and callback is not None:
-                callback(heightmap, *cb_args)
-            else:
-                print("PATCH NOT READY?", heightmap.heightmap_ready, callback)
+            print("PATCH NOT CREATED?", patch.str_id())
 
     def apply(self, patch):
-        heightmap = self.map_patch[patch.str_id()]
-        heightmap.apply(patch)
+        if patch.str_id() in self.map_patch:
+            heightmap = self.map_patch[patch.str_id()]
+            heightmap.apply(patch)
+        else:
+            print("PATCH NOT CREATED?", patch.str_id())
 
 class StackedHeightmapPatch(HeightmapPatch):
     def __init__(self, patches, *args, **kwargs):
         HeightmapPatch.__init__(self, *args, **kwargs)
         self.patches = patches
-        self.callback = None
-        self.count = None
 
     def is_ready(self):
         if self.count is None or self.count != len(self.patches):
@@ -518,17 +504,10 @@ class StackedHeightmapPatch(HeightmapPatch):
             height += patch.get_height(x, y)
         return height
 
-    def sub_callback(self, patch):
-        self.count += 1
-        if self.count == len(self.patches):
-            self.callback(self.patch)
-
-    def load(self, callback):
+    def load(self):
         if self.count != None: return
-        self.count = 0
-        self.callback = callback
         for patch in self.patches:
-            patch.load(self.sub_callback)
+            patch.load()
 
 class StackedHeightmapPatchFactory(HeightmapPatchFactory):
     def __init__(self, heightmaps):
@@ -543,8 +522,8 @@ class StackedHeightmapPatchFactory(HeightmapPatchFactory):
         return StackedHeightmapPatch.create_from_patch(patches, *args, **kwargs)
 
 class StackedPatchedHeightmap(PatchedHeightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, heightmaps, callback=None):
-        PatchedHeightmap.__init__(self, name, size, height_scale, u_scale, v_scale, StackedHeightmapPatchFactory(heightmaps), callback)
+    def __init__(self, name, size, height_scale, u_scale, v_scale, heightmaps):
+        PatchedHeightmap.__init__(self, name, size, height_scale, u_scale, v_scale, StackedHeightmapPatchFactory(heightmaps))
         self.heightmaps = heightmaps
 
 class TerrainPatchLodControl(PatchLodControl):

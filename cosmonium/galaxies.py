@@ -105,7 +105,7 @@ class GalaxyAppearance(AppearanceBase):
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
 
-    def apply(self, shape, owner):
+    async def apply(self, shape, owner):
         if self.texture is None:
             if self.image is None:
                 self.image = self.sprite.generate()
@@ -162,7 +162,7 @@ class GalaxyShapeBase(Shape):
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
 
-    def create_instance(self):
+    async def create_instance(self):
         shape_id = self.shape_id()
         if shape_id in GalaxyShapeBase.templates:
             template =  GalaxyShapeBase.templates[shape_id]

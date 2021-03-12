@@ -25,6 +25,7 @@ from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
+from direct.task.Task import gather
 from direct.actor.Actor import Actor
 
 from .foundation import VisibleObject
@@ -51,8 +52,7 @@ class Shape:
         self.radius = 1.0
         self.owner = None
         self.instance_ready = False
-        self.jobs_pending = 0
-        self.jobs = 0
+        self.task = None
         self.clickable = False
         self.attribution = None
         #TODO: Used to fix ring textures
@@ -70,13 +70,19 @@ class Shape:
     def check_settings(self):
         pass
 
+    def task_done(self, task):
+        self.task = None
+
+    def shape_done(self):
+        pass
+
     def is_spherical(self):
         return True
 
     def update_shape(self):
         pass
 
-    def create_instance(self):
+    async def create_instance(self):
         return None
 
     def update_instance(self, camera_pos, camera_rot):
@@ -87,6 +93,10 @@ class Shape:
             self.instance.detach_node()
             self.instance = None
         self.instance_ready = False
+        if self.task is not None:
+            #print("KILL TASK", self.str_id())
+            #self.task.cancel()
+            self.task = None
 
     def create_collision_solid(self, radius=1.0):
         cs = CollisionSphere(0, 0, 0, radius)
@@ -194,9 +204,11 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.add_after_effect(after_effect)
 
-    def create_instance(self):
+    async def create_instance(self):
+        tasks = []
         for component in self.components:
-            component.create_instance()
+            tasks.append(component.create_instance())
+        return gather(*tasks)
 
     def update_instance(self, camera_pos, camera_rot):
         for component in self.components:
@@ -225,6 +237,8 @@ class ShapeObject(VisibleObject):
         self.owner = None
         self.shadows = MultiShadows(self)
         self.shadow_caster = None
+        self.first_patch = True
+        self.task = None
 
     def check_settings(self):
         self.shape.check_settings()
@@ -291,28 +305,27 @@ class ShapeObject(VisibleObject):
     def is_flat(self):
         return True
 
-    def create_instance(self, callback=None, cb_args=()):
-        self.callback = callback
-        self.cb_args = cb_args
-        self.instance = self.shape.create_instance()
-        if not self.shape.deferred_instance:
-            self.apply_instance(self.instance)
-        else:
-            self.shape.apply_owner()
-            self.instance.reparentTo(self.context.world)
-        return self.instance
+    def task_done(self, task):
+        self.task = None
 
-    def apply_instance(self, instance):
-        #print("Apply", self.get_name())
-        if instance != self.instance:
-            if self.instance is not None:
-                self.instance.remove_node()
-            self.instance = instance
+    #TODO: Temporarily stolen from foundation to be able to spawn task
+    def check_and_create_instance(self):
+        if not self.instance and not self.task:
+            self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
+
+    async def create_instance(self):
+        self.instance = NodePath('shape')
+        #TODO: Temporarily here until foundation.show() is corrected
+        self.instance.reparent_to(self.context.world)
+        shape_instance = await self.shape.create_instance()
+        #The shape has been removed from the view while the mesh was loaded
+        if self.instance is None: return
+        shape_instance.reparent_to(self.instance)
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
-        self.instance.reparentTo(self.context.world)
-        instance.hide(self.AllCamerasMask)
-        instance.show(self.default_camera_mask)
+        #self.instance.reparent_to(self.context.world)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()
@@ -340,73 +353,54 @@ class ShapeObject(VisibleObject):
         if self.shadow_caster is not None:
             self.shadow_caster.add_target(target)
 
-    def schedule_patch_jobs(self, patch):
-        if self.appearance is not None:
-            self.appearance.apply_patch(patch, self)
+    async def patch_task(self, patch):
+        #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
+        await self.appearance.apply_patch(patch, self)
+        if patch.instance is not None:
+            patch.instance_ready = True
+            if self.shader is not None:
+                if self.first_patch:
+                    self.shader.apply(self.shape, self.appearance)
+                    self.first_patch = False
+                self.shader.apply_patch(self.shape, patch, self.appearance)
+                #TODO: Why update_patch should be called here ?
+                self.shader.update_patch(self.shape, patch, self.appearance)
+            patch.patch_done()
+        #print(globalClock.getFrameCount(), "DONE", patch.str_id())
 
-    def schedule_shape_jobs(self, shape):
-        if self.appearance is not None:
-            self.appearance.apply(shape, self)
+    async def shape_task(self, shape):
+        #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
+        await self.appearance.apply(shape, self)
+        if shape.instance is not None:
+            shape.instance_ready = True
+            self.instance_ready = True
+            if self.shader is not None:
+                self.shader.apply(shape, self.appearance)
+                #TODO: Why update() should be called here ?
+                self.shader.update(self.shape, self.appearance)
+            shape.shape_done()
+        #print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
     def schedule_jobs(self):
         if self.shape.patchable:
             for patch in self.shape.patches:
-                if not patch.instance_ready:
-                    # Add a fake job to avoid multiple patch_done() event if the jobs are synchronous
-                    patch.jobs_pending += 1
-                    self.schedule_patch_jobs(patch)
-                    # Remove the fake job and so trigger the patch_done() event if needed
-                    self.jobs_done_cb(patch)
-                    if patch.jobs_pending > 0:
-                        # Patch generation is ongoing, use parent data to display the patch in the meantime
-                        self.early_apply_patch(patch)
-        if not self.shape.instance_ready:
-            # Add a fake job to avoid multiple shape_done() event if the jobs are synchronous
-            self.shape.jobs_pending += 1
-            self.schedule_shape_jobs(self.shape)
-            # Remove the fake job and so trigger the shape_done() event if needed
-            self.jobs_done_cb(None)
+                if not patch.instance_ready and patch.task is None:
+                    # Patch generation is ongoing, use parent data to display the patch in the meantime
+                    self.early_apply_patch(patch)
+                    #print("SCHEDULE", patch.str_id())
+                    patch.task = taskMgr.add(self.patch_task(patch), uponDeath=patch.task_done)
+        if not self.shape.instance_ready and self.shape.task is None:
+            self.shape.task = taskMgr.add(self.shape_task(self.shape), uponDeath=self.shape.task_done)
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
+            #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready, id(patch.instance))
             patch.instance_ready = True
-            self.patch_done(patch)
-
-    def patch_done(self, patch):
-        if self.appearance is not None:
-            self.appearance.apply_textures(patch)
-        if self.shader is not None:
-            self.shader.apply_patch(self.shape, patch, self.appearance)
-        patch.patch_done()
-
-    def shape_done(self):
-        if self.appearance is not None and not self.shape.patchable:
-            self.appearance.apply_textures(self.shape)
-        if self.shader is not None:
-            self.shader.apply(self.shape, self.appearance)
-
-    def jobs_done_cb(self, patch):
-        if patch is not None:
-            patch.jobs_pending -= 1
-            if patch.jobs_pending > 0: return
-            patch.jobs_pending = 0
-            patch.jobs = 0
-            if patch.instance is not None:
-                patch.instance_ready = True
-                self.patch_done(patch)
-                if self.callback is not None:
-                    self.callback(self, patch, *self.cb_args)
-        else:
-            self.shape.jobs_pending -= 1
-            if self.shape.jobs_pending > 0: return
-            self.shape.jobs_pending = 0
-            self.shape.jobs = 0
-            if self.shape.instance is not None:
-                self.shape.instance_ready = True
-                self.instance_ready = True
-                self.shape_done()
-                if self.callback is not None:
-                    self.callback(self, *self.cb_args)
+            if self.appearance is not None:
+                self.appearance.apply_textures(patch)
+            if self.shader is not None:
+                self.shader.apply_patch(self.shape, patch, self.appearance)
+            patch.patch_done()
 
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
@@ -454,6 +448,7 @@ class ShapeObject(VisibleObject):
         self.instance_ready = False
         if self.context.observer.has_scattering:
             self.context.observer.scattering.remove_attenuated_object(self)
+        self.first_patch = True
 
 class MeshShape(Shape):
     deferred_instance = True
@@ -475,8 +470,6 @@ class MeshShape(Shape):
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
-        self.callback = None
-        self.cb_args = None
 
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
@@ -500,8 +493,16 @@ class MeshShape(Shape):
     def is_spherical(self):
         return False
 
-    def create_instance_cb(self, mesh):
-        if mesh is None: return
+    def load(self):
+        if self.panda:
+            return load_panda_model(self.model)
+        else:
+            return load_model(self.model, self.context)
+
+    async def create_instance(self):
+        self.instance = NodePath('mesh-holder')
+        mesh = await self.load()
+        if mesh is None: return None
         #The shape has been removed from the view while the mesh was loaded
         if self.instance is None: return
         self.mesh = mesh
@@ -515,18 +516,6 @@ class MeshShape(Shape):
         self.update_shape()
         self.apply_owner()
         self.mesh.reparent_to(self.instance)
-        self.parent.apply_instance(self.instance)
-        if self.callback is not None:
-            self.callback(self, *self.cb_args)
-
-    def create_instance(self, callback=None, cb_args=()):
-        self.callback = callback
-        self.cb_args = cb_args
-        self.instance = NodePath('holder')
-        if self.panda:
-            load_panda_model(self.model, self.create_instance_cb)
-        else:
-            load_model(self.model, self.create_instance_cb, self.context)
         return self.instance
 
 class ActorShape(MeshShape):
@@ -534,13 +523,8 @@ class ActorShape(MeshShape):
         MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, True, attribution, context)
         self.animations = animations
 
-    def create_instance(self, callback=None, cb_args=()):
-        self.callback = callback
-        self.cb_args = cb_args
-        self.instance = NodePath('holder')
-        actor = Actor(self.model, self.animations)
-        self.create_instance_cb(actor)
-        return self.instance
+    async def load(self):
+        return Actor(self.model, self.animations)
 
     def stop(self, animName=None, partName=None):
         if self.mesh is not None:
@@ -574,12 +558,10 @@ class InstanceShape(Shape):
         else:
             self.radius = 0
 
-    def create_instance(self, callback=None):
+    async def create_instance(self):
         self.apply_owner()
         self.parent.apply_instance(self.instance)
         self.instance_ready = True
-        if callback is not None:
-            callback(self)
         return self.instance
 
     def get_apparent_radius(self):
@@ -590,7 +572,7 @@ class InstanceShape(Shape):
 
 class SphereShape(Shape):
     template = None
-    def create_instance(self):
+    async def create_instance(self):
         if self.template is None:
             self.template = geometry.UVSphere(radius=1, rings=45, sectors=90)
         self.instance = NodePath('shpere')
@@ -606,7 +588,7 @@ class IcoSphereShape(Shape):
         Shape.__init__(self)
         self.subdivisions = subdivisions
 
-    def create_instance(self):
+    async def create_instance(self):
         if self.template is None:
             self.template = geometry.IcoSphere(radius=1, subdivisions=self.subdivisions)
         self.instance = NodePath('icoshpere')
@@ -622,7 +604,7 @@ class DisplacementSphereShape(Shape):
         self.heightmap = heightmap
         self.max_height = max_height
 
-    def create_instance(self):
+    async def create_instance(self):
         print(self.radius, self.max_height)
         self.instance = geometry.DisplacementUVSphere(radius=1.0,
                                                       heightmap=self.heightmap,
@@ -638,7 +620,7 @@ class ScaledSphereShape(Shape):
         Shape.__init__(self)
         self.radius = radius
 
-    def create_instance(self):
+    async def create_instance(self):
         self.instance=geometry.UVSphere(radius=self.radius, rings=45, sectors=90)
         if self.use_collision_solid:
             self.create_collision_solid(self.radius)
@@ -650,19 +632,12 @@ class RingShape(Shape):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.nbOfPoints = 360
-        #TODO: This is a big hack to make it work with ProceduralVirtualTextureSource
-        self.lod = 0
         self.coord = 0 #TexCoord.Flat
-        self.x0 = 0
-        self.y0 = 0
-        self.lod_scale_x = 1
-        self.lod_scale_y = 1
-        self.face = -1
 
     def is_spherical(self):
         return False
 
-    def create_instance(self):
+    async def create_instance(self):
         self.instance = NodePath("ring")
         node = GeomNode('ring-up')
         node.addGeom(geometry.RingFaceGeometry(1.0, self.inner_radius, self.outer_radius, self.nbOfPoints))
