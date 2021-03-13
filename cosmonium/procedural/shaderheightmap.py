@@ -113,21 +113,14 @@ class ShaderHeightmapPatchFactory(HeightmapPatchFactory):
         HeightmapPatchFactory.__init__(self)
         self.noise = noise
 
-    def create_patch(self, *args, **kwargs):
-        return ShaderHeightmapPatch.create_from_patch(self.noise, *args, **kwargs)
+    def create_patch(self, parent, patch, width, height, scale, overlap):
+        return ShaderHeightmapPatch(self.noise, parent, patch, width, height, scale, overlap)
 
 class ShaderHeightmapPatch(HeightmapPatch):
     tex_generators = {}
     cachable = False
-    def __init__(self, noise, parent,
-                 x0, y0, x1, y1,
-                 width, height,
-                 scale=1.0,
-                 coord=TexCoord.Cylindrical, face=0, overlap=0):
-        HeightmapPatch.__init__(self, parent, x0, y0, x1, y1,
-                              width, height,
-                              scale,
-                              coord, face, overlap)
+    def __init__(self, noise, parent, patch, width, height, scale, overlap):
+        HeightmapPatch.__init__(self, parent, patch, width, height, scale, overlap)
         self.shader = None
         self.noise = noise
         self.tex_generator = None
@@ -148,7 +141,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
             pool = GeneratorPool([])
             for i in range(settings.patch_pool_size):
                 chain = GeneratorChain()
-                stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
+                stage = HeightmapGenerationStage(self.patch.coord, self.width, self.height, self.noise)
                 chain.add_stage(stage)
                 pool.add_chain(chain)
             ShaderHeightmapPatch.tex_generators[self.width] = pool
@@ -156,6 +149,6 @@ class ShaderHeightmapPatch(HeightmapPatch):
         tex_generator = ShaderHeightmapPatch.tex_generators[self.width]
         shader_data = {'heightmap': {'offset': (self.r_x0, self.r_y0, 0.0),
                                      'scale': (self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0),
-                                     'face': self.face
+                                     'face': self.patch.face
                                     }}
         return tex_generator.generate(shader_data)
