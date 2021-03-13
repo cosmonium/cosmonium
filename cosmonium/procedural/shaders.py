@@ -147,8 +147,6 @@ class TextureDictionaryDataSource(DataSource):
         DataSource.__init__(self, shader)
         self.dictionary = dictionary
         self.tiling = dictionary.tiling
-        self.nb_entries = self.dictionary.nb_blocks
-        self.nb_coefs = (self.nb_entries + 3) // 4
 
     def get_id(self):
         return 'dict' + str(id(self))
@@ -160,7 +158,6 @@ class TextureDictionaryDataSource(DataSource):
     def fragment_uniforms(self, code):
         DataSource.fragment_uniforms(self, code)
         self.tiling.uniforms(code)
-        code.append("#define NB_COEFS_VEC %d" % self.nb_coefs)
         if self.dictionary.texture_array:
             for texture in self.dictionary.texture_arrays.values():
                 code.append("uniform sampler2DArray %s;" % texture.input_name)
@@ -170,56 +167,39 @@ class TextureDictionaryDataSource(DataSource):
                     code.append("uniform sampler2D tex_%s_%s;" % (name, texture.category))
         code.append("uniform vec2 detail_factor;")
 
-    def resolve_coefs(self, code, category):
-        code.append("vec4 resolve_%s(vec4 coefs[NB_COEFS_VEC], vec2 position) {" % category)
-        code.append("    float coef;")
-        code.append("    vec4 result = vec4(0.0);")
-        for (block_id, block) in self.dictionary.blocks.items():
-            index = self.dictionary.blocks_index[block_id]
-            major = index // 4
-            minor = index % 4
-            tex_id = self.dictionary.get_tex_id_for(block_id, category)
-            code.append("    coef = coefs[%d][%d];" % (major, minor))
-            code.append("    if (coef > 0) {")
-            if self.dictionary.texture_array:
-                dict_name = 'array_%s' % category
-                texture_sample = self.tiling.tile_texture_array('tex_{}'.format(dict_name), 'position.xy * detail_factor', tex_id)
-                #TODO: There should not be a link like that
-                if self.shader.appearance.resolved:
-                    if category == 'normal':
-                        code.append("      vec3 tex_%s = %s.xyz * 2 - 1;" % (block_id, texture_sample))
-                    else:
-                        code.append("      vec3 tex_%s = %s.xyz;" % (block_id, texture_sample))
-                else:
-                    if category == 'normal':
-                        code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz * 2 - 1;" % (block_id, dict_name, tex_id))
-                    else:
-                        code.append("      vec3 tex_%s = textureLod(tex_%s, vec3(position.xy * detail_factor, %d), 1000).xyz;" % (block_id, dict_name, tex_id))
-            else:
-                texture_sample = self.tiling.tile_texture('tex_{}_{}'.format(dict_name, category), 'position.xy * detail_factor')
-                if category == 'normal':
-                    code.append("      vec3 tex_%s = %s.xyz * 2 - 1;" % (block_id, texture_sample))
-                else:
-                    code.append("      vec3 tex_%s = %s.xyz;" % (block_id, texture_sample))
-            code.append("      result.rgb = mix(result.rgb, tex_%s, coef);" % (block_id))
-            code.append("    }")
-        code.append("    result.w = 1.0;")
-        code.append("    return result;")
-        code.append("}")
-
     def fragment_extra(self, code):
         DataSource.fragment_extra(self, code)
         self.tiling.extra(code)
-        for category in self.dictionary.texture_categories.keys():
-            self.resolve_coefs(code, category)
 
     def get_source_for(self, source, param, error=True):
-        for category in self.dictionary.texture_categories.keys():
-            if source == 'resolve_tex_dict_' + category:
-                return 'resolve_%s(%s)' % (category, ', '.join(param))
+        for (block_id, entry) in self.dictionary.blocks.items():
+            for texture in entry.textures:
+                if source == '{}_{}'.format(block_id, texture.category):
+                    position = "{} * detail_factor".format(param)
+                    if self.dictionary.texture_array:
+                        tex_id = self.dictionary.get_tex_id_for(block_id, texture.category)
+                        dict_name = 'array_%s' % texture.category
+                        texture_sample = self.tiling.tile_texture_array('tex_{}'.format(dict_name), position, tex_id)
+                        #TODO: There should not be a link like that
+                        if self.shader.appearance.resolved:
+                            if texture.category == 'normal':
+                                return "(%s.xyz * 2 - 1)" % (texture_sample)
+                            else:
+                                return "%s.xyz" % (texture_sample)
+                        else:
+                            if texture.category == 'normal':
+                                return "(textureLod(tex_%s, vec3(%s, %d), 1000).xyz * 2 - 1)" % (dict_name, position, tex_id)
+                            else:
+                                return "textureLod(tex_%s, vec3(%s, %d), 1000).xyz" % (dict_name, position, tex_id)
+                    else:
+                        texture_sample = self.tiling.tile_texture('tex_{}_{}'.format(dict_name, texture.category), position)
+                        if texture.category == 'normal':
+                            return "(%s.xyz * 2 - 1)" % (texture_sample)
+                        else:
+                            return "%s.xyz" % (texture_sample)
         for (name, index) in self.dictionary.blocks_index.items():
             if source == name + '_index':
-                return (index, self.nb_coefs)
+                return (index, self.dictionary.nb_blocks)
         if error: print("Unknown source '%s' requested" % source)
         return 0
 

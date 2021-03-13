@@ -267,19 +267,46 @@ class MixTextureControl(TextureControl):
     def fragment_uniforms(self, code):
         TextureControl.fragment_uniforms(self, code)
         self.textures_control.fragment_uniforms(code)
+        code.append("#define NB_COEFS_VEC {}".format(self.nb_coefs))
 
     def fragment_extra(self, code):
         TextureControl.fragment_extra(self, code)
         self.textures_control.fragment_extra(code)
+        if self.has_albedo:
+            self.resolve_coefs(code, 'albedo')
+        if self.has_normal:
+            self.resolve_coefs(code, 'normal')
+        if self.has_occlusion:
+            self.resolve_coefs(code, 'occlusion')
+
+    def resolve_coefs(self, code, category):
+        code.append("vec4 resolve_%s_%s(vec4 coefs[NB_COEFS_VEC], vec2 position) {" % (self.name, category))
+        code.append("    float coef;")
+        code.append("    vec4 result = vec4(0.0);")
+        for block_id in self.dictionary.blocks.keys():
+            index = self.dictionary.blocks_index[block_id]
+            major = index // 4
+            minor = index % 4
+            code.append("    coef = coefs[%d][%d];" % (major, minor))
+            code.append("    if (coef > 0) {")
+            code.append("      vec3 tex_%s = %s;" % (block_id, self.shader.data_source.get_source_for('{}_{}'.format(block_id, category), 'position')))
+            code.append("      result.rgb = mix(result.rgb, tex_%s, coef);" % (block_id))
+            code.append("    }")
+        code.append("    result.w = 1.0;")
+        code.append("    return result;")
+        code.append("}")
 
     def create_shader_configuration(self, appearance):
         self.has_albedo = 'albedo' in appearance.texture_source.texture_categories
         self.has_normal = 'normal' in appearance.texture_source.texture_categories
         self.has_occlusion = 'occlusion' in appearance.texture_source.texture_categories
+        #TODO: This hack should be removed
+        self.nb_coefs = appearance.texture_source.nb_blocks
+        self.dictionary = appearance.texture_source
 
     def color_func_call(self, code):
         self.textures_control.color_func_call(code)
         code.append("vec4 coefs[NB_COEFS_VEC] = %s_coefs;" % self.textures_control.name)
 
     def get_value(self, code, category):
-        code.append("vec4 %s_%s = %s;" % (self.name, category, self.shader.data_source.get_source_for('resolve_tex_dict_%s' % category, ["coefs", 'position'])))
+        code.append("vec4 %s_%s = resolve_%s_%s(coefs, position);" % (self.name, category, self.name, category))
