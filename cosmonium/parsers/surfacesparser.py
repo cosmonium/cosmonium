@@ -22,12 +22,11 @@ from __future__ import absolute_import
 
 from ..surfaces import FlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader, PandaDataSource, ShaderSphereSelfShadow
+from ..shaders import BasicShader
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
 from ..heightmap import heightmapRegistry
 from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
 from ..shapes import MeshShape
-from ..procedural.shaders import DetailMap
 from ..catalogs import objectsDB
 from .. import settings
 
@@ -36,7 +35,6 @@ from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
-from .texturecontrolparser import TextureControlYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .utilsparser import get_radius_scale
 
@@ -60,15 +58,26 @@ class SurfaceYamlParser(YamlModuleParser):
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
         shader_appearance = data.setdefault('shader-appearance', previous.get('shader-appearance'))
+        if shape is None and heightmap_data is not None:
+            shape = 'sqrt-sphere'
         if shape is not None:
             shape, extra = ShapeYamlParser.decode(shape)
+        if heightmap_data is not None:
+            if isinstance(heightmap_data, dict):
+                name = data.get('name', 'heightmap')
+                heightmap = HeightmapYamlParser.decode(heightmap_data, name, shape.patchable, radius)
+            else:
+                if shape.patchable:
+                    heightmap = heightmapRegistry.get(heightmap_data + '-patched')
+                else:
+                    heightmap = heightmapRegistry.get(heightmap_data)
+        else:
+            heightmap = None
         if appearance is not None:
-            appearance = AppearanceYamlParser.decode(appearance)
+            appearance = AppearanceYamlParser.decode(appearance, heightmap, radius)
         if shape is None:
             recommended_shape = None
-            if heightmap_data is not None:
-                recommended_shape = 'sqrt-sphere'
-            elif appearance is not None:
+            if appearance is not None:
                 recommended_shape = appearance.get_recommended_shape()
             if recommended_shape is None:
                 recommended_shape = 'patched-sphere'
@@ -89,7 +98,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.patch_max_vertex_size,
                                                                          min_density=settings.patch_min_density,
                                                                          density=settings.patch_max_density))
-        if heightmap_data is None:
+        if heightmap is None:
             shader = BasicShader(lighting_model=lighting_model,
                                  appearance=shader_appearance,
                                  use_model_texcoord=not extra.get('create-uv', False))
@@ -97,26 +106,11 @@ class SurfaceYamlParser(YamlModuleParser):
                                   radius=radius, oblateness=ellipticity, scale=scale,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
-            if isinstance(heightmap_data, dict):
-                name = data.get('name', 'heightmap')
-                heightmap = HeightmapYamlParser.decode(heightmap_data, name, shape.patchable, radius)
-            else:
-                if shape.patchable:
-                    heightmap = heightmapRegistry.get(heightmap_data + '-patched')
-                else:
-                    heightmap = heightmapRegistry.get(heightmap_data)
-            control = data.get('control', None)
-            if control is not None:
-                control_parser = TextureControlYamlParser()
-                (control, appearance_source) = control_parser.decode(control, appearance, heightmap, radius)
-                if control is not None:
-                    shader_appearance = DetailMap(control, heightmap, create_normals=True)
-            else:
-                shader_appearance = None
-                appearance_source = PandaDataSource()
             data_source = [HeightmapDataSource(heightmap, normals=True)]
+            appearance_source = appearance.get_data_source()
             if appearance_source is not None:
                 data_source.append(appearance_source)
+            shader_appearance = appearance.get_shader_appearance()
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
                                  data_source=data_source,
                                  appearance=shader_appearance,

@@ -29,6 +29,7 @@ from .textures import AutoTextureSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
 from .parameters import ParametersGroup, AutoUserParameter
+from .shaders import PandaDataSource
 
 from . import settings
 
@@ -151,6 +152,12 @@ class AppearanceBase:
         pass
 
     def get_recommended_shape(self):
+        return None
+
+    def get_data_source(self):
+        return PandaDataSource()
+
+    def get_shader_appearance(self):
         return None
 
     def get_user_parameters(self):

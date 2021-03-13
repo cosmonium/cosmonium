@@ -273,9 +273,9 @@ class MixTextureControl(TextureControl):
         self.textures_control.fragment_extra(code)
 
     def create_shader_configuration(self, appearance):
-        self.has_albedo = 'albedo' in appearance.texture_categories
-        self.has_normal = 'normal' in appearance.texture_categories
-        self.has_occlusion = 'occlusion' in appearance.texture_categories
+        self.has_albedo = 'albedo' in appearance.texture_source.texture_categories
+        self.has_normal = 'normal' in appearance.texture_source.texture_categories
+        self.has_occlusion = 'occlusion' in appearance.texture_source.texture_categories
 
     def color_func_call(self, code):
         self.textures_control.color_func_call(code)

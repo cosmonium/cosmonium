@@ -26,8 +26,9 @@ from ..appearances import AppearanceBase, Appearance, TexturesBlock
 from ..textures import TextureArray
 from ..astro import units
 from ..dircontext import defaultDirContext
-
 from .. import settings
+
+from .shaders import TextureDictionaryDataSource, DetailMap
 
 from math import pi
 
@@ -125,7 +126,21 @@ class TexturesDictionary(AppearanceBase):
                 shape.parent.update_shader()
 
 class ProceduralAppearance(AppearanceBase):
-    def __init__(self,
-                 scale_factor = (1, 1)):
+    def __init__(self, texture_control, texture_source, heightmap):
         AppearanceBase.__init__(self)
-        self.scale_factor = scale_factor
+        self.texture_control = texture_control
+        self.texture_source = texture_source
+        self.appearance_source = TextureDictionaryDataSource(texture_source)
+        self.shader_appearance = DetailMap(texture_control, heightmap, create_normals=True)
+
+    def get_data_source(self):
+        return self.appearance_source
+
+    def get_shader_appearance(self):
+        return self.shader_appearance
+
+    async def apply(self, shape, owner):
+        await self.texture_source.apply(shape, owner)
+
+    def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
+        self.texture_source.update_lod(shape, apparent_radius, distance_to_obs, pixel_size)

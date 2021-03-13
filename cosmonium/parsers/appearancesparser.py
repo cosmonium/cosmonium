@@ -24,12 +24,14 @@ from panda3d.core import LColor
 
 from ..appearances import Appearance, ModelAppearance
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from ..procedural.appearances import ProceduralAppearance
 from ..procedural.raymarching import RayMarchingAppearance
 from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
 from .texturesourceparser import TextureSourceYamlParser
 from .textureparser import TextureDictionaryYamlParser
+from .texturecontrolparser import TextureControlYamlParser
 
 def decode_bias(data, appearance):
     appearance.shadow_normal_bias = data.get('normal-bias', appearance.shadow_normal_bias)
@@ -139,14 +141,27 @@ class RayMarchingAppeanceYamlParser(YamlModuleParser):
                                      mie_coef, phase_coef,
                                      source_power, emission_power, max_steps)
 
+class ProceduralAppearanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data, heightmap, radius):
+        control = data.get('control', None)
+        textures_source = data.get('textures', None)
+        control_parser = TextureControlYamlParser()
+        textures_source = TextureDictionaryYamlParser.decode_textures_dictionary(textures_source)
+        texture_control = control_parser.decode(control, heightmap, radius)
+        appearance = ProceduralAppearance(texture_control, textures_source, heightmap)
+        return appearance
+
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, patched_shape=True):
+    def decode(self, data, heightmap=None, radius=None, patched_shape=True):
         (object_type, parameters) = self.get_type_and_data(data, 'textures', detect_trivial=False)
         if object_type == 'textures':
             appearance = TexturesAppearanceYamlParser.decode(parameters, patched_shape)
         elif object_type == 'model':
             appearance = ModelAppearanceYamlParser.decode(parameters)
+        elif object_type == 'procedural':
+            appearance = ProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
         elif object_type == 'textures-dict':
             appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
         else:

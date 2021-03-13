@@ -26,7 +26,6 @@ from ..procedural.texturecontrol import HeightTextureControl, HeightTextureContr
     SlopeTextureControl, SlopeTextureControlEntry,\
     BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
 from ..procedural.texturecontrol import MixTextureControl
-from ..procedural.shaders import TextureDictionaryDataSource, SimpleTextureTiling, HashTextureTiling
 from ..astro import units
 
 from .utilsparser import DistanceUnitsYamlParser
@@ -148,20 +147,16 @@ class MixTextureControlYamlParser(YamlParser):
         return MixTextureControl("control", entry)
 
 class TextureControlYamlParser(YamlModuleParser):
-    def decode(self, data, appearance, heightmap, radius=1.0):
+    def decode(self, data, heightmap, radius=1.0):
         if data is None: return None
         control_type = data.get('type', 'textures')
         if control_type == 'textures':
             control_parser = MixTextureControlYamlParser()
             control = control_parser.decode(data, heightmap, radius)
-            #TODO: Appearance source should be moved outside
-            appearance_source = TextureDictionaryDataSource(appearance)
         elif control_type == 'colormap':
             control_parser = HeightColorControlYamlParser()
             control = control_parser.decode(data, heightmap, radius)
-            appearance_source = None
         else:
             print("Unknown control type '%s'" % control_type)
             control = None
-            appearance_source = None
-        return (control, appearance_source)
+        return control
