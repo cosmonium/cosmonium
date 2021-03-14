@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -160,13 +160,15 @@ class ProceduralSurface(FlatSurface):
 
     async def patch_task(self, patch):
         #TODO: We should use gather instead
-        self.heightmap.create_heightmap(patch)
-        await self.heightmap.load_heightmap(patch)
+        self.heightmap.create_patch_data(patch)
+        await self.heightmap.load_patch_data(patch)
         if self.biome is not None:
-            self.biome.create_heightmap(patch)
-            await self.biome.load_heightmap(patch)
+            self.biome.create_patch_data(patch)
+            await self.biome.load_patch_data(patch)
         if patch.instance is not None:
             self.heightmap.apply(patch)
+            if self.biome is not None:
+                self.biome.apply(patch)
         else:
             #print("DISCARDED", patch.str_id())
             pass
@@ -174,8 +176,11 @@ class ProceduralSurface(FlatSurface):
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
-            self.heightmap.create_heightmap(patch)
+            self.heightmap.create_patch_data(patch)
             self.heightmap.apply(patch)
+            if self.biome is not None:
+                self.biome.create_patch_data(patch)
+                self.biome.apply(patch)
         FlatSurface.early_apply_patch(self, patch)
 
     async def shape_task(self, shape):
@@ -185,6 +190,8 @@ class ProceduralSurface(FlatSurface):
                 self.biome.load_heightmap(shape)
             if shape.instance is not None:
                 self.heightmap.apply(shape)
+                if self.biome is not None:
+                    self.biome.apply(shape)
             else:
                 #print("DISCARDED", patch.str_id())
                 pass
@@ -232,11 +239,11 @@ class HeightmapSurface(ProceduralSurface):
         coord = self.shape.global_to_shape_coord(x, y)
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
-            heightmap_patch = self.heightmap.get_heightmap(patch)
-        while patch is not None and (heightmap_patch is None or not heightmap_patch.heightmap_ready):
+            patch_data = self.heightmap.get_patch_data(patch)
+        while patch is not None and (patch_data is None or not patch_data.data_ready):
             patch = patch.parent
             if patch is not None:
-                heightmap_patch = self.heightmap.get_heightmap(patch)
+                patch_data = self.heightmap.get_patch_data(patch)
         if patch is not None:
             uv = patch.coord_to_uv(coord)
             #print("uv", uv)
@@ -270,19 +277,19 @@ class HeightmapSurface(ProceduralSurface):
     def get_height_patch(self, patch, u, v, recursive=False):
         if not self.displacement:
             return self.radius
-        heightmap = self.heightmap.get_heightmap(patch)
-        while heightmap is None and patch is not None:
+        patch_data = self.heightmap.get_patch_data(patch)
+        while patch_data is None and patch is not None:
             print("Recurse")
             patch = patch.parent
-            heightmap = self.heightmap.get_heightmap(patch)
+            patch_data = self.heightmap.get_patch_data(patch)
             u /= 2.0
             v /= 2.0
-        if heightmap is None:
+        if patch_data is None:
             print("No heightmap")
             return self.radius
         if self.follow_mesh:
-            h = self.get_mesh_height_uv(heightmap, u, v, patch.density)
+            h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
         else:
-            h = heightmap.get_height_uv(u, v)
+            h = patch_data.get_height_uv(u, v)
         height = h * self.height_scale + self.heightmap_base
         return height

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ class ShaderHeightmap(TextureHeightmapBase):
     async def load(self, patch):
         result = await self.do_load(patch)
         data = result['heightmap']
-        self.configure_heightmap(data)
+        self.configure_data(data)
 
     def do_load(self, shape):
         if not self.tex_id in ShaderHeightmap.tex_generators:
@@ -113,14 +113,13 @@ class ShaderHeightmapPatchFactory(HeightmapPatchFactory):
         HeightmapPatchFactory.__init__(self)
         self.noise = noise
 
-    def create_patch(self, parent, patch, width, height, scale, overlap):
-        return ShaderHeightmapPatch(self.noise, parent, patch, width, height, scale, overlap)
+    def create_patch(self, parent, patch, width, height, overlap):
+        return ShaderHeightmapPatch(self.noise, parent, patch, width, height, overlap)
 
 class ShaderHeightmapPatch(HeightmapPatch):
     tex_generators = {}
-    cachable = False
-    def __init__(self, noise, parent, patch, width, height, scale, overlap):
-        HeightmapPatch.__init__(self, parent, patch, width, height, scale, overlap)
+    def __init__(self, noise, parent, patch, width, height, overlap):
+        HeightmapPatch.__init__(self, parent, patch, width, height, overlap)
         self.shader = None
         self.noise = noise
         self.tex_generator = None
@@ -134,7 +133,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
     async def load(self, patch):
         result = await self.do_load(patch)
         data = result['heightmap']
-        self.configure_heightmap(data)
+        self.configure_data(data)
 
     def do_load(self, patch):
         if not self.width in ShaderHeightmapPatch.tex_generators:

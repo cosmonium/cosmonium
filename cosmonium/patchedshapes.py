@@ -1139,14 +1139,16 @@ class PatchedShape(PatchedShapeBase):
         max_radius = 1.0
         mean_radius = 1.0
         if self.heightmap is not None and patch is not None:
-            heightmap_patch = self.heightmap.get_heightmap(patch)
-            if heightmap_patch is not None:
+            patch_data = self.heightmap.get_patch_data(patch, recurse=True)
+            if patch_data is not None:
                 #TODO: This should be done inside the heightmap patch
                 height_scale = self.heightmap.height_scale
                 height_offset = self.heightmap.height_offset
-                min_radius = 1.0 + heightmap_patch.min_height * height_scale + height_offset
-                max_radius = 1.0 + heightmap_patch.max_height * height_scale + height_offset
-                mean_radius = 1.0 + heightmap_patch.mean_height * height_scale + height_offset
+                min_radius = 1.0 + patch_data.min_height * height_scale + height_offset
+                max_radius = 1.0 + patch_data.max_height * height_scale + height_offset
+                mean_radius = 1.0 + patch_data.mean_height * height_scale + height_offset
+            else:
+                print("NO PATCH DATA !!!", patch.str_id())
         return (min_radius, max_radius, mean_radius)
 
     def place_patches(self, owner):
