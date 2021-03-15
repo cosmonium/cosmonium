@@ -109,16 +109,11 @@ class PatchData:
                 print("Make default data")
                 self.configure_data(self.make_default_data())
 
-class PatchDataFactory(object):
-    def create_patch(self, parent, patch, width, height, overlap):
-        return None
-
 class PatchedData():
-    def __init__(self, name, size, overlap, patch_data_factory, max_lod=100):
+    def __init__(self, name, size, overlap, max_lod=100):
         self.name = name
         self.size = size
         self.overlap = overlap
-        self.patch_data_factory = patch_data_factory
         self.max_lod = max_lod
         self.map_patch_data = {}
 
@@ -138,11 +133,12 @@ class PatchedData():
             patch_data = self.map_patch_data.get(patch.str_id(), None)
         return patch_data
 
+    def do_create_patch_data(self, patch):
+        pass
+
     def create_patch_data(self, patch):
         if patch.str_id() in self.map_patch_data: return
-        patch_data = self.patch_data_factory.create_patch(parent=self, patch=patch,
-                                                          width=self.size, height=self.size,
-                                                          overlap=self.overlap)
+        patch_data = self.do_create_patch_data(patch)
         self.map_patch_data[patch.str_id()] = patch_data
         parent = patch.parent
         # The parent data is also used for early display of the patch

@@ -136,20 +136,6 @@ class TextureHeightmapPatch(HeightmapPatch):
         self.configure_data(texture_data)
 
 
-class HeightmapPatchFactory(object):
-    def create_patch(self, parent, patch, width, height, overlap):
-        return None
-
-
-class TextureHeightmapPatchFactory(HeightmapPatchFactory):
-    def __init__(self, data_source):
-        HeightmapPatchFactory.__init__(self)
-        self.data_source = data_source
-
-    def create_patch(self, parent, patch, width, height, overlap):
-        return TextureHeightmapPatch(self.data_source, parent, patch, width, height, overlap)
-
-
 class HeightmapBase():
     def __init__(self, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator=None, filter=None):
         self.width = width
@@ -257,10 +243,10 @@ class TextureHeightmap(TextureHeightmapBase):
         self.configure_data(texture_data)
 
 
-class PatchedHeightmap(HeightmapBase, PatchedData):
-    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, patch_data_factory, interpolator=None, filter=None, max_lod=100):
+class PatchedHeightmapBase(HeightmapBase, PatchedData):
+    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
         HeightmapBase.__init__(self, size, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
-        PatchedData.__init__(self, name, size, overlap, patch_data_factory, max_lod)
+        PatchedData.__init__(self, name, size, overlap, max_lod)
         self.normal_scale_lod = True
 
     def get_u_scale(self, patch):
@@ -278,9 +264,18 @@ class PatchedHeightmap(HeightmapBase, PatchedData):
             return self.v_scale
 
 
+class TexturePatchedHeightmap(PatchedHeightmapBase):
+    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
+        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator, filter, max_lod)
+        self.data_source = data_source
+
+    def do_create_patch_data(self, patch):
+        return TextureHeightmapPatch(self.data_source, self, patch, self.size, self.size, self.overlap)
+
+
 class StackedHeightmapPatch(HeightmapPatch):
-    def __init__(self, patches, *args, **kwargs):
-        HeightmapPatch.__init__(self, *args, **kwargs)
+    def __init__(self, patches, parent, patch, width, height, overlap):
+        HeightmapPatch.__init__(self, parent, patch, width, height, overlap)
         self.patches = patches
 
     def is_ready(self):
@@ -303,23 +298,16 @@ class StackedHeightmapPatch(HeightmapPatch):
             patch.load()
 
 
-class StackedHeightmapPatchFactory(HeightmapPatchFactory):
-    def __init__(self, heightmaps):
-        HeightmapPatchFactory.__init__(self)
+class StackedPatchedHeightmap(PatchedHeightmapBase):
+    def __init__(self, name, size, height_scale, u_scale, v_scale, heightmaps):
+        PatchedHeightmapBase.__init__(self, name, size, height_scale, u_scale, v_scale)
         self.heightmaps = heightmaps
 
-    def create_patch(self, *args, **kwargs):
+    def do_create_patch_data(self, patch):
         patches = []
         for heightmap in self.heightmaps:
-            kwargs['parent'] = heightmap
-            patches.append(heightmap.patch_factory.create_patch(*args, **kwargs))
-        return StackedHeightmapPatch.create_from_patch(patches, *args, **kwargs)
-
-
-class StackedPatchedHeightmap(PatchedHeightmap):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, heightmaps):
-        PatchedHeightmap.__init__(self, name, size, height_scale, u_scale, v_scale, StackedHeightmapPatchFactory(heightmaps))
-        self.heightmaps = heightmaps
+            patches.append(heightmap.do_create_patch_data(self, patch, self.size, self.size, self.overlap))
+        return StackedHeightmapPatch(patches, self, patch, self.size, self.size, self.overlap)
 
 
 class TerrainPatchLodControl(PatchLodControl):

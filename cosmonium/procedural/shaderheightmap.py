@@ -25,7 +25,7 @@ from panda3d.core import Texture
 from .generator import RenderTarget, RenderStage, GeneratorChain, GeneratorPool
 from .shadernoise import NoiseShader, FloatTarget
 
-from ..heightmap import TextureHeightmapBase, HeightmapPatch, HeightmapPatchFactory
+from ..heightmap import TextureHeightmapBase, HeightmapPatch, PatchedHeightmapBase
 from ..textures import TexCoord
 from .. import settings
 
@@ -108,22 +108,28 @@ class ShaderHeightmap(TextureHeightmapBase):
             self.shader.create_and_register_shader(None, None)
         return tex_generator.generate(self.shader, 0, self.texture)
 
-class ShaderHeightmapPatchFactory(HeightmapPatchFactory):
-    def __init__(self, noise):
-        HeightmapPatchFactory.__init__(self)
+class ShaderPatchedHeightmap(PatchedHeightmapBase):
+    def __init__(self, name, noise, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
+        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator, filter, max_lod)
         self.noise = noise
+        self.generator = None
 
-    def create_patch(self, parent, patch, width, height, overlap):
-        return ShaderHeightmapPatch(self.noise, parent, patch, width, height, overlap)
+    def get_generator(self, patch):
+        if self.generator is None:
+            pool = GeneratorPool([])
+            for i in range(settings.patch_pool_size):
+                chain = GeneratorChain()
+                stage = HeightmapGenerationStage(patch.coord, self.width, self.height, self.noise)
+                chain.add_stage(stage)
+                pool.add_chain(chain)
+            pool.create()
+            self.generator = pool
+        return self.generator
+
+    def do_create_patch_data(self, patch):
+        return ShaderHeightmapPatch(self, patch, self.size, self.size, self.overlap)
 
 class ShaderHeightmapPatch(HeightmapPatch):
-    tex_generators = {}
-    def __init__(self, noise, parent, patch, width, height, overlap):
-        HeightmapPatch.__init__(self, parent, patch, width, height, overlap)
-        self.shader = None
-        self.noise = noise
-        self.tex_generator = None
-
     def apply(self, patch):
         if self.texture is None:
             # The heightmap is not available yet, use the parent heightmap instead
@@ -136,16 +142,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
         self.configure_data(data)
 
     def do_load(self, patch):
-        if not self.width in ShaderHeightmapPatch.tex_generators:
-            pool = GeneratorPool([])
-            for i in range(settings.patch_pool_size):
-                chain = GeneratorChain()
-                stage = HeightmapGenerationStage(self.patch.coord, self.width, self.height, self.noise)
-                chain.add_stage(stage)
-                pool.add_chain(chain)
-            ShaderHeightmapPatch.tex_generators[self.width] = pool
-            pool.create()
-        tex_generator = ShaderHeightmapPatch.tex_generators[self.width]
+        tex_generator = self.parent.get_generator(patch)
         shader_data = {'heightmap': {'offset': (self.r_x0, self.r_y0, 0.0),
                                      'scale': (self.r_x1 - self.r_x0, self.r_y1 - self.r_y0, 1.0),
                                      'face': self.patch.face
