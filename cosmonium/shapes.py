@@ -423,7 +423,7 @@ class ShapeObject(VisibleObject):
         if self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #In case of oblate shape, the offset can not be used directly to retrieve the body center
             #The scale must be applied to the offset to retrieve the real center
-            offset = self.shape.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
+            offset = self.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
             self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
         if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
