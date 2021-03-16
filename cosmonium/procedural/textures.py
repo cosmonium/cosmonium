@@ -55,7 +55,7 @@ class TextureGenerationStage(RenderStage):
         else:
             texture.set_minfilter(Texture.FT_linear)
         texture.set_magfilter(Texture.FT_linear)
-        return texture
+        return {'texture': texture}
 
     def configure_data(self, data, patch):
         if patch is not None:
@@ -85,7 +85,7 @@ class ProceduralVirtualTextureSource(TextureSource):
     async def load(self, shape, color_space):
         if self.texture is None:
             result = await self._make_texture(shape)
-            self.texture = result[self.texture_stage.name]
+            self.texture = result[self.texture_stage.name]['texture']
         return (self.texture, self.texture_size, 0)
 
     def create_generator(self, coord):
@@ -134,7 +134,7 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         texture_info = None
         if not patch.str_id() in self.map_patch:
             result = await self._make_texture(patch)
-            texture = result[self.texture_stage.name]
+            texture = result[self.texture_stage.name]['texture']
             #print("READY", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info

@@ -53,7 +53,7 @@ class HeightmapGenerationStage(RenderStage):
         texture.set_anisotropic_degree(0)
         texture.set_minfilter(Texture.FT_linear)
         texture.set_magfilter(Texture.FT_linear)
-        return texture
+        return {'heightmap': texture}
 
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
@@ -88,7 +88,7 @@ class ShaderHeightmap(TextureHeightmapBase):
 
     async def load(self, patch):
         result = await self.do_load(patch)
-        data = result['heightmap']
+        data = result['heightmap']['heightmap']
         self.configure_data(data)
 
     def do_load(self, shape):
@@ -138,7 +138,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
 
     async def load(self, patch):
         result = await self.do_load(patch)
-        data = result['heightmap']
+        data = result['heightmap']['heightmap']
         self.configure_data(data)
 
     def do_load(self, patch):

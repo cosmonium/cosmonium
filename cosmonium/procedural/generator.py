@@ -137,7 +137,13 @@ class RenderTarget(object):
             mode = GraphicsOutput.RTM_copy_ram
         else:
             mode = GraphicsOutput.RTM_bind_or_copy
-        self.buffer.add_render_texture(textures, mode)
+        for texture_config in textures.values():
+            if not isinstance(texture_config, (list, tuple)):
+                texture = texture_config
+                render_target = GraphicsOutput.RTP_color
+            else:
+                texture, render_target = texture_config
+            self.buffer.add_render_texture(texture, mode, render_target)
         self.buffer.set_one_shot(True)
         self.buffer.set_active(True)
 
@@ -184,7 +190,13 @@ class RenderStage():
         self.target.update(shader_data)
 
     def gather(self, result):
-        result[self.name] = self.textures
+        data = {}
+        for name, texture_config in self.textures.items():
+            if isinstance(texture_config, (list, tuple)):
+                data[name] = texture_config[0]
+            else:
+                data[name] = texture_config
+        result[self.name] = data
 
     def clear(self):
         self.target.clear()
