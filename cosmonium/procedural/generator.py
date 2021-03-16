@@ -52,6 +52,7 @@ class RenderTarget(object):
         self.buffer = None
         self.width = None
         self.height = None
+        self.resizable = False
 
     def format_to_props(self, texture_format):
         fbprops = FrameBufferProperties()
@@ -82,10 +83,11 @@ class RenderTarget(object):
         winprops.setSize(width, height)
         fbprops = self.format_to_props(texture_format)
         win = base.win
-        self.buffer=base.graphics_engine.make_output(
-            win.get_pipe(), "generatorBuffer", -1,
-            fbprops, winprops, GraphicsPipe.BF_refuse_window | GraphicsPipe.BF_resizeable,
-            win.get_gsg(), win)
+        buffer_options = GraphicsPipe.BF_refuse_window
+        if self.resizable:
+            buffer_options |= GraphicsPipe.BF_resizeable
+        self.buffer = base.graphics_engine.make_output(win.get_pipe(), "generatorBuffer", -1,
+            fbprops, winprops,  buffer_options, win.get_gsg(), win)
         self.buffer.set_active(False)
 
         #Create the camera for the buffer
