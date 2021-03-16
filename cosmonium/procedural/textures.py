@@ -57,6 +57,20 @@ class TextureGenerationStage(RenderStage):
         texture.set_magfilter(Texture.FT_linear)
         return texture
 
+    def configure_data(self, data, patch):
+        if patch is not None:
+            data[self.name] = {'offset': (patch.x0, patch.y0, 0.0),
+                               'scale': (patch.lod_scale_x, patch.lod_scale_y, 1.0),
+                               'face': patch.face,
+                               'lod': patch.lod
+                              }
+        else:
+            data[self.name] = {'offset': (0.0, 0.0, 0.0),
+                               'scale': (1.0, 1.0, 1.0),
+                               'face': -1,
+                               'lod': 0
+                              }
+
 class ProceduralVirtualTextureSource(TextureSource):
     cached = True
     procedural = True
@@ -66,27 +80,25 @@ class ProceduralVirtualTextureSource(TextureSource):
         self.target = target
         self.texture_size = size
         self.tex_generator = None
+        self.texture_stage = None
 
     async def load(self, shape, color_space):
         if self.texture is None:
             result = await self._make_texture(shape)
-            self.texture = result['texture']
+            self.texture = result[self.texture_stage.name]
         return (self.texture, self.texture_size, 0)
 
     def create_generator(self, coord):
         self.tex_generator =  GeneratorChain()
-        stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
-        self.tex_generator.add_stage(stage)
+        self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
+        self.tex_generator.add_stage(self.texture_stage)
         self.tex_generator.create()
 
     def _make_texture(self, shape):
         if self.tex_generator is None:
             self.create_generator(shape.coord)
-        shader_data = {'texture': {'offset': (0.0, 0.0, 0.0),
-                                   'scale': (1.0, 1.0, 1.0),
-                                   'face': -1,
-                                   'lod': 0
-                                  }}
+        shader_data = {}
+        self.texture_stage.configure_data(shader_data, None)
         #print("GEN", patch.str_id())
         return self.tex_generator.generate(shader_data)
 
@@ -103,6 +115,7 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         self.texture_size = size
         self.map_patch = {}
         self.tex_generator = None
+        self.texture_stage = None
 
     def is_patched(self):
         return True
@@ -121,7 +134,7 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         texture_info = None
         if not patch.str_id() in self.map_patch:
             result = await self._make_texture(patch)
-            texture = result['texture']
+            texture = result[self.texture_stage.name]
             #print("READY", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info
@@ -133,19 +146,16 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
             chain = GeneratorChain()
-            stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
-            chain.add_stage(stage)
+            self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
+            chain.add_stage(self.texture_stage)
             self.tex_generator.add_chain(chain)
         self.tex_generator.create()
 
     def _make_texture(self, patch):
         if self.tex_generator is None:
             self.create_generator(patch.coord)
-        shader_data = {'texture': {'offset': (patch.x0, patch.y0, 0.0),
-                                   'scale': (patch.lod_scale_x, patch.lod_scale_y, 1.0),
-                                   'face': patch.face,
-                                   'lod': patch.lod
-                                  }}
+        shader_data = {}
+        self.texture_stage.configure_data(shader_data, patch)
         #print("GEN", patch.str_id())
         return self.tex_generator.generate(shader_data)
 
