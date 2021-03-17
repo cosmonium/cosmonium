@@ -260,9 +260,10 @@ class DetailMap(ShaderAppearance):
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance)
-        self.has_surface = True
-        self.has_normal = self.create_normals or self.textures_control.has_normal
-        self.has_occlusion = self.textures_control.has_occlusion
+        self.has_surface = 'albedo' in appearance.texture_source.texture_categories
+        self.has_normal = self.create_normals
+        self.has_detail_normal = 'normal' in appearance.texture_source.texture_categories
+        self.has_occlusion = 'occlusion' in appearance.texture_source.texture_categories
 
     def get_id(self):
         name = "dm"
@@ -273,6 +274,8 @@ class DetailMap(ShaderAppearance):
             config += "o"
         if self.has_normal:
             config += "n"
+        if self.has_detail_normal:
+            config += "d"
         if self.resolved:
             config += 'r'
         if config != "":
@@ -317,18 +320,18 @@ class DetailMap(ShaderAppearance):
         code.append('vec2 uv = texcoord0.xy;')
         code.append('float angle = surface_normal.z;')
         self.textures_control.color_func_call(code)
-        if self.textures_control.has_albedo:
+        if self.has_surface:
             self.textures_control.get_value(code, 'albedo')
             code.append("surface_color = %s_albedo;" % self.textures_control.name)
         if self.has_normal:
-            if self.textures_control.has_normal:
+            if self.has_detail_normal:
                 self.textures_control.get_value(code, 'normal')
                 code.append("vec3 n1 = surface_normal + vec3(0, 0, 1);")
                 code.append("vec3 n2 = %s_normal.xyz * vec3(-1, -1, 1);" % self.textures_control.name)
                 code.append("pixel_normal = n1 * dot(n1, n2) / n1.z - n2;")
             else:
                 code.append("pixel_normal = surface_normal;")
-        if self.textures_control.has_occlusion:
+        if self.has_occlusion:
             self.textures_control.get_value(code, 'occlusion')
             code.append("surface_occlusion = %s_occlusion.x;" % self.textures_control.name)
 

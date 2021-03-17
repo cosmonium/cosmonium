@@ -46,9 +46,6 @@ class HeightColorMap(TextureControl):
     def __init__(self, name, colormap):
         TextureControl.__init__(self, name)
         self.colormap = colormap
-        self.has_albedo = True
-        self.has_normal = False
-        self.has_occlusion = False
 
     def fragment_extra(self, code):
         TextureControl.fragment_extra(self, code)
@@ -256,9 +253,6 @@ class MixTextureControl(TextureControl):
     def __init__(self, name, textures_control):
         TextureControl.__init__(self, name)
         self.textures_control = textures_control
-        self.has_albedo = False
-        self.has_normal = False
-        self.has_occlusion = False
 
     def set_shader(self, shader):
         TextureControl.set_shader(self, shader)
@@ -272,12 +266,8 @@ class MixTextureControl(TextureControl):
     def fragment_extra(self, code):
         TextureControl.fragment_extra(self, code)
         self.textures_control.fragment_extra(code)
-        if self.has_albedo:
-            self.resolve_coefs(code, 'albedo')
-        if self.has_normal:
-            self.resolve_coefs(code, 'normal')
-        if self.has_occlusion:
-            self.resolve_coefs(code, 'occlusion')
+        for category in self.dictionary.texture_categories.keys():
+            self.resolve_coefs(code, category)
 
     def resolve_coefs(self, code, category):
         code.append("vec4 resolve_%s_%s(vec4 coefs[NB_COEFS_VEC], vec2 position) {" % (self.name, category))
@@ -297,9 +287,6 @@ class MixTextureControl(TextureControl):
         code.append("}")
 
     def create_shader_configuration(self, appearance):
-        self.has_albedo = 'albedo' in appearance.texture_source.texture_categories
-        self.has_normal = 'normal' in appearance.texture_source.texture_categories
-        self.has_occlusion = 'occlusion' in appearance.texture_source.texture_categories
         #TODO: This hack should be removed
         self.nb_coefs = appearance.texture_source.nb_blocks
         self.dictionary = appearance.texture_source
