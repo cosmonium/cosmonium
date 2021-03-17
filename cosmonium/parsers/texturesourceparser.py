@@ -30,6 +30,7 @@ from ..spaceengine.textures import SpaceEngineVirtualTextureSource
 
 from .yamlparser import YamlModuleParser
 from .noiseparser import NoiseYamlParser
+from cosmonium.procedural.textures import NoiseTextureGenerator
 
 class ReferenceTextureSourceYamlParser(YamlModuleParser):
     @classmethod
@@ -96,10 +97,11 @@ class ProceduralTextureSourceYamlParser(YamlModuleParser):
         size = int(data.get('size', 256))
         frequency = float(data.get('frequency', 1.0))
         scale = float(data.get('scale', 1.0))
+        tex_generator = NoiseTextureGenerator(size, func, target)
         if patched_shape:
-            texture_source = PatchedProceduralVirtualTextureSource(func, target, size)
+            texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
         else:
-            texture_source = ProceduralVirtualTextureSource(func, target, size)
+            texture_source = ProceduralVirtualTextureSource(tex_generator, size)
         texture_offset = data.get('offset', 0)
         return texture_source, texture_offset
 
