@@ -38,6 +38,7 @@ class Tile(PatchBase):
         PatchBase.__init__(self, parent, lod, density)
         self.x = x
         self.y = y
+        self.face = -1
         self.scale = scale
         self.size = 1.0 / (1 << lod)
         self.half_size = self.size / 2.0
@@ -51,11 +52,8 @@ class Tile(PatchBase):
                                     self.y1 * scale,
                                     (self.x1 - self.x0) * scale,
                                     (self.y0 - self.y1) * scale)
-        self.local_bounds = geometry.PatchAABB(1.0, min_height, max_height)
+        self.bounds = geometry.PatchAABB(self.x0, self.y0, 1.0, min_height, max_height)
         self.layers = []
-        self.create_holder_instance()
-        self.bounds = self.local_bounds.make_copy()
-        self.bounds.xform(self.holder.getNetTransform().getMat())
         self.bounds_shape = BoundingBoxShape(self.bounds)
 
     def str_id(self):
@@ -88,23 +86,12 @@ class Tile(PatchBase):
         #print(self.str_id(), within_patch, self.patch_in_view, altitude, self.distance)
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 
-    def create_holder_instance(self):
-        self.holder = NodePath('tile')
-        self.holder.set_pos(self.x0, self.y0, 0.0)
-        self.holder.set_scale(*self.get_scale())
-        if settings.debug_lod_show_bb:
-            self.bounds_shape.create_instance()
-        self.holder.node().setBounds(OmniBoundingVolume())
-        self.holder.node().setFinal(1)
-
-    def create_instance(self):
-        self.instance = self.holder
-        self.apply_owner()
+    def create_geometry_instance(self):
         for layer in self.layers:
             layer.create_instance(self)
-        return self.instance
 
     def patch_done(self):
+        PatchBase.patch_done(self)
         for layer in self.layers:
             layer.patch_done(self)
 
@@ -115,18 +102,9 @@ class Tile(PatchBase):
         for layer in self.layers:
             layer.update_instance(self)
 
-    def remove_holder_instance(self):
-        if self.holder is not None:
-            self.holder.removeNode()
-            self.holder = None
-
-    def remove_instance(self):
+    def remove_geometry_instance(self):
         for layer in self.layers:
             layer.remove_instance()
-        #Set instance to None before calling PatchBase.remove_instance
-        #as the instance is the holder and should not be removed
-        self.instance = None
-        PatchBase.remove_instance(self)
 
     def coord_to_uv(self, coord):
         (x, y) = coord
@@ -176,6 +154,8 @@ class GpuPatchTerrainLayer(TerrainLayer):
         self.instance = NodePath('tile')
         self.template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
+        self.instance.set_pos(patch.x0, patch.y0, 0.0)
+        self.instance.set_scale(*patch.get_scale())
 
 class MeshTerrainLayer(TerrainLayer):
     template = {}
@@ -188,6 +168,8 @@ class MeshTerrainLayer(TerrainLayer):
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)
         self.instance.reparent_to(patch.instance)
+        self.instance.set_pos(patch.x0, patch.y0, 0.0)
+        self.instance.set_scale(*patch.get_scale())
 
     def update_instance(self, patch):
         self.remove_instance()
@@ -280,7 +262,6 @@ class TiledShape(PatchedShapeBase):
         return (intersect & BoundingBox.IF_some) != 0
 
     def is_patch_in_view(self, patch):
-        if patch.holder is None: return False
         return self.is_bb_in_view(patch.bounds, None, None)
 
     def get_scale(self):

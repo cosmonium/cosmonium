@@ -824,8 +824,8 @@ def Patch(size=1.0):
     node.addGeom(gm)
     return path
 
-def PatchAABB(size=1.0, min_height=-1.0, max_height=1.0):
-    return BoundingBox(LPoint3(0, 0, min_height), LPoint3(size, size, max_height))
+def PatchAABB(x=0.0, y=0.0, size=1.0, min_height=-1.0, max_height=1.0):
+    return BoundingBox(LPoint3(x * size, y * size, min_height), LPoint3((x + 1.0) * size, (y + 1.0) * size, max_height))
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     if x_inverted:

@@ -117,8 +117,11 @@ class PatchBase(Shape):
         pass
 
     def remove_geometry_instance(self):
-        self.geometry_instance.remove_node()
-        self.geometry_instance = None
+        if self.geometry_instance is not None:
+            # Note that we use detach_node and not remove_node as the geom object is still in the cache
+            # and might be reused later.
+            self.geometry_instance.detach_node()
+            self.geometry_instance = None
 
     def create_instance(self):
         self.instance = NodePath('patch')
@@ -137,8 +140,7 @@ class PatchBase(Shape):
         Shape.remove_instance(self)
         if self.bounds_shape is not None:
             self.bounds_shape.remove_instance()
-        # No need to call remove_geometry_instance() as it is already removed via removal of the parent instance
-        self.geometry_instance = None
+        self.remove_geometry_instance()
 
     def add_child(self, child):
         child.parent = self
