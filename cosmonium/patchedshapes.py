@@ -836,6 +836,10 @@ class PatchedShapeBase(Shape):
             self.show_patch(patch)
         patch.set_clickable(self.clickable)
 
+    def patch_done(self, patch):
+        for linked_object in self.linked_objects:
+            linked_object.patch_done(patch)
+
     def place_patches(self, owner):
         if self.frustum is not None:
             #Position the frustum relative to the body
@@ -993,7 +997,7 @@ class PatchedShapeBase(Shape):
             self.split_neighbours(patch, update)
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
-                linked_object.hide_patch(patch)
+                linked_object.remove_patch_instance(patch)
             self.remove_patch_instance(patch)
             for child in patch.children:
                 child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
@@ -1002,7 +1006,7 @@ class PatchedShapeBase(Shape):
                     self.create_patch_instance(child)
                     if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
                     for linked_object in self.linked_objects:
-                        linked_object.show_patch(child)
+                        linked_object.create_patch_instance(child)
             apply_appearance = True
             patch.last_split = frame
             if process_nb > 2:
@@ -1014,11 +1018,11 @@ class PatchedShapeBase(Shape):
             self.create_patch_instance(patch)
             apply_appearance = True
             for linked_object in self.linked_objects:
-                linked_object.show_patch(patch)
+                linked_object.create_patch_instance(patch)
         for patch in self.to_remove:
             if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view)
             for linked_object in self.linked_objects:
-                linked_object.hide_patch(patch)
+                linked_object.remove_patch_instance(patch)
             self.remove_patch_instance(patch)
         for patch in self.to_merge:
             #Dampen high frequency split-merge anomaly
@@ -1033,7 +1037,7 @@ class PatchedShapeBase(Shape):
                 linked_object.merge_patch(patch)
             for child in patch.children:
                 for linked_object in self.linked_objects:
-                    linked_object.hide_patch(child)
+                    linked_object.remove_patch_instance(child)
                 self.remove_patch_instance(child)
             patch.remove_children()
         self.max_lod = self.new_max_lod

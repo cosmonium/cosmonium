@@ -366,6 +366,7 @@ class ShapeObject(VisibleObject):
                 #TODO: Why update_patch should be called here ?
                 self.shader.update_patch(self.shape, patch, self.appearance)
             patch.patch_done()
+            self.shape.patch_done(patch)
         #print(globalClock.getFrameCount(), "DONE", patch.str_id())
 
     async def shape_task(self, shape):
