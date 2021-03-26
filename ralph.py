@@ -44,8 +44,7 @@ from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBo
 
 from cosmonium.foundation import BaseObject
 from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
-from cosmonium.procedural.shaders import TextureDictionaryDataSource
-from cosmonium.procedural.shaders import DetailMap
+from cosmonium.procedural.appearances import ProceduralAppearance
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
@@ -53,8 +52,7 @@ from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.ships import ActorShip
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer, TerrainLayer
-from cosmonium.heightmap import PatchedHeightmap
-from cosmonium.procedural.shaderheightmap import ShaderHeightmapPatchFactory
+from cosmonium.procedural.shaderheightmap import ShaderPatchedHeightmap
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
@@ -91,10 +89,10 @@ class TileFactory(object):
         min_height = -self.height_scale
         max_height = self.height_scale
         if parent is not None:
-            heightmap_patch = self.heightmap.get_heightmap(parent)
+            heightmap_patch = self.heightmap.get_patch_data(parent)
             if heightmap_patch is not None:
-                min_height = heightmap_patch.min_height * self.height_scale
-                max_height = heightmap_patch.max_height * self.height_scale
+                min_height = heightmap_patch.min_height
+                max_height = heightmap_patch.max_height
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
         if settings.hardware_tessellation:
@@ -143,7 +141,7 @@ class WaterLayer(object):
 
     def create_instance(self, patch):
         scale = patch.scale * patch.size / self.config.scale
-        self.water = WaterNode(0, 0, 1, 1, scale, patch)
+        self.water = WaterNode(patch.x0, patch.y0, patch.size, scale, patch)
         if self.config.visible:
             self.water.create_instance()
 
@@ -164,17 +162,16 @@ class PhysicsLayer(TerrainLayer):
         self.instance = None
 
     def patch_done(self, patch):
-        heightmap_patch = patch.owner.heightmap.get_heightmap(patch)
+        heightmap_patch = patch.owner.heightmap.get_patch_data(patch)
         shape = BulletHeightfieldShape(heightmap_patch.texture, patch.owner.heightmap.height_scale, ZUp)
         shape.setUseDiamondSubdivision(True)
         self.instance = NodePath(BulletRigidBodyNode('Heightfield'))
         self.instance.node().add_shape(shape)
-        x = (heightmap_patch.x0 + heightmap_patch.x1) / 2.0
-        y = (heightmap_patch.y0 + heightmap_patch.y1) / 2.0
+        x = (patch.x0 + patch.x1) / 2.0
+        y = (patch.y0 + patch.y1) / 2.0
         z = patch.owner.heightmap.height_scale / 2
-        size = heightmap_patch.x1 - heightmap_patch.x0
-        self.instance.set_pos(x, y, z)
-        self.instance.set_scale(size / heightmap_patch.width, size / heightmap_patch.height, 1.0)
+        self.instance.set_pos(patch.scale * x, patch.scale * y , z)
+        self.instance.set_scale(patch.scale / heightmap_patch.width, patch.scale / heightmap_patch.height, 1.0)
         self.instance.setCollideMask(BitMask32.allOn())
         self.physics.add(self.instance)
 
@@ -298,12 +295,13 @@ class RalphConfigParser(YamlModuleParser):
         if appearance is not None:
             appearance_parser = TextureDictionaryYamlParser()
             self.appearance = appearance_parser.decode(appearance)
+            self.appearance.extend *= 1000
         else:
             self.appearance = None
 
         if control is not None:
             control_parser = TextureControlYamlParser()
-            (self.control, appearance_source) = control_parser.decode(control, self.appearance, self.height_scale)
+            self.control = control_parser.decode(control, self.appearance, 1.0)
         else:
             self.control = None
 
@@ -490,29 +488,29 @@ class RalphAppConfig:
 
 class RoamingRalphDemo(CosmoniumBase):
     def create_terrain_appearance(self):
-        self.terrain_appearance = self.ralph_config.appearance
+        self.terrain_appearance = ProceduralAppearance(self.ralph_config.control, self.ralph_config.appearance, self.heightmap)
 
     def create_terrain_heightmap(self):
-        self.heightmap = PatchedHeightmap('heightmap',
+        self.heightmap = ShaderPatchedHeightmap('heightmap',
+                                          self.ralph_config.heightmap,
                                           self.ralph_config.heightmap_size,
                                           -self.ralph_config.height_scale, self.ralph_config.height_scale,
                                           1.0, 0.0,
                                           self.ralph_config.tile_size,
                                           self.ralph_config.tile_size,
                                           0,
-                                          ShaderHeightmapPatchFactory(self.ralph_config.heightmap),
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
 
     def create_terrain_biome(self):
-        self.biome = PatchedHeightmap('biome',
+        self.biome = ShaderPatchedHeightmap('biome',
+                                      self.ralph_config.biome,
                                       self.ralph_config.biome_size,
                                       -1, 1,
                                       1.0, 0.0,
                                       self.ralph_config.tile_size,
                                       self.ralph_config.tile_size,
                                       0,
-                                      ShaderHeightmapPatchFactory(self.ralph_config.biome),
                                       self.ralph_config.interpolator)
 
     def create_terrain_shader(self):
@@ -526,15 +524,14 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        appearance = DetailMap(self.ralph_config.control, self.heightmap, create_normals=True)
         data_source = [HeightmapDataSource(self.heightmap),
                        HeightmapDataSource(self.biome, normals=False),
-                       TextureDictionaryDataSource(self.terrain_appearance)]
+                       self.terrain_appearance.get_data_source()]
         if settings.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()
         else:
             tessellation_control = None
-        self.terrain_shader = BasicShader(appearance=appearance,
+        self.terrain_shader = BasicShader(appearance=self.terrain_appearance.get_shader_appearance(),
                                           tessellation_control=tessellation_control,
                                           vertex_control=DisplacementVertexControl(self.heightmap),
                                           data_source=data_source)
@@ -857,8 +854,9 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.camera.get_pos())
         self.vector_to_obs = self.camera.get_pos()
         self.vector_to_obs.normalize()
-        self.distance_to_obs = self.observer._local_position.get_z() - self.get_height(self.observer._local_position)
+        self.distance_to_obs = self.observer._local_position.get_z()# - self.get_height(self.observer._local_position)
         self._local_position = LPoint3d()
+        self._height_under = self.get_height_under(self.observer._local_position)
         self.rel_position = self._local_position - self.observer._local_position
         self.scene_rel_position = self.rel_position
         if settings.camera_at_origin:

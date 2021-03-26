@@ -35,11 +35,10 @@ class WaterNode():
     observer = None
     task = None
 
-    def __init__(self, x1, y1, x2, y2, scale, parent):
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
+    def __init__(self, x, y, size, scale, parent):
+        self.x = x
+        self.y = y
+        self.size = size
         self.scale = scale
         self.parent = parent
         self.waterNP = None
@@ -48,13 +47,14 @@ class WaterNode():
         self.create_buffer()
         # Water surface
         maker = CardMaker('water')
-        maker.setFrame(self.x1, self.x2, self.y1, self.y2)
+        maker.setFrame(0, 1, 0, 1)
 
         self.waterNP = self.parent.instance.attachNewNode(maker.generate())
         self.waterNP.hide(BaseObject.AllCamerasMask)
         self.waterNP.show(BaseObject.DefaultCameraMask)
         self.waterNP.setHpr(0, -90, 0)
-        self.waterNP.setPos(0, 0, self.z)
+        self.waterNP.setPos(self.x, self.y, self.z)
+        self.waterNP.setScale(self.size, self.size, 1.0)
         self.waterNP.setTransparency(TransparencyAttrib.MAlpha)
         vertex_shader = defaultDirContext.find_shader('water-vertex.glsl')
         fragment_shader = defaultDirContext.find_shader('water-fragment.glsl')
