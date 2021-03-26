@@ -70,10 +70,8 @@ class PatchData:
             x_delta = (self.patch.x - x_tex) / scale
             y_delta = (self.patch.y - y_tex) / scale
         else:
-            x_tex = int(self.patch.x * scale) / scale
-            y_tex = int(self.patch.y * scale) / scale
-            x_delta = self.patch.x - x_tex
-            y_delta = self.patch.y - y_tex
+            x_delta = (self.patch.x - self.parent_data.patch.x) / self.parent_data.patch.size
+            y_delta = (self.patch.y - self.parent_data.patch.y) / self.parent_data.patch.size
         r_scale_x = (self.width - self.overlap * 2 - 1) / self.width
         r_scale_y = (self.height - self.overlap * 2 - 1) / self.height
         self.texture_offset = LVector2((self.overlap + 0.5) / self.width + x_delta * r_scale_x, (self.overlap + 0.5) / self.height + y_delta * r_scale_y)
