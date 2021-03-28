@@ -239,20 +239,14 @@ class HeightmapSurface(ProceduralSurface):
         coord = self.shape.global_to_shape_coord(x, y)
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
-            patch_data = self.heightmap.get_patch_data(patch)
-        while patch is not None and (patch_data is None or not patch_data.data_ready):
-            patch = patch.parent
-            if patch is not None:
-                patch_data = self.heightmap.get_patch_data(patch)
-        if patch is not None:
-            uv = patch.coord_to_uv(coord)
-            #print("uv", uv)
-            return self.get_height_patch(patch, *uv)
+            u, v = patch.coord_to_uv(coord)
+            height = self.get_height_patch(patch, u, v, strict)
         elif strict:
-            return None
+            height = None
         else:
             #print("Patch not found for", x, y)
-            return self.radius
+            height = self.radius
+        return height
 
     #TODO: Should be based on how the patch is tesselated !
     def get_mesh_height_uv(self, heightmap, u, v, density):
@@ -274,22 +268,19 @@ class HeightmapSurface(ProceduralSurface):
         h_11 = heightmap.get_height(x1, y1)
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
-    def get_height_patch(self, patch, u, v, recursive=False):
+    def get_height_patch(self, patch, u, v, strict=False):
         if not self.displacement:
             return self.radius
         patch_data = self.heightmap.get_patch_data(patch)
-        while patch_data is None and patch is not None:
-            print("Recurse")
-            patch = patch.parent
-            patch_data = self.heightmap.get_patch_data(patch)
-            u /= 2.0
-            v /= 2.0
-        if patch_data is None:
-            print("No heightmap")
-            return self.radius
-        if self.follow_mesh:
-            h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
+        if patch_data is not None and patch_data.data_ready:
+            if self.follow_mesh:
+                h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
+            else:
+                h = patch_data.get_height_uv(u, v)
+            height = h * self.height_scale + self.heightmap_base
+        elif strict:
+            height = None
         else:
-            h = patch_data.get_height_uv(u, v)
-        height = h * self.height_scale + self.heightmap_base
+            #print("Patch data not found for", patch.str_id())
+            height = self.radius
         return height

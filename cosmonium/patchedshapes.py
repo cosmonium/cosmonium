@@ -296,9 +296,6 @@ class Patch(PatchBase):
     def get_patch_length(self):
         return None
 
-    def get_height_uv(self, u, v):
-        return self.average_radius
-
 class SpherePatch(Patch):
     patch_cache = {}
     coord = TexCoord.Cylindrical
@@ -1059,17 +1056,6 @@ class PatchedShapeBase(Shape):
 
     def find_patch_at(self, coord):
         return None
-
-    def get_height_at(self, coord):
-        patch = self.find_patch_at(coord)
-        if patch is not None:
-            return patch.get_height_at(coord)
-        else:
-            print("Patch not found", coord)
-            return self.average_radius
-
-    def get_height_patch(self, patch, u, v):
-        return patch.get_height_uv(u, v)
 
     def get_normals_at(self, coord):
         patch = self.find_patch_at(coord)
