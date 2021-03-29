@@ -52,7 +52,7 @@ from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.ships import ActorShip
 from cosmonium.surfaces import HeightmapSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer, TerrainLayer
-from cosmonium.procedural.shaderheightmap import ShaderPatchedHeightmap
+from cosmonium.procedural.shaderheightmap import ShaderPatchedHeightmap, HeightmapPatchGenerator
 from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
@@ -275,7 +275,8 @@ class RalphConfigParser(YamlModuleParser):
         self.noise_scale = raw_height_scale
         #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
         noise_parser = NoiseYamlParser(scale_length)
-        self.heightmap = noise_parser.decode(noise)
+        heightmap_function = noise_parser.decode(noise)
+        self.heightmap_data_source = HeightmapPatchGenerator(self.heightmap_size, self.heightmap_size, heightmap_function, self.tile_size)
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
         self.interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
@@ -288,9 +289,10 @@ class RalphConfigParser(YamlModuleParser):
             self.layers.append(PopulatorYamlParser.decode(layer))
 
         if biome is not None:
-            self.biome = noise_parser.decode(biome)
+            biome_function = noise_parser.decode(biome)
+            self.biome_data_source = HeightmapPatchGenerator(self.biome_size, self.biome_size, biome_function, self.tile_size)
         else:
-            self.biome = None
+            self.biome_data_source = None
 
         if appearance is not None:
             appearance_parser = TextureDictionaryYamlParser()
@@ -492,7 +494,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def create_terrain_heightmap(self):
         self.heightmap = ShaderPatchedHeightmap('heightmap',
-                                          self.ralph_config.heightmap,
+                                          self.ralph_config.heightmap_data_source,
                                           self.ralph_config.heightmap_size,
                                           -self.ralph_config.height_scale, self.ralph_config.height_scale,
                                           1.0, 0.0,
@@ -504,7 +506,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def create_terrain_biome(self):
         self.biome = ShaderPatchedHeightmap('biome',
-                                      self.ralph_config.biome,
+                                      self.ralph_config.biome_data_source,
                                       self.ralph_config.biome_size,
                                       -1, 1,
                                       1.0, 0.0,

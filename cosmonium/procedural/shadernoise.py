@@ -1039,8 +1039,8 @@ class NoiseFragmentShader(ShaderProgram):
     def create_uniforms(self, code):
         code.append("uniform vec3 noiseOffset;")
         code.append("uniform vec3 noiseScale;")
-        code.append("uniform float global_frequency;")
-        code.append("uniform vec3 global_offset;")
+        code.append("uniform float global_coord_scale;")
+        code.append("uniform vec3 global_coord_offset;")
         code.append("uniform float global_scale;")
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             code.append("uniform mat3 cube_rot;")
@@ -1096,7 +1096,7 @@ class NoiseFragmentShader(ShaderProgram):
             code.append('position.x = noiseOffset.x + coord.x * noiseScale.x;')
             code.append('position.y = noiseOffset.y + coord.y * noiseScale.y;')
             code.append('position.z = noiseOffset.z;')
-        code.append('position = position * global_frequency + global_offset;')
+        code.append('position = position * global_coord_scale + global_coord_offset;')
         code.append('float value;')
         self.noise_source.noise_value(code, 'value', 'position')
         code.append('return value * global_scale;')
@@ -1168,11 +1168,11 @@ class NoiseShader(StructuredShader):
                             0.0, 1.0, 0.0,
                             0.0, 0.0, 1.0)
 
-    def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_frequency=1.0, global_offset=LVector3(0, 0, 0), global_scale=1.0, lod=None):
+    def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_coord_scale=1.0, global_coord_offset=LVector3(0, 0, 0), global_scale=1.0, lod=None):
         instance.set_shader_input('noiseOffset', offset)
         instance.set_shader_input('noiseScale', scale)
-        instance.set_shader_input('global_frequency', global_frequency)
-        instance.set_shader_input('global_offset', global_offset)
+        instance.set_shader_input('global_coord_scale', global_coord_scale)
+        instance.set_shader_input('global_coord_offset', global_coord_offset)
         instance.set_shader_input('global_scale', global_scale)
         #instance.set_shader_input('permTexture', self.texture)
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
