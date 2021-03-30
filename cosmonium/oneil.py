@@ -827,12 +827,6 @@ class ONeilScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
 
-    def update_shader_shape(self, shape, appearance):
-        ONeilScatteringBase.update_shader_shape(self, shape, appearance)
-        parameters = self.parameters
-        pbOpticalDepth = parameters.get_lookup_table()
-        shape.instance.setShaderInput("pbOpticalDepth", pbOpticalDepth)
-
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
