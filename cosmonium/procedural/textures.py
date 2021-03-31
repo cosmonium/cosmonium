@@ -84,8 +84,10 @@ class NoiseTextureGenerator():
         self.tex_generator.add_stage(self.texture_stage)
         self.tex_generator.create()
 
-    def clear(self):
-        self.tex_generator = None
+    def clear_all(self):
+        if self.tex_generator is not None:
+            self.tex_generator.remove()
+            self.tex_generator = None
 
     async def generate(self, shape, patch):
         if self.tex_generator is None:
@@ -112,6 +114,10 @@ class ProceduralVirtualTextureSource(TextureSource):
 
     def get_texture(self, shape, strict=False):
         return (self.texture, self.texture_size, 0)
+
+    def clear_all(self):
+        self.texture = None
+        self.tex_generator.clear_all()
 
 class PatchedProceduralVirtualTextureSource(TextureSource):
     cached = False
@@ -145,6 +151,16 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         else:
             texture_info = self.map_patch[patch.str_id()]
         return texture_info
+
+    def clear_patch(self, patch):
+        try:
+            del self.map_patch[patch.str_id()]
+        except KeyError:
+            pass
+
+    def clear_all(self):
+        self.map_patch = {}
+        self.tex_generator.clear_all()
 
     def get_texture(self, patch, strict=False):
         if patch.str_id() in self.map_patch:

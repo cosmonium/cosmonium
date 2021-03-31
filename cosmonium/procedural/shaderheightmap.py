@@ -126,8 +126,10 @@ class HeightmapPatchGenerator():
         pool.create()
         self.generator = pool
 
-    def clear(self):
-        self.generator = None
+    def clear_all(self):
+        if self.generator is not None:
+            self.generator.remove()
+            self.generator = None
 
     async def generate(self, heightmap_patch):
         if self.generator is None:
@@ -149,6 +151,10 @@ class ShaderPatchedHeightmap(PatchedHeightmapBase):
 
     def do_create_patch_data(self, patch):
         return ShaderHeightmapPatch(self, patch, self.size, self.size, self.overlap)
+
+    def clear_all(self):
+        PatchedHeightmapBase.clear_all(self)
+        self.data_source.clear_all()
 
 class ShaderHeightmapPatch(HeightmapPatch):
     def apply(self, patch):

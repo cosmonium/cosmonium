@@ -115,6 +115,15 @@ class ShaderBase(object):
     def update_patch(self, shape, patch, appearance):
         self.update_shader_patch(shape, patch, appearance)
 
+    def clear_patch(self, shape, patch):
+        pass
+
+    def clear(self, shape):
+        pass
+
+    def clear_all(self):
+        pass
+
     def get_user_parameters(self):
         group = ParametersGroup('Shader')
         return group

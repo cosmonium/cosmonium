@@ -152,7 +152,6 @@ class RenderTarget(object):
         self.buffer.set_one_shot(True)
 
     def clear(self):
-        #TODO: Should the buffer be deactivated too ?
         self.buffer.clear_render_textures()
 
 class RenderStage():
@@ -204,6 +203,7 @@ class RenderStage():
 
     def remove(self):
         self.target.remove()
+        self.textures = None
 
 class GeneratorChain():
     def __init__(self):

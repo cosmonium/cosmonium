@@ -148,6 +148,12 @@ class AppearanceBase:
     async def apply(self, shape, owner):
         pass
 
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         pass
 
@@ -368,6 +374,36 @@ class Appearance(AppearanceBase):
             if shape.instance is not None:
                 #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
                 self.apply_textures(shape)
+
+    def clear_patch(self, patch):
+        if patch.instance is not None:
+            patch.instance.clear_texture()
+        if self.texture is not None:
+            self.texture.clear_patch(patch)
+        if self.normal_map is not None:
+            self.normal_map.clear_patch(patch)
+        if self.bump_map is not None:
+            self.bump_map.clear_patch(patch)
+        if self.specular_map is not None:
+            self.specular_map.clear_patch(patch)
+        if self.emission_texture is not None:
+            self.emission_texture.clear_patch(patch)
+        if self.occlusion_map is not None:
+            self.occlusion_map.clear_patch(patch)
+
+    def clear_all(self):
+        if self.texture is not None:
+            self.texture.clear_all()
+        if self.normal_map is not None:
+            self.normal_map.clear_all()
+        if self.bump_map is not None:
+            self.bump_map.clear_all()
+        if self.specular_map is not None:
+            self.specular_map.clear_all()
+        if self.emission_texture is not None:
+            self.emission_texture.clear_all()
+        if self.occlusion_map is not None:
+            self.occlusion_map.clear_all()
 
 class ModelAppearance(AppearanceBase):
     def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):

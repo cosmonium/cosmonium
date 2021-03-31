@@ -60,6 +60,12 @@ class TextureBase(object):
     def apply_shader(self, shape, input_name, texture, texture_lod):
         shape.instance.set_shader_input(input_name, texture)
 
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
     def can_split(self, patch):
         return False
 
@@ -137,6 +143,12 @@ class TextureSource(object):
     def load(self, patch, color_space=None):
         pass
 
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
     def can_split(self, patch):
         return False
 
@@ -212,6 +224,16 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         return self.source.load(patch, color_space)
 
+    def clear_patch(self, patch):
+        if self.source is None:
+            self.create_source()
+        self.source.clear_patch(patch)
+
+    def clear_all(self):
+        if self.source is None:
+            self.create_source()
+        self.source.clear_all()
+
     def can_split(self, patch):
         if self.source is None:
             self.create_source()
@@ -259,6 +281,14 @@ class TextureFileSource(TextureSource):
             else:
                 print("File", self.filename, "not found")
         return (self.texture, 0, 0)
+
+    def clear_patch(self, patch):
+        # A non-patched texture can not be cleared per patch
+        pass
+
+    def clear_all(self):
+        self.texture = None
+        self.loaded = False
 
     def get_texture(self, shape):
         return (self.texture, 0, 0)
@@ -358,6 +388,12 @@ class SimpleTexture(TextureBase):
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
         shape.instance.setTexture(texture_stage, texture, 1)
 
+    def clear_patch(self, patch):
+        self.source.clear_patch(patch)
+
+    def clear_all(self):
+        self.source.clear_all()
+
     def can_split(self, patch):
         return self.source.can_split(patch)
 
@@ -380,6 +416,12 @@ class DataTexture(TextureBase):
             if self.source.is_patched():
                 self.clamp(texture)
             shape.instance.set_shader_input(input_name, texture)
+
+    def clear_patch(self, patch):
+        self.source.clear_patch(patch)
+
+    def clear_all(self):
+        self.source.clear_all()
 
     def can_split(self, patch):
         return self.source.can_split(patch)
@@ -528,6 +570,13 @@ class TextureArray(TextureBase):
     def apply(self, shape):
         self.apply_shader(shape, self.input_name, self.texture, None)
 
+    def clear_patch(self, patch):
+        # A non-patched texture can not be cleared per patch
+        pass
+
+    def clear_all(self):
+        self.texture = None
+
     def can_split(self, patch):
         return False
 
@@ -596,6 +645,15 @@ class VirtualTextureSource(TextureSource):
         else:
             texture_info = self.map_patch[patch.str_id()]
         return texture_info
+
+    def clear_patch(self, patch):
+        try:
+            del self.map_patch[patch.str_id()]
+        except KeyError:
+            pass
+
+    def clear_all(self):
+        self.map_patch = {}
 
     def get_texture(self, patch, strict=False):
         if patch.str_id() in self.map_patch:

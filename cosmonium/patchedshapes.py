@@ -123,6 +123,12 @@ class PatchBase(Shape):
             self.geometry_instance.detach_node()
             self.geometry_instance = None
 
+    def clear_geometry(self):
+        pass
+
+    def clear_all_geometry(self):
+        pass
+
     def create_instance(self):
         self.instance = NodePath('patch')
         self.instance.setPythonTag('patch', self)
@@ -380,6 +386,20 @@ class SpherePatch(Patch):
             self.geometry_instance = cache[patch_id]
             self.geometry_instance.reparent_to(self.instance)
 
+    def clear_geometry(self):
+        if settings.software_instancing:
+            patch_id = "%d-%d" % (self.lod, self.ring)
+        else:
+            patch_id = "%d-%d %d" % (self.lod, self.ring, self.sector)
+        cache = self.patch_cache[self.owner]
+        try:
+            del cache[patch_id]
+        except KeyError:
+            pass
+
+    def clear_all_geometry(self):
+        self.patch_cache[self.owner] = {}
+
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         if texture_lod == self.lod and patched:
             return
@@ -547,6 +567,27 @@ class SquarePatchBase(Patch):
         cache[patch_id].instance_to(self.geometry_instance)
         self.orientation = self.rotations[self.face]
         self.instance.setQuat(LQuaternion(*self.orientation))
+
+    def clear_geometry(self):
+        if self.use_shader and self.use_tessellation:
+            if self.owner.face_unique:
+                patch_id = "%d : %d - %d %d" % (self.lod, self.face, self.x, self.y)
+            else:
+                patch_id = "%d : %d %d" % (self.lod, self.x, self.y)
+        else:
+            tess_id = str(self.tessellation_inner_level) + '-' + '-'.join(map(str, self.tessellation_outer_level))
+            if self.owner.face_unique:
+                patch_id = "%d : %d - %d %d %s" % (self.lod, self.face, self.x, self.y, tess_id)
+            else:
+                patch_id = "%d : %d %d %s" % (self.lod, self.x, self.y, tess_id)
+        cache = self.patch_cache[self.owner]
+        try:
+            del cache[patch_id]
+        except KeyError:
+            pass
+
+    def clear_all_geometry(self):
+        self.patch_cache[self.owner] = {}
 
     def update_instance(self, parent):
         if self.instance is not None and not self.use_tessellation:
@@ -789,11 +830,17 @@ class PatchedShapeBase(Shape):
             self.patches.remove(patch)
         patch.remove_instance()
         patch.shown = False
+        if len(patch.children) == 0:
+            # Only remove a patch if it has no children, its data might be used by one of the child.
+            self.parent.remove_patch(patch)
+            patch.clear_geometry()
 
     def remove_all_patches_instances(self):
         for patch in self.patches:
             patch.remove_instance()
             patch.shown = False
+        if patch is not None:
+            patch.clear_all_geometry()
         self.patches = []
 
     async def create_instance(self):
@@ -995,7 +1042,6 @@ class PatchedShapeBase(Shape):
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
                 linked_object.remove_patch_instance(patch)
-            self.remove_patch_instance(patch)
             for child in patch.children:
                 child.check_visibility(self, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
                 #print(child.str_id(), child.visible)
@@ -1004,6 +1050,7 @@ class PatchedShapeBase(Shape):
                     if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
                     for linked_object in self.linked_objects:
                         linked_object.create_patch_instance(child)
+            self.remove_patch_instance(patch)
             apply_appearance = True
             patch.last_split = frame
             if process_nb > 2:

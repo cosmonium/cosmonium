@@ -83,6 +83,12 @@ class PatchData:
     async def load(self, patch):
         pass
 
+    def clear(self):
+        self.texture = None
+        self.data_ready = False
+        self.loaded = False
+        self.cloned = False
+
     def configure_texture(self):
         pass
 
@@ -168,3 +174,14 @@ class PatchedData():
             patch_data.apply(patch)
         else:
             print("PATCH NOT CREATED?", patch.str_id())
+
+    def clear_patch(self, patch):
+        try:
+            patch_data = self.map_patch_data[patch.str_id()]
+            patch_data.clear()
+            del self.map_patch_data[patch.str_id()]
+        except KeyError:
+            pass
+
+    def clear_all(self):
+        self.map_patch_data = {}

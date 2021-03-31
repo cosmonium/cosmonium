@@ -197,6 +197,12 @@ class ProceduralSurface(FlatSurface):
                 pass
         await FlatSurface.shape_task(self, shape)
 
+    def remove_instance(self):
+        self.heightmap.clear_all()
+        if self.biome is not None:
+            self.biome.clear_all()
+        FlatSurface.remove_instance(self)
+
 class HeightmapSurface(ProceduralSurface):
     def __init__(self, name,
                  radius, oblateness, scale,

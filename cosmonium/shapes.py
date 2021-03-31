@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import GeomNode, LQuaternion, LQuaterniond
 from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
-from panda3d.core import NodePath, BitMask32
+from panda3d.core import NodePath, BitMask32, ModelPool
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
 from panda3d.core import Material
 from direct.task.Task import gather
@@ -444,12 +444,19 @@ class ShapeObject(VisibleObject):
 
     def remove_instance(self):
         self.shadows.clear_shadows()
+        self.appearance.clear_all()
+        self.shader.clear_all()
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
         if self.context.observer.has_scattering:
             self.context.observer.scattering.remove_attenuated_object(self)
         self.first_patch = True
+
+    def remove_patch(self, patch):
+        #TODO: This should be reworked and moved into a dedicated class
+        self.appearance.clear_patch(patch)
+        self.shader.clear_patch(self.shape, patch)
 
 class MeshShape(Shape):
     deferred_instance = True
@@ -518,6 +525,12 @@ class MeshShape(Shape):
         self.apply_owner()
         self.mesh.reparent_to(self.instance)
         return self.instance
+
+    def remove_instance(self):
+        Shape.remove_instance(self)
+        if self.mesh is not None:
+            ModelPool.release_model(self.mesh.node())
+            self.mesh = None
 
 class ActorShape(MeshShape):
     def __init__(self, model, animations, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, attribution=None, context=defaultDirContext):

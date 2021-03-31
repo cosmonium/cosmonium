@@ -41,6 +41,9 @@ class ShapeData:
     async def load(self):
         pass
 
+    def clear(self):
+        pass
+
 class TextureShapeDataBase(ShapeData):
     def __init__(self, name, width, height):
         ShapeData.__init__(self, name)
@@ -79,6 +82,10 @@ class TextureShapeDataBase(ShapeData):
             print("Make default data")
             self.configure_data(self.make_default_data())
 
+    def clear(self):
+        self.texture = None
+        self.data_ready = False
+
 class TextureShapeData(TextureShapeDataBase):
     def __init__(self, name, width, height, data_source):
         TextureShapeDataBase.__init__(self, name, width, height)
@@ -96,3 +103,7 @@ class TextureShapeData(TextureShapeDataBase):
         await self.data_source.load(shape)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(strict=True)
         self.configure_data(texture_data)
+
+    def clear(self):
+        TextureShapeDataBase.clear(self)
+        self.data_source.clear()

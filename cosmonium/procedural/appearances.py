@@ -112,6 +112,22 @@ class TexturesDictionary(AppearanceBase):
             if shape.instance is not None:
                 self.apply_textures(shape)
 
+    def clear_textures(self):
+        for entry in self.blocks.values():
+            for texture in entry.textures:
+                texture.clear_all()
+
+    def clear_texture_array(self):
+        for texture in self.texture_arrays.values():
+            texture.clear_all()
+
+    def clear_all(self):
+        if self.nb_textures > 0:
+            if self.texture_array:
+                self.clear_texture_array()
+            else:
+                self.clear_textures()
+
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
         height_under = shape.owner._height_under
@@ -141,6 +157,12 @@ class ProceduralAppearance(AppearanceBase):
 
     async def apply(self, shape, owner):
         await self.texture_source.apply(shape, owner)
+
+    def clear_patch(self, patch):
+        self.texture_source.clear_patch(patch)
+
+    def clear_all(self):
+        self.texture_source.clear_all()
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         self.texture_source.update_lod(shape, apparent_radius, distance_to_obs, pixel_size)

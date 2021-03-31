@@ -73,6 +73,10 @@ class HeightmapPatch(PatchData):
     async def load(self, patch):
         pass
 
+    def clear(self):
+        PatchData.clear(self)
+        self.texture_peeker = None
+
     def configure_texture(self):
         self.texture.set_wrap_u(Texture.WMClamp)
         self.texture.set_wrap_v(Texture.WMClamp)
@@ -134,6 +138,10 @@ class TextureHeightmapPatch(HeightmapPatch):
         await self.data_source.load(patch)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
         self.configure_data(texture_data)
+
+    def clear(self):
+        HeightmapPatch.clear(self)
+        self.data_source.clear(self.patch)
 
 
 class HeightmapBase():
@@ -272,6 +280,13 @@ class TexturePatchedHeightmap(PatchedHeightmapBase):
     def do_create_patch_data(self, patch):
         return TextureHeightmapPatch(self.data_source, self, patch, self.size, self.size, self.overlap)
 
+    def clear_patch(self, patch):
+        PatchedHeightmapBase.clear_patch(self, patch)
+        self.data_source.clear_patch(patch)
+
+    def clear_all(self):
+        PatchedHeightmapBase.clear_all(self)
+        self.data_source.clear_all()
 
 class StackedHeightmapPatch(HeightmapPatch):
     def __init__(self, patches, parent, patch, width, height, overlap):
