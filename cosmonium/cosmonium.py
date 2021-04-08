@@ -1229,14 +1229,15 @@ class Cosmonium(CosmoniumBase):
         StellarObject.nb_instance = 0
 
         self.update_universe(self.time.time_full, dt)
+
+        nearest_system, nearest_visible_system = self.find_nearest_system()
+        self.update_nearest_system(nearest_system, nearest_visible_system)
+
         self.find_light_sources()
         self.update_magnitudes()
         self.find_orbits()
         self.check_scattering()
         self.update_height_under()
-
-        nearest_system, nearest_visible_system = self.find_nearest_system()
-        self.update_nearest_system(nearest_system, nearest_visible_system)
 
         if self.trigger_check_settings:
             for visible in self.visibles:
