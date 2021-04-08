@@ -836,10 +836,12 @@ class PatchedShapeBase(Shape):
             patch.clear_geometry()
 
     def remove_all_patches_instances(self):
+        patch = None
         for patch in self.patches:
             patch.remove_instance()
             patch.shown = False
         if patch is not None:
+            #TODO: Clearing all the patch geometries should be not be done through a simple patch
             patch.clear_all_geometry()
         self.patches = []
 
