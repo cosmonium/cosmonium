@@ -137,10 +137,7 @@ class OrbitYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, frame=None, parent=None):
         if data is None:
-            if frame is None:
-                frame = AbsoluteReferenceFrame()
-            #TODO: This should be instead reported as an error
-            return AbsoluteFixedPosition(absolute_reference_point=LPoint3d(), frame=frame)
+            data = {'type': 'fixed', 'position': (0, 0, 0), 'global': False}
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'elliptic':
             orbit = EllipticOrbitYamlParser.decode(parameters, frame, parent)
