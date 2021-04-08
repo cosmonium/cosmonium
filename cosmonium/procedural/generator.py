@@ -131,6 +131,9 @@ class RenderTarget(object):
             self.buffer = None
 
     def prepare(self, textures, shader_data):
+        if self.buffer is None:
+            print("Prepare called on disabled stage")
+            return
         self.buffer.clear_render_textures()
         self.shader.update(self.quad, **shader_data)
         if self.to_ram:
@@ -190,11 +193,14 @@ class RenderStage():
 
     def gather(self, result):
         data = {}
-        for name, texture_config in self.textures.items():
-            if isinstance(texture_config, (list, tuple)):
-                data[name] = texture_config[0]
-            else:
-                data[name] = texture_config
+        if self.textures is not None:
+            for name, texture_config in self.textures.items():
+                if isinstance(texture_config, (list, tuple)):
+                    data[name] = texture_config[0]
+                else:
+                    data[name] = texture_config
+        else:
+            print("Stage gather callled on disabled stage")
         result[self.name] = data
 
     def clear(self):

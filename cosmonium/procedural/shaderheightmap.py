@@ -141,7 +141,7 @@ class HeightmapPatchGenerator():
                                     }}
         #print("GEN", heightmap_patch.patch.str_id())
         result = await self.generator.generate(shader_data)
-        data = result['heightmap']['heightmap']
+        data = result['heightmap'].get('heightmap')
         return data
 
 class ShaderPatchedHeightmap(PatchedHeightmapBase):

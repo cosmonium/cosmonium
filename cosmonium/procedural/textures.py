@@ -96,7 +96,7 @@ class NoiseTextureGenerator():
         self.texture_stage.configure_data(shader_data, shape, patch)
         #print("GEN", patch.str_id())
         result = await self.tex_generator.generate(shader_data)
-        texture = result[self.texture_stage.name]['texture']
+        texture = result[self.texture_stage.name].get('texture')
         return texture
 
 class ProceduralVirtualTextureSource(TextureSource):
