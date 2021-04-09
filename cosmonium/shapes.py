@@ -318,8 +318,13 @@ class ShapeObject(VisibleObject):
         #TODO: Temporarily here until foundation.show() is corrected
         self.instance.reparent_to(self.context.world)
         shape_instance = await self.shape.create_instance()
+        if shape_instance is None:
+            print("ERROR: Could not create the shape instance")
+            return
         #The shape has been removed from the view while the mesh was loaded
-        if self.instance is None: return
+        if self.instance is None:
+            #TODO: We should probably call shape.remove_instance() here
+            return
         shape_instance.reparent_to(self.instance)
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
