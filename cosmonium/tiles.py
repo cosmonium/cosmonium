@@ -160,10 +160,10 @@ class GpuPatchTerrainLayer(TerrainLayer):
 class MeshTerrainLayer(TerrainLayer):
     template = {}
     def create_instance(self, patch):
-        tile_id = str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
+        tile_id = str(patch.size) + '-' + str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
         #print(tile_id)
         if tile_id not in self.template:
-            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tessellation_inner_level, outer=patch.tessellation_outer_level)
+            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tessellation_inner_level, outer=patch.tessellation_outer_level, skirt_size=patch.size / 33, skirt_uv=1 / 33)
         template = self.template[tile_id]
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)

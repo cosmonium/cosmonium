@@ -721,7 +721,7 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
                 prim.addVertices(skirt, v + 1, skirt + 1)
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
+def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False, skirt_size=0.1, skirt_uv=0.1):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
     (path, node) = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
@@ -757,22 +757,25 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
-                    i = 0
-                    j = b
+                    x = 0.0
+                    y = b / inner
+                    u = -skirt_uv
+                    v = y
                 elif a == 1:
-                    i = inner
-                    j = b
+                    x = 1.0
+                    y = b / inner
+                    u = 1.0 + skirt_uv
+                    v = y
                 elif a == 2:
-                    i = b
-                    j = 0
+                    x = b / inner
+                    y = 0.0
+                    u = x
+                    v = -skirt_uv
                 elif a == 3:
-                    i = b
-                    j = inner
-                u = float(i) / inner
-                v = float(j) / inner
-
-                x = u
-                y = v
+                    x = b / inner
+                    y = 1.0
+                    u = x
+                    v = 1.0 + skirt_uv
 
                 if inv_u:
                     u = 1.0 - u
@@ -782,7 +785,7 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False):
                     gtw.add_data2(v, u)
                 else:
                     gtw.add_data2(u, v)
-                gvw.add_data3(x * size, y * size, -size)
+                gvw.add_data3(x * size, y * size, -skirt_size * size)
                 gnw.add_data3(0, 0, 1.0)
                 gtanw.add_data3(1, 0, 0)
                 gbiw.add_data3(0, 1, 0)
