@@ -137,7 +137,7 @@ class HeightmapYamlParser(YamlModuleParser):
             max_lod = data.get('max-lod', 100)
             heightmap = heightmap_class(name, heightmap_data_source, size,
                                         min_height, max_height, height_scale, height_offset,
-                                        pi, pi, overlap,
+                                        1.0, 1.0, overlap,
                                         interpolator, filter, max_lod)
         else:
             heightmap = TextureHeightmap(name, size, size / 2,
