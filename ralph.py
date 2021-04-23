@@ -51,9 +51,9 @@ from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, Sha
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.ships import ActorShip
 from cosmonium.surfaces import HeightmapSurface
-from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer, TerrainLayer
+from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.shaderheightmap import ShaderPatchedHeightmap, HeightmapPatchGenerator
-from cosmonium.patchedshapes import VertexSizeMaxDistancePatchLodControl
+from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistancePatchLodControl
 from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
@@ -74,7 +74,7 @@ from cosmonium import settings
 from math import pow, pi, sqrt
 import argparse
 
-class TileFactory(object):
+class TileFactory(PatchFactory):
     def __init__(self, heightmap, tile_density, size, height_scale, has_water, water, has_physics, physics):
         self.heightmap = heightmap
         self.tile_density = tile_density
@@ -86,15 +86,16 @@ class TileFactory(object):
         self.physics = physics
 
     def create_patch(self, parent, lod, x, y):
-        min_height = -self.height_scale
-        max_height = self.height_scale
+        #print("CREATE PATCH", x, y)
+        min_height = -self.height_scale / self.size
+        max_height = self.height_scale / self.size
         if parent is not None:
             heightmap_patch = self.heightmap.get_patch_data(parent)
             if heightmap_patch is not None:
-                min_height = heightmap_patch.min_height
-                max_height = heightmap_patch.max_height
+                min_height = heightmap_patch.min_height / self.size
+                max_height = heightmap_patch.max_height / self.size
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
-        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, patch.flat_coord)
+        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
         if settings.hardware_tessellation:
             terrain_layer = GpuPatchTerrainLayer()
         else:
@@ -106,28 +107,7 @@ class TileFactory(object):
             patch.add_layer(PhysicsLayer(self.physics))
         return patch
 
-    def split_patch(self, parent):
-        lod = parent.lod + 1
-        delta = parent.half_size
-        x = parent.x
-        y = parent.y
-        self.create_patch(parent, lod, x, y)
-        self.create_patch(parent, lod, x + delta, y)
-        self.create_patch(parent, lod, x + delta, y + delta)
-        self.create_patch(parent, lod, x, y + delta)
-        parent.children_bb = []
-        parent.children_normal = []
-        parent.children_offset = []
-        for child in parent.children:
-            parent.children_bb.append(child.bounds.make_copy())
-            parent.children_normal.append(None)
-            parent.children_offset.append(None)
-            child.owner = parent.owner
-
-    def merge_patch(self, patch):
-        pass
-
-class WaterLayer(object):
+class WaterLayer(PatchLayer):
     def __init__(self, config):
         self.config = config
         self.water = None
@@ -156,7 +136,7 @@ class WaterLayer(object):
             self.water.remove_instance()
             self.water = None
 
-class PhysicsLayer(TerrainLayer):
+class PhysicsLayer(PatchLayer):
     def __init__(self, physics):
         self.physics = physics
         self.instance = None
@@ -496,10 +476,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.heightmap = ShaderPatchedHeightmap('heightmap',
                                           self.ralph_config.heightmap_data_source,
                                           self.ralph_config.heightmap_size,
-                                          -self.ralph_config.height_scale, self.ralph_config.height_scale,
-                                          1.0, 0.0,
-                                          self.ralph_config.tile_size,
-                                          self.ralph_config.tile_size,
+                                          -1, 1,
+                                          1.0 / self.ralph_config.tile_size, 0.0,
+                                          1.0, 1.0,
                                           0,
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
@@ -509,9 +488,8 @@ class RoamingRalphDemo(CosmoniumBase):
                                       self.ralph_config.biome_data_source,
                                       self.ralph_config.biome_size,
                                       -1, 1,
-                                      1.0, 0.0,
-                                      self.ralph_config.tile_size,
-                                      self.ralph_config.tile_size,
+                                      1.0 , 0,
+                                      1.0, 1.0,
                                       0,
                                       self.ralph_config.interpolator)
 
@@ -552,7 +530,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                         self.ralph_config.physics.enable, self.physics)
         self.terrain_shape = TiledShape(self.tile_factory,
                                         self.ralph_config.tile_size,
-                                        VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance,
+                                        VertexSizeMaxDistancePatchLodControl(self.ralph_config.max_distance / self.ralph_config.tile_size,
                                                                              self.ralph_config.max_vertex_size,
                                                                              density=settings.patch_constant_density,
                                                                              max_lod=self.ralph_config.max_lod))
@@ -561,6 +539,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_object = HeightmapSurface(
                                'surface',
                                0, None, None,
+                               0, self.ralph_config.tile_size,
                                self.terrain_shape,
                                self.heightmap,
                                self.biome,
@@ -667,7 +646,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         settings.color_picking = False
         settings.scale = 1.0
-        settings.use_inv_scaling = False
+        settings.use_depth_scaling = False
         self.gui = None
 
         if args.config is not None:

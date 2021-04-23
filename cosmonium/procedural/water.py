@@ -39,7 +39,7 @@ class WaterNode():
         self.x = x
         self.y = y
         self.size = size
-        self.scale = scale
+        self.scale = 1.0 #scale
         self.parent = parent
         self.waterNP = None
 

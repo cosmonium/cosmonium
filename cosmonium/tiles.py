@@ -20,26 +20,22 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import OmniBoundingVolume, BoundingBox
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4
 from panda3d.core import NodePath
 
-from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape
+from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
 from .textures import TexCoord
 from . import geometry
-from . import settings
 
-from math import sqrt
 
 class Tile(PatchBase):
     coord = TexCoord.Flat
 
-    def __init__(self, parent, lod, x, y, density, scale, min_height, max_height):
-        PatchBase.__init__(self, parent, lod, density)
+    def __init__(self, parent, lod, x, y, density, surface_scale, min_height, max_height):
+        PatchBase.__init__(self, parent, lod, density, surface_scale)
         self.x = x
         self.y = y
         self.face = -1
-        self.scale = scale
         self.size = 1.0 / (1 << lod)
         self.half_size = self.size / 2.0
 
@@ -48,63 +44,19 @@ class Tile(PatchBase):
         self.x1 = x + self.size
         self.y1 = y + self.size
         self.centre = LPoint3d(x + self.half_size, y + self.half_size, 0.0)
-        self.flat_coord = LVector4(self.x0 * scale,
-                                    self.y1 * scale,
-                                    (self.x1 - self.x0) * scale,
-                                    (self.y0 - self.y1) * scale)
-        self.bounds = geometry.PatchAABB(self.x0, self.y0, 1.0, min_height, max_height)
-        self.layers = []
+        self.flat_coord = LVector4(self.x0 * surface_scale,
+                                    self.y1 * surface_scale,
+                                    (self.x1 - self.x0) * surface_scale,
+                                    (self.y0 - self.y1) * surface_scale)
+        self.normal = LVector3d.up()
+        self.bounds = geometry.PatchAABB(self.x0, self.y0, self.size, 1.0, min_height, max_height)
         self.bounds_shape = BoundingBoxShape(self.bounds)
 
     def str_id(self):
         return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)
 
-    def add_layer(self, layer):
-        self.layers.append(layer)
-
-    def check_settings(self):
-        PatchBase.check_settings(self)
-        for layer in self.layers:
-            layer.check_settings()
-        for child in self.children:
-            child.check_settings()
-
     def get_patch_length(self):
-        return self.scale * self.size
-
-    def check_visibility(self, worker, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
-        if self.in_patch(*local):
-            self.distance = altitude
-            within_patch = True
-        else:
-            dx = max(self.x0 - model_camera_pos[0], 0, model_camera_pos[0] - self.x1) * self.scale
-            dy = max(self.y0 - model_camera_pos[1], 0, model_camera_pos[1] - self.y1) * self.scale
-            self.distance = sqrt(dx*dx + dy*dy + altitude * altitude)
-            within_patch = False
-        self.patch_in_view = worker.is_patch_in_view(self)
-        self.visible = within_patch or self.patch_in_view
-        #print(self.str_id(), within_patch, self.patch_in_view, altitude, self.distance)
-        self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
-
-    def create_geometry_instance(self):
-        for layer in self.layers:
-            layer.create_instance(self)
-
-    def patch_done(self):
-        PatchBase.patch_done(self)
-        for layer in self.layers:
-            layer.patch_done(self)
-
-    def update_instance(self, parent):
-        PatchBase.update_instance(self, parent)
-        if self.instance is None: return
-        #print("Update", self.str_id())
-        for layer in self.layers:
-            layer.update_instance(self)
-
-    def remove_geometry_instance(self):
-        for layer in self.layers:
-            layer.remove_instance()
+        return self.size
 
     def coord_to_uv(self, coord):
         (x, y) = coord
@@ -124,28 +76,7 @@ class Tile(PatchBase):
         vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
         return vectors
 
-class TerrainLayer(object):
-    def __init__(self):
-        self.instance = None
-
-    def check_settings(self):
-        pass
-
-    def create_instance(self, patch):
-        pass
-
-    def patch_done(self, patch):
-        pass
-
-    def update_instance(self, patch):
-        pass
-
-    def remove_instance(self):
-        if self.instance is not None:
-            self.instance.removeNode()
-            self.instance = None
-
-class GpuPatchTerrainLayer(TerrainLayer):
+class GpuPatchTerrainLayer(PatchLayer):
     template = None
 
     def create_instance(self, patch):
@@ -157,7 +88,7 @@ class GpuPatchTerrainLayer(TerrainLayer):
         self.instance.set_pos(patch.x0, patch.y0, 0.0)
         self.instance.set_scale(*patch.get_scale())
 
-class MeshTerrainLayer(TerrainLayer):
+class MeshTerrainLayer(PatchLayer):
     template = {}
     def create_instance(self, patch):
         tile_id = str(patch.size) + '-' + str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
@@ -177,12 +108,11 @@ class MeshTerrainLayer(TerrainLayer):
 
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):
-        PatchedShapeBase.__init__(self, None, lod_control)
-        self.factory = factory
-        self.scale = scale
+        PatchedShapeBase.__init__(self, factory, None, lod_control)
+        self.heightscale = scale
 
     def global_to_shape_coord(self, x, y):
-        return (x / self.scale, y / self.scale)
+        return (x / self.heightscale, y / self.heightscale)
 
     def find_patch_at(self, coord):
         (x, y) = coord
@@ -232,11 +162,26 @@ class TiledShape(PatchedShapeBase):
                         neighbour.add_neighbour(PatchBase.EAST, patch)
         return patch
 
-    def split_patch(self, patch):
-        self.factory.split_patch(patch)
+    def split_patch(self, parent):
+        lod = parent.lod + 1
+        delta = parent.half_size
+        x = parent.x
+        y = parent.y
+        self.factory.create_patch(parent, lod, x, y)
+        self.factory.create_patch(parent, lod, x + delta, y)
+        self.factory.create_patch(parent, lod, x + delta, y + delta)
+        self.factory.create_patch(parent, lod, x, y + delta)
+        parent.children_bb = []
+        parent.children_normal = []
+        parent.children_offset = []
+        for child in parent.children:
+            parent.children_bb.append(child.bounds.make_copy())
+            parent.children_normal.append(LVector3.up())
+            parent.children_offset.append(0.0)
+            child.owner = parent.owner
 
     def merge_patch(self, patch):
-        self.factory.merge_patch(patch)
+        pass
 
     def add_root_patches(self, patch, update):
         #print("Create root patches", patch.centre, self.scale)
@@ -251,18 +196,9 @@ class TiledShape(PatchedShapeBase):
         patch.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
-        model_camera_pos = camera_pos / self.scale
+        model_camera_pos = camera_pos / self.heightscale
         (x, y) = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, None, (x, y))
 
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
-        lens_bounds = self.lens_bounds.make_copy()
-        lens_bounds.xform(render.get_mat(self.instance))
-        intersect = lens_bounds.contains(bb)
-        return (intersect & BoundingBox.IF_some) != 0
-
-    def is_patch_in_view(self, patch):
-        return self.is_bb_in_view(patch.bounds, None, None)
-
     def get_scale(self):
-        return LVector3(self.scale, self.scale, 1.0)
+        return LVector3(self.heightscale, self.heightscale, self.heightscale)

@@ -265,12 +265,12 @@ class ShapeObject(VisibleObject):
 
     def set_shape(self, shape):
         if self.shape is not None:
-            self.shape.set_owner(None)
             self.shape.parent = None
+            self.shape.set_owner(None)
         self.shape = shape
         if shape is not None:
-            self.shape.set_owner(self.parent)
             self.shape.parent = self
+            self.shape.set_owner(self.parent)
 
     def set_owner(self, owner):
         self.owner = owner

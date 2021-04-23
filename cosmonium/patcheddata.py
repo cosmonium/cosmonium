@@ -60,10 +60,10 @@ class PatchData:
         scale = 1 << delta
         #TODO: This should be moved into the patch
         if self.patch.coord == TexCoord.Cylindrical:
-            x_tex = (self.patch.sector // scale) * scale
-            y_tex = (self.patch.ring // scale) * scale
-            x_delta = (self.patch.sector - x_tex) / scale
-            y_delta = (self.patch.ring - y_tex) / scale
+            x_tex = (self.patch.x // scale) * scale
+            y_tex = (self.patch.y // scale) * scale
+            x_delta = (self.patch.x - x_tex) / scale
+            y_delta = (self.patch.y - y_tex) / scale
         elif self.patch.coord != TexCoord.Flat:
             x_tex = (self.patch.x // scale) * scale
             y_tex = (self.patch.y // scale) * scale

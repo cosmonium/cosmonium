@@ -60,7 +60,7 @@ class TextureGenerationStage(RenderStage):
     def configure_data(self, data, shape, patch):
         if patch is not None:
             data[self.name] = {'offset': (patch.x0, patch.y0, 0.0),
-                               'scale': (patch.lod_scale_x, patch.lod_scale_y, 1.0),
+                               'scale': (patch.x1 - patch.x0, patch.y1 - patch.y0, 1.0),
                                'face': patch.face,
                                'lod': patch.lod
                               }

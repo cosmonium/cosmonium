@@ -54,6 +54,8 @@ class Surface(ShapeObject):
         self.radius = radius
         self.oblateness = oblateness
         self.scale = scale
+        #TODO: This is a workaround for patchedshape scale, this should be fixed
+        self.height_scale = self.radius
         #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
         self.owner = None
 
@@ -61,6 +63,7 @@ class Surface(ShapeObject):
         return _('Surface')
 
     def configure_shape(self):
+        print("CONFIG SHAPE")
         if self.scale is not None:
             scale = self.scale
         elif self.oblateness is not None:
@@ -206,16 +209,14 @@ class ProceduralSurface(FlatSurface):
 class HeightmapSurface(ProceduralSurface):
     def __init__(self, name,
                  radius, oblateness, scale,
+                 height_base, height_scale,
                  shape, heightmap, biome, appearance, shader, clickable=True, displacement=True, follow_mesh=True):
         ProceduralSurface.__init__(self, name,radius, oblateness, scale,
                                    shape, heightmap, appearance, shader, clickable)
-        if radius != 0.0:
-            self.height_scale = radius
-        else:
-            self.height_scale = 1.0
-        self.min_radius = radius + self.height_scale * self.heightmap.min_height
-        self.max_radius = radius + self.height_scale * self.heightmap.max_height
-        self.heightmap_base = radius
+        self.heightmap_base  = height_base
+        self.height_scale = height_scale
+        self.min_radius = self.heightmap_base + self.height_scale * self.heightmap.min_height
+        self.max_radius = self.heightmap_base + self.height_scale * self.heightmap.max_height
         self.biome = biome
         self.displacement = displacement
         self.follow_mesh = follow_mesh

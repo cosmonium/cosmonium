@@ -119,6 +119,7 @@ class SurfaceYamlParser(YamlModuleParser):
             surface = HeightmapSurface(name,
                                        #category=category, resolution=resolution, source=source,
                                        radius=radius, oblateness=ellipticity, scale=scale,
+                                       height_scale=radius, height_base=radius,
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         if atmosphere is not None:
             atmosphere.add_shape_object(surface)
