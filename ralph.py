@@ -50,7 +50,7 @@ from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.ships import ActorShip
-from cosmonium.surfaces import HeightmapSurface
+from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.procedural.shaderheightmap import ShaderPatchedHeightmap, HeightmapPatchGenerator
 from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistancePatchLodControl
@@ -536,9 +536,8 @@ class RoamingRalphDemo(CosmoniumBase):
                                                                              max_lod=self.ralph_config.max_lod))
         self.create_terrain_appearance()
         self.create_terrain_shader()
-        self.terrain_object = HeightmapSurface(
+        self.terrain_object = HeightmapFlatSurface(
                                'surface',
-                               0, None, None,
                                0, self.ralph_config.tile_size,
                                self.terrain_shape,
                                self.heightmap,

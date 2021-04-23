@@ -340,11 +340,20 @@ class ShapeObject(VisibleObject):
         self.instance.node().setFinal(True)
         self.schedule_jobs()
 
-    def create_shadows(self):
+    def create_shadow_caster(self):
         pass
 
+    def create_shadows(self):
+        if self.shadow_caster is None:
+            self.create_shadow_caster()
+        self.owner.set_visibility_override(True)
+        self.shadow_caster.create()
+
     def remove_shadows(self):
-        pass
+        if self.shadow_caster is not None:
+            self.shadow_caster.remove()
+            self.owner.set_visibility_override(False)
+            self.shadow_caster = None
 
     def start_shadows_update(self):
         self.shadows.start_update()
@@ -419,6 +428,12 @@ class ShapeObject(VisibleObject):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.apply(self.shape, self.appearance)
 
+    def update_lod(self, camera_pos, camera_rot):
+        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+            self.schedule_jobs()
+        if self.appearance is not None:
+            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+
     def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
         self.place_instance(self.instance, self.parent)
@@ -431,12 +446,9 @@ class ShapeObject(VisibleObject):
             #The scale must be applied to the offset to retrieve the real center
             offset = self.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
             self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
-        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
-            self.schedule_jobs()
+        self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
             self.shape.place_patches(self.parent)
-        if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
         if self.shadow_caster is not None:
             self.shadow_caster.update()
         if self.shadows.update_needed:

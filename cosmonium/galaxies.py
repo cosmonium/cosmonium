@@ -28,7 +28,7 @@ from panda3d.core import NodePath, StackedPerlinNoise3
 
 from .appearances import AppearanceBase
 from .shapes import Shape
-from .surfaces import FlatSurface
+from .surfaces import EllipsoidFlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
 from .shaders import PointControl
@@ -66,7 +66,7 @@ class Galaxy(DeepSpaceObject):
         shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
-        surface = FlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
+        surface = EllipsoidFlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,

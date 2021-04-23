@@ -27,7 +27,7 @@ from .stellarobject import StellarObject
 from .systems import SimpleSystem
 from .foundation import VisibleObject
 from .shapes import SphereShape, ScaledSphereShape
-from .surfaces import FlatSurface
+from .surfaces import EllipsoidFlatSurface
 from .appearances import Appearance
 from .astro.frame import RelativeReferenceFrame, SynchroneReferenceFrame
 from .astro.orbits import FixedOrbit
@@ -433,7 +433,7 @@ class StarTexSurfaceFactory(SurfaceFactory):
         shape = SphereShape()
         appearance = Appearance(emissionColor=body.point_color, texture=self.texture)
         shader = BasicShader(lighting_model=FlatLightingModel())
-        return FlatSurface('surface',
+        return EllipsoidFlatSurface('surface',
                            radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                            shape=shape, appearance=appearance, shader=shader)
 

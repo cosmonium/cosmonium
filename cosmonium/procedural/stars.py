@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..surfaces import FlatSurface
+from ..surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizePatchLodControl
 from ..shaders import BasicShader, FlatLightingModel
 from ..appearances import Appearance
@@ -45,7 +45,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = BasicShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target)
-        surface = FlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
+        surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                               appearance=Appearance(colorScale=body.point_color,
                                                     texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
                                                                                                                  self.size),

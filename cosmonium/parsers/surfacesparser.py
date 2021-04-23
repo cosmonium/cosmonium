@@ -20,7 +20,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..surfaces import FlatSurface, HeightmapSurface
+from ..surfaces import EllipsoidFlatSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..patchedshapes import VertexSizePatchLodControl, TextureOrVertexSizePatchLodControl
@@ -102,7 +102,7 @@ class SurfaceYamlParser(YamlModuleParser):
             shader = BasicShader(lighting_model=lighting_model,
                                  appearance=shader_appearance,
                                  use_model_texcoord=not extra.get('create-uv', False))
-            surface = FlatSurface(name, category=category, resolution=resolution, attribution=attribution,
+            surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
                                   radius=radius, oblateness=ellipticity, scale=scale,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
