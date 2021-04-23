@@ -544,8 +544,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.biome,
                                self.terrain_appearance,
                                self.terrain_shader,
-                               clickable=False,
-                               follow_mesh=True)
+                               clickable=False)
         self.terrain = CompositeShapeObject()
         self.terrain.add_component(self.terrain_object)
         self.terrain_object.set_parent(self)

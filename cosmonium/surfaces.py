@@ -269,8 +269,6 @@ class HeightmapSurface(EllipsoidSurface):
 
     def get_height_at(self, x, y, strict=False):
         #print("get_height_at", x, y)
-        if not self.displacement:
-            return self.radius
         coord = self.shape.global_to_shape_coord(x, y)
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
@@ -304,14 +302,9 @@ class HeightmapSurface(EllipsoidSurface):
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_patch(self, patch, u, v, strict=False):
-        if not self.displacement:
-            return self.radius
         patch_data = self.heightmap.get_patch_data(patch)
         if patch_data is not None and patch_data.data_ready:
-            if self.follow_mesh:
-                h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
-            else:
-                h = patch_data.get_height_uv(u, v)
+            h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
             height = h * self.height_scale + self.heightmap_base
         elif strict:
             height = None
