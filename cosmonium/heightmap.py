@@ -145,15 +145,15 @@ class TextureHeightmapPatch(HeightmapPatch):
 
 
 class HeightmapBase():
-    def __init__(self, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator=None, filter=None):
+    def __init__(self, width, height, min_height, max_height, height_scale, height_offset, interpolator=None, filter=None):
         self.width = width
         self.height = height
         self.min_height = min_height
         self.max_height = max_height
         self.height_scale = height_scale
         self.height_offset = height_offset
-        self.u_scale = float(u_scale) / width
-        self.v_scale = float(v_scale) / height
+        self.u_scale = 1.0 / width
+        self.v_scale = 1.0 / height
         if interpolator is None:
             interpolator = HardwareInterpolator()
         self.interpolator = interpolator
@@ -198,8 +198,8 @@ class HeightmapBase():
 
 
 class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
-    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter):
-        HeightmapBase.__init__(self, width, height, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
+    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter):
+        HeightmapBase.__init__(self, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter)
         TextureShapeDataBase.__init__(self, name, width, height)
         self.texture_peeker = None
 
@@ -237,7 +237,7 @@ class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
 
 class TextureHeightmap(TextureHeightmapBase):
     def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
-        TextureHeightmapBase.__init__(self, name, width, height, min_height, max_height, height_scale,  height_offset, 1.0, 1.0, interpolator, filter)
+        TextureHeightmapBase.__init__(self, name, width, height, min_height, max_height, height_scale,  height_offset, interpolator, filter)
         self.data_source = data_source
 
     def set_data_source(self, data_source, context=defaultDirContext):
@@ -252,8 +252,8 @@ class TextureHeightmap(TextureHeightmapBase):
 
 
 class PatchedHeightmapBase(HeightmapBase, PatchedData):
-    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
-        HeightmapBase.__init__(self, size, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, interpolator, filter)
+    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
+        HeightmapBase.__init__(self, size, size, min_height, max_height, height_scale, height_offset, interpolator, filter)
         PatchedData.__init__(self, name, size, overlap, max_lod)
         self.normal_scale_lod = True
 
@@ -273,8 +273,8 @@ class PatchedHeightmapBase(HeightmapBase, PatchedData):
 
 
 class TexturePatchedHeightmap(PatchedHeightmapBase):
-    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
-        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator, filter, max_lod)
+    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
+        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator, filter, max_lod)
         self.data_source = data_source
 
     def do_create_patch_data(self, patch):
@@ -314,8 +314,8 @@ class StackedHeightmapPatch(HeightmapPatch):
 
 
 class StackedPatchedHeightmap(PatchedHeightmapBase):
-    def __init__(self, name, size, height_scale, u_scale, v_scale, heightmaps):
-        PatchedHeightmapBase.__init__(self, name, size, height_scale, u_scale, v_scale)
+    def __init__(self, name, size, height_scale, heightmaps):
+        PatchedHeightmapBase.__init__(self, name, size, height_scale)
         self.heightmaps = heightmaps
 
     def do_create_patch_data(self, patch):

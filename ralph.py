@@ -478,7 +478,6 @@ class RoamingRalphDemo(CosmoniumBase):
                                           self.ralph_config.heightmap_size,
                                           -1, 1,
                                           1.0 / self.ralph_config.tile_size, 0.0,
-                                          1.0, 1.0,
                                           0,
                                           self.ralph_config.interpolator,
                                           max_lod=self.ralph_config.heightmap_max_lod)
@@ -489,7 +488,6 @@ class RoamingRalphDemo(CosmoniumBase):
                                       self.ralph_config.biome_size,
                                       -1, 1,
                                       1.0 , 0,
-                                      1.0, 1.0,
                                       0,
                                       self.ralph_config.interpolator)
 

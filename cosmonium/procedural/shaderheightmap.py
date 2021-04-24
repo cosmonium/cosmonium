@@ -145,8 +145,8 @@ class HeightmapPatchGenerator():
         return data
 
 class ShaderPatchedHeightmap(PatchedHeightmapBase):
-    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator=None, filter=None, max_lod=100):
-        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, u_scale, v_scale, overlap, interpolator, filter, max_lod)
+    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
+        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator, filter, max_lod)
         self.data_source = data_source
 
     def do_create_patch_data(self, patch):
