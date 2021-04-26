@@ -56,20 +56,17 @@ class BoundingBoxShape():
             self.instance.remove_node()
             self.instance = None
 
-class CullingFrustum:
-    def __init__(self, owner, camera, scale, transform_mat, limit_far, min_radius, altitude_to_min_radius, max_lod):
+class CullingFrustumBase:
+    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+        raise NotImplementedError()
+
+    def is_patch_in_view(self, patch):
+        return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
+
+class CullingFrustum(CullingFrustumBase):
+    def __init__(self, owner, camera, transform_mat):
         self.owner = owner
         self.lens = camera.realCamLens.make_copy()
-        if limit_far:
-            if settings.cull_far_patches and max_lod > settings.cull_far_patches_threshold:
-                factor = 2.0 / (1 << ((max_lod - settings.cull_far_patches_threshold) // 2))
-            else:
-                factor = 2.0
-            limit = sqrt(max(0.0, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
-            far = limit * scale
-            #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
-            #TODO: get the actual value from the config
-            self.lens.setNearFar(far * 1e-6, far)
         self.lens_bounds = self.lens.makeBounds()
         self.lens_bounds.xform(camera.cam.getNetTransform().getMat())
         self.lens_bounds.xform(transform_mat)
@@ -85,8 +82,33 @@ class CullingFrustum:
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
 
-    def is_patch_in_view(self, patch):
-        return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
+class HorizonCullingFrustum(CullingFrustumBase):
+    def __init__(self, owner, camera, scale, transform_mat, min_radius, altitude_to_min_radius, max_lod):
+        self.owner = owner
+        self.lens = camera.realCamLens.make_copy()
+        if settings.cull_far_patches and max_lod > settings.cull_far_patches_threshold:
+            factor = 2.0 / (1 << ((max_lod - settings.cull_far_patches_threshold) // 2))
+        else:
+            factor = 2.0
+        limit = sqrt(max(0.0, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
+        far = limit * scale
+        #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
+        #TODO: get the actual value from the config
+        self.lens.setNearFar(far * 1e-6, far)
+        self.lens_bounds = self.lens.makeBounds()
+        self.lens_bounds.xform(camera.cam.getNetTransform().getMat())
+        self.lens_bounds.xform(transform_mat)
+
+    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+        offset = LVector3d()
+        if settings.offset_body_center:
+            offset += self.owner.model_body_center_offset
+        if settings.shift_patch_origin:
+            offset = offset + patch_normal * patch_offset
+        offset = LPoint3(*offset)
+        obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
+        intersect = self.lens_bounds.contains(obj_bounds)
+        return (intersect & BoundingBox.IF_some) != 0
 
 class PatchLayer:
     def __init__(self):
@@ -720,7 +742,6 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
 class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
-    limit_far = False
     def __init__(self, factory, heightmap=None, lod_control=None):
         Shape.__init__(self)
         self.factory = factory
@@ -977,7 +998,7 @@ class PatchedShapeBase(Shape):
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.owner.distance_to_obs - self.owner._height_under) / self.parent.height_scale
-        self.create_culling_frustum(altitude_to_ground)
+        self.create_culling_frustum()
         self.create_frustum_node()
         self.to_split = []
         self.to_merge = []
@@ -1128,10 +1149,16 @@ class PatchedShapeBase(Shape):
         print("Instance not ready:  ", stats_array[7])
         print("Tasks running:       ", stats_array[8])
 
-class PatchedShape(PatchedShapeBase):
+class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
-    limit_far = True
+
+    def create_culling_frustum(self):
+        min_radius = self.owner.surface.get_min_radius() / self.parent.height_scale
+        altitude_to_min_radius = (self.owner.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
+        transform_mat = LMatrix4()
+        transform_mat.invert_from(self.instance.getNetTransform().getMat())
+        self.culling_frustum = HorizonCullingFrustum(self.owner, self.owner.context.observer, self.parent.height_scale / settings.scale, transform_mat, min_radius, altitude_to_min_radius, self.max_lod)
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
@@ -1173,7 +1200,7 @@ class PatchedSpherePatchFactory(PatchFactory):
         patch.owner = self.owner
         return patch
 
-class PatchedSphereShape(PatchedShape):
+class PatchedSphereShape(EllipsoidPatchedShape):
     def create_root_patches(self):
         self.root_patches = [self.create_patch(None, 0, -1, 0, 0),
                              self.create_patch(None, 0, -1, 1, 0)
@@ -1211,9 +1238,9 @@ class PatchedSphereShape(PatchedShape):
                 return result
         return None
 
-class PatchedSquareShapeBase(PatchedShape):
+class PatchedSquareShapeBase(EllipsoidPatchedShape):
     def __init__(self, factory, heightmap=None, lod_control=None):
-        PatchedShape.__init__(self, factory, heightmap, lod_control)
+        EllipsoidPatchedShape.__init__(self, factory, heightmap, lod_control)
         self.face_unique = False
 
     def create_root_patches(self):

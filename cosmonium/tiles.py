@@ -20,12 +20,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4
+from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
 from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
 from .textures import TexCoord
 from . import geometry
+from cosmonium.patchedshapes import CullingFrustum
 
 
 class Tile(PatchBase):
@@ -110,6 +111,11 @@ class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.heightscale = scale
+
+    def create_culling_frustum(self):
+        transform_mat = LMatrix4()
+        transform_mat.invert_from(self.instance.getNetTransform().getMat())
+        self.culling_frustum = CullingFrustum(self.owner, self.owner.context.observer, transform_mat)
 
     def global_to_shape_coord(self, x, y):
         return (x / self.heightscale, y / self.heightscale)
