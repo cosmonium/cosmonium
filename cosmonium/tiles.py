@@ -23,10 +23,10 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
-from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
+from .patchedshapes import CullingFrustum, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
 from .textures import TexCoord
 from . import geometry
-from cosmonium.patchedshapes import CullingFrustum
+from . import settings
 
 
 class Tile(PatchBase):
@@ -95,7 +95,10 @@ class MeshTerrainLayer(PatchLayer):
         tile_id = str(patch.size) + '-' + str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
         #print(tile_id)
         if tile_id not in self.template:
-            self.template[tile_id] = geometry.Tile(size=1.0, inner=patch.tessellation_inner_level, outer=patch.tessellation_outer_level, skirt_size=patch.size / 33, skirt_uv=1 / 33)
+            self.template[tile_id] = geometry.Tile(1.0,
+                                                   geometry.TesselationInfo(patch.tessellation_inner_level, patch.tessellation_outer_level),
+                                                   use_patch_adaptation=settings.use_patch_adaptation, use_patch_skirts=settings.use_patch_skirts,
+                                                   skirt_size=patch.size / 33, skirt_uv=1 / 33)
         template = self.template[tile_id]
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)

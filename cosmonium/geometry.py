@@ -721,12 +721,18 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
                 prim.addVertices(skirt, v + 1, skirt + 1)
 
-def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False, skirt_size=0.1, skirt_uv=0.1):
-    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
+@named_pstat("geom")
+def PyTile(size, tesselation,
+        inv_u=False, inv_v=False, swap_uv=False,
+         use_patch_adaptation = True,
+         use_patch_skirts = True,
+         skirt_size=0.1, skirt_uv=0.1):
+    inner = tesselation.inner
+    nb_vertices = inner + 1
     (path, node) = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
@@ -753,7 +759,7 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False, skirt
             gtanw.add_data3(1, 0, 0)
             gbiw.add_data3(0, 1, 0)
 
-    if settings.use_patch_skirts:
+    if use_patch_skirts:
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -790,13 +796,13 @@ def Tile(size, inner, outer=None, inv_u=False, inv_v=False, swap_uv=False, skirt
                 gtanw.add_data3(1, 0, 0)
                 gbiw.add_data3(0, 1, 0)
 
-    if settings.use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, ratio)
-        if settings.use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio)
+    if use_patch_adaptation:
+        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        if use_patch_skirts:
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
-        if settings.use_patch_skirts:
+        if use_patch_skirts:
             make_primitives_skirt(prim, inner, nb_vertices)
     prim.closePrimitive()
     geom.addPrimitive(prim)
@@ -1344,11 +1350,12 @@ def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
 UVPatch = PyUVPatch
 SquaredDistanceSquarePatch = PySquaredDistanceSquarePatch
 NormalizedSquarePatch = PyNormalizedSquarePatch
+Tile = PyTile
 TesselationInfo = PyTesselationInfo
 
 try:
     from cosmonium_engine import TesselationInfo as CTesselationInfo
-    from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator
+    from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator, TilePatchGenerator
     TesselationInfo = CTesselationInfo
     uv_patch_generator = UVPatchGenerator()
     UVPatch = uv_patch_generator.make
@@ -1356,6 +1363,8 @@ try:
     NormalizedSquarePatch = qcs_patch_generator.make
     improved_qcs_patch_generator = ImprovedQCSPatchGenerator()
     SquaredDistanceSquarePatch = improved_qcs_patch_generator.make
+    tile_patch_generator = TilePatchGenerator()
+    Tile = tile_patch_generator.make
 except ImportError as e:
     print("WARNING: Could not load geometry C implementation, fallback on python implementation")
     print("\t", e)

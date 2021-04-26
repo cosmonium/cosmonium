@@ -31,6 +31,8 @@ import os
 sys.stdout.flush()
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
+# Add lib/ directory to import path to be able to load the c++ libraries
+sys.path.insert(1, 'lib')
 # Add third-party/ directory to import path to be able to load the external libraries
 sys.path.insert(0, 'third-party')
 # CEFPanda and glTF modules aree not at top level

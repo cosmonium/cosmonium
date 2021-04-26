@@ -116,4 +116,24 @@ private:
       GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
 };
 
+class TilePatchGenerator :  public CubePatchGeneratorBase
+{
+PUBLISHED:
+  TilePatchGenerator();
+
+  NodePath
+  make(double size, TesselationInfo tesselation,
+      bool inv_u=false, bool inv_v=false, bool swap_uv=false,
+      bool use_patch_adaptation=true, bool use_patch_skirts=true,
+      double skirt_size=0.1, double skirt_uv=0.1);
+
+private:
+  inline void
+  make_point(double size,
+      double u, double v, double x, double y,
+      bool inv_u, bool inv_v, bool swap_uv,
+      GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
+      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
+};
+
 #endif // GEOMETRY_H
