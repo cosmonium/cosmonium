@@ -171,6 +171,213 @@ class PatchFactory:
     def create_patch(self, parent, lod, x, y):
         pass
 
+class PatchNeighboursBase:
+    pass
+
+class PatchNoNeighbours(PatchNeighboursBase):
+    def __init__(self, patch):
+        self.patch = patch
+
+    def set_neighbours(self, face, neighbours):
+        pass
+
+    def add_neighbour(self, face, neighbour):
+        pass
+
+    def get_neighbours(self, face):
+        return []
+
+    def collect_side_neighbours(self, side):
+        return []
+
+    def set_all_neighbours(self, north, east, south, west):
+        pass
+
+    def clear_all_neighbours(self):
+        pass
+
+    def get_all_neighbours(self):
+        return []
+
+    def get_neighbour_lower_lod(self, face):
+        return self.patch.lod
+
+    def remove_detached_neighbours(self):
+        pass
+
+    def replace_neighbours(self, face, olds, news):
+        pass
+
+    def split_neighbours(self, update):
+        pass
+
+    def merge_neighbours(self, update):
+        pass
+
+    def calc_outer_tessellation_level(self, update):
+        pass
+
+class PatchNeighbours(PatchNeighboursBase):
+    def __init__(self, patch):
+        self.patch = patch
+        self.neighbours = [[], [], [], []]
+
+    def set_neighbours(self, face, neighbours):
+        self.neighbours[face] = neighbours
+
+    def add_neighbour(self, face, neighbour):
+        if neighbour not in self.neighbours[face]:
+            self.neighbours[face].append(neighbour)
+
+    def get_neighbours(self, face):
+        return [] + self.neighbours[face]
+
+    def _collect_side_neighbours(self, result, side):
+        if len(self.patch.children) != 0:
+            (bl, br, tr, tl) = self.patch.children
+            if side == PatchBase.NORTH:
+                tl.neighbours._collect_side_neighbours(result, side)
+                tr.neighbours._collect_side_neighbours(result, side)
+            elif side == PatchBase.EAST:
+                tr.neighbours._collect_side_neighbours(result, side)
+                br.neighbours._collect_side_neighbours(result, side)
+            elif side == PatchBase.SOUTH:
+                bl.neighbours._collect_side_neighbours(result, side)
+                br.neighbours._collect_side_neighbours(result, side)
+            elif side == PatchBase.WEST:
+                tl.neighbours._collect_side_neighbours(result, side)
+                bl.neighbours._collect_side_neighbours(result, side)
+        else:
+            result.append(self.patch)
+
+    def collect_side_neighbours(self, side):
+        result = []
+        self._collect_side_neighbours(result, side)
+        return result
+
+    def set_all_neighbours(self, north, east, south, west):
+        self.neighbours[PatchBase.NORTH] = north
+        self.neighbours[PatchBase.EAST] = east
+        self.neighbours[PatchBase.SOUTH] = south
+        self.neighbours[PatchBase.WEST] = west
+
+    def clear_all_neighbours(self):
+        self.neighbours = [[], [], [], []]
+
+    def get_all_neighbours(self):
+        neighbours = []
+        for i in range(4):
+            neighbours += self.neighbours[i]
+        return neighbours
+
+    def get_neighbour_lower_lod(self, face):
+        lower_lod = self.patch.lod
+        for neighbour in self.neighbours[face]:
+            #print(neighbour.lod)
+            lower_lod = min(lower_lod, neighbour.lod)
+        return lower_lod
+
+    def remove_detached_neighbours(self):
+        valid = []
+        patch = self.patch
+        for neighbour in self.neighbours[PatchBase.NORTH]:
+            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
+                valid.append(neighbour)
+        self.neighbours[PatchBase.NORTH] = valid
+        valid = []
+        for neighbour in self.neighbours[PatchBase.SOUTH]:
+            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
+                valid.append(neighbour)
+        self.neighbours[PatchBase.SOUTH] = valid
+        valid = []
+        for neighbour in self.neighbours[PatchBase.EAST]:
+            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
+                valid.append(neighbour)
+        self.neighbours[PatchBase.EAST] = valid
+        valid = []
+        for neighbour in self.neighbours[PatchBase.WEST]:
+            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
+                valid.append(neighbour)
+        self.neighbours[PatchBase.WEST] = valid
+
+    def replace_neighbours(self, face, olds, news):
+        opposite = PatchBase.opposite_face[face]
+        for neighbour_patch in self.neighbours[face]:
+            neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
+            for old in olds:
+                try:
+                    neighbour_list.remove(old)
+                except ValueError:
+                    pass
+            for new in news:
+                if not new in neighbour_list:
+                    neighbour_list.append(new)
+
+    def split_neighbours(self, update):
+        (bl, br, tr, tl) = self.patch.children
+        tl.set_all_neighbours(self.get_neighbours(PatchBase.NORTH), [tr], [bl], self.get_neighbours(PatchBase.WEST))
+        tr.set_all_neighbours(self.get_neighbours(PatchBase.NORTH), self.get_neighbours(PatchBase.EAST), [br], [tl])
+        br.set_all_neighbours([tr], self.get_neighbours(PatchBase.EAST), self.get_neighbours(PatchBase.SOUTH), [bl])
+        bl.set_all_neighbours([tl], [br], self.get_neighbours(PatchBase.SOUTH), self.get_neighbours(PatchBase.WEST))
+        neighbours = self.get_all_neighbours()
+        self.replace_neighbours(PatchBase.NORTH, [self.patch], [tl, tr])
+        self.replace_neighbours(PatchBase.EAST, [self.patch], [tr, br])
+        self.replace_neighbours(PatchBase.SOUTH, [self.patch], [bl, br])
+        self.replace_neighbours(PatchBase.WEST,  [self.patch], [tl, bl])
+        for (i, new) in enumerate((tl, tr, br, bl)):
+            #text = ['tl', 'tr', 'br', 'bl']
+            #print("*** Child", text[i], '***')
+            new.remove_detached_neighbours()
+            new.calc_outer_tessellation_level(update)
+        #print("Neighbours")
+        for neighbour in neighbours:
+            neighbour.remove_detached_neighbours()
+            neighbour.calc_outer_tessellation_level(update)
+        self.clear_all_neighbours()
+
+    def merge_neighbours(self, update):
+        (bl, br, tr, tl) = self.patch.children
+        north = []
+        for neighbour in tl.get_neighbours(PatchBase.NORTH) + tr.get_neighbours(PatchBase.NORTH):
+            if neighbour not in north:
+                north.append(neighbour)
+        east = []
+        for neighbour in tr.get_neighbours(PatchBase.EAST) + br.get_neighbours(PatchBase.EAST):
+            if neighbour not in east:
+                east.append(neighbour)
+        south = []
+        for neighbour in bl.get_neighbours(PatchBase.SOUTH) + br.get_neighbours(PatchBase.SOUTH):
+            if neighbour not in south:
+                south.append(neighbour)
+        west = []
+        for neighbour in tl.get_neighbours(PatchBase.WEST) + bl.get_neighbours(PatchBase.WEST):
+            if neighbour not in west:
+                west.append(neighbour)
+        self.set_all_neighbours(north, east, south, west)
+        self.replace_neighbours(PatchBase.NORTH, [tl, tr], [self.patch])
+        self.replace_neighbours(PatchBase.EAST, [tr, br], [self.patch])
+        self.replace_neighbours(PatchBase.SOUTH, [bl, br], [self.patch])
+        self.replace_neighbours(PatchBase.WEST,  [tl, bl], [self.patch])
+        self.calc_outer_tessellation_level(update)
+        for neighbour in north + east + south + west:
+            neighbour.calc_outer_tessellation_level(update)
+
+    def calc_outer_tessellation_level(self, update):
+        for face in range(4):
+            #print("Check face", PatchBase.text[face])
+            lod = self.get_neighbour_lower_lod(face)
+            delta = self.patch.lod - lod
+            outer_level = max(0, self.patch.max_level - delta)
+            new_level = 1 << outer_level
+            dest = PatchBase.conv[face]
+            if self.patch.tessellation_outer_level[dest] != new_level:
+                #print("Change from", self.tessellation_outer_level[dest], "to", new_level)
+                if not self.patch in update:
+                    update.append(self.patch)
+            self.patch.tessellation_outer_level[dest] = new_level
+            #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
+
+
 class PatchBase(Shape):
     NORTH = 0
     EAST = 1
@@ -197,7 +404,7 @@ class PatchBase(Shape):
         self.bounds_shape = None
         self.tessellation_inner_level = density
         self.tessellation_outer_level = LVecBase4i(density, density, density, density)
-        self.neighbours = [[], [], [], []]
+        self.neighbours = PatchNeighbours(self)
         self.children = []
         self.children_bb = []
         self.children_normal = []
@@ -226,6 +433,30 @@ class PatchBase(Shape):
 
     def remove_layer(self, layer):
         self.layers.remove(layer)
+
+    def add_neighbour(self, face, neighbour):
+        return self.neighbours.add_neighbour(face, neighbour)
+
+    def set_all_neighbours(self, north, east, south, west):
+        return self.neighbours.set_all_neighbours(north, east, south, west)
+
+    def get_neighbours(self, face):
+        return self.neighbours.get_all_neighbours()
+
+    def collect_side_neighbours(self, side):
+        return self.neighbours.collect_side_neighbours(side)
+
+    def remove_detached_neighbours(self):
+        return self.neighbours.remove_detached_neighbours()
+
+    def split_neighbours(self, update):
+        return self.neighbours.split_neighbours(update)
+
+    def merge_neighbours(self, update):
+        return self.neighbours.merge_neighbours(update)
+
+    def calc_outer_tessellation_level(self, update):
+        self.neighbours.calc_outer_tessellation_level(update)
 
     def patch_done(self):
         if self.instance is not None:
@@ -281,111 +512,6 @@ class PatchBase(Shape):
             if len(child.children) != 0:
                 return False
         return True
-
-    def set_neighbours(self, face, neighbours):
-        self.neighbours[face] = neighbours
-
-    def add_neighbour(self, face, neighbour):
-        if neighbour not in self.neighbours[face]:
-            self.neighbours[face].append(neighbour)
-
-    def get_neighbours(self, face):
-        return [] + self.neighbours[face]
-
-    def _collect_side_neighbours(self, result, side):
-        if len(self.children) != 0:
-            (bl, br, tr, tl) = self.children
-            if side == PatchBase.NORTH:
-                tl._collect_side_neighbours(result, side)
-                tr._collect_side_neighbours(result, side)
-            elif side == PatchBase.EAST:
-                tr._collect_side_neighbours(result, side)
-                br._collect_side_neighbours(result, side)
-            elif side == PatchBase.SOUTH:
-                bl._collect_side_neighbours(result, side)
-                br._collect_side_neighbours(result, side)
-            elif side == PatchBase.WEST:
-                tl._collect_side_neighbours(result, side)
-                bl._collect_side_neighbours(result, side)
-        else:
-            result.append(self)
-
-    def collect_side_neighbours(self, side):
-        result = []
-        self._collect_side_neighbours(result, side)
-        return result
-
-    def set_all_neighbours(self, north, east, south, west):
-        self.neighbours[PatchBase.NORTH] = north
-        self.neighbours[PatchBase.EAST] = east
-        self.neighbours[PatchBase.SOUTH] = south
-        self.neighbours[PatchBase.WEST] = west
-
-    def clear_all_neighbours(self):
-        self.neighbours = [[], [], [], []]
-
-    def get_all_neighbours(self):
-        neighbours = []
-        for i in range(4):
-            neighbours += self.neighbours[i]
-        return neighbours
-
-    def get_neighbour_lower_lod(self, face):
-        lower_lod = self.lod
-        for neighbour in self.neighbours[face]:
-            #print(neighbour.lod)
-            lower_lod = min(lower_lod, neighbour.lod)
-        return lower_lod
-
-    def remove_detached_neighbours(self):
-        valid = []
-        for neighbour in self.neighbours[PatchBase.NORTH]:
-            if neighbour.x1 > self.x0 and neighbour.x0 < self.x1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.NORTH] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.SOUTH]:
-            if neighbour.x1 > self.x0 and neighbour.x0 < self.x1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.SOUTH] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.EAST]:
-            if neighbour.y1 > self.y0 and neighbour.y0 < self.y1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.EAST] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.WEST]:
-            if neighbour.y1 > self.y0 and neighbour.y0 < self.y1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.WEST] = valid
-
-    def replace_neighbours(self, face, olds, news):
-        opposite = PatchBase.opposite_face[face]
-        for neighbour in self.neighbours[face]:
-            neighbour_list = neighbour.neighbours[opposite]
-            for old in olds:
-                try:
-                    neighbour_list.remove(old)
-                except ValueError:
-                    pass
-            for new in news:
-                if not new in neighbour_list:
-                    neighbour_list.append(new)
-
-    def calc_outer_tessellation_level(self, update):
-        for face in range(4):
-            #print("Check face", PatchBase.text[face])
-            lod = self.get_neighbour_lower_lod(face)
-            delta = self.lod - lod
-            outer_level = max(0, self.max_level - delta)
-            new_level = 1 << outer_level
-            dest = PatchBase.conv[face]
-            if self.tessellation_outer_level[dest] != new_level:
-                #print("Change from", self.tessellation_outer_level[dest], "to", new_level)
-                if not self in update:
-                    update.append(self)
-            self.tessellation_outer_level[dest] = new_level
-            #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
     def get_patch_length(self):
         return None
@@ -884,55 +1010,6 @@ class PatchedShapeBase(Shape):
             self.frustum_node.set_pos(*(self.owner.scene_position + self.frustum_rel_position * self.owner.scene_scale_factor))
             #TODO: The frustum is not correctly placed when lod is frozen and scale is changing
 
-    def split_neighbours(self, patch, update):
-        (bl, br, tr, tl) = patch.children
-        tl.set_all_neighbours(patch.get_neighbours(PatchBase.NORTH), [tr], [bl], patch.get_neighbours(PatchBase.WEST))
-        tr.set_all_neighbours(patch.get_neighbours(PatchBase.NORTH), patch.get_neighbours(PatchBase.EAST), [br], [tl])
-        br.set_all_neighbours([tr], patch.get_neighbours(PatchBase.EAST), patch.get_neighbours(PatchBase.SOUTH), [bl])
-        bl.set_all_neighbours([tl], [br], patch.get_neighbours(PatchBase.SOUTH), patch.get_neighbours(PatchBase.WEST))
-        neighbours = patch.get_all_neighbours()
-        patch.replace_neighbours(PatchBase.NORTH, [patch], [tl, tr])
-        patch.replace_neighbours(PatchBase.EAST, [patch], [tr, br])
-        patch.replace_neighbours(PatchBase.SOUTH, [patch], [bl, br])
-        patch.replace_neighbours(PatchBase.WEST,  [patch], [tl, bl])
-        for (i, new) in enumerate((tl, tr, br, bl)):
-            #text = ['tl', 'tr', 'br', 'bl']
-            #print("*** Child", text[i], '***')
-            new.remove_detached_neighbours()
-            new.calc_outer_tessellation_level(update)
-        #print("Neighbours")
-        for neighbour in neighbours:
-            neighbour.remove_detached_neighbours()
-            neighbour.calc_outer_tessellation_level(update)
-        patch.clear_all_neighbours()
-
-    def merge_neighbours(self, patch, update):
-        (bl, br, tr, tl) = patch.children
-        north = []
-        for neighbour in tl.get_neighbours(PatchBase.NORTH) + tr.get_neighbours(PatchBase.NORTH):
-            if neighbour not in north:
-                north.append(neighbour)
-        east = []
-        for neighbour in tr.get_neighbours(PatchBase.EAST) + br.get_neighbours(PatchBase.EAST):
-            if neighbour not in east:
-                east.append(neighbour)
-        south = []
-        for neighbour in bl.get_neighbours(PatchBase.SOUTH) + br.get_neighbours(PatchBase.SOUTH):
-            if neighbour not in south:
-                south.append(neighbour)
-        west = []
-        for neighbour in tl.get_neighbours(PatchBase.WEST) + bl.get_neighbours(PatchBase.WEST):
-            if neighbour not in west:
-                west.append(neighbour)
-        patch.set_all_neighbours(north, east, south, west)
-        patch.replace_neighbours(PatchBase.NORTH, [tl, tr], [patch])
-        patch.replace_neighbours(PatchBase.EAST, [tr, br], [patch])
-        patch.replace_neighbours(PatchBase.SOUTH, [bl, br], [patch])
-        patch.replace_neighbours(PatchBase.WEST,  [tl, bl], [patch])
-        patch.calc_outer_tessellation_level(update)
-        for neighbour in north + east + south + west:
-            neighbour.calc_outer_tessellation_level(update)
-
     @pstat
     def check_lod(self, patch, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
         patch.check_visibility(self.culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
@@ -1021,7 +1098,7 @@ class PatchedShapeBase(Shape):
             process_nb += 1
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
             self.split_patch(patch)
-            self.split_neighbours(patch, update)
+            patch.split_neighbours(update)
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
                 linked_object.remove_patch_instance(patch)
@@ -1056,7 +1133,7 @@ class PatchedShapeBase(Shape):
             if frame - patch.last_split < 5: continue
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
             self.merge_patch(patch)
-            self.merge_neighbours(patch, update)
+            patch.merge_neighbours(update)
             if patch.visible:
                 self.create_patch_instance(patch)
                 apply_appearance = True
@@ -1115,7 +1192,7 @@ class PatchedShapeBase(Shape):
         #print(pad, '  Distance', patch.distance)
         print(pad, "  Tessellation", '-'.join(map(str, patch.tessellation_outer_level)))
         for i in range(4):
-            print(pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours[i])))
+            print(pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours.neighbours[i])))
 
     def _dump_tree(self, patch):
         self.dump_patch(patch)
