@@ -110,6 +110,35 @@ class HorizonCullingFrustum(CullingFrustumBase):
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
 
+class LodResult():
+    def __init__(self):
+        self.to_split = []
+        self.to_merge = []
+        self.to_show = []
+        self.to_remove = []
+        self.max_lod = 0
+
+    def add_to_split(self, patch):
+        self.to_split.append(patch)
+
+    def add_to_merge(self, patch):
+        self.to_merge.append(patch)
+
+    def add_to_show(self, patch):
+        self.to_show.append(patch)
+
+    def add_to_remove(self, patch):
+        self.to_remove.append(patch)
+
+    def check_max_lod(self, patch):
+        self.max_lod = max(self.max_lod, patch.lod)
+
+    def sort_by_distance(self):
+        self.to_split.sort(key=lambda x: x.distance)
+        self.to_merge.sort(key=lambda x: x.distance)
+        self.to_show.sort(key=lambda x: x.distance)
+        self.to_remove.sort(key=lambda x: x.distance)
+
 class PatchLayer:
     def __init__(self):
         self.instance = None
@@ -532,6 +561,33 @@ class PatchBase(Shape):
         self.visible = within_patch or self.patch_in_view
         self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
 
+    def are_children_visibles(self, culling_frustum):
+        children_visible = len(self.children_bb) == 0
+        for (i, child_bb) in enumerate(self.children_bb):
+            if culling_frustum.is_bb_in_view(child_bb, self.children_normal[i], self.children_offset[i]):
+                children_visible = True
+                break
+        return children_visible
+
+    @pstat
+    def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
+        self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
+        lod_result.check_max_lod(self)
+        #TODO: Should be checked before calling check_lod
+        for child in self.children:
+            child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
+        if len(self.children) != 0:
+            if self.can_merge_children() and lod_control.should_merge(self, self.apparent_size, self.distance):
+                lod_result.add_to_merge(self)
+        else:
+            if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
+                if self.are_children_visibles(culling_frustum):
+                    lod_result.add_to_split(self)
+            if self.shown and lod_control.should_remove(self, self.apparent_size, self.distance):
+                lod_result.add_to_remove(self)
+            if not self.shown and not self.instance and lod_control.should_instanciate(self, self.apparent_size, self.distance):
+                lod_result.add_to_show(self)
+
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
 
@@ -878,14 +934,9 @@ class PatchedShapeBase(Shape):
         self.linked_objects = []
         self.lod_control = lod_control
         self.max_lod = 0
-        self.new_max_lod = 0
         self.culling_frustum = None
         self.frustum_node = None
         self.frustum_rel_position = None
-        self.to_split = []
-        self.to_merge = []
-        self.to_show = []
-        self.to_remove = []
 
     #TODO: Ugly workaround until we get rid of surface in PatchFactory
     def set_owner(self, owner):
@@ -1010,25 +1061,6 @@ class PatchedShapeBase(Shape):
             self.frustum_node.set_pos(*(self.owner.scene_position + self.frustum_rel_position * self.owner.scene_scale_factor))
             #TODO: The frustum is not correctly placed when lod is frozen and scale is changing
 
-    @pstat
-    def check_lod(self, patch, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
-        patch.check_visibility(self.culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
-        self.new_max_lod = max(patch.lod, self.new_max_lod)
-        #TODO: Should be checked before calling check_lod
-        for child in patch.children:
-            self.check_lod(child, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
-        if len(patch.children) != 0:
-            if patch.can_merge_children() and lod_control.should_merge(patch, patch.apparent_size, patch.distance):
-                self.to_merge.append(patch)
-        else:
-            if lod_control.should_split(patch, patch.apparent_size, patch.distance) and (patch.lod > 0 or patch.instance_ready):
-                if self.are_children_visibles(patch):
-                    self.to_split.append(patch)
-            if patch.shown and lod_control.should_remove(patch, patch.apparent_size, patch.distance):
-                self.to_remove.append(patch)
-            if not patch.shown and not patch.instance and lod_control.should_instanciate(patch, patch.apparent_size, patch.distance):
-                self.to_show.append(patch)
-
     def xform_cam_to_model(self, camera_pos):
         pass
 
@@ -1056,14 +1088,6 @@ class PatchedShapeBase(Shape):
             self.frustum_node.set_quat(self.owner.context.observer.get_camera_rot())
             #The frustum position is updated in place_patches()
 
-    def are_children_visibles(self, patch):
-        children_visible = len(patch.children_bb) == 0
-        for (i, child_bb) in enumerate(patch.children_bb):
-            if self.culling_frustum.is_bb_in_view(child_bb, patch.children_normal[i], patch.children_offset[i]):
-                children_visible = True
-                break
-        return children_visible
-
     @pstat
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         if settings.debug_lod_freeze:
@@ -1086,15 +1110,13 @@ class PatchedShapeBase(Shape):
         self.new_max_lod = 0
         frame = globalClock.getFrameCount()
         self.lod_control.set_appearance(appearance)
+        lod_result = LodResult()
         for patch in self.root_patches:
-            self.check_lod(patch, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
-        self.to_split.sort(key=lambda x: x.distance)
-        self.to_merge.sort(key=lambda x: x.distance)
-        self.to_show.sort(key=lambda x: x.distance)
-        self.to_remove.sort(key=lambda x: x.distance)
+            patch.check_lod(lod_result, self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
+        lod_result.sort_by_distance()
         apply_appearance = False
         update = []
-        for patch in self.to_split:
+        for patch in lod_result.to_split:
             process_nb += 1
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
             self.split_patch(patch)
@@ -1115,7 +1137,7 @@ class PatchedShapeBase(Shape):
             patch.last_split = frame
             if process_nb > 2:
                 break
-        for patch in self.to_show:
+        for patch in lod_result.to_show:
             if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
@@ -1123,12 +1145,12 @@ class PatchedShapeBase(Shape):
             apply_appearance = True
             for linked_object in self.linked_objects:
                 linked_object.create_patch_instance(patch)
-        for patch in self.to_remove:
+        for patch in lod_result.to_remove:
             if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view)
             for linked_object in self.linked_objects:
                 linked_object.remove_patch_instance(patch)
             self.remove_patch_instance(patch)
-        for patch in self.to_merge:
+        for patch in lod_result.to_merge:
             #Dampen high frequency split-merge anomaly
             if frame - patch.last_split < 5: continue
             if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
