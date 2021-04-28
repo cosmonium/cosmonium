@@ -207,8 +207,6 @@ class PatchBase(Shape):
         self.apparent_size = None
         self.patch_in_view = False
         self.last_split = 0
-        if self.parent is not None:
-            self.parent.add_child(self)
 
     def check_settings(self):
         Shape.check_settings(self)
@@ -789,7 +787,10 @@ class PatchedShapeBase(Shape):
         self.linked_objects.remove(linked_object)
 
     def create_patch(self, parent, lod, face, x, y):
-        return self.factory.create_patch(parent, lod, face, x, y)
+        patch = self.factory.create_patch(parent, lod, face, x, y)
+        if parent is not None:
+            parent.add_child(patch)
+        return patch
 
     def create_root_patches(self):
         pass

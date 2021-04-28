@@ -140,7 +140,7 @@ class TiledShape(PatchedShapeBase):
     def add_root_patch(self, x, y):
         patch = self.find_root_patch(x, y)
         if patch is None:
-            patch = self.factory.create_patch(None, 0, x, y)
+            patch = self.create_patch(None, 0, -1, x, y)
             patch.owner = self
             self.root_patches.append(patch)
             for linked_object in self.linked_objects:
@@ -176,10 +176,10 @@ class TiledShape(PatchedShapeBase):
         delta = parent.half_size
         x = parent.x
         y = parent.y
-        self.factory.create_patch(parent, lod, x, y)
-        self.factory.create_patch(parent, lod, x + delta, y)
-        self.factory.create_patch(parent, lod, x + delta, y + delta)
-        self.factory.create_patch(parent, lod, x, y + delta)
+        self.create_patch(parent, lod, -1, x, y)
+        self.create_patch(parent, lod, -1, x + delta, y)
+        self.create_patch(parent, lod, -1, x + delta, y + delta)
+        self.create_patch(parent, lod, -1, x, y + delta)
         parent.children_bb = []
         parent.children_normal = []
         parent.children_offset = []

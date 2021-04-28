@@ -87,7 +87,7 @@ class TileFactory(PatchFactory):
         self.has_physics = has_physics
         self.physics = physics
 
-    def create_patch(self, parent, lod, x, y):
+    def create_patch(self, parent, lod, face, x, y):
         #print("CREATE PATCH", x, y)
         min_height = -self.height_scale / self.size
         max_height = self.height_scale / self.size
