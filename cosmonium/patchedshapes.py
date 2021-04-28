@@ -406,6 +406,99 @@ class PatchNeighbours(PatchNeighboursBase):
             self.patch.tessellation_outer_level[dest] = new_level
             #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
+class QuadTreeNode:
+    def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
+        Shape.__init__(self)
+        self.patch = patch
+        self.lod = lod
+        self.density = density
+        self.centre = centre
+        self.length = length
+        self.normal = normal
+        self.offset = offset
+        self.bounds = bounds
+        self.children = []
+        self.children_bb = []
+        self.children_normal = []
+        self.children_offset = []
+        self.shown = False
+        self.visible = False
+        self.instance_ready = False
+        self.apparent_size = None
+        self.patch_in_view = False
+
+    def set_shown(self, shown):
+        self.shown = shown
+
+    def set_instance_ready(self, instance_ready):
+        self.instance_ready = instance_ready
+
+    def add_child(self, child):
+        child.parent = self
+        self.children.append(child)
+        self.children_bb.append(child.bounds.make_copy())
+        self.children_normal.append(child.normal)
+        self.children_offset.append(child.offset)
+
+    def remove_children(self):
+        for child in self.children:
+            child.parent = None
+        self.children = []
+        self.children_bb = []
+        self.children_normal = []
+        self.children_offset = []
+
+    def can_merge_children(self):
+        if len(self.children) == 0:
+            return False
+        for child in self.children:
+            if len(child.children) != 0:
+                return False
+        return True
+
+    def in_patch(self, x, y):
+        return x >= self.x0 and x <= self.x1 and y >= self.y0 and y <= self.y1
+
+    def check_visibility(self, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
+        #Testing if we are inside the patch create visual artifacts
+        #The change of lod between patches is too noticeable
+        if False and self.in_patch(*local):
+            within_patch = True
+            self.distance = altitude
+        else:
+            within_patch = False
+            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.length * 0.5)
+        self.patch_in_view = culling_frustum.is_patch_in_view(self)
+        self.visible = within_patch or self.patch_in_view
+        self.apparent_size = self.length / (self.distance * pixel_size)
+
+    def are_children_visibles(self, culling_frustum):
+        children_visible = len(self.children_bb) == 0
+        for (i, child_bb) in enumerate(self.children_bb):
+            if culling_frustum.is_bb_in_view(child_bb, self.children_normal[i], self.children_offset[i]):
+                children_visible = True
+                break
+        return children_visible
+
+    @pstat
+    def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
+        self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
+        lod_result.check_max_lod(self)
+        #TODO: Should be checked before calling check_lod
+        for child in self.children:
+            child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
+        if len(self.children) != 0:
+            if self.can_merge_children() and lod_control.should_merge(self, self.apparent_size, self.distance):
+                lod_result.add_to_merge(self)
+        else:
+            if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
+                if self.are_children_visibles(culling_frustum):
+                    lod_result.add_to_split(self)
+            if self.shown and lod_control.should_remove(self, self.apparent_size, self.distance):
+                lod_result.add_to_remove(self)
+            if not self.shown and lod_control.should_instanciate(self, self.apparent_size, self.distance):
+                lod_result.add_to_show(self)
+
 
 class PatchBase(Shape):
     NORTH = 0
@@ -424,24 +517,17 @@ class PatchBase(Shape):
         self.parent = parent
         self.lod = lod
         self.density = density
-        self.layers = []
-        self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
-        self.flat_coord = None
-        self.normal = None
-        self.offset = 0.0
-        self.bounds = None
-        self.bounds_shape = None
+        self.owner = None
+        self.quadtree_node = None
         self.tessellation_inner_level = density
         self.tessellation_outer_level = LVecBase4i(density, density, density, density)
         self.neighbours = PatchNeighbours(self)
+        self.layers = []
+        self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
+        self.flat_coord = None
+        self.bounds_shape = None
         self.children = []
-        self.children_bb = []
-        self.children_normal = []
-        self.children_offset = []
         self.shown = False
-        self.visible = False
-        self.apparent_size = None
-        self.patch_in_view = False
         self.last_split = 0
 
     def check_settings(self):
@@ -488,6 +574,7 @@ class PatchBase(Shape):
         self.neighbours.calc_outer_tessellation_level(update)
 
     def patch_done(self):
+        self.quadtree_node.set_instance_ready(self.instance_ready)
         if self.instance is not None:
             self.instance.unstash()
         for layer in self.layers:
@@ -510,6 +597,7 @@ class PatchBase(Shape):
             self.bounds_shape.create_instance()
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
+        self.quadtree_node.set_shown(True)
 
     def update_instance(self, shape):
         if self.instance is None: return
@@ -518,6 +606,8 @@ class PatchBase(Shape):
             layer.update_instance(self)
 
     def remove_instance(self):
+        self.quadtree_node.set_shown(False)
+        self.quadtree_node.set_instance_ready(False)
         Shape.remove_instance(self)
         if self.bounds_shape is not None:
             self.bounds_shape.remove_instance()
@@ -525,7 +615,9 @@ class PatchBase(Shape):
 
     def add_child(self, child):
         child.parent = self
+        child.owner = self.owner
         self.children.append(child)
+        self.quadtree_node.add_child(child.quadtree_node)
 
     def remove_children(self):
         for child in self.children:
@@ -533,60 +625,7 @@ class PatchBase(Shape):
             child.remove_instance()
             child.shown = False
         self.children = []
-
-    def can_merge_children(self):
-        if len(self.children) == 0:
-            return False
-        for child in self.children:
-            if len(child.children) != 0:
-                return False
-        return True
-
-    def get_patch_length(self):
-        return None
-
-    def in_patch(self, x, y):
-        return x >= self.x0 and x <= self.x1 and y >= self.y0 and y <= self.y1
-
-    def check_visibility(self, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
-        #Testing if we are inside the patch create visual artifacts
-        #The change of lod between patches is too noticeable
-        if False and self.in_patch(*local):
-            within_patch = True
-            self.distance = altitude
-        else:
-            within_patch = False
-            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.get_patch_length() * 0.5)
-        self.patch_in_view = culling_frustum.is_patch_in_view(self)
-        self.visible = within_patch or self.patch_in_view
-        self.apparent_size = self.get_patch_length() / (self.distance * pixel_size)
-
-    def are_children_visibles(self, culling_frustum):
-        children_visible = len(self.children_bb) == 0
-        for (i, child_bb) in enumerate(self.children_bb):
-            if culling_frustum.is_bb_in_view(child_bb, self.children_normal[i], self.children_offset[i]):
-                children_visible = True
-                break
-        return children_visible
-
-    @pstat
-    def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
-        self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
-        lod_result.check_max_lod(self)
-        #TODO: Should be checked before calling check_lod
-        for child in self.children:
-            child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
-        if len(self.children) != 0:
-            if self.can_merge_children() and lod_control.should_merge(self, self.apparent_size, self.distance):
-                lod_result.add_to_merge(self)
-        else:
-            if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
-                if self.are_children_visibles(culling_frustum):
-                    lod_result.add_to_split(self)
-            if self.shown and lod_control.should_remove(self, self.apparent_size, self.distance):
-                lod_result.add_to_remove(self)
-            if not self.shown and not self.instance and lod_control.should_instanciate(self, self.apparent_size, self.distance):
-                lod_result.add_to_show(self)
+        self.quadtree_node.remove_children()
 
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
@@ -598,14 +637,12 @@ class SpherePatch(PatchBase):
         self.y = y
         r_div = 1 << self.lod
         s_div = 2 << self.lod
-        self.mean_radius = mean_radius
         if settings.shift_patch_origin:
-            self.offset = self.mean_radius
+            self.offset = mean_radius
         self.x0 = float(self.x) / s_div
         self.y0 = float(self.y) / r_div
         self.x1 = float(self.x + 1) / s_div
         self.y1 = float(self.y + 1) / r_div
-        self.normal = geometry.UVPatchNormal(self.x0, self.y0, self.x1, self.y1)
         long_scale = 2 * pi * surface_scale * 1000.0
         lat_scale = pi * surface_scale * 1000.0
         long0 = self.x0 * long_scale
@@ -616,21 +653,24 @@ class SpherePatch(PatchBase):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        if self.lod > 0:
-            self.bounds = geometry.UVPatchAABB(min_radius, max_radius,
-                                               self.x0, self.y0, self.x1, self.y1,
-                                               offset=self.offset)
-        else:
-            self.bounds = geometry.halfSphereAABB(mean_radius, self.x == 1, self.offset)
-        self.bounds_shape = BoundingBoxShape(self.bounds)
-        self.centre =  geometry.UVPatchPoint(self.mean_radius,
-                                             0.5, 0.5,
-                                             self.x0, self.y0,
-                                             self.x1, self.y1)
+        self.create_quadtree_node(min_radius, max_radius, mean_radius)
+        self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
-    def get_patch_length(self):
+    def create_quadtree_node(self, min_radius, max_radius, mean_radius):
         nb_sectors = 2 << self.lod
-        return self.mean_radius * 2 * pi / nb_sectors
+        length = mean_radius * 2 * pi / nb_sectors
+        normal = geometry.UVPatchNormal(self.x0, self.y0, self.x1, self.y1)
+        if self.lod > 0:
+            bounds = geometry.UVPatchAABB(min_radius, max_radius,
+                                          self.x0, self.y0, self.x1, self.y1,
+                                          offset=self.offset)
+        else:
+            bounds = geometry.halfSphereAABB(mean_radius, self.x == 1, self.offset)
+        centre =  geometry.UVPatchPoint(mean_radius,
+                                        0.5, 0.5,
+                                        self.x0, self.y0,
+                                        self.x1, self.y1)
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, normal, self.offset, bounds)
 
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.y, self.x)
@@ -731,13 +771,8 @@ class SquarePatchBase(PatchBase):
         self.y0 = float(self.y) / div
         self.x1 = float(self.x + 1) / div
         self.y1 = float(self.y + 1) / div
-        self.lod_scale_x = 1.0 / div
-        self.lod_scale_y = 1.0 / div
-        self.source_normal = self.face_normal(x, y)
-        self.normal = self.rotations[self.face].xform(self.source_normal)
-        self.mean_radius = mean_radius
         if settings.shift_patch_origin:
-            self.offset = self.mean_radius
+            self.offset = mean_radius
         long_scale = 2 * pi * surface_scale * 1000.0
         lat_scale = pi * surface_scale * 1000.0
         long0 = self.x0 * long_scale / 4
@@ -748,11 +783,19 @@ class SquarePatchBase(PatchBase):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        self.bounds = self.create_bounding_volume(x, y, min_radius, max_radius)
-        self.bounds.xform(self.rotations_mat[self.face])
-        self.bounds_shape = BoundingBoxShape(self.bounds)
-        centre = self.create_centre(x, y, self.mean_radius)
-        self.centre = self.rotations[self.face].xform(centre)
+        self.create_quadtree_node(min_radius, max_radius, mean_radius)
+        self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
+
+    def create_quadtree_node(self,min_radius, max_radius, mean_radius):
+        nb_sectors = 4 << self.lod
+        length = mean_radius * 2 * pi / nb_sectors
+        bounds = self.create_bounding_volume(min_radius, max_radius)
+        bounds.xform(self.rotations_mat[self.face])
+        centre = self.create_centre(mean_radius)
+        centre = self.rotations[self.face].xform(centre)
+        source_normal = self.face_normal()
+        normal = self.rotations[self.face].xform(source_normal)
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, normal, self.offset, bounds)
 
     def face_normal(self, x, y):
         return None
@@ -765,10 +808,6 @@ class SquarePatchBase(PatchBase):
 
     def create_patch_instance(self, x, y):
         return None
-
-    def get_patch_length(self):
-        nb_sectors = 4 << self.lod
-        return self.mean_radius * 2 * pi / nb_sectors
 
     def str_id(self):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
@@ -805,15 +844,15 @@ class SquarePatchBase(PatchBase):
 class NormalizedSquarePatch(SquarePatchBase):
     coord = TexCoord.NormalizedCube
 
-    def face_normal(self, x, y):
+    def face_normal(self):
         return geometry.NormalizedSquarePatchNormal(self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius):
+    def create_bounding_volume(self, min_radius, max_radius):
         return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
                                                   self.x0, self.y0, self.x1, self.y1,
                                                   offset=self.offset)
 
-    def create_centre(self, x, y, radius):
+    def create_centre(self, radius):
         return geometry.NormalizedSquarePatchPoint(radius,
                                                   0.5, 0.5,
                                                   self.x0, self.y0, self.x1, self.y1)
@@ -862,15 +901,15 @@ class NormalizedSquarePatchLayer(PatchLayer):
 class SquaredDistanceSquarePatch(SquarePatchBase):
     coord = TexCoord.SqrtCube
 
-    def face_normal(self, x, y):
+    def face_normal(self):
         return geometry.SquaredDistanceSquarePatchNormal(self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius):
+    def create_bounding_volume(self, min_radius, max_radius):
         return geometry.SquaredDistanceSquarePatchAABB(min_radius, max_radius,
                                                        self.x0, self.y0, self.x1, self.y1,
                                                        offset=self.offset)
 
-    def create_centre(self, x, y, radius):
+    def create_centre(self, radius):
         return geometry.SquaredDistanceSquarePatchPoint(radius,
                                                        0.5, 0.5,
                                                        self.x0, self.y0, self.x1, self.y1)
@@ -993,6 +1032,7 @@ class PatchedShapeBase(Shape):
         patch.shown = True
 
     def create_patch_instance(self, patch):
+        patch.visible = True
         if patch.instance is None:
             patch.create_instance()
             patch.instance.reparent_to(self.instance)
@@ -1112,11 +1152,12 @@ class PatchedShapeBase(Shape):
         self.lod_control.set_appearance(appearance)
         lod_result = LodResult()
         for patch in self.root_patches:
-            patch.check_lod(lod_result, self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
+            patch.quadtree_node.check_lod(lod_result, self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
         lod_result.sort_by_distance()
         apply_appearance = False
         update = []
-        for patch in lod_result.to_split:
+        for node in lod_result.to_split:
+            patch = node.patch
             process_nb += 1
             if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
             self.split_patch(patch)
@@ -1125,9 +1166,9 @@ class PatchedShapeBase(Shape):
                 linked_object.split_patch(patch)
                 linked_object.remove_patch_instance(patch)
             for child in patch.children:
-                child.check_visibility(self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
+                child.quadtree_node.check_visibility(self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
                 #print(child.str_id(), child.visible)
-                if self.lod_control.should_instanciate(child, 0, 0):
+                if self.lod_control.should_instanciate(child.quadtree_node, 0, 0):
                     self.create_patch_instance(child)
                     if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
                     for linked_object in self.linked_objects:
@@ -1137,26 +1178,29 @@ class PatchedShapeBase(Shape):
             patch.last_split = frame
             if process_nb > 2:
                 break
-        for patch in lod_result.to_show:
-            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.patch_in_view, patch.instance_ready)
+        for node in lod_result.to_show:
+            patch = node.patch
+            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
             self.create_patch_instance(patch)
             apply_appearance = True
             for linked_object in self.linked_objects:
                 linked_object.create_patch_instance(patch)
-        for patch in lod_result.to_remove:
-            if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.patch_in_view)
+        for node in lod_result.to_remove:
+            patch = node.patch
+            if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.quadtree_node.patch_in_view)
             for linked_object in self.linked_objects:
                 linked_object.remove_patch_instance(patch)
             self.remove_patch_instance(patch)
-        for patch in lod_result.to_merge:
+        for node in lod_result.to_merge:
+            patch = node.patch
             #Dampen high frequency split-merge anomaly
             if frame - patch.last_split < 5: continue
-            if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.visible)
+            if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.quadtree_node.visible)
             self.merge_patch(patch)
             patch.merge_neighbours(update)
-            if patch.visible:
+            if patch.quadtree_node.visible:
                 self.create_patch_instance(patch)
                 apply_appearance = True
             for linked_object in self.linked_objects:
@@ -1269,7 +1313,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
                 body_offset = LVector3d()
             for patch in self.patches:
                 if settings.shift_patch_origin:
-                    patch_offset = body_offset + patch.normal * patch.offset
+                    patch_offset = body_offset + patch.quadtree_node.normal * patch.offset
                 else:
                     patch_offset = body_offset
                 patch.instance.setPos(*patch_offset)
@@ -1319,13 +1363,6 @@ class PatchedSphereShape(EllipsoidPatchedShape):
         self.create_child_patch(patch, 1, 0)
         self.create_child_patch(patch, 1, 1)
         self.create_child_patch(patch, 0, 1)
-        patch.children_bb = []
-        patch.children_normal = []
-        patch.children_offset = []
-        for child in patch.children:
-            patch.children_bb.append(child.bounds.make_copy())
-            patch.children_normal.append(child.normal)
-            patch.children_offset.append(child.offset)
 
     def global_to_shape_coord(self, x, y):
         return (x, y)
@@ -1372,13 +1409,6 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         self.create_child_patch(patch, 1, 0)
         self.create_child_patch(patch, 1, 1)
         self.create_child_patch(patch, 0, 1)
-        patch.children_bb = []
-        patch.children_normal = []
-        patch.children_offset = []
-        for child in patch.children:
-            patch.children_bb.append(child.bounds.make_copy())
-            patch.children_normal.append(child.normal)
-            patch.children_offset.append(child.offset)
 
     def xyz_to_xy(self, x, y, z):
         return None
@@ -1515,11 +1545,11 @@ class PatchLodControl(object):
 
     def should_instanciate(self, patch, apparent_patch_size, distance):
         #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return not patch.shown and (patch.visible or patch.lod == 0) and len(patch.children) == 0
+        return (patch.visible or patch.lod == 0) and len(patch.children) == 0
 
     def should_remove(self, patch, apparent_patch_size, distance):
         #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return patch.shown and (not patch.visible and patch.lod != 0)
+        return (not patch.visible and patch.lod != 0)
 
 #The lod control classes uses hysteresis to avoid cycle of split/merge due to
 #precision errors.
@@ -1560,11 +1590,7 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
         if patch.lod >= self.max_lod: return False
         if self.patch_size > 0:
             if apparent_patch_size > self.patch_size * 1.1:
-                if self.appearance.texture.can_split(patch):
-                    return True
-                else:
-                    apparent_vertex_size = apparent_patch_size / patch.density
-                    return apparent_vertex_size > self.max_vertex_size * 1.1
+                return True
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size > self.max_vertex_size
@@ -1572,11 +1598,7 @@ class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
     def should_merge(self, patch, apparent_patch_size, distance):
         if self.patch_size > 0:
             if apparent_patch_size < self.patch_size / 1.1:
-                if patch.parent is not None and self.appearance.texture.can_split(patch.parent):
-                    return True
-                else:
-                    apparent_vertex_size = apparent_patch_size / patch.density
-                    return apparent_vertex_size < self.max_vertex_size / 1.1
+                return True
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size < self.max_vertex_size / 1.1
@@ -1603,7 +1625,7 @@ class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
         self.max_distance = max_distance
 
     def should_instanciate(self, patch, apparent_patch_size, distance):
-        return patch.visible and distance < self.max_distance and patch.instance is None
+        return patch.visible and distance < self.max_distance
 
     def should_remove(self, patch, apparent_patch_size, distance):
-        return not patch.visible and patch.instance is not None
+        return not patch.visible

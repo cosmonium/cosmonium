@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
-from .patchedshapes import CullingFrustum, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
+from .patchedshapes import CullingFrustum, QuadTreeNode, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
 from .textures import TexCoord
 from . import geometry
 from . import settings
@@ -44,20 +44,21 @@ class Tile(PatchBase):
         self.y0 = y
         self.x1 = x + self.size
         self.y1 = y + self.size
-        self.centre = LPoint3d(x + self.half_size, y + self.half_size, 0.0)
         self.flat_coord = LVector4(self.x0 * surface_scale,
                                     self.y1 * surface_scale,
                                     (self.x1 - self.x0) * surface_scale,
                                     (self.y0 - self.y1) * surface_scale)
-        self.normal = LVector3d.up()
-        self.bounds = geometry.PatchAABB(self.x0, self.y0, self.size, 1.0, min_height, max_height)
-        self.bounds_shape = BoundingBoxShape(self.bounds)
+        self.create_quadtree_node(min_height, max_height)
+        self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
+
+    def create_quadtree_node(self, min_height, max_height):
+        centre = LPoint3d(self.x0 + self.half_size, self.y0 + self.half_size, 0.0)
+        normal = LVector3d.up()
+        bounds = geometry.PatchAABB(self.x0, self.y0, self.size, 1.0, min_height, max_height)
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, self.size, normal, 0.0, bounds)
 
     def str_id(self):
         return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)
-
-    def get_patch_length(self):
-        return self.size
 
     def coord_to_uv(self, coord):
         (x, y) = coord
@@ -180,14 +181,6 @@ class TiledShape(PatchedShapeBase):
         self.create_patch(parent, lod, -1, x + delta, y)
         self.create_patch(parent, lod, -1, x + delta, y + delta)
         self.create_patch(parent, lod, -1, x, y + delta)
-        parent.children_bb = []
-        parent.children_normal = []
-        parent.children_offset = []
-        for child in parent.children:
-            parent.children_bb.append(child.bounds.make_copy())
-            parent.children_normal.append(LVector3.up())
-            parent.children_offset.append(0.0)
-            child.owner = parent.owner
 
     def merge_patch(self, patch):
         pass
