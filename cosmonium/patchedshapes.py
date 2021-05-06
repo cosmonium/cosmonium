@@ -90,7 +90,7 @@ class HorizonCullingFrustum(CullingFrustumBase):
             factor = 2.0 / (1 << ((max_lod - settings.cull_far_patches_threshold) // 2))
         else:
             factor = 2.0
-        limit = sqrt(max(0.0, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
+        limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
         far = limit * scale
         #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
         #TODO: get the actual value from the config
