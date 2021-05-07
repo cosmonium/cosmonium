@@ -1206,17 +1206,16 @@ class Cosmonium(CosmoniumBase):
                     if patch is not None:
                         print("\tID:", patch.str_id())
                         print("\tLOD:", patch.lod)
-                        print("\tView:", patch.patch_in_view)
-                        print("\tLength:", patch.get_patch_length(), "App:", patch.apparent_size)
-                        print("\tCoord:", coord, "Distance:", patch.distance)
-                        print("\tMean:", patch.mean_radius)
+                        print("\tView:", patch.quadtree_node.patch_in_view)
+                        print("\tLength:", patch.quadtree_node.length, "App:", patch.quadtree_node.apparent_size)
+                        print("\tCoord:", coord, "Distance:", patch.quadtree_node.distance)
                         print("\tflat:", patch.flat_coord)
                         if patch.instance is not None:
                             print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(self.world))
                             print("\tDistance:", patch.instance.get_pos(self.world).length())
                             print("\tScale:", patch.instance.get_scale())
-                            if patch.offset is not None:
-                                print("\tOffset:", patch.offset, patch.offset * self.selected.get_apparent_radius())
+                            if patch.quadtree_node.offset is not None:
+                                print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * self.selected.get_apparent_radius())
             else:
                 if self.selected.scene_scale_factor is not None:
                     print("Scene:")
