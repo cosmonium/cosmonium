@@ -23,7 +23,7 @@ from panda3d.core import Texture, LColor
 
 from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
-from .patchedshapes import PatchLodControl
+from .patchedshapes import LodControl
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .interpolators import HardwareInterpolator
 from .filters import BilinearFilter
@@ -323,21 +323,6 @@ class StackedPatchedHeightmap(PatchedHeightmapBase):
         for heightmap in self.heightmaps:
             patches.append(heightmap.do_create_patch_data(self, patch, self.size, self.size, self.overlap))
         return StackedHeightmapPatch(patches, self, patch, self.size, self.size, self.overlap)
-
-
-class TerrainPatchLodControl(PatchLodControl):
-    def __init__(self, heightmap, factor = 1.0, max_lod=100):
-        self.heightmap = heightmap
-        self.max_lod = max_lod
-        self.patch_size = heightmap.size * factor
-
-    def should_split(self, patch, apparent_patch_size, distance):
-        if apparent_patch_size > self.patch_size * 1.01 and patch.lod < self.max_lod:
-            print(patch.str_id(), apparent_patch_size, self.patch_size, patch.distance, patch.average_height)
-        return apparent_patch_size > self.patch_size * 1.01 and patch.lod < self.max_lod
-
-    def should_merge(self, patch, apparent_patch_size, distance):
-        return apparent_patch_size < self.patch_size / 1.99
 
 
 class HeightmapRegistry():

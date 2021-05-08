@@ -116,10 +116,12 @@ class TiledShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.heightscale = scale
 
-    def create_culling_frustum(self):
+    def create_culling_frustum(self, camera):
+        cam_transform_mat = camera.cam.getNetTransform().getMat()
         transform_mat = LMatrix4()
         transform_mat.invert_from(self.instance.getNetTransform().getMat())
-        self.culling_frustum = CullingFrustum(self.owner, self.owner.context.observer, transform_mat)
+        transform_mat = cam_transform_mat * transform_mat
+        self.culling_frustum = CullingFrustum(camera.realCamLens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
     def global_to_shape_coord(self, x, y):
         return (x / self.heightscale, y / self.heightscale)
@@ -200,7 +202,7 @@ class TiledShape(PatchedShapeBase):
     def xform_cam_to_model(self, camera_pos):
         model_camera_pos = camera_pos / self.heightscale
         (x, y) = model_camera_pos[0], model_camera_pos[1]
-        return (model_camera_pos, None, (x, y))
+        return (model_camera_pos, LVector3d(), (x, y))
 
     def get_scale(self):
         return LVector3(self.heightscale, self.heightscale, self.heightscale)

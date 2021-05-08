@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..surfaces import EllipsoidFlatSurface
-from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizePatchLodControl
+from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
 from ..shaders import BasicShader, FlatLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
@@ -40,8 +40,8 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
 
     def create(self, body):
         factory = SquaredDistanceSquarePatchFactory()
-        lod_control = VertexSizePatchLodControl(max_vertex_size=settings.patch_max_vertex_size,
-                                                density=settings.patch_constant_density)
+        lod_control = VertexSizeLodControl(max_vertex_size=settings.patch_max_vertex_size,
+                                           density=settings.patch_constant_density)
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = BasicShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target)

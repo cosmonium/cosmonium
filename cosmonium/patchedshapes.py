@@ -21,7 +21,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode
-from panda3d.core import LVector3d, LVector4, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
+from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix3, LMatrix4, LVecBase4i
 from panda3d.core import NodePath, BoundingBox
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from direct.task.Task import gather
@@ -56,61 +56,63 @@ class BoundingBoxShape():
             self.instance.remove_node()
             self.instance = None
 
-class CullingFrustumBase:
+class PyCullingFrustumBase:
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         raise NotImplementedError()
 
     def is_patch_in_view(self, patch):
         return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
 
-class CullingFrustum(CullingFrustumBase):
-    def __init__(self, owner, camera, transform_mat):
-        self.owner = owner
-        self.lens = camera.realCamLens.make_copy()
+class PyCullingFrustum(PyCullingFrustumBase):
+    def __init__(self, lens, transform_mat, offset_body_center, model_body_center_offset, shift_patch_origin):
+        self.lens = lens
         self.lens_bounds = self.lens.makeBounds()
-        self.lens_bounds.xform(camera.cam.getNetTransform().getMat())
         self.lens_bounds.xform(transform_mat)
+        self.offset_body_center = offset_body_center
+        self. model_body_center_offset = model_body_center_offset
+        self.shift_patch_origin = shift_patch_origin
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         offset = LVector3d()
-        if settings.offset_body_center:
-            offset += self.owner.model_body_center_offset
-        if settings.shift_patch_origin:
+        if self.offset_body_center:
+            offset += self.model_body_center_offset
+        if self.shift_patch_origin:
             offset = offset + patch_normal * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
 
-class HorizonCullingFrustum(CullingFrustumBase):
-    def __init__(self, owner, camera, scale, transform_mat, min_radius, altitude_to_min_radius, max_lod):
-        self.owner = owner
-        self.lens = camera.realCamLens.make_copy()
-        if settings.cull_far_patches and max_lod > settings.cull_far_patches_threshold:
-            factor = 2.0 / (1 << ((max_lod - settings.cull_far_patches_threshold) // 2))
+class PyHorizonCullingFrustum(PyCullingFrustumBase):
+    def __init__(self, lens, scale, transform_mat, min_radius, altitude_to_min_radius, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
+        lens = lens.make_copy()
+        if cull_far_patches and max_lod > cull_far_patches_threshold:
+            factor = 2.0 / (1 << ((max_lod - cull_far_patches_threshold) // 2))
         else:
             factor = 2.0
         limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
         far = limit * scale
         #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
         #TODO: get the actual value from the config
-        self.lens.setNearFar(far * 1e-6, far)
-        self.lens_bounds = self.lens.makeBounds()
-        self.lens_bounds.xform(camera.cam.getNetTransform().getMat())
+        lens.set_near_far(far * 1e-6, far)
+        self.lens_bounds = lens.make_bounds()
         self.lens_bounds.xform(transform_mat)
+        self.offset_body_center = offset_body_center
+        self.model_body_center_offset = model_body_center_offset
+        self.shift_patch_origin = shift_patch_origin
 
     def is_bb_in_view(self, bb, patch_normal, patch_offset):
         offset = LVector3d()
-        if settings.offset_body_center:
-            offset += self.owner.model_body_center_offset
-        if settings.shift_patch_origin:
+        if self.offset_body_center:
+            offset += self.model_body_center_offset
+        if self.shift_patch_origin:
             offset = offset + patch_normal * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
 
-class LodResult():
+class PyLodResult():
     def __init__(self):
         self.to_split = []
         self.to_merge = []
@@ -406,7 +408,7 @@ class PatchNeighbours(PatchNeighboursBase):
             self.patch.tessellation_outer_level[dest] = new_level
             #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
-class QuadTreeNode:
+class PyQuadTreeNode:
     def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
         Shape.__init__(self)
         self.patch = patch
@@ -423,6 +425,7 @@ class QuadTreeNode:
         self.children_offset = []
         self.shown = False
         self.visible = False
+        self.distance = 0.0
         self.instance_ready = False
         self.apparent_size = None
         self.patch_in_view = False
@@ -1104,16 +1107,8 @@ class PatchedShapeBase(Shape):
     def xform_cam_to_model(self, camera_pos):
         pass
 
-    def create_culling_frustum(self, altitude_to_ground):
-        if self.limit_far:
-            min_radius = self.owner.surface.get_min_radius() / self.parent.height_scale
-            altitude_to_min_radius = (self.owner.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
-        else:
-            min_radius = 0
-            altitude_to_min_radius = 0
-        transform_mat = LMatrix4()
-        transform_mat.invert_from(self.instance.getNetTransform().getMat())
-        self.culling_frustum = CullingFrustum(self.owner, self.owner.context.observer, self.parent.height_scale / settings.scale, transform_mat, self.limit_far, min_radius, altitude_to_min_radius, self.max_lod)
+    def create_culling_frustum(self, camera):
+        pass
 
     def create_frustum_node(self):
         if self.frustum_node is not None:
@@ -1140,7 +1135,7 @@ class PatchedShapeBase(Shape):
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.owner.distance_to_obs - self.owner._height_under) / self.parent.height_scale
-        self.create_culling_frustum()
+        self.create_culling_frustum(self.owner.context.observer)
         self.create_frustum_node()
         self.to_split = []
         self.to_merge = []
@@ -1149,10 +1144,13 @@ class PatchedShapeBase(Shape):
         process_nb = 0
         self.new_max_lod = 0
         frame = globalClock.getFrameCount()
-        self.lod_control.set_appearance(appearance)
+        if appearance is not None and appearance.texture is not None:
+            self.lod_control.set_texture_size(appearance.texture.source.texture_size)
+        else:
+            self.lod_control.set_texture_size(0)
         lod_result = LodResult()
         for patch in self.root_patches:
-            patch.quadtree_node.check_lod(lod_result, self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size, self.lod_control)
+            patch.quadtree_node.check_lod(lod_result, self.culling_frustum, LPoint2d(*coord), LPoint3d(model_camera_pos), LVector3d(model_camera_vector), altitude_to_ground, pixel_size, self.lod_control)
         lod_result.sort_by_distance()
         apply_appearance = False
         update = []
@@ -1297,12 +1295,26 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
 
-    def create_culling_frustum(self):
+    def create_culling_frustum(self, camera):
         min_radius = self.owner.surface.get_min_radius() / self.parent.height_scale
         altitude_to_min_radius = (self.owner.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
-        transform_mat = LMatrix4()
-        transform_mat.invert_from(self.instance.getNetTransform().getMat())
-        self.culling_frustum = HorizonCullingFrustum(self.owner, self.owner.context.observer, self.parent.height_scale / settings.scale, transform_mat, min_radius, altitude_to_min_radius, self.max_lod)
+        cam_transform_mat = camera.cam.getNetTransform().getMat()
+        if False:
+            upper = LMatrix3()
+            scale = self.owner.surface.get_scale() * self.owner.scene_scale_factor
+            inv_scale = LVector3d(1.0 / scale[0], 1.0 / scale[1], 1.0 / scale[2])
+            upper.set_scale_mat(inv_scale)
+            rot_mat = LMatrix3()
+            self.owner.scene_orientation.conjugate().extract_to_matrix(rot_mat)
+            upper *= rot_mat
+            transform_mat = LMatrix4(upper, upper.xform(-self.owner.scene_position))
+        else:
+            transform_mat = LMatrix4()
+            transform_mat.invert_from(self.instance.getNetTransform().getMat())
+        transform_mat = cam_transform_mat * transform_mat
+        self.culling_frustum = HorizonCullingFrustum(camera.realCamLens, self.parent.height_scale / settings.scale, transform_mat, min_radius, altitude_to_min_radius,
+                                                     self.max_lod, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin,
+                                                     settings.cull_far_patches, settings.cull_far_patches_threshold)
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
@@ -1526,7 +1538,7 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
-class PatchLodControl(object):
+class PyLodControl(object):
     def __init__(self, density=32, max_lod=100):
         self.density = density
         self.max_lod = max_lod
@@ -1535,6 +1547,9 @@ class PatchLodControl(object):
         return self.density
 
     def set_appearance(self, appearance):
+        pass
+
+    def set_texture_size(self, appearance):
         pass
 
     def should_split(self, patch, apparent_patch_size, distance):
@@ -1556,56 +1571,57 @@ class PatchLodControl(object):
 #When splitting the resulting patch will be 1.1 bigger than the merge limit
 #When merging, the resulting patch will be  1.1 smaller than the slit limit
 
-class TexturePatchLodControl(PatchLodControl):
+class PyTextureLodControl(PyLodControl):
     def __init__(self, min_density, density, max_lod=100):
-        PatchLodControl.__init__(self, density, max_lod)
+        PyLodControl.__init__(self, density, max_lod)
         self.min_density = min_density
+        self.texture_size = 0
 
     def get_density_for(self, lod):
-        density = self.density // (1 << lod)
-        if density < self.min_density:
-            density = self.min_density
-        return density
+        return max(self.min_density, self.density // (1 << lod))
 
     def set_appearance(self, appearance):
         self.appearance = appearance
         if appearance is not None and appearance.texture is not None:
-            self.patch_size = appearance.texture.source.texture_size
+            self.texture_size = appearance.texture.source.texture_size
         else:
-            self.patch_size = 0
+            self.texture_size = 0
+
+    def set_texture_size(self, texture_size):
+        self.texture_size = texture_size
 
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
-        return self.patch_size > 0 and apparent_patch_size > self.patch_size * 1.1 and self.appearance.texture.can_split(patch)
+        return self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1 #and self.appearance.texture.can_split(patch)
 
     def should_merge(self, patch, apparent_patch_size, distance):
-        return apparent_patch_size < self.patch_size / 1.1
+        return apparent_patch_size < self.texture_size / 1.1
 
-class TextureOrVertexSizePatchLodControl(TexturePatchLodControl):
+class PyTextureOrVertexSizeLodControl(PyTextureLodControl):
     def __init__(self, max_vertex_size, min_density, density, max_lod=100):
-        TexturePatchLodControl.__init__(self, min_density, density, max_lod)
+        PyTextureLodControl.__init__(self, min_density, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod >= self.max_lod: return False
-        if self.patch_size > 0:
-            if apparent_patch_size > self.patch_size * 1.1:
+        if self.texture_size > 0:
+            if apparent_patch_size > self.texture_size * 1.1:
                 return True
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size > self.max_vertex_size
 
     def should_merge(self, patch, apparent_patch_size, distance):
-        if self.patch_size > 0:
-            if apparent_patch_size < self.patch_size / 1.1:
+        if self.texture_size > 0:
+            if apparent_patch_size < self.texture_size / 1.1:
                 return True
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size < self.max_vertex_size / 1.1
 
-class VertexSizePatchLodControl(PatchLodControl):
+class PyVertexSizeLodControl(PyLodControl):
     def __init__(self, max_vertex_size, density, max_lod=100):
-        PatchLodControl.__init__(self, density, max_lod)
+        PyLodControl.__init__(self, density, max_lod)
         self.max_vertex_size = max_vertex_size
 
     def should_split(self, patch, apparent_patch_size, distance):
@@ -1619,9 +1635,9 @@ class VertexSizePatchLodControl(PatchLodControl):
         to_merge = apparent_vertex_size < self.max_vertex_size / 1.1
         return to_merge
 
-class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
+class PyVertexSizeMaxDistanceLodControl(PyVertexSizeLodControl):
     def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
-        VertexSizePatchLodControl.__init__(self, max_vertex_size, density, max_lod)
+        PyVertexSizeLodControl.__init__(self, max_vertex_size, density, max_lod)
         self.max_distance = max_distance
 
     def should_instanciate(self, patch, apparent_patch_size, distance):
@@ -1629,3 +1645,22 @@ class VertexSizeMaxDistancePatchLodControl(VertexSizePatchLodControl):
 
     def should_remove(self, patch, apparent_patch_size, distance):
         return not patch.visible
+
+try:
+    from cosmonium_engine import QuadTreeNode
+    from cosmonium_engine import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
+    from cosmonium_engine import LodResult
+    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
+except ImportError as e:
+    print("WARNING: Could not load Patch C implementation, fallback on python implementation")
+    print("\t", e)
+    QuadTreeNode = PyQuadTreeNode
+    CullingFrustumBase = PyCullingFrustumBase
+    CullingFrustum = PyCullingFrustum
+    HorizonCullingFrustum = PyHorizonCullingFrustum
+    LodResult = PyLodResult
+    LodControl = PyLodControl
+    TextureLodControl = PyTextureLodControl
+    TextureOrVertexSizeLodControl = PyTextureOrVertexSizeLodControl
+    VertexSizeLodControl = PyVertexSizeLodControl
+    VertexSizeMaxDistanceLodControl = PyVertexSizeMaxDistanceLodControl
