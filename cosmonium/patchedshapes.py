@@ -467,7 +467,7 @@ class QuadTreeNode:
             self.distance = altitude
         else:
             within_patch = False
-            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.length * 0.5)
+            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.length * 0.7071067811865476)
         self.patch_in_view = culling_frustum.is_patch_in_view(self)
         self.visible = within_patch or self.patch_in_view
         self.apparent_size = self.length / (self.distance * pixel_size)
