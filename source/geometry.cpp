@@ -33,6 +33,8 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+static PStatCollector _geom_collector("Engine:geom");
+
 TesselationInfo::TesselationInfo(unsigned int inner, LVecBase4i outer) :
   inner(inner),
   outer(outer)
@@ -64,6 +66,8 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
       bool global_texture, bool inv_texture_u, bool inv_texture_v,
       bool has_offset, double offset)
 {
+    _geom_collector.start();
+
     unsigned int r_sectors = sectors + 1;
     unsigned int r_rings = rings + 1;
 
@@ -153,6 +157,9 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
     prim->close_primitive();
     geom->add_primitive(prim);
     node->add_geom(geom);
+
+    _geom_collector.stop();
+
     return NodePath(node);
 }
 
@@ -425,6 +432,8 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     bool has_offset, double offset,
     bool use_patch_adaptation, bool use_patch_skirts)
 {
+  _geom_collector.start();
+
   unsigned int nb_vertices = tesselation.inner + 1;
 
   unsigned int nb_prims = tesselation.inner * tesselation.inner;
@@ -544,6 +553,9 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   prim->close_primitive();
   geom->add_primitive(prim);
   node->add_geom(geom);
+
+  _geom_collector.stop();
+
   return NodePath(node);
 }
 
@@ -611,6 +623,8 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     bool has_offset, double offset,
     bool use_patch_adaptation, bool use_patch_skirts)
 {
+  _geom_collector.start();
+
   unsigned int nb_vertices = tesselation.inner + 1;
 
   unsigned int nb_prims = tesselation.inner * tesselation.inner;
@@ -742,6 +756,9 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   prim->close_primitive();
   geom->add_primitive(prim);
   node->add_geom(geom);
+
+  _geom_collector.stop();
+
   return NodePath(node);
 }
 
@@ -786,6 +803,8 @@ TilePatchGenerator::make(double size, TesselationInfo tesselation,
     bool use_patch_adaptation, bool use_patch_skirts,
     double skirt_size, double skirt_uv)
 {
+  _geom_collector.start();
+
   unsigned int nb_vertices = tesselation.inner + 1;
 
   unsigned int nb_prims = tesselation.inner * tesselation.inner;
@@ -883,5 +902,8 @@ TilePatchGenerator::make(double size, TesselationInfo tesselation,
   prim->close_primitive();
   geom->add_primitive(prim);
   node->add_geom(geom);
+
+  _geom_collector.stop();
+
   return NodePath(node);
 }
