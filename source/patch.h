@@ -28,6 +28,7 @@
 #include "py_panda.h"
 
 class CullingFrustumBase;
+class QuadTreeNode;
 
 class LodControl : public ReferenceCount
 {
