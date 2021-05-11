@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor
 from panda3d.core import LPoint3, LPoint3d
+from panda3d.core import PandaSystem
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
@@ -34,6 +35,8 @@ app_name = 'cosmonium'
 use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
+
+panda11 = PandaSystem.getMajorVersion() >= 1 and PandaSystem.getMinorVersion() >= 11
 
 #OpenGL user configuration
 use_core_profile_mac = True

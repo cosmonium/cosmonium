@@ -28,6 +28,8 @@ except ImportError:
     import Queue as queue
 import traceback
 
+from . import settings
+
 # These will be initialized in cosmonium base class
 asyncTextureLoader = None
 syncTextureLoader = None
@@ -99,8 +101,12 @@ class AsyncLoader():
             #A small but not null timeout is required to avoid draining CPU resources
             job = self.in_queue.get(timeout=0.001)
             (func, fargs, future) = job
-            result = func(*fargs)
-            self.cb_queue.put([future, result])
+            if not settings.panda11 or not future.cancelled():
+                result = func(*fargs)
+                self.cb_queue.put([future, result])
+            else:
+                #print("job cancelled")
+                pass
         except queue.Empty:
             pass
         return Task.cont
@@ -110,7 +116,11 @@ class AsyncLoader():
             while True:
                 job = self.cb_queue.get_nowait()
                 (future, result) = job
-                future.set_result(result)
+                if not settings.panda11 or not future.cancelled():
+                    future.set_result(result)
+                else:
+                    #print("Result cancelled")
+                    pass
         except queue.Empty:
             pass
         return Task.cont

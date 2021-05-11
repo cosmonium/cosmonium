@@ -27,6 +27,8 @@ from direct.task import Task
 
 from ..shaders import ShaderProgram
 
+from .. import settings
+
 class GeneratorVertexShader(ShaderProgram):
     def __init__(self):
         ShaderProgram.__init__(self, 'vertex')
@@ -258,17 +260,24 @@ class GeneratorChain():
     def check_generation(self, task):
         if len(self.queue) > 0:
             (shader_data, future) = self.queue.pop(0)
-            future.set_result(self.gather_results())
-            if len(self.queue) > 0:
-                self.schedule_next()
+            if not settings.panda11 or not future.cancelled():
+                future.set_result(self.gather_results())
             else:
-                self.busy = False
-                #self.clear()
+                #print("Dropping result")
+                pass
+            self.schedule_next()
         return Task.cont
 
     def schedule_next(self):
-        (shader_data, future) = self.queue[0]
-        self.prepare(shader_data)
+        while len(self.queue) > 0:
+            (shader_data, future) = self.queue[0]
+            if not settings.panda11 or not future.cancelled():
+                self.prepare(shader_data)
+                break
+            #print("Remove cancelled job")
+            self.queue.pop(0)
+        else:
+            self.busy = False
 
     def schedule(self, shader_data, future):
         self.queue.append((shader_data, future))
