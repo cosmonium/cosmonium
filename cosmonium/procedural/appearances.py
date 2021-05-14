@@ -81,14 +81,14 @@ class TexturesDictionary(AppearanceBase):
         texture = block.textures_map[category]
         return texture.array_id
 
-    def apply_textures(self, shape):
+    def apply_textures(self, instance):
         if self.texture_array:
             for texture in self.texture_arrays.values():
-                texture.apply(shape)
+                texture.apply(instance)
         else:
             for entry in self.blocks.values():
                 for texture in entry.textures:
-                    texture.apply(shape)
+                    texture.apply(instance)
 
     def load_textures(self, shape, owner):
         tasks = []
@@ -110,9 +110,10 @@ class TexturesDictionary(AppearanceBase):
             else:
                 await self.load_textures(shape, owner)
 
-    def apply(self, shape, owner):
-        if self.nb_textures > 0 and shape.instance is not None:
-            self.apply_textures(shape)
+    def apply(self, shape, instance):
+        if self.nb_textures > 0:
+            self.apply_textures(instance)
+            instance.set_shader_input("detail_factor", self.scale_factor)
 
     def clear_textures(self):
         for entry in self.blocks.values():
@@ -160,8 +161,8 @@ class ProceduralAppearance(AppearanceBase):
     async def load(self, shape, owner):
         await self.texture_source.load(shape, owner)
 
-    def apply(self, shape, owner):
-        self.texture_source.apply(shape, owner)
+    def apply(self, shape, instance):
+        self.texture_source.apply(shape, instance)
 
     def clear_patch(self, patch):
         self.texture_source.clear_patch(patch)

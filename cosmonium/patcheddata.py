@@ -83,6 +83,9 @@ class PatchData:
     async def load(self, patch):
         pass
 
+    def apply(self, instance):
+        pass
+
     def clear(self):
         self.texture = None
         self.data_ready = False
@@ -168,10 +171,10 @@ class PatchedData():
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
-    def apply_patch_data(self, patch, owner):
+    def apply_patch_data(self, patch, instance):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
-            patch_data.apply(patch)
+            patch_data.apply(instance)
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
@@ -189,5 +192,5 @@ class PatchedData():
     async def load(self, shape, owner):
         pass
 
-    def apply(self, shape, owner):
+    def apply(self, shape, instance):
         pass

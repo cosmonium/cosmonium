@@ -992,6 +992,9 @@ class PatchedShapeBase(Shape):
             self.frustum_node.remove_node()
             self.frustum_node = None
 
+    def get_data_source(self):
+        return PatchedShapeDataSource()
+
     def set_heightmap(self, heightmap):
         self.factory.set_heightmap(heightmap)
 
@@ -1537,6 +1540,30 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
         vy = sqrt(abs(0.5 * (vy + isqrt)))
 
         return (copysign(vx, x), copysign(vy, y))
+
+class PatchedShapeDataSource:
+    def create_patch_data(self, patch):
+        pass
+
+    async def load_patch_data(self, patch, owner):
+        pass
+
+    def apply_patch_data(self, patch, instance):
+        instance.set_shader_input("flat_coord", patch.flat_coord)
+        instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
+        instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
+
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
+    async def load(self, shape, owner):
+        pass
+
+    def apply(self, shape, owner):
+        pass
 
 class PyLodControl(object):
     def __init__(self, density=32, max_lod=100):

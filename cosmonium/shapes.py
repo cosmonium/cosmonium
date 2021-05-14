@@ -70,6 +70,9 @@ class Shape:
     def check_settings(self):
         pass
 
+    def get_data_source(self):
+        return None
+
     def task_done(self, task):
         self.task = None
 
@@ -227,6 +230,7 @@ class ShapeObject(VisibleObject):
     default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.WaterCameraMask | VisibleObject.ShadowCameraMask
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
+        self.sources = []
         self.shape = None
         self.set_shape(shape)
         self.appearance = appearance
@@ -234,7 +238,7 @@ class ShapeObject(VisibleObject):
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
-        self.sources = [self.appearance]
+        self.sources.append(self.appearance)
         self.instance_ready = False
         self.owner = None
         self.shadows = MultiShadows(self)
@@ -273,6 +277,9 @@ class ShapeObject(VisibleObject):
         if shape is not None:
             self.shape.parent = self
             self.shape.set_owner(self.parent)
+            data_source = self.shape.get_data_source()
+            if data_source is not None:
+                self.sources.append(data_source)
 
     def set_owner(self, owner):
         self.owner = owner
@@ -377,15 +384,12 @@ class ShapeObject(VisibleObject):
         await gather(*load_tasks)
         if patch.instance is not None:
             for source in self.sources:
-                source.apply_patch_data(patch, self)
+                source.apply_patch_data(patch, patch.instance)
             patch.instance_ready = True
             if self.shader is not None:
                 if self.first_patch:
                     self.shader.apply(self.shape, self.appearance)
                     self.first_patch = False
-                self.shader.apply_patch(self.shape, patch, self.appearance)
-                #TODO: Why update_patch should be called here ?
-                self.shader.update_patch(self.shape, patch, self.appearance)
             patch.patch_done()
             self.shape.patch_done(patch)
         #print(globalClock.getFrameCount(), "DONE", patch.str_id())
@@ -396,7 +400,7 @@ class ShapeObject(VisibleObject):
         await gather(*load_tasks)
         if shape.instance is not None:
             for source in self.sources:
-                source.apply(shape, self)
+                source.apply(shape, shape.instance)
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
@@ -423,9 +427,7 @@ class ShapeObject(VisibleObject):
             patch.instance_ready = True
             for source in self.sources:
                 source.create_patch_data(patch)
-                source.apply_patch_data(patch, self)
-            if self.shader is not None:
-                self.shader.apply_patch(self.shape, patch, self.appearance)
+                source.apply_patch_data(patch, patch.instance)
             patch.patch_done()
 
     def check_visibility(self, pixel_size):

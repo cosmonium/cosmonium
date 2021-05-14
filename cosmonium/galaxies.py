@@ -114,13 +114,12 @@ class GalaxyAppearance(AppearanceBase):
             self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha)
             self.texture.set_tex_matrix(False)
 
-    def apply(self, shape, owner):
+    def apply(self, shape, instance):
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         self.texture.apply(shape)
         shape.instance.set_depth_write(False)
         if self.background is not None:
             shape.instance.setBin('background', settings.deep_space_depth)
-        owner.shader.apply(shape, self)
         shape.instance_ready = True
 
     def get_user_parameters(self):

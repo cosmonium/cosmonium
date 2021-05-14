@@ -157,11 +157,11 @@ class ShaderPatchedHeightmap(PatchedHeightmapBase):
         self.data_source.clear_all()
 
 class ShaderHeightmapPatch(HeightmapPatch):
-    def apply(self, patch):
+    def apply(self, instance):
         if self.texture is None:
             # The heightmap is not available yet, use the parent heightmap instead
             self.calc_sub_patch()
-        patch.instance.set_shader_input("heightmap_%s" % self.parent.name, self.texture)
+        HeightmapPatch.apply(self, instance)
 
     async def load(self, patch):
         data = await self.parent.data_source.generate(self)

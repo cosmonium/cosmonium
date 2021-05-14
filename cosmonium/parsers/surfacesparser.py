@@ -25,7 +25,7 @@ from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
 from ..heightmap import heightmapRegistry
-from ..heightmapshaders import DisplacementVertexControl, HeightmapDataSource
+from ..heightmapshaders import DisplacementVertexControl
 from ..shapes import MeshShape
 from ..catalogs import objectsDB
 from .. import settings
@@ -106,7 +106,8 @@ class SurfaceYamlParser(YamlModuleParser):
                                   radius=radius, oblateness=ellipticity, scale=scale,
                                   shape=shape, appearance=appearance, shader=shader)
         else:
-            data_source = [HeightmapDataSource(heightmap, normals=True)]
+            data_source = []
+            data_source.append(heightmap.get_data_source())
             appearance_source = appearance.get_data_source()
             if appearance_source is not None:
                 data_source.append(appearance_source)

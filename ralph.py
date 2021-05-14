@@ -45,7 +45,7 @@ from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternio
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
-from cosmonium.heightmapshaders import HeightmapDataSource, DisplacementVertexControl
+from cosmonium.heightmapshaders import DisplacementVertexControl
 from cosmonium.procedural.appearances import ProceduralAppearance
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
@@ -504,8 +504,8 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        data_source = [HeightmapDataSource(self.heightmap),
-                       HeightmapDataSource(self.biome, normals=False),
+        data_source = [self.heightmap.get_data_source(),
+                       self.biome.get_data_source(),
                        self.terrain_appearance.get_data_source()]
         if settings.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()

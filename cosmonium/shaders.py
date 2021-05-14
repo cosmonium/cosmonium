@@ -69,26 +69,11 @@ class ShaderBase(object):
         if shape is None or shape.instance is None: return
         self.create_and_register_shader(shape, appearance, force=True)
         self.update_shader_shape_static(shape, appearance)
-        if shape.patchable:
-            for patch in shape.patches:
-                if patch.instance_ready:
-                    self.update_shader_patch_static(shape, patch, appearance)
-        else:
-            self.update_shader_patch_static(shape, shape, appearance)
-
-    def apply_patch(self, shape, patch, appearance):
-        self.update_shader_patch_static(shape, patch, appearance)
 
     def update_shader_shape_static(self, shape, appearance):
         pass
 
     def update_shader_shape(self, shape, appearance):
-        pass
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        pass
-
-    def update_shader_patch(self, shape, patch, appearance):
         pass
 
     def update(self, shape, appearance):
@@ -99,21 +84,6 @@ class ShaderBase(object):
         self.update_shader_shape(shape, appearance)
         shape.instance.set_shader_inputs(**self.inputs)
         self.inputs = None
-        if shape.patchable:
-            for patch in shape.patches:
-                if patch.instance_ready:
-                    self.inputs = {}
-                    self.update_shader_patch(shape, patch, appearance)
-                    patch.instance.set_shader_inputs(**self.inputs)
-                    self.inputs = None
-        else:
-            self.inputs = {}
-            self.update_shader_patch(shape, shape, appearance)
-            shape.instance.set_shader_inputs(**self.inputs)
-            self.inputs = None
-
-    def update_patch(self, shape, patch, appearance):
-        self.update_shader_patch(shape, patch, appearance)
 
     def clear_patch(self, shape, patch):
         pass
@@ -1202,28 +1172,6 @@ class BasicShader(StructuredShader):
         for effect in self.after_effects:
             effect.update_shader_shape(shape, appearance)
 
-    def update_shader_patch_static(self, shape, patch, appearance):
-        self.appearance.update_shader_patch_static(shape, patch, appearance)
-        self.tessellation_control.update_shader_patch_static(shape, patch, appearance)
-        for shadow in self.shadows:
-            shadow.update_shader_shape_static(shape, appearance)
-        self.lighting_model.update_shader_patch_static(shape, patch, appearance)
-        self.scattering.update_shader_patch_static(shape, patch, appearance)
-        self.vertex_control.update_shader_patch_static(shape, patch, appearance)
-        self.data_source.update_shader_patch_static(shape, patch, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_patch_static(shape, patch, appearance)
-
-    def update_shader_patch(self, shape, patch, appearance):
-        self.appearance.update_shader_patch(shape, patch, appearance)
-        self.tessellation_control.update_shader_patch(shape, patch, appearance)
-        self.lighting_model.update_shader_patch(shape, patch, appearance)
-        self.scattering.update_shader_patch(shape, patch, appearance)
-        self.vertex_control.update_shader_patch(shape, patch, appearance)
-        self.data_source.update_shader_patch(shape, patch, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_patch(shape, patch, appearance)
-
     def get_user_parameters(self):
         group = StructuredShader.get_user_parameters(self)
         group.add_parameter(self.lighting_model.get_user_parameters())
@@ -1306,12 +1254,6 @@ class ShaderComponent(object):
         pass
 
     def update_shader_shape(self, shape, appearance):
-        pass
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        pass
-
-    def update_shader_patch(self, shape, patch, appearance):
         pass
 
     def clear(self, shape, appearance):
@@ -1604,10 +1546,6 @@ class ConstantTessellationControl(TessellationControl):
         gl_TessLevelInner[0] = TessLevelInner;
         gl_TessLevelInner[1] = TessLevelInner;
 ''']
-
-    def update_shader_patch(self, shape, patch, appearance):
-        patch.instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
-        patch.instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
 
 class VertexControl(ShaderComponent):
     use_double = False
@@ -1906,14 +1844,6 @@ class MultiDataSource(DataSource):
     def update_shader_shape(self, shape, appearance):
         for source in self.sources:
             source.update_shader_shape(shape, appearance)
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        for source in self.sources:
-            source.update_shader_patch_static(shape, patch, appearance)
-
-    def update_shader_patch(self, shape, patch, appearance):
-        for source in self.sources:
-            source.update_shader_patch(shape, patch, appearance)
 
 class PandaDataSource(DataSource):
     def __init__(self, shader=None):

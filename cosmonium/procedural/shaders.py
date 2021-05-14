@@ -203,10 +203,6 @@ class TextureDictionaryDataSource(DataSource):
         if error: print("Unknown source '%s' requested" % source)
         return 0
 
-    def update_shader_shape_static(self, shape, appearance):
-        DataSource.update_shader_shape_static(self, shape, appearance)
-        shape.instance.set_shader_input("detail_factor", self.dictionary.scale_factor)
-
 class ProceduralMap(ShaderAppearance):
     use_vertex = True
     world_vertex = True
@@ -338,8 +334,3 @@ class DetailMap(ShaderAppearance):
     def update_shader_shape_static(self, shape, appearance):
         ShaderAppearance.update_shader_shape_static(self, shape, appearance)
         self.textures_control.update_shader_shape_static(shape, appearance)
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        ShaderAppearance.update_shader_patch_static(self, shape, patch, appearance)
-        self.textures_control.update_shader_patch_static(shape, patch, appearance)
-        patch.instance.set_shader_input("flat_coord", patch.flat_coord)

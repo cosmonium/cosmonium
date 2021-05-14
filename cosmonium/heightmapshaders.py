@@ -66,8 +66,8 @@ class HeightmapDataSource(DataSource):
     F_quintic    = 3
     F_bspline    = 4
 
-    def __init__(self, heightmap, normals=True, shader=None):
-        DataSource.__init__(self, shader)
+    def __init__(self, heightmap, normals=True):
+        DataSource.__init__(self)
         self.heightmap = heightmap
         self.name = self.heightmap.name
         self.has_normal = normals
@@ -389,16 +389,6 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, float height_scal
         self.shader.fragment_shader.add_function(code, 'get_terrain_height_%s' % self.name, self.get_terrain_height)
         self.shader.fragment_shader.add_function(code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal)
 
-    def update_shader_patch_static(self, shape, patch, appearance):
-        patch_data = self.heightmap.get_patch_data(patch)
-        patch.instance.set_shader_input('heightmap_%s' % self.name, patch_data.texture)
-        #TODO: replace this by a vec3
-        patch.instance.set_shader_input("heightmap_%s_height_scale" % self.name, self.heightmap.get_height_scale(patch))
-        patch.instance.set_shader_input("heightmap_%s_u_scale" % self.name, self.heightmap.get_u_scale(patch))
-        patch.instance.set_shader_input("heightmap_%s_v_scale" % self.name, self.heightmap.get_v_scale(patch))
-        patch.instance.set_shader_input("heightmap_%s_offset" % self.name, self.heightmap.get_texture_offset(patch))
-        patch.instance.set_shader_input("heightmap_%s_scale" % self.name, self.heightmap.get_texture_scale(patch))
-
 class StackedHeightmapDataSource(DataSource):
     def __init__(self, heightmap, texture_class, shader=None):
         DataSource.__init__(self, shader)
@@ -501,13 +491,3 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         self.decode_height(code)
         self.get_terrain_height_named(code)
         self.get_terrain_normal_named(code)
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        #TODO: Berk, should be either done in texture load or now switch to explicit heightmap generation in patchedshape
-        heightmap = self.heightmap.get_or_create_heightmap(patch)
-        for i, texture_source in enumerate(self.texture_sources):
-            texture_source.load(patch)
-            texture_source.apply(patch, 'heightmap_%s' % self.heightmap.heightmaps[i].name)
-            patch.instance.set_shader_input("heightmap_%s_height_scale" % self.heightmap.heightmaps[i].name, self.heightmap.heightmaps[i].get_height_scale(patch))
-        patch.instance.set_shader_input("heightmap_%s_u_scale" % self.name, self.heightmap.get_u_scale(patch))
-        patch.instance.set_shader_input("heightmap_%s_v_scale" % self.name, self.heightmap.get_v_scale(patch))

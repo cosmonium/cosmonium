@@ -23,7 +23,7 @@ from panda3d.core import Texture, LColor
 
 from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
-from .patchedshapes import LodControl
+from .heightmapshaders import HeightmapDataSource
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .interpolators import HardwareInterpolator
 from .filters import BilinearFilter
@@ -73,6 +73,16 @@ class HeightmapPatch(PatchData):
     async def load(self, patch):
         pass
 
+    def apply(self, instance):
+        name = self.parent.name
+        instance.set_shader_input('heightmap_%s' % name, self.texture)
+        #TODO: replace this by a vec3
+        instance.set_shader_input("heightmap_%s_height_scale" % name, self.parent.get_height_scale(self.patch))
+        instance.set_shader_input("heightmap_%s_u_scale" % name, self.parent.get_u_scale(self.patch))
+        instance.set_shader_input("heightmap_%s_v_scale" % name, self.parent.get_v_scale(self.patch))
+        instance.set_shader_input("heightmap_%s_offset" % name, self.texture_offset)
+        instance.set_shader_input("heightmap_%s_scale" % name, self.texture_scale)
+
     def clear(self):
         PatchData.clear(self)
         self.texture_peeker = None
@@ -121,7 +131,6 @@ class HeightmapPatch(PatchData):
         texture.set_clear_color(LColor(0, 0, 0, 0))
         texture.make_ram_image()
         return texture
-
 
 class TextureHeightmapPatch(HeightmapPatch):
     def __init__(self, data_source, parent, patch, width, height, overlap):
@@ -271,6 +280,8 @@ class PatchedHeightmapBase(HeightmapBase, PatchedData):
         else:
             return self.v_scale
 
+    def get_data_source(self):
+        return HeightmapDataSource(self)
 
 class TexturePatchedHeightmap(PatchedHeightmapBase):
     def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):

@@ -57,8 +57,8 @@ class TextureBase(object):
     def apply(self, shape):
         pass
 
-    def apply_shader(self, shape, input_name, texture, texture_lod):
-        shape.instance.set_shader_input(input_name, texture)
+    def apply_shader(self, instance, input_name, texture, texture_lod):
+        instance.set_shader_input(input_name, texture)
 
     def clear_patch(self, patch):
         pass
@@ -567,8 +567,8 @@ class TextureArray(TextureBase):
                 self.convert_texture(texture)
                 self.mipmap(texture)
 
-    def apply(self, shape):
-        self.apply_shader(shape, self.input_name, self.texture, None)
+    def apply(self, instance):
+        self.apply_shader(instance, self.input_name, self.texture, None)
 
     def clear_patch(self, patch):
         # A non-patched texture can not be cleared per patch
