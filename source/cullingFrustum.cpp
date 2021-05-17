@@ -37,8 +37,7 @@ CullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double pa
   if (shift_patch_origin) {
     offset = offset + patch_normal * patch_offset;
   }
-  //offset = LPoint3(*offset);
-  BoundingBox obj_bounds(bb->get_min() + offset, bb->get_max() + offset);
+  BoundingBox obj_bounds(bb->get_min() + LCAST(PN_stdfloat, offset), bb->get_max() + LCAST(PN_stdfloat, offset));
   int intersect = lens_bounds->contains(&obj_bounds);
   return (intersect & BoundingVolume::IF_some) != 0;
 }
@@ -76,8 +75,7 @@ HorizonCullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, do
   if (shift_patch_origin) {
     offset = offset + patch_normal * patch_offset;
   }
-  //offset = LPoint3(*offset);
-  BoundingBox obj_bounds(bb->get_min() + offset, bb->get_max() + offset);
+  BoundingBox obj_bounds(bb->get_min() + LCAST(PN_stdfloat, offset), bb->get_max() + LCAST(PN_stdfloat, offset));
   int intersect = lens_bounds->contains(&obj_bounds);
   return (intersect & BoundingVolume::IF_some) != 0;
 }
