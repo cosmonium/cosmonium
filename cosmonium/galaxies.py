@@ -105,7 +105,7 @@ class GalaxyAppearance(AppearanceBase):
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
 
-    async def apply(self, shape, owner):
+    async def load(self, shape, owner):
         if self.texture is None:
             if self.image is None:
                 self.image = self.sprite.generate()
@@ -113,6 +113,8 @@ class GalaxyAppearance(AppearanceBase):
             texture.load(self.image)
             self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha)
             self.texture.set_tex_matrix(False)
+
+    def apply(self, shape, owner):
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         self.texture.apply(shape)
         shape.instance.set_depth_write(False)

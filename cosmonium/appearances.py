@@ -142,10 +142,16 @@ class AppearanceBase:
     def apply_textures(self, patch):
         pass
 
-    async def apply_patch(self, patch, owner):
+    async def load_patch(self, patch, owner):
         pass
 
-    async def apply(self, shape, owner):
+    def apply_patch(self, patch, owner):
+        pass
+
+    async def load(self, shape, owner):
+        pass
+
+    def apply(self, shape, owner):
         pass
 
     def clear_patch(self, patch):
@@ -351,29 +357,33 @@ class Appearance(AppearanceBase):
         if self.occlusion_map:
             self.occlusion_map.apply(patch)
 
-    async def apply_patch(self, patch, owner):
+    async def load_patch(self, patch, owner):
             if self.nb_textures > 0:
                 #print("LOAD", patch.str_id())
                 await self.load_textures(patch, owner)
-                if patch.instance is not None:
-                    #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
-                    self.apply_textures(patch)
-                else:
-                    #print(globalClock.getFrameCount(), "DISCARD", patch.str_id())
-                    pass
 
-    async def apply(self, shape, owner):
+    def apply_patch(self, patch, owner):
+        if patch.instance is not None:
+            #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
+            self.apply_textures(patch)
+        else:
+            #print(globalClock.getFrameCount(), "DISCARD", patch.str_id())
+            pass
+
+    async def load(self, shape, owner):
+        if not shape.patchable and self.nb_textures > 0:
+            #print("LOAD", shape, self.nb_textures)
+            await self.load_textures(shape, owner)
+
+    def apply(self, shape, owner):
+        if shape.instance is None: return
         #Override any material present on the shape (use ModelAppearance to keep it)
         shape.instance.setMaterial(self.material, 1)
         if self.colorScale is not None:
             shape.instance.set_color_scale(self.colorScale)
-        if shape.patchable: return
-        #print("APPLY", shape, self.nb_textures)
-        if self.nb_textures > 0:
-            await self.load_textures(shape, owner)
-            if shape.instance is not None:
-                #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
-                self.apply_textures(shape)
+        if not shape.patchable and self.nb_textures > 0:
+            #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
+            self.apply_textures(shape)
 
     def clear_patch(self, patch):
         if patch.instance is not None:
@@ -516,5 +526,8 @@ class ModelAppearance(AppearanceBase):
             self.transparency_blend = TransparencyBlend.TB_Alpha
         self.nb_textures_coord = 1
 
-    async def apply(self, shape, owner):
+    async def load(self, shape, owner):
         self.scan_model(shape.instance)
+
+    def apply(self, shape, owner):
+        pass
