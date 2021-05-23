@@ -155,7 +155,7 @@ class PatchedData():
         if patch_data.parent_data is None and patch.lod > 0:
             print("NO PARENT DATA FOR", patch.str_id())
 
-    async def load_patch_data(self, patch):
+    async def load_patch_data(self, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             if not patch_data.loaded:
@@ -168,7 +168,7 @@ class PatchedData():
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
-    def apply(self, patch):
+    def apply_patch_data(self, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             patch_data.apply(patch)
@@ -185,3 +185,9 @@ class PatchedData():
 
     def clear_all(self):
         self.map_patch_data = {}
+
+    async def load(self, shape, owner):
+        pass
+
+    def apply(self, shape, owner):
+        pass

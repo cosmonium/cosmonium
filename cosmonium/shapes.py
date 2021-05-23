@@ -234,6 +234,7 @@ class ShapeObject(VisibleObject):
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
+        self.sources = [self.appearance]
         self.instance_ready = False
         self.owner = None
         self.shadows = MultiShadows(self)
@@ -370,9 +371,13 @@ class ShapeObject(VisibleObject):
 
     async def patch_task(self, patch):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
-        await self.appearance.load_patch(patch, self)
-        self.appearance.apply_patch(patch, self)
+        for source in self.sources:
+            source.create_patch_data(patch)
+        load_tasks = map(lambda x: x.load_patch_data(patch, self), self.sources)
+        await gather(*load_tasks)
         if patch.instance is not None:
+            for source in self.sources:
+                source.apply_patch_data(patch, self)
             patch.instance_ready = True
             if self.shader is not None:
                 if self.first_patch:
@@ -387,9 +392,11 @@ class ShapeObject(VisibleObject):
 
     async def shape_task(self, shape):
         #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
-        await self.appearance.load(shape, self)
-        self.appearance.apply(shape, self)
+        load_tasks = map(lambda x: x.load(shape, self), self.sources)
+        await gather(*load_tasks)
         if shape.instance is not None:
+            for source in self.sources:
+                source.apply(shape, self)
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
@@ -414,8 +421,9 @@ class ShapeObject(VisibleObject):
         if patch.lod > 0:
             #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready, id(patch.instance))
             patch.instance_ready = True
-            if self.appearance is not None:
-                self.appearance.apply_textures(patch)
+            for source in self.sources:
+                source.create_patch_data(patch)
+                source.apply_patch_data(patch, self)
             if self.shader is not None:
                 self.shader.apply_patch(self.shape, patch, self.appearance)
             patch.patch_done()

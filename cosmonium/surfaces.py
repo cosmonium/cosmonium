@@ -196,6 +196,9 @@ class HeightmapSurface(EllipsoidSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
+        self.sources.append(self.heightmap)
+        if biome is not None:
+            self.sources.append(biome)
         self.min_radius = self.heightmap_base + self.height_scale * self.heightmap.min_height
         self.max_radius = self.heightmap_base + self.height_scale * self.heightmap.max_height
         #TODO: Make a proper method for this...
@@ -216,50 +219,6 @@ class HeightmapSurface(EllipsoidSurface):
 
     def get_max_radius(self):
         return self.max_radius
-
-    def shape_done(self):
-        if not self.shape.patchable:
-            self.heightmap.apply(self.shape)
-        EllipsoidSurface.shape_done(self)
-
-    async def patch_task(self, patch):
-        #TODO: We should use gather instead
-        self.heightmap.create_patch_data(patch)
-        await self.heightmap.load_patch_data(patch)
-        if self.biome is not None:
-            self.biome.create_patch_data(patch)
-            await self.biome.load_patch_data(patch)
-        if patch.instance is not None:
-            self.heightmap.apply(patch)
-            if self.biome is not None:
-                self.biome.apply(patch)
-        else:
-            #print("DISCARDED", patch.str_id())
-            pass
-        await EllipsoidSurface.patch_task(self, patch)
-
-    def early_apply_patch(self, patch):
-        if patch.lod > 0:
-            self.heightmap.create_patch_data(patch)
-            self.heightmap.apply(patch)
-            if self.biome is not None:
-                self.biome.create_patch_data(patch)
-                self.biome.apply(patch)
-        EllipsoidSurface.early_apply_patch(self, patch)
-
-    async def shape_task(self, shape):
-        if not shape.patchable:
-            self.heightmap.load_heightmap(shape)
-            if self.biome is not None:
-                self.biome.load_heightmap(shape)
-            if shape.instance is not None:
-                self.heightmap.apply(shape)
-                if self.biome is not None:
-                    self.biome.apply(shape)
-            else:
-                #print("DISCARDED", patch.str_id())
-                pass
-        await EllipsoidSurface.shape_task(self, shape)
 
     def remove_instance(self):
         self.heightmap.clear_all()
@@ -326,6 +285,9 @@ class HeightmapFlatSurface(FlatSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
+        self.sources.append(self.heightmap)
+        if biome is not None:
+            self.sources.append(biome)
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
@@ -338,50 +300,6 @@ class HeightmapFlatSurface(FlatSurface):
 
     def get_min_radius(self):
         return self.heightmap_base + self.height_scale * self.heightmap.min_height
-
-    def shape_done(self):
-        if not self.shape.patchable:
-            self.heightmap.apply(self.shape)
-        FlatSurface.shape_done(self)
-
-    async def patch_task(self, patch):
-        #TODO: We should use gather instead
-        self.heightmap.create_patch_data(patch)
-        await self.heightmap.load_patch_data(patch)
-        if self.biome is not None:
-            self.biome.create_patch_data(patch)
-            await self.biome.load_patch_data(patch)
-        if patch.instance is not None:
-            self.heightmap.apply(patch)
-            if self.biome is not None:
-                self.biome.apply(patch)
-        else:
-            #print("DISCARDED", patch.str_id())
-            pass
-        await FlatSurface.patch_task(self, patch)
-
-    def early_apply_patch(self, patch):
-        if patch.lod > 0:
-            self.heightmap.create_patch_data(patch)
-            self.heightmap.apply(patch)
-            if self.biome is not None:
-                self.biome.create_patch_data(patch)
-                self.biome.apply(patch)
-        EllipsoidSurface.early_apply_patch(self, patch)
-
-    async def shape_task(self, shape):
-        if not shape.patchable:
-            self.heightmap.load_heightmap(shape)
-            if self.biome is not None:
-                self.biome.load_heightmap(shape)
-            if shape.instance is not None:
-                self.heightmap.apply(shape)
-                if self.biome is not None:
-                    self.biome.apply(shape)
-            else:
-                #print("DISCARDED", patch.str_id())
-                pass
-        await FlatSurface.shape_task(self, shape)
 
     def remove_instance(self):
         self.heightmap.clear_all()

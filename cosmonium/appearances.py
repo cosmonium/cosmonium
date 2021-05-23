@@ -142,10 +142,13 @@ class AppearanceBase:
     def apply_textures(self, patch):
         pass
 
-    async def load_patch(self, patch, owner):
+    def create_patch_data(self, patch):
         pass
 
-    def apply_patch(self, patch, owner):
+    async def load_patch_data(self, patch, owner):
+        pass
+
+    def apply_patch_data(self, patch, owner):
         pass
 
     async def load(self, shape, owner):
@@ -357,12 +360,12 @@ class Appearance(AppearanceBase):
         if self.occlusion_map:
             self.occlusion_map.apply(patch)
 
-    async def load_patch(self, patch, owner):
+    async def load_patch_data(self, patch, owner):
             if self.nb_textures > 0:
                 #print("LOAD", patch.str_id())
                 await self.load_textures(patch, owner)
 
-    def apply_patch(self, patch, owner):
+    def apply_patch_data(self, patch, owner):
         if patch.instance is not None:
             #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
             self.apply_textures(patch)
