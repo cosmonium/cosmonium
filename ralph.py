@@ -65,8 +65,7 @@ from cosmonium.astro.frame import CartesianSurfaceReferenceFrame
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
-from cosmonium.parsers.textureparser import TextureDictionaryYamlParser
-from cosmonium.parsers.texturecontrolparser import TextureControlYamlParser, HeightColorControlYamlParser
+from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.utils import quaternion_from_euler
@@ -265,6 +264,15 @@ class RalphConfigParser(YamlModuleParser):
         self.filter = InterpolatorYamlParser.decode(heightmap.get('filter'))
         self.heightmap_max_lod = heightmap.get('max-lod', 100)
 
+        self.heightmap = ShaderPatchedHeightmap('heightmap',
+                                          self.heightmap_data_source,
+                                          self.heightmap_size,
+                                          -1, 1,
+                                          1.0 / self.tile_size, 0.0,
+                                          0,
+                                          self.interpolator,
+                                          max_lod=self.heightmap_max_lod)
+
         layers = data.get('layers', [])
         self.layers = []
         for layer in layers:
@@ -273,21 +281,19 @@ class RalphConfigParser(YamlModuleParser):
         if biome is not None:
             biome_function = noise_parser.decode(biome)
             self.biome_data_source = HeightmapPatchGenerator(self.biome_size, self.biome_size, biome_function, self.tile_size)
+            self.biome = ShaderPatchedHeightmap('biome',
+                                                self.biome_data_source,
+                                                self.biome_size,
+                                                -1, 1,
+                                                1.0 , 0,
+                                                0,
+                                                self.interpolator)
         else:
             self.biome_data_source = None
+            self.biome = None
 
-        if appearance is not None:
-            appearance_parser = TextureDictionaryYamlParser()
-            self.appearance = appearance_parser.decode(appearance)
-            self.appearance.extend *= 1000
-        else:
-            self.appearance = None
-
-        if control is not None:
-            control_parser = TextureControlYamlParser()
-            self.control = control_parser.decode(control, self.appearance, 1.0)
-        else:
-            self.control = None
+        self.appearance = AppearanceYamlParser.decode(appearance, self.heightmap, 1.0, patched_shape=True)
+        self.appearance.texture_source.extend *= 1000
 
         if water is not None:
             level = water.get('level', 0)
@@ -471,28 +477,6 @@ class RalphAppConfig:
         self.test_start = False
 
 class RoamingRalphDemo(CosmoniumBase):
-    def create_terrain_appearance(self):
-        self.terrain_appearance = ProceduralAppearance(self.ralph_config.control, self.ralph_config.appearance, self.heightmap)
-
-    def create_terrain_heightmap(self):
-        self.heightmap = ShaderPatchedHeightmap('heightmap',
-                                          self.ralph_config.heightmap_data_source,
-                                          self.ralph_config.heightmap_size,
-                                          -1, 1,
-                                          1.0 / self.ralph_config.tile_size, 0.0,
-                                          0,
-                                          self.ralph_config.interpolator,
-                                          max_lod=self.ralph_config.heightmap_max_lod)
-
-    def create_terrain_biome(self):
-        self.biome = ShaderPatchedHeightmap('biome',
-                                      self.ralph_config.biome_data_source,
-                                      self.ralph_config.biome_size,
-                                      -1, 1,
-                                      1.0 , 0,
-                                      0,
-                                      self.ralph_config.interpolator)
-
     def create_terrain_shader(self):
 #         control4 = HeightColorMap('colormap',
 #                 [
@@ -504,16 +488,16 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        data_source = [self.heightmap.get_data_source(),
-                       self.biome.get_data_source(),
-                       self.terrain_appearance.get_data_source()]
+        data_source = [self.ralph_config.heightmap.get_data_source(),
+                       self.ralph_config.biome.get_data_source(),
+                       self.ralph_config.appearance.get_data_source()]
         if settings.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()
         else:
             tessellation_control = None
-        self.terrain_shader = BasicShader(appearance=self.terrain_appearance.get_shader_appearance(),
+        self.terrain_shader = BasicShader(appearance=self.ralph_config.appearance.get_shader_appearance(),
                                           tessellation_control=tessellation_control,
-                                          vertex_control=DisplacementVertexControl(self.heightmap),
+                                          vertex_control=DisplacementVertexControl(self.ralph_config.heightmap),
                                           data_source=data_source)
         self.terrain_shader.add_shadows(ShaderShadowMap('caster', None, self.shadow_caster, use_bias=False))
 
@@ -521,9 +505,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.create_terrain_heightmap()
-        self.create_terrain_biome()
-        self.tile_factory = TileFactory(self.heightmap,
+        self.tile_factory = TileFactory(self.ralph_config.heightmap,
                                         self.ralph_config.tile_density, self.ralph_config.tile_size,
                                         self.ralph_config.height_scale,
                                         self.has_water, self.water,
@@ -534,15 +516,14 @@ class RoamingRalphDemo(CosmoniumBase):
                                                                         self.ralph_config.max_vertex_size,
                                                                         density=settings.patch_constant_density,
                                                                         max_lod=self.ralph_config.max_lod))
-        self.create_terrain_appearance()
         self.create_terrain_shader()
         self.terrain_object = HeightmapFlatSurface(
                                'surface',
                                0, self.ralph_config.tile_size,
                                self.terrain_shape,
-                               self.heightmap,
-                               self.biome,
-                               self.terrain_appearance,
+                               self.ralph_config.heightmap,
+                               self.ralph_config.biome,
+                               self.ralph_config.appearance,
                                self.terrain_shader,
                                clickable=False)
         self.terrain = CompositeShapeObject()

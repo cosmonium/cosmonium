@@ -103,6 +103,7 @@ fog:
     ground: -300
 
 appearance:
+    type: procedural
     textures:
       entries:
         grass: data/procedural/textures/grass/GrassGreenTexture0003.jpg
@@ -112,60 +113,59 @@ appearance:
         soil: data/procedural/textures/soil/dirt_02.png
       scale: [0.5, 0.5]
       tiling: hash
-
-control2:
-      type: colormap
-      percentage: true
-      entries:
-        - height: 0
-          bottom: [0, 0, 0] #black
-          top: [255, 120, 255] #Purple
-        - height: .2
-          top: [120, 120, 255] #Blue
-        - height: .4
-          top: [120, 255, 255] #Aqua
-        - height: .6
-          top: [120, 255, 1201] #Green
-        - height: .7
-          top: [255, 255, 120] #Yellow
-        - height: .9
-          top: [255, 120, 120] #Red
-        - height: 1.0
-          top: [255, 255, 255] #White
-        - height: 1.0
-          top: [0, 0, 0] #black
-control:
-    biome:
-        - entry:
-            slope:
-              - entry: gravel
-              - entry:
-                  height:
-                  - entry: soil
-                    height: 200
-                    height-units: km
-                  - entry: snow
-                    height: 500
-                    height-units: km
-                    blend: 10
-                angle: 5
-                blend: 5
-        - entry:
-            slope:
-                - entry: soil
-                - entry:
-                    height:
-                        - entry: grass
-                          height: 200
-                          height-units: km
-                        - entry: snow
-                          height: 500
-                          height-units: km
-                          blend: 10
-                  angle: 5
-                  blend: 5
-                - entry: rock
-                  angle: 35
-                  blend: 10
-          value: 0
-          blend: 0.1
+    control2:
+         type: colormap
+         percentage: true
+         entries:
+           - height: 0
+             bottom: [0, 0, 0] #black
+             top: [255, 120, 255] #Purple
+           - height: .2
+             top: [120, 120, 255] #Blue
+           - height: .4
+             top: [120, 255, 255] #Aqua
+           - height: .6
+             top: [120, 255, 1201] #Green
+           - height: .7
+             top: [255, 255, 120] #Yellow
+           - height: .9
+             top: [255, 120, 120] #Red
+           - height: 1.0
+             top: [255, 255, 255] #White
+           - height: 1.0
+             top: [0, 0, 0] #black
+    control:
+       biome:
+           - entry:
+               slope:
+                 - entry: gravel
+                 - entry:
+                     height:
+                     - entry: soil
+                       height: 200
+                       height-units: km
+                     - entry: snow
+                       height: 500
+                       height-units: km
+                       blend: 10
+                   angle: 5
+                   blend: 5
+           - entry:
+               slope:
+                   - entry: soil
+                   - entry:
+                       height:
+                           - entry: grass
+                             height: 200
+                             height-units: km
+                           - entry: snow
+                             height: 500
+                             height-units: km
+                             blend: 10
+                     angle: 5
+                     blend: 5
+                   - entry: rock
+                     angle: 35
+                     blend: 10
+             value: 0
+             blend: 0.1
