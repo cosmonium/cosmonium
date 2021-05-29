@@ -259,7 +259,7 @@ class GeneratorChain():
 
     def check_generation(self, task):
         if len(self.queue) > 0:
-            (shader_data, future) = self.queue.pop(0)
+            (tid, shader_data, future) = self.queue.pop(0)
             if not settings.panda11 or not future.cancelled():
                 future.set_result(self.gather_results())
             else:
@@ -270,7 +270,7 @@ class GeneratorChain():
 
     def schedule_next(self):
         while len(self.queue) > 0:
-            (shader_data, future) = self.queue[0]
+            (tid, shader_data, future) = self.queue[0]
             if not settings.panda11 or not future.cancelled():
                 self.prepare(shader_data)
                 break
@@ -279,15 +279,15 @@ class GeneratorChain():
         else:
             self.busy = False
 
-    def schedule(self, shader_data, future):
-        self.queue.append((shader_data, future))
+    def schedule(self, tid, shader_data, future):
+        self.queue.append((tid, shader_data, future))
         if not self.busy:
             self.schedule_next()
             self.busy = True
 
-    def generate(self, shader_data):
+    def generate(self, tid, shader_data):
         future = AsyncFuture()
-        self.schedule(shader_data, future)
+        self.schedule(tid, shader_data, future)
         return future
 
 class GeneratorPool(object):
@@ -305,9 +305,9 @@ class GeneratorPool(object):
         for chain in self.chains:
             chain.remove()
 
-    def generate(self, shader_data):
+    def generate(self, tid, shader_data):
         lowest = self.chains[0]
         for chain in self.chains[1:]:
             if len(chain.queue) < len(lowest.queue):
                 lowest = chain
-        return lowest.generate(shader_data)
+        return lowest.generate(tid, shader_data)

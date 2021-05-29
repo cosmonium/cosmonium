@@ -131,7 +131,7 @@ class HeightmapPatchGenerator():
             self.generator.remove()
             self.generator = None
 
-    async def generate(self, heightmap_patch):
+    async def generate(self, tid, heightmap_patch):
         if self.generator is None:
             self.create(heightmap_patch.patch.coord)
         shader_data = {'heightmap': {'offset': (heightmap_patch.r_x0, heightmap_patch.r_y0, 0.0),
@@ -140,7 +140,7 @@ class HeightmapPatchGenerator():
                                      'face': heightmap_patch.patch.face
                                     }}
         #print("GEN", heightmap_patch.patch.str_id())
-        result = await self.generator.generate(shader_data)
+        result = await self.generator.generate(tid, shader_data)
         data = result['heightmap'].get('heightmap')
         return data
 
@@ -164,5 +164,5 @@ class ShaderHeightmapPatch(HeightmapPatch):
         HeightmapPatch.apply(self, instance)
 
     async def load(self, patch):
-        data = await self.parent.data_source.generate(self)
+        data = await self.parent.data_source.generate("hm - " + patch.str_id(), self)
         self.configure_data(data)
