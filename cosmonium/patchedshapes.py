@@ -487,12 +487,12 @@ class PyQuadTreeNode:
     def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
         self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
         lod_result.check_max_lod(self)
-        #TODO: Should be checked before calling check_lod
-        for child in self.children:
-            child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
         if len(self.children) != 0:
             if self.can_merge_children() and lod_control.should_merge(self, self.apparent_size, self.distance):
                 lod_result.add_to_merge(self)
+            else:
+                for child in self.children:
+                    child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
         else:
             if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
                 if self.are_children_visibles(culling_frustum):
