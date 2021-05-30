@@ -106,7 +106,9 @@ class HeightmapYamlParser(YamlModuleParser):
             height_scale /= radius
             height_offset /= radius
         else:
-            scale_length = 1.0
+            scale_length = data.get('scale-length', 1.0)
+            scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
+            scale_length *= scale_length_units
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
         filter = FilterYamlParser.decode(data.get('filter'))
         if heightmap_type == 'procedural':
