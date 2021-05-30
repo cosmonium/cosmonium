@@ -46,7 +46,6 @@ from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBo
 
 from cosmonium.foundation import BaseObject
 from cosmonium.heightmapshaders import DisplacementVertexControl
-from cosmonium.procedural.appearances import ProceduralAppearance
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
@@ -59,7 +58,7 @@ from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDista
 from cosmonium.shadows import ShadowMap
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
-from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser
+from cosmonium.parsers.heightmapsparser import InterpolatorYamlParser, HeightmapYamlParser
 from cosmonium.controllers import ShipSurfaceBodyMover
 from cosmonium.astro.frame import CartesianSurfaceReferenceFrame
 from cosmonium.parsers.yamlparser import YamlModuleParser
@@ -72,29 +71,44 @@ from cosmonium.utils import quaternion_from_euler
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium import settings
 
+from cosmonium.astro import units
+
+#TODO: Change of base unit should be done properly
+units.m = 1.0
+units.Km = 1000.0
+
 from math import pow, pi, sqrt
 import argparse
 
 class TileFactory(PatchFactory):
-    def __init__(self, heightmap, tile_density, size, height_scale, has_water, water, has_physics, physics):
+    def __init__(self, heightmap, tile_density, size, has_water, water, has_physics, physics):
         self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
-        self.height_scale = height_scale
         self.has_water = has_water
         self.water = water
         self.has_physics = has_physics
         self.physics = physics
 
+    def get_patch_limits(self, patch):
+        height_scale = self.heightmap.height_scale
+        height_offset = self.heightmap.height_offset
+        min_height = self.heightmap.min_height# * height_scale + height_offset
+        max_height = self.heightmap.max_height# * height_scale + height_offset
+        mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0# * height_scale + height_offset
+        if patch is not None:
+            patch_data = self.heightmap.get_patch_data(patch, recurse=True)
+            if patch_data is not None:
+                #TODO: This should be done inside the heightmap patch
+                min_height = patch_data.min_height * height_scale + height_offset
+                max_height = patch_data.max_height * height_scale + height_offset
+                mean_height = patch_data.mean_height * height_scale + height_offset
+            else:
+                print("NO PATCH DATA !!!", patch.str_id())
+        return (min_height, max_height, mean_height)
+
     def create_patch(self, parent, lod, face, x, y):
-        #print("CREATE PATCH", x, y)
-        min_height = -self.height_scale / self.size
-        max_height = self.height_scale / self.size
-        if parent is not None:
-            heightmap_patch = self.heightmap.get_patch_data(parent)
-            if heightmap_patch is not None:
-                min_height = heightmap_patch.min_height / self.size
-                max_height = heightmap_patch.max_height / self.size
+        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
         if settings.hardware_tessellation:
@@ -247,31 +261,10 @@ class RalphConfigParser(YamlModuleParser):
         self.heightmap_size = terrain.get('heightmap-size', 512)
         self.biome_size = terrain.get('biome-size', 128)
 
-        heightmap = data.get('heightmap', {})
-        raw_height_scale = heightmap.get('max-height', 1.0)
-        height_scale_units = heightmap.get('max-height-units', 1.0)
-        scale_length = heightmap.get('scale-length', 2.0)
-        noise = heightmap.get('noise')
-        self.height_scale = raw_height_scale * height_scale_units
-        self.noise_scale = raw_height_scale
-        #filtering = self.decode_filtering(heightmap.get('filter', 'none'))
-        noise_parser = NoiseYamlParser(scale_length)
-        heightmap_function = noise_parser.decode(noise)
-        self.heightmap_data_source = HeightmapPatchGenerator(self.heightmap_size, self.heightmap_size, heightmap_function, self.tile_size)
-        self.shadow_size = terrain.get('shadow-size', 16)
-        self.shadow_box_length = terrain.get('shadow-depth', self.height_scale)
-        self.interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
-        self.filter = InterpolatorYamlParser.decode(heightmap.get('filter'))
-        self.heightmap_max_lod = heightmap.get('max-lod', 100)
+        self.heightmap = HeightmapYamlParser.decode(data.get('heightmap', {}), 'heightmap', patched=True, radius=self.tile_size)
 
-        self.heightmap = ShaderPatchedHeightmap('heightmap',
-                                          self.heightmap_data_source,
-                                          self.heightmap_size,
-                                          -1, 1,
-                                          1.0 / self.tile_size, 0.0,
-                                          0,
-                                          self.interpolator,
-                                          max_lod=self.heightmap_max_lod)
+        self.shadow_size = terrain.get('shadow-size', 16)
+        self.shadow_box_length = terrain.get('shadow-depth', self.tile_size)
 
         layers = data.get('layers', [])
         self.layers = []
@@ -279,6 +272,9 @@ class RalphConfigParser(YamlModuleParser):
             self.layers.append(PopulatorYamlParser.decode(layer))
 
         if biome is not None:
+            heightmap = data.get('heightmap', {})
+            interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
+            noise_parser = NoiseYamlParser(2000.0)
             biome_function = noise_parser.decode(biome)
             self.biome_data_source = HeightmapPatchGenerator(self.biome_size, self.biome_size, biome_function, self.tile_size)
             self.biome = ShaderPatchedHeightmap('biome',
@@ -287,7 +283,7 @@ class RalphConfigParser(YamlModuleParser):
                                                 -1, 1,
                                                 1.0 , 0,
                                                 0,
-                                                self.interpolator)
+                                                interpolator)
         else:
             self.biome_data_source = None
             self.biome = None
@@ -507,7 +503,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def create_terrain(self):
         self.tile_factory = TileFactory(self.ralph_config.heightmap,
                                         self.ralph_config.tile_density, self.ralph_config.tile_size,
-                                        self.ralph_config.height_scale,
                                         self.has_water, self.water,
                                         self.ralph_config.physics.enable, self.physics)
         self.terrain_shape = TiledShape(self.tile_factory,
