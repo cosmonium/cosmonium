@@ -262,6 +262,7 @@ class RalphConfigParser(YamlModuleParser):
         self.biome_size = terrain.get('biome-size', 128)
 
         self.heightmap = HeightmapYamlParser.decode(data.get('heightmap', {}), 'heightmap', patched=True, radius=self.tile_size)
+        self.biome = HeightmapYamlParser.decode(data.get('biome', {}), 'biome', patched=True, radius=None)
 
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.tile_size)
@@ -270,23 +271,6 @@ class RalphConfigParser(YamlModuleParser):
         self.layers = []
         for layer in layers:
             self.layers.append(PopulatorYamlParser.decode(layer))
-
-        if biome is not None:
-            heightmap = data.get('heightmap', {})
-            interpolator = InterpolatorYamlParser.decode(heightmap.get('interpolator'))
-            noise_parser = NoiseYamlParser(2000.0)
-            biome_function = noise_parser.decode(biome)
-            self.biome_data_source = HeightmapPatchGenerator(self.biome_size, self.biome_size, biome_function, self.tile_size)
-            self.biome = ShaderPatchedHeightmap('biome',
-                                                self.biome_data_source,
-                                                self.biome_size,
-                                                -1, 1,
-                                                1.0 , 0,
-                                                0,
-                                                interpolator)
-        else:
-            self.biome_data_source = None
-            self.biome = None
 
         self.appearance = AppearanceYamlParser.decode(appearance, self.heightmap, 1.0, patched_shape=True)
         self.appearance.texture_source.extend *= 1000

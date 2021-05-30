@@ -55,13 +55,16 @@ heightmap:
                       scale: 40
               - -100.0
 biome:
-    aliases:
-      perlin: gpunoise:perlin
+    max-height: 1
+    scale-length: 32768.0
     noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
         fbm:
             noise: perlin
             octaves: 4
-            length: 16384
+            length: 16.384
 layers:
   - shape:
       type: mesh
