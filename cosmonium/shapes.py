@@ -38,6 +38,30 @@ from .parameters import ParametersGroup, AutoUserParameter, UserParameter
 from . import geometry
 from . import settings
 
+class ShapeTasksTree:
+    def __init__(self, sources):
+        self.sources = sources
+        self.named_tasks = {source.name: None for source in sources}
+        self.tasks = []
+
+    def add_task_for(self, source, coro):
+        task = taskMgr.add(coro)
+        self.named_tasks[source.name] = task
+        self.tasks.append(task)
+
+    def collect_patch_tasks(self, patch, owner):
+        for source in self.sources:
+            source.create_load_patch_data_task(self, patch, owner)
+
+    def collect_tasks(self, shape, owner):
+        for source in self.sources:
+            source.create_load_task(self, shape, owner)
+
+    async def run_tasks(self):
+        await gather(*self.tasks)
+        self.named_tasks = {}
+        self.tasks = []
+
 #TODO: Should inherit from VisibleObject !
 class Shape:
     patchable = False
@@ -380,8 +404,9 @@ class ShapeObject(VisibleObject):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
         for source in self.sources:
             source.create_patch_data(patch)
-        load_tasks = map(lambda x: x.load_patch_data(patch, self), self.sources)
-        await gather(*load_tasks)
+        tasks_tree = ShapeTasksTree(self.sources)
+        tasks_tree.collect_patch_tasks(patch, self)
+        await tasks_tree.run_tasks()
         if patch.instance is not None:
             for source in self.sources:
                 source.apply_patch_data(patch, patch.instance)
@@ -396,8 +421,9 @@ class ShapeObject(VisibleObject):
 
     async def shape_task(self, shape):
         #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
-        load_tasks = map(lambda x: x.load(shape, self), self.sources)
-        await gather(*load_tasks)
+        tasks_tree = ShapeTasksTree(self.sources)
+        tasks_tree.collect_tasks(shape, self)
+        await tasks_tree.run_tasks()
         if shape.instance is not None:
             for source in self.sources:
                 source.apply(shape, shape.instance)

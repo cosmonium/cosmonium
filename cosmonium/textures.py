@@ -51,7 +51,7 @@ class TextureBase(object):
     def set_offset(self, offset):
         pass
 
-    def load(self, patch):
+    async def load(self, tasks_tree, patch):
         pass
 
     def apply(self, shape):
@@ -140,7 +140,7 @@ class TextureSource(object):
     def texture_filename(self, patch):
         return None
 
-    def load(self, patch, color_space=None):
+    async def load(self, tasks_tree, patch, color_space=None):
         pass
 
     def clear_patch(self, patch):
@@ -159,7 +159,7 @@ class TextureSource(object):
         return None
 
 class InvalidTextureSource(TextureSource):
-    def load(self, patch, color_space=None):
+    async def load(self, tasks_tree, patch, color_space=None):
         return (None, 0, 0)
 
 class AutoTextureSource(TextureSource):
@@ -219,10 +219,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, patch, color_space=None):
+    def load(self, tasks_tree, patch, color_space=None):
         if self.source is None:
             self.create_source()
-        return self.source.load(patch, color_space)
+        return self.source.load(tasks_tree, patch, color_space)
 
     def clear_patch(self, patch):
         if self.source is None:
@@ -267,7 +267,7 @@ class TextureFileSource(TextureSource):
     def texture_filename(self, patch):
         return self.context.find_texture(self.filename)
 
-    async def load(self, patch, color_space=None):
+    async def load(self, tasks_tree, patch, color_space=None):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
@@ -311,7 +311,7 @@ class DirectTextureSource(TextureSource):
     def replace(self, texture):
         self.texture = texture
 
-    def load(self, patch):
+    async def load(self, tasks_tree, patch):
         return (self.texture, 0, 0)
 
     def get_texture(self, shape):
@@ -347,7 +347,7 @@ class SimpleTexture(TextureBase):
     def convert_texture(self, texture):
         pass
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         if not self.source.loaded or not self.source.cached:
             if self.srgb:
                 color_space=CS_sRGB
@@ -355,7 +355,7 @@ class SimpleTexture(TextureBase):
                 color_space=CS_linear
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            (texture, texture_size, texture_lod) = await self.source.load(patch, color_space=color_space)
+            (texture, texture_size, texture_lod) = await self.source.load(tasks_tree, patch, color_space=color_space)
             if texture is not None:
                 self.convert_texture(texture)
 
@@ -404,9 +404,9 @@ class DataTexture(TextureBase):
             source = AutoTextureSource(source, attribution=None)
         self.source = source
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         if not self.source.loaded or not self.source.cached:
-            await self.source.load(patch)
+            await self.source.load(tasks_tree, patch)
 
     def apply(self, shape, input_name):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
@@ -556,7 +556,7 @@ class TextureArray(TextureBase):
             elif tex_format == Texture.F_rgba:
                 texture.set_format(Texture.F_srgb_alpha)
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         if self.texture is None:
             if settings.sync_texture_load:
                 texture = workers.syncTextureLoader.load_texture_array(self.textures)
@@ -623,7 +623,7 @@ class VirtualTextureSource(TextureSource):
         if parent_patch is not None:
             return self.map_patch[parent_patch.str_id()]
 
-    async def load(self, patch, color_space=None):
+    async def load(self, tasks_tree, patch, color_space=None):
         texture_info = None
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)

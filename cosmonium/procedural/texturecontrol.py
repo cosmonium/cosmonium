@@ -25,13 +25,12 @@ from ..shaders import ShaderComponent
 from math import cos, pi
 
 class TextureControl(ShaderComponent):
-    def __init__(self, name, heightmap=None, shader=None):
+    def __init__(self, name, shader=None):
         ShaderComponent.__init__(self, shader)
         self.name = name
-        self.heightmap = heightmap
 
-    def set_heightmap(self, heightmap):
-        self.heightmap = heightmap
+    def get_sources_names(self):
+        return set('heightmap')
 
     def color_func_call(self, code):
         pass
@@ -106,6 +105,12 @@ class HeightTextureControl(TextureControl):
         TextureControl.__init__(self, name)
         self.entries = entries
 
+    def get_sources_names(self):
+        sources = set('heightmap')
+        for entry in self.entries:
+            sources.update(entry.texture_control.get_sources_names())
+        return sources
+
     def set_shader(self, shader):
         TextureControl.set_shader(self, shader)
         for entry in self.entries:
@@ -163,6 +168,12 @@ class SlopeTextureControl(TextureControl):
         TextureControl.__init__(self, name)
         self.entries = entries
 
+    def get_sources_names(self):
+        sources = set('heightmap')
+        for entry in self.entries:
+            sources.update(entry.texture_control.get_sources_names())
+        return sources
+
     def set_shader(self, shader):
         TextureControl.set_shader(self, shader)
         for entry in self.entries:
@@ -211,6 +222,12 @@ class BiomeControl(TextureControl):
         self.biome_name = biome_name
         self.entries = entries
 
+    def get_sources_names(self):
+        sources = set(self.biome_name)
+        for entry in self.entries:
+            sources.update(entry.texture_control.get_sources_names())
+        return sources
+
     def set_shader(self, shader):
         TextureControl.set_shader(self, shader)
         for entry in self.entries:
@@ -253,6 +270,9 @@ class MixTextureControl(TextureControl):
     def __init__(self, name, textures_control):
         TextureControl.__init__(self, name)
         self.textures_control = textures_control
+
+    def get_sources_names(self):
+        return self.textures_control.get_sources_names()
 
     def set_shader(self, shader):
         TextureControl.set_shader(self, shader)

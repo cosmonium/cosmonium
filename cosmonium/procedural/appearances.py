@@ -90,25 +90,25 @@ class TexturesDictionary(AppearanceBase):
                 for texture in entry.textures:
                     texture.apply(instance)
 
-    def load_textures(self, shape, owner):
+    def load_textures(self, tasks_tree, shape, owner):
         tasks = []
         for entry in self.blocks.values():
             for texture in entry.textures:
-                tasks.append(texture.load(shape))
+                tasks.append(texture.load(tasks_tree, shape))
         return gather(*tasks)
 
-    def load_texture_array(self, shape, owner):
+    def load_texture_array(self, tasks_tree, shape, owner):
         tasks = []
         for texture in self.texture_arrays.values():
-            tasks.append(texture.load(shape))
+            tasks.append(texture.load(tasks_tree, shape))
         return gather(*tasks)
 
-    async def load(self, shape, owner):
+    async def load(self, tasks_tree, shape, owner):
         if self.nb_textures > 0:
             if self.texture_array:
-                await self.load_texture_array(shape, owner)
+                await self.load_texture_array(tasks_tree, shape, owner)
             else:
-                await self.load_textures(shape, owner)
+                await self.load_textures(tasks_tree, shape, owner)
 
     def apply(self, shape, instance):
         if self.nb_textures > 0:
@@ -158,8 +158,8 @@ class ProceduralAppearance(AppearanceBase):
     def get_shader_appearance(self):
         return self.shader_appearance
 
-    async def load(self, shape, owner):
-        await self.texture_source.load(shape, owner)
+    async def load(self, tasks_tree, shape, owner):
+        await self.texture_source.load(tasks_tree, shape, owner)
 
     def apply(self, shape, instance):
         self.texture_source.apply(shape, instance)

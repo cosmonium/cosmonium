@@ -105,7 +105,7 @@ class GalaxyAppearance(AppearanceBase):
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
 
-    async def load(self, shape, owner):
+    async def load(self, tasks_tree, shape, owner):
         if self.texture is None:
             if self.image is None:
                 self.image = self.sprite.generate()

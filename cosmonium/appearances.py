@@ -100,6 +100,7 @@ class TexturesBlock(object):
 
 class AppearanceBase:
     def __init__(self):
+        self.name = 'appearance'
         self.tex_transform = False
         self.nb_textures = 0
         self.texture_index = 0
@@ -145,13 +146,19 @@ class AppearanceBase:
     def create_patch_data(self, patch):
         pass
 
-    async def load_patch_data(self, patch, owner):
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        tasks_tree.add_task_for(self, self.load_patch_data(tasks_tree, patch, owner))
+
+    async def load_patch_data(self, tasks_tree, patch, owner):
         pass
 
     def apply_patch_data(self, patch, instance):
         pass
 
-    async def load(self, shape, owner):
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
+
+    async def load(self, tasks_tree, shape, owner):
         pass
 
     def apply(self, shape, instance):
@@ -325,20 +332,20 @@ class Appearance(AppearanceBase):
         else:
             return None
 
-    def load_textures(self, shape, owner):
+    def load_textures(self, tasks_tree, shape, owner):
         tasks = []
         if self.texture:
-            tasks.append(self.texture.load(shape))
+            tasks.append(self.texture.load(tasks_tree, shape))
         if self.normal_map:
-            tasks.append(self.normal_map.load(shape))
+            tasks.append(self.normal_map.load(tasks_tree, shape))
         if self.bump_map:
-            tasks.append(self.bump_map.load(shape))
+            tasks.append(self.bump_map.load(tasks_tree, shape))
         if self.specular_map:
-            tasks.append(self.specular_map.load(shape))
+            tasks.append(self.specular_map.load(tasks_tree, shape))
         if self.emission_texture:
-            tasks.append(self.emission_texture.load(shape))
+            tasks.append(self.emission_texture.load(tasks_tree, shape))
         if self.occlusion_map:
-            tasks.append(self.occlusion_map.load(shape))
+            tasks.append(self.occlusion_map.load(tasks_tree, shape))
         return gather(*tasks)
 
     def apply_textures(self, patch):
@@ -360,10 +367,10 @@ class Appearance(AppearanceBase):
         if self.occlusion_map:
             self.occlusion_map.apply(patch)
 
-    async def load_patch_data(self, patch, owner):
+    async def load_patch_data(self, tasks_tree, patch, owner):
             if self.nb_textures > 0:
                 #print("LOAD", patch.str_id())
-                await self.load_textures(patch, owner)
+                await self.load_textures(tasks_tree, patch, owner)
 
     def apply_patch_data(self, patch, instance):
         if patch.instance is not None:
@@ -373,10 +380,10 @@ class Appearance(AppearanceBase):
             #print(globalClock.getFrameCount(), "DISCARD", patch.str_id())
             pass
 
-    async def load(self, shape, owner):
+    async def load(self, tasks_tree, shape, owner):
         if not shape.patchable and self.nb_textures > 0:
             #print("LOAD", shape, self.nb_textures)
-            await self.load_textures(shape, owner)
+            await self.load_textures(tasks_tree, shape, owner)
 
     def apply(self, shape, instance):
         #Override any material present on the shape (use ModelAppearance to keep it)
@@ -528,7 +535,7 @@ class ModelAppearance(AppearanceBase):
             self.transparency_blend = TransparencyBlend.TB_Alpha
         self.nb_textures_coord = 1
 
-    async def load(self, shape, owner):
+    async def load(self, tasks_tree, shape, owner):
         self.scan_model(shape.instance)
 
     def apply(self, shape, instance):

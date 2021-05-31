@@ -89,13 +89,13 @@ class NoiseTextureGenerator():
             self.tex_generator.remove()
             self.tex_generator = None
 
-    async def generate(self, shape, patch):
+    async def generate(self, tasks_tree, shape, patch):
         if self.tex_generator is None:
             self.create(shape.coord)
         shader_data = {}
         self.texture_stage.configure_data(shader_data, shape, patch)
         #print("GEN", patch.str_id())
-        result = await self.tex_generator.generate(shader_data)
+        result = await self.tex_generator.generate(tasks_tree, shader_data)
         texture = result[self.texture_stage.name].get('texture')
         return texture
 
@@ -107,9 +107,9 @@ class ProceduralVirtualTextureSource(TextureSource):
         self.texture_size = size
         self.tex_generator = tex_generator
 
-    async def load(self, shape, color_space):
+    async def load(self, tasks_tree, shape, color_space):
         if self.texture is None:
-            self.texture = await self.tex_generator.generate(shape, None)
+            self.texture = await self.tex_generator.generate(tasks_tree, shape, None)
         return (self.texture, self.texture_size, 0)
 
     def get_texture(self, shape, strict=False):
@@ -140,11 +140,11 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
     def can_split(self, patch):
         return True
 
-    async def load(self, patch, color_space):
+    async def load(self, tasks_tree, patch, color_space):
         #print("LOAD", patch.str_id())
         texture_info = None
         if not patch.str_id() in self.map_patch:
-            texture = await self.tex_generator.generate(patch, patch)
+            texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch)
             #print("READY", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info

@@ -1542,8 +1542,14 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
         return (copysign(vx, x), copysign(vy, y))
 
 class PatchedShapeDataSource:
+    def __init__(self):
+        self.name = 'shape'
+
     def create_patch_data(self, patch):
         pass
+
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        tasks_tree.add_task_for(self, self.load_patch_data(patch, owner))
 
     async def load_patch_data(self, patch, owner):
         pass
@@ -1558,6 +1564,9 @@ class PatchedShapeDataSource:
 
     def clear_all(self):
         pass
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(shape, owner))
 
     async def load(self, shape, owner):
         pass

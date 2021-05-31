@@ -249,7 +249,6 @@ class DetailMap(ShaderAppearance):
         ShaderAppearance.__init__(self, shader)
         self.textures_control = textures_control
         self.heightmap = heightmap
-        self.textures_control.set_heightmap(self.heightmap)
         self.create_normals = create_normals
         self.normal_texture_tangent_space = True
         self.resolved = False

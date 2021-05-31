@@ -158,6 +158,9 @@ class PatchedData():
         if patch_data.parent_data is None and patch.lod > 0:
             print("NO PARENT DATA FOR", patch.str_id())
 
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        tasks_tree.add_task_for(self, self.load_patch_data(patch, owner))
+
     async def load_patch_data(self, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
@@ -188,6 +191,9 @@ class PatchedData():
 
     def clear_all(self):
         self.map_patch_data = {}
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(shape, owner))
 
     async def load(self, shape, owner):
         pass
