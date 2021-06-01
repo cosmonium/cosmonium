@@ -201,7 +201,7 @@ class TextureDictionaryDataSource(DataSource):
             if source == name + '_index':
                 return (index, self.dictionary.nb_blocks)
         if error: print("Unknown source '%s' requested" % source)
-        return 0
+        return ''
 
 class ProceduralMap(ShaderAppearance):
     use_vertex = True
