@@ -956,7 +956,7 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
         self.instance.set_quat(LQuaternion(*orientation))
 
     def update_instance(self, patch):
-        if self.instance is not None and self.shown:
+        if self.instance is not None and patch.shown:
                 self.remove_instance()
                 self.create_instance(patch)
 
