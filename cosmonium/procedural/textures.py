@@ -133,7 +133,8 @@ class NoiseTextureGenerator():
 
     async def generate(self, tasks_tree, shape, patch):
         if self.tex_generator is None:
-            self.create(shape.coord)
+            #TODO: This condition is needed for unpatched procedural ring, to be corrected
+            self.create(patch.coord if patch else shape.coord)
         shader_data = {}
         self.texture_stage.configure_data(shader_data, shape, patch)
         #print("GEN", patch.str_id())
