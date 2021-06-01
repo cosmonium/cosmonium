@@ -402,6 +402,8 @@ class ShapeObject(VisibleObject):
 
     async def patch_task(self, patch):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
+        if self.shape.task is not None:
+            await self.shape.task
         for source in self.sources:
             source.create_patch_data(patch)
         tasks_tree = ShapeTasksTree(self.sources)
