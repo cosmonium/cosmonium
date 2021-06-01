@@ -45,6 +45,8 @@ class TexturesDictionary(AppearanceBase):
         self.nb_arrays = 0
         self.extend = 2 * pi * max(self.scale_factor) * units.m
         self.resolved = False
+        self.loaded = False
+        self.task = None
         self.blocks = {}
         self.blocks_index = {}
         if settings.use_texture_array and array:
@@ -103,17 +105,26 @@ class TexturesDictionary(AppearanceBase):
             tasks.append(texture.load(tasks_tree, shape))
         return gather(*tasks)
 
+    def task_done(self, task):
+        self.task = None
+
     async def load(self, tasks_tree, shape, owner):
-        if self.nb_textures > 0:
-            if self.texture_array:
-                await self.load_texture_array(tasks_tree, shape, owner)
-            else:
-                await self.load_textures(tasks_tree, shape, owner)
+        if not self.loaded:
+            if self.task is None:
+                if self.texture_array:
+                    self.task = self.load_texture_array(tasks_tree, shape, owner)
+                else:
+                    self.task = self.load_textures(tasks_tree, shape, owner)
+                self.task.setUponDeath(self.task_done)
+            await self.task
+            #TODO: loaded should be protected by a lock to avoid race condition with clear()
+            self.loaded = True
 
     def apply(self, shape, instance):
-        if self.nb_textures > 0:
-            self.apply_textures(instance)
-            instance.set_shader_input("detail_factor", self.scale_factor)
+        if not self.loaded:
+            print("ERROR: Applying not loaded texture")
+        self.apply_textures(instance)
+        instance.set_shader_input("detail_factor", self.scale_factor)
 
     def clear_textures(self):
         for entry in self.blocks.values():
@@ -125,11 +136,11 @@ class TexturesDictionary(AppearanceBase):
             texture.clear_all()
 
     def clear_all(self):
-        if self.nb_textures > 0:
-            if self.texture_array:
-                self.clear_texture_array()
-            else:
-                self.clear_textures()
+        if self.texture_array:
+            self.clear_texture_array()
+        else:
+            self.clear_textures()
+        self.loaded = False
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
