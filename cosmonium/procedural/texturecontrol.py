@@ -308,8 +308,10 @@ class MixTextureControl(TextureControl):
 
     def create_shader_configuration(self, appearance):
         #TODO: This hack should be removed
-        self.nb_coefs = appearance.texture_source.nb_blocks
-        self.dictionary = appearance.texture_source
+        #self.nb_coefs = appearance.texture_source.nb_blocks
+        #self.dictionary = appearance.texture_source
+        self.nb_coefs = appearance.nb_blocks
+        self.dictionary = appearance
 
     def color_func_call(self, code):
         self.textures_control.color_func_call(code)

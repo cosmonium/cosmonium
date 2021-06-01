@@ -20,7 +20,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..shaders import DataSource, ShaderAppearance
+from ..shaders import DataSource, ShaderAppearance, StructuredShader, ShaderProgram, MultiDataSource
+from .generator import GeneratorVertexShader
 
 class TextureTiling:
     def __init__(self):
@@ -254,7 +255,7 @@ class DetailMap(ShaderAppearance):
         self.resolved = False
 
     def create_shader_configuration(self, appearance):
-        self.textures_control.create_shader_configuration(appearance)
+        self.textures_control.create_shader_configuration(appearance.texture_source)
         self.has_surface = 'albedo' in appearance.texture_source.texture_categories
         self.has_normal = self.create_normals
         self.has_detail_normal = 'normal' in appearance.texture_source.texture_categories
@@ -333,3 +334,80 @@ class DetailMap(ShaderAppearance):
     def update_shader_shape_static(self, shape, appearance):
         ShaderAppearance.update_shader_shape_static(self, shape, appearance)
         self.textures_control.update_shader_shape_static(shape, appearance)
+
+class DeferredDetailMapFragmentShader(ShaderProgram):
+    def __init__(self, data_source, textures_control, heightmap):
+        ShaderProgram.__init__(self, 'fragment')
+        self.data_source = data_source
+        self.textures_control = textures_control
+        self.heightmap = heightmap
+
+    def set_shader(self, shader):
+        self.shader = shader
+        self.textures_control.set_shader(self)
+        #self.heightmap.set_shader(self)
+
+    def create_uniforms(self, code):
+        self.data_source.fragment_uniforms(code)
+        self.textures_control.fragment_uniforms(code)
+        code.append("uniform vec4 flat_coord;")
+
+    def create_inputs(self, code):
+        self.data_source.fragment_inputs(code)
+        code.append("in vec2 texcoord;")
+
+    def create_outputs(self, code):
+        if self.version >= 130:
+            code.append("out vec4 frag_output;")
+
+    def create_extra(self, code):
+        self.data_source.fragment_extra(code)
+        self.textures_control.fragment_extra(code)
+
+    def create_body(self, code):
+        self.data_source.fragment_shader_decl(code)
+        if self.version < 130:
+            code.append('vec4 frag_output;')
+        self.data_source.fragment_shader(code)
+        code.append("vec2 flat_position;")
+        code.append("vec2 texcoord0 = texcoord.xy;")
+        code.append("flat_position.x = flat_coord.x + flat_coord.z * texcoord.x;")
+        code.append("flat_position.y = flat_coord.y + flat_coord.w * (1.0 - texcoord.y);")
+        code.append('vec2 position = flat_position;')
+        code.append('vec3 surface_normal = %s;' % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord.xy'))
+        code.append("float height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord.xy'))
+        code.append('vec2 uv = texcoord.xy;')
+        code.append('float angle = surface_normal.z;')
+        self.textures_control.color_func_call(code)
+        if True or self.has_surface:
+            self.textures_control.get_value(code, 'albedo')
+            code.append("frag_output = %s_albedo;" % self.textures_control.name)
+        if self.version < 130:
+            code.append('gl_FragColor = frag_output;')
+
+class FakeAppearance:
+    # Workaround class to have a shader appearance for the TextureDictionaryDataSource
+    def __init__(self):
+        self.resolved = True
+
+class DeferredDetailMapShader(StructuredShader):
+    def __init__(self, heightmap, textures_control, texture_source):
+        StructuredShader.__init__(self)
+        self.heightmap = heightmap
+        self.texture_source = texture_source
+        self.appearance = FakeAppearance()
+        self.data_source = MultiDataSource()
+        self.data_source.set_shader(self)
+        self.vertex_shader = GeneratorVertexShader()
+        self.fragment_shader = DeferredDetailMapFragmentShader(self.data_source, textures_control, heightmap)
+        self.fragment_shader.set_shader(self)
+
+    def get_shader_id(self):
+        name = 'detailmap'
+        return name
+
+    def update(self, instance, shape, patch, appearance, lod):
+        shape.get_data_source().apply_patch_data(patch, instance)
+        #instance.set_shader_input("flat_coord", patch.flat_coord)
+        self.texture_source.apply(shape, instance)
+        self.heightmap.apply_patch_data(patch, instance)

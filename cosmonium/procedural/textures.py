@@ -23,8 +23,9 @@ from __future__ import absolute_import
 from panda3d.core import Texture
 
 from .generator import RenderTarget, RenderStage, GeneratorChain, GeneratorPool
-from ..textures import TextureSource
+from .shaders import DeferredDetailMapShader, TextureDictionaryDataSource
 from .shadernoise import NoiseShader
+from ..textures import TextureSource
 from .. import settings
 
 class TextureGenerationStage(RenderStage):
@@ -71,6 +72,47 @@ class TextureGenerationStage(RenderStage):
                                'lod': 0
                               }
 
+class DetailTextureGenerationStage(RenderStage):
+    def __init__(self, width, height, heightmap, texture_control, texture_source):
+        RenderStage.__init__(self, "texture", (width, height))
+        self.heightmap = heightmap
+        self.texture_control = texture_control
+        self.texture_source = texture_source
+
+    def create_shader(self):
+        shader = DeferredDetailMapShader(self.heightmap, self.texture_control, self.texture_source)
+        shader.data_source.add_source(TextureDictionaryDataSource(self.texture_source))
+        shader.data_source.add_source(self.heightmap.get_data_source())
+        shader.create_and_register_shader(None, None)
+        return shader
+
+    def create(self):
+        self.target = RenderTarget()
+        (width, height) = self.get_size()
+        self.target.make_buffer(width, height, Texture.F_rgba, to_ram=False)
+        #TODO: Link is missing
+        self.texture_control.create_shader_configuration(self.texture_source)
+        self.target.set_shader(self.create_shader())
+
+    def create_textures(self, shader_data):
+        texture = Texture()
+        texture.set_wrap_u(Texture.WM_clamp)
+        texture.set_wrap_v(Texture.WM_clamp)
+        texture.set_anisotropic_degree(0)
+        if shader_data['lod'] == 0:
+            texture.set_minfilter(Texture.FT_linear_mipmap_linear)
+        else:
+            texture.set_minfilter(Texture.FT_linear)
+        texture.set_magfilter(Texture.FT_linear)
+        return {'texture': texture}
+
+    def configure_data(self, data, shape, patch):
+        data[self.name] = {'shape': shape,
+                           'patch': patch,
+                           'appearance': None,
+                           'lod': patch.lod
+                          }
+
 class NoiseTextureGenerator():
     def __init__(self, size, noise, target):
         self.texture_size = size
@@ -99,6 +141,44 @@ class NoiseTextureGenerator():
         texture = result[self.texture_stage.name].get('texture')
         return texture
 
+class DetailMapTextureGenerator():
+    def __init__(self, size, heightmap, texture_control, texture_source):
+        self.texture_size = size
+        self.heightmap = heightmap
+        self.texture_control = texture_control
+        self.texture_source = texture_source
+        self.tex_generator = None
+        self.texture_stage = None
+
+    def create(self):
+        self.tex_generator = GeneratorPool([])
+        for i in range(settings.patch_pool_size):
+            chain =  GeneratorChain()
+            self.texture_stage = DetailTextureGenerationStage(self.texture_size, self.texture_size, self.heightmap, self.texture_control, self.texture_source)
+            chain.add_stage(self.texture_stage)
+            self.tex_generator.add_chain(chain)
+        self.tex_generator.create()
+
+    def clear_all(self):
+        if self.tex_generator is not None:
+            self.tex_generator.remove()
+            self.tex_generator = None
+
+    async def generate(self, tasks_tree, shape, patch):
+        if self.tex_generator is None:
+            self.create()
+        if not self.texture_source.loaded:
+            await self.texture_source.load(tasks_tree, None, None)
+        shader_data = {}
+        for source_name in self.texture_control.get_sources_names():
+            if source_name in tasks_tree.named_tasks:
+                await tasks_tree.named_tasks[source_name]
+        self.texture_stage.configure_data(shader_data, shape, patch)
+        #print("GEN", patch.str_id())
+        result = await self.tex_generator.generate(shader_data)
+        texture = result[self.texture_stage.name]['texture']
+        return texture
+
 class ProceduralVirtualTextureSource(TextureSource):
     cached = True
     procedural = True
@@ -121,12 +201,12 @@ class ProceduralVirtualTextureSource(TextureSource):
 
 class PatchedProceduralVirtualTextureSource(TextureSource):
     cached = False
-    procedural = True
     def __init__(self, tex_generator, size):
         TextureSource.__init__(self)
         self.texture_size = size
         self.map_patch = {}
         self.tex_generator = tex_generator
+        self.procedural = True
 
     def is_patched(self):
         return True

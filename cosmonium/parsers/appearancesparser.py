@@ -26,6 +26,7 @@ from ..appearances import Appearance, ModelAppearance
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.appearances import ProceduralAppearance
 from ..procedural.raymarching import RayMarchingAppearance
+from ..procedural.textures import PatchedProceduralVirtualTextureSource, DetailTextureGenerationStage, DetailMapTextureGenerator
 from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
@@ -152,6 +153,24 @@ class ProceduralAppearanceYamlParser(YamlModuleParser):
         appearance = ProceduralAppearance(texture_control, textures_source, heightmap)
         return appearance
 
+class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data, heightmap, radius):
+        control = data.get('control', None)
+        textures_source = data.get('textures', None)
+        size = data.get('size', 256)
+        control_parser = TextureControlYamlParser()
+        textures_source = TextureDictionaryYamlParser.decode_textures_dictionary(textures_source)
+        texture_control = control_parser.decode(control, heightmap, radius)
+        tex_generator = DetailMapTextureGenerator(size, heightmap, texture_control, textures_source)
+        texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
+        #TODO: procedural is used to configure the lod control
+        texture_source.procedural = False
+        texture = SurfaceTexture(texture_source)
+        appearance = Appearance()
+        appearance.set_texture(texture, None, False, 0.0, TransparencyBlend.TB_None, 0)
+        return appearance
+
 class AppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, heightmap=None, radius=None, patched_shape=True):
@@ -162,6 +181,8 @@ class AppearanceYamlParser(YamlModuleParser):
             appearance = ModelAppearanceYamlParser.decode(parameters)
         elif object_type == 'procedural':
             appearance = ProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
+        elif object_type == 'deferred-procedural':
+            appearance = DeferredProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
         elif object_type == 'textures-dict':
             appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
         else:
