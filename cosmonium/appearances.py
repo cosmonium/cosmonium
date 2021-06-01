@@ -476,7 +476,7 @@ class ModelAppearance(AppearanceBase):
                         self.nb_textures += 1
                         has_normal = True
                         #print("NORMAL", self.normal_map_index, self.normal_map)
-                elif mode in (TextureStage.M_glow, ):
+                elif mode in (TextureStage.M_glow, TextureStage.M_emission):
                     if not has_glow:
                         self.emission_texture = WrapperTexture(tex)
                         self.emission_texture_index = self.nb_textures
