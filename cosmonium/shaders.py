@@ -1771,6 +1771,10 @@ class MultiDataSource(DataSource):
                 str_id += src_id
         return str_id
 
+    def add_source(self, source):
+        self.sources.append(source)
+        source.set_shader(self.shader)
+
     def create_shader_configuration(self, appearance):
         for source in self.sources:
             source.create_shader_configuration(appearance)
