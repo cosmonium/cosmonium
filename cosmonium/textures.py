@@ -408,14 +408,14 @@ class DataTexture(TextureBase):
         if not self.source.loaded or not self.source.cached:
             await self.source.load(tasks_tree, patch)
 
-    def apply(self, shape, input_name):
+    def apply(self, shape, instance, input_name):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             (texture, texture_size, texture_lod) = self.get_default_texture()
         if texture is not None:
             if self.source.is_patched():
                 self.clamp(texture)
-            shape.instance.set_shader_input(input_name, texture)
+            instance.set_shader_input(input_name, texture)
 
     def clear_patch(self, patch):
         self.source.clear_patch(patch)

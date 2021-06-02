@@ -86,7 +86,7 @@ class ShaderHeightmap(TextureHeightmapBase):
     def apply(self, shape):
         shape.instance.set_shader_input("heightmap_%s" % self.name, self.texture)
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         result = await self.do_load(patch)
         data = result['heightmap']['heightmap']
         self.configure_data(data)
@@ -163,6 +163,6 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.calc_sub_patch()
         HeightmapPatch.apply(self, instance)
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         data = await self.parent.data_source.generate("hm - " + patch.str_id(), self)
         self.configure_data(data)

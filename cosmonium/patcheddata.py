@@ -80,7 +80,7 @@ class PatchData:
     def is_ready(self):
         return self.data_ready
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         pass
 
     def apply(self, instance):
@@ -159,9 +159,9 @@ class PatchedData():
             print("NO PARENT DATA FOR", patch.str_id())
 
     def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        tasks_tree.add_task_for(self, self.load_patch_data(patch, owner))
+        tasks_tree.add_task_for(self, self.load_patch_data(tasks_tree, patch, owner))
 
-    async def load_patch_data(self, patch, owner):
+    async def load_patch_data(self, tasks_tree, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             if not patch_data.loaded:
@@ -170,7 +170,7 @@ class PatchedData():
                     # Mark the patch data as loaded as it's beyond max lod
                     patch_data.loaded = True
                 else:
-                    await patch_data.load(patch)
+                    await patch_data.load(tasks_tree, patch)
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 

@@ -70,7 +70,7 @@ class HeightmapPatch(PatchData):
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
 
-    async def load(self, patch):
+    async def load(self, tasks_tree, patch):
         pass
 
     def apply(self, instance):
@@ -137,14 +137,15 @@ class TextureHeightmapPatch(HeightmapPatch):
         HeightmapPatch.__init__(self, parent, patch, width, height, overlap)
         self.data_source = data_source
 
-    def apply(self, patch):
+    def apply(self, instance):
         if self.texture is None:
             # The heightmap is not available yet, use the parent heightmap instead
             self.calc_sub_patch()
-        self.data_source.apply(patch, "heightmap_%s" % self.parent.name)
+        self.data_source.apply(self.patch, instance, "heightmap_%s" % self.parent.name)
+        HeightmapPatch.apply(self, instance)
 
-    async def load(self, patch):
-        await self.data_source.load(patch)
+    async def load(self, tasks_tree, patch):
+        await self.data_source.load(tasks_tree, patch)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
         self.configure_data(texture_data)
 
