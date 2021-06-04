@@ -36,11 +36,11 @@ class HUDObject(object):
         self.instance = None
 
     def hide(self):
-        self.instance.hide()
+        self.instance.stash()
         self.shown = False
 
     def show(self):
-        self.instance.show()
+        self.instance.unstash()
         self.shown = True
 
     def set_scale(self, scale):

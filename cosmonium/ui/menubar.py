@@ -299,10 +299,10 @@ class Menubar:
             textColorDisabled=(.3,.3,.3,1))
 
     def show(self):
-        self.menubar.menu.show()
+        self.menubar.menu.unstash()
 
     def hide(self):
-        self.menubar.menu.hide()
+        self.menubar.menu.stash()
 
     def get_height(self):
         return self.menubar.height
