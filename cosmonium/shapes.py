@@ -371,7 +371,11 @@ class ShapeObject(VisibleObject):
             self.context.observer.scattering.add_attenuated_object(self)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
+        self.configure_render_order()
         self.schedule_jobs()
+
+    def configure_render_order(self):
+        pass
 
     def create_shadow_caster(self):
         pass

@@ -211,6 +211,9 @@ class Clouds(EllipsoidFlatSurface):
     def get_component_name(self):
         return _('Clouds')
 
+    def configure_render_order(self):
+        self.instance.set_bin("transparent", 0)
+
     def configure_shape(self):
         self.radius = self.parent.surface.get_average_radius() + self.height
         #TODO : temporary until height_scale is removed from patchedshape

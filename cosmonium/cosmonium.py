@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
-from panda3d.core import Texture, CardMaker
+from panda3d.core import Texture, CardMaker, CullBinManager
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
@@ -150,6 +150,10 @@ class CosmoniumBase(ShowBase):
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
+
+        # Front to back bin is added between opaque and transparent
+        CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
+        print(CullBinManager.get_global_ptr())
 
     def load_lang(self, domain, locale_path):
         languages = None

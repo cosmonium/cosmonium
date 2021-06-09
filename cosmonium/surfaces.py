@@ -56,6 +56,9 @@ class Surface(ShapeObject):
     def get_component_name(self):
         return _('Surface')
 
+    def configure_render_order(self):
+        self.instance.set_bin("front_to_back", 0)
+
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
 
