@@ -107,7 +107,10 @@ class SurfaceYamlParser(YamlModuleParser):
                                   shape=shape, appearance=appearance, shader=shader)
         else:
             data_source = []
-            data_source.append(heightmap.get_data_source())
+            #TODO: The configuration of the data store can not be done like that
+            if shape.data_store is not None:
+                data_source.append(shape.data_store.get_shader_data_source())
+            data_source.append(heightmap.get_data_source(shape.data_store is not None))
             appearance_source = appearance.get_data_source()
             if appearance_source is not None:
                 data_source.append(appearance_source)

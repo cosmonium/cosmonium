@@ -181,6 +181,16 @@ class PatchedData():
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
+    def get_nb_shader_data(self):
+        raise NotImplementedError()
+
+    def collect_shader_data(self, data, patch):
+        if patch.str_id() in self.map_patch_data:
+            patch_data = self.map_patch_data[patch.str_id()]
+            patch_data.collect_shader_data(data)
+        else:
+            print("PATCH NOT CREATED?", patch.str_id())
+
     def clear_patch(self, patch):
         try:
             patch_data = self.map_patch_data[patch.str_id()]

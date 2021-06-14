@@ -87,6 +87,17 @@ class HeightmapPatch(PatchData):
         PatchData.clear(self)
         self.texture_peeker = None
 
+    def collect_shader_data(self, data):
+        # Data is set as RGBA, but stored as BGRA
+        data += [self.parent.get_v_scale(self.patch),
+                 self.parent.get_u_scale(self.patch),
+                 self.parent.get_height_scale(self.patch),
+                 0.0,
+                 self.texture_scale[0],
+                 self.texture_offset[1],
+                 self.texture_offset[0],
+                 self.texture_scale[1]]
+
     def configure_texture(self):
         self.texture.set_wrap_u(Texture.WMClamp)
         self.texture.set_wrap_v(Texture.WMClamp)
@@ -206,7 +217,6 @@ class HeightmapBase():
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
 
-
 class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
     def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter):
         HeightmapBase.__init__(self, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter)
@@ -281,8 +291,11 @@ class PatchedHeightmapBase(HeightmapBase, PatchedData):
         else:
             return self.v_scale
 
-    def get_data_source(self):
-        return HeightmapDataSource(self)
+    def get_data_source(self, data_store):
+        return HeightmapDataSource(self, data_store)
+
+    def get_nb_shader_data(self):
+        return 8
 
 class TexturePatchedHeightmap(PatchedHeightmapBase):
     def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):

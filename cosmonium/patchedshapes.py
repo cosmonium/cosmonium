@@ -20,19 +20,23 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode
+from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode, Texture
 from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix3, LMatrix4, LVecBase4i
 from panda3d.core import NodePath, BoundingBox
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from direct.task.Task import gather
 
 from .shapes import Shape
+from .shaders import DataStoreManagerDataSource, ParametersDataStoreDataSource
 from .textures import TexCoord
 from .pstats import pstat
 from . import geometry
 from . import settings
 
 from math import cos, sin, pi, sqrt, copysign, log
+from collections import deque
+import struct
+from array import array
 
 class BoundingBoxShape():
     state = None
@@ -408,6 +412,104 @@ class PatchNeighbours(PatchNeighboursBase):
             self.patch.tessellation_outer_level[dest] = new_level
             #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
+class PatchDataStoreManager:
+    def __init__(self, max_elem):
+        self.max_elem = max_elem
+        self.entries = [None] * max_elem
+        self.free_entries = deque(range(max_elem))
+        self.data_stores = []
+        self.parameters = PatchParametersDataStore()
+        self.add_data_store(self.parameters)
+
+    def add_data_store(self, data_store):
+        self.data_stores.append(data_store)
+        data_store.parent = self
+
+    def init(self):
+        for data_store in self.data_stores:
+            data_store.init()
+
+    def get_shader_data_source(self):
+        shader_data_source = DataStoreManagerDataSource()
+        for data_store in self.data_stores:
+            shader_data_source.add_source(data_store.get_shader_data_source())
+        return shader_data_source
+
+    def apply(self, instance):
+        for data_store in self.data_stores:
+            data_store.apply(instance)
+
+    def clear(self):
+        self.entries = [None] * self.max_elem
+        self.free_entries = deque(range(self.max_elem))
+        for data_store in self.data_stores:
+            data_store.clear()
+
+    def apply_patch_data(self, patch, instance):
+        if patch.entry_id is None:
+            self.add_patch(patch)
+        instance.set_shader_input('entry_id', patch.entry_id)
+
+    def add_patch(self, patch):
+        if patch.entry_id is None:
+            entry_id = self.free_entries.pop()
+            patch.entry_id = entry_id
+
+    def remove_patch(self, patch):
+        entry_id = patch.entry_id
+        if entry_id is not None:
+            self.free_entries.append(entry_id)
+            patch.entry_id = None
+
+    def update_patch(self, patch):
+        if patch.entry_id is None:
+            self.add_patch(patch)
+        for data_store in self.data_stores:
+            data_store.update_patch(patch)
+
+class PatchParametersDataStore:
+    def __init__(self):
+        self.texture_data = None
+        self.data_sources = []
+        self.data_size = 0
+        self.texture_size = 0
+        self.pack_format = ''
+
+    def get_shader_data_source(self):
+        return ParametersDataStoreDataSource()
+
+    def add_data_source(self, data_source):
+        if self.texture_data is not None:
+            print("ERROR, can not add data source")
+            return
+        self.data_sources.append(data_source)
+        self.data_size += data_source.get_nb_shader_data()
+        self.texture_size = self.parent.max_elem * ((self.data_size * 4 + 15) // 16)
+        self.pack_format = 'f' * self.data_size
+
+    def init(self):
+        if self.texture_size == 0: return
+        self.texture_data = Texture()
+        self.texture_data.setup_1d_texture(self.texture_size, Texture.T_float, Texture.F_rgba32)
+        self.texture_data.set_clear_color(0.0)
+
+    def apply(self, instance):
+        if self.texture_size == 0: return
+        instance.set_shader_input("data_store", self.texture_data)
+
+    def clear(self):
+        self.texture_data = None
+
+    def update_patch(self, patch):
+        if self.texture_size == 0: return
+        data = []
+        for data_source in self.data_sources:
+            data_source.collect_shader_data(data, patch)
+        data_buffer = memoryview(self.texture_data.modify_ram_image())
+        offset = patch.entry_id * self.data_size * 4
+        packed_data = struct.pack(self.pack_format, *data)
+        data_buffer[offset : offset + self.data_size * 4] = packed_data
+
 class PyQuadTreeNode:
     def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
         Shape.__init__(self)
@@ -522,6 +624,7 @@ class PatchBase(Shape):
         self.density = density
         self.owner = None
         self.quadtree_node = None
+        self.entry_id = None
         self.tessellation_inner_level = density
         self.tessellation_outer_level = LVecBase4i(density, density, density, density)
         self.neighbours = PatchNeighbours(self)
@@ -971,6 +1074,12 @@ class PatchedShapeBase(Shape):
         self.factory.set_lod_control(lod_control)
         self.factory.set_heightmap(heightmap)
         self.factory.set_owner(self)
+        self.data_store = None
+        if settings.patch_data_store:
+            self.data_store = PatchDataStoreManager(max_elem=settings.patch_data_store_max_elems)
+            if settings.patch_parameters_data_store:
+                if heightmap is not None:
+                    self.data_store.parameters.add_data_source(heightmap)
         self.root_patches = []
         self.patches = []
         self.linked_objects = []
@@ -993,10 +1102,12 @@ class PatchedShapeBase(Shape):
             self.frustum_node = None
 
     def get_data_source(self):
-        return PatchedShapeDataSource()
+        return PatchedShapeDataSource(self)
 
     def set_heightmap(self, heightmap):
         self.factory.set_heightmap(heightmap)
+        if self.data_store is not None and settings.patch_parameters_data_store:
+            self.data_store.parameters.add_data_source(heightmap)
 
     def set_lod_control(self, lod_control):
         self.lod_control = lod_control
@@ -1062,6 +1173,8 @@ class PatchedShapeBase(Shape):
         if len(patch.children) == 0:
             # Only remove a patch if it has no children, its data might be used by one of the child.
             self.parent.remove_patch(patch)
+        if self.data_store is not None:
+            self.data_store.remove_patch(patch)
 
     def update_patch_instances(self, update):
         for patch in update:
@@ -1077,6 +1190,8 @@ class PatchedShapeBase(Shape):
     async def create_instance(self):
         if self.instance is None:
             self.instance = NodePath('root')
+            if self.data_store is not None:
+                self.data_store.init()
             self.create_root_patches()
             self.apply_owner()
             if self.use_collision_solid:
@@ -1093,11 +1208,15 @@ class PatchedShapeBase(Shape):
 
     def remove_instance(self):
         self.remove_all_patches_instances()
+        if self.data_store is not None:
+            self.data_store.clear()
         Shape.remove_instance(self)
 
     def patch_done(self, patch):
         for linked_object in self.linked_objects:
             linked_object.patch_done(patch)
+        if self.data_store is not None:
+            self.data_store.update_patch(patch)
 
     def place_patches(self, owner):
         if self.frustum_node is not None:
@@ -1542,8 +1661,9 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
         return (copysign(vx, x), copysign(vy, y))
 
 class PatchedShapeDataSource:
-    def __init__(self):
+    def __init__(self, shape):
         self.name = 'shape'
+        self.shape = shape
 
     def create_patch_data(self, patch):
         pass
@@ -1555,6 +1675,8 @@ class PatchedShapeDataSource:
         pass
 
     def apply_patch_data(self, patch, instance):
+        if self.shape.data_store is not None:
+            self.shape.data_store.apply_patch_data(patch, instance)
         instance.set_shader_input("flat_coord", patch.flat_coord)
         instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
         instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
@@ -1571,8 +1693,9 @@ class PatchedShapeDataSource:
     async def load(self, shape, owner):
         pass
 
-    def apply(self, shape, owner):
-        pass
+    def apply(self, shape, instance):
+        if self.shape.data_store is not None:
+            self.shape.data_store.apply(instance)
 
 class PyLodControl(object):
     def __init__(self, density=32, max_lod=100):

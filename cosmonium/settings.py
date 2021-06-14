@@ -89,6 +89,10 @@ patch_constant_density = 32
 cull_far_patches = False
 cull_far_patches_threshold = 10
 
+patch_data_store = True
+patch_data_store_max_elems = 2048
+patch_parameters_data_store = True
+
 use_patch_adaptation = True
 use_patch_skirts = True
 

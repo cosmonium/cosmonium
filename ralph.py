@@ -468,9 +468,12 @@ class RoamingRalphDemo(CosmoniumBase):
 #                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
 #                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
 #                 ])
-        data_source = [self.ralph_config.heightmap.get_data_source(),
-                       self.ralph_config.biome.get_data_source(),
-                       self.ralph_config.appearance.get_data_source()]
+        data_source = []
+        if self.terrain_shape.data_store is not None:
+            data_source.append(self.terrain_shape.data_store.get_shader_data_source())
+        data_source.append(self.ralph_config.heightmap.get_data_source(self.terrain_shape.data_store is not None))
+        data_source.append(self.ralph_config.biome.get_data_source(self.terrain_shape.data_store is not None))
+        data_source.append(self.ralph_config.appearance.get_data_source())
         if settings.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()
         else:

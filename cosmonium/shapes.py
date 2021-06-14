@@ -461,6 +461,7 @@ class ShapeObject(VisibleObject):
                 source.create_patch_data(patch)
                 source.apply_patch_data(patch, patch.instance)
             patch.patch_done()
+            self.shape.patch_done(patch)
 
     def check_visibility(self, pixel_size):
         self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
