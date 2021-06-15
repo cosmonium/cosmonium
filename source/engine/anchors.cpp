@@ -280,11 +280,18 @@ StellarAnchor::update(double time)
   _position = _global_position + _local_position;
 }
 
+LPoint3d
+diff(LPoint3d a, LPoint3d b)
+{
+  return a - b;
+}
+
 void
 StellarAnchor::update_observer(Observer &observer)
 {
-  LPoint3d reference_point_delta = _global_position - observer.get_absolute_reference_point();
-  LPoint3d local_delta = _local_position - observer.get_local_position();
+  //Use a function to do the diff, to work around a probable compiler bug
+  LPoint3d reference_point_delta = diff(_global_position, observer.get_absolute_reference_point());
+  LPoint3d local_delta = diff(_local_position, observer.get_local_position());
   rel_position = reference_point_delta + local_delta;
   distance_to_obs = rel_position.length();
   vector_to_obs = -rel_position / distance_to_obs;
