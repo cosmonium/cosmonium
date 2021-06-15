@@ -20,11 +20,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from panda3d.core import NodePath, OrthographicLens, CardMaker, GraphicsOutput, Texture
-from panda3d.core import FrameBufferProperties, GraphicsPipe, WindowProperties
+from panda3d.core import NodePath, Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture
+from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
+from panda3d.core import AsyncFuture
 from direct.task import Task
 
 from ..shaders import ShaderProgram
+
 from .. import settings
 
 class GeneratorVertexShader(ShaderProgram):
@@ -45,136 +47,267 @@ class GeneratorVertexShader(ShaderProgram):
         code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
         code.append("texcoord = p3d_MultiTexCoord0;")
 
-class TexGenerator(object):
+class RenderTarget(object):
     def __init__(self):
         self.root = None
         self.quad = None
         self.buffer = None
-        self.busy = False
-        self.first = True
-        self.queue = []
-        self.processed = []
+        self.width = None
+        self.height = None
+        self.resizable = False
 
-    def make_buffer(self, width, height, texture_format):
+    def format_to_props(self, texture_format):
+        fbprops = FrameBufferProperties()
+        fbprops.set_srgb_color(False)
+        if texture_format == Texture.F_rgb:
+            fbprops.set_float_color(False)
+            fbprops.set_rgba_bits(8, 8, 8, 0)
+        elif texture_format == Texture.F_rgba:
+            fbprops.set_float_color(False)
+            fbprops.set_rgba_bits(8, 8, 8, 8)
+        elif texture_format == Texture.F_r32:
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 0, 0, 0)
+        elif texture_format == Texture.F_rgb32:
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 32, 32, 0)
+        elif texture_format == Texture.F_rgba32:
+            fbprops.set_float_color(True)
+            fbprops.set_rgba_bits(32, 32, 32, 32)
+        return fbprops
+
+    def make_buffer(self, width, height, texture_format, to_ram):
         self.width = width
         self.height = height
+        self.to_ram = to_ram
         self.root = NodePath("root")
-        props = FrameBufferProperties()
-        props.set_srgb_color(False)
-        if texture_format == Texture.F_rgb:
-            props.set_float_color(False)
-            props.set_rgba_bits(8, 8, 8, 0)
-        elif texture_format == Texture.F_rgba:
-            props.set_float_color(False)
-            props.set_rgba_bits(8, 8, 8, 8)
-        elif texture_format == Texture.F_r32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 0, 0, 0)
-        elif texture_format == Texture.F_rgb32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 32, 32, 0)
-        elif texture_format == Texture.F_rgba32:
-            props.set_float_color(True)
-            props.set_rgba_bits(32, 32, 32, 32)
-        self.buffer = base.win.make_texture_buffer("generatorBuffer", width, height, to_ram=True, fbp=props)
-        #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
-        self.buffer.setOneShot(True)
-        #the camera for the buffer
-        cam = base.makeCamera(win=self.buffer)
-        cam.reparent_to(self.root)
-        cam.set_pos(width / 2, height / 2, 100)
-        cam.set_p(-90)
+        winprops = WindowProperties()
+        winprops.setSize(width, height)
+        fbprops = self.format_to_props(texture_format)
+        win = base.win
+        buffer_options = GraphicsPipe.BF_refuse_window
+        if self.resizable:
+            buffer_options |= GraphicsPipe.BF_resizeable
+        self.buffer = base.graphics_engine.make_output(win.get_pipe(), "generatorBuffer", -1,
+            fbprops, winprops,  buffer_options, win.get_gsg(), win)
+        self.buffer.set_active(False)
+
+        #Create the camera for the buffer
+        cam = Camera("generator-cam")
         lens = OrthographicLens()
-        lens.set_film_size(width, height)
-        cam.node().set_lens(lens)          
-        #plane with the texture
+        lens.set_film_size(2, 2)
+        lens.set_near_far(0, 0)
+        lens.setNearFar(-1000, 1000)
+        cam.set_lens(lens)
+        cam_np = self.root.attach_new_node(cam)
+
+        #Create the plane with the texture
         cm = CardMaker("plane")
-        cm.set_frame(0, width, 0, height)
+        cm.set_frame_fullscreen_quad()
+        #TODO: This should either be done inside the passthrough vertex shader
+        # Or in the heightmap sampler.
         x_margin = 1.0 / width / 2.0
         y_margin = 1.0 / height / 2.0
         cm.set_uv_range((-x_margin, -y_margin), (1 + x_margin, 1 + y_margin))
         self.quad = self.root.attach_new_node(cm.generate())
-        self.quad.look_at(0, 0, -1)
-        taskMgr.add(self.check_generation, 'check_generation', sort = -10000)
-        taskMgr.add(self.callback, 'callback', sort = -9999)
+        self.quad.set_depth_test(False)
+        self.quad.set_depth_write(False)
+
+        #Create the display region and attach the camera
+        dr = self.buffer.make_display_region((0, 1, 0, 1))
+        dr.disable_clears()
+        dr.set_camera(cam_np)
+        dr.set_scissor_enabled(False)
+
         print("Created offscreen buffer, size: %dx%d" % (width, height), "format:", Texture.formatFormat(texture_format))
 
+    def set_shader(self, shader):
+        self.shader = shader
+        self.quad.set_shader(shader.shader)
+
     def remove(self):
+        self.clear()
         if self.buffer is not None:
             self.buffer.set_active(False)
-            base.graphicsEngine.removeWindow(self.buffer)
+            base.graphicsEngine.remove_window(self.buffer)
             self.buffer = None
 
-    def callback(self, task):
-        if len(self.processed) > 0:
-            (shader, face, texture, callback, cb_args) = self.processed[0]
-            if texture.has_ram_image():
-                if callback is not None:
-                    #print(texture)
-                    #print(self.buffer.get_fb_properties(), self.buffer.get_texture())
-                    callback(texture, *cb_args)
-                self.processed.pop(0)
-        return Task.cont
+    def prepare(self, textures, shader_data):
+        if self.buffer is None:
+            print("Prepare called on disabled stage")
+            return
+        self.buffer.clear_render_textures()
+        self.shader.update(self.quad, **shader_data)
+        if self.to_ram:
+            mode = GraphicsOutput.RTM_copy_ram
+        else:
+            mode = GraphicsOutput.RTM_bind_or_copy
+        for texture_config in textures.values():
+            if not isinstance(texture_config, (list, tuple)):
+                texture = texture_config
+                render_target = GraphicsOutput.RTP_color
+            else:
+                texture, render_target = texture_config
+            self.buffer.add_render_texture(texture, mode, render_target)
+        self.buffer.set_one_shot(True)
+        self.buffer.set_active(True)
+
+    def update(self, shader_data):
+        self.shader.update(self.quad, **shader_data)
+        self.buffer.set_one_shot(True)
+
+    def clear(self):
+        self.buffer.clear_render_textures()
+
+class RenderStage():
+    sources = []
+    def __init__(self,name, size):
+        self.name = name
+        self.size = size
+        self.sources_map = {}
+        self.target = None
+        self.textures = None
+
+    def get_size(self):
+        return self.size
+
+    def has_output(self, output_name):
+        return False
+
+    def get_output(self, output_name):
+        return None
+
+    def add_source(self, source_name, stage):
+        self.sources_map[source_name] = stage
+
+    def create(self):
+        raise NotImplementedError()
+
+    def create_textures(self):
+        raise NotImplementedError()
+
+    def prepare(self, shader_data):
+        self.textures = self.create_textures(shader_data)
+        self.target.prepare(self.textures, shader_data)
+
+    def update(self, shader_data):
+        self.target.update(shader_data)
+
+    def gather(self, result):
+        data = {}
+        if self.textures is not None:
+            for name, texture_config in self.textures.items():
+                if isinstance(texture_config, (list, tuple)):
+                    data[name] = texture_config[0]
+                else:
+                    data[name] = texture_config
+        else:
+            print("Stage gather callled on disabled stage")
+        result[self.name] = data
+
+    def clear(self):
+        self.target.clear()
+        self.textures = None
+
+    def remove(self):
+        self.target.remove()
+        self.textures = None
+
+class GeneratorChain():
+    def __init__(self):
+        self.stages = []
+        self.busy = False
+        self.queue = []
+        taskMgr.add(self.check_generation, 'tex_generation', sort = -10000)
+
+    def add_stage(self, stage):
+        for source in stage.sources:
+            for parent in reversed(self.stages):
+                output = parent.get_output(source)
+                if output is not None:
+                    stage.add_source(source, parent)
+                    break
+            else:
+                print("ERROR: Source {} not found".format(source))
+        self.stages.append(stage)
+
+    def create(self):
+        for stage in self.stages:
+            stage.create()
+
+    def prepare(self, shader_data):
+        for stage in self.stages:
+            stage.prepare(shader_data.get(stage.name, {}))
+
+    def update(self, shader_data):
+        for stage in self.stages:
+            stage.update(shader_data.get(stage.name, {}))
+
+    def gather_results(self):
+        result = {}
+        for stage in self.stages:
+            stage.gather(result)
+        return result
+
+    def clear(self):
+        for stage in self.stages:
+            stage.clear()
+
+    def remove(self):
+        for stage in self.stages:
+            stage.remove()
 
     def check_generation(self, task):
-        if self.buffer is None:
-            return Task.cont
-        if self.first and len(self.queue) > 0:
-            (shader, face, texture, callback, cb_args) = self.queue[0]
-            if not texture.has_ram_image():
-                #print("FIRST")
-                self.buffer.setOneShot(True)
-            else:
-                self.first = False
-            return Task.cont
         if len(self.queue) > 0:
-            self.processed.append(self.queue.pop(0))
-            if len(self.queue) > 0:
-                self.schedule_next()
+            (tid, shader_data, future) = self.queue.pop(0)
+            if not settings.panda11 or not future.cancelled():
+                future.set_result(self.gather_results())
             else:
-                self.busy = False
+                #print("Dropping result")
+                pass
+            self.schedule_next()
         return Task.cont
 
-    def prepare(self, shader, face, texture):
-        self.buffer.setOneShot(True)
-        self.quad.set_shader(shader.shader)
-        #TODO: face should be in shader
-        shader.update(self.root, face=face)
-        self.buffer.clear_render_textures()
-        self.buffer.add_render_texture(texture, GraphicsOutput.RTM_copy_ram)
-
     def schedule_next(self):
-        (shader, face, texture, callback, cb_args) = self.queue[0]
-        self.prepare(shader, face, texture)
+        while len(self.queue) > 0:
+            (tid, shader_data, future) = self.queue[0]
+            if not settings.panda11 or not future.cancelled():
+                self.prepare(shader_data)
+                break
+            #print("Remove cancelled job")
+            self.queue.pop(0)
+        else:
+            self.busy = False
 
-    def schedule(self, item):
-        self.queue.append(item)
+    def schedule(self, tid, shader_data, future):
+        self.queue.append((tid, shader_data, future))
         if not self.busy:
-            #print("SCHEDULE")
-            (shader, face, texture, callback, cb_args) = item
-            self.prepare(shader, face, texture)
+            self.schedule_next()
             self.busy = True
 
-    def generate(self, shader, face, texture, callback=None, cb_args=()):
-        #print("ADD")
-        if texture.has_ram_image() and callback is not None:
-            print("Texture already has data")
-        self.schedule((shader, face, texture, callback, cb_args))
+    def generate(self, tid, shader_data):
+        future = AsyncFuture()
+        self.schedule(tid, shader_data, future)
+        return future
 
 class GeneratorPool(object):
-    def __init__(self, number):
-        self.number = number
-        self.generators = []
-        for _ in range(number):
-            self.generators.append(TexGenerator())
+    def __init__(self, chains):
+        self.chains = chains
 
-    def make_buffer(self, width, height, texture_format):
-        for generator in self.generators:
-            generator.make_buffer(width, height, texture_format)
+    def add_chain(self, chain):
+        self.chains.append(chain)
 
-    def generate(self, shader, face, texture, callback=None, cb_args=()):
-        lowest = self.generators[0]
-        for generator in self.generators[1:]:
-            if len(generator.queue) < len(lowest.queue):
-                lowest = generator
-        lowest.generate(shader, face, texture, callback, cb_args)
+    def create(self):
+        for chain in self.chains:
+            chain.create()
+
+    def remove(self):
+        for chain in self.chains:
+            chain.remove()
+
+    def generate(self, tid, shader_data):
+        lowest = self.chains[0]
+        for chain in self.chains[1:]:
+            if len(chain.queue) < len(lowest.queue):
+                lowest = chain
+        return lowest.generate(tid, shader_data)

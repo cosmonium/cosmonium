@@ -65,7 +65,7 @@ class TerrainPopulatorBase(object):
     def calc_nb_of_instances(self, patch):
         return self.count
 
-    def generate_instances_info_for(self, patch):
+    def generate_object_instances_info_for(self, patch):
         nb_of_instances = self.calc_nb_of_instances(patch)
         if self.max_instances is not None:
             nb_of_instances = min(nb_of_instances, self.max_instances)
@@ -78,19 +78,20 @@ class TerrainPopulatorBase(object):
             count += 1
         return offsets
 
-    def create_object_template(self):
+    async def create_object_template(self):
         if self.object_template.instance is None:
-            self.object_template.create_instance(self.create_object_template_instance_cb)
+            await self.object_template.create_instance()
+            self.configure_object_template()
 
     def delete_object_template(self):
         if self.object_template.instance is not None:
             self.object_template.remove_instance()
 
-    def create_object_template_instance_cb(self):
+    def configure_object_template(self):
         pass
 
-    def create_instance(self):
-        pass
+    async def create_instance(self):
+        await self.create_object_template()
 
     def update_instance(self, camera_pos, camera_rot):
         if self.object_template.instance is not None and self.object_template.instance_ready:
@@ -120,8 +121,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         return terrain_patch in self.patch_map or terrain_patch.lod >= self.min_lod
 
     def create_patch_for(self, terrain_patch):
-        patch = None
-        if not terrain_patch in self.patch_map and terrain_patch.lod >= self.min_lod:
+        patch = self.patch_map.get(terrain_patch)
+        if patch is None and terrain_patch.lod >= self.min_lod:
             if settings.debug_lod_split_merge:
                 print("Populator create patch", terrain_patch.str_id())
             patch = TerrainPopulatorPatch(None)
@@ -131,7 +132,7 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
     def create_data_for(self, patch, terrain_patch):
         if settings.debug_lod_split_merge:
             print("Populator create data", terrain_patch.str_id())
-        data = self.generate_instances_info_for(terrain_patch)
+        data = self.generate_object_instances_info_for(terrain_patch)
         patch.set_data(data)
 
     def create_root_patch(self, terrain_patch):
@@ -180,42 +181,46 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
                 del self.patch_map[child]
         patch.children = []
 
-    def create_patch_instances(self, patch, terrain_patch):
+    def create_object_instances(self, patch, terrain_patch):
         pass
 
-    def show_patch(self, terrain_patch):
-        if not self.patch_valid(terrain_patch): return
-        if settings.debug_lod_split_merge:
-            print("Populator show patch", terrain_patch.str_id())
-        self.create_object_template()
-        self.create_patch_for(terrain_patch)
+    def patch_done(self, terrain_patch):
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
             if patch.data is None:
                 self.create_data_for(patch, terrain_patch)
-            self.visible_patches[terrain_patch] = patch
-            self.create_patch_instances(patch, terrain_patch)
+                self.visible_patches[terrain_patch] = patch
+                self.create_object_instances(patch, terrain_patch)
 
-    def remove_patch_instances(self, patch, terrain_patch):
+    def create_patch_instance(self, terrain_patch):
+        if not self.patch_valid(terrain_patch): return
+        if settings.debug_lod_split_merge:
+            print("Populator create patch instance", terrain_patch.str_id())
+        patch = self.create_patch_for(terrain_patch)
+        if patch is not None and patch.data is not None:
+            self.visible_patches[terrain_patch] = patch
+            self.create_object_instances(patch, terrain_patch)
+
+    def remove_object_instances(self, patch, terrain_patch):
         pass
 
-    def hide_patch(self, terrain_patch):
+    def remove_patch_instance(self, terrain_patch):
         if settings.debug_lod_split_merge:
-            print("Populator hide patch", terrain_patch.str_id())
+            print("Populator remove patch instance", terrain_patch.str_id())
         if terrain_patch in self.visible_patches:
             patch = self.visible_patches[terrain_patch]
-            self.remove_patch_instances(patch, terrain_patch)
+            self.remove_object_instances(patch, terrain_patch)
             del self.visible_patches[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
         PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
 
-    def create_object_template_instance_cb(self, terrain_object):
+    def configure_object_template(self):
         #Hide the main instance
-        terrain_object.instance.stash()
+        self.object_template.instance.stash()
 
-    def create_patch_instances(self, patch, terrain_patch):
+    def create_object_instances(self, patch, terrain_patch):
         instances = []
         for (i, offset) in enumerate(patch.data):
             (x, y, height, scale) = offset
@@ -227,7 +232,7 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
             instances.append(child)
         patch.instances = instances
 
-    def remove_patch_instances(self, patch, terrain_patch):
+    def remove_object_instances(self, patch, terrain_patch):
         for instance in patch.instances:
             instance.remove_node()
         patch.instances = []
@@ -239,15 +244,15 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
         self.rebuild = False
 
-    def create_object_template_instance_cb(self, terrain_object):
+    def configure_object_template(self):
         bounds = OmniBoundingVolume()
-        terrain_object.instance.node().setBounds(bounds)
-        terrain_object.instance.node().setFinal(1)
+        self.object_template.instance.node().setBounds(bounds)
+        self.object_template.instance.node().setFinal(1)
 
-    def create_patch_instances(self, patch, terrain_patch):
+    def create_object_instances(self, patch, terrain_patch):
         self.rebuild = True
 
-    def remove_patch_instances(self, patch, terrain_patch):
+    def remove_object_instances(self, patch, terrain_patch):
         self.rebuild = True
 
     def generate_table(self):

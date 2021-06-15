@@ -26,7 +26,7 @@ from .bodyelements import Atmosphere
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
-from .procedural.generator import GeneratorVertexShader, TexGenerator
+from .procedural.generator import GeneratorVertexShader, RenderTarget, RenderStage
 
 from math import pow, pi
 
@@ -112,8 +112,6 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         return group
 
 class ONeilAtmosphere(ONeilAtmosphereBase):
-    tex_generators = {}
-
     def __init__(self,
                  shape,
                  height,
@@ -158,18 +156,23 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.height = height
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
+        self.lookuptable_generator = None
         self.pbOpticalDepth = None
         shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
-    @classmethod
-    def get_generator(cls, size):
-        if not size in cls.tex_generators:
-            cls.tex_generators[size] = TexGenerator()
-            texture_format = Texture.F_rgb32
-            cls.tex_generators[size].make_buffer(size, size, texture_format)
-        tex_generator = cls.tex_generators[size]
-        return tex_generator
+    def create_generator(self):
+        self.lookuptable_generator = ONeilLookupTableRenderStage(self.lookup_size)
+        self.lookuptable_generator.create()
+        self.lookuptable_generator.prepare({'parameters': self})
+        self.pbOpticalDepth = self.lookuptable_generator.textures['lookuptable']
+
+    def remove_instance(self):
+        ONeilAtmosphereBase.remove_instance(self)
+        if self.lookuptable_generator is not None:
+            self.lookuptable_generator.remove()
+            self.lookuptable_generator = None
+        self.pbOpticalDepth = None
 
     def set_parent(self, parent):
         Atmosphere.set_parent(self, parent)
@@ -188,20 +191,11 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return scattering
 
     def generate_lookup_table(self):
-        tex_generator = self.get_generator(self.lookup_size)
-        shader = ONeilLookupTableShader(self)
-        shader.create_and_register_shader(None, None)
-        self.pbOpticalDepth = Texture()
-        self.pbOpticalDepth.setWrapU(Texture.WM_clamp)
-        self.pbOpticalDepth.setWrapV(Texture.WM_clamp)
-        self.pbOpticalDepth.setMinfilter(Texture.FT_linear)
-        self.pbOpticalDepth.setMagfilter(Texture.FT_linear)
-
-        tex_generator.generate(shader, 0, self.pbOpticalDepth)
+        self.lookuptable_generator.update({'parameters': self})
 
     def get_lookup_table(self):
         if self.pbOpticalDepth is None:
-            self.generate_lookup_table()
+            self.create_generator()
         return self.pbOpticalDepth
 
     def set_rayleigh_scale_depth(self, rayleigh_scale_depth):
@@ -647,9 +641,8 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
             code.append('gl_FragColor = frag_output;')
 
 class ONeilLookupTableShader(StructuredShader):
-    def __init__(self, parameters):
+    def __init__(self):
         StructuredShader.__init__(self)
-        self.parameters = parameters
         self.vertex_shader = GeneratorVertexShader()
         self.fragment_shader = ONeilLookupTableFragmentShader()
 
@@ -657,19 +650,43 @@ class ONeilLookupTableShader(StructuredShader):
         name = 'oneil'
         return name
 
-    def update(self, instance, face):
-        planet_radius = self.parameters.planet_radius
+    def update(self, instance, parameters):
+        planet_radius = parameters.planet_radius
         inner_radius = planet_radius
-        outer_radius = self.parameters.radius
+        outer_radius = parameters.radius
 
         scale = 1.0 / (outer_radius - inner_radius)
 
-        instance.setShaderInput("nSamples", self.parameters.lookup_samples)
+        instance.setShaderInput("nSamples", parameters.lookup_samples)
         instance.setShaderInput("fOuterRadius", outer_radius)
         instance.setShaderInput("fInnerRadius", inner_radius)
-        instance.setShaderInput("fRayleighScaleHeight", self.parameters.rayleigh_scale_depth)
-        instance.setShaderInput("fMieScaleHeight", self.parameters.mie_scale_depth)
+        instance.setShaderInput("fRayleighScaleHeight", parameters.rayleigh_scale_depth)
+        instance.setShaderInput("fMieScaleHeight", parameters.mie_scale_depth)
         instance.setShaderInput("fScale", scale)
+
+class ONeilLookupTableRenderStage(RenderStage):
+    def __init__(self, size):
+        RenderStage.__init__(self, "lookuptable", (size, size))
+
+    def create_shader(self):
+        shader = ONeilLookupTableShader()
+        shader.create_and_register_shader(None, None)
+        return shader
+
+    def create(self):
+        self.target = RenderTarget()
+        (width, height) = self.get_size()
+        self.target.make_buffer(width, height, Texture.F_rgb32, to_ram=False)
+        self.target.set_shader(self.create_shader())
+
+    def create_textures(self, shader_data):
+        texture = Texture()
+        texture.set_wrap_u(Texture.WM_clamp)
+        texture.set_wrap_v(Texture.WM_clamp)
+        texture.set_anisotropic_degree(0)
+        texture.set_minfilter(Texture.FT_linear)
+        texture.set_magfilter(Texture.FT_linear)
+        return {'lookuptable': texture}
 
 class ONeilScattering(ONeilScatteringBase):
     str_id = 'oneil'

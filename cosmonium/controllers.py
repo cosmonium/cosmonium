@@ -182,6 +182,47 @@ class BodyMover():
     def set_state(self, new_state):
         self.body.set_state(new_state)
 
+#Temporary class until a common interface between object and stellar bodies is implemented
+
+class ShipMover(BodyMover):
+    def set_pos(self, position):
+        self.body.set_frame_pos(position)
+
+    def get_pos(self):
+        return self.body.get_frame_pos()
+
+    def set_rot(self, rotation):
+        self.body.set_rot(rotation)
+
+    def get_rot(self):
+        return self.body.get_rot()
+
+    def delta(self, delta):
+        self.set_pos(self.get_pos() + delta)
+
+    def step(self, direction, distance):
+        rotation = LQuaterniond()
+        look_at(rotation, direction, LVector3d.up())
+        delta = rotation.xform(LVector3d(0, distance, 0))
+        self.delta(delta)
+
+    def step_relative(self, distance):
+        rotation = self.body.get_frame_rot()
+        direction = rotation.xform(LVector3d.forward())
+        self.step(direction, distance)
+
+    def turn(self, angle):
+        new_rotation = LQuaterniond()
+        new_rotation.setFromAxisAngleRad(angle, LVector3d.up())
+        self.set_rot(new_rotation)
+
+    def turn_relative(self, step):
+        rotation = self.get_rot()
+        delta = LQuaterniond()
+        delta.setFromAxisAngleRad(step, LVector3d.up())
+        new_rotation = delta * rotation
+        self.set_rot(new_rotation)
+
 class CartesianBodyMover(BodyMover):
     def set_pos(self, position):
         self.body.anchor.orbit.set_frame_position(position)
@@ -266,6 +307,50 @@ class SurfaceBodyMover(CartesianBodyMover):
         frame_pos = self.body.anchor.orbit.position
         frame_pos[2] = distance + altitude
         self.altitude = altitude
+
+    def step_altitude(self, step):
+        self.set_altitude(self.get_altitude() + step)
+
+class ShipSurfaceBodyMover(ShipMover):
+    def __init__(self, body):
+        ShipMover.__init__(self, body)
+        self.altitude = 0.0
+
+    def update(self):
+        #Refresh altitude in case the body has changed shape (often due to change of LOD)
+        self.set_altitude(self.altitude)
+
+    def set_pos(self, position):
+        (x, y, altitude) = position
+        new_frame_pos = LPoint3d(x, y, 0)
+        self.body.set_frame_pos(new_frame_pos)
+        new_pos = self.body.get_pos()
+        distance = self.body.frame.body.get_height_under(new_pos)
+        new_frame_pos[2] = distance + altitude
+        self.body.set_frame_pos(new_frame_pos)
+        self.altitude = altitude
+
+    def get_pos(self):
+        pos = self.body.get_frame_pos()
+        pos = LPoint3d(pos[0], pos[1], self.altitude)
+        return pos
+
+    def get_altitude(self):
+        return self.altitude
+
+    def set_altitude(self, altitude):
+        pos = self.body.get_pos()
+        distance = self.body.frame.body.get_height_under(pos)
+        new_frame_pos = LPoint3d(self.body.get_frame_pos())
+        new_frame_pos[2] = distance + altitude
+        self.body.set_frame_pos(new_frame_pos)
+        self.altitude = altitude
+
+    #TODO: Needed to replace as the CartesianBodyMover version uses body orbit orientation
+    def step_relative(self, distance):
+        rotation = self.body._frame_rotation
+        direction = rotation.xform(LVector3d.forward())
+        self.step(direction, distance)
 
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)

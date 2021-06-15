@@ -33,6 +33,8 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+static PStatCollector _geom_collector("Engine:geom");
+
 TesselationInfo::TesselationInfo(unsigned int inner, LVecBase4i outer) :
   inner(inner),
   outer(outer)
@@ -64,6 +66,8 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
       bool global_texture, bool inv_texture_u, bool inv_texture_v,
       bool has_offset, double offset)
 {
+    _geom_collector.start();
+
     unsigned int r_sectors = sectors + 1;
     unsigned int r_rings = rings + 1;
 
@@ -153,6 +157,9 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
     prim->close_primitive();
     geom->add_primitive(prim);
     node->add_geom(geom);
+
+    _geom_collector.stop();
+
     return NodePath(node);
 }
 
@@ -425,6 +432,8 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     bool has_offset, double offset,
     bool use_patch_adaptation, bool use_patch_skirts)
 {
+  _geom_collector.start();
+
   unsigned int nb_vertices = tesselation.inner + 1;
 
   unsigned int nb_prims = tesselation.inner * tesselation.inner;
@@ -544,6 +553,9 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   prim->close_primitive();
   geom->add_primitive(prim);
   node->add_geom(geom);
+
+  _geom_collector.stop();
+
   return NodePath(node);
 }
 
@@ -611,6 +623,8 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     bool has_offset, double offset,
     bool use_patch_adaptation, bool use_patch_skirts)
 {
+  _geom_collector.start();
+
   unsigned int nb_vertices = tesselation.inner + 1;
 
   unsigned int nb_prims = tesselation.inner * tesselation.inner;
@@ -742,5 +756,154 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
   prim->close_primitive();
   geom->add_primitive(prim);
   node->add_geom(geom);
+
+  _geom_collector.stop();
+
+  return NodePath(node);
+}
+
+TilePatchGenerator::TilePatchGenerator()
+{
+}
+
+void
+TilePatchGenerator::make_point(double size,
+    double u, double v, double x, double y,
+    bool inv_u, bool inv_v, bool swap_uv,
+    GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
+    GeomVertexWriter &gtanw, GeomVertexWriter &gbiw)
+{
+  if (inv_u) {
+      u = 1.0 - u;
+  }
+  if (inv_v) {
+      v = 1.0 - v;
+  }
+  if (swap_uv) {
+    std::swap(u, v);
+  }
+  gtw.add_data2(u, v);
+  gvw.add_data3(x * size, y * size, 0);
+
+  gnw.add_data3(0, 0, 1.0);
+  LVector3d tan(1, 0, 0);
+  LVector3d bin(0, 1, 0);
+  if (inv_u) tan = -tan;
+  if (inv_v) bin = -bin;
+  if (swap_uv) {
+    std::swap(tan, bin);
+  }
+  gtanw.add_data3d(tan);
+  gbiw.add_data3d(bin);
+}
+
+NodePath
+TilePatchGenerator::make(double size, TesselationInfo tesselation,
+    bool inv_u, bool inv_v, bool swap_uv,
+    bool use_patch_adaptation, bool use_patch_skirts,
+    double skirt_size, double skirt_uv)
+{
+  _geom_collector.start();
+
+  unsigned int nb_vertices = tesselation.inner + 1;
+
+  unsigned int nb_prims = tesselation.inner * tesselation.inner;
+  unsigned int nb_points = nb_vertices * nb_vertices;
+
+  if (use_patch_skirts) {
+      nb_points += nb_vertices * 4;
+      nb_prims += tesselation.inner * 4;
+  }
+
+  PT(GeomNode) node = new GeomNode("qcs");
+
+  PT(GeomVertexArrayFormat) array = new GeomVertexArrayFormat();
+  array->add_column(InternalName::get_vertex(), 3, Geom::NT_float32, Geom::C_point);
+  array->add_column(InternalName::get_texcoord(), 2, Geom::NT_float32, Geom::C_texcoord);
+  array->add_column(InternalName::get_normal(), 3, Geom::NT_float32, Geom::C_vector);
+  array->add_column(InternalName::get_tangent(), 3, Geom::NT_float32, Geom::C_vector);
+  array->add_column(InternalName::get_binormal(), 3, Geom::NT_float32, Geom::C_vector);
+  PT(GeomVertexFormat) source_format = new GeomVertexFormat();
+  source_format->add_array(array);
+  CPT(GeomVertexFormat) format = GeomVertexFormat::register_format(source_format);
+
+  PT(GeomVertexData) gvd = new GeomVertexData("gvd", format, Geom::UH_static);
+  if (nb_points != 0) {
+      gvd->unclean_set_num_rows(nb_points);
+  }
+  PT(Geom) geom = new Geom(gvd);
+  GeomVertexWriter gvw = GeomVertexWriter(gvd, InternalName::get_vertex());
+  GeomVertexWriter gtw = GeomVertexWriter(gvd, InternalName::get_texcoord());
+  GeomVertexWriter gnw = GeomVertexWriter(gvd, InternalName::get_normal());
+  GeomVertexWriter gtanw = GeomVertexWriter(gvd, InternalName::get_tangent());
+  GeomVertexWriter gbiw = GeomVertexWriter(gvd, InternalName::get_binormal());
+  PT(GeomTriangles) prim = new GeomTriangles(Geom::UH_static);
+  if (nb_prims != 0) {
+      prim->reserve_num_vertices(nb_prims);
+  }
+
+  for (unsigned int i = 0; i < nb_vertices; ++i) {
+      double u = float(i) / tesselation.inner;
+      for (unsigned int j = 0; j < nb_vertices; ++j) {
+          double v = float(j) / tesselation.inner;
+          make_point(size,
+            u, v, u, v,
+            inv_u, inv_v, swap_uv,
+            gvw, gtw, gnw, gtanw, gbiw);
+      }
+  }
+
+  if (use_patch_skirts) {
+      for (unsigned int a = 0; a < 4; ++a) {
+          for (unsigned int b = 0; b < nb_vertices; ++b) {
+              double x, y;
+              double u, v;
+              if (a == 0) {
+                  x = 0.0;
+                  y = float(b) / tesselation.inner;
+                  u = -skirt_uv;
+                  v = y;
+              } else if (a == 1) {
+                  x = 1.0;
+                  y = float(b) / tesselation.inner;
+                  u = 1.0 + skirt_uv;
+                  v = y;
+              } else if (a == 2) {
+                  x = float(b) / tesselation.inner;
+                  y = 0.0;
+                  u = x;
+                  v = -skirt_uv;
+              } else if (a == 3) {
+                  x = float(b) / tesselation.inner;
+                  y = 1.0;
+                  u = x;
+                  v = 1.0 + skirt_uv;
+              }
+              make_point(size,
+                  u, v, x, y,
+                  inv_u, inv_v, swap_uv,
+                  gvw, gtw, gnw, gtanw, gbiw);
+            }
+        }
+  }
+
+  if (use_patch_adaptation) {
+    make_adapted_square_primitives(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+    if (use_patch_skirts) {
+      make_adapted_square_primitives_skirt(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+    }
+  } else {
+    make_primitives(prim, tesselation.inner, nb_vertices);
+    if (use_patch_skirts) {
+      make_primitives_skirt(prim, tesselation.inner, nb_vertices);
+    }
+  }
+
+  prim->close_primitive();
+  geom->add_primitive(prim);
+  node->add_geom(geom);
+
+  _geom_collector.stop();
+
   return NodePath(node);
 }

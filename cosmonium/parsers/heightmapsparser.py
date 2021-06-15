@@ -21,17 +21,17 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from ..astro import units
-from ..heightmap import TextureHeightmap, TextureHeightmapPatchFactory, PatchedHeightmap, heightmapRegistry
+from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
 from ..interpolators import HardwareInterpolator, SoftwareInterpolator
 from ..filters import NearestFilter, BilinearFilter, SmoothstepFilter, QuinticFilter, BSplineFilter
-from ..procedural.shaderheightmap import ShaderHeightmap, ShaderHeightmapPatchFactory
+from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderPatchedHeightmap
 from ..textures import HeightMapTexture
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import DistanceUnitsYamlParser
 from .noiseparser import NoiseYamlParser
-from .appearancesparser import TexturesAppearanceYamlParser
+from .texturesourceparser import TextureSourceYamlParser
 
 from math import pi
 
@@ -106,10 +106,11 @@ class HeightmapYamlParser(YamlModuleParser):
             height_scale /= radius
             height_offset /= radius
         else:
-            scale_length = 1.0
+            scale_length = data.get('scale-length', 1.0)
+            scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
+            scale_length *= scale_length_units
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
         filter = FilterYamlParser.decode(data.get('filter'))
-        factory = None
         if heightmap_type == 'procedural':
             size = data.get('size', 256)
             overlap = data.get('overlap', 1)
@@ -118,31 +119,32 @@ class HeightmapYamlParser(YamlModuleParser):
             if func is None:
                 func = data.get('noise')
                 print("Warning: 'noise' entry is deprecated, use 'func' instead'")
-            heightmap_source = noise_parser.decode(func)
-            if patched:
-                factory = ShaderHeightmapPatchFactory(heightmap_source)
+            heightmap_function = noise_parser.decode(func)
+            heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, 1.0)
+            #TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures 
+            heightmap_class = ShaderPatchedHeightmap
         else:
             heightmap_data = data.get('data')
             overlap = data.get('overlap', 0)
             if heightmap_data is not None:
-                texture_source, texture_offset = TexturesAppearanceYamlParser.decode_source(heightmap_data)
-                heightmap_source = HeightMapTexture(texture_source)
+                texture_source, texture_offset = TextureSourceYamlParser.decode(heightmap_data)
+                heightmap_data_source = HeightMapTexture(texture_source)
                 #TODO: missing texture offset
                 if patched:
-                    factory = TextureHeightmapPatchFactory(heightmap_source)
-                    size = heightmap_source.source.texture_size
+                    heightmap_class = TexturePatchedHeightmap
+                    size = heightmap_data_source.source.texture_size
                 else:
                     size = 1.0
         if patched:
             max_lod = data.get('max-lod', 100)
-            heightmap = PatchedHeightmap(name, size,
-                                         min_height, max_height, height_scale, height_offset,
-                                         pi, pi, overlap,
-                                         factory, interpolator, filter, max_lod)
+            heightmap = heightmap_class(name, heightmap_data_source, size,
+                                        min_height, max_height, height_scale, height_offset,
+                                        overlap,
+                                        interpolator, filter, max_lod)
         else:
             heightmap = TextureHeightmap(name, size, size / 2,
                                          min_height, max_height, height_scale, height_offset,
-                                         heightmap_source, interpolator, filter)
+                                         heightmap_data_source, interpolator, filter)
         return heightmap
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):

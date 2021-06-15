@@ -35,12 +35,13 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
         self.offset = offset
 
     def get_patch_name(self, patch, scale=1):
-        sector = patch.sector
-        ring = (1 << patch.lod) - patch.ring - 1
+        x = patch.x
+        y = (1 << patch.lod) - patch.y - 1
         if self.offset != 0:
-            sector += patch.s_div // 2
-            sector %= patch.s_div
-        return "%s%d_%d.%s" % (self.prefix, sector * scale, ring * scale, self.ext)
+            s_div = 2 << patch.lod
+            x += s_div // 2
+            x %= s_div
+        return "%s%d_%d.%s" % (self.prefix, x * scale, y * scale, self.ext)
 
     def child_texture_name(self, patch):
         return os.path.join(self.root, 'level%d' % (patch.lod + 1), self.get_patch_name(patch, 2))

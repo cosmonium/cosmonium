@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from panda3d.core import LColor
 from panda3d.core import LPoint3, LPoint3d
+from panda3d.core import PandaSystem
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
@@ -34,6 +35,8 @@ app_name = 'cosmonium'
 use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
+
+panda11 = PandaSystem.getMajorVersion() >= 1 and PandaSystem.getMinorVersion() >= 11
 
 #OpenGL user configuration
 use_core_profile_mac = True
@@ -85,6 +88,10 @@ patch_max_density = 64
 patch_constant_density = 32
 cull_far_patches = False
 cull_far_patches_threshold = 10
+
+patch_data_store = True
+patch_data_store_max_elems = 2048
+patch_parameters_data_store = True
 
 use_patch_adaptation = True
 use_patch_skirts = True
@@ -197,7 +204,7 @@ grid_thickness = 0.5
 asterism_thickness = 0.9
 boundary_thickness = 0.9
 
-wireframe_fill_color = LColor(0.5, 0.5, 0.5, 1.0)
+wireframe_fill_color = LColor(1, 0., 0., 1.0)
 
 fast_move = 2.0
 slow_move = 5.0

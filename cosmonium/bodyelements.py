@@ -25,13 +25,14 @@ from panda3d.core import DepthOffsetAttrib
 
 from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
-from .surfaces import FlatSurface
+from .surfaces import EllipsoidFlatSurface
 from .utils import TransparencyBlend
 from .shaders import AtmosphericScattering
 from .shadows import RingShadowCaster
 from .parameters import AutoUserParameter
 
 from . import settings
+from direct.showbase.ShowBaseGlobal import globalClock
 
 class Ring(ShapeObject):
     def __init__(self, inner_radius, outer_radius, appearance=None, shader=None):
@@ -140,11 +141,11 @@ class Atmosphere(ShapeObject):
         if self.get_pixel_height() < 1.0:
             self.visible = False
 
-    def create_instance(self):
+    async def create_instance(self):
         #TODO: Find a better way to retrieve ellipticity
         scale = self.planet.surface.get_scale() / self.planet_radius
         self.set_scale(scale * self.radius)
-        ShapeObject.create_instance(self)
+        await ShapeObject.create_instance(self)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
@@ -195,11 +196,11 @@ class Atmosphere(ShapeObject):
         self.context.observer.scattering = None
         self.context.observer.apply_scattering = 0
 
-class Clouds(FlatSurface):
+class Clouds(EllipsoidFlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
-        FlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        EllipsoidFlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
         self.scale_base = None
         self.inside = None
@@ -210,8 +211,13 @@ class Clouds(FlatSurface):
     def get_component_name(self):
         return _('Clouds')
 
+    def configure_render_order(self):
+        self.instance.set_bin("transparent", 0)
+
     def configure_shape(self):
         self.radius = self.parent.surface.get_average_radius() + self.height
+        #TODO : temporary until height_scale is removed from patchedshape
+        self.height_scale = self.radius
         scale = self.parent.surface.get_scale()
         factor = 1.0 + self.height / self.parent.surface.get_average_radius()
         self.shape.set_scale(scale * factor)
@@ -220,6 +226,7 @@ class Clouds(FlatSurface):
         self.set_shown(settings.show_clouds)
 
     def update_instance(self, camera_pos, camera_rot):
+        if not self.instance_ready: return
         inside = self.parent.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:
@@ -235,10 +242,10 @@ class Clouds(FlatSurface):
                 if self.appearance.transparency:
                     self.instance.set_depth_write(False)
             self.inside = inside
-        return FlatSurface.update_instance(self, camera_pos, camera_rot)
+        return EllipsoidFlatSurface.update_instance(self, camera_pos, camera_rot)
 
     def remove_instance(self):
-        FlatSurface.remove_instance(self)
+        EllipsoidFlatSurface.remove_instance(self)
         self.inside = None
 
     def set_height(self, height):

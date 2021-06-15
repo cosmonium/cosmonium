@@ -20,13 +20,15 @@
 from __future__ import print_function
 
 from panda3d.core import Texture, Filename
-from direct.task.Task import Task
+from direct.task.Task import Task, AsyncFuture
 
 try:
     import queue
 except ImportError:
     import Queue as queue
 import traceback
+
+from . import settings
 
 # These will be initialized in cosmonium base class
 asyncTextureLoader = None
@@ -88,17 +90,23 @@ class AsyncLoader():
         self.base.taskMgr.remove(self.callback_task)
         self.callback_task = None
 
-    def add_job(self, func, fargs, callback, cb_args):
-        job = [func, fargs, callback, cb_args]
+    def add_job(self, func, fargs):
+        future = AsyncFuture()
+        job = [func, fargs, future]
         self.in_queue.put(job)
+        return future
 
     def processTask(self, task):
         try:
             #A small but not null timeout is required to avoid draining CPU resources
             job = self.in_queue.get(timeout=0.001)
-            (func, fargs, callback, cb_args) = job
-            result = func(*fargs)
-            self.cb_queue.put([callback, result, cb_args])
+            (func, fargs, future) = job
+            if not settings.panda11 or not future.cancelled():
+                result = func(*fargs)
+                self.cb_queue.put([future, result])
+            else:
+                #print("job cancelled")
+                pass
         except queue.Empty:
             pass
         return Task.cont
@@ -107,8 +115,12 @@ class AsyncLoader():
         try:
             while True:
                 job = self.cb_queue.get_nowait()
-                (callback, result, cb_args) = job
-                callback(result, *cb_args)
+                (future, result) = job
+                if not settings.panda11 or not future.cancelled():
+                    future.set_result(result)
+                else:
+                    #print("Result cancelled")
+                    pass
         except queue.Empty:
             pass
         return Task.cont
@@ -117,11 +129,11 @@ class AsyncTextureLoader(AsyncLoader):
     def __init__(self, base):
         AsyncLoader.__init__(self, base, 'TextureLoader')
 
-    def load_texture(self, filename, alpha_filename, callback, args):
-        self.add_job(self.do_load_texture, [filename, alpha_filename], callback, args)
+    async def load_texture(self, filename, alpha_filename):
+        return await self.add_job(self.do_load_texture, [filename, alpha_filename])
 
-    def load_texture_array(self, textures, callback, args):
-        self.add_job(self.do_load_texture_array, [textures], callback, args)
+    async def load_texture_array(self, textures):
+        return await self.add_job(self.do_load_texture_array, [textures])
 
     def do_load_texture(self, filename, alpha_filename):
         tex = Texture()
@@ -175,24 +187,3 @@ class SyncTextureLoader():
                 image = texture.create_default_image()
                 tex.load(image, z=page, n=0)
         return tex
-
-if __name__ == '__main__':
-    import direct.directbase.DirectStart
-    import sys
-
-    loader = AsyncTextureLoader(base)
-
-    def callback(texture, args):
-        print(texture, args)
-        sys.exit()
-
-    def tick(task):
-        frame = globalClock.getFrameCount()
-        print(frame, 'tick')
-        return task.cont
-
-    taskMgr.add(tick, 'tick')
-
-    loader.load_texture('textures/earth.png', callback, ["args"])
-    base.accept('escape', sys.exit)
-    base.run()

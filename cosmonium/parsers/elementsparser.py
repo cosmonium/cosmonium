@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from ..bodyelements import Clouds, Ring
 from ..shaders import BasicShader
-from ..patchedshapes import VertexSizePatchLodControl, TexturePatchLodControl, TextureOrVertexSizePatchLodControl
+from ..patchedshapes import VertexSizeLodControl, TextureLodControl, TextureOrVertexSizeLodControl
 from .. import settings
 
 from .yamlparser import YamlModuleParser
@@ -39,12 +39,12 @@ class CloudsYamlParser(YamlModuleParser):
         appearance = AppearanceYamlParser.decode(data.get('appearance'))
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
-                shape.set_lod_control(VertexSizePatchLodControl(settings.patch_max_vertex_size,
-                                                                density=settings.patch_constant_density))
+                shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
+                                                           density=settings.patch_constant_density))
             else:
-                shape.set_lod_control(TextureOrVertexSizePatchLodControl(settings.patch_max_vertex_size,
-                                                                         min_density=settings.patch_min_density,
-                                                                         density=settings.patch_max_density))
+                shape.set_lod_control(TextureOrVertexSizeLodControl(settings.patch_max_vertex_size,
+                                                                    min_density=settings.patch_min_density,
+                                                                    density=settings.patch_max_density))
         lighting_model = None
         shader = BasicShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
@@ -59,7 +59,7 @@ class RingsYamlParser(YamlModuleParser):
         inner_radius = data.get('inner-radius')
         outer_radius = data.get('outer-radius')
         lighting_model = data.get('lighting-model')
-        appearance = AppearanceYamlParser.decode(data.get('appearance'))
+        appearance = AppearanceYamlParser.decode(data.get('appearance'), patched_shape=False)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model)
         rings = Ring(inner_radius, outer_radius, appearance, shader)

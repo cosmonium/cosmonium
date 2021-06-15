@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from panda3d.core import LVector3d, LQuaterniond
 
 from ..shapes import SphereShape, IcoSphereShape, MeshShape
+from ..patchedshapes import PatchedSpherePatchFactory, SquaredDistanceSquarePatchFactory, NormalizedSquarePatchFactory
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 from ..procedural.raymarching import RayMarchingShape
@@ -69,16 +70,19 @@ class ShapeYamlParser(YamlModuleParser):
         extra = {}
         (shape_type, shape_data) = self.get_type_and_data(data, default)
         if shape_type == 'patched-sphere':
-            shape = PatchedSphereShape()
+            factory = PatchedSpherePatchFactory()
+            shape = PatchedSphereShape(factory)
         elif shape_type == 'sphere':
             shape = SphereShape()
         elif shape_type == 'icosphere':
             subdivisions = shape_data.get('subdivisions', 3)
             shape = IcoSphereShape(subdivisions)
         elif shape_type == 'sqrt-sphere':
-            shape = SquaredDistanceSquareShape()
+            factory = NormalizedSquarePatchFactory()
+            shape = NormalizedSquareShape(factory)
         elif shape_type == 'cube-sphere':
-            shape = NormalizedSquareShape()
+            factory = SquaredDistanceSquarePatchFactory
+            shape = SquaredDistanceSquareShape(factory)
         elif shape_type == 'se-sphere':
             shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':

@@ -31,6 +31,7 @@ from .sprites import SimplePoint, RoundDiskPointSprite
 class PointsSet(VisibleObject):
     tex = None
     def __init__(self, use_sprites=True, use_sizes=True, points_size=2, sprite=None, background=None, shader=None):
+        VisibleObject.__init__(self, 'pointsset')
         self.gnode = GeomNode('starfield')
         self.use_sprites = use_sprites
         self.use_sizes = use_sizes
@@ -57,8 +58,7 @@ class PointsSet(VisibleObject):
         #TODO: Should not use ModelAppearance !
         self.appearance = ModelAppearance(vertex_color=True)
         if self.appearance is not None:
-            self.appearance.bake()
-            self.appearance.apply(self, self)
+            self.appearance.scan_model(self.instance)
         if self.shader is not None:
             self.shader.apply(self, self.appearance)
         if self.use_sprites:
@@ -69,9 +69,6 @@ class PointsSet(VisibleObject):
         self.instance.set_depth_write(False)
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.DefaultCameraMask)
-
-    def jobs_done_cb(self, patch):
-        pass
 
     def reset(self):
         self.points = []

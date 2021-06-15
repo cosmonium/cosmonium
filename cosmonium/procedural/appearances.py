@@ -20,21 +20,20 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from direct.task.Task import gather
+
 from ..appearances import AppearanceBase, Appearance, TexturesBlock
 from ..textures import TextureArray
 from ..astro import units
 from ..dircontext import defaultDirContext
-
 from .. import settings
+
+from .shaders import TextureDictionaryDataSource, DetailMap
 
 from math import pi
 
-class TextureTilingMode(object):
-    F_none = 0
-    F_hash = 1
-
 class TexturesDictionary(AppearanceBase):
-    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=TextureTilingMode.F_none, srgb=None, array=True, context=defaultDirContext):
+    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=None, srgb=None, array=True, context=defaultDirContext):
         AppearanceBase.__init__(self)
         self.scale_factor = scale_factor
         self.tiling = tiling
@@ -46,6 +45,8 @@ class TexturesDictionary(AppearanceBase):
         self.nb_arrays = 0
         self.extend = 2 * pi * max(self.scale_factor) * units.m
         self.resolved = False
+        self.loaded = False
+        self.task = None
         self.blocks = {}
         self.blocks_index = {}
         if settings.use_texture_array and array:
@@ -82,38 +83,64 @@ class TexturesDictionary(AppearanceBase):
         texture = block.textures_map[category]
         return texture.array_id
 
-    def apply_textures(self, shape):
+    def apply_textures(self, instance):
         if self.texture_array:
             for texture in self.texture_arrays.values():
-                texture.apply(shape)
+                texture.apply(instance)
         else:
             for entry in self.blocks.values():
                 for texture in entry.textures:
-                    texture.apply(shape)
+                    texture.apply(instance)
 
-    def texture_loaded_cb(self, texture, patch, owner):
-        owner.jobs_done_cb(None)
-
-    def load_textures(self, shape, owner):
+    def load_textures(self, tasks_tree, shape, owner):
+        tasks = []
         for entry in self.blocks.values():
             for texture in entry.textures:
-                texture.load(shape, self.texture_loaded_cb, (shape, owner))
+                tasks.append(texture.load(tasks_tree, shape))
+        return gather(*tasks)
 
-    def load_texture_array(self, shape, owner):
+    def load_texture_array(self, tasks_tree, shape, owner):
+        tasks = []
         for texture in self.texture_arrays.values():
-            texture.load(shape, self.texture_loaded_cb, (shape, owner))
+            tasks.append(texture.load(tasks_tree, shape))
+        return gather(*tasks)
 
-    def apply(self, shape, owner):
-        if (shape.jobs & Appearance.JOB_TEXTURE_LOAD) == 0:
-            #print("APPLY", shape, self.nb_textures)
-            if self.nb_textures > 0:
-                shape.jobs |= Appearance.JOB_TEXTURE_LOAD
+    def task_done(self, task):
+        self.task = None
+
+    async def load(self, tasks_tree, shape, owner):
+        if not self.loaded:
+            if self.task is None:
                 if self.texture_array:
-                    shape.jobs_pending += self.nb_arrays
-                    self.load_texture_array(shape, owner)
+                    self.task = self.load_texture_array(tasks_tree, shape, owner)
                 else:
-                    shape.jobs_pending += self.nb_textures
-                    self.load_textures(shape, owner)
+                    self.task = self.load_textures(tasks_tree, shape, owner)
+                self.task.setUponDeath(self.task_done)
+            await self.task
+            #TODO: loaded should be protected by a lock to avoid race condition with clear()
+            self.loaded = True
+
+    def apply(self, shape, instance):
+        if not self.loaded:
+            print("ERROR: Applying not loaded texture")
+        self.apply_textures(instance)
+        instance.set_shader_input("detail_factor", self.scale_factor)
+
+    def clear_textures(self):
+        for entry in self.blocks.values():
+            for texture in entry.textures:
+                texture.clear_all()
+
+    def clear_texture_array(self):
+        for texture in self.texture_arrays.values():
+            texture.clear_all()
+
+    def clear_all(self):
+        if self.texture_array:
+            self.clear_texture_array()
+        else:
+            self.clear_textures()
+        self.loaded = False
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
@@ -129,7 +156,30 @@ class TexturesDictionary(AppearanceBase):
                 shape.parent.update_shader()
 
 class ProceduralAppearance(AppearanceBase):
-    def __init__(self,
-                 scale_factor = (1, 1)):
+    def __init__(self, texture_control, texture_source, heightmap):
         AppearanceBase.__init__(self)
-        self.scale_factor = scale_factor
+        self.texture_control = texture_control
+        self.texture_source = texture_source
+        self.appearance_source = TextureDictionaryDataSource(texture_source)
+        self.shader_appearance = DetailMap(texture_control, heightmap, create_normals=True)
+
+    def get_data_source(self):
+        return self.appearance_source
+
+    def get_shader_appearance(self):
+        return self.shader_appearance
+
+    async def load(self, tasks_tree, shape, owner):
+        await self.texture_source.load(tasks_tree, shape, owner)
+
+    def apply(self, shape, instance):
+        self.texture_source.apply(shape, instance)
+
+    def clear_patch(self, patch):
+        self.texture_source.clear_patch(patch)
+
+    def clear_all(self):
+        self.texture_source.clear_all()
+
+    def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
+        self.texture_source.update_lod(shape, apparent_radius, distance_to_obs, pixel_size)

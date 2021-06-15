@@ -69,26 +69,11 @@ class ShaderBase(object):
         if shape is None or shape.instance is None: return
         self.create_and_register_shader(shape, appearance, force=True)
         self.update_shader_shape_static(shape, appearance)
-        if shape.patchable:
-            for patch in shape.patches:
-                if patch.instance_ready:
-                    self.update_shader_patch_static(shape, patch, appearance)
-        else:
-            self.update_shader_patch_static(shape, shape, appearance)
-
-    def apply_patch(self, shape, patch, appearance):
-        self.update_shader_patch_static(shape, patch, appearance)
 
     def update_shader_shape_static(self, shape, appearance):
         pass
 
     def update_shader_shape(self, shape, appearance):
-        pass
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        pass
-
-    def update_shader_patch(self, shape, patch, appearance):
         pass
 
     def update(self, shape, appearance):
@@ -99,22 +84,15 @@ class ShaderBase(object):
         self.update_shader_shape(shape, appearance)
         shape.instance.set_shader_inputs(**self.inputs)
         self.inputs = None
-        if shape.patchable:
-            for patch in shape.patches:
-                if not shape.instance_ready:
-                    print("shader update called on non ready patch instance")
-                self.inputs = {}
-                self.update_shader_patch(shape, patch, appearance)
-                patch.instance.set_shader_inputs(**self.inputs)
-                self.inputs = None
-        else:
-            self.inputs = {}
-            self.update_shader_patch(shape, shape, appearance)
-            shape.instance.set_shader_inputs(**self.inputs)
-            self.inputs = None
 
-    def update_patch(self, shape, patch, appearance):
-        self.update_shader_patch(shape, patch, appearance)
+    def clear_patch(self, shape, patch):
+        pass
+
+    def clear(self, shape):
+        pass
+
+    def clear_all(self):
+        pass
 
     def get_user_parameters(self):
         group = ParametersGroup('Shader')
@@ -583,6 +561,11 @@ class VertexShader(ShaderProgram):
         if not self.config.fragment_uses_tangent:
             code.append("vec3 binormal;")
             code.append("vec3 tangent;")
+
+        self.point_control.vertex_shader_decl(code)
+        self.appearance.vertex_shader_decl(code)
+        self.data_source.vertex_shader_decl(code)
+
         if self.vertex_control.has_vertex:
             self.vertex_control.update_vertex(code)
         if self.config.use_normal and self.vertex_control.has_normal:
@@ -1194,28 +1177,6 @@ class BasicShader(StructuredShader):
         for effect in self.after_effects:
             effect.update_shader_shape(shape, appearance)
 
-    def update_shader_patch_static(self, shape, patch, appearance):
-        self.appearance.update_shader_patch_static(shape, patch, appearance)
-        self.tessellation_control.update_shader_patch_static(shape, patch, appearance)
-        for shadow in self.shadows:
-            shadow.update_shader_shape_static(shape, appearance)
-        self.lighting_model.update_shader_patch_static(shape, patch, appearance)
-        self.scattering.update_shader_patch_static(shape, patch, appearance)
-        self.vertex_control.update_shader_patch_static(shape, patch, appearance)
-        self.data_source.update_shader_patch_static(shape, patch, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_patch_static(shape, patch, appearance)
-
-    def update_shader_patch(self, shape, patch, appearance):
-        self.appearance.update_shader_patch(shape, patch, appearance)
-        self.tessellation_control.update_shader_patch(shape, patch, appearance)
-        self.lighting_model.update_shader_patch(shape, patch, appearance)
-        self.scattering.update_shader_patch(shape, patch, appearance)
-        self.vertex_control.update_shader_patch(shape, patch, appearance)
-        self.data_source.update_shader_patch(shape, patch, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_patch(shape, patch, appearance)
-
     def get_user_parameters(self):
         group = StructuredShader.get_user_parameters(self)
         group.add_parameter(self.lighting_model.get_user_parameters())
@@ -1273,6 +1234,9 @@ class ShaderComponent(object):
     def vertex_extra(self, code):
         pass
 
+    def vertex_shader_decl(self, code):
+        pass
+
     def vertex_shader(self, code):
         pass
 
@@ -1298,12 +1262,6 @@ class ShaderComponent(object):
         pass
 
     def update_shader_shape(self, shape, appearance):
-        pass
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        pass
-
-    def update_shader_patch(self, shape, patch, appearance):
         pass
 
     def clear(self, shape, appearance):
@@ -1597,10 +1555,6 @@ class ConstantTessellationControl(TessellationControl):
         gl_TessLevelInner[1] = TessLevelInner;
 ''']
 
-    def update_shader_patch(self, shape, patch, appearance):
-        patch.instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
-        patch.instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
-
 class VertexControl(ShaderComponent):
     use_double = False
     has_vertex = True
@@ -1825,6 +1779,10 @@ class MultiDataSource(DataSource):
                 str_id += src_id
         return str_id
 
+    def add_source(self, source):
+        self.sources.append(source)
+        source.set_shader(self.shader)
+
     def create_shader_configuration(self, appearance):
         for source in self.sources:
             source.create_shader_configuration(appearance)
@@ -1863,6 +1821,10 @@ class MultiDataSource(DataSource):
         for source in self.sources:
             source.vertex_extra(code)
 
+    def vertex_shader_decl(self, code):
+        for source in self.sources:
+            source.vertex_shader_decl(code)
+
     def vertex_shader(self, code):
         for source in self.sources:
             source.vertex_shader(code)
@@ -1898,14 +1860,6 @@ class MultiDataSource(DataSource):
     def update_shader_shape(self, shape, appearance):
         for source in self.sources:
             source.update_shader_shape(shape, appearance)
-
-    def update_shader_patch_static(self, shape, patch, appearance):
-        for source in self.sources:
-            source.update_shader_patch_static(shape, patch, appearance)
-
-    def update_shader_patch(self, shape, patch, appearance):
-        for source in self.sources:
-            source.update_shader_patch(shape, patch, appearance)
 
 class PandaDataSource(DataSource):
     def __init__(self, shader=None):
@@ -2173,6 +2127,21 @@ class PandaDataSource(DataSource):
             shape.instance.setShaderInput("shape_shininess", appearance.shininess)
         if self.has_transparency:
             shape.instance.setShaderInput("transparency_level", appearance.transparency_level)
+
+class DataStoreManagerDataSource(MultiDataSource):
+    pass
+
+class ParametersDataStoreDataSource(DataSource):
+    def get_id(self):
+        return "ds"
+
+    def vertex_uniforms(self, code):
+        code.append("uniform sampler1D data_store;")
+        code.append("uniform int entry_id;")
+
+    def fragment_uniforms(self, code):
+        code.append("uniform sampler1D data_store;")
+        code.append("uniform int entry_id;")
 
 class ShaderShadow(ShaderComponent):
     pass

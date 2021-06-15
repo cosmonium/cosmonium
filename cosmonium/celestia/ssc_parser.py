@@ -31,7 +31,7 @@ from .shaders import LunarLambertLightingModel
 
 from ..celestia.atmosphere import CelestiaAtmosphere
 from ..bodies import ReflectiveBody, ReferencePoint
-from ..surfaces import FlatSurface
+from ..surfaces import EllipsoidFlatSurface
 from ..bodyelements import Ring, Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
@@ -303,7 +303,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
         lighting_model = LunarLambertLightingModel()
     else:
         lighting_model = LambertPhongLightingModel()
-    surface = FlatSurface(
+    surface = EllipsoidFlatSurface(
                           shape=shape,
                           appearance=appearance,
                           shader=BasicShader(lighting_model=lighting_model))

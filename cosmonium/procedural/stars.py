@@ -20,15 +20,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from ..surfaces import FlatSurface
-from ..patchedshapes import SquaredDistanceSquareShape, VertexSizePatchLodControl
+from ..surfaces import EllipsoidFlatSurface
+from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
 from ..shaders import BasicShader, FlatLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
 from ..bodies import SurfaceFactory
 from .. import settings
 
-from .textures import ProceduralVirtualTextureSource
+from .textures import NoiseTextureGenerator, PatchedProceduralVirtualTextureSource
 from .shadernoise import GrayTarget
 
 class ProceduralStarSurfaceFactory(SurfaceFactory):
@@ -39,15 +39,17 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         self.target = GrayTarget()
 
     def create(self, body):
-        shape = SquaredDistanceSquareShape(lod_control=VertexSizePatchLodControl(max_vertex_size=settings.patch_max_vertex_size,
-                                                                                 density=settings.patch_constant_density),
-                                           use_shader=False)
+        factory = SquaredDistanceSquarePatchFactory()
+        lod_control = VertexSizeLodControl(max_vertex_size=settings.patch_max_vertex_size,
+                                           density=settings.patch_constant_density)
+        shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = BasicShader(lighting_model=FlatLightingModel())
-        surface = FlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
+        tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target)
+        surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                               appearance=Appearance(colorScale=body.anchor.point_color,
-                                                    texture=SurfaceTexture(ProceduralVirtualTextureSource(self.noise,
-                                                                                                          self.target,
-                                                                                                          self.size))),
+                                                    texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
+                                                                                                                 self.size),
+                                                                           srgb=False)),
                               shape=shape,
                               shader=shader)
         return surface
