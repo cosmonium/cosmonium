@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode, Texture
 from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix3, LMatrix4, LVecBase4i

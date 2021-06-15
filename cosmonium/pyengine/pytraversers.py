@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..astro.astro import abs_to_app_mag, app_to_abs_mag
 from .pyanchors import AnchorBase

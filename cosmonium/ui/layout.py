@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from direct.gui.DirectGui import DirectFrame, DGG
 from direct.showbase.ShowBaseGlobal import aspect2d

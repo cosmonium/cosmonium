@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
 from direct.showbase.DirectObject import DirectObject

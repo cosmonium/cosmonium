@@ -17,7 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import
 
 from ..annotations import Asterism
 from ..astro.orbits import FixedPosition

@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName

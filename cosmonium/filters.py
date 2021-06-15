@@ -17,9 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 from panda3d.core import LColor, Texture
 

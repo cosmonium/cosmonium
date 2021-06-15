@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..galaxies import LenticularGalaxyShape, EllipticalGalaxyShape, IrregularGalaxyShape, SpiralGalaxyShape, FullSpiralGalaxyShape, FullRingGalaxyShape
 from ..sprites import GaussianPointSprite, ExpPointSprite, RoundDiskPointSprite

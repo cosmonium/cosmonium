@@ -17,7 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 
 class SpectralType(object):
     global_class = {'T': [800,    1500],
