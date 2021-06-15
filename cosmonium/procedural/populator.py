@@ -28,7 +28,6 @@ from .. import settings
 from random import random, uniform
 from array import array
 from itertools import chain
-import sys
 
 class TerrainObjectFactory(object):
     def __init__(self):
@@ -271,10 +270,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
             texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
             flattened_data = list(chain.from_iterable(offsets))
             data = array("f", flattened_data)
-            if sys.version_info[0] < 3:
-                texture.setRamImage(data.tostring())
-            else:
-                texture.setRamImage(data.tobytes())
+            texture.setRamImage(data.tobytes())
             self.object_template.appearance.offsets = texture
         else:
             self.object_template.appearance.offsets = offsets

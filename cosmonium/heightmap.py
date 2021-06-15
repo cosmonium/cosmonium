@@ -30,7 +30,6 @@ from .dircontext import defaultDirContext
 
 import traceback
 import numpy
-import sys
 
 #TODO: HeightmapPatch has common code with Heightmap and TextureHeightmapBase, this should be refactored
 #TODO: Texture data should be refactored like appearance to be fully independent from the source
@@ -125,11 +124,7 @@ class HeightmapPatch(PatchData):
             else:
                 buffer_type = numpy.uint16
                 scale = 65535.0
-        if sys.version_info[0] < 3:
-            buf = data.getData()
-            np_buffer = numpy.fromstring(buf, dtype=buffer_type)
-        else:
-            np_buffer = numpy.frombuffer(data, buffer_type)
+        np_buffer = numpy.frombuffer(data, buffer_type)
         np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
         self.min_height = np_buffer.min() / scale
         self.max_height = np_buffer.max() / scale
@@ -243,11 +238,7 @@ class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
         self.filter.configure_texture(texture)
         self.texture_peeker = self.texture.peek()
         data = self.texture.getRamImage()
-        if sys.version_info[0] < 3:
-            buf = data.getData()
-            np_buffer = numpy.fromstring(buf, dtype=numpy.float32)
-        else:
-            np_buffer = numpy.frombuffer(data, numpy.float32)
+        np_buffer = numpy.frombuffer(data, numpy.float32)
         np_buffer.shape = (self.texture.getYSize(), self.texture.getXSize(), self.texture.getNumComponents())
         self.min_height = np_buffer.min()
         self.max_height = np_buffer.max()

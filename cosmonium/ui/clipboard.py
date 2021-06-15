@@ -36,10 +36,7 @@ class TkClipboard(Clipboard):
         has_tk = False
         self.r = None
         try:
-            if sys.version_info[0] < 3:
-                from Tkinter import Tk, TclError
-            else:
-                from tkinter import Tk, TclError
+            from tkinter import Tk, TclError
             has_tk = True
             print("Using Tk clipboard")
         except ImportError:

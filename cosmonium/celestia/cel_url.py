@@ -28,12 +28,8 @@ from .bigfix import Bigfix
 import sys
 import re
 
-if sys.version_info[0] < 3:
-    import urlparse
-    import urllib as urlquote
-else:
-    from urllib import parse as urlparse
-    from urllib import parse as urlquote
+from urllib import parse as urlparse
+from urllib import parse as urlquote
 
 class CelUrl(object):
     valid_modes = ["Follow", "SyncOrbit", "Chase", "PhaseLock", "Freeflight"]

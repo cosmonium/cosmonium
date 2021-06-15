@@ -20,13 +20,9 @@
 
 from .systems import SimpleSystem
 
-import sys
 import re
 
-if sys.version_info[0] < 3:
-    import urllib as urlquote
-else:
-    from urllib import parse as urlquote
+from urllib import parse as urlquote
 
 starts_with_digit = re.compile("^\d")
 
