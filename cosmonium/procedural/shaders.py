@@ -18,7 +18,7 @@
 #
 
 
-from ..shaders import DataSource, ShaderAppearance, StructuredShader, ShaderProgram, MultiDataSource
+from ..shaders import ShaderDataSource, ShaderAppearance, StructuredShader, ShaderProgram, CompositeShaderDataSource
 from .generator import GeneratorVertexShader
 
 class TextureTiling:
@@ -141,9 +141,9 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
     def tile_texture_array(self, texture, coord, page):
         return 'hash_texture_array_tiling({}, vec3({}, {}))'.format(texture, coord, page)
 
-class TextureDictionaryDataSource(DataSource):
+class TextureDictionaryDataSource(ShaderDataSource):
     def __init__(self, dictionary, shader=None):
-        DataSource.__init__(self, shader)
+        ShaderDataSource.__init__(self, shader)
         self.dictionary = dictionary
         self.tiling = dictionary.tiling
 
@@ -151,11 +151,11 @@ class TextureDictionaryDataSource(DataSource):
         return 'dict' + str(id(self))
 
     def set_shader(self, shader):
-        DataSource.set_shader(self, shader)
+        ShaderDataSource.set_shader(self, shader)
         self.tiling.set_shader(shader)
 
     def fragment_uniforms(self, code):
-        DataSource.fragment_uniforms(self, code)
+        ShaderDataSource.fragment_uniforms(self, code)
         self.tiling.uniforms(code)
         if self.dictionary.texture_array:
             for texture in self.dictionary.texture_arrays.values():
@@ -167,7 +167,7 @@ class TextureDictionaryDataSource(DataSource):
         code.append("uniform vec2 detail_factor;")
 
     def fragment_extra(self, code):
-        DataSource.fragment_extra(self, code)
+        ShaderDataSource.fragment_extra(self, code)
         self.tiling.extra(code)
 
     def get_source_for(self, source, param, error=True):
@@ -394,7 +394,7 @@ class DeferredDetailMapShader(StructuredShader):
         self.heightmap = heightmap
         self.texture_source = texture_source
         self.appearance = FakeAppearance()
-        self.data_source = MultiDataSource()
+        self.data_source = CompositeShaderDataSource()
         self.data_source.set_shader(self)
         self.vertex_shader = GeneratorVertexShader()
         self.fragment_shader = DeferredDetailMapFragmentShader(self.data_source, textures_control, heightmap)

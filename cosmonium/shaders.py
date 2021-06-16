@@ -860,7 +860,7 @@ class BasicShader(StructuredShader):
             vertex_source = DirectVertexInput(self)
         if data_source is None:
             data_source = PandaDataSource(self)
-        data_source = MultiDataSource(data_source)
+        data_source = CompositeShaderDataSource(data_source)
         if after_effects is None:
             after_effects = []
         self.appearance = appearance
@@ -1745,7 +1745,7 @@ class OffsetScaleInstanceControl(InstanceControl):
         if appearance.offsets is not None:
             shape.instance.set_shader_input('instances_offset', appearance.offsets)
 
-class DataSource(ShaderComponent):
+class ShaderDataSource(ShaderComponent):
     def has_source_for(self, source):
         return False
 
@@ -1753,9 +1753,9 @@ class DataSource(ShaderComponent):
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
-class MultiDataSource(DataSource):
+class CompositeShaderDataSource(ShaderDataSource):
     def __init__(self, sources=None, shader=None):
-        DataSource.__init__(self, shader)
+        ShaderDataSource.__init__(self, shader)
         if sources is None:
             self.sources = []
         elif isinstance(sources, list):
@@ -1859,9 +1859,9 @@ class MultiDataSource(DataSource):
         for source in self.sources:
             source.update_shader_shape(shape, appearance)
 
-class PandaDataSource(DataSource):
+class PandaDataSource(ShaderDataSource):
     def __init__(self, shader=None):
-        DataSource.__init__(self, shader)
+        ShaderDataSource.__init__(self, shader)
         self.tex_transform = False
         self.texture_index = 0
         self.normal_map_index = 0
@@ -2126,10 +2126,10 @@ class PandaDataSource(DataSource):
         if self.has_transparency:
             shape.instance.setShaderInput("transparency_level", appearance.transparency_level)
 
-class DataStoreManagerDataSource(MultiDataSource):
+class DataStoreManagerDataSource(CompositeShaderDataSource):
     pass
 
-class ParametersDataStoreDataSource(DataSource):
+class ParametersDataStoreDataSource(ShaderDataSource):
     def get_id(self):
         return "ds"
 

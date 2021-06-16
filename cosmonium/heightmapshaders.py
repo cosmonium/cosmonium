@@ -18,7 +18,7 @@
 #
 
 
-from .shaders import DataSource, VertexControl
+from .shaders import ShaderDataSource, VertexControl
 from .textures import DataTexture
 from . import settings
 
@@ -54,7 +54,7 @@ class DisplacementVertexControl(VertexControl):
         code.append("normal = normalize(normal);")
         code.append("model_normal4 = vec4(normal, 0.0);")
 
-class HeightmapDataSource(DataSource):
+class HeightmapDataSource(ShaderDataSource):
     I_Hardware = 0
     I_Software = 1
 
@@ -65,7 +65,7 @@ class HeightmapDataSource(DataSource):
     F_bspline    = 4
 
     def __init__(self, heightmap, data_store, normals=True):
-        DataSource.__init__(self)
+        ShaderDataSource.__init__(self)
         self.heightmap = heightmap
         self.name = self.heightmap.name
         self.has_normal = normals
@@ -427,9 +427,9 @@ struct HeightmapParameters {
             code.append("heightmap_%s_params.offset = encoded_data_%s.xy;" % (self.name, self.name))
             code.append("heightmap_%s_params.scale = encoded_data_%s.zw;" % (self.name, self.name))
 
-class StackedHeightmapDataSource(DataSource):
+class StackedHeightmapDataSource(ShaderDataSource):
     def __init__(self, heightmap, texture_class, shader=None):
-        DataSource.__init__(self, shader)
+        ShaderDataSource.__init__(self, shader)
         self.heightmap = heightmap
         self.texture_sources = []
         for heightmap in self.heightmap.heightmaps:
