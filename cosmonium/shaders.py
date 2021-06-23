@@ -2382,7 +2382,14 @@ class ShaderSphereShadow(ShaderShadow):
         centers = []
         radii = []
         occluder_transform = PTA_LMatrix4()
+        if len(shape.parent.shadows.sphere_shadows.occluders) > self.max_occluders:
+            print("Too many occluders")
+        nb_of_occluders = 0
         for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
+            #TODO: The selection should be done on the angular radius of the shadow.
+            if nb_of_occluders >= self.max_occluders:
+                break
+            nb_of_occluders += 1
             centers.append((shadow_caster.body.anchor._local_position - observer) * scale)
             radius = shadow_caster.body.get_apparent_radius()
             radii.append(radius * scale)
@@ -2397,7 +2404,6 @@ class ShaderSphereShadow(ShaderShadow):
                 rotation_mat_inv.invert_from(rotation_mat)
                 descale_mat = rotation_mat_inv * descale * rotation_mat
                 occluder_transform.push_back(descale_mat)
-        nb_of_occluders = len(shape.parent.shadows.sphere_shadows.occluders)
         shape.instance.setShaderInput('occluder_centers', centers)
         shape.instance.setShaderInput('occluder_radii', radii)
         if self.oblate_occluder:
