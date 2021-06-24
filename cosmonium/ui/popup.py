@@ -69,7 +69,7 @@ class Popup:
         if not self.gui.menubar_shown:
             if over is not None:
                 items.append(0)
-            items.append(self.menu_text(_('Show _menubar'), 0, self.show_menu))
+            items.append(self.menu_text(_('Show _menubar'), 0, self.gui.show_menu))
         return items
 
     def create(self, font, scale, over, popup_done=None):
