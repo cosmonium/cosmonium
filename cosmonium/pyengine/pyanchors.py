@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d, LQuaterniond, LColor
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LColor
 
 from ..foundation import BaseObject
 from ..octree import OctreeNode
@@ -166,8 +166,10 @@ class StellarAnchor(AnchorBase):
         distance_to_obs = rel_position.length()
         vector_to_obs = -rel_position / distance_to_obs
         if distance_to_obs > 0.0:
+            vector_to_obs = -rel_position / distance_to_obs
             visible_size = self._extend / (distance_to_obs * observer.pixel_size)
         else:
+            vector_to_obs = LVector3d()
             visible_size = 0.0
         radius = self._extend
         if distance_to_obs > radius:

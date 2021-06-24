@@ -294,10 +294,11 @@ StellarAnchor::update_observer(Observer &observer)
   LPoint3d local_delta = diff(_local_position, observer.get_local_position());
   rel_position = reference_point_delta + local_delta;
   distance_to_obs = rel_position.length();
-  vector_to_obs = -rel_position / distance_to_obs;
   if (distance_to_obs > 0.0) {
+      vector_to_obs = -rel_position / distance_to_obs;
       visible_size = _extend / (distance_to_obs * observer.pixel_size);
   } else {
+      vector_to_obs = 0.0;
       visible_size = 0.0;
   }
   double radius = _extend;
