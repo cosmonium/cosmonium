@@ -241,7 +241,7 @@ RckinOrbit::RckinOrbit(unsigned int planet_id,
     double average_period,
     double average_semi_major_axis,
     double average_eccentricity) :
-    FunctionOrbit(new J2000EclipticReferenceFrame(), average_period * Day, average_semi_major_axis * Km, average_eccentricity),
+    FunctionOrbit(new J2000EquatorialReferenceFrame(), average_period * Day, average_semi_major_axis * Km, average_eccentricity),
     planet_id(planet_id)
 {
 }
