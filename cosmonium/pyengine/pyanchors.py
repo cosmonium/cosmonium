@@ -62,15 +62,15 @@ class AnchorBase():
         self._height_under = 0.0
         self._albedo = 0.5
         #Scene parameters
-        self.rel_position = None
-        self.distance_to_obs = None
-        self.vector_to_obs = None
-        self.distance_to_star = None
-        self.vector_to_star = None
+        self.rel_position = LPoint3d()
+        self.distance_to_obs = 0
+        self.vector_to_obs = LVector3d()
+        self.distance_to_star = 0
+        self.vector_to_star = LVector3d()
         self.visible_size = 0.0
-        self.scene_position = None
-        self.scene_orientation = None
-        self.scene_scale_factor = None
+        self.scene_position = LPoint3d()
+        self.scene_orientation = LQuaterniond()
+        self.scene_scale_factor = 0.0
 
     def set_rebuild_needed(self):
         self.rebuild_needed = True
