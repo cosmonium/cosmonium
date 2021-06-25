@@ -18,10 +18,10 @@
 #
 
 
-from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond,\
-    LPoint3d
+from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond, LPoint3d
 from panda3d.core import DirectionalLight
 
+from .foundation import BaseObject
 from .stellarobject import StellarObject
 from .anchors import StellarAnchor
 from .systems import SimpleSystem
@@ -69,18 +69,22 @@ class StellarBody(StellarObject):
         self.auto_surface = surface is None
         if surface is not None:
             #TODO: Should not be done explicitly
-            surface.owner = self
+            surface.set_body(self)
+            surface.set_owner(self)
             self.surfaces.append(surface)
         self.radius = radius
         self.anchor._height_under = radius
         self.oblateness = oblateness
         self.scale = scale
         if self.clouds is not None:
-            self.clouds.owner = self
+            self.clouds.set_body(self)
+            self.clouds.set_owner(self)
         if self.atmosphere is not None:
-            self.atmosphere.owner = self
+            self.atmosphere.set_body(self)
+            self.atmosphere.set_owner(self)
         if self.ring is not None:
-            self.ring.owner = self
+            self.ring.set_body(self)
+            self.ring.set_owner(self)
         self.anchor._extend = self.get_extend()
 
     def get_or_create_system(self):
@@ -102,17 +106,21 @@ class StellarBody(StellarObject):
 
     def create_surface(self):
         self.surface = self.surface_factory.create(self)
+        self.surface.set_body(self)
+        self.surface.set_owner(self)
 
     def add_surface(self, surface):
         self.surfaces.append(surface)
-        surface.owner = self
+        surface.set_body(self)
+        surface.set_owner(self)
         if self.surface is None:
             self.surface = surface
             self.auto_surface = False
 
     def insert_surface(self, index, surface):
         self.surfaces.insert(index, surface)
-        surface.owner = self
+        surface.set_body(self)
+        surface.set_owner(self)
 
     def set_surface(self, surface):
         if not surface in self.surfaces: return
@@ -139,24 +147,29 @@ class StellarBody(StellarObject):
         StellarObject.create_components(self)
         if self.surface is None:
             self.create_surface()
-            #TODO: Should not be done explicitly
-            self.surface.owner = self
             self.auto_surface = True
-        self.add_component(self.surface)
-        self.add_component(self.ring)
-        self.add_component(self.clouds)
-        self.add_component(self.atmosphere)
+        self.components.add_component(self.surface)
+        self.surface.set_oid_color(self.oid_color)
+        if self.ring is not None:
+            self.components.add_component(self.ring)
+            self.ring.set_oid_color(self.oid_color)
+        if self.clouds is not None:
+            self.components.add_component(self.clouds)
+            self.clouds.set_oid_color(self.oid_color)
+        if self.atmosphere is not None:
+            self.components.add_component(self.atmosphere)
+            self.atmosphere.set_oid_color(self.oid_color)
         self.configure_shape()
 
     def remove_components(self):
         self.unconfigure_shape()
         StellarObject.remove_components(self)
-        self.remove_component(self.surface)
+        self.components.remove_component(self.surface)
         if self.auto_surface:
             self.surface = None
-        self.remove_component(self.ring)
-        self.remove_component(self.clouds)
-        self.remove_component(self.atmosphere)
+        self.components.remove_component(self.ring)
+        self.components.remove_component(self.clouds)
+        self.components.remove_component(self.atmosphere)
 
     def get_components(self):
         #TODO: This is a hack to be fixed in v0.3.0
@@ -325,11 +338,11 @@ class ReflectiveBody(StellarBody):
         self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
         self.directional_light.setColor((1, 1, 1, 1))
         self.light_source = self.context.world.attachNewNode(self.directional_light)
-        self.set_light(self.light_source)
+        self.components.set_light(self.light_source)
 
     def update_light(self, camera_pos):
         pos = self.get_local_position() + self.anchor.vector_to_star * self.get_extend()
-        self.place_pos_only(self.light_source, pos, camera_pos, self.anchor.distance_to_obs, self.anchor.vector_to_obs)
+        BaseObject.place_pos_only(self.light_source, pos, camera_pos, self.anchor.distance_to_obs, self.anchor.vector_to_obs)
         self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
 
     def remove_light(self):
@@ -349,7 +362,7 @@ class ReflectiveBody(StellarBody):
         StellarBody.create_components(self)
         if self.light_source is None:
             self.create_light()
-            self.update_shader()
+            self.components.update_shader()
 
     def update_components(self, camera_pos):
         if self.light_source is not None:
@@ -358,7 +371,7 @@ class ReflectiveBody(StellarBody):
     def remove_components(self):
         if self.light_source is not None:
             self.remove_light()
-            self.update_shader()
+            self.components.update_shader()
         StellarBody.remove_components(self)
 
 class EmissiveBody(StellarBody):

@@ -132,6 +132,7 @@ class CosmoniumBase(ShowBase):
 
         #TODO: should find a better way than patching classes...
         BaseObject.context = self
+        StellarObject.context = self
         YamlModuleParser.app = self
         BodyController.context = self
 
@@ -419,6 +420,8 @@ class Cosmonium(CosmoniumBase):
             self.near_cam = None
 
         self.universe = Universe(self)
+        self.components = CompositeObject('<root>')
+        self.components.visible = True
 
         if settings.color_picking:
             self.oid_texture = Texture()
@@ -1035,10 +1038,9 @@ class Cosmonium(CosmoniumBase):
         traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude)
         self.universe.anchor.traverse(traverser)
         self.visibles = traverser.get_collected()
-        #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
-        CompositeObject.update(self.universe, time, dt)
-        CompositeObject.update_obs(self.universe, self.observer)
-        CompositeObject.check_visibility(self.universe, frustum, pixel_size)
+        self.components.update(time, dt)
+        self.components.update_obs(self.observer)
+        self.components.check_visibility(frustum, pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1166,8 +1168,7 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_instances(self):
-        #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
-        CompositeObject.check_and_update_instance(self.universe, self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        self.components.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for occluder in self.shadow_casters:
             occluder.update_scene(self.c_observer)
         for visible in self.visibles:
@@ -1285,8 +1286,7 @@ class Cosmonium(CosmoniumBase):
                 visible.body.check_settings()
             for orbit in self.orbits:
                 orbit.check_settings()
-            #TODO: Temporary hack until the constellations, asterisms, .. are moved into a proper container
-            CompositeObject.check_settings(self.universe)
+            self.components.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()

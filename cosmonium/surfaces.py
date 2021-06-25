@@ -48,11 +48,13 @@ class Surface(ShapeObject):
         self.category = category
         self.resolution = resolution
         self.attribution = attribution
-        #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
-        self.owner = None
+        self.body = None
 
     def get_component_name(self):
         return _('Surface')
+
+    def set_body(self, body):
+        self.body = body
 
     def configure_render_order(self):
         self.instance.set_bin("front_to_back", 0)
@@ -75,18 +77,18 @@ class Surface(ShapeObject):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.owner.get_local_position()
-        object_orientation = self.owner.get_abs_rotation()
+        object_position = self.body.get_local_position()
+        object_orientation = self.body.get_abs_rotation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.owner.get_abs_rotation()
+        object_orientation = self.body.get_abs_rotation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 
     def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(position))
+        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
 
 class EllipsoidSurface(Surface):
@@ -99,8 +101,6 @@ class EllipsoidSurface(Surface):
         self.scale = scale
         #TODO: This is a workaround for patchedshape scale, this should be fixed
         self.height_scale = self.radius
-        #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
-        self.owner = None
 
     def configure_shape(self):
         if self.scale is not None:
@@ -112,8 +112,8 @@ class EllipsoidSurface(Surface):
         self.shape.set_scale(scale)
 
     def create_shadow_caster(self):
-        self.shadow_caster = SphereShadowCaster(self.owner)
-        if self.owner.atmosphere is None:
+        self.shadow_caster = SphereShadowCaster(self.body)
+        if self.body.atmosphere is None:
             self.shader.add_shadows(ShaderSphereSelfShadow())
 
     def get_average_radius(self):
@@ -143,18 +143,18 @@ class EllipsoidSurface(Surface):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.owner.get_local_position()
-        object_orientation = self.owner.get_abs_rotation()
+        object_position = self.body.get_local_position()
+        object_orientation = self.body.get_abs_rotation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.owner.get_abs_rotation()
+        object_orientation = self.body.get_abs_rotation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 
     def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(position))
+        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
 
 class EllipsoidFlatSurface(EllipsoidSurface):
@@ -169,14 +169,14 @@ class MeshSurface(Surface):
         return False
 
     def create_shadow_caster(self):
-        self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
+        self.shadow_caster = CustomShadowMapShadowCaster(self.body, None)
         self.shadow_caster.add_target(self, self_shadow=True)
 
     def start_shadows_update(self):
         ShapeObject.start_shadows_update(self)
         #Add self-shadowing for non-spherical objects
         #TODO: It's a bit convoluted to do it like that...
-        if self.owner.visible and self.owner.resolved:
+        if self.body.visible and self.body.resolved:
             self.shadow_caster.add_target(self, self_shadow=True)
 
     def get_height_at(self, x, y, strict=False):

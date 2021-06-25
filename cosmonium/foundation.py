@@ -42,46 +42,15 @@ class BaseObject(object):
     WaterCameraMask = DrawMask.bit(29)
     ShadowCameraMask = DrawMask.bit(30)
 
-    def __init__(self, names=None):
-        self.set_names(names)
+    def __init__(self, name):
+        self.name =name
         self.shown = self.default_shown
         self.visible = False
         self.light = None
         self.parent = None
 
-    def get_names(self):
-        return self.names
-
-    def set_names(self, names):
-        if names is None:
-            self.names = ['']
-        elif isinstance(names, (list, tuple)):
-            self.names = names
-        else:
-            self.names = [names]
-
-    def get_friendly_name(self):
-        return self.names[0]
-
     def get_name(self):
-        return self.names[0]
-
-    def get_ascii_name(self):
-        return self.names[0].encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
-
-    def get_exact_name(self, text):
-        text = text.upper()
-        result = ''
-        for name in self.names:
-            if name.upper() == text:
-                result = name
-                break
-        else:
-            for name in self.source_names:
-                if name.upper() == text:
-                    result = name
-                    break
-        return result
+        return self.name
 
     def get_user_parameters(self):
         return None
@@ -190,9 +159,9 @@ class BaseObject(object):
         instance.setPos(*position)
 
     def place_instance(self, instance, parent):
-        instance.setPos(*self.parent.anchor.scene_position)
-        instance.setScale(self.get_scale() * self.parent.anchor.scene_scale_factor)
-        instance.setQuat(LQuaternion(*self.parent.anchor.scene_orientation))
+        instance.setPos(*self.body.anchor.scene_position)
+        instance.setScale(self.get_scale() * self.body.anchor.scene_scale_factor)
+        instance.setQuat(LQuaternion(*self.body.anchor.scene_orientation))
 
     def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
         instance.setPos(*scene_position)
@@ -203,8 +172,8 @@ class VisibleObject(BaseObject):
     ignore_light = False
     patchable = False
 
-    def __init__(self, names=None):
-        BaseObject.__init__(self, names)
+    def __init__(self, name):
+        BaseObject.__init__(self, name)
         self.instance = None
         #TODO: Should be handled properly
         self.instance_ready = False
@@ -263,8 +232,8 @@ class VisibleObject(BaseObject):
         return LColor()
 
 class CompositeObject(BaseObject):
-    def __init__(self, names):
-        BaseObject.__init__(self, names)
+    def __init__(self, name):
+        BaseObject.__init__(self, name)
         self.components = []
         self.init = False
 
@@ -353,10 +322,10 @@ class ObjectLabel(VisibleObject):
     appearance = None
     shader = None
 
-    def __init__(self, names, parent):
-        VisibleObject.__init__(self, names)
+    def __init__(self, name, label_source):
+        VisibleObject.__init__(self, name)
         self.fade = 1.0
-        self.parent = parent
+        self.label_source = label_source
 
     @classmethod
     def create_shader(cls):
@@ -372,10 +341,10 @@ class ObjectLabel(VisibleObject):
         cls.shader = BasicShader(lighting_model=FlatLightingModel())
 
     def check_settings(self):
-        if self.parent.body_class is None:
-            print("No class for", self.parent.get_name())
+        if self.label_source.body_class is None:
+            print("No class for", self.label_source.get_name())
             return
-        self.set_shown(bodyClasses.get_show_label(self.parent.body_class))
+        self.set_shown(bodyClasses.get_show_label(self.label_source.body_class))
 
     @classmethod
     def load_font(cls):
@@ -388,20 +357,20 @@ class ObjectLabel(VisibleObject):
 
     def create_instance(self):
         #print("Create label for", self.get_name())
-        self.label = TextNode(self.parent.get_ascii_name() + '-label')
+        self.label = TextNode(self.label_source.get_ascii_name() + '-label')
         if not self.font_init:
             self.load_font()
         if self.font is not None:
             self.label.set_font(self.font)
-        name = bayer.decode_name(self.parent.get_label_text())
+        name = bayer.decode_name(self.label_source.get_label_text())
         self.label.setText(name)
-        self.label.setTextColor(*srgb_to_linear(self.parent.get_label_color()))
+        self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
         #node=label.generate()
         #self.instance = self.context.annotation.attachNewNode(node)
         #self.instance.setBillboardPointEye()
         #node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
-        #node.setPythonTag('owner', self.parent)
-        cardMaker = CardMaker(self.get_ascii_name() + '-labelcard')
+        #node.setPythonTag('owner', self.label_source)
+        cardMaker = CardMaker(self.label_source.get_ascii_name() + '-labelcard')
         cardMaker.setFrame(self.label.getFrameActual())
         cardMaker.setColor(0, 0, 0, 0)
         card_node = cardMaker.generate()
@@ -426,12 +395,12 @@ class ObjectLabel(VisibleObject):
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.set_depth_write(False)
         self.instance.set_color_scale(LColor(1, 1, 1, 1))
-        card_node.setPythonTag('owner', self.parent)
+        card_node.setPythonTag('owner', self.label_source)
         self.look_at = self.instance.attachNewNode("dummy")
 
 class LabelledObject(CompositeObject):
-    def __init__(self, names):
-        CompositeObject.__init__(self, names)
+    def __init__(self, name):
+        CompositeObject.__init__(self, name)
         self.label = None
 
     def check_settings(self):

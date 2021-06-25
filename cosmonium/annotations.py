@@ -23,9 +23,11 @@ from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, Geo
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
-from .foundation import VisibleObject, ObjectLabel, LabelledObject
+from .foundation import VisibleObject, CompositeObject, ObjectLabel, LabelledObject
+from .namedobject import NamedObject
 from .astro.orbits import FixedPosition
 from .astro.projection import InfinitePosition
+from .astro.astro import position_to_equatorial
 from .astro import units
 from .bodyclass import bodyClasses
 from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
@@ -35,19 +37,18 @@ from .utils import srgb_to_linear
 from . import settings
 
 from math import sin, cos, atan2, pi
-from cosmonium.astro.astro import position_to_equatorial
 
 class BackgroundLabel(ObjectLabel):
     def create_instance(self):
         ObjectLabel.create_instance(self)
-        self.instance.setBin('background', self.parent.background_level)
-        if self.parent is not None:
-            self.rel_position = self.parent.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
+        self.instance.setBin('background', self.label_source.background_level)
+        if self.label_source is not None:
+            self.rel_position = self.label_source.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
         else:
             self.rel_position = None
         if self.rel_position != None:
             self.instance.setPos(*self.rel_position)
-            scale = abs(self.context.observer.pixel_size * self.parent.get_label_size() * self.context.observer.infinity)
+            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * self.context.observer.infinity)
         else:
             scale = 0.0
         if scale < 1e-7:
@@ -74,7 +75,6 @@ class Orbit(VisibleObject):
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
         self.body = body
-        self.owner = body
         self.nbOfPoints = 360
         self.orbit = self.find_orbit(self.body)
         self.color = None
@@ -150,7 +150,7 @@ class Orbit(VisibleObject):
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
-        self.instance.node().setPythonTag('owner', self)
+        self.instance.node().setPythonTag('owner', self.body)
         self.instance.reparentTo(self.context.annotation)
         if self.color is None:
             self.color = self.body.get_orbit_color()
@@ -236,7 +236,7 @@ class RotationAxis(VisibleObject):
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
-        self.instance.setColor(srgb_to_linear(self.parent.get_orbit_color()))
+        self.instance.setColor(srgb_to_linear(self.body.get_orbit_color()))
         self.instance.reparentTo(self.context.annotation)
 
     def check_settings(self):
@@ -244,9 +244,9 @@ class RotationAxis(VisibleObject):
 
     def check_visibility(self, frustum, pixel_size):
         if self.parent.shown:
-            distance_to_obs = self.parent.anchor.distance_to_obs
+            distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
-                size = self.parent.get_apparent_radius() / (distance_to_obs * pixel_size)
+                size = self.body.get_apparent_radius() / (distance_to_obs * pixel_size)
             else:
                 size = 0.0
             self.visible = size > settings.axis_fade
@@ -275,9 +275,6 @@ class ReferenceAxis(VisibleObject):
         self.instance = load_panda_model(self.model)
         self.instance.reparentTo(self.context.annotation)
         return self.instance
-
-    def check_visibility(self, frustum, pixel_size):
-        self.visible = self.parent is not None and self.parent.shown and self.parent.anchor.visible and self.parent.anchor.resolved
 
     def update_instance(self, camera_pos, camera_rot):
         if self.instance:
@@ -506,26 +503,50 @@ class Boundary(VisibleObject):
         self.instance.setBin('background', settings.boundaries_depth)
         self.instance.set_depth_write(False)
 
-class Constellation(LabelledObject):
+class Constellation(NamedObject):
     ignore_light = True
     default_shown = True
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
     def __init__(self, name, center, boundary):
+        NamedObject.__init__(self, name, [])
         LabelledObject.__init__(self, name)
         self.visible = True
         self.center = center
         self.boundary = boundary
+        self.components = CompositeObject(name)
+        self.components.visible = True
         self.create_components()
+
+    def set_parent(self, parent):
+        pass
+
+    def set_light(self, parent):
+        pass
 
     def create_label_instance(self):
         return BackgroundLabel(self.get_ascii_name() + '-label', self)
 
     def create_components(self):
         self.create_label()
-        self.add_component(self.label)
-        self.add_component(self.boundary)
+        self.components.add_component(self.label)
+        self.components.add_component(self.boundary)
+
+    def check_settings(self):
+        self.components.check_settings()
+
+    def update(self, time, dt):
+        self.components.update(time, dt)
+
+    def update_obs(self, observer):
+        self.components.update_obs(observer)
+
+    def check_visibility(self, frustum, pixel_size):
+        self.components.check_visibility(frustum, pixel_size)
+
+    def check_and_update_instance(self, camera_pos, camera_rot):
+        self.components.check_and_update_instance(camera_pos, camera_rot)
 
     def project(self, time, center, distance):
         return self.center.project(time, center, distance)

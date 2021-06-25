@@ -80,13 +80,11 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
-    def set_parent(self, parent):
-        Atmosphere.set_parent(self, parent)
-        if parent is not None:
-            self.planet = parent
-            self.planet_radius = parent.get_min_radius()
-            self.radius = self.planet_radius * self.AtmosphereRatio
-            self.ratio = self.AtmosphereRatio
+    def set_body(self, body):
+        self.body = body
+        self.body_radius = body.get_min_radius()
+        self.radius = self.body_radius * self.AtmosphereRatio
+        self.ratio = self.AtmosphereRatio
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
@@ -172,13 +170,11 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
             self.lookuptable_generator = None
         self.pbOpticalDepth = None
 
-    def set_parent(self, parent):
-        Atmosphere.set_parent(self, parent)
-        if parent is not None:
-            self.planet = parent
-            self.planet_radius = parent.get_average_radius()
-            self.radius = self.planet_radius + self.height
-            self.ratio = self.radius / self.planet_radius
+    def set_body(self, body):
+        self.body = body
+        self.body_radius = body.get_average_radius()
+        self.radius = self.body_radius + self.height
+        self.ratio = self.radius / self.body_radius
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
@@ -339,22 +335,22 @@ class ONeilScatteringBase(AtmosphericScattering):
         self.calc_colors(code)
 
     def update_shader_shape(self, shape, appearance):
-        planet = self.parameters.planet
-        factor = 1.0 / shape.owner.anchor.scene_scale_factor
-        inner_radius = self.parameters.planet_radius
+        body = self.parameters.body
+        factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
+        inner_radius = self.parameters.body_radius
 
         #TODO: We should get the oblateness correctly
-        planet_scale = self.parameters.planet.surface.get_scale()
-        descale = LMatrix4.scale_mat(inner_radius / planet_scale[0], inner_radius / planet_scale[1], inner_radius / planet_scale[2])
+        body_scale = self.parameters.body.surface.get_scale()
+        descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
         rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.owner.anchor.scene_orientation)
+        orientation = LQuaternion(*shape.parent.body.anchor.scene_orientation)
         orientation.extract_to_matrix(rotation_mat)
         rotation_mat_inv = LMatrix4()
         rotation_mat_inv.invert_from(rotation_mat)
         descale_mat = rotation_mat_inv * descale * rotation_mat
-        pos = planet.anchor.rel_position
+        pos = body.anchor.rel_position
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = planet.star.anchor._local_position - planet.anchor._local_position
+        star_pos = body.star.anchor._local_position - body.anchor._local_position
         scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
         scaled_star_pos.normalize()
         camera_height = scaled_pos.length()
@@ -513,8 +509,8 @@ class ONeilSimpleScattering(ONeilScatteringBase):
 
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters
-        inner_radius = parameters.planet_radius
-        outer_radius = parameters.planet_radius * parameters.AtmosphereRatio
+        inner_radius = parameters.body_radius
+        outer_radius = parameters.body_radius * parameters.AtmosphereRatio
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("fKr4PI", parameters.Kr * 4 * pi)
@@ -649,8 +645,8 @@ class ONeilLookupTableShader(StructuredShader):
         return name
 
     def update(self, instance, parameters):
-        planet_radius = parameters.planet_radius
-        inner_radius = planet_radius
+        body_radius = parameters.body_radius
+        inner_radius = body_radius
         outer_radius = parameters.radius
 
         scale = 1.0 / (outer_radius - inner_radius)
@@ -828,7 +824,7 @@ class ONeilScattering(ONeilScatteringBase):
     def update_shader_shape_static(self, shape, appearance):
         parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
-        inner_radius = parameters.planet_radius
+        inner_radius = parameters.body_radius
         outer_radius =  parameters.radius
         scale = 1.0 / (outer_radius - inner_radius)
 

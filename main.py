@@ -224,7 +224,7 @@ class CosmoniumApp(Cosmonium):
         parser.set_translation(self.load_lang('main', locale))
         universeYamlParser.set_universe(self.universe)
         parser.load_and_parse(self.app_config.common)
-        parser.load_and_parse(self.app_config.main, self.universe)
+        parser.load_and_parse(self.app_config.main, self.components)
         for extra in self.app_config.extra:
             if os.path.isdir(extra):
                 self.load_dir(parser, extra)

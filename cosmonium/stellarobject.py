@@ -20,7 +20,8 @@
 
 from panda3d.core import LPoint3d, LVector3d, LVector3, LColor
 
-from .foundation import CompositeObject, ObjectLabel, LabelledObject
+from .foundation import CompositeObject, ObjectLabel
+from .namedobject import NamedObject
 from .annotations import ReferenceAxis, RotationAxis, Orbit
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
 from .astro.frame import SynchroneReferenceFrame
@@ -36,17 +37,17 @@ from math import pi, asin, atan2, sin, cos
 
 class StellarBodyLabel(ObjectLabel):
     def get_oid_color(self):
-        return self.parent.oid_color
+        return self.label_source.oid_color
 
     def check_visibility(self, frustum, pixel_size):
-        if hasattr(self.parent, "primary") and self.parent.anchor.resolved:
+        if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved:
             self.visible = False
             return
-        if self.parent.system is not None:
-            body = self.parent.system
+        if self.label_source.system is not None:
+            body = self.label_source.system
         else:
-            body = self.parent
-        if self.parent.anchor.visible and self.parent.anchor.resolved:
+            body = self.label_source
+        if self.label_source.anchor.visible and self.label_source.anchor.resolved:
             self.visible = True
             self.fade = 1.0
         else:
@@ -57,7 +58,7 @@ class StellarBodyLabel(ObjectLabel):
         self.fade = clamp(self.fade, 0.0, 1.0)
 
     def update_instance(self, camera_pos, camera_rot):
-        body = self.parent
+        body = self.label_source
         if body.is_emissive() and (not body.anchor.resolved or body.background):
             if body.anchor.scene_position != None:
                 self.instance.setPos(*body.anchor.scene_position)
@@ -84,14 +85,15 @@ class StellarBodyLabel(ObjectLabel):
 class FixedOrbitLabel(StellarBodyLabel):
     def check_visibility(self, frustum, pixel_size):
         #TODO: Should be refactored !
-        if hasattr(self.parent, "primary") and self.parent.anchor.resolved and (self.parent.primary is None or (self.parent.primary.label is not None and self.parent.primary.label.visible)):
+        if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved and (self.label_source.primary is None or (self.label_source.primary.label is not None and self.label_source.primary.label.visible)):
             self.visible = False
             return
-        self.visible = self.parent.anchor._app_magnitude < settings.label_lowest_app_magnitude
-        self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.parent.anchor._app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
+        self.visible = self.label_source.anchor._app_magnitude < settings.label_lowest_app_magnitude
+        self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.label_source.anchor._app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
         self.fade = clamp(self.fade, 0.0, 1.0)
 
-class StellarObject(LabelledObject):
+class StellarObject(NamedObject):
+    context = None
     anchor_class = 0
     has_rotation_axis = False
     has_reference_axis = False
@@ -107,9 +109,7 @@ class StellarObject(LabelledObject):
     nb_instance = 0
 
     def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
-        LabelledObject.__init__(self, names)
-        self.source_names = source_names
-        self.description = description
+        NamedObject.__init__(self, names, source_names, description)
         self.system = None
         self.body_class = body_class
         if point_color is None:
@@ -137,6 +137,20 @@ class StellarObject(LabelledObject):
         self.init_components = False
         objectsDB.add(self)
 
+        self.shown = True
+        self.visible = False
+        self.light = None
+        self.parent = None
+
+        self.components = CompositeObject(self.get_ascii_name())
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def set_light(self, light):
+        self.light = light
+        self.components.set_light(light)
+
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
         return DynamicStellarAnchor(anchor_class, self, orbit, rotation, point_color)
 
@@ -144,11 +158,26 @@ class StellarObject(LabelledObject):
         return False
 
     def check_settings(self):
-        LabelledObject.check_settings(self)
+        self.components.check_settings()
+        if self.label is not None:
+            self.label.check_settings()
         if self.body_class is None:
             print("No class for", self.get_name())
             return
         self.set_shown(bodyClasses.get_show(self.body_class))
+
+    def set_shown(self, new_shown_status):
+        if new_shown_status != self.shown:
+            if new_shown_status:
+                self.show()
+            else:
+                self.hide()
+
+    def show(self):
+        self.shown = True
+
+    def hide(self):
+        self.shown = False
 
     def get_user_parameters(self):
         group = ParametersGroup(self.get_name())
@@ -168,7 +197,7 @@ class StellarObject(LabelledObject):
         return group
 
     def update_user_parameters(self):
-        LabelledObject.update_user_parameters(self)
+        self.components.update_user_parameters()
         if isinstance(self.orbit, FixedPosition) and self.system is not None:
             self.system.orbit.update_user_parameters()
             if self.system.orbit_object is not None:
@@ -205,19 +234,19 @@ class StellarObject(LabelledObject):
     def create_components(self):
         if self.has_rotation_axis:
             self.rotation_axis = RotationAxis(self)
-            self.add_component(self.rotation_axis)
+            self.components.add_component(self.rotation_axis)
         if self.has_reference_axis:
             self.reference_axis = ReferenceAxis(self)
-            self.add_component(self.reference_axis)
+            self.components.add_component(self.reference_axis)
         self.init_components = True
 
     def update_components(self, camera_pos):
         pass
 
     def remove_components(self):
-        self.remove_component(self.rotation_axis)
+        self.components.remove_component(self.rotation_axis)
         self.rotation_axis = None
-        self.remove_component(self.reference_axis)
+        self.components.remove_component(self.reference_axis)
         self.reference_axis = None
         self.init_components = False
 
@@ -230,14 +259,14 @@ class StellarObject(LabelledObject):
     def create_orbit_object(self):
         if self.orbit_object is None and not isinstance(self.anchor.orbit, FixedPosition):
             self.orbit_object = Orbit(self)
-            self.add_component(self.orbit_object)
+            self.components.add_component(self.orbit_object)
             self.orbit_object.check_settings()
 
     def set_orbit(self, orbit):
         if self.orbit_object is not None:
             self.orbit_object.remove_instance()
             self.orbit_object = None
-            self.remove_component(self.orbit_object)
+            self.components.remove_component(self.orbit_object)
         self.anchor.orbit = orbit
         self.create_orbit_object()
 
@@ -393,10 +422,17 @@ class StellarObject(LabelledObject):
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.frustum, self.context.observer.pixel_size)
 
+    def update_obs(self, observer):
+        self.components.update_obs(observer)
+
+    def check_visibility(self, frustum, pixel_size):
+        self.components.check_visibility(frustum, pixel_size)
+
     def check_and_update_instance(self, camera_pos, camera_rot):
         StellarObject.nb_instance += 1
         if not self.init_components:
             self.create_components()
+            self.components.visible = True
             self.check_settings()
         if self.support_offset_body_center and settings.offset_body_center:
             self.world_body_center_offset = -self.anchor.vector_to_obs * self.anchor._height_under * self.anchor.scene_scale_factor
@@ -407,10 +443,10 @@ class StellarObject(LabelledObject):
                 self.model_body_center_offset[1] /= scale[1]
                 self.model_body_center_offset[2] /= scale[2]
         self.update_components(camera_pos)
-        CompositeObject.check_and_update_instance(self, camera_pos, camera_rot)
+        self.components.check_and_update_instance(camera_pos, camera_rot)
 
     def remove_instance(self):
-        CompositeObject.remove_instance(self)
+        self.components.remove_instance()
         if self.init_components:
             self.remove_components()
         self.remove_label()

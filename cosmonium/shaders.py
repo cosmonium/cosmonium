@@ -2551,8 +2551,8 @@ class LambertPhongLightingModel(LightingModel):
 
     def update_shader_shape(self, shape, appearance):
         LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.anchor.vector_to_star
-        light_color = shape.owner.light_color
+        light_dir = shape.parent.body.anchor.vector_to_star
+        light_color = shape.parent.body.light_color
         shape.instance.setShaderInput("light_dir", *light_dir)
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)

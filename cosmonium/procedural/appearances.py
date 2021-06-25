@@ -142,7 +142,7 @@ class TexturesDictionary(AppearanceBase):
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
-        height_under = shape.owner.anchor._height_under
+        height_under = shape.parent.body.anchor._height_under
         distance = distance_to_obs - height_under
         if distance > 0.0:
             size = self.extend / (distance * pixel_size)

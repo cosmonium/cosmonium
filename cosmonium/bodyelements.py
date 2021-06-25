@@ -39,10 +39,14 @@ class Ring(ShapeObject):
         self.outer_radius = outer_radius
         self.set_shape(RingShape(inner_radius, outer_radius))
         self.shadow_caster = RingShadowCaster(self)
+        self.body = None
         self.shape.vanish_borders = True
 
     def get_component_name(self):
         return _('Rings')
+
+    def set_body(self, body):
+        self.body = body
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
@@ -52,8 +56,8 @@ class Atmosphere(ShapeObject):
             appearance = Appearance()
         ShapeObject.__init__(self, 'atmosphere', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.inside = None
-        self.planet = None
-        self.planet_radius = None
+        self.body = None
+        self.body_radius = None
         self.radius = None
         self.ratio = None
         self.blend = TransparencyBlend.TB_None
@@ -62,6 +66,9 @@ class Atmosphere(ShapeObject):
 
     def get_component_name(self):
         return _('Atmosphere')
+
+    def set_body(self, body):
+        self.body = body
 
     def check_settings(self):
         if settings.show_atmospheres != self.shown:
@@ -132,7 +139,7 @@ class Atmosphere(ShapeObject):
                 self.remove_scattering_on(shape_object)
 
     def get_pixel_height(self):
-        return self.parent.anchor.visible_size * (self.ratio - 1.0)
+        return self.body.anchor.visible_size * (self.ratio - 1.0)
 
     def check_visibility(self, frustum, pixel_size):
         ShapeObject.check_visibility(self, frustum, pixel_size)
@@ -141,7 +148,7 @@ class Atmosphere(ShapeObject):
 
     async def create_instance(self):
         #TODO: Find a better way to retrieve ellipticity
-        scale = self.planet.surface.get_scale() / self.planet_radius
+        scale = self.body.surface.get_scale() / self.body_radius
         self.set_scale(scale * self.radius)
         await ShapeObject.create_instance(self)
         TransparencyBlend.apply(self.blend, self.instance)
@@ -153,7 +160,7 @@ class Atmosphere(ShapeObject):
 
     def update_obs(self, observer):
         ShapeObject.update_obs(self, observer)
-        inside = self.owner.anchor.distance_to_obs < self.radius
+        inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             self.inside = inside
             self.update_shader_params()
@@ -202,6 +209,7 @@ class Clouds(EllipsoidFlatSurface):
         self.height = height
         self.scale_base = None
         self.inside = None
+        self.body = None
         if appearance is not None:
             #TODO: Disabled as it causes blinking
             pass#appearance.check_transparency()
@@ -209,15 +217,18 @@ class Clouds(EllipsoidFlatSurface):
     def get_component_name(self):
         return _('Clouds')
 
+    def set_body(self, body):
+        self.body = body
+
     def configure_render_order(self):
         self.instance.set_bin("transparent", 0)
 
     def configure_shape(self):
-        self.radius = self.parent.surface.get_average_radius() + self.height
+        self.radius = self.body.surface.get_average_radius() + self.height
         #TODO : temporary until height_scale is removed from patchedshape
         self.height_scale = self.radius
-        scale = self.parent.surface.get_scale()
-        factor = 1.0 + self.height / self.parent.surface.get_average_radius()
+        scale = self.body.surface.get_scale()
+        factor = 1.0 + self.height / self.body.surface.get_average_radius()
         self.shape.set_scale(scale * factor)
 
     def check_settings(self):
@@ -225,7 +236,7 @@ class Clouds(EllipsoidFlatSurface):
 
     def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
-        inside = self.parent.anchor.distance_to_obs < self.radius
+        inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
@@ -254,7 +265,7 @@ class Clouds(EllipsoidFlatSurface):
 
     def get_user_parameters(self):
         group = ShapeObject.get_user_parameters(self)
-        group.add_parameter(AutoUserParameter('Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.parent.get_apparent_radius() * 0.01]))
+        group.add_parameter(AutoUserParameter('Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.body.get_apparent_radius() * 0.01]))
         return group
 
     def update_user_parameters(self):

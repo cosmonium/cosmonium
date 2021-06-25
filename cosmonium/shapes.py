@@ -22,7 +22,7 @@ from panda3d.core import GeomNode, LQuaternion, LQuaterniond
 from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32, ModelPool
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
-from panda3d.core import Material
+from panda3d.core import Material, LColor
 from direct.task.Task import gather
 from direct.actor.Actor import Actor
 
@@ -77,14 +77,18 @@ class Shape:
         self.task = None
         self.clickable = False
         self.attribution = None
+        self.oid_color = None
         #TODO: Used to fix ring textures
         self.vanish_borders = False
 
     def get_name(self):
         return 'shape ' + self.owner.get_name()
 
+    def set_oid_color(self, oid_color):
+        self.oid_color = oid_color
+
     def get_oid_color(self):
-        return self.owner.oid_color
+        return self.oid_color
 
     def get_user_parameters(self):
         return None
@@ -254,6 +258,7 @@ class ShapeObject(VisibleObject):
         VisibleObject.__init__(self, name)
         self.sources = []
         self.shape = None
+        self.owner = None
         self.set_shape(shape)
         self.appearance = appearance
         if shader is None:
@@ -298,18 +303,18 @@ class ShapeObject(VisibleObject):
         self.shape = shape
         if shape is not None:
             self.shape.parent = self
-            self.shape.set_owner(self.parent)
+            self.shape.set_owner(self.owner)
             data_source = self.shape.get_data_source()
             if data_source is not None:
                 self.sources.append(data_source)
 
     def set_owner(self, owner):
         self.owner = owner
+        self.shape.set_owner(owner)
 
-    def set_parent(self, parent):
-        VisibleObject.set_parent(self, parent)
-        if self.shape is not None:
-            self.shape.set_owner(parent)
+    def set_oid_color(self, oid_color):
+        #TODO: Should it be stored to be applied in set_shape ?
+        self.shape.set_oid_color(oid_color)
 
     def set_appearance(self, appearance):
         self.appearance = appearance
@@ -461,9 +466,6 @@ class ShapeObject(VisibleObject):
             patch.patch_done()
             self.shape.patch_done(patch)
 
-    def check_visibility(self, frustum, pixel_size):
-        self.visible = self.parent is not None and self.parent.shown and self.parent.anchor.visible and self.parent.anchor.resolved
-
     def update_shape(self):
         if self.instance is not None and self.shape is not None and self.instance_ready:
             self.shape.update_shape()
@@ -473,10 +475,10 @@ class ShapeObject(VisibleObject):
             self.shader.apply(self.shape, self.appearance)
 
     def update_lod(self, camera_pos, camera_rot):
-        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.anchor.distance_to_obs, self.context.observer.pixel_size)
+            self.appearance.update_lod(self.shape, self.body.get_apparent_radius(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size)
 
     def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
@@ -484,15 +486,15 @@ class ShapeObject(VisibleObject):
         self.shape.update_instance(camera_pos, camera_rot)
         if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
             #TODO: Should be done in place_instance, but that would make several if...
-            self.instance.setPos(*(self.parent.anchor.scene_position + self.parent.world_body_center_offset))
-        if self.shape.patchable and settings.offset_body_center and self.parent is not None:
+            self.instance.setPos(*(self.body.anchor.scene_position + self.body.world_body_center_offset))
+        if self.shape.patchable and settings.offset_body_center and self.body is not None:
             #In case of oblate shape, the offset can not be used directly to retrieve the body center
             #The scale must be applied to the offset to retrieve the real center
-            offset = self.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
-            self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
+            offset = self.instance.getMat().xform(LVector3(*self.body.model_body_center_offset))
+            self.body.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
-            self.shape.place_patches(self.parent)
+            self.shape.place_patches(self.body)
         if self.shadow_caster is not None:
             self.shadow_caster.update()
         if self.shadows.rebuild_needed:
