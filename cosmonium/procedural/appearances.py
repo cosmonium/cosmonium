@@ -81,14 +81,14 @@ class TexturesDictionary(AppearanceBase):
         texture = block.textures_map[category]
         return texture.array_id
 
-    def apply_textures(self, instance):
+    def apply_textures(self, shape, instance):
         if self.texture_array:
             for texture in self.texture_arrays.values():
-                texture.apply(instance)
+                texture.apply(shape, instance)
         else:
             for entry in self.blocks.values():
                 for texture in entry.textures:
-                    texture.apply(instance)
+                    texture.apply(shape, instance)
 
     def load_textures(self, tasks_tree, shape, owner):
         tasks = []
@@ -121,7 +121,7 @@ class TexturesDictionary(AppearanceBase):
     def apply(self, shape, instance):
         if not self.loaded:
             print("ERROR: Applying not loaded texture")
-        self.apply_textures(instance)
+        self.apply_textures(shape, instance)
         instance.set_shader_input("detail_factor", self.scale_factor)
 
     def clear_textures(self):

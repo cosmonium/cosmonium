@@ -114,7 +114,7 @@ class GalaxyAppearance(AppearanceBase):
 
     def apply(self, shape, instance):
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
-        self.texture.apply(shape)
+        self.texture.apply(shape, instance)
         shape.instance.set_depth_write(False)
         if self.background is not None:
             shape.instance.setBin('background', settings.deep_space_depth)

@@ -138,7 +138,7 @@ class AppearanceBase:
     def bake(self):
         pass
 
-    def apply_textures(self, patch):
+    def apply_textures(self, shape):
         pass
 
     def create_patch_data(self, patch):
@@ -346,24 +346,24 @@ class Appearance(AppearanceBase):
             tasks.append(self.occlusion_map.load(tasks_tree, shape))
         return gather(*tasks)
 
-    def apply_textures(self, patch):
-        patch.instance.clearTexture()
+    def apply_textures(self, shape, instance):
+        instance.clear_texture()
         if self.texture:
             if self.check_specular_mask:
                 self.has_specular_mask = self.texture.has_alpha_channel
                 self.check_specular_mask = False
             self.texture.has_specular_mask = self.has_specular_mask
-            self.texture.apply(patch)
+            self.texture.apply(shape, instance)
         if self.normal_map:
-            self.normal_map.apply(patch)
+            self.normal_map.apply(shape, instance)
         if self.bump_map:
-            self.bump_map.apply(patch)
+            self.bump_map.apply(shape, instance)
         if self.specularColor is not None and self.specular_map is not None:
-            self.specular_map.apply(patch)
+            self.specular_map.apply(shape, instance)
         if self.emission_texture:
-            self.emission_texture.apply(patch)
+            self.emission_texture.apply(shape, instance)
         if self.occlusion_map:
-            self.occlusion_map.apply(patch)
+            self.occlusion_map.apply(shape, instance)
 
     async def load_patch_data(self, tasks_tree, patch, owner):
             if self.nb_textures > 0:
@@ -371,12 +371,8 @@ class Appearance(AppearanceBase):
                 await self.load_textures(tasks_tree, patch, owner)
 
     def apply_patch_data(self, patch, instance):
-        if patch.instance is not None:
-            #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
-            self.apply_textures(patch)
-        else:
-            #print(globalClock.getFrameCount(), "DISCARD", patch.str_id())
-            pass
+        #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
+        self.apply_textures(patch, instance)
 
     async def load(self, tasks_tree, shape, owner):
         if not shape.patchable and self.nb_textures > 0:
@@ -390,7 +386,7 @@ class Appearance(AppearanceBase):
             instance.set_color_scale(self.colorScale)
         if not shape.patchable and self.nb_textures > 0:
             #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
-            self.apply_textures(shape)
+            self.apply_textures(shape, instance)
 
     def clear_patch(self, patch):
         if patch.instance is not None:
