@@ -41,6 +41,7 @@ from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
 from .anchors import AnchorBase, StellarAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
+from .lights import LightSources, LightSource
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame
@@ -398,7 +399,7 @@ class Cosmonium(CosmoniumBase):
         self.nav = None
         self.gui = None
         self.visibles = []
-        self.light_sources = []
+        self.global_light_sources = []
         self.orbits = []
         self.shadow_casters = []
         self.nearest_system = None
@@ -1055,12 +1056,12 @@ class Cosmonium(CosmoniumBase):
             controller.check_visibility(frustum, pixel_size)
 
     @pstat
-    def find_light_sources(self):
+    def find_global_light_sources(self):
         position = self.observer._global_position + self.observer._local_position
         traverser = FindLightSourceTraverser(-10, position)
         self.universe.anchor.traverse(traverser)
-        self.light_sources = traverser.get_collected()
-        #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.light_sources)))
+        self.global_light_sources = traverser.get_collected()
+        #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
 
     def update_ship(self, time, dt):
         frustum = self.observer.rel_frustum
@@ -1096,8 +1097,8 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_magnitudes(self):
-        if len(self.light_sources) > 0:
-            star = self.light_sources[0]
+        if len(self.global_light_sources) > 0:
+            star = self.global_light_sources[0]
         else:
             star = None
         for visible_object in self.visibles:
@@ -1124,11 +1125,26 @@ class Cosmonium(CosmoniumBase):
         self.renderer.add_orbits(self.orbits)
 
     @pstat
+    def find_local_lights(self):
+        if len(self.global_light_sources) > 0:
+            star = self.global_light_sources[0]
+        else:
+            star = None
+        for visible_object in self.visibles:
+            if not visible_object.resolved: continue
+            if visible_object.content & AnchorBase.System != 0: continue
+            if visible_object.content & AnchorBase.Reflective == 0: continue
+            lights = LightSources()
+            if star is not None:
+                lights.add_source(LightSource(star.body, visible_object.body))
+            visible_object.body.set_lights(lights)
+
+    @pstat
     def find_shadows(self):
         self.shadow_casters = []
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
-        if len(self.light_sources) == 0: return
-        star = self.light_sources[0]
+        if len(self.global_light_sources) == 0: return
+        star = self.global_light_sources[0]
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
             if visible_object.content & AnchorBase.System != 0: continue
@@ -1275,8 +1291,9 @@ class Cosmonium(CosmoniumBase):
         nearest_system, nearest_visible_system = self.find_nearest_system()
         self.update_nearest_system(nearest_system, nearest_visible_system)
 
-        self.find_light_sources()
+        self.find_global_light_sources()
         self.update_magnitudes()
+        self.find_local_lights()
         self.find_orbits()
         self.check_scattering()
         self.update_height_under()

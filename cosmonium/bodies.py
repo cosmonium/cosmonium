@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,10 +18,8 @@
 #
 
 
-from panda3d.core import LVector3d, LVector3, LQuaternion, LColor, BitMask32, LQuaterniond, LPoint3d
-from panda3d.core import DirectionalLight
+from panda3d.core import LVector3d, LQuaternion, LColor, BitMask32, LQuaterniond, LPoint3d
 
-from .foundation import BaseObject
 from .stellarobject import StellarObject
 from .anchors import StellarAnchor
 from .systems import SimpleSystem
@@ -301,7 +299,6 @@ class ReflectiveBody(StellarBody):
     def __init__(self, *args, **kwargs):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
-        self.light_source = None
         #TODO: This should be done in create_anchor
         self.anchor._albedo = self.albedo
 
@@ -332,24 +329,6 @@ class ReflectiveBody(StellarBody):
         for component in self.get_components():
             component.end_shadows_update()
 
-    def create_light(self):
-        print("Create light for", self.get_name())
-        self.directional_light = DirectionalLight('light_source')
-        self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
-        self.directional_light.setColor((1, 1, 1, 1))
-        self.light_source = self.context.world.attachNewNode(self.directional_light)
-        self.components.set_light(self.light_source)
-
-    def update_light(self, camera_pos):
-        pos = self.get_local_position() + self.anchor.vector_to_star * self.get_extend()
-        BaseObject.place_pos_only(self.light_source, pos, camera_pos, self.anchor.distance_to_obs, self.anchor.vector_to_obs)
-        self.directional_light.setDirection(LVector3(*-self.anchor.vector_to_star))
-
-    def remove_light(self):
-        self.light_source.remove_node()
-        self.light_source = None
-        self.directional_light = None
-
     def configure_shape(self):
         StellarBody.configure_shape(self)
         self.surface.create_shadows()
@@ -360,18 +339,19 @@ class ReflectiveBody(StellarBody):
 
     def create_components(self):
         StellarBody.create_components(self)
-        if self.light_source is None:
-            self.create_light()
-            self.components.update_shader()
+        #if self.light_source is None:
+            #self.create_light()
+        self.components.update_shader()
 
     def update_components(self, camera_pos):
-        if self.light_source is not None:
-            self.update_light(camera_pos)
+        #if self.light_source is not None:
+        #    self.update_light(camera_pos)
+        pass
 
     def remove_components(self):
-        if self.light_source is not None:
-            self.remove_light()
-            self.components.update_shader()
+        #if self.light_source is not None:
+            #self.remove_light()
+        self.components.update_shader()
         StellarBody.remove_components(self)
 
 class EmissiveBody(StellarBody):

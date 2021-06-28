@@ -46,7 +46,6 @@ class BaseObject(object):
         self.name =name
         self.shown = self.default_shown
         self.visible = False
-        self.light = None
         self.parent = None
 
     def get_name(self):
@@ -64,8 +63,8 @@ class BaseObject(object):
     def set_parent(self, parent):
         self.parent = parent
 
-    def set_light(self, light):
-        self.light = light
+    def set_lights(self, lights):
+        pass
 
     def show(self):
         self.shown = True
@@ -181,9 +180,6 @@ class VisibleObject(BaseObject):
     def check_and_create_instance(self):
         if not self.instance:
             self.create_instance()
-        if self.instance:
-            if self.light and not self.ignore_light:
-                self.instance.setLight(self.light)
 
     def create_instance(self):
         pass
@@ -223,10 +219,9 @@ class VisibleObject(BaseObject):
     def update_instance(self, camera_pos, camera_rot):
         pass
 
-    def set_light(self, light):
-        BaseObject.set_light(self, light)
+    def set_light(self, lights):
         if self.instance and not self.ignore_light:
-            self.instance.setLight(self.light)
+            lights.update(self.instance)
 
     def get_oid_color(self):
         return LColor()
@@ -244,7 +239,6 @@ class CompositeObject(BaseObject):
         if component is not None:
             self.components.append(component)
             component.set_parent(self)
-            component.set_light(self.light)
 
     def remove_component(self, component):
         if component is None: return
@@ -309,10 +303,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.remove_instance()
 
-    def set_light(self, light):
-        BaseObject.set_light(self, light)
+    def set_lights(self, lights):
         for component in self.components:
-            component.set_light(light)
+            component.set_light(lights)
 
 class ObjectLabel(VisibleObject):
     default_shown = False

@@ -2256,8 +2256,6 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
             shape.instance.setShaderInput('%s_shadow_normal_bias' % self.name, normal_bias)
             shape.instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
             shape.instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
-            light_dir = shape.owner.anchor.vector_to_star
-            shape.instance.setShaderInput("%s_light_dir" % self.name, *light_dir)
         if self.caster_body is not None:
             caster = self.caster_body
             body = shape.owner
@@ -2536,15 +2534,6 @@ class LambertPhongLightingModel(LightingModel):
         code.append("total_diffuse_color += surface_color * total_diffuse;")
         self.apply_emission(code, 'n_dot_l')
 
-    def update_shader_shape(self, shape, appearance):
-        LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.parent.body.anchor.vector_to_star
-        light_color = shape.parent.body.light_color
-        shape.instance.setShaderInput("light_dir", *light_dir)
-        shape.instance.setShaderInput("light_color", light_color)
-        shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
-        shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
-
 class OrenNayarPhongLightingModel(LightingModel):
     use_vertex = True
     world_vertex = True
@@ -2592,15 +2581,6 @@ class OrenNayarPhongLightingModel(LightingModel):
         code.append("total_diffuse.a = 1.0;")
         code.append("total_diffuse_color += surface_color * total_diffuse;")
         self.apply_emission(code, 'l_dot_n')
-
-    def update_shader_shape(self, shape, appearance):
-        LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.anchor.vector_to_star
-        light_color = shape.owner.light_color
-        shape.instance.setShaderInput("light_dir", *light_dir)
-        shape.instance.setShaderInput("light_color", light_color)
-        shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
-        shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
 
 class AtmosphericScattering(ShaderComponent):
     def fragment_uniforms(self, code):

@@ -19,7 +19,6 @@
 
 
 from ..shaders import LightingModel
-from .. import settings
 
 class LunarLambertLightingModel(LightingModel):
     use_normal = True
@@ -53,12 +52,3 @@ class LunarLambertLightingModel(LightingModel):
         code.append("total_light.a = 1.0;")
         code.append("total_diffuse_color = surface_color * total_light;")
         self.apply_emission(code, 'light_angle')
-
-    def update_shader_shape(self, shape, appearance):
-        LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.vector_to_star
-        light_color = shape.owner.light_color
-        shape.instance.setShaderInput("light_dir", *light_dir)
-        shape.instance.setShaderInput("light_color", light_color)
-        shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
-        shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))

@@ -185,12 +185,3 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("total_diffuse_color.rgb += material.diffuse_color * ambient.rgb;")
         code.append("total_diffuse_color.a = surface_color.a;")
         self.apply_emission(code, 'vectors.n_dot_l')
-
-    def update_shader_shape(self, shape, appearance):
-        LightingModel.update_shader_shape(self, shape, appearance)
-        light_dir = shape.owner.anchor.vector_to_star
-        light_color = shape.owner.light_color
-        shape.instance.setShaderInput("light_dir", *light_dir)
-        shape.instance.setShaderInput("light_color", light_color)
-        shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
-        shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
