@@ -52,7 +52,7 @@ class StarYamlParser(YamlModuleParser):
             factory = proceduralStarSurfaceFactoryDB.get(factory_name)
         else:
             factory = None
-        clouds = CloudsYamlParser.decode(data.get('clouds'), None)
+        clouds = CloudsYamlParser.decode(data.get('clouds'))
         rings = RingsYamlParser.decode(data.get('rings'))
         star = Star(translated_names,
                     source_names=source_names,
@@ -70,7 +70,7 @@ class StarYamlParser(YamlModuleParser):
                     spectral_type=spectral_type)
         surfaces = data.get('surfaces')
         if surfaces is not None:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, star)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), star)
             factory = None
         else:
             surfaces = []

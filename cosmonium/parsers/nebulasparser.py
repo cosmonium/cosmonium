@@ -49,9 +49,9 @@ class NebulaYamlParser(YamlModuleParser):
                     rotation=rotation)
         nebula.has_resolved_halo = False
         if data.get('surfaces') is None:
-            surfaces = [SurfaceYamlParser.decode_surface(data, None, {}, nebula)]
+            surfaces = [SurfaceYamlParser.decode_surface(data, {}, nebula)]
         else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, nebula)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), nebula)
         for surface in surfaces:
             nebula.add_surface(surface)
         if explicit_parent:

@@ -958,6 +958,9 @@ class BasicShader(StructuredShader):
             self.tessellation_eval_shader.scattering = scattering
         self.fragment_shader.scattering = scattering
 
+    def remove_scattering(self):
+        self.set_scattering(AtmosphericScattering())
+
     def add_shadows(self, shadow):
         self.shadows.append(shadow)
         shadow.shader = self

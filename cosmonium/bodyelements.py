@@ -63,6 +63,7 @@ class Atmosphere(ShapeObject):
         self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
         self.attenuated_objects = []
+        self.sources.append(self.create_data_source())
 
     def get_component_name(self):
         return _('Atmosphere')
@@ -85,15 +86,12 @@ class Atmosphere(ShapeObject):
         self.set_shown(settings.show_atmospheres)
 
     def set_scattering_on(self, shape_object, extinction):
-        if shape_object.shader is not None:
-            scattering = self.create_scattering_shader(atmosphere=False, displacement=not shape_object.is_flat(), extinction=extinction)
-            shape_object.shader.set_scattering(scattering)
-            shape_object.update_shader()
+        data_source = self.create_data_source()
+        scattering = self.create_scattering_shader(atmosphere=False, displacement=not shape_object.is_flat(), extinction=extinction)
+        shape_object.set_scattering(data_source, scattering)
 
     def remove_scattering_on(self, shape_object):
-        if shape_object.shader is not None:
-            shape_object.shader.set_scattering(AtmosphericScattering())
-            shape_object.update_shader()
+        shape_object.remove_scattering()
 
     def do_update_scattering(self, shape_object, atmosphere, extinction):
         pass
@@ -183,6 +181,9 @@ class Atmosphere(ShapeObject):
                 self.attenuated_objects = []
         elif observer.apply_scattering > 0:
             observer.apply_scattering -= 1
+
+    def create_data_source(self):
+        raise NotImplementedError()
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         return AtmosphericScattering()

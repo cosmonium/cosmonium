@@ -338,6 +338,21 @@ class ShapeObject(VisibleObject):
     def get_scale(self):
         return self.shape.get_scale()
 
+    def set_scattering(self, scattering_source, scattering_shader):
+        self.shader.set_scattering(scattering_shader)
+        self.update_shader()
+        self.sources.append(scattering_source)
+        if self.instance is not None:
+            scattering_source.apply(self.shape, self.instance)
+
+    def remove_scattering(self):
+        self.shader.remove_scattering()
+        self.update_shader()
+        #self.sources.remove()
+        if self.instance is not None:
+            #scattering_source.un_apply(self.instance)
+            pass
+
     def is_flat(self):
         return True
 
@@ -370,6 +385,7 @@ class ShapeObject(VisibleObject):
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()
+        #TODO: Should be moved to shape_task
         if self.context.observer.has_scattering:
             self.context.observer.scattering.add_attenuated_object(self)
         self.instance.node().setBounds(OmniBoundingVolume())

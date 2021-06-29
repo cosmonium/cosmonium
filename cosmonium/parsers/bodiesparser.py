@@ -49,7 +49,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         radius, ellipticity, scale = get_radius_scale(data, None)
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
-        clouds = CloudsYamlParser.decode(data.get('clouds'), atmosphere)
+        clouds = CloudsYamlParser.decode(data.get('clouds'))
         rings = RingsYamlParser.decode(data.get('rings'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
@@ -71,9 +71,9 @@ class ReflectiveYamlParser(YamlModuleParser):
                               albedo=albedo)
         if data.get('surfaces') is None:
             surfaces = []
-            surfaces.append(SurfaceYamlParser.decode_surface(data, atmosphere, {}, body))
+            surfaces.append(SurfaceYamlParser.decode_surface(data, {}, body))
         else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, body)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), body)
         for surface in surfaces:
             body.add_surface(surface)
         if explicit_parent:

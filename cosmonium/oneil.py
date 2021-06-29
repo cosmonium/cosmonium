@@ -94,6 +94,9 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         scattering.inside = self.inside
         return scattering
 
+    def create_data_source(self):
+        return ONeilSimpleScatteringDataSource(self)
+
     def get_user_parameters(self):
         group = Atmosphere.get_user_parameters(self)
         group.add_parameters(
@@ -183,6 +186,9 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
             scattering = ONeilScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
         scattering.inside = self.inside
         return scattering
+
+    def create_data_source(self):
+        return ONeilScatteringDataSource(self)
 
     def generate_lookup_table(self):
         self.lookuptable_generator.update({'parameters': self})
@@ -507,7 +513,36 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
 
-    def update_shader_shape_static(self, shape, appearance):
+class ONeilSimpleScatteringDataSource():
+    def __init__(self, parameters):
+        self.name = 'scattering'
+        self.parameters = parameters
+
+    def create_patch_data(self, patch):
+        pass
+
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        pass
+
+    async def load_patch_data(self, patch, owner):
+        pass
+
+    def apply_patch_data(self, patch, instance):
+        pass
+
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        pass
+
+    async def load(self, shape, owner):
+        pass
+
+    def apply(self, shape, instance):
         parameters = self.parameters
         inner_radius = parameters.body_radius
         outer_radius = parameters.body_radius * parameters.AtmosphereRatio
@@ -821,7 +856,36 @@ class ONeilScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
 
-    def update_shader_shape_static(self, shape, appearance):
+class ONeilScatteringDataSource():
+    def __init__(self, parameters):
+        self.name = 'scattering'
+        self.parameters = parameters
+
+    def create_patch_data(self, patch):
+        pass
+
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        pass
+
+    async def load_patch_data(self, patch, owner):
+        pass
+
+    def apply_patch_data(self, patch, instance):
+        pass
+
+    def clear_patch(self, patch):
+        pass
+
+    def clear_all(self):
+        pass
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        pass
+
+    async def load(self, shape, owner):
+        pass
+
+    def apply(self, shape, instance):
         parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
         inner_radius = parameters.body_radius

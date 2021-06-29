@@ -38,7 +38,7 @@ from .utilsparser import get_radius_scale
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
-    def decode_surface(self, data, atmosphere, previous, owner):
+    def decode_surface(self, data, previous, owner):
         name = data.get('name', None)
         category_name = data.get('category', 'visible')
         category = surfaceCategoryDB.get(category_name)
@@ -123,17 +123,15 @@ class SurfaceYamlParser(YamlModuleParser):
                                        radius=radius, oblateness=ellipticity, scale=scale,
                                        height_scale=radius, height_base=radius,
                                        shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
-        if atmosphere is not None:
-            atmosphere.add_shape_object(surface)
         return surface
 
     @classmethod
-    def decode(self, data, atmosphere, owner):
+    def decode(self, data, owner):
         surfaces = []
         #TODO: Should do surface element cloning instead of reparsing
         previous = {}
         for entry in data:
-            surface = self.decode_surface(entry, atmosphere, previous, owner)
+            surface = self.decode_surface(entry, previous, owner)
             surfaces.append(surface)
             previous = entry
         return surfaces
@@ -148,7 +146,7 @@ class StandaloneSurfaceYamlParser(YamlModuleParser):
             print("ERROR: Parent '%s' of surface '%s' not found" % (parent_name, name))
             return None
         active = data.get('active', 'True')
-        surface = SurfaceYamlParser.decode_surface(data, parent.atmosphere, {}, parent)
+        surface = SurfaceYamlParser.decode_surface(data, {}, parent)
         parent.add_surface(surface)
         if active:
             parent.set_surface(surface)
