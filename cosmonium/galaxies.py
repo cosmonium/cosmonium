@@ -42,6 +42,7 @@ from . import settings
 from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from random import random, gauss, choice, seed
 from cosmonium.utils import srgb_to_linear
+from cosmonium.datasource import DataSource
 
 class Galaxy(DeepSpaceObject):
     has_rotation_axis = False
@@ -65,6 +66,7 @@ class Galaxy(DeepSpaceObject):
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = EllipsoidFlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
+        surface.sources.append(GalaxyDataSource())
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
@@ -560,6 +562,17 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
+class GalaxyDataSource(DataSource):
+    def __init__(self):
+        DataSource.__init__(self, 'galaxy')
+
+    def apply(self, shape, instance):
+        instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
+        instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
+
+    def update(self, shape, instance):
+        instance.setShaderInput("scale_factor", shape.owner.anchor.scene_scale_factor)
+
 class GalaxyPointControl(PointControl):
     use_vertex = True
     world_vertex = True
@@ -589,11 +602,3 @@ class GalaxyPointControl(PointControl):
 
     def fragment_shader(self, code):
         code.append("total_emission_color *= attenuation;")
-
-    def update_shader_shape_static(self, shape, appearance):
-        PointControl.update_shader_shape_static(self, shape, appearance)
-        shape.instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
-        shape.instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
-
-    def update_shader_shape(self, shape, appearance):
-        shape.instance.setShaderInput("scale_factor", shape.owner.anchor.scene_scale_factor)
