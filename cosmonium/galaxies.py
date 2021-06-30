@@ -103,6 +103,9 @@ class GalaxyAppearance(AppearanceBase):
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
 
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
+
     async def load(self, tasks_tree, shape, owner):
         if self.texture is None:
             if self.image is None:

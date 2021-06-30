@@ -21,6 +21,7 @@
 from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
 from .bodyelements import Atmosphere
+from .datasource import DataSource
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
@@ -513,34 +514,10 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
 
-class ONeilSimpleScatteringDataSource():
+class ONeilSimpleScatteringDataSource(DataSource):
     def __init__(self, parameters):
-        self.name = 'scattering'
+        DataSource.__init__(self, 'scattering')
         self.parameters = parameters
-
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        pass
-
-    async def load_patch_data(self, patch, owner):
-        pass
-
-    def apply_patch_data(self, patch, instance):
-        pass
-
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
-        pass
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        pass
-
-    async def load(self, shape, owner):
-        pass
 
     def apply(self, shape, instance):
         parameters = self.parameters
@@ -856,34 +833,10 @@ class ONeilScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
 
-class ONeilScatteringDataSource():
+class ONeilScatteringDataSource(DataSource):
     def __init__(self, parameters):
-        self.name = 'scattering'
+        DataSource.__init__(self, 'scattering')
         self.parameters = parameters
-
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        pass
-
-    async def load_patch_data(self, patch, owner):
-        pass
-
-    def apply_patch_data(self, patch, instance):
-        pass
-
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
-        pass
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        pass
-
-    async def load(self, shape, owner):
-        pass
 
     def apply(self, shape, instance):
         parameters = self.parameters

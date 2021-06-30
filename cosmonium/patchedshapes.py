@@ -25,6 +25,7 @@ from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAtt
 from direct.task.Task import gather
 
 from .shapes import Shape
+from .datasource import DataSource
 from .shaders import DataStoreManagerDataSource, ParametersDataStoreDataSource
 from .textures import TexCoord
 from .pstats import pstat
@@ -1658,19 +1659,10 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
-class PatchedShapeDataSource:
+class PatchedShapeDataSource(DataSource):
     def __init__(self, shape):
-        self.name = 'shape'
+        DataSource.__init__(self, 'shape')
         self.shape = shape
-
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        tasks_tree.add_task_for(self, self.load_patch_data(patch, owner))
-
-    async def load_patch_data(self, patch, owner):
-        pass
 
     def apply_patch_data(self, patch, instance):
         if self.shape.data_store is not None:
@@ -1678,18 +1670,6 @@ class PatchedShapeDataSource:
         instance.set_shader_input("flat_coord", patch.flat_coord)
         instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
         instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
-
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
-        pass
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        tasks_tree.add_task_for(self, self.load(shape, owner))
-
-    async def load(self, shape, owner):
-        pass
 
     def apply(self, shape, instance):
         if self.shape.data_store is not None:

@@ -167,6 +167,9 @@ class ProceduralAppearance(AppearanceBase):
     def get_shader_appearance(self):
         return self.shader_appearance
 
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
+
     async def load(self, tasks_tree, shape, owner):
         await self.texture_source.load(tasks_tree, shape, owner)
 

@@ -24,6 +24,7 @@ from direct.task.Task import gather
 
 from .textures import TextureBase, WrapperTexture, SurfaceTexture, TransparentTexture, EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from .textures import AutoTextureSource
+from .datasource import DataSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
 from .parameters import ParametersGroup, AutoUserParameter
@@ -96,9 +97,9 @@ class TexturesBlock(object):
         self.nb_textures += 1
         self.textures_map[bump.category] = bump
 
-class AppearanceBase:
+class AppearanceBase(DataSource):
     def __init__(self):
-        self.name = 'appearance'
+        DataSource.__init__(self, 'appearance')
         self.tex_transform = False
         self.nb_textures = 0
         self.texture_index = 0
@@ -139,33 +140,6 @@ class AppearanceBase:
         pass
 
     def apply_textures(self, shape):
-        pass
-
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        tasks_tree.add_task_for(self, self.load_patch_data(tasks_tree, patch, owner))
-
-    async def load_patch_data(self, tasks_tree, patch, owner):
-        pass
-
-    def apply_patch_data(self, patch, instance):
-        pass
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
-
-    async def load(self, tasks_tree, shape, owner):
-        pass
-
-    def apply(self, shape, instance):
-        pass
-
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
         pass
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
@@ -365,6 +339,9 @@ class Appearance(AppearanceBase):
         if self.occlusion_map:
             self.occlusion_map.apply(shape, instance)
 
+    def create_load_patch_data_task(self, tasks_tree, patch, owner):
+        tasks_tree.add_task_for(self, self.load_patch_data(tasks_tree, patch, owner))
+
     async def load_patch_data(self, tasks_tree, patch, owner):
             if self.nb_textures > 0:
                 #print("LOAD", patch.str_id())
@@ -373,6 +350,9 @@ class Appearance(AppearanceBase):
     def apply_patch_data(self, patch, instance):
         #print(globalClock.getFrameCount(), "APPLY", patch.str_id())
         self.apply_textures(patch, instance)
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         if not shape.patchable and self.nb_textures > 0:
@@ -542,6 +522,9 @@ class ModelAppearance(AppearanceBase):
             self.transparency_level = 0.0
             self.transparency_blend = TransparencyBlend.TB_Alpha
         self.nb_textures_coord = 1
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         self.scan_model(shape.instance)

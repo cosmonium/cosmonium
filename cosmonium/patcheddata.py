@@ -20,6 +20,7 @@
 
 from panda3d.core import LVector2
 
+from .datasource import DataSource
 from .textures import TexCoord
 
 class PatchData:
@@ -115,7 +116,7 @@ class PatchData:
                 print("Make default data")
                 self.configure_data(self.make_default_data())
 
-class PatchedData():
+class PatchedData(DataSource):
     def __init__(self, name, size, overlap, max_lod=100):
         self.name = name
         self.size = size
@@ -203,9 +204,3 @@ class PatchedData():
 
     def create_load_task(self, tasks_tree, shape, owner):
         tasks_tree.add_task_for(self, self.load(shape, owner))
-
-    async def load(self, shape, owner):
-        pass
-
-    def apply(self, shape, instance):
-        pass
