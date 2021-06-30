@@ -66,7 +66,7 @@ class Galaxy(DeepSpaceObject):
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = EllipsoidFlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
-        surface.sources.append(GalaxyDataSource())
+        surface.sources.add_source(GalaxyDataSource())
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,

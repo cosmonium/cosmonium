@@ -63,7 +63,7 @@ class Atmosphere(ShapeObject):
         self.blend = TransparencyBlend.TB_None
         self.shape_objects = []
         self.attenuated_objects = []
-        self.sources.append(self.create_data_source())
+        self.sources.add_source(self.create_data_source())
 
     def get_component_name(self):
         return _('Atmosphere')

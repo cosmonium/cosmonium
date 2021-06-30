@@ -18,6 +18,34 @@
 #
 
 
+from direct.task.Task import gather
+
+
+class DataSourceTasksTree:
+    def __init__(self, sources):
+        self.sources = sources
+        self.named_tasks = {source.name: None for source in sources}
+        self.tasks = []
+
+    def add_task_for(self, source, coro):
+        task = taskMgr.add(coro)
+        self.named_tasks[source.name] = task
+        self.tasks.append(task)
+
+    def collect_patch_tasks(self, patch, owner):
+        for source in self.sources:
+            source.create_load_patch_data_task(self, patch, owner)
+
+    def collect_tasks(self, shape, owner):
+        for source in self.sources:
+            source.create_load_task(self, shape, owner)
+
+    async def run_tasks(self):
+        await gather(*self.tasks)
+        self.named_tasks = {}
+        self.tasks = []
+
+
 class DataSource:
     def __init__(self, name):
         self.name = name
@@ -51,3 +79,50 @@ class DataSource:
 
     def update(self, shape, instance):
         pass
+
+class DataSourcesHandler:
+    def __init__(self):
+        self.sources = []
+
+    def add_source(self, source):
+        self.sources.append(source)
+
+    def remove_source(self, source):
+        self.sources.remove(source)
+
+    def remove_source_by_name(self, name):
+        source = None
+        for source in self.sources:
+            if source.name == name:
+                self.sources.remove(source)
+                break
+
+    async def load_patch_data(self, patch):
+        for source in self.sources:
+            source.create_patch_data(patch)
+        tasks_tree = DataSourceTasksTree(self.sources)
+        tasks_tree.collect_patch_tasks(patch, self)
+        await tasks_tree.run_tasks()
+
+    def apply_patch_data(self, patch):
+        for source in self.sources:
+            source.apply_patch_data(patch, patch.instance)
+
+    def early_apply_patch_data(self, patch):
+        for source in self.sources:
+            source.create_patch_data(patch)
+            source.apply_patch_data(patch, patch.instance)
+
+    async def load_shape_data(self, shape):
+        tasks_tree = DataSourceTasksTree(self.sources)
+        tasks_tree.collect_tasks(shape, self)
+        await tasks_tree.run_tasks()
+
+    def apply_shape_data(self, shape):
+        for source in self.sources:
+            source.apply(shape, shape.instance)
+            source.update(shape, shape.instance)
+
+    def update_shape_data(self, shape):
+        for source in self.sources:
+            source.update(shape, shape.instance)

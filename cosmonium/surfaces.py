@@ -197,9 +197,9 @@ class HeightmapSurface(EllipsoidSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
-        self.sources.append(self.heightmap)
+        self.sources.add_source(self.heightmap)
         if biome is not None:
-            self.sources.append(biome)
+            self.sources.add_source(biome)
         self.min_radius = self.heightmap_base + self.height_scale * self.heightmap.min_height
         self.max_radius = self.heightmap_base + self.height_scale * self.heightmap.max_height
         #TODO: Make a proper method for this...
