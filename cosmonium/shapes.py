@@ -452,6 +452,7 @@ class ShapeObject(VisibleObject):
         if shape.instance is not None:
             for source in self.sources:
                 source.apply(shape, shape.instance)
+                source.update(shape, shape.instance)
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
@@ -511,6 +512,8 @@ class ShapeObject(VisibleObject):
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
             self.shape.place_patches(self.body)
+        for source in self.sources:
+            source.update(self.shape, self.shape.instance)
         if self.shadow_caster is not None:
             self.shadow_caster.update()
         if self.shadows.rebuild_needed:

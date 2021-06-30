@@ -48,3 +48,6 @@ class DataSource:
 
     def apply(self, shape, instance):
         pass
+
+    def update(self, shape, instance):
+        pass
