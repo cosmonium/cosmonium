@@ -341,39 +341,6 @@ class ONeilScatteringBase(AtmosphericScattering):
             self.calc_scattering(code)
         self.calc_colors(code)
 
-    def update_shader_shape(self, shape, appearance):
-        body = self.parameters.body
-        factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
-        inner_radius = self.parameters.body_radius
-
-        #TODO: We should get the oblateness correctly
-        body_scale = self.parameters.body.surface.get_scale()
-        descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
-        rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.parent.body.anchor.scene_orientation)
-        orientation.extract_to_matrix(rotation_mat)
-        rotation_mat_inv = LMatrix4()
-        rotation_mat_inv.invert_from(rotation_mat)
-        descale_mat = rotation_mat_inv * descale * rotation_mat
-        pos = body.anchor.rel_position
-        scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = body.star.anchor._local_position - body.anchor._local_position
-        scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
-        scaled_star_pos.normalize()
-        camera_height = scaled_pos.length()
-        if camera_height > inner_radius * 100:
-            scaled_pos *= 100.0 * inner_radius / camera_height
-            camera_height = 100.0 * inner_radius
-        shape.instance.setShaderInput("v3OriginPos", pos)
-        shape.instance.setShaderInput("v3CameraPos", -scaled_pos)
-
-        shape.instance.setShaderInput("fCameraHeight", camera_height)
-        shape.instance.setShaderInput("fCameraHeight2", camera_height * camera_height)
-
-        shape.instance.setShaderInput("v3LightPos", scaled_star_pos)
-        shape.instance.setShaderInput("model_scale", factor)
-        shape.instance.setShaderInput("atm_descale", descale_mat)
-
 class ONeilSimpleScattering(ONeilScatteringBase):
     str_id = 'oneil-simple'
 
@@ -514,11 +481,45 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
 
-class ONeilSimpleScatteringDataSource(DataSource):
+class ONeilScatteringDataSourceBase(DataSource):
     def __init__(self, parameters):
         DataSource.__init__(self, 'scattering')
         self.parameters = parameters
 
+    def update(self, shape, instance):
+        body = self.parameters.body
+        factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
+        inner_radius = self.parameters.body_radius
+
+        #TODO: We should get the oblateness correctly
+        body_scale = self.parameters.body.surface.get_scale()
+        descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
+        rotation_mat = LMatrix4()
+        orientation = LQuaternion(*shape.parent.body.anchor.scene_orientation)
+        orientation.extract_to_matrix(rotation_mat)
+        rotation_mat_inv = LMatrix4()
+        rotation_mat_inv.invert_from(rotation_mat)
+        descale_mat = rotation_mat_inv * descale * rotation_mat
+        pos = body.anchor.rel_position
+        scaled_pos = descale_mat.xform_point(LPoint3(*pos))
+        star_pos = body.star.anchor._local_position - body.anchor._local_position
+        scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
+        scaled_star_pos.normalize()
+        camera_height = scaled_pos.length()
+        if camera_height > inner_radius * 100:
+            scaled_pos *= 100.0 * inner_radius / camera_height
+            camera_height = 100.0 * inner_radius
+        instance.setShaderInput("v3OriginPos", pos)
+        instance.setShaderInput("v3CameraPos", -scaled_pos)
+
+        instance.setShaderInput("fCameraHeight", camera_height)
+        instance.setShaderInput("fCameraHeight2", camera_height * camera_height)
+
+        instance.setShaderInput("v3LightPos", scaled_star_pos)
+        instance.setShaderInput("model_scale", factor)
+        instance.setShaderInput("atm_descale", descale_mat)
+
+class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
     def apply(self, shape, instance):
         parameters = self.parameters
         inner_radius = parameters.body_radius
@@ -833,11 +834,7 @@ class ONeilScattering(ONeilScatteringBase):
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
 
-class ONeilScatteringDataSource(DataSource):
-    def __init__(self, parameters):
-        DataSource.__init__(self, 'scattering')
-        self.parameters = parameters
-
+class ONeilScatteringDataSource(ONeilScatteringDataSourceBase):
     def apply(self, shape, instance):
         parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
