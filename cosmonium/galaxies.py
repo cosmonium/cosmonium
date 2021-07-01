@@ -23,6 +23,7 @@ from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, 
 from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
+from panda3d.core import ShaderAttrib
 
 from .appearances import AppearanceBase
 from .shapes import Shape
@@ -163,6 +164,12 @@ class GalaxyShapeBase(Shape):
 
     def create_points(self, radius=1.0):
         return None
+
+    def shape_done(self):
+        # Indicates that the attached shader also contro the size of the rendered points
+        attrib = self.instance.getAttrib(ShaderAttrib)
+        attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
+        self.instance.setAttrib(attrib2)
 
     def apply(self):
         self.instance.node().setBounds(OmniBoundingVolume())

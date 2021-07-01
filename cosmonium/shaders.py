@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import Shader, ShaderAttrib
+from panda3d.core import Shader
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
@@ -1673,12 +1673,6 @@ class PointControl(ShaderComponent):
     def fragment_shader_decl(self, code):
         for i in range(self.shader.nb_textures_coord):
             code.append("vec4 texcoord%i = vec4(gl_PointCoord, 0, 0);" % i)
-
-    def update_shader_shape_static(self, shape, appearance):
-        #TODO: This should definitively not be here
-        attrib = shape.instance.getAttrib(ShaderAttrib)
-        attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
-        shape.instance.setAttrib(attrib2)
 
 class NoPointControl(ShaderComponent):
     pass
