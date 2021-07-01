@@ -18,14 +18,13 @@
 #
 
 
-from panda3d.core import Shader, ShaderAttrib, LVector3d, LMatrix4, PTA_LMatrix4, LQuaternion
+from panda3d.core import Shader, ShaderAttrib
 
 from .utils import TransparencyBlend
 from .cache import create_path_for
 from .parameters import ParametersGroup
 from . import settings
 
-from math import asin, pi
 import hashlib
 import os
 import re
@@ -109,7 +108,7 @@ class AutoShader(ShaderBase):
     def remove_shadows(self, shape, appearance, shadow):
         pass
 
-    def clear_shadows(self, shape, appearance):
+    def remove_all_shadows(self, shape, appearance):
         pass
 
     def add_after_effect(self, after_effect):
@@ -978,11 +977,9 @@ class BasicShader(StructuredShader):
             print("SHADOW NOT FOUND")
         #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
 
-    def clear_shadows(self, shape, appearance):
+    def remove_all_shadows(self, shape, appearance):
         while self.shadows:
             shadow = self.shadows.pop()
-            if shape.instance_ready:
-                shadow.clear(shape, appearance)
             shadow.shader = None
         #As the list is referenced by the vertex and fragment shader no need to apply to fragment too...
 
@@ -2244,55 +2241,16 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
             else:
                 code.append("shadow *= 1.0 - (1.0 - textureProj(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
 
-    def update_shader_shape_static(self, shape, appearance):
-        shape.instance.setShaderInput('%s_depthmap' % self.name, self.caster.depthmap)
-        shape.instance.setShaderInput("%sLightSource" % self.name, self.caster.cam)
-        if self.caster_body is None:
-            shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0)
-
-    def update_shader_shape(self, shape, appearance):
-        if self.use_bias:
-            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            #print(normal_bias, slope_bias, depth_bias, shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
-            shape.instance.setShaderInput('%s_shadow_normal_bias' % self.name, normal_bias)
-            shape.instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
-            shape.instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
-        if self.caster_body is not None:
-            caster = self.caster_body
-            body = shape.owner
-            self_radius = caster.get_apparent_radius()
-            body_radius = body.get_apparent_radius()
-            position = caster.anchor._local_position
-            body_position = body.anchor._local_position
-            pa = body_position - position
-            distance = abs(pa.length() - body_radius)
-            if distance != 0:
-                self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(caster.star.get_apparent_radius() / ((caster.star.anchor._local_position - body_position).length() - body_radius))
-                ar_ratio = self_ar /star_ar
-            else:
-                ar_ratio = 1.0
-            shape.instance.setShaderInput('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
-
-    def clear(self, shape, appearance):
-        shape.instance.clearShaderInput('%s_depthmap' % self.name)
-        shape.instance.clearShaderInput("%sLightSource" % self.name)
-
 class ShaderSphereShadow(ShaderShadow):
     use_vertex = True
     use_vertex_frag = True
     world_vertex = True
     model_vertex = True
-    max_occluders = 4
-    far_sun = True
 
-    def __init__(self, shader=None):
-        ShaderShadow.__init__(self, shader)
-        self.oblate_occluder = False
-
-    def set_oblate_occluder(self, oblate_occluder):
+    def __init__(self, max_occluders, far_sun, oblate_occluder):
+        ShaderShadow.__init__(self, None)
+        self.max_occluders = max_occluders
+        self.far_sun = far_sun
         self.oblate_occluder = oblate_occluder
 
     def get_id(self):
@@ -2361,49 +2319,6 @@ class ShaderSphereShadow(ShaderShadow):
         code.append("  }")
         code.append("}")
 
-    def update_shader_shape(self, shape, appearance):
-        #TODO: This is quite ugly....
-        star = shape.owner.star
-        anchor = shape.owner.anchor
-        observer = shape.owner.context.observer._position
-        scale = shape.owner.anchor.scene_scale_factor
-        if self.far_sun:
-            shape.instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.anchor.distance_to_star))
-        star_center = (star.anchor._local_position - observer) * scale
-        star_radius = star.get_apparent_radius() * scale
-        shape.instance.setShaderInput('star_center', star_center)
-        shape.instance.setShaderInput('star_radius', star_radius)
-        centers = []
-        radii = []
-        occluder_transform = PTA_LMatrix4()
-        if len(shape.parent.shadows.sphere_shadows.occluders) > self.max_occluders:
-            print("Too many occluders")
-        nb_of_occluders = 0
-        for shadow_caster in shape.parent.shadows.sphere_shadows.occluders:
-            #TODO: The selection should be done on the angular radius of the shadow.
-            if nb_of_occluders >= self.max_occluders:
-                break
-            nb_of_occluders += 1
-            centers.append((shadow_caster.body.anchor._local_position - observer) * scale)
-            radius = shadow_caster.body.get_apparent_radius()
-            radii.append(radius * scale)
-            if self.oblate_occluder:
-                #TODO: This should refactored with the code in oneil and moved to the body class
-                planet_scale = shadow_caster.body.surface.get_scale()
-                descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
-                rotation_mat = LMatrix4()
-                orientation = LQuaternion(*shadow_caster.body.anchor._orientation)
-                orientation.extract_to_matrix(rotation_mat)
-                rotation_mat_inv = LMatrix4()
-                rotation_mat_inv.invert_from(rotation_mat)
-                descale_mat = rotation_mat_inv * descale * rotation_mat
-                occluder_transform.push_back(descale_mat)
-        shape.instance.setShaderInput('occluder_centers', centers)
-        shape.instance.setShaderInput('occluder_radii', radii)
-        if self.oblate_occluder:
-            shape.instance.setShaderInput('occluder_transform', occluder_transform)
-        shape.instance.setShaderInput("nb_of_occluders", nb_of_occluders)
-
 class ShaderRingShadow(ShaderShadow):
     use_vertex = True
     use_vertex_frag = True
@@ -2432,23 +2347,6 @@ class ShaderRingShadow(ShaderShadow):
         code.append("} else {")
         code.append("  //Not in shadow")
         code.append("}")
-
-    #TODO: Should be in static
-    def update_shader_shape(self, shape, appearance):
-        #TODO: This is quite ugly....
-        ring = shape.parent.shadows.ring_shadow.ring
-        (texture, texture_size, texture_lod) = ring.appearance.texture.source.get_texture(ring.shape)
-        if texture is not None:
-            shape.instance.setShaderInput('shadow_ring_tex',texture)
-        normal = shape.owner.anchor.scene_orientation.xform(LVector3d.up())
-        shape.instance.setShaderInput('ring_normal', normal)
-        shape.instance.setShaderInput('ring_inner_radius', ring.inner_radius * shape.owner.anchor.scene_scale_factor)
-        shape.instance.setShaderInput('ring_outer_radius', ring.outer_radius * shape.owner.anchor.scene_scale_factor)
-        if shape.owner.support_offset_body_center and settings.offset_body_center:
-            body_center = shape.owner.anchor.scene_position + shape.owner.projected_world_body_center_offset
-        else:
-            body_center = shape.owner.anchor.scene_position
-        shape.instance.setShaderInput('body_center', body_center)
 
 class ShaderSphereSelfShadow(ShaderShadow):
     #TODO: Until proper self-shadowing is added, the effect of the normal map
