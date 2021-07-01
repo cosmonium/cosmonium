@@ -36,8 +36,10 @@ from .utils import srgb_to_linear
 from math import pi, asin, atan2, sin, cos
 
 class StellarBodyLabel(ObjectLabel):
-    def get_oid_color(self):
-        return self.label_source.oid_color
+    def create_instance(self):
+        ObjectLabel.create_instance(self)
+        if settings.color_picking and self.label_source.oid_color is not None:
+            self.instance.set_shader_input("color_picking", self.label_source.oid_color)
 
     def check_visibility(self, frustum, pixel_size):
         if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved:

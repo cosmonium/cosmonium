@@ -54,18 +54,11 @@ class Shape:
         self.task = None
         self.clickable = False
         self.attribution = None
-        self.oid_color = None
         #TODO: Used to fix ring textures
         self.vanish_borders = False
 
     def get_name(self):
         return 'shape ' + self.owner.get_name()
-
-    def set_oid_color(self, oid_color):
-        self.oid_color = oid_color
-
-    def get_oid_color(self):
-        return self.oid_color
 
     def get_user_parameters(self):
         return None
@@ -291,8 +284,10 @@ class ShapeObject(VisibleObject):
         self.shape.set_owner(owner)
 
     def set_oid_color(self, oid_color):
-        #TODO: Should it be stored to be applied in set_shape ?
-        self.shape.set_oid_color(oid_color)
+        self.oid_color = oid_color
+
+    def get_oid_color(self):
+        return self.oid_color
 
     def set_appearance(self, appearance):
         self.appearance = appearance
@@ -370,6 +365,8 @@ class ShapeObject(VisibleObject):
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.configure_render_order()
+        if settings.color_picking and self.get_oid_color() is not None:
+            self.instance.set_shader_input("color_picking", self.get_oid_color())
         self.schedule_jobs()
 
     def configure_render_order(self):

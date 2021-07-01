@@ -1145,8 +1145,6 @@ class BasicShader(StructuredShader):
         self.scattering.define_shader(shape, appearance)
 
     def update_shader_shape_static(self, shape, appearance):
-        if self.color_picking and not self.vertex_oids:
-            shape.instance.set_shader_input("color_picking", shape.get_oid_color())
         self.appearance.update_shader_shape_static(shape, appearance)
         self.tessellation_control.update_shader_shape_static(shape, appearance)
         for shadow in self.shadows:

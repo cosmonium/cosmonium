@@ -151,6 +151,8 @@ class Orbit(VisibleObject):
         self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.node().setPythonTag('owner', self.body)
+        if settings.color_picking and self.body.oid_color is not None:
+            self.instance.set_shader_input("color_picking", self.body.oid_color)
         self.instance.reparentTo(self.context.annotation)
         if self.color is None:
             self.color = self.body.get_orbit_color()
@@ -199,7 +201,6 @@ class Orbit(VisibleObject):
                                        self.body.parent.anchor.scene_position,
                                        self.body.parent.anchor.scene_scale_factor,
                                        LQuaternion())
-            self.shader.update(self, self.appearance)
 
     def update_user_parameters(self):
         if self.instance is not None:
