@@ -34,7 +34,6 @@ class ShaderBase(object):
 
     def __init__(self):
         self.shader = None
-        self.inputs = None
 
     def get_shader_id(self):
         return None
@@ -65,22 +64,6 @@ class ShaderBase(object):
     def apply(self, shape, appearance):
         if shape is None or shape.instance is None: return
         self.create_and_register_shader(shape, appearance, force=True)
-        self.update_shader_shape_static(shape, appearance)
-
-    def update_shader_shape_static(self, shape, appearance):
-        pass
-
-    def update_shader_shape(self, shape, appearance):
-        pass
-
-    def update(self, shape, appearance):
-        if not shape.instance_ready:
-            print("shader update called on non ready shape instance")
-        self.create_and_register_shader(shape, appearance)
-        self.inputs = {}
-        self.update_shader_shape(shape, appearance)
-        shape.instance.set_shader_inputs(**self.inputs)
-        self.inputs = None
 
     def clear_patch(self, shape, patch):
         pass
@@ -115,9 +98,6 @@ class AutoShader(ShaderBase):
         print("AutoShader: add_after_effect not supported")
 
     def apply(self, shape, appearance):
-        pass
-
-    def update(self, shape, appearance):
         pass
 
 class FileShader(ShaderBase):
@@ -1144,35 +1124,6 @@ class BasicShader(StructuredShader):
         self.create_shader_configuration(appearance)
         self.scattering.define_shader(shape, appearance)
 
-    def update_shader_shape_static(self, shape, appearance):
-        self.appearance.update_shader_shape_static(shape, appearance)
-        self.tessellation_control.update_shader_shape_static(shape, appearance)
-        for shadow in self.shadows:
-            shadow.update_shader_shape_static(shape, appearance)
-        self.lighting_model.update_shader_shape_static(shape, appearance)
-        self.scattering.update_shader_shape_static(shape, appearance)
-        self.vertex_control.update_shader_shape_static(shape, appearance)
-        self.point_control.update_shader_shape_static(shape, appearance)
-        self.instance_control.update_shader_shape_static(shape, appearance)
-        self.data_source.update_shader_shape_static(shape, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_shape_static(shape, appearance)
-#         if self.has_bump_texture:
-#             shape.instance.setShaderInput("bump_height", appearance.bump_height / settings.scale)
-
-    def update_shader_shape(self, shape, appearance):
-        self.appearance.update_shader_shape(shape, appearance)
-        self.tessellation_control.update_shader_shape(shape, appearance)
-        for shadow in self.shadows:
-            shadow.update_shader_shape(shape, appearance)
-        self.lighting_model.update_shader_shape(shape, appearance)
-        self.scattering.update_shader_shape(shape, appearance)
-        self.vertex_control.update_shader_shape(shape, appearance)
-        self.point_control.update_shader_shape(shape, appearance)
-        self.data_source.update_shader_shape(shape, appearance)
-        for effect in self.after_effects:
-            effect.update_shader_shape(shape, appearance)
-
     def get_user_parameters(self):
         group = StructuredShader.get_user_parameters(self)
         group.add_parameter(self.lighting_model.get_user_parameters())
@@ -1252,15 +1203,6 @@ class ShaderComponent(object):
         pass
 
     def fragment_shader(self, code):
-        pass
-
-    def update_shader_shape_static(self, shape, appearance):
-        pass
-
-    def update_shader_shape(self, shape, appearance):
-        pass
-
-    def clear(self, shape, appearance):
         pass
 
 class CustomShaderComponent(ShaderComponent):
@@ -1842,14 +1784,6 @@ class CompositeShaderDataSource(ShaderDataSource):
     def fragment_shader(self, code):
         for source in self.sources:
             source.fragment_shader(code)
-
-    def update_shader_shape_static(self, shape, appearance):
-        for source in self.sources:
-            source.update_shader_shape_static(shape, appearance)
-
-    def update_shader_shape(self, shape, appearance):
-        for source in self.sources:
-            source.update_shader_shape(shape, appearance)
 
 class PandaDataSource(ShaderDataSource):
     def __init__(self, shader=None):

@@ -424,8 +424,6 @@ class ShapeObject(VisibleObject):
             self.instance_ready = True
             if self.shader is not None:
                 self.shader.apply(shape, self.appearance)
-                #TODO: Why update() should be called here ?
-                self.shader.update(self.shape, self.appearance)
             shape.shape_done()
         #print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
@@ -485,8 +483,6 @@ class ShapeObject(VisibleObject):
             self.shadows.rebuild_needed = False
         if self.context.observer.apply_scattering > 0:
             self.context.observer.scattering.add_attenuated_object(self)
-        if self.shader is not None:
-            self.shader.update(self.shape, self.appearance)
 
     def remove_instance(self):
         self.shadows.clear_shadows()

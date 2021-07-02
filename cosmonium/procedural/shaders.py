@@ -329,10 +329,6 @@ class DetailMap(ShaderAppearance):
             self.textures_control.get_value(code, 'occlusion')
             code.append("surface_occlusion = %s_occlusion.x;" % self.textures_control.name)
 
-    def update_shader_shape_static(self, shape, appearance):
-        ShaderAppearance.update_shader_shape_static(self, shape, appearance)
-        self.textures_control.update_shader_shape_static(shape, appearance)
-
 class DeferredDetailMapFragmentShader(ShaderProgram):
     def __init__(self, data_source, textures_control, heightmap):
         ShaderProgram.__init__(self, 'fragment')
