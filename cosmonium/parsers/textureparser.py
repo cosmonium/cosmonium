@@ -100,7 +100,7 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
 
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, heightmap=None, radius=None, patched_shape=None):
         entry_type = list(data)[0]
         entry = data[entry_type]
         if entry_type == 'textures':

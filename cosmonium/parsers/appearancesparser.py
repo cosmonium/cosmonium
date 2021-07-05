@@ -39,7 +39,7 @@ def decode_bias(data, appearance):
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, patched_shape=True):
+    def decode(self, data, heightmap, radius, patched_shape):
         source_parser = TextureSourceYamlParser()
         appearance = Appearance()
         tint = data.get('tint', None)
@@ -115,7 +115,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
 
 class ModelAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, heightmap, radius, patched_shape):
         material = data.get('material', True)
         vertex_color = data.get('vertex-color', True)
         occlusion_channel = data.get('occlusion-channel', False)
@@ -142,7 +142,7 @@ class RayMarchingAppeanceYamlParser(YamlModuleParser):
 
 class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius):
+    def decode(self, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         control_parser = TextureControlYamlParser()
@@ -153,7 +153,7 @@ class ProceduralAppearanceYamlParser(YamlModuleParser):
 
 class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius):
+    def decode(self, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         size = data.get('size', 256)
@@ -170,21 +170,25 @@ class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):
+    parsers = {}
     @classmethod
-    def decode(self, data, heightmap=None, radius=None, patched_shape=True):
-        (object_type, parameters) = self.get_type_and_data(data, 'textures', detect_trivial=False)
-        if object_type == 'textures':
-            appearance = TexturesAppearanceYamlParser.decode(parameters, patched_shape)
-        elif object_type == 'model':
-            appearance = ModelAppearanceYamlParser.decode(parameters)
-        elif object_type == 'procedural':
-            appearance = ProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
-        elif object_type == 'deferred-procedural':
-            appearance = DeferredProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
-        elif object_type == 'textures-dict':
-            appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
+    def register(cls, name, parser):
+        cls.parsers[name] = parser
+
+    @classmethod
+    def decode(cls, data, heightmap=None, radius=None, patched_shape=True):
+        (object_type, parameters) = cls.get_type_and_data(data, 'textures', detect_trivial=False)
+        if object_type in cls.parsers:
+            parser = cls.parsers[object_type]
+            return parser.decode(parameters, heightmap, radius, patched_shape)
+            appearance = TexturesAppearanceYamlParser()
         else:
             print("Unknown appearance type '%s'" % object_type, data)
             appearance = None
         return appearance
 
+AppearanceYamlParser.register('textures', TexturesAppearanceYamlParser)
+AppearanceYamlParser.register('model', ModelAppearanceYamlParser)
+AppearanceYamlParser.register('procedural', ProceduralAppearanceYamlParser)
+AppearanceYamlParser.register('deferred-procedural', DeferredProceduralAppearanceYamlParser)
+AppearanceYamlParser.register('textures-dict', TextureDictionaryYamlParser)
