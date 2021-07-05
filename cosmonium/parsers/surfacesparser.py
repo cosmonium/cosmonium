@@ -32,7 +32,7 @@ from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
-from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
+from .shadersparser import LightingModelYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .utilsparser import get_radius_scale
 
@@ -87,7 +87,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 appearance = 'textures'
             appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        shader_appearance = ShaderAppearanceYamlParser.decode(shader_appearance, appearance)
+        shader_appearance = appearance.get_shader_appearance()
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
                 shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
@@ -112,7 +112,6 @@ class SurfaceYamlParser(YamlModuleParser):
             appearance_source = appearance.get_data_source()
             if appearance_source is not None:
                 data_source.append(appearance_source)
-            shader_appearance = appearance.get_shader_appearance()
             shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
                                  data_source=data_source,
                                  appearance=shader_appearance,
