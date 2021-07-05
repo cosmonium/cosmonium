@@ -85,31 +85,6 @@ class LightingModelYamlParser(YamlModuleParser):
             model = None
         return model
 
-class ShaderTextureAppearanceYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(cls, data, appearance):
-            return TextureAppearance()
-
-class ShaderAppearanceYamlParser(YamlModuleParser):
-    parsers = {}
-    @classmethod
-    def register(cls, name, parser):
-        cls.parsers[name] = parser
-
-    @classmethod
-    def decode(cls, data, appearance):
-        (object_type, parameters) = cls.get_type_and_data(data, 'texture')
-        if object_type in cls.parsers:
-            parser = cls.parsers[object_type]
-            return parser.decode(parameters, appearance)
-            appearance = TextureAppearance()
-        else:
-            print("Shader appearance", object_type, "unknown")
-            appearance = None
-        return appearance
-
-ShaderAppearanceYamlParser.register('texture', ShaderTextureAppearanceYamlParser)
-
 class VertexControlYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
