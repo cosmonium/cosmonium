@@ -90,7 +90,7 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         return entry
 
     @classmethod
-    def decode_textures_dictionary(cls, data):
+    def decode(cls, data):
         entries = {}
         srgb = data.get('srgb')
         for (name, entry) in data.get('entries', {}).items():
@@ -98,12 +98,3 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         scale = data.get('scale')
         tiling = TextureTilingYamlParser.decode(data.get('tiling'))
         return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
-
-    @classmethod
-    def decode(cls, data, heightmap=None, radius=None, patched_shape=None):
-        entry_type = list(data)[0]
-        entry = data[entry_type]
-        if entry_type == 'textures':
-            return cls.decode_textures_dictionary(entry)
-        else:
-            return None
