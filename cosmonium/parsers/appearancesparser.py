@@ -23,7 +23,6 @@ from panda3d.core import LColor
 from ..appearances import Appearance, ModelAppearance
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.appearances import ProceduralAppearance
-from ..procedural.raymarching import RayMarchingAppearance
 from ..procedural.textures import PatchedProceduralVirtualTextureSource, DetailTextureGenerationStage, DetailMapTextureGenerator
 from ..utils import TransparencyBlend
 
@@ -122,23 +121,6 @@ class ModelAppearanceYamlParser(YamlModuleParser):
         appearance = ModelAppearance(vertex_color=vertex_color, material=material, occlusion_channel=occlusion_channel)
         decode_bias(data, appearance)
         return appearance
-
-class RayMarchingAppeanceYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(self, data):
-        density_coef = data.get('density-coef', 10000.0)
-        density_power = data.get('density-power', 2)
-        absorption_factor = data.get('absorption-factor', 0.00001)
-        absorption_coef = data.get('absorption-coef', [1, 1, 1])
-        mie_coef = data.get('mie-coef', 0.1)
-        phase_coef = data.get('phase-coef', 0)
-        source_power = data.get('source-power', 10000.0)
-        emission_power = data.get('emission-power', 0.0)
-        max_steps = data.get('max-steps', 16)
-        return RayMarchingAppearance(density_coef, density_power,
-                                     absorption_factor, absorption_coef,
-                                     mie_coef, phase_coef,
-                                     source_power, emission_power, max_steps)
 
 class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
