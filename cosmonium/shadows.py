@@ -219,7 +219,7 @@ class ShadowMapDataSource(DataSource):
                 ar_ratio = 1.0
             instance.setShaderInput('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
 
-    def clear(self, shape, instance):
+    def clear_shape_data(self, shape, instance):
         instance.clearShaderInput('%s_depthmap' % self.name)
         instance.clearShaderInput("%sLightSource" % self.name)
 

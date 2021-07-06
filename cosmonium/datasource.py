@@ -80,6 +80,9 @@ class DataSource:
     def update(self, shape, instance):
         pass
 
+    def clear_shape_data(self, shape, instance):
+        pass
+
 class DataSourcesHandler:
     def __init__(self):
         self.sources = []
@@ -126,3 +129,7 @@ class DataSourcesHandler:
     def update_shape_data(self, shape):
         for source in self.sources:
             source.update(shape, shape.instance)
+
+    def clear_shape_data(self, shape, instance):
+        for source in self.sources:
+            source.clear_shape_data(shape, shape.instance)
