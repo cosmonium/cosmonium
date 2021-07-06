@@ -52,7 +52,7 @@ class RayMarchingShape(Shape):
     def get_apparent_radius(self):
         return self.radius
 
-    def create_instance(self):
+    async def create_instance(self):
         self.instance = NodePath("card")
         card_maker = CardMaker("card")
         card_maker.set_frame(-1, 1, -1, 1)
@@ -68,7 +68,7 @@ class RayMarchingShape(Shape):
         return Shape.get_scale(self) * self.scale_factor
 
     def update_instance(self, camera_pos, orientation):
-        alpha = asin(self.radius / self.owner.distance_to_obs)
+        alpha = asin(self.radius / self.owner.anchor.distance_to_obs)
         self.scale_factor = 1.0 / cos(alpha)
 
 class RayMarchingAppearance(AppearanceBase):
@@ -184,7 +184,7 @@ bool raySphereIntersection(float radius, vec3 origin, vec3 direction, out float 
         shape.instance.setShaderInput("exposure", self.exposure)
 
     def update_shader_shape(self, shape, appearance):
-        pos = shape.owner.rel_position
+        pos = shape.owner.anchor.rel_position
         shape.instance.setShaderInput("radius", shape.owner.get_apparent_radius())
         shape.instance.setShaderInput("center", pos)
         shape.instance.setShaderInput("origin", -pos)
