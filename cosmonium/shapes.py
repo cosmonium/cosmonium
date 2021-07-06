@@ -330,6 +330,9 @@ class ShapeObject(VisibleObject):
     def is_flat(self):
         return True
 
+    def is_spherical(self):
+        return self.shape.is_spherical()
+
     def task_done(self, task):
         self.task = None
 

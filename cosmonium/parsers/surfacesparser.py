@@ -18,7 +18,7 @@
 #
 
 
-from ..surfaces import EllipsoidFlatSurface, HeightmapSurface
+from ..surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
@@ -88,40 +88,47 @@ class SurfaceYamlParser(YamlModuleParser):
             appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader_appearance = appearance.get_shader_appearance()
-        if shape.patchable:
-            if appearance.texture is None or appearance.texture.source.procedural:
-                shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
-                                                           density=settings.patch_constant_density))
+        if shape.is_spherical():
+            if shape.patchable:
+                if appearance.texture is None or appearance.texture.source.procedural:
+                    shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
+                                                               density=settings.patch_constant_density))
+                else:
+                    shape.set_lod_control(TextureOrVertexSizeLodControl(settings.patch_max_vertex_size,
+                                                                        min_density=settings.patch_min_density,
+                                                                        density=settings.patch_max_density))
+            if heightmap is None:
+                shader = BasicShader(lighting_model=lighting_model,
+                                     appearance=shader_appearance,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
+                                      radius=radius, oblateness=ellipticity, scale=scale,
+                                      shape=shape, appearance=appearance, shader=shader)
             else:
-                shape.set_lod_control(TextureOrVertexSizeLodControl(settings.patch_max_vertex_size,
-                                                                    min_density=settings.patch_min_density,
-                                                                    density=settings.patch_max_density))
-        if heightmap is None:
-            shader = BasicShader(lighting_model=lighting_model,
-                                 appearance=shader_appearance,
-                                 use_model_texcoord=not extra.get('create-uv', False))
-            surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
-                                  radius=radius, oblateness=ellipticity, scale=scale,
-                                  shape=shape, appearance=appearance, shader=shader)
+                data_source = []
+                #TODO: The configuration of the data store can not be done like that
+                if shape.data_store is not None:
+                    data_source.append(shape.data_store.get_shader_data_source())
+                data_source.append(heightmap.get_data_source(shape.data_store is not None))
+                appearance_source = appearance.get_data_source()
+                if appearance_source is not None:
+                    data_source.append(appearance_source)
+                shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
+                                     data_source=data_source,
+                                     appearance=shader_appearance,
+                                     lighting_model=lighting_model,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = HeightmapSurface(name,
+                                           #category=category, resolution=resolution, source=source,
+                                           radius=radius, oblateness=ellipticity, scale=scale,
+                                           height_scale=radius, height_base=radius,
+                                           shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         else:
-            data_source = []
-            #TODO: The configuration of the data store can not be done like that
-            if shape.data_store is not None:
-                data_source.append(shape.data_store.get_shader_data_source())
-            data_source.append(heightmap.get_data_source(shape.data_store is not None))
-            appearance_source = appearance.get_data_source()
-            if appearance_source is not None:
-                data_source.append(appearance_source)
-            shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
-                                 data_source=data_source,
-                                 appearance=shader_appearance,
-                                 lighting_model=lighting_model,
-                                 use_model_texcoord=not extra.get('create-uv', False))
-            surface = HeightmapSurface(name,
-                                       #category=category, resolution=resolution, source=source,
-                                       radius=radius, oblateness=ellipticity, scale=scale,
-                                       height_scale=radius, height_base=radius,
-                                       shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
+                shader = BasicShader(lighting_model=lighting_model,
+                                     appearance=shader_appearance,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = MeshSurface(name, category=category, resolution=resolution, attribution=attribution,
+                                      shape=shape, appearance=appearance, shader=shader)
         return surface
 
     @classmethod

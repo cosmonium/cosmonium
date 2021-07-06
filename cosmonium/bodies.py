@@ -232,7 +232,7 @@ class StellarBody(StellarObject):
     def get_extend(self):
         if self.ring is not None:
             return self.ring.outer_radius
-        elif self.surface is not None:
+        elif self.surface is not None and self.surface.is_spherical():
             return self.surface.get_max_radius()
         else:
             return self.get_apparent_radius()
