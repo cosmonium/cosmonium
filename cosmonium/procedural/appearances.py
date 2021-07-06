@@ -113,7 +113,7 @@ class TexturesDictionary(AppearanceBase):
                     self.task = self.load_texture_array(tasks_tree, shape, owner)
                 else:
                     self.task = self.load_textures(tasks_tree, shape, owner)
-                self.task.setUponDeath(self.task_done)
+                self.task.add_done_callback(self.task_done)
             await self.task
             #TODO: loaded should be protected by a lock to avoid race condition with clear()
             self.loaded = True
