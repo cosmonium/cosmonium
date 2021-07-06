@@ -65,15 +65,6 @@ class ShaderBase(object):
         if shape is None or shape.instance is None: return
         self.create_and_register_shader(shape, appearance, force=True)
 
-    def clear_patch(self, shape, patch):
-        pass
-
-    def clear(self, shape):
-        pass
-
-    def clear_all(self):
-        pass
-
     def get_user_parameters(self):
         group = ParametersGroup('Shader')
         return group
@@ -948,8 +939,6 @@ class BasicShader(StructuredShader):
 
     def remove_shadows(self, shape, appearance, shadow):
         if shadow in self.shadows:
-            if shape.instance_ready:
-                shadow.clear(shape, appearance)
             self.shadows.remove(shadow)
             shadow.shader = None
             shadow.appearance = None

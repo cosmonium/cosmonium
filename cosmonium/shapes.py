@@ -487,7 +487,6 @@ class ShapeObject(VisibleObject):
     def remove_instance(self):
         self.shadows.clear_shadows()
         self.appearance.clear_all()
-        self.shader.clear_all()
         self.shape.remove_instance()
         self.instance = None
         self.instance_ready = False
@@ -498,7 +497,6 @@ class ShapeObject(VisibleObject):
     def remove_patch(self, patch):
         #TODO: This should be reworked and moved into a dedicated class
         self.appearance.clear_patch(patch)
-        self.shader.clear_patch(self.shape, patch)
 
 class MeshShape(Shape):
     deferred_instance = True
