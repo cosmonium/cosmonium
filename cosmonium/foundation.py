@@ -388,6 +388,7 @@ class ObjectLabel(VisibleObject):
 
         if self.shader is None:
             self.create_shader()
+        self.appearance.apply(self, self.instance)
         self.shader.apply(self, self.appearance)
         self.shader.update(self, self.appearance)
         TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)

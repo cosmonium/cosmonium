@@ -2119,13 +2119,6 @@ class PandaDataSource(ShaderDataSource):
         if self.has_occlusion_map_texture:
             code += self.create_sample_texture(self.occlusion_map_texture_index)
 
-    def update_shader_shape_static(self, shape, appearance):
-        if self.has_specular:
-            shape.instance.setShaderInput("shape_specular_color", appearance.specularColor)
-            shape.instance.setShaderInput("shape_shininess", appearance.shininess)
-        if self.has_transparency:
-            shape.instance.setShaderInput("transparency_level", appearance.transparency_level)
-
 class DataStoreManagerDataSource(CompositeShaderDataSource):
     pass
 
@@ -2489,12 +2482,6 @@ class LightingModel(ShaderComponent):
         if self.appearance.has_emission and not self.appearance.has_nightscale:
             code.append("  total_emission_color.rgb += emission_color.rgb;")
 
-    def update_shader_shape(self, shape, appearance):
-        if self.appearance.has_backlit:
-            shape.instance.setShaderInput("backlit", appearance.backlit)
-        if self.appearance.has_emission and self.appearance.has_nightscale:
-            shape.instance.setShaderInput("nightscale", appearance.nightscale)
-
 class FlatLightingModel(LightingModel):
     def get_id(self):
         return "flat"
@@ -2614,7 +2601,6 @@ class OrenNayarPhongLightingModel(LightingModel):
         shape.instance.setShaderInput("light_color", light_color)
         shape.instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         shape.instance.setShaderInput("ambient_color", (1, 1, 1, 1))
-        shape.instance.setShaderInput("roughness_squared", appearance.roughness * appearance.roughness)
 
 class AtmosphericScattering(ShaderComponent):
     def fragment_uniforms(self, code):

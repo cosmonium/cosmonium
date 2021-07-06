@@ -387,6 +387,20 @@ class Appearance(AppearanceBase):
         if not shape.patchable and self.nb_textures > 0:
             #print(globalClock.getFrameCount(), "APPLY", shape.str_id())
             self.apply_textures(shape, instance)
+        if self.specularColor is not None:
+            #TODO: Should be stored in material
+            instance.setShaderInput("shape_specular_color", self.specularColor)
+            instance.setShaderInput("shape_shininess", self.shininess)
+        if self.transparency:
+            instance.setShaderInput("transparency_level", self.transparency_level)
+        #TODO: Should be done in shader using material roughness
+        instance.setShaderInput("roughness_squared", self.roughness * self.roughness)
+        if self.backlit is not None:
+            instance.setShaderInput("backlit", self.backlit)
+        if self.emission_texture is not None and self.nightscale is not None:
+            instance.setShaderInput("nightscale", self.nightscale)
+#         if self.has_bump_texture:
+#             instance.setShaderInput("bump_height", appearance.bump_height / settings.scale)
 
     def clear_patch(self, patch):
         if patch.instance is not None:
@@ -533,4 +547,5 @@ class ModelAppearance(AppearanceBase):
         self.scan_model(shape.instance)
 
     def apply(self, shape, instance):
-        pass
+        if self.transparency:
+            instance.setShaderInput("transparency_level", self.transparency_level)

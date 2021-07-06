@@ -55,8 +55,8 @@ class PointsSet(VisibleObject):
         self.instance.node().setPythonTag('owner', self)
         #TODO: Should not use ModelAppearance !
         self.appearance = ModelAppearance(vertex_color=True)
-        if self.appearance is not None:
-            self.appearance.scan_model(self.instance)
+        self.appearance.scan_model(self.instance)
+        self.appearance.apply(self, self.instance)
         if self.shader is not None:
             self.shader.apply(self, self.appearance)
         if self.use_sprites:

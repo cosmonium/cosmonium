@@ -118,6 +118,8 @@ class GalaxyAppearance(AppearanceBase):
         shape.instance.set_depth_write(False)
         if self.background is not None:
             shape.instance.setBin('background', settings.deep_space_depth)
+        if self.transparency:
+            instance.setShaderInput("transparency_level", self.transparency_level)
         shape.instance_ready = True
 
     def get_user_parameters(self):
