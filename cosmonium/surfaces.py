@@ -111,9 +111,14 @@ class EllipsoidSurface(Surface):
             scale = LVector3(self.radius, self.radius, self.radius)
         self.shape.set_scale(scale)
 
-    def create_shadow_caster(self):
-        self.shadow_caster = SphereShadowCaster(self.body)
-        if self.body.atmosphere is None:
+    def do_create_shadow_caster_for(self, light_source):
+        shadow_caster = SphereShadowCaster(light_source, self.body)
+        return shadow_caster
+
+    def add_self_shadow(self, light_source):
+        if self.body.atmosphere is None and not light_source in self.shadow_casters:
+            self.create_shadow_caster_for(light_source)
+            #TODO: A proper shadow caster should be added
             self.shader.add_shadows(ShaderSphereSelfShadow())
 
     def get_average_radius(self):
@@ -168,16 +173,17 @@ class MeshSurface(Surface):
     def is_flat(self):
         return False
 
-    def create_shadow_caster(self):
-        self.shadow_caster = CustomShadowMapShadowCaster(self.body, None)
-        self.shadow_caster.add_target(self, self_shadow=True)
+    def do_create_shadow_caster_for(self, light_source):
+        shadow_caster = CustomShadowMapShadowCaster(light_source, self.body)
+        shadow_caster.add_target(self, self_shadow=True)
+        return shadow_caster
 
-    def start_shadows_update(self):
-        ShapeObject.start_shadows_update(self)
+    def add_self_shadow(self, light_source):
         #Add self-shadowing for non-spherical objects
         #TODO: It's a bit convoluted to do it like that...
-        if self.body.visible and self.body.resolved:
-            self.shadow_caster.add_target(self, self_shadow=True)
+        if self.body.anchor.visible and self.body.anchor.resolved:
+            self.create_shadow_caster_for(light_source)
+            self.shadow_casters[light_source].add_target(self, self_shadow=True)
 
     def get_height_at(self, x, y, strict=False):
         coord = self.shape.global_to_shape_coord(x, y)

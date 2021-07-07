@@ -2083,7 +2083,7 @@ class ShaderShadowMap(ShaderShadow):
             code.append("uniform float %s_shadow_normal_bias;" % self.name)
             code.append("uniform float %s_shadow_slope_bias;" % self.name)
             code.append("uniform float %s_shadow_depth_bias;" % self.name)
-        code.append("uniform vec3 %s_light_dir;" % self.name)
+        code.append("uniform vec3 light_dir;")
 
     def vertex_outputs(self, code):
         code.append("out vec4 %s_lightcoord;" % self.name)
@@ -2106,7 +2106,7 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
 
     def vertex_shader(self, code):
         if self.use_bias:
-            code.append("vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, %s_light_dir);" % (self.name, self.name, self.name, self.name))
+            code.append("vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, light_dir);" % (self.name, self.name, self.name))
             code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * (world_vertex4 + vec4(%s_offset, 0.0));" % (self.name, self.name, self.name))
             code.append("%s_lightclip.z -= %s_shadow_depth_bias * %s_lightclip.w;" % (self.name, self.name, self.name))
         else:

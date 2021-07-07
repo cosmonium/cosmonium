@@ -142,6 +142,7 @@ class StellarObject(NamedObject):
         self.shown = True
         self.visible = False
         self.parent = None
+        self.lights = None
 
         self.components = CompositeObject(self.get_ascii_name())
 
@@ -149,6 +150,7 @@ class StellarObject(NamedObject):
         self.parent = parent
 
     def set_lights(self, lights):
+        self.lights = lights
         self.components.set_lights(lights)
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):

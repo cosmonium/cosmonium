@@ -320,28 +320,27 @@ class ReflectiveBody(StellarBody):
     def start_shadows_update(self):
         for component in self.get_components():
             component.start_shadows_update()
+
+    def self_shadows_update(self, light_source):
+        self.surface.add_self_shadow(light_source)
         if self.ring is not None:
             if self.clouds is not None:
-                self.ring.shadow_caster.add_target(self.clouds)
+                self.ring.shadow_caster.add_target(light_source, self.clouds)
             if self.surface is not None:
-                self.ring.add_shadow_target(self.surface)
-                self.surface.add_shadow_target(self.ring)
+                self.ring.add_shadow_target(light_source, self.surface)
+                self.surface.add_shadow_target(light_source, self.ring)
 
-    def add_shadow_target(self, target):
+    def add_shadow_target(self, light_source, target):
         for component in target.get_components():
-            self.surface.add_shadow_target(component)
+            self.surface.add_shadow_target(light_source, component)
 
     def end_shadows_update(self):
         for component in self.get_components():
             component.end_shadows_update()
 
-    def configure_shape(self):
-        StellarBody.configure_shape(self)
-        self.surface.create_shadows()
-
     def unconfigure_shape(self):
         StellarBody.unconfigure_shape(self)
-        self.surface.remove_shadows()
+        self.surface.remove_all_shadows()
 
     def create_components(self):
         StellarBody.create_components(self)

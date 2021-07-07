@@ -38,7 +38,6 @@ class Ring(ShapeObject):
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.set_shape(RingShape(inner_radius, outer_radius))
-        self.shadow_caster = RingShadowCaster(self)
         self.body = None
         self.shape.vanish_borders = True
 
@@ -47,6 +46,9 @@ class Ring(ShapeObject):
 
     def set_body(self, body):
         self.body = body
+
+    def do_create_shadow_caster_for(self, light_source):
+        return RingShadowCaster(light_source, self)
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):

@@ -31,12 +31,10 @@ class LightSource:
         self.directional_light = None
 
     def create_light(self):
-        print("Create light for", self.get_name())
         self.directional_light = DirectionalLight('light_source')
         self.directional_light.setDirection(LVector3(*-self.target.anchor.vector_to_star))
         self.directional_light.setColor((1, 1, 1, 1))
-        self.light_source = self.context.world.attachNewNode(self.directional_light)
-        self.components.set_light(self.light_source)
+        self.light_source = BaseObject.context.world.attachNewNode(self.directional_light)
 
     def update_light(self, camera_pos):
         pos = self.target.get_local_position() + self.target.anchor.vector_to_star * self.target.get_extend()
@@ -65,9 +63,21 @@ class LightSources:
 
     def add_source(self, source):
         self.sources.append(source)
+        source.create_light()
 
     def remove_source(self, source):
         self.sources.remove(source)
+
+    def remove_all(self):
+        for source in self.sources:
+            source.remove_light()
+        self.sources = []
+
+    def get_light_for(self, light_source):
+        for source in self.sources:
+            if source.source is light_source:
+                return source
+        return None
 
     def apply(self, instance):
         for source in self.sources:

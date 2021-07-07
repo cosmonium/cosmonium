@@ -1144,24 +1144,31 @@ class Cosmonium(CosmoniumBase):
         self.shadow_casters = []
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
         if len(self.global_light_sources) == 0: return
-        star = self.global_light_sources[0]
+        reflectives = []
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
             if visible_object.content & AnchorBase.System != 0: continue
             if visible_object.content & AnchorBase.Reflective == 0: continue
-            vector_to_star = visible_object.calc_absolute_relative_position(star)
-            distance_to_star = vector_to_star.length()
-            vector_to_star /= distance_to_star
             visible_object.body.start_shadows_update()
-            #print("TEST", visible_object.body.get_name())
-            traverser = FindShadowCastersTraverser(visible_object, vector_to_star, distance_to_star, star._extend)
-            self.nearest_system.anchor.traverse(traverser)
-            #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
-            for occluder in traverser.get_collected():
-                if not occluder in self.shadow_casters:
-                    self.shadow_casters.append(occluder)
-                occluder.body.add_shadow_target(visible_object.body)
-            visible_object.body.end_shadows_update()
+            reflectives.append(visible_object)
+
+        for light_source in self.global_light_sources:
+            for reflective in reflectives:
+                vector_to_light_source = reflective.calc_absolute_relative_position(light_source)
+                distance_to_light_source = vector_to_light_source.length()
+                vector_to_light_source /= distance_to_light_source
+                reflective.body.self_shadows_update(light_source.body)
+                #print("TEST", reflective.body.get_name())
+                traverser = FindShadowCastersTraverser(reflective, vector_to_light_source, distance_to_light_source, light_source._extend)
+                self.nearest_system.anchor.traverse(traverser)
+                #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+                for occluder in traverser.get_collected():
+                    if not occluder in self.shadow_casters:
+                        self.shadow_casters.append(occluder)
+                    occluder.body.add_shadow_target(light_source.body, reflective.body)
+
+        for reflective in reflectives:
+            reflective.body.end_shadows_update()
 
     @pstat
     def check_scattering(self):

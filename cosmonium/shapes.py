@@ -239,14 +239,14 @@ class ShapeObject(VisibleObject):
         self.instance_ready = False
         self.owner = None
         self.shadows = MultiShadows(self)
-        self.shadow_caster = None
+        self.shadow_casters = {}
         self.first_patch = True
         self.task = None
 
     def check_settings(self):
         self.shape.check_settings()
-        if self.shadow_caster is not None:
-            self.shadow_caster.check_settings()
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.check_settings()
         self.update_shader()
 
     def get_user_parameters(self):
@@ -375,20 +375,20 @@ class ShapeObject(VisibleObject):
     def configure_render_order(self):
         pass
 
-    def create_shadow_caster(self):
+    def do_create_shadow_caster_for(self, light_source):
         pass
 
-    def create_shadows(self):
-        if self.shadow_caster is None:
-            self.create_shadow_caster()
+    def create_shadow_caster_for(self, light_source):
+        if not light_source in self.shadow_casters:
+            self.shadow_casters[light_source] = self.do_create_shadow_caster_for(light_source)
         self.owner.set_visibility_override(True)
-        self.shadow_caster.create()
+        self.shadow_casters[light_source].create()
 
-    def remove_shadows(self):
-        if self.shadow_caster is not None:
-            self.shadow_caster.remove()
-            self.owner.set_visibility_override(False)
-            self.shadow_caster = None
+    def remove_all_shadows(self):
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.remove()
+        self.owner.set_visibility_override(False)
+        self.shadow_casters = {}
 
     def start_shadows_update(self):
         self.shadows.start_update()
@@ -396,11 +396,12 @@ class ShapeObject(VisibleObject):
     def end_shadows_update(self):
         self.shadows.end_update()
 
-    def add_shadow_target(self, target):
-        if self.shadow_caster is None:
-            self.create_shadows()
-        if self.shadow_caster is not None:
-            self.shadow_caster.add_target(target)
+    def add_shadow_target(self, light_source, target):
+        self.create_shadow_caster_for(light_source)
+        self.shadow_casters[light_source].add_target(target)
+
+    def add_self_shadow(self, light_source):
+        pass
 
     async def patch_task(self, patch):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
@@ -479,8 +480,8 @@ class ShapeObject(VisibleObject):
         if self.shape.patchable:
             self.shape.place_patches(self.body)
         self.sources.update_shape_data(self.shape)
-        if self.shadow_caster is not None:
-            self.shadow_caster.update()
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.update()
         if self.shadows.rebuild_needed:
             self.update_shader()
             self.shadows.rebuild_needed = False
