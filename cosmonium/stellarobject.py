@@ -444,6 +444,8 @@ class StellarObject(NamedObject):
                 self.model_body_center_offset[0] /= scale[0]
                 self.model_body_center_offset[1] /= scale[1]
                 self.model_body_center_offset[2] /= scale[2]
+        if self.lights is not None:
+            self.lights.update_lights(camera_pos)
         self.update_components(camera_pos)
         self.components.check_and_update_instance(camera_pos, camera_rot)
 

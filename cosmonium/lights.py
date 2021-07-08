@@ -79,6 +79,10 @@ class LightSources:
                 return source
         return None
 
+    def update_lights(self, camera_pos):
+        for source in self.sources:
+            source.update_light(camera_pos)
+
     def apply(self, instance):
         for source in self.sources:
             source.apply(instance)
