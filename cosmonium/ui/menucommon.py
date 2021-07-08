@@ -63,7 +63,7 @@ def create_surfaces_menu_items(body):
         for surface in body.surfaces:
             name = surface.get_name()
             if surface.category is not None:
-                if name != '':
+                if name is not None:
                     name += " (%s)" % surface.category.name
                 else:
                     name = "%s" % surface.category.name
