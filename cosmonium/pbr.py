@@ -33,6 +33,10 @@ class PbrLightingModel(LightingModel):
     def get_id(self):
         return "pbr"
 
+    def vertex_uniforms(self, code):
+        LightingModel.vertex_uniforms(self, code)
+        code.append("uniform vec3 light_dir;")
+
     def fragment_uniforms(self, code):
         LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")

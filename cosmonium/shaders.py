@@ -2083,7 +2083,6 @@ class ShaderShadowMap(ShaderShadow):
             code.append("uniform float %s_shadow_normal_bias;" % self.name)
             code.append("uniform float %s_shadow_slope_bias;" % self.name)
             code.append("uniform float %s_shadow_depth_bias;" % self.name)
-        code.append("uniform vec3 light_dir;")
 
     def vertex_outputs(self, code):
         code.append("out vec4 %s_lightcoord;" % self.name)
@@ -2319,7 +2318,11 @@ class LambertPhongLightingModel(LightingModel):
 
     def get_id(self):
         return "lambert"
- 
+
+    def vertex_uniforms(self, code):
+        LightingModel.vertex_uniforms(self, code)
+        code.append("uniform vec3 light_dir;")
+
     def fragment_uniforms(self, code):
         LightingModel.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
@@ -2359,6 +2362,10 @@ class OrenNayarPhongLightingModel(LightingModel):
 
     def get_id(self):
         return "oren-nayar"
+
+    def vertex_uniforms(self, code):
+        LightingModel.vertex_uniforms(self, code)
+        code.append("uniform vec3 light_dir;")
 
     def fragment_uniforms(self, code):
         LightingModel.fragment_uniforms(self, code)
