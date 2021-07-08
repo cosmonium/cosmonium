@@ -59,7 +59,7 @@ class SurfaceYamlParser(YamlModuleParser):
         if shape is None and heightmap_data is not None:
             shape = 'sqrt-sphere'
         if shape is not None:
-            shape, extra = ShapeYamlParser.decode(shape)
+            shape, extra = ShapeYamlParser.decode(shape, radius=radius)
         if heightmap_data is not None:
             if isinstance(heightmap_data, dict):
                 name = data.get('name', 'heightmap')

@@ -33,6 +33,8 @@ from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from .shadows import MultiShadows
 from .parameters import ParametersGroup, AutoUserParameter, UserParameter
+#TODO: There shouldn't be a dependency towards astro
+from .astro import units
 
 from . import geometry
 from . import settings
@@ -523,6 +525,10 @@ class MeshShape(Shape):
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
+        if auto_scale_mesh and self.scale_factor is not None:
+            self.radius = max(*self.scale_factor)
+        else:
+            self.radius = 0.0
 
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
@@ -563,7 +569,10 @@ class MeshShape(Shape):
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             scale_factor = 1.0 / major
-            self.scale_factor = LVector3d(scale_factor, scale_factor, scale_factor)
+            self.scale_factor *= scale_factor
+        else:
+            self.scale_factor *= units.m
+            self.radius = max(*self.scale_factor)
         if self.flatten:
             self.mesh.flattenStrong()
         self.update_shape()
