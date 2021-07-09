@@ -55,7 +55,6 @@ class SurfaceYamlParser(YamlModuleParser):
         shape = data.setdefault('shape', previous.get('shape'))
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
-        shader_appearance = data.setdefault('shader-appearance', previous.get('shader-appearance'))
         if shape is None and heightmap_data is not None:
             shape = 'sqrt-sphere'
         if shape is not None:
