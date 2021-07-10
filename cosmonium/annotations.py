@@ -160,7 +160,7 @@ class Orbit(VisibleObject):
         self.instance_ready = True
         if self.shader is None:
             self.create_shader()
-        self.shader.apply(self, self.appearance)
+        self.shader.apply(self, self.appearance, self.instance)
 
     def update_geom(self):
         geom = self.node.modify_geom(0)

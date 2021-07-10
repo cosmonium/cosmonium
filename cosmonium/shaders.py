@@ -58,12 +58,12 @@ class ShaderBase(object):
             self.shader = self.create_shader()
             shader_id = self.get_shader_id()
             self.shaders_cache[shader_id] = self.shader
-        if self.shader is not None and shape is not None:
-            shape.instance.setShader(self.shader)
 
-    def apply(self, shape, appearance):
-        if shape is None or shape.instance is None: return
+    def apply(self, shape, appearance, instance):
+        if instance is None: return
         self.create_and_register_shader(shape, appearance, force=True)
+        if self.shader is not None:
+            instance.setShader(self.shader)
 
     def get_user_parameters(self):
         group = ParametersGroup('Shader')

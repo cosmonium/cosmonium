@@ -485,9 +485,6 @@ class SkySphere(VisibleObject):
         if self.appearance is not None:
             self.appearance.bake()
             self.appearance.apply(self)
-        #Shader is applied once the textures are loaded
-#         if self.shader is not None:
-#             self.shader.apply(self.shape, self.appearance)
         self.instance.setQuat(LQuaternion(*self.orientation))
         self.instance.set_two_sided(True)
         self.instance.setCollideMask(BitMask32.allOff())

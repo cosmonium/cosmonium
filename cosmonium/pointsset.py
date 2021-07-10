@@ -58,7 +58,7 @@ class PointsSet(VisibleObject):
         self.appearance.scan_model(self.instance)
         self.appearance.apply(self, self.instance)
         if self.shader is not None:
-            self.shader.apply(self, self.appearance)
+            self.shader.apply(self, self.appearance, self.instance)
         if self.use_sprites:
             self.instance.node().setBounds(OmniBoundingVolume())
             self.instance.node().setFinal(True)

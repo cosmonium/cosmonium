@@ -275,7 +275,9 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         else:
             self.object_template.appearance.offsets = offsets
         self.object_template.instance.set_instance_count(offsets_nb)
-        self.object_template.shader.apply(self.object_template.shape, self.object_template.appearance)
+        self.object_template.shader.apply(self.object_template.shape,
+                                          self.object_template.appearance,
+                                          self.object_template.shape.isntance)
         self.rebuild = False
 
     def update_instance(self, camera_pos, camera_rot):
