@@ -92,8 +92,6 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   rel_position(0.0),
   distance_to_obs(0.0),
   vector_to_obs(0.0),
-  distance_to_star(0.0),
-  vector_to_star(0.0),
   visible_size(0.0),
   scene_position(0.0),
   scene_distance(0.0),
@@ -349,9 +347,6 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
       if (star != 0) {
         double reflected = get_luminosity(star);
         _app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), distance_to_obs);
-        vector_to_star = star->get_local_position() - _local_position;
-        distance_to_star = vector_to_star.length();
-        vector_to_star /= distance_to_star;
       } else {
         _app_magnitude = 99.0;
       }

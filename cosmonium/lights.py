@@ -29,17 +29,20 @@ class LightSource:
         self.source = source
         self.target = target
         self.directional_light = None
+        self.light_direction = self.target.anchor._local_position - self.source.anchor._local_position
+        self.light_distance = self.light_direction.length()
+        self.light_direction /= self.light_distance
 
     def create_light(self):
         self.directional_light = DirectionalLight('light_source')
-        self.directional_light.setDirection(LVector3(*-self.target.anchor.vector_to_star))
+        self.directional_light.setDirection(LVector3(*self.light_direction))
         self.directional_light.setColor((1, 1, 1, 1))
         self.light_source = BaseObject.context.world.attachNewNode(self.directional_light)
 
     def update_light(self, camera_pos):
-        pos = self.target.get_local_position() + self.target.anchor.vector_to_star * self.target.get_extend()
+        pos = self.target.get_local_position() - self.light_direction * self.target.get_extend()
         BaseObject.place_pos_only(self.light_source, pos, camera_pos, self.target.anchor.distance_to_obs, self.target.anchor.vector_to_obs)
-        self.directional_light.setDirection(LVector3(*-self.target.anchor.vector_to_star))
+        self.directional_light.setDirection(LVector3(*self.light_direction))
 
     def remove_light(self):
         self.light_source.remove_node()
@@ -50,9 +53,8 @@ class LightSource:
         pass
 
     def update(self, instance):
-        light_dir = self.target.anchor.vector_to_star
         light_color = self.source.light_color
-        instance.setShaderInput("light_dir", *light_dir)
+        instance.setShaderInput("light_dir", *-self.light_direction)
         instance.setShaderInput("light_color", light_color)
         instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         instance.setShaderInput("ambient_color", (1, 1, 1, 1))

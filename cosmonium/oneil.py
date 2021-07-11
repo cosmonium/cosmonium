@@ -488,6 +488,11 @@ class ONeilScatteringDataSourceBase(DataSource):
 
     def update(self, shape, instance):
         body = self.parameters.body
+        #TODO: This should not be managed here
+        if body.lights is None or len(body.lights.sources) == 0:
+            print("No light source for scattering")
+            return
+        light_source = body.lights.sources[0].source
         factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
         inner_radius = self.parameters.body_radius
 
@@ -502,7 +507,7 @@ class ONeilScatteringDataSourceBase(DataSource):
         descale_mat = rotation_mat_inv * descale * rotation_mat
         pos = body.anchor.rel_position
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = body.star.anchor._local_position - body.anchor._local_position
+        star_pos = light_source.anchor._local_position - body.anchor._local_position
         scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
         scaled_star_pos.normalize()
         camera_height = scaled_pos.length()

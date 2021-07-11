@@ -180,7 +180,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         #So the near plane is 0 to coincide with the boundary of the object
         self.shadow_caster.get_lens().setNear(0)
         self.shadow_caster.get_lens().setFar(radius*2)
-        self.shadow_caster.get_lens().set_view_vector(LVector3(*-self.occluder.anchor.vector_to_star), LVector3.up())
+        self.shadow_caster.get_lens().set_view_vector(LVector3(*self.light_source.light_direction), LVector3.up())
 
 class ShadowMapDataSource(DataSource):
     def __init__(self, name, caster, use_bias):
@@ -207,6 +207,7 @@ class ShadowMapDataSource(DataSource):
             instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
             instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
         if self.caster.occluder is not None:
+            light_source = self.caster.light_source
             occluder = self.caster.occluder
             body = shape.owner
             self_radius = occluder.get_apparent_radius()
@@ -217,7 +218,7 @@ class ShadowMapDataSource(DataSource):
             distance = abs(pa.length() - body_radius)
             if distance != 0:
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(occluder.star.get_apparent_radius() / ((occluder.star.anchor._local_position - body_position).length() - body_radius))
+                star_ar = asin(light_source.get_apparent_radius() / ((light_source.anchor._local_position - body_position).length() - body_radius))
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
@@ -306,32 +307,32 @@ class SphereShadowCaster(ShadowCasterBase):
 
 
 class SphereShadowDataSource(DataSource):
-    def __init__(self, occluders, max_occluders, far_sun, oblate_occluder):
+    def __init__(self, shadow_casters, max_occluders, far_sun, oblate_occluder):
         DataSource.__init__(self, 'sphere-shadows')
-        self.occluders = occluders
+        self.shadow_casters = shadow_casters
         self.max_occluders = max_occluders
         self.far_sun = far_sun
         self.oblate_occluder = oblate_occluder
 
     def update(self, shape, instance):
-        #TODO: This is quite ugly....
-        star = shape.owner.star
-        anchor = shape.owner.anchor
+        self.light_source = self.shadow_casters.shadow_casters[0].light_source
         observer = shape.owner.context.observer._position
         scale = shape.owner.anchor.scene_scale_factor
         if self.far_sun:
-            instance.setShaderInput('star_ar', asin(star.get_apparent_radius() / shape.owner.anchor.distance_to_star))
-        star_center = (star.anchor._local_position - observer) * scale
-        star_radius = star.get_apparent_radius() * scale
+            vector = shape.owner.anchor._local_position - self.light_source.anchor._local_position
+            distance_to_light_source = vector.length()
+            instance.setShaderInput('star_ar', asin(self.light_source.get_apparent_radius() / distance_to_light_source))
+        star_center = (self.light_source.anchor._local_position - observer) * scale
+        star_radius = self.light_source.get_apparent_radius() * scale
         instance.setShaderInput('star_center', star_center)
         instance.setShaderInput('star_radius', star_radius)
         centers = []
         radii = []
         occluder_transform = PTA_LMatrix4()
-        if len(self.occluders.occluders) > self.max_occluders:
+        if len(self.shadow_casters.shadow_casters) > self.max_occluders:
             print("Too many occluders")
         nb_of_occluders = 0
-        for shadow_caster in self.occluders.occluders:
+        for shadow_caster in self.shadow_casters.shadow_casters:
             #TODO: The selection should be done on the angular radius of the shadow.
             if nb_of_occluders >= self.max_occluders:
                 break
@@ -363,22 +364,22 @@ class ShadowBase(object):
 
 class SphereShadows(ShadowBase):
     def __init__(self):
-        self.occluders = []
+        self.shadow_casters = []
         self.max_occluders = 4
         self.far_sun = True
         self.oblate_occluder = True
         self.shader_component = ShaderSphereShadow(self.max_occluders, self.far_sun, self.oblate_occluder)
         self.data_source = SphereShadowDataSource(self, self.max_occluders, self.far_sun, self.oblate_occluder)
 
-    def add_occluder(self, occluder):
-        if not occluder in self.occluders:
-            self.occluders.append(occluder)
+    def add_shadow_caster(self, shadow_caster):
+        if not shadow_caster in self.shadow_casters:
+            self.shadow_casters.append(shadow_caster)
 
     def empty(self):
-        return len(self.occluders) == 0
+        return len(self.shadow_casters) == 0
 
     def clear(self):
-        self.occluders = []
+        self.shadow_casters = []
 
 class GenericShadows(ShadowBase):
     def __init__(self, target):
@@ -477,7 +478,7 @@ class MultiShadows(ShadowBase):
             print("Can not switch ring shadow caster")
 
     def add_sphere_occluder(self, shadow_caster):
-        self.sphere_shadows.add_occluder(shadow_caster)
+        self.sphere_shadows.add_shadow_caster(shadow_caster)
 
     def add_generic_occluder(self, occluder, self_shadow):
         self.generic_shadows.add_occluder(occluder, self_shadow)

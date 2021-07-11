@@ -122,7 +122,6 @@ class StellarObject(NamedObject):
         #else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
         self.abs_magnitude = 99.0
-        self.star = None
         self.oid = None
         self.oid_color = None
         #Flags
@@ -302,10 +301,6 @@ class StellarObject(NamedObject):
         else:
             if self.parent:
                 self.parent.set_selected(selected)
-
-    def set_star(self, star):
-        self.star = star
-        #self.anchor.star = star
 
     def is_emissive(self):
         return False

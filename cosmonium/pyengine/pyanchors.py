@@ -65,8 +65,6 @@ class AnchorBase():
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
         self.vector_to_obs = LVector3d()
-        self.distance_to_star = 0
-        self.vector_to_star = LVector3d()
         self.visible_size = 0.0
         self.scene_position = LPoint3d()
         self.scene_orientation = LQuaterniond()
@@ -148,7 +146,6 @@ class StellarAnchor(AnchorBase):
         #TODO: Should be done properly
         orbit.body = body
         rotation.body = body
-        self.star = None
 
     def update(self, time):
         self._orientation = self.rotation.get_absolute_rotation_at(time)
@@ -156,8 +153,6 @@ class StellarAnchor(AnchorBase):
         self._local_position = self.orbit.get_local_position_at(time)
         self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
-        if self.star is not None:
-            (self.vector_to_star, self.distance_to_star) = self.calc_local_distance_to(self.star.anchor)
 
     def update_observer(self, observer):
         global_delta = self._global_position - observer._global_position
@@ -216,9 +211,6 @@ class StellarAnchor(AnchorBase):
             if star is not None:
                 reflected = self.get_luminosity(star)
                 self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
-                self.vector_to_star = star._local_position - self._local_position
-                self.distance_to_star = self.vector_to_star.length()
-                self.vector_to_star /= self.distance_to_star
             else:
                 self._app_magnitude = 99.0
         else:

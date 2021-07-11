@@ -312,8 +312,13 @@ class ReflectiveBody(StellarBody):
         return False
 
     def get_phase(self):
-        if self.anchor.vector_to_obs is None or self.anchor.vector_to_star is None: return 0.0
-        angle = self.anchor.vector_to_obs.dot(self.anchor.vector_to_star)
+        #TODO: This should not be managed here
+        if self.lights is None or len(self.lights.sources) == 0:
+            print("No light source for phase")
+            return
+        light_source = self.lights.sources[0]
+        if self.anchor.vector_to_obs is None or light_source.light_direction is None: return 0.0
+        angle = self.anchor.vector_to_obs.dot(-light_source.light_direction)
         phase = (1.0 + angle) / 2.0
         return phase
 

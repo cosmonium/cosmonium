@@ -123,21 +123,10 @@ class StellarSystem(StellarObject):
         self.children.append(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
-        #TODO: Temporary workaround until multiple stars are supported
-        if self.star is not None:
-            child.set_star(self.star)
 
     #TODO: This is a quick workaround until stars of a system are properly managed
     def add_child_star_fast(self, child):
-        if child.parent is not None:
-            child.parent.anchor.remove_child(child.anchor)
-            child.parent.remove_child_fast(child)
-        #print("Add child", child.get_name(), "to", self.get_name())
-        self.children_map.add(child)
-        self.children.append(child)
-        self.anchor.add_child(child.anchor)
-        child.set_parent(self)
-        self.star = child
+        self.add_child_fast(child)
         self.has_halo = True
 
     def add_child(self, child):
@@ -147,17 +136,11 @@ class StellarSystem(StellarObject):
         #print("Remove child", child.get_name(), "from", self.get_name())
         self.children.remove(child)
         child.set_parent(None)
-        child.set_star(None)
         self.children_map.remove(child)
         self.anchor.remove_child(child.anchor)
 
     def remove_child(self, child):
         self.remove_child_fast(child)
-
-    def set_star(self, star):
-        StellarObject.set_star(self, star)
-        for child in self.children:
-            child.set_star(star)
 
     def remove_components(self):
         StellarObject.remove_components(self)

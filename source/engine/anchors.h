@@ -141,8 +141,6 @@ PUBLISHED:
   LPoint3d rel_position;
   double distance_to_obs;
   LVector3d  vector_to_obs;
-  double distance_to_star;
-  LVector3d vector_to_star;
   double visible_size;
   LPoint3d scene_position;
   double scene_distance;
