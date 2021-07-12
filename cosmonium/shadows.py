@@ -218,7 +218,7 @@ class ShadowMapDataSource(DataSource):
             distance = abs(pa.length() - body_radius)
             if distance != 0:
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(light_source.get_apparent_radius() / ((light_source.anchor._local_position - body_position).length() - body_radius))
+                star_ar = asin(light_source.source.get_apparent_radius() / ((light_source.source.anchor._local_position - body_position).length() - body_radius))
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
@@ -262,8 +262,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def update(self):
         ShadowMapShadowCaster.update(self)
-        light = self.occluder.lights.get_light_for(self.light_source)
-        self.shadow_caster.set_pos(light.light_source.getPos())
+        self.shadow_caster.set_pos(self.light_source.light_source.getPos())
 
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_generic_occluder(self, self_shadow)
@@ -319,11 +318,11 @@ class SphereShadowDataSource(DataSource):
         observer = shape.owner.context.observer._position
         scale = shape.owner.anchor.scene_scale_factor
         if self.far_sun:
-            vector = shape.owner.anchor._local_position - self.light_source.anchor._local_position
+            vector = shape.owner.anchor._local_position - self.light_source.source.anchor._local_position
             distance_to_light_source = vector.length()
-            instance.setShaderInput('star_ar', asin(self.light_source.get_apparent_radius() / distance_to_light_source))
-        star_center = (self.light_source.anchor._local_position - observer) * scale
-        star_radius = self.light_source.get_apparent_radius() * scale
+            instance.setShaderInput('star_ar', asin(self.light_source.source.get_apparent_radius() / distance_to_light_source))
+        star_center = (self.light_source.source.anchor._local_position - observer) * scale
+        star_radius = self.light_source.source.get_apparent_radius() * scale
         instance.setShaderInput('star_center', star_center)
         instance.setShaderInput('star_radius', star_radius)
         centers = []
