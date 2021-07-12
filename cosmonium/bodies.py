@@ -315,7 +315,7 @@ class ReflectiveBody(StellarBody):
         #TODO: This should not be managed here
         if self.lights is None or len(self.lights.sources) == 0:
             print("No light source for phase")
-            return
+            return 0.0
         light_source = self.lights.sources[0]
         if self.anchor.vector_to_obs is None or light_source.light_direction is None: return 0.0
         angle = self.anchor.vector_to_obs.dot(-light_source.light_direction)
