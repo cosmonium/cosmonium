@@ -149,7 +149,6 @@ class StellarObject(NamedObject):
         self.parent = parent
 
     def set_lights(self, lights):
-        #TODO: The lights set should not be recreated each frame
         if self.lights is not None:
             self.lights.remove_all()
         self.lights = lights

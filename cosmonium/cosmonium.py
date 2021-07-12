@@ -1130,14 +1130,16 @@ class Cosmonium(CosmoniumBase):
             star = self.global_light_sources[0]
         else:
             star = None
+        if star is None: return
         for visible_object in self.visibles:
             if not visible_object.resolved: continue
             if visible_object.content & AnchorBase.System != 0: continue
             if visible_object.content & AnchorBase.Reflective == 0: continue
-            lights = LightSources()
-            if star is not None:
-                lights.add_source(LightSource(star.body, visible_object.body))
-            visible_object.body.set_lights(lights)
+            if visible_object.body.lights is None:
+                lights = LightSources()
+                visible_object.body.set_lights(lights)
+            if star is not None and visible_object.body.lights.get_light_for(star.body) is None:
+                visible_object.body.lights.add_source(LightSource(star.body, visible_object.body))
 
     @pstat
     def find_shadows(self):

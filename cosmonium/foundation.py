@@ -219,9 +219,8 @@ class VisibleObject(BaseObject):
     def update_instance(self, camera_pos, camera_rot):
         pass
 
-    def set_light(self, lights):
-        if self.instance and not self.ignore_light:
-            lights.update(self.instance)
+    def set_lights(self, lights):
+        pass
 
     def get_oid_color(self):
         return LColor()
@@ -230,6 +229,7 @@ class CompositeObject(BaseObject):
     def __init__(self, name):
         BaseObject.__init__(self, name)
         self.components = []
+        self.lights = None
         self.init = False
 
     def create_components(self):
@@ -239,6 +239,7 @@ class CompositeObject(BaseObject):
         if component is not None:
             self.components.append(component)
             component.set_parent(self)
+            component.set_lights(self.lights)
 
     def remove_component(self, component):
         if component is None: return
@@ -304,8 +305,9 @@ class CompositeObject(BaseObject):
             component.remove_instance()
 
     def set_lights(self, lights):
+        self.lights = lights
         for component in self.components:
-            component.set_light(lights)
+            component.set_lights(lights)
 
 class ObjectLabel(VisibleObject):
     default_shown = False

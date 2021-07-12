@@ -522,7 +522,7 @@ class Constellation(NamedObject):
     def set_parent(self, parent):
         pass
 
-    def set_light(self, parent):
+    def set_lights(self, lights):
         pass
 
     def create_label_instance(self):

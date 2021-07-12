@@ -285,6 +285,11 @@ class ShapeObject(VisibleObject):
         self.owner = owner
         self.shape.set_owner(owner)
 
+    def set_lights(self, lights):
+        self.sources.remove_source_by_name('lights')
+        if lights is not None:
+            self.sources.add_source(lights)
+
     def set_oid_color(self, oid_color):
         self.oid_color = oid_color
 

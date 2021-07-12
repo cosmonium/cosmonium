@@ -22,6 +22,7 @@ from panda3d.core import LVector3
 from panda3d.core import DirectionalLight
 
 from .foundation import BaseObject
+from .datasource import DataSource
 from . import settings
 
 class LightSource:
@@ -59,8 +60,9 @@ class LightSource:
         instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
         instance.setShaderInput("ambient_color", (1, 1, 1, 1))
 
-class LightSources:
+class LightSources(DataSource):
     def __init__(self):
+        DataSource.__init__(self, 'lights')
         self.sources = []
 
     def add_source(self, source):
@@ -85,10 +87,10 @@ class LightSources:
         for source in self.sources:
             source.update_light(camera_pos)
 
-    def apply(self, instance):
+    def apply(self, shape, instance):
         for source in self.sources:
             source.apply(instance)
 
-    def update(self, instance):
+    def update(self, shape, instance):
         for source in self.sources:
             source.update(instance)
