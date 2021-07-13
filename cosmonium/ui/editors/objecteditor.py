@@ -42,7 +42,8 @@ class StellarObjectEditor:
         self.rotation_editor = ObjectEditors.get_editor_for(self.stellar_object.anchor.rotation)
         general_group.add_parameter(self.rotation_editor.get_group())
         group.add_parameter(general_group)
-        for component in self.stellar_object.components:
+        #TODO: CompositeObject should have an iterator interface
+        for component in self.stellar_object.components.components:
             component_group = component.get_user_parameters()
             if component_group is not None:
                 group.add_parameter(component_group)
