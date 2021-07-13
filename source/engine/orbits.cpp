@@ -256,13 +256,6 @@ EllipticalOrbit::is_dynamic(void)
 }
 
 double
-EllipticalOrbit::get_period(void)
-{
-  return 2 * M_PI / mean_motion;
-
-}
-
-double
 EllipticalOrbit::get_mean_motion(void)
 {
   return mean_motion;

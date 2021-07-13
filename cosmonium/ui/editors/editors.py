@@ -46,6 +46,9 @@ class EditorWrapper:
     def __init__(self, wrapped_object):
         self.wrapped_object = wrapped_object
 
+    def get_group(self):
+        return self.wrapped_object.get_group()
+
     def get_user_parameters(self):
         return self.wrapped_object.get_user_parameters()
 
@@ -55,6 +58,9 @@ class EditorWrapper:
 class EmptyEditor:
     def __init__(self, object_to_edit):
         pass
+
+    def get_group(self):
+        return None
 
     def get_user_parameters(self):
         return ParametersList()

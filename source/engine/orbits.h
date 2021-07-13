@@ -155,17 +155,11 @@ protected:
 PUBLISHED:
   virtual PT(OrbitBase) make_copy(void) const;
 
-  virtual void update_rotation(void);
-
   virtual bool is_periodic(void);
 
   virtual bool is_closed(void);
 
   virtual bool is_dynamic(void);
-
-  virtual double get_period(void);
-
-  MAKE_PROPERTY(period, get_period);
 
   virtual double get_mean_motion(void);
 
@@ -175,7 +169,45 @@ PUBLISHED:
 
   virtual double get_bounding_radius(void);
 
+  INLINE double get_period(void);
+  INLINE void set_period(double period);
+  MAKE_PROPERTY(period, get_period, set_period);
+
+  INLINE double get_argument_of_periapsis(void);
+  INLINE void set_argument_of_periapsis(double argument_of_periapsis);
+  MAKE_PROPERTY(argument_of_periapsis, get_argument_of_periapsis, set_argument_of_periapsis);
+
+  INLINE double get_inclination(void);
+  INLINE void set_inclination(double inclination);
+  MAKE_PROPERTY(inclination, get_inclination, set_inclination);
+
+  INLINE double get_ascending_node(void);
+  INLINE void set_ascending_node(double ascending_node);
+  MAKE_PROPERTY(ascending_node, get_ascending_node, set_ascending_node);
+
+  INLINE double get_epoch(void);
+  INLINE void set_epoch(double epoch);
+  MAKE_PROPERTY(epoch, get_epoch, set_epoch);
+
+  INLINE void set_mean_motion(double mean_motion);
+  MAKE_PROPERTY(mean_motion, get_mean_motion, set_mean_motion);
+
+  INLINE double get_mean_anomaly(void);
+  INLINE void set_mean_anomaly(double mean_anomaly);
+  MAKE_PROPERTY(mean_anomaly, get_mean_anomaly, set_mean_anomaly);
+
+  INLINE double get_pericenter_distance(void);
+  INLINE void set_pericenter_distance(double pericenter_distance);
+  MAKE_PROPERTY(pericenter_distance, get_pericenter_distance, set_pericenter_distance);
+
+  INLINE double get_eccentricity(void);
+  INLINE void set_eccentricity(double eccentricity);
+  MAKE_PROPERTY(eccentricity, get_eccentricity, set_eccentricity);
+
   MAKE_TYPE("EllipticalOrbit", OrbitBase);
+
+protected:
+  void update_rotation(void);
 
 protected:
   double argument_of_periapsis;
@@ -222,5 +254,7 @@ protected:
   double average_period;
   double bounding_radius;
 };
+
+#include "orbits.I"
 
 #endif
