@@ -83,6 +83,12 @@ class DataSource:
     def clear_shape_data(self, shape, instance):
         pass
 
+    def get_user_parameters(self):
+        return None
+
+    def update_user_parameters(self):
+        pass
+
 class DataSourcesHandler:
     def __init__(self):
         self.sources = []

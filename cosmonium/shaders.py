@@ -65,10 +65,6 @@ class ShaderBase(object):
         if self.shader is not None:
             instance.setShader(self.shader)
 
-    def get_user_parameters(self):
-        group = ParametersGroup('Shader')
-        return group
-
 class AutoShader(ShaderBase):
     def set_instance_control(self, instance_control):
         print("AutoShader: set_instance_control not supported")

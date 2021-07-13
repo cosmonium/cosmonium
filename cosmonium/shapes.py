@@ -257,8 +257,9 @@ class ShapeObject(VisibleObject):
             group.add_parameters(self.shape.get_user_parameters())
         if self.appearance is not None:
             group.add_parameters(self.appearance.get_user_parameters())
-        if self.shader is not None:
-            group.add_parameters(self.shader.get_user_parameters())
+        #TODO: DataSourcesHandler should have an iterator interface
+        for source in self.sources.sources:
+            group.add_parameters(source.get_user_parameters())
         return group
 
     def update_user_parameters(self):
