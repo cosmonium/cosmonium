@@ -105,13 +105,6 @@ class UniformRotation(Rotation):
     def get_period(self):
         return 2 * pi / self.mean_motion
 
-    def get_user_parameters(self):
-        group = FixedRotation.get_user_parameters(self)
-        group.add_parameter(UserParameter(_("Period"), self.set_period, self.get_period, UserParameter.TYPE_FLOAT))
-        group.add_parameter(AutoUserParameter(_("Meridian angle"), 'meridian_angle', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180))
-        group.add_parameter(AutoUserParameter(_("Epoch"), 'epoch', self, UserParameter.TYPE_FLOAT))
-        return group
-
     def get_frame_equatorial_orientation_at(self, time):
         return self.equatorial_orientation
 

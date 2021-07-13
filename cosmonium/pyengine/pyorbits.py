@@ -122,7 +122,7 @@ class EllipticalOrbit(Orbit):
              mean_anomaly,
              pericenter_distance,
              eccentricity,
-             arg_of_periapsis,
+             argument_of_periapsis,
              inclination,
              ascending_node):
         Orbit.__init__(self, frame)
@@ -133,7 +133,7 @@ class EllipticalOrbit(Orbit):
         self.eccentricity = eccentricity
         self.inclination = inclination
         self.ascending_node = ascending_node
-        self.arg_of_periapsis = arg_of_periapsis
+        self.argument_of_periapsis = argument_of_periapsis
         self.mean_anomaly = mean_anomaly
         self.epoch = epoch
         self.update_rotation()
@@ -160,27 +160,11 @@ class EllipticalOrbit(Orbit):
     def update_rotation(self):
         inclination_quat = LQuaterniond()
         inclination_quat.setFromAxisAngleRad(self.inclination, LVector3d.unitX())
-        arg_of_periapsis_quat = LQuaterniond()
-        arg_of_periapsis_quat.setFromAxisAngleRad(self.arg_of_periapsis, LVector3d.unitZ())
+        argument_of_periapsis_quat = LQuaterniond()
+        argument_of_periapsis_quat.setFromAxisAngleRad(self.argument_of_periapsis, LVector3d.unitZ())
         ascending_node_quat = LQuaterniond()
         ascending_node_quat.setFromAxisAngleRad(self.ascending_node, LVector3d.unitZ())
-        self.rotation = arg_of_periapsis_quat * inclination_quat * ascending_node_quat
-
-    def get_user_parameters(self):
-        group = Orbit.get_user_parameters(self)
-        group.add_parameters(
-                      UserParameter(_("Period"), self.set_period, self.get_period, UserParameter.TYPE_FLOAT),
-                      AutoUserParameter(_("Eccentricity"), "eccentricity", self, UserParameter.TYPE_FLOAT, value_range=[0, 10]),
-                      AutoUserParameter(_("Inclination"), "inclination", self, UserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
-                      AutoUserParameter(_("Argument of periapsis"), 'arg_of_periapsis', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
-                      AutoUserParameter(_("Ascending node"), 'ascending_node', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
-                      AutoUserParameter(_("Mean anomaly"), 'mean_anomaly', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
-                      AutoUserParameter(_("Epoch"), 'epoch', self, UserParameter.TYPE_FLOAT),
-                     )
-        return group
-
-    def update_user_parameters(self):
-        self.update_rotation()
+        self.rotation = argument_of_periapsis_quat * inclination_quat * ascending_node_quat
 
     def get_mean_motion(self):
         return self.mean_motion

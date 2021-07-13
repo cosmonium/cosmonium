@@ -40,7 +40,7 @@ class EllipticalOrbitEditor(OrbitEditorBase):
             UserParameter(_("Period"), self.orbit.set_period, self.orbit.get_period, UserParameter.TYPE_FLOAT),
             AutoUserParameter(_("Eccentricity"), "eccentricity", self.orbit, UserParameter.TYPE_FLOAT, value_range=[0, 10]),
             AutoUserParameter(_("Inclination"), "inclination", self.orbit, UserParameter.TYPE_FLOAT, value_range=[-180, 180], units=pi / 180),
-            AutoUserParameter(_("Argument of periapsis"), 'arg_of_periapsis', self.orbit, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
+            AutoUserParameter(_("Argument of periapsis"), 'argument_of_periapsis', self.orbit, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
             AutoUserParameter(_("Ascending node"), 'ascending_node', self.orbit, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
             AutoUserParameter(_("Mean anomaly"), 'mean_anomaly', self.orbit, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180),
             AutoUserParameter(_("Epoch"), 'epoch', self.orbit, UserParameter.TYPE_FLOAT),
@@ -48,4 +48,6 @@ class EllipticalOrbitEditor(OrbitEditorBase):
         return parameters
 
     def update_user_parameters(self):
-        self.orbit.update_rotation()
+        #TODO: To be removed when Python orbit use properties
+        if hasattr(self.orbit, 'update_rotation'):
+            self.orbit.update_rotation()
