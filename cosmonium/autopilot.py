@@ -204,13 +204,13 @@ class AutoPilot(object):
         center = target.get_rel_position_to(self.ship._global_position)
         position = None
         if star:
-            if target.lights is not None and len(target.lights.sources) > 0:
-                position = target.lights.sources[0].source
+            if target.lights is not None and len(target.lights.lights) > 0:
+                position = target.lights.lights[0].source
         else:
             if target.parent is not None and isinstance(target.parent, SimpleSystem):
                 if target.parent.primary == target:
-                    if target.lights is not None and len(target.lights.sources) > 0:
-                        position = target.lights.sources[0].source
+                    if target.lights is not None and len(target.lights.lights) > 0:
+                        position = target.lights.lights[0].source
                 else:
                     position = target.parent.primary
         if position is not None:

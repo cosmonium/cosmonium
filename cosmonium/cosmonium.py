@@ -41,7 +41,7 @@ from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
 from .anchors import AnchorBase, StellarAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
-from .lights import LightSources, LightSource
+from .lights import SurrogateLight, LightSources
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame
@@ -1139,7 +1139,7 @@ class Cosmonium(CosmoniumBase):
                 lights = LightSources()
                 visible_object.body.set_lights(lights)
             if star is not None and visible_object.body.lights.get_light_for(star.body) is None:
-                visible_object.body.lights.add_source(LightSource(star.body, visible_object.body))
+                visible_object.body.lights.add_light(SurrogateLight(star.body, visible_object.body))
 
     @pstat
     def find_shadows(self):

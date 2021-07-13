@@ -489,10 +489,10 @@ class ONeilScatteringDataSourceBase(DataSource):
     def update(self, shape, instance):
         body = self.parameters.body
         #TODO: This should not be managed here
-        if body.lights is None or len(body.lights.sources) == 0:
+        if body.lights is None or len(body.lights.lights) == 0:
             print("No light source for scattering")
             return
-        light_source = body.lights.sources[0].source
+        light_source = body.lights.lights[0].source
         factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
         inner_radius = self.parameters.body_radius
 

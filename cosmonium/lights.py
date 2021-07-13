@@ -25,30 +25,31 @@ from .foundation import BaseObject
 from .datasource import DataSource
 from . import settings
 
-class LightSource:
+class SurrogateLight:
     def __init__(self, source, target):
         self.source = source
         self.target = target
-        self.directional_light = None
+        self.light_node = None
+        self.light_instance = None
         self.light_direction = self.target.anchor._local_position - self.source.anchor._local_position
         self.light_distance = self.light_direction.length()
         self.light_direction /= self.light_distance
 
     def create_light(self):
-        self.directional_light = DirectionalLight('light_source')
-        self.directional_light.setDirection(LVector3(*self.light_direction))
-        self.directional_light.setColor((1, 1, 1, 1))
-        self.light_source = BaseObject.context.world.attachNewNode(self.directional_light)
+        self.light_node = DirectionalLight('light_source')
+        self.light_node.set_direction(LVector3(*self.light_direction))
+        self.light_node.set_color((1, 1, 1, 1))
+        self.light_instance = BaseObject.context.world.attach_new_node(self.light_node)
 
     def update_light(self, camera_pos):
         pos = self.target.get_local_position() - self.light_direction * self.target.get_extend()
-        BaseObject.place_pos_only(self.light_source, pos, camera_pos, self.target.anchor.distance_to_obs, self.target.anchor.vector_to_obs)
-        self.directional_light.setDirection(LVector3(*self.light_direction))
+        BaseObject.place_pos_only(self.light_instance, pos, camera_pos, self.target.anchor.distance_to_obs, self.target.anchor.vector_to_obs)
+        self.light_node.set_direction(LVector3(*self.light_direction))
 
     def remove_light(self):
-        self.light_source.remove_node()
-        self.light_source = None
-        self.directional_light = None
+        self.light_instance.remove_node()
+        self.light_instance = None
+        self.light_node = None
 
     def apply(self, instance):
         pass
@@ -63,34 +64,34 @@ class LightSource:
 class LightSources(DataSource):
     def __init__(self):
         DataSource.__init__(self, 'lights')
-        self.sources = []
+        self.lights = []
 
-    def add_source(self, source):
-        self.sources.append(source)
-        source.create_light()
+    def add_light(self, light):
+        self.lights.append(light)
+        light.create_light()
 
-    def remove_source(self, source):
-        self.sources.remove(source)
+    def remove_light(self, light):
+        self.lights.remove(light)
 
     def remove_all(self):
-        for source in self.sources:
+        for source in self.lights:
             source.remove_light()
-        self.sources = []
+        self.lights = []
 
     def get_light_for(self, light_source):
-        for source in self.sources:
-            if source.source is light_source:
-                return source
+        for light in self.lights:
+            if light.source is light_source:
+                return light
         return None
 
     def update_lights(self, camera_pos):
-        for source in self.sources:
-            source.update_light(camera_pos)
+        for light in self.lights:
+            light.update_light(camera_pos)
 
     def apply(self, shape, instance):
-        for source in self.sources:
-            source.apply(instance)
+        for light in self.lights:
+            light.apply(instance)
 
     def update(self, shape, instance):
-        for source in self.sources:
-            source.update(instance)
+        for light in self.lights:
+            light.update(instance)
