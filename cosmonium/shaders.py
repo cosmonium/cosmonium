@@ -2058,11 +2058,9 @@ class ShaderShadowMap(ShaderShadow):
     use_normal = True
     world_normal = True
 
-    def __init__(self, name, caster_body, caster, use_bias, shader=None):
+    def __init__(self, name, use_bias, shader=None):
         ShaderShadow.__init__(self, shader)
         self.name = name
-        self.caster_body = caster_body
-        self.caster = caster
         self.use_bias = use_bias
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias
         self.use_pcf_16 = settings.shadows_pcf_16

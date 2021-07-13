@@ -89,20 +89,6 @@ class ShadowMap(object):
                                        1.0))
         self.cam.set_pos(self.cam.get_pos() - LVector3(new_center.x, new_center.y, new_center.z))
 
-    def set_lens(self, size, near, far, direction):
-        lens = self.node.get_lens()
-        lens.set_film_size(size)
-        lens.setNear(near)
-        lens.setFar(far)
-        lens.set_view_vector(LVector3(*direction), LVector3.up())
- 
-    def get_lens(self):
-        return self.node.get_lens()
-
-    def set_direction(self, direction):
-        lens = self.node.get_lens()
-        lens.set_view_vector(LVector3(*direction), LVector3.up())
-
     def get_pos(self):
         return self.cam.get_pos()
 
@@ -147,14 +133,14 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         ShadowCasterBase.__init__(self, light_source)
         self.occluder = occluder
         self.name = self.occluder.get_ascii_name()
-        self.shadow_caster = None
+        self.shadow_map = None
         self.shadow_camera = None
 
     def create_camera(self):
         pass
 
     def create(self):
-        if self.shadow_caster is not None: return
+        if self.shadow_map is not None: return
         self.create_camera()
         self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraMask)
 
@@ -171,16 +157,16 @@ class ShadowMapShadowCaster(ShadowCasterBase):
             self.shadow_camera.hide_frustum()
 
     def is_valid(self):
-        return self.shadow_caster is not None
+        return self.shadow_map is not None
 
     def update(self):
         radius = self.occluder.get_extend() / settings.scale
-        self.shadow_caster.get_lens().set_film_size(radius * 2.1, radius * 2.1)
+        self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
         #The shadow frustum origin is at the light center which is one radius away from the object
         #So the near plane is 0 to coincide with the boundary of the object
-        self.shadow_caster.get_lens().setNear(0)
-        self.shadow_caster.get_lens().setFar(radius*2)
-        self.shadow_caster.get_lens().set_view_vector(LVector3(*self.light_source.light_direction), LVector3.up())
+        self.shadow_camera.get_lens().set_near(0)
+        self.shadow_camera.get_lens().set_far(radius*2)
+        self.shadow_camera.get_lens().set_view_vector(LVector3(*self.light_source.light_direction), LVector3.up())
 
 class ShadowMapDataSource(DataSource):
     def __init__(self, name, caster, use_bias):
@@ -190,10 +176,10 @@ class ShadowMapDataSource(DataSource):
         self.use_bias = use_bias
 
     def apply(self, shape, instance):
-        shape.instance.setShaderInput('%s_depthmap' % self.name, self.caster.shadow_caster.depthmap)
-        shape.instance.setShaderInput("%sLightSource" % self.name, self.caster.shadow_caster.cam)
+        shape.instance.set_shader_input('%s_depthmap' % self.name, self.caster.shadow_map.depthmap)
+        shape.instance.set_shader_input("%sLightSource" % self.name, self.caster.shadow_map.cam)
         if self.caster.occluder is None:
-            shape.instance.setShaderInput('%s_shadow_coef' % self.name, 1.0)
+            shape.instance.set_shader_input('%s_shadow_coef' % self.name, 1.0)
 
     def update(self, shape, instance):
         #TODO: Shadow parameters should not be retrieved like that
@@ -203,9 +189,9 @@ class ShadowMapDataSource(DataSource):
             slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
             depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
             #print(normal_bias, slope_bias, depth_bias, shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
-            instance.setShaderInput('%s_shadow_normal_bias' % self.name, normal_bias)
-            instance.setShaderInput('%s_shadow_slope_bias' % self.name, slope_bias)
-            instance.setShaderInput('%s_shadow_depth_bias' % self.name, depth_bias)
+            instance.set_shader_input('%s_shadow_normal_bias' % self.name, normal_bias)
+            instance.set_shader_input('%s_shadow_slope_bias' % self.name, slope_bias)
+            instance.set_shader_input('%s_shadow_depth_bias' % self.name, depth_bias)
         if self.caster.occluder is not None:
             light_source = self.caster.light_source
             occluder = self.caster.occluder
@@ -222,23 +208,23 @@ class ShadowMapDataSource(DataSource):
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
-            instance.setShaderInput('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
+            instance.set_shader_input('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
 
     def clear_shape_data(self, shape, instance):
         instance.clearShaderInput('%s_depthmap' % self.name)
         instance.clearShaderInput("%sLightSource" % self.name)
 
-class PandaShadowCaster(ShadowMapShadowCaster):
+class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
     def create_camera(self):
         print("Create Panda3D shadow camera for", self.occluder.get_name())
         self.light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)
-        self.shadow_caster = self.directional_light
+        self.shadow_map = self.directional_light
         self.shadow_camera = self.directional_light
 
     def remove_camera(self):
         print("Remove Panda3D shadow camera for", self.occluder.get_name())
         self.light.setShadowCaster(False)
-        self.shadow_caster = None
+        self.shadow_map = None
         self.shadow_camera = None
 
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
@@ -248,24 +234,24 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def create_camera(self):
         print("Create shadow camera for", self.occluder.get_name())
-        self.shadow_caster = ShadowMap(settings.shadow_size)
-        self.shadow_caster.create()
-        self.shadow_camera = self.shadow_caster.node
+        self.shadow_map = ShadowMap(settings.shadow_size)
+        self.shadow_map.create()
+        self.shadow_camera = self.shadow_map.node
 
     def remove_camera(self):
         print("Remove shadow camera for", self.occluder.get_name())
-        self.shadow_caster.remove()
+        self.shadow_map.remove()
         for target in list(self.targets.keys()):
             self.remove_target(target)
-        self.shadow_caster = None
+        self.shadow_map = None
         self.shadow_camera = None
 
     def update(self):
         ShadowMapShadowCaster.update(self)
-        self.shadow_caster.set_pos(self.light_source.light_source.getPos())
+        self.shadow_map.set_pos(self.light_source.light_source.getPos())
 
     def add_target(self, shape_object, self_shadow=False):
-        shape_object.shadows.add_generic_occluder(self, self_shadow)
+        shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)
 
 class RingShadowCaster(ShadowCasterBase):
     def __init__(self, light_source, ring):
@@ -273,7 +259,7 @@ class RingShadowCaster(ShadowCasterBase):
         self.ring = ring
 
     def add_target(self, shape_object):
-        shape_object.shadows.add_ring_occluder(self)
+        shape_object.shadows.add_ring_shadow_caster(self)
 
 
 class RingShadowDataSource(DataSource):
@@ -284,16 +270,16 @@ class RingShadowDataSource(DataSource):
     def update(self, shape, instance):
         (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is not None:
-            instance.setShaderInput('shadow_ring_tex',texture)
+            instance.set_shader_input('shadow_ring_tex',texture)
         normal = shape.owner.anchor.scene_orientation.xform(LVector3d.up())
-        instance.setShaderInput('ring_normal', normal)
-        instance.setShaderInput('ring_inner_radius', self.ring.inner_radius * shape.owner.anchor.scene_scale_factor)
-        instance.setShaderInput('ring_outer_radius', self.ring.outer_radius * shape.owner.anchor.scene_scale_factor)
+        instance.set_shader_input('ring_normal', normal)
+        instance.set_shader_input('ring_inner_radius', self.ring.inner_radius * shape.owner.anchor.scene_scale_factor)
+        instance.set_shader_input('ring_outer_radius', self.ring.outer_radius * shape.owner.anchor.scene_scale_factor)
         if shape.owner.support_offset_body_center and settings.offset_body_center:
             body_center = shape.owner.anchor.scene_position + shape.owner.projected_world_body_center_offset
         else:
             body_center = shape.owner.anchor.scene_position
-        instance.setShaderInput('body_center', body_center)
+        instance.set_shader_input('body_center', body_center)
 
 
 class SphereShadowCaster(ShadowCasterBase):
@@ -302,7 +288,7 @@ class SphereShadowCaster(ShadowCasterBase):
         self.occluder = occluder
 
     def add_target(self, shape_object):
-        shape_object.shadows.add_sphere_occluder(self)
+        shape_object.shadows.add_sphere_shadow_caster(self)
 
 
 class SphereShadowDataSource(DataSource):
@@ -320,11 +306,11 @@ class SphereShadowDataSource(DataSource):
         if self.far_sun:
             vector = shape.owner.anchor._local_position - self.light_source.source.anchor._local_position
             distance_to_light_source = vector.length()
-            instance.setShaderInput('star_ar', asin(self.light_source.source.get_apparent_radius() / distance_to_light_source))
+            instance.set_shader_input('star_ar', asin(self.light_source.source.get_apparent_radius() / distance_to_light_source))
         star_center = (self.light_source.source.anchor._local_position - observer) * scale
         star_radius = self.light_source.source.get_apparent_radius() * scale
-        instance.setShaderInput('star_center', star_center)
-        instance.setShaderInput('star_radius', star_radius)
+        instance.set_shader_input('star_center', star_center)
+        instance.set_shader_input('star_radius', star_radius)
         centers = []
         radii = []
         occluder_transform = PTA_LMatrix4()
@@ -351,11 +337,11 @@ class SphereShadowDataSource(DataSource):
                 rotation_mat_inv.invert_from(rotation_mat)
                 descale_mat = rotation_mat_inv * descale * rotation_mat
                 occluder_transform.push_back(descale_mat)
-        instance.setShaderInput('occluder_centers', centers)
-        instance.setShaderInput('occluder_radii', radii)
+        instance.set_shader_input('occluder_centers', centers)
+        instance.set_shader_input('occluder_radii', radii)
         if self.oblate_occluder:
-            instance.setShaderInput('occluder_transform', occluder_transform)
-        instance.setShaderInput("nb_of_occluders", nb_of_occluders)
+            instance.set_shader_input('occluder_transform', occluder_transform)
+        instance.set_shader_input("nb_of_occluders", nb_of_occluders)
 
 
 class ShadowBase(object):
@@ -380,7 +366,7 @@ class SphereShadows(ShadowBase):
     def clear(self):
         self.shadow_casters = []
 
-class GenericShadows(ShadowBase):
+class ShadowMapShadows(ShadowBase):
     def __init__(self, target):
         self.target = target
         self.casters = []
@@ -390,12 +376,12 @@ class GenericShadows(ShadowBase):
         self.rebuild_needed = False
         self.nb_updates = 0
 
-    def add_occluder(self, caster, self_shadow):
+    def add_shadow_caster(self, caster, self_shadow):
         if not caster.is_valid(): return
         self.casters.append(caster)
         if not caster in self.old_casters:
             print("Add shadow caster", caster.name, "on", self.target.owner.get_name())
-            shadow_shader =  ShaderShadowMap(caster.name, caster.occluder, caster.shadow_caster, use_bias=self_shadow)
+            shadow_shader =  ShaderShadowMap(caster.name, use_bias=self_shadow)
             self.shader_components[caster] = shadow_shader
             data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow)
             self.target.sources.add_source(data_source)
@@ -431,7 +417,7 @@ class MultiShadows(ShadowBase):
         self.target = target
         self.ring_shadow = None
         self.sphere_shadows = SphereShadows()
-        self.generic_shadows = GenericShadows(target)
+        self.shadow_map_shadows = ShadowMapShadows(target)
         self.rebuild_needed = False
         self.had_sphere_occluder = False
         self.nb_updates = 0
@@ -448,7 +434,7 @@ class MultiShadows(ShadowBase):
         if self.nb_updates == 0:
             self.had_sphere_occluder = not self.sphere_shadows.empty()
             self.sphere_shadows.clear()
-            self.generic_shadows.start_update()
+            self.shadow_map_shadows.start_update()
         self.nb_updates += 1
 
     def end_update(self):
@@ -464,9 +450,9 @@ class MultiShadows(ShadowBase):
                 self.target.sources.add_source(self.sphere_shadows.data_source)
                 print("Add sphere shadow component")
                 self.rebuild_needed = True
-            self.rebuild_needed = self.generic_shadows.end_update() or self.rebuild_needed
+            self.rebuild_needed = self.shadow_map_shadows.end_update() or self.rebuild_needed
 
-    def add_ring_occluder(self, shadow_caster):
+    def add_ring_shadow_caster(self, shadow_caster):
         if self.ring_shadow is None:
             print("Add ring shadow component")
             self.ring_shadow = shadow_caster
@@ -476,8 +462,8 @@ class MultiShadows(ShadowBase):
         elif self.ring_shadow != shadow_caster:
             print("Can not switch ring shadow caster")
 
-    def add_sphere_occluder(self, shadow_caster):
+    def add_sphere_shadow_caster(self, shadow_caster):
         self.sphere_shadows.add_shadow_caster(shadow_caster)
 
-    def add_generic_occluder(self, occluder, self_shadow):
-        self.generic_shadows.add_occluder(occluder, self_shadow)
+    def add_shadow_map_shadow_caster(self, shadow_caster, self_shadow):
+        self.shadow_map_shadows.add_shadow_caster(shadow_caster, self_shadow)
