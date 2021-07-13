@@ -1138,8 +1138,11 @@ class Cosmonium(CosmoniumBase):
             if visible_object.body.lights is None:
                 lights = LightSources()
                 visible_object.body.set_lights(lights)
-            if star is not None and visible_object.body.lights.get_light_for(star.body) is None:
-                visible_object.body.lights.add_light(SurrogateLight(star.body, visible_object.body))
+            light = visible_object.body.lights.get_light_for(star.body)
+            if light is None:
+                light = SurrogateLight(star.body, visible_object.body)
+                visible_object.body.lights.add_light(light)
+            light.update_light()
 
     @pstat
     def find_shadows(self):

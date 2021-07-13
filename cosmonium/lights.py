@@ -31,17 +31,21 @@ class SurrogateLight:
         self.target = target
         self.light_node = None
         self.light_instance = None
+        self.light_direction = None
+        self.light_distance = None
+
+    def create_light(self):
+        self.light_node = DirectionalLight('light_source')
+        #self.light_node.set_direction(LVector3(*self.light_direction))
+        self.light_node.set_color((1, 1, 1, 1))
+        self.light_instance = BaseObject.context.world.attach_new_node(self.light_node)
+
+    def update_light(self):
         self.light_direction = self.target.anchor._local_position - self.source.anchor._local_position
         self.light_distance = self.light_direction.length()
         self.light_direction /= self.light_distance
 
-    def create_light(self):
-        self.light_node = DirectionalLight('light_source')
-        self.light_node.set_direction(LVector3(*self.light_direction))
-        self.light_node.set_color((1, 1, 1, 1))
-        self.light_instance = BaseObject.context.world.attach_new_node(self.light_node)
-
-    def update_light(self, camera_pos):
+    def update_instance(self, camera_pos):
         pos = self.target.get_local_position() - self.light_direction * self.target.get_extend()
         BaseObject.place_pos_only(self.light_instance, pos, camera_pos, self.target.anchor.distance_to_obs, self.target.anchor.vector_to_obs)
         self.light_node.set_direction(LVector3(*self.light_direction))
@@ -84,9 +88,13 @@ class LightSources(DataSource):
                 return light
         return None
 
-    def update_lights(self, camera_pos):
+    def update_lights(self):
         for light in self.lights:
-            light.update_light(camera_pos)
+            light.update_light()
+
+    def update_instances(self, camera_pos):
+        for light in self.lights:
+            light.update_instance(camera_pos)
 
     def apply(self, shape, instance):
         for light in self.lights:
