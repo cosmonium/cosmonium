@@ -150,16 +150,24 @@ class J2000BarycentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
     def __init__(self):
         J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
 
-class RelativeReferenceFrame(AnchorReferenceFrame):
-    def __init__(self, parent_frame, anchor):
-        AnchorReferenceFrame.__init__(self, anchor)
+class RelativeReferenceFrame(ReferenceFrame):
+    def __init__(self, parent_frame, position, orientation):
+        ReferenceFrame.__init__(self)
         self.parent_frame = parent_frame
+        self.frame_position = position
+        self.frame_orientation = orientation
+
+    def get_center(self):
+        return self.parent_frame.get_local_position(self.frame_position)
 
     def get_orientation(self):
-        return self.parent_frame.get_orientation()
+        return self.parent_frame.get_absolute_orientation(self.frame_orientation)
+
+    def get_absolute_reference_point(self):
+        return self.parent_frame.get_absolute_reference_point()
 
     def __str__(self):
-        return AnchorReferenceFrame.__str__(self) + ' ' + str(self.parent_frame)
+        return self.__class__.__name__ + '(' + str(self.parent_frame) + ')'
 
 class CelestialReferenceFrame(AnchorReferenceFrame):
     """

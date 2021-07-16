@@ -225,10 +225,10 @@ PUBLISHED:
   MAKE_TYPE("SynchroneReferenceFrame", AnchorReferenceFrame);
 };
 
-class RelativeReferenceFrame : public AnchorReferenceFrame
+class RelativeReferenceFrame : public ReferenceFrame
 {
 PUBLISHED:
-  RelativeReferenceFrame(ReferenceFrame *parent_frame, AnchorBase *anchor = 0);
+  RelativeReferenceFrame(ReferenceFrame *parent_frame, LPoint3d position, LQuaterniond orientation);
 
 protected:
   RelativeReferenceFrame(RelativeReferenceFrame const &other);
@@ -236,12 +236,18 @@ protected:
 PUBLISHED:
   PT(ReferenceFrame) make_copy(void) const;
 
+  virtual LPoint3d get_center(void);
+
   virtual LQuaterniond get_orientation(void);
+
+  virtual LPoint3d get_absolute_reference_point(void);
 
 protected:
   PT(ReferenceFrame) parent_frame;
+  LPoint3d frame_position;
+  LQuaterniond frame_orientation;
 
-  MAKE_TYPE("RelativeReferenceFrame", AnchorReferenceFrame);
+  MAKE_TYPE("RelativeReferenceFrame", ReferenceFrame);
 };
 
 #endif

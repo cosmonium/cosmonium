@@ -343,15 +343,17 @@ SynchroneReferenceFrame::get_orientation(void)
 
 TypeHandle RelativeReferenceFrame::_type_handle;
 
-RelativeReferenceFrame::RelativeReferenceFrame(ReferenceFrame *parent_frame, AnchorBase *anchor) :
-    AnchorReferenceFrame(anchor),
-    parent_frame(parent_frame)
+RelativeReferenceFrame::RelativeReferenceFrame(ReferenceFrame *parent_frame, LPoint3d position, LQuaterniond orientation) :
+    parent_frame(parent_frame),
+    frame_position(position),
+    frame_orientation(orientation)
 {
 }
 
 RelativeReferenceFrame::RelativeReferenceFrame(RelativeReferenceFrame const &other) :
-    AnchorReferenceFrame(other.anchor),
-    parent_frame(other.parent_frame)
+    parent_frame(other.parent_frame),
+    frame_position(frame_position),
+    frame_orientation(frame_orientation)
 {
 }
 
@@ -361,9 +363,21 @@ RelativeReferenceFrame::make_copy(void) const
   return new RelativeReferenceFrame(*this);
 }
 
+LPoint3d
+RelativeReferenceFrame::get_center(void)
+{
+  return parent_frame->get_local_position(frame_position);
+}
+
 LQuaterniond
 RelativeReferenceFrame::get_orientation(void)
 {
-  return parent_frame->get_orientation();
+  return parent_frame->get_absolute_orientation(frame_orientation);
 }
 
+
+LPoint3d
+RelativeReferenceFrame::get_absolute_reference_point(void)
+{
+  return parent_frame->get_absolute_reference_point();
+}
