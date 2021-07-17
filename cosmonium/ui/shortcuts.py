@@ -20,6 +20,8 @@
 
 from direct.showbase.DirectObject import DirectObject
 
+import sys
+
 class Shortcuts(DirectObject):
     keymap = {
         'control-q': 'exit',
@@ -169,6 +171,14 @@ class Shortcuts(DirectObject):
         if not base.app_config.test_start:
             base.buttonThrowers[0].node().set_keystroke_event('keystroke')
         self.accept('keystroke', self.keystroke_event)
+
+        if sys.platform == 'darwin':
+            modified_keymap = {}
+            for (key, event) in self.keymap.items():
+                key = key.replace('control', 'meta')
+                modified_keymap[key] = event
+            Shortcuts.keymap = modified_keymap
+
         if Shortcuts.eventmap is None:
             Shortcuts.eventmap = {Shortcuts.keymap[key]: key for key in reversed(sorted(Shortcuts.keymap.keys()))}
         for (key, event) in self.keymap.items():
