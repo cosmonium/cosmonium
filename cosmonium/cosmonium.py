@@ -45,7 +45,7 @@ from .lights import SurrogateLight, LightSources
 from .universe import Universe
 from .annotations import Grid
 from .astro.frame import BodyReferenceFrame
-from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
+from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
 #TODO: from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
@@ -936,9 +936,9 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.set_frame(RelativeReferenceFrame(body.anchor.orbit.frame, body.anchor))
+            self.ship.set_frame(OrbitReferenceFrame(body.anchor))
             self.update_extra(self.follow)
-            self.observer.set_frame(RelativeReferenceFrame(body.anchor.orbit.frame, body.anchor))
+            self.observer.set_frame(OrbitReferenceFrame(body.anchor))
         else:
             self.ship.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())

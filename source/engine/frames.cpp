@@ -20,6 +20,8 @@
 #include "frames.h"
 #include "anchors.h"
 #include "astro.h"
+#include "orbits.h"
+#include "dcast.h"
 
 TypeHandle ReferenceFrame::_type_handle;
 
@@ -265,6 +267,30 @@ LQuaterniond
 CelestialReferenceFrame::get_orientation(void)
 {
   return orientation;
+}
+
+TypeHandle OrbitReferenceFrame::_type_handle;
+
+OrbitReferenceFrame::OrbitReferenceFrame(AnchorBase *anchor) :
+    AnchorReferenceFrame(anchor)
+{
+}
+
+OrbitReferenceFrame::OrbitReferenceFrame(OrbitReferenceFrame const &other) :
+    AnchorReferenceFrame(other.anchor)
+{
+}
+
+PT(ReferenceFrame)
+OrbitReferenceFrame::make_copy(void) const
+{
+  return new OrbitReferenceFrame(*this);
+}
+
+LQuaterniond
+OrbitReferenceFrame::get_orientation(void)
+{
+  return DCAST(StellarAnchor, anchor)->get_orbit()->get_frame()->get_orientation();
 }
 
 TypeHandle EquatorialReferenceFrame::_type_handle;

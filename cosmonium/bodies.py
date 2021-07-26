@@ -27,7 +27,7 @@ from .foundation import VisibleObject
 from .shapes import SphereShape, ScaledSphereShape
 from .surfaces import EllipsoidFlatSurface
 from .appearances import Appearance
-from .astro.frame import RelativeReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from .astro.frame import OrbitReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from .astro.orbits import LocalFixedPosition
 from .astro.rotations import FixedRotation, UnknownRotation
 from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, temp_to_radius
@@ -94,7 +94,7 @@ class StellarBody(StellarObject):
             self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
             self.parent.add_child_fast(self.system)
             #system_orbit.set_body(self.system)
-            orbit = LocalFixedPosition(frame=RelativeReferenceFrame(system_orbit.frame, self.system.anchor), frame_position=LPoint3d())
+            orbit = LocalFixedPosition(frame=OrbitReferenceFrame(self.system.anchor), frame_position=LPoint3d())
             self.set_orbit(orbit)
             if isinstance(self, Star):
                 self.system.add_child_star_fast(self)

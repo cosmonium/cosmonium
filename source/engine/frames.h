@@ -177,6 +177,22 @@ protected:
   MAKE_TYPE("CelestialReferenceFrame", AnchorReferenceFrame);
 };
 
+class OrbitReferenceFrame : public AnchorReferenceFrame
+{
+PUBLISHED:
+  OrbitReferenceFrame(AnchorBase *anchor = 0);
+
+protected:
+  OrbitReferenceFrame(OrbitReferenceFrame const &other);
+
+PUBLISHED:
+  PT(ReferenceFrame) make_copy(void) const;
+
+  virtual LQuaterniond get_orientation(void);
+
+  MAKE_TYPE("OrbitReferenceFrame", AnchorReferenceFrame);
+};
+
 class EquatorialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:

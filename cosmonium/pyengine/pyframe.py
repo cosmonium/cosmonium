@@ -188,6 +188,11 @@ j2000GalacticReferenceFrame = CelestialReferenceFrame(right_ascension=units.J200
                                                       longitude_at_node=units.J2000_GalacticNode
                                                       )
 
+class OrbitReferenceFrame(AnchorReferenceFrame):
+    def get_orientation(self):
+        rot = self.anchor.orbit.frame.get_orientation()
+        return rot
+
 class EquatorialReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.get_equatorial_rotation()
