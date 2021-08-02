@@ -407,7 +407,7 @@ class ShadowMapShadows(ShadowBase):
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
                 del self.shader_components[caster]
                 data_source = self.data_sources[caster]
-                self.target.lights.remove_source(data_source)
+                self.target.sources.remove_source(data_source)
                 self.rebuild_needed = True
             self.old_casters = []
         return self.rebuild_needed
@@ -443,7 +443,7 @@ class MultiShadows(ShadowBase):
             if self.sphere_shadows.empty() and self.had_sphere_occluder:
                 print("Remove sphere shadow component")
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.sphere_shadows.shader_component)
-                self.target.lights.remove_source(self.sphere_shadows.data_source)
+                self.target.sources.remove_source(self.sphere_shadows.data_source)
                 self.rebuild_needed = True
             elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
                 self.target.shader.add_shadows(self.sphere_shadows.shader_component)
