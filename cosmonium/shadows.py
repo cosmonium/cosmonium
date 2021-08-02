@@ -300,6 +300,9 @@ class SphereShadowDataSource(DataSource):
         self.oblate_occluder = oblate_occluder
 
     def update(self, shape, instance):
+        if len(self.shadow_casters.shadow_casters) == 0:
+            print("ERROR: No lights for", shape, shape.owner.get_name())
+            return
         self.light = self.shadow_casters.shadow_casters[0].light
         observer = shape.owner.context.observer._position
         scale = shape.owner.anchor.scene_scale_factor
@@ -348,13 +351,15 @@ class ShadowBase(object):
     pass
 
 class SphereShadows(ShadowBase):
-    def __init__(self):
+    def __init__(self, target):
+        self.target = target
         self.shadow_casters = []
         self.max_occluders = 4
         self.far_sun = True
         self.oblate_occluder = True
         self.shader_component = ShaderSphereShadow(self.max_occluders, self.far_sun, self.oblate_occluder)
         self.data_source = SphereShadowDataSource(self, self.max_occluders, self.far_sun, self.oblate_occluder)
+        self.nb_updates = 0
 
     def add_shadow_caster(self, shadow_caster):
         if not shadow_caster in self.shadow_casters:
@@ -363,8 +368,32 @@ class SphereShadows(ShadowBase):
     def empty(self):
         return len(self.shadow_casters) == 0
 
-    def clear(self):
+    def clear_shadows(self):
+        if len(self.shadow_casters) > 0:
+            self.target.sources.remove_source(self.data_source)
         self.shadow_casters = []
+
+    def start_update(self):
+        if self.nb_updates == 0:
+            self.had_sphere_occluder = not self.empty()
+            self.shadow_casters = []
+            self.rebuild_needed = False
+        self.nb_updates += 1
+
+    def end_update(self):
+        self.nb_updates -= 1
+        if self.nb_updates == 0:
+            if self.empty() and self.had_sphere_occluder:
+                print("Remove sphere shadow component on", self.target.owner.get_name())
+                self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.shader_component)
+                self.target.sources.remove_source(self.data_source)
+                self.rebuild_needed = True
+            elif not self.had_sphere_occluder and not self.empty():
+                self.target.shader.add_shadows(self.shader_component)
+                self.target.sources.add_source(self.data_source)
+                print("Add sphere shadow component on", self.target.owner.get_name())
+                self.rebuild_needed = True
+        return self.rebuild_needed
 
 class ShadowMapShadows(ShadowBase):
     def __init__(self, target):
@@ -425,16 +454,16 @@ class MultiShadows(ShadowBase):
     def __init__(self, target):
         self.target = target
         self.ring_shadow = None
-        self.sphere_shadows = SphereShadows()
+        self.sphere_shadows = SphereShadows(target)
         self.shadow_map_shadows = ShadowMapShadows(target)
         self.rebuild_needed = False
         self.had_sphere_occluder = False
         self.nb_updates = 0
 
     def clear_shadows(self):
+        self.sphere_shadows.clear_shadows()
         self.shadow_map_shadows.clear_shadows()
         self.ring_shadow = None
-        self.sphere_shadows.clear()
         self.shadow_map = None
         self.target.shader.remove_all_shadows(self.target.shape, self.target.appearance)
         self.rebuild_needed = True
@@ -443,24 +472,16 @@ class MultiShadows(ShadowBase):
     def start_update(self):
         if self.nb_updates == 0:
             self.had_sphere_occluder = not self.sphere_shadows.empty()
-            self.sphere_shadows.clear()
+            self.sphere_shadows.start_update()
             self.shadow_map_shadows.start_update()
         self.nb_updates += 1
 
     def end_update(self):
         self.nb_updates -= 1
         if self.nb_updates == 0:
-            if self.sphere_shadows.empty() and self.had_sphere_occluder:
-                print("Remove sphere shadow component")
-                self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.sphere_shadows.shader_component)
-                self.target.sources.remove_source(self.sphere_shadows.data_source)
-                self.rebuild_needed = True
-            elif not self.had_sphere_occluder and not self.sphere_shadows.empty():
-                self.target.shader.add_shadows(self.sphere_shadows.shader_component)
-                self.target.sources.add_source(self.sphere_shadows.data_source)
-                print("Add sphere shadow component")
-                self.rebuild_needed = True
-            self.rebuild_needed = self.shadow_map_shadows.end_update() or self.rebuild_needed
+            shadow_map_rebuild_needed = self.shadow_map_shadows.end_update()
+            sphere_shadows_rebuild_needed = self.sphere_shadows.end_update()
+            self.rebuild_needed = shadow_map_rebuild_needed or sphere_shadows_rebuild_needed
 
     def add_ring_shadow_caster(self, shadow_caster):
         if self.ring_shadow is None:
