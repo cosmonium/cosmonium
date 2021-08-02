@@ -501,7 +501,9 @@ class ShapeObject(VisibleObject):
         self.shadows.clear_shadows()
         self.appearance.clear_all()
         self.shape.remove_instance()
-        self.instance = None
+        if self.instance is not None:
+            self.instance.remove_node()
+            self.instance = None
         self.instance_ready = False
         if self.context.observer.has_scattering:
             self.context.observer.scattering.remove_attenuated_object(self)
