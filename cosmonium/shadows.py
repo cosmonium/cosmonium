@@ -391,6 +391,14 @@ class ShadowMapShadows(ShadowBase):
         else:
             self.old_casters.remove(caster)
 
+    def clear_shadows(self):
+        for caster in self.old_casters:
+            data_source = self.data_sources[caster]
+            self.target.sources.remove_source(data_source)
+        self.casters = []
+        self.shader_components = {}
+        self.data_sources = {}
+
     def start_update(self):
         if self.nb_updates == 0:
             self.old_casters = self.casters
@@ -408,6 +416,7 @@ class ShadowMapShadows(ShadowBase):
                 del self.shader_components[caster]
                 data_source = self.data_sources[caster]
                 self.target.sources.remove_source(data_source)
+                del self.data_sources[caster]
                 self.rebuild_needed = True
             self.old_casters = []
         return self.rebuild_needed
@@ -423,6 +432,7 @@ class MultiShadows(ShadowBase):
         self.nb_updates = 0
 
     def clear_shadows(self):
+        self.shadow_map_shadows.clear_shadows()
         self.ring_shadow = None
         self.sphere_shadows.clear()
         self.shadow_map = None
