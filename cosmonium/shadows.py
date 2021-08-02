@@ -463,6 +463,7 @@ class MultiShadows(ShadowBase):
     def clear_shadows(self):
         self.sphere_shadows.clear_shadows()
         self.shadow_map_shadows.clear_shadows()
+        self.target.sources.remove_source_by_name('ring-shadow')
         self.ring_shadow = None
         self.shadow_map = None
         self.target.shader.remove_all_shadows(self.target.shape, self.target.appearance)
