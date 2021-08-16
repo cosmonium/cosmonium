@@ -262,6 +262,10 @@ def check_and_create_rendering_buffers(showbase):
     else:
         float_depth = False
         depth_bits = 1
+    if False:
+        float_depth = False
+        depth_bits = 1
+        depth_buffer = Texture()
     if settings.render_scene_to_float:
         if settings.floating_point_buffer:
             rgba_bits = (32, 32, 32, 32)

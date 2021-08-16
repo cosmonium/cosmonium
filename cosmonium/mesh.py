@@ -50,3 +50,6 @@ async def load_model(pattern, context=defaultDirContext):
 
 async def load_panda_model(pattern):
     return await loader.loadModel(pattern, blocking=False)
+
+def load_panda_model_sync(pattern):
+    return loader.loadModel(pattern)

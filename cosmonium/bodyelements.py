@@ -20,6 +20,7 @@
 
 from panda3d.core import CullFaceAttrib
 from panda3d.core import DepthOffsetAttrib
+from panda3d.core import LQuaternion
 
 from .appearances import Appearance
 from .shapes import ShapeObject, SphereShape, RingShape
@@ -49,6 +50,11 @@ class Ring(ShapeObject):
 
     def do_create_shadow_caster_for(self, light_source):
         return RingShadowCaster(light_source, self)
+
+    def update_instance(self, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, camera_pos, camera_rot)
+        if not self.instance_ready: return
+        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
@@ -146,11 +152,11 @@ class Atmosphere(ShapeObject):
         if self.get_pixel_height() < 1.0:
             self.visible = False
 
-    async def create_instance(self):
+    async def create_instance(self, scene_anchor):
         #TODO: Find a better way to retrieve ellipticity
         scale = self.body.surface.get_scale() / self.body_radius
         self.set_scale(scale * self.radius)
-        await ShapeObject.create_instance(self)
+        await ShapeObject.create_instance(self, scene_anchor)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
@@ -193,6 +199,11 @@ class Atmosphere(ShapeObject):
     def update_user_parameters(self):
         ShapeObject.update_user_parameters(self)
         self.update_scattering()
+
+    def update_instance(self, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, camera_pos, camera_rot)
+        if not self.instance_ready: return
+        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
     def remove_instance(self):
         ShapeObject.remove_instance(self)
@@ -239,6 +250,8 @@ class Clouds(EllipsoidFlatSurface):
 
     def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
+        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+
         inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             if inside:

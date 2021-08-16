@@ -21,7 +21,6 @@
 from panda3d.core import LVector3
 from panda3d.core import DirectionalLight
 
-from .foundation import BaseObject
 from .datasource import DataSource
 from . import settings
 
@@ -38,7 +37,9 @@ class SurrogateLight:
         self.light_node = DirectionalLight('light_source')
         #self.light_node.set_direction(LVector3(*self.light_direction))
         self.light_node.set_color((1, 1, 1, 1))
-        self.light_instance = BaseObject.context.world.attach_new_node(self.light_node)
+
+    def create_light_node(self):
+        self.light_instance = self.target.scene_anchor.unshifted_instance.attach_new_node(self.light_node)
 
     def update_light(self):
         self.light_direction = self.target.anchor._local_position - self.source.anchor._local_position
@@ -46,8 +47,10 @@ class SurrogateLight:
         self.light_direction /= self.light_distance
 
     def update_instance(self, camera_pos):
-        pos = self.target.get_local_position() - self.light_direction * self.target.get_extend()
-        BaseObject.place_pos_only(self.light_instance, pos, camera_pos, self.target.anchor.distance_to_obs, self.target.anchor.vector_to_obs)
+        if self.light_instance is None:
+            self.create_light_node()
+        pos = - self.light_direction * self.target.get_extend()
+        self.light_instance.set_pos(*pos)
         self.light_node.set_direction(LVector3(*self.light_direction))
 
     def remove_light(self):

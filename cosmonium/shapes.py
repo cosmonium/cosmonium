@@ -347,12 +347,18 @@ class ShapeObject(VisibleObject):
     #TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
-            self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
+            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
 
-    async def create_instance(self):
+    async def create_instance(self, scene_anchor):
         self.instance = NodePath('shape')
         #TODO: Temporarily here until foundation.show() is corrected
-        self.instance.reparent_to(self.context.world)
+        if scene_anchor.instance is None:
+            print("NO INSTANCE FOR", self, self.owner.get_name())
+            return
+        if self.shape.patchable:
+            self.instance.reparent_to(scene_anchor.shifted_instance)
+        else:
+            self.instance.reparent_to(scene_anchor.unshifted_instance)
         shape_instance = await self.shape.create_instance()
         if shape_instance is None:
             print("ERROR: Could not create the shape instance")
@@ -373,6 +379,7 @@ class ShapeObject(VisibleObject):
         #TODO: Should be moved to shape_task
         if self.context.observer.has_scattering:
             self.context.observer.scattering.add_attenuated_object(self)
+        self.instance.set_scale(self.get_scale())
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.configure_render_order()
@@ -465,6 +472,7 @@ class ShapeObject(VisibleObject):
     def update_shader(self):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.apply(self.shape, self.appearance, self.shape.instance)
+            self.sources.apply_shape_data(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
         if self.shape.update_lod(self.context.observer.get_camera_pos(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
@@ -474,16 +482,7 @@ class ShapeObject(VisibleObject):
 
     def update_instance(self, camera_pos, camera_rot):
         if not self.instance_ready: return
-        self.place_instance(self.instance, self.parent)
         self.shape.update_instance(camera_pos, camera_rot)
-        if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
-            #TODO: Should be done in place_instance, but that would make several if...
-            self.instance.setPos(*(self.body.anchor.scene_position + self.body.world_body_center_offset))
-        if self.shape.patchable and settings.offset_body_center and self.body is not None:
-            #In case of oblate shape, the offset can not be used directly to retrieve the body center
-            #The scale must be applied to the offset to retrieve the real center
-            offset = self.instance.getMat().xform(LVector3(*self.body.model_body_center_offset))
-            self.body.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
             self.shape.place_patches(self.body)

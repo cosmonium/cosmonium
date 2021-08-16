@@ -95,7 +95,7 @@ class GalaxyAppearance(AppearanceBase):
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             if shape.is_flat():
-                axis = owner.anchor.scene_orientation.xform(LVector3d.up())
+                axis = owner.anchor._orientation.xform(LVector3d.up())
                 cosa = abs(axis.dot(owner.anchor.vector_to_obs))
                 coef = max(self.min_coef, sqrt(cosa))
             else:
@@ -578,7 +578,7 @@ class GalaxyDataSource(DataSource):
         instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
 
     def update(self, shape, instance):
-        instance.setShaderInput("scale_factor", shape.owner.anchor.scene_scale_factor)
+        instance.setShaderInput("scale_factor", shape.owner.scene_anchor.scene_scale_factor)
 
 class GalaxyPointControl(PointControl):
     use_vertex = True

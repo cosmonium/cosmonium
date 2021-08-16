@@ -108,8 +108,6 @@ PUBLISHED:
 
   virtual void update_app_magnitude(AnchorBase *star = 0) = 0;
 
-  virtual void update_scene(Observer &observer) = 0;
-
 public:
   PyObject *ref_object;
   LColor point_color;
@@ -137,15 +135,10 @@ PUBLISHED:
   double _albedo;
 
   //Scene parameters
-  bool support_offset_body_center;
   LPoint3d rel_position;
   double distance_to_obs;
   LVector3d  vector_to_obs;
   double visible_size;
-  LPoint3d scene_position;
-  double scene_distance;
-  LQuaterniond scene_orientation;
-  double scene_scale_factor;
 
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };
@@ -199,8 +192,6 @@ PUBLISHED:
 
   virtual void update_app_magnitude(AnchorBase *star = 0);
 
-  virtual void update_scene(Observer &observer);
-
   //TODO: Temporary until Python code is aligned
   MAKE_PROPERTY(_global_position, get_absolute_reference_point);
   MAKE_PROPERTY(_local_position, get_local_position);
@@ -209,9 +200,6 @@ PUBLISHED:
 
 public:
   double get_luminosity(AnchorBase *star);
-
-  void
-  calc_scene_params(Observer &observer, LPoint3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs);
 
 protected:
   PT(OrbitBase) orbit;

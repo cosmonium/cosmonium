@@ -23,7 +23,7 @@ from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from .shaders import ShaderSphereSelfShadow
 
 from math import floor, ceil
-from panda3d.core import LVector3
+from panda3d.core import LVector3, LQuaternion
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -90,6 +90,11 @@ class Surface(ShapeObject):
     def local_position_to_shape_coord(self, position):
         (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
+
+    def update_instance(self, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, camera_pos, camera_rot)
+        if not self.instance_ready: return
+        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
 class EllipsoidSurface(Surface):
     def __init__(self, name=None, category=None, resolution=None, attribution=None,

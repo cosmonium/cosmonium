@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d
+from panda3d.core import LPoint3d, LQuaternion, LColor, LVector3, LVector3d,OmniBoundingVolume
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
@@ -32,7 +32,7 @@ from .astro import units
 from .bodyclass import bodyClasses
 from .shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
 from .appearances import ModelAppearance
-from .mesh import load_panda_model
+from .mesh import load_panda_model_sync
 from .utils import srgb_to_linear
 from . import settings
 
@@ -71,6 +71,7 @@ class Orbit(VisibleObject):
     selected_color = LColor(1.0, 0.0, 0.0, 1.0)
     appearance = None
     shader = None
+    default_camera_mask = VisibleObject.DefaultCameraMask
 
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
@@ -153,7 +154,7 @@ class Orbit(VisibleObject):
         self.instance.node().setPythonTag('owner', self.body)
         if settings.color_picking and self.body.oid_color is not None:
             self.instance.set_shader_input("color_picking", self.body.oid_color)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparentTo(self.body.parent.scene_anchor.unshifted_instance)
         if self.color is None:
             self.color = self.body.get_orbit_color()
         self.instance.setColor(srgb_to_linear(self.color * self.fade))
@@ -161,6 +162,10 @@ class Orbit(VisibleObject):
         if self.shader is None:
             self.create_shader()
         self.shader.apply(self, self.appearance, self.instance)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
 
     def update_geom(self):
         geom = self.node.modify_geom(0)
@@ -181,7 +186,7 @@ class Orbit(VisibleObject):
             vwriter.setData3f(*pos)
 
     def check_visibility(self, frustum, pixel_size):
-        if self.body.parent.anchor.visible and self.body.shown and self.orbit:
+        if self.body.parent.anchor.visible and self.body.parent.scene_anchor.instance is not None and self.body.shown and self.orbit:
             distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)
@@ -194,13 +199,6 @@ class Orbit(VisibleObject):
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, camera_rot):
-        if self.instance:
-            self.place_instance_params(self.instance,
-                                       self.body.parent.anchor.scene_position,
-                                       self.body.parent.anchor.scene_scale_factor,
-                                       LQuaternion())
-
     def update_user_parameters(self):
         if self.instance is not None:
             self.update_geom()
@@ -208,6 +206,8 @@ class Orbit(VisibleObject):
 class RotationAxis(VisibleObject):
     default_shown = False
     ignore_light = True
+    default_camera_mask = VisibleObject.DefaultCameraMask
+
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-axis')
         self.body = body
@@ -237,7 +237,12 @@ class RotationAxis(VisibleObject):
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
         self.instance.setColor(srgb_to_linear(self.body.get_orbit_color()))
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparentTo(self.body.scene_anchor.unshifted_instance)
+        self.instance.set_light_off(1)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
 
     def check_settings(self):
         self.set_shown(settings.show_rotation_axis)
@@ -254,8 +259,9 @@ class RotationAxis(VisibleObject):
             self.visible = False
 
     def update_instance(self, camera_pos, camera_rot):
-        if self.instance:
-            self.place_instance(self.instance, self.parent)
+        if self.instance is not None:
+            self.instance.set_scale(*self.get_scale())
+            self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
     def get_scale(self):
         return self.body.surface.get_scale()
@@ -263,6 +269,7 @@ class RotationAxis(VisibleObject):
 class ReferenceAxis(VisibleObject):
     default_shown = False
     ignore_light = True
+    default_camera_mask = VisibleObject.DefaultCameraMask
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-axis')
         self.body = body
@@ -272,13 +279,20 @@ class ReferenceAxis(VisibleObject):
         self.set_shown(settings.show_reference_axis)
 
     def create_instance(self):
-        self.instance = load_panda_model(self.model)
-        self.instance.reparentTo(self.context.annotation)
+        if self.instance is not None: return self.instance
+        self.instance = load_panda_model_sync(self.model)
+        self.instance.reparent_to(self.body.scene_anchor.unshifted_instance)
+        self.instance.set_light_off(1)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
         return self.instance
 
     def update_instance(self, camera_pos, camera_rot):
         if self.instance:
-            self.place_instance(self.instance, self.parent)
+            self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+            self.instance.set_scale(*self.get_scale())
 
     def get_scale(self):
         return self.body.surface.get_scale() / 5.0

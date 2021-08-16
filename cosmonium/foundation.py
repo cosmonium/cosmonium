@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor, DrawMask
+from panda3d.core import LVecBase3, NodePath, LColor, DrawMask
 from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
@@ -30,8 +30,6 @@ from .appearances import ModelAppearance
 from .shaders import FlatLightingModel, BasicShader
 from .utils import TransparencyBlend
 from . import settings
-
-from math import log
 
 class BaseObject(object):
     context = None
@@ -118,54 +116,6 @@ class BaseObject(object):
     def update_shader(self):
         pass
 
-    @classmethod
-    def get_real_pos(cls, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        return cls.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
-
-    @classmethod
-    def calc_scene_params(cls, rel_position, abs_position, distance_to_obs, vector_to_obs):
-        if settings.camera_at_origin:
-            obj_position = rel_position
-        else:
-            obj_position = abs_position
-        midPlane = cls.context.observer.midPlane
-        distance_to_obs /= settings.scale
-        if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = obj_position / settings.scale
-            distance = distance_to_obs
-            scale_factor = 1.0 / settings.scale
-        elif settings.use_inv_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - midPlane / distance_to_obs)
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        elif settings.use_log_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - log(midPlane / distance_to_obs + 1, 2))
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        return position, distance, scale_factor
-
-    @classmethod
-    def place_pos_only(cls, instance, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        position, distance, scale_factor = cls.get_real_pos(abs_position, camera_pos, distance_to_obs, vector_to_obs)
-        instance.setPos(*position)
-
-    def place_instance(self, instance, parent):
-        instance.setPos(*self.body.anchor.scene_position)
-        instance.setScale(self.get_scale() * self.body.anchor.scene_scale_factor)
-        instance.setQuat(LQuaternion(*self.body.anchor.scene_orientation))
-
-    def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
-        instance.setPos(*scene_position)
-        instance.setScale(self.get_scale() * scene_scale_factor)
-        instance.setQuat(LQuaternion(*scene_orientation))
 
 class VisibleObject(BaseObject):
     ignore_light = False

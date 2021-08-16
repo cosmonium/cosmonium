@@ -185,9 +185,9 @@ class ShadowMapDataSource(DataSource):
         #TODO: Shadow parameters should not be retrieved like that
         appearance = shape.parent.appearance
         if self.use_bias:
-            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
             #print(normal_bias, slope_bias, depth_bias, shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
             instance.set_shader_input('%s_shadow_normal_bias' % self.name, normal_bias)
             instance.set_shader_input('%s_shadow_slope_bias' % self.name, slope_bias)
@@ -248,7 +248,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def update(self):
         ShadowMapShadowCaster.update(self)
-        self.shadow_map.set_pos(self.light.light_instance.get_pos())
+        self.shadow_map.set_pos(self.light.light_instance.get_pos(render))
 
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)
@@ -271,14 +271,14 @@ class RingShadowDataSource(DataSource):
         (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is not None:
             instance.set_shader_input('shadow_ring_tex',texture)
-        normal = shape.owner.anchor.scene_orientation.xform(LVector3d.up())
+        normal = shape.owner.anchor._orientation.xform(LVector3d.up())
         instance.set_shader_input('ring_normal', normal)
-        instance.set_shader_input('ring_inner_radius', self.ring.inner_radius * shape.owner.anchor.scene_scale_factor)
-        instance.set_shader_input('ring_outer_radius', self.ring.outer_radius * shape.owner.anchor.scene_scale_factor)
+        instance.set_shader_input('ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor)
+        instance.set_shader_input('ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor)
         if shape.owner.support_offset_body_center and settings.offset_body_center:
-            body_center = shape.owner.anchor.scene_position + shape.owner.projected_world_body_center_offset
+            body_center = shape.owner.scene_anchor.scene_position + shape.owner.scene_anchor.world_body_center_offset
         else:
-            body_center = shape.owner.anchor.scene_position
+            body_center = shape.owner.scene_anchor.scene_position
         instance.set_shader_input('body_center', body_center)
 
 
@@ -305,7 +305,7 @@ class SphereShadowDataSource(DataSource):
             return
         self.light = self.shadow_casters.shadow_casters[0].light
         observer = shape.owner.context.observer._position
-        scale = shape.owner.anchor.scene_scale_factor
+        scale = shape.owner.scene_anchor.scene_scale_factor
         if self.far_sun:
             vector = shape.owner.anchor._local_position - self.light.source.anchor._local_position
             distance_to_light_source = vector.length()

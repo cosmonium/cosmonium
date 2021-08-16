@@ -66,9 +66,6 @@ class AnchorBase():
         self.distance_to_obs = 0
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
-        self.scene_position = LPoint3d()
-        self.scene_orientation = LQuaterniond()
-        self.scene_scale_factor = 0.0
 
     def set_rebuild_needed(self):
         self.rebuild_needed = True
@@ -130,9 +127,6 @@ class AnchorBase():
         self.update_observer(observer)
 
     def update_app_magnitude(self, star):
-        pass
-
-    def update_scene(self, observer):
         pass
 
 class CartesianAnchor(AnchorBase):
@@ -216,16 +210,6 @@ class StellarAnchor(AnchorBase):
         else:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
         self.visible = self.visible and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
-
-    def update_scene(self, observer):
-        if self.body.support_offset_body_center and self.visible and self.resolved and settings.offset_body_center:
-            self.scene_rel_position = self.rel_position + self.vector_to_obs * self._height_under
-            distance_to_obs = self.distance_to_obs - self._height_under
-        else:
-            self.scene_rel_position = self.rel_position
-            distance_to_obs = self.distance_to_obs
-        self.scene_position, self.scene_distance, self.scene_scale_factor = BaseObject.calc_scene_params(self.scene_rel_position, self._position, distance_to_obs, self.vector_to_obs)
-        self.scene_orientation = self._orientation
 
 class FixedStellarAnchor(StellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):

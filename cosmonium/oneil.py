@@ -493,14 +493,14 @@ class ONeilScatteringDataSourceBase(DataSource):
             print("No light source for scattering")
             return
         light_source = body.lights.lights[0].source
-        factor = 1.0 / shape.parent.body.anchor.scene_scale_factor
+        factor = 1.0 / shape.parent.body.scene_anchor.scene_scale_factor
         inner_radius = self.parameters.body_radius
 
         #TODO: We should get the oblateness correctly
         body_scale = self.parameters.body.surface.get_scale()
         descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
         rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.parent.body.anchor.scene_orientation)
+        orientation = LQuaternion(*shape.parent.body.anchor._orientation)
         orientation.extract_to_matrix(rotation_mat)
         rotation_mat_inv = LMatrix4()
         rotation_mat_inv.invert_from(rotation_mat)

@@ -88,15 +88,10 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _height_under(0.0),
   _albedo(0.0),
   //Scene parameters
-  support_offset_body_center(true),
   rel_position(0.0),
   distance_to_obs(0.0),
   vector_to_obs(0.0),
-  visible_size(0.0),
-  scene_position(0.0),
-  scene_distance(0.0),
-  scene_orientation(LQuaterniond::ident_quat()),
-  scene_scale_factor(0.0)
+  visible_size(0.0)
 {
   Py_INCREF(ref_object);
 }
@@ -354,61 +349,6 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
     _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
   }
   visible = visible && (visible_size > 1.0 || _app_magnitude < settings.lowest_app_magnitude);
-}
-
-void
-StellarAnchor::calc_scene_params(Observer &observer, LPoint3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs)
-{
-    LPoint3d obj_position;
-    if (settings.camera_at_origin) {
-        obj_position = rel_position;
-    } else {
-        obj_position = abs_position;
-    }
-    distance_to_obs /= settings.scale;
-    LPoint3d position;
-    double distance;
-    double scale_factor;
-    if (!settings.use_depth_scaling || distance_to_obs <= observer.midPlane) {
-        position = obj_position / settings.scale;
-        distance = distance_to_obs;
-        scale_factor = 1.0 / settings.scale;
-    } else if (settings.use_inv_scaling) {
-        LVector3d not_scaled = -vector_to_obs * observer.midPlane;
-        double scaled_distance = observer.midPlane * (1 - observer.midPlane / distance_to_obs);
-        LVector3d scaled = -vector_to_obs * scaled_distance;
-        position = not_scaled + scaled;
-        distance = observer.midPlane + scaled_distance;
-        double ratio = distance / distance_to_obs;
-        scale_factor = ratio / settings.scale;
-    } else if (settings.use_log_scaling) {
-        LVector3d not_scaled = -vector_to_obs * observer.midPlane;
-        double scaled_distance = observer.midPlane * (1 - log2(observer.midPlane / distance_to_obs + 1));
-        LVector3d scaled = -vector_to_obs * scaled_distance;
-        position = not_scaled + scaled;
-        distance = observer.midPlane + scaled_distance;
-        double ratio = distance / distance_to_obs;
-        scale_factor = ratio / settings.scale;
-    }
-    scene_position = position;
-    scene_distance =  distance;
-    scene_scale_factor = scale_factor;
-}
-
-void
-StellarAnchor::update_scene(Observer &observer)
-{
-  LPoint3d scene_rel_position;
-  double scene_rel_distance_to_obs;
-  if (support_offset_body_center && visible && resolved && settings.offset_body_center) {
-      scene_rel_position = rel_position + vector_to_obs * _height_under;
-      scene_rel_distance_to_obs = distance_to_obs - _height_under;
-  } else {
-      scene_rel_position = rel_position;
-      scene_rel_distance_to_obs = distance_to_obs;
-  }
-  calc_scene_params(observer, scene_rel_position, _local_position, scene_rel_distance_to_obs, vector_to_obs);
-  scene_orientation = _orientation;
 }
 
 TypeHandle SystemAnchor::_type_handle;

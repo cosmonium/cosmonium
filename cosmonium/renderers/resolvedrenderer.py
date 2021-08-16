@@ -40,10 +40,7 @@ class ResolvedRenderer(object):
             #TODO: this will update the body's components
             body.update_obs(observer)
             body.check_visibility(frustum, pixel_size)
-            if isinstance(body, StellarSystem):
-                body.check_and_update_instance_children(camera_pos, orientation)
-            else:
-                body.check_and_update_instance(camera_pos, orientation)
+            body.check_and_update_instance(camera_pos, orientation)
         for body in self.old_bodies:
             if body not in self.bodies:
                 body.remove_instance()

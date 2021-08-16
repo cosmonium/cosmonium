@@ -41,10 +41,10 @@ class Renderer:
                 self.orbits_renderer.add_orbit(orbit_to_render)
         for object_to_render in self.objects:
             if object_to_render.anchor.visible:
-                self.points_renderer.add_point(object_to_render.anchor.point_color, object_to_render.anchor.scene_position, object_to_render.anchor.visible_size, object_to_render.anchor._app_magnitude, object_to_render.oid_color)
+                self.points_renderer.add_point(object_to_render.anchor.point_color, object_to_render.scene_anchor.scene_position, object_to_render.anchor.visible_size, object_to_render.anchor._app_magnitude, object_to_render.oid_color)
                 if object_to_render.has_resolved_halo:
-                    self.points_renderer.add_halo(object_to_render.anchor.point_color, object_to_render.anchor.scene_position, object_to_render.anchor.visible_size, object_to_render.anchor._app_magnitude, object_to_render.oid_color)
-                if object_to_render.anchor.resolved and not object_to_render.virtual_object:
+                    self.points_renderer.add_halo(object_to_render.anchor.point_color, object_to_render.scene_anchor.scene_position, object_to_render.anchor.visible_size, object_to_render.anchor._app_magnitude, object_to_render.oid_color)
+                if object_to_render.anchor.resolved:
                     self.resolved_renderer.add_body(object_to_render)
             self.labels_renderer.add_label(object_to_render)
         self.points_renderer.render(observer)

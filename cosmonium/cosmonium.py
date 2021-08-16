@@ -156,7 +156,6 @@ class CosmoniumBase(ShowBase):
 
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
-        print(CullBinManager.get_global_ptr())
 
     def load_lang(self, domain, locale_path):
         languages = None
@@ -1197,9 +1196,11 @@ class Cosmonium(CosmoniumBase):
     def update_instances(self):
         self.components.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
         for occluder in self.shadow_casters:
-            occluder.update_scene(self.c_observer)
+        #    occluder.update_scene(self.c_observer)
+            occluder.body.scene_anchor.update()
         for visible in self.visibles:
-            visible.update_scene(self.c_observer)
+            #visible.update_scene(self.c_observer)
+            visible.body.scene_anchor.update()
             self.renderer.add_object(visible.body)
         self.renderer.render(self.observer)
         self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
@@ -1365,13 +1366,12 @@ class Cosmonium(CosmoniumBase):
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
                 print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
-                print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
+                #print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(self.selected, StellarBody):
-                if self.selected.anchor.scene_scale_factor is not None:
+                if self.selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.anchor.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.anchor.scene_distance)
-                    print("\tOrientation", self.selected.anchor.scene_orientation)
-                    print("\tScale", self.selected.anchor.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.anchor.scene_scale_factor, ')')
+                    print("\tPosition", self.selected.scene_anchor.scene_position, '(Offset:', self.selected.scene_anchor.world_body_center_offset, ')')
+                    print("\tScale", self.selected.scene_anchor.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.scene_anchor.scene_scale_factor, ')')
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
@@ -1407,11 +1407,11 @@ class Cosmonium(CosmoniumBase):
                             if patch.quadtree_node.offset is not None:
                                 print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * self.selected.get_apparent_radius())
             else:
-                if self.selected.anchor.scene_scale_factor is not None:
+                if self.selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene:")
-                    print("\tPosition:", self.selected.anchor.scene_position, self.selected.anchor.scene_distance)
-                    print("\tOrientation:", self.selected.anchor.scene_orientation)
-                    print("\tScale:", self.selected.anchor.scene_scale_factor)
+                    print("\tPosition:", self.selected.scene_anchor.scene_position)
+                    print("\tOrientation:", self.selected.scene_anchor.scene_orientation)
+                    print("\tScale:", self.selected.scene_anchor.scene_scale_factor)
 
     def init_universe(self):
         pass

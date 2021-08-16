@@ -24,6 +24,7 @@ from .foundation import CompositeObject, ObjectLabel
 from .namedobject import NamedObject
 from .annotations import ReferenceAxis, RotationAxis, Orbit
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
+from .sceneanchor import SceneAnchor
 from .astro.frame import SynchroneReferenceFrame
 from .astro.orbits import FixedPosition
 from .astro.astro import abs_to_app_mag
@@ -73,7 +74,7 @@ class StellarBodyLabel(ObjectLabel):
             vector_to_obs = LVector3d(-rel_front_pos)
             distance_to_obs = vector_to_obs.length()
             vector_to_obs /= distance_to_obs
-            position, distance, scale_factor = self.calc_scene_params(rel_front_pos, rel_front_pos, distance_to_obs, vector_to_obs)
+            position, distance, scale_factor = self.label_source.scene_anchor.calc_scene_params(rel_front_pos, rel_front_pos, distance_to_obs, vector_to_obs)
             self.instance.setPos(*position)
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
         self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
@@ -121,6 +122,7 @@ class StellarObject(NamedObject):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         #else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
+        self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center)
         self.abs_magnitude = 99.0
         self.oid = None
         self.oid_color = None
@@ -128,9 +130,6 @@ class StellarObject(NamedObject):
         self.selected = False
         #Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
-        self.world_body_center_offset = LVector3d()
-        self.model_body_center_offset = LVector3d()
-        self.projected_world_body_center_offset = LVector3d()
         #Components
         self.orbit_object = None
         self.rotation_axis = None
@@ -430,17 +429,11 @@ class StellarObject(NamedObject):
     def check_and_update_instance(self, camera_pos, camera_rot):
         StellarObject.nb_instance += 1
         if not self.init_components:
+            self.scene_anchor.create_instance()
+            self.scene_anchor.update()
             self.create_components()
             self.components.visible = True
             self.check_settings()
-        if self.support_offset_body_center and settings.offset_body_center:
-            self.world_body_center_offset = -self.anchor.vector_to_obs * self.anchor._height_under * self.anchor.scene_scale_factor
-            self.model_body_center_offset = self.anchor.scene_orientation.conjugate().xform(-self.anchor.vector_to_obs) * self.anchor._height_under# / self.get_apparent_radius()
-            if self.anchor._height_under != 0:
-                scale = self.surface.get_scale()
-                self.model_body_center_offset[0] /= scale[0]
-                self.model_body_center_offset[1] /= scale[1]
-                self.model_body_center_offset[2] /= scale[2]
         if self.lights is not None:
             self.lights.update_instances(camera_pos)
         self.update_components(camera_pos)
@@ -448,6 +441,7 @@ class StellarObject(NamedObject):
 
     def remove_instance(self):
         self.components.remove_instance()
+        self.scene_anchor.remove_instance()
         if self.init_components:
             self.remove_components()
         self.remove_label()
