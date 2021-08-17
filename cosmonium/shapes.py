@@ -496,6 +496,8 @@ class ShapeObject(VisibleObject):
             self.context.observer.scattering.add_attenuated_object(self)
 
     def remove_instance(self):
+        # This method could be called even if the instance does not exist
+        if self.instance is None: return
         self.sources.clear_shape_data(self.shape, self.shape.instance)
         self.shadows.clear_shadows()
         self.appearance.clear_all()
