@@ -266,7 +266,7 @@ class DropDownMenu(DirectObject):
       menuEvents=messenger.find('menu-')
       if menuEvents:
          menuEvent=menuEvents.keys()
-         activeMenu=menuEvents[menuEvent[0]].values()[0][0].__self__
+         activeMenu=list(menuEvents[list(menuEvent)[0]].values())[0][0].__self__
          activeMenu.destroy(delParents=True)
 
   def __reverseItems(self):
