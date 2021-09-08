@@ -39,6 +39,8 @@ from . import settings
 from math import sin, cos, atan2, pi
 
 class BackgroundLabel(ObjectLabel):
+    color_picking = False
+
     def create_instance(self):
         ObjectLabel.create_instance(self)
         self.instance.setBin('background', self.label_source.background_level)

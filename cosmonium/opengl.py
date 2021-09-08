@@ -234,6 +234,7 @@ def check_opengl_config(base):
     print("Render to buffer:", settings.buffer_texture)
     print("Floating point buffer:", settings.floating_point_buffer)
     print("Texture array:", settings.texture_array)
+    print("Color picking", settings.color_picking)
 
 def check_and_create_rendering_buffers(showbase):
     if not settings.render_scene_to_buffer:

@@ -266,6 +266,7 @@ class ObjectLabel(VisibleObject):
     font = None
     appearance = None
     shader = None
+    color_picking = True
 
     def __init__(self, name, label_source):
         VisibleObject.__init__(self, name)
@@ -284,6 +285,7 @@ class ObjectLabel(VisibleObject):
         cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
         cls.appearance.alpha_mask = True
         cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader.color_picking = settings.color_picking and cls.color_picking
 
     def check_settings(self):
         if self.label_source.body_class is None:
