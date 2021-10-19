@@ -387,6 +387,7 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
 
+        self.update_id = 0
         self.patch = None
         self.selected = None
         self.follow = None
@@ -1035,7 +1036,7 @@ class Cosmonium(CosmoniumBase):
         self.update_c_observer()
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
-        traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude)
+        traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude, self.update_id)
         self.universe.anchor.traverse(traverser)
         self.visibles = traverser.get_collected()
         self.components.update(time, dt)
@@ -1088,11 +1089,12 @@ class Cosmonium(CosmoniumBase):
             if body is None: continue
             self._add_extra(body.anchor)
         for anchor in self.extra:
-            anchor.update(self.time.time_full)
+            anchor.update(self.time.time_full, self.update_id)
 
     def update_extra_observer(self):
         for anchor in self.extra:
-            anchor.update_observer(self.c_observer)
+            anchor.update_observer(self.c_observer, self.update_id)
+            anchor.update_id = self.update_id
 
     @pstat
     def update_magnitudes(self):
@@ -1271,6 +1273,7 @@ class Cosmonium(CosmoniumBase):
 
     def time_task(self, task):
         # Reset all states
+        self.update_id += 1
         self.to_update_extra = []
         self.renderer.reset()
         self.update_c_settings()
@@ -1287,6 +1290,7 @@ class Cosmonium(CosmoniumBase):
         self.nav.update(self.time.time_full, dt)
         self.update_ship(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
+        self.update_c_observer()
         self.update_extra_observer()
 
         update = pstats.levelpstat('update', 'Bodies')

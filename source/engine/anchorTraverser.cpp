@@ -68,17 +68,19 @@ AnchorTraverser::traverse_octree_node(OctreeNode *anchor, std::vector<PT(AnchorB
 {
 }
 
-UpdateTraverser::UpdateTraverser(double time, Observer &observer, double limit):
+UpdateTraverser::UpdateTraverser(double time, Observer &observer, double limit, unsigned long int update_id):
     time(time),
     observer(observer),
-    limit(limit)
+    limit(limit),
+    update_id(update_id)
 {
 }
 
 void
 UpdateTraverser::traverse_anchor(AnchorBase *anchor)
 {
-    anchor->update_and_update_observer(time, observer);
+    anchor->update_and_update_observer(time, observer, update_id);
+    anchor->update_id = update_id;
     if (anchor->visible || anchor->visibility_override) {
         collected.push_back(anchor);
     }
@@ -87,10 +89,7 @@ UpdateTraverser::traverse_anchor(AnchorBase *anchor)
 bool
 UpdateTraverser::enter_system(SystemAnchor *anchor)
 {
-    anchor->update_and_update_observer(time, observer);
-    if (anchor->visible) {
-        collected.push_back(anchor);
-    }
+    traverse_anchor(anchor);
     return ((anchor->visible || anchor->visibility_override) && anchor->resolved) || anchor->force_update;
 }
 

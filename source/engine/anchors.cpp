@@ -73,7 +73,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   visible(false),
   visibility_override(false),
   resolved(false),
-  update_id(0),
+  update_id(~0),
   update_frozen(false),
   force_update(false),
   //Cached values
@@ -141,10 +141,10 @@ AnchorBase::set_star(AnchorBase *star)
 }
 
 void
-AnchorBase::update_and_update_observer(double time, Observer &observer)
+AnchorBase::update_and_update_observer(double time, Observer &observer, unsigned long int update_id)
 {
-  update(time);
-  update_observer(observer);
+  update(time, update_id);
+  update_observer(observer, update_id);
 }
 
 TypeHandle StellarAnchor::_type_handle;
@@ -264,8 +264,9 @@ StellarAnchor::calc_absolute_relative_position(AnchorBase *anchor)
 }
 
 void
-StellarAnchor::update(double time)
+StellarAnchor::update(double time, unsigned long int update_id)
 {
+  if (update_id == this->update_id) return;
   _orientation = rotation->get_absolute_rotation_at(time);
   _equatorial = rotation->get_equatorial_orientation_at(time);
   _local_position = orbit->get_local_position_at(time);
@@ -280,8 +281,9 @@ diff(LPoint3d a, LPoint3d b)
 }
 
 void
-StellarAnchor::update_observer(Observer &observer)
+StellarAnchor::update_observer(Observer &observer, unsigned long int update_id)
 {
+  if (update_id == this->update_id) return;
   //Use a function to do the diff, to work around a probable compiler bug
   LPoint3d reference_point_delta = diff(_global_position, observer.get_absolute_reference_point());
   LPoint3d local_delta = diff(_local_position, observer.get_local_position());
@@ -475,7 +477,7 @@ void
 OctreeAnchor::create_octree(void)
 {
   for (auto child : children) {
-    child->update(0);
+    child->update(0, 0);
     child->rebuild();
     octree->add(child);
   }

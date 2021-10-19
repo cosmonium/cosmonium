@@ -116,15 +116,15 @@ class AnchorBase():
         length = local_delta.length()
         return (local_delta / length, length)
 
-    def update(self, time):
+    def update(self, time, update_id):
         pass
 
-    def update_observer(self, observer):
+    def update_observer(self, observer, update_id):
         pass
 
-    def update_and_update_observer(self, time, observer):
-        self.update(time)
-        self.update_observer(observer)
+    def update_and_update_observer(self, time, observer, update_id):
+        self.update(time, update_id)
+        self.update_observer(observer, update_id)
 
     def update_app_magnitude(self, star):
         pass
@@ -141,14 +141,16 @@ class StellarAnchor(AnchorBase):
         orbit.body = body
         rotation.body = body
 
-    def update(self, time):
+    def update(self, time, update_id):
+        if self.update_id == update_id: return
         self._orientation = self.rotation.get_absolute_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
         self._local_position = self.orbit.get_local_position_at(time)
         self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
 
-    def update_observer(self, observer):
+    def update_observer(self, observer, update_id):
+        if self.update_id == update_id: return
         global_delta = self._global_position - observer._global_position
         local_delta = self._local_position - observer._local_position
         rel_position = global_delta + local_delta
@@ -302,7 +304,7 @@ class OctreeAnchor(SystemAnchor):
         start = time()
         for child in self.children:
             #TODO: this should be done properly at anchor creation
-            child.update(0)
+            child.update(0, None)
             child.rebuild()
             self.octree.add(child)
         end = time()

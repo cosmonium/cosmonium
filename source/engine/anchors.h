@@ -100,11 +100,11 @@ PUBLISHED:
 
   virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor) = 0;
 
-  virtual void update(double time) = 0;
+  virtual void update(double time, unsigned long int update_id) = 0;
 
-  virtual void update_observer(Observer &observer) = 0;
+  virtual void update_observer(Observer &observer, unsigned long int update_id) = 0;
 
-  virtual void update_and_update_observer(double time, Observer &observer);
+  virtual void update_and_update_observer(double time, Observer &observer, unsigned long int update_id);
 
   virtual void update_app_magnitude(AnchorBase *star = 0) = 0;
 
@@ -118,7 +118,7 @@ PUBLISHED:
   bool visible;
   bool visibility_override;
   bool resolved;
-  int update_id;
+  unsigned long int update_id;
   bool update_frozen;
   bool force_update;
 
@@ -186,9 +186,9 @@ PUBLISHED:
 
   virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
 
-  virtual void update(double time);
+  virtual void update(double time, unsigned long int update_id);
 
-  virtual void update_observer(Observer &observer);
+  virtual void update_observer(Observer &observer, unsigned long int update_id);
 
   virtual void update_app_magnitude(AnchorBase *star = 0);
 

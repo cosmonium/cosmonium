@@ -40,22 +40,24 @@ class AnchorTraverser:
         pass
 
 class UpdateTraverser(AnchorTraverser):
-    def __init__(self, time, observer, limit):
+    def __init__(self, time, observer, limit, update_id):
         self.time = time
         self.observer = observer
         self.limit = limit
+        self.update_id = update_id
         self.visibles = []
 
     def get_collected(self):
         return self.visibles
 
     def traverse_anchor(self, anchor):
-        anchor.update_and_update_observer(self.time, self.observer)
+        anchor.update_and_update_observer(self.time, self.observer, self.update_id)
+        anchor.update_id = self.update_id
         if anchor.visible or anchor.visibility_override:
             self.visibles.append(anchor)
 
     def enter_system(self, anchor):
-        anchor.update_and_update_observer(self.time, self.observer)
+        self.traverse_anchor(anchor)
         if anchor.visible:
             self.visibles.append(anchor)
         return ((anchor.visible or anchor.visibility_override) and anchor.resolved) or anchor.force_update

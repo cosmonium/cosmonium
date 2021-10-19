@@ -61,7 +61,7 @@ protected:
 class UpdateTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:
-  UpdateTraverser(double time, Observer &observer, double limit);
+  UpdateTraverser(double time, Observer &observer, double limit, unsigned long int update_id);
 
   virtual void traverse_anchor(AnchorBase *anchor);
 
@@ -77,6 +77,7 @@ protected:
   double time;
   Observer &observer;
   double limit;
+  unsigned long int update_id;
 };
 
 class FindClosestSystemTraverser : public AnchorTraverser
