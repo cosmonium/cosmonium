@@ -230,12 +230,16 @@ class StellarBody(StellarObject):
             return self.get_apparent_radius()
 
     def get_extend(self):
+        extend = 0
         if self.ring is not None:
-            return self.ring.outer_radius
-        elif self.surface is not None and self.surface.is_spherical():
-            return self.surface.get_max_radius()
+            extend = max(extend, self.ring.outer_radius)
+        if self.surface is not None and self.surface.is_spherical():
+            extend = max(extend, self.surface.get_max_radius())
         else:
-            return self.get_apparent_radius()
+            extend = max(extend, self.get_apparent_radius())
+        if self.atmosphere is not None:
+            extend = max(extend, self.atmosphere.radius)
+        return extend
 
     def get_height_under_xy(self, x, y):
         if self.surface is not None:
