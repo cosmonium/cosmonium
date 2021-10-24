@@ -63,9 +63,9 @@ class StellarBodyLabel(ObjectLabel):
     def update_instance(self, camera_pos, camera_rot):
         body = self.label_source
         if body.is_emissive() and (not body.anchor.resolved or body.background):
-            if body.anchor.scene_position != None:
-                self.instance.setPos(*body.anchor.scene_position)
-                scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.scene_distance)
+            if body.scene_anchor.scene_position != None:
+                self.instance.setPos(*body.scene_anchor.scene_position)
+                scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.scene_anchor.scene_distance)
             else:
                 scale = 0.0
         else:
