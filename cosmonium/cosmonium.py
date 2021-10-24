@@ -1362,7 +1362,7 @@ class Cosmonium(CosmoniumBase):
             print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected.anchor._orientation)
             print("\tVector to obs", self.selected.anchor.vector_to_obs)
-            print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ')')
+            print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ') Override:', self.selected.anchor.visibility_override)
             print("\tUpdate frozen:", self.selected.anchor.update_frozen)
             print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
             print("\tRotation:", self.selected.anchor.rotation.__class__.__name__, self.selected.anchor.rotation.frame)

@@ -110,6 +110,9 @@ class ShadowCasterBase(object):
     def __init__(self, light):
         self.light = light
 
+    def is_analytic(self):
+        pass
+
     def create(self):
         pass
 
@@ -135,6 +138,9 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         self.name = self.occluder.get_ascii_name()
         self.shadow_map = None
         self.shadow_camera = None
+
+    def is_analytic(self):
+        return False
 
     def create_camera(self):
         pass
@@ -258,6 +264,9 @@ class RingShadowCaster(ShadowCasterBase):
         ShadowCasterBase.__init__(self, light)
         self.ring = ring
 
+    def is_analytic(self):
+        return True
+
     def add_target(self, shape_object):
         shape_object.shadows.add_ring_shadow_caster(self)
 
@@ -286,6 +295,9 @@ class SphereShadowCaster(ShadowCasterBase):
     def __init__(self, light, occluder):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
+
+    def is_analytic(self):
+        return True
 
     def add_target(self, shape_object):
         shape_object.shadows.add_sphere_shadow_caster(self)
