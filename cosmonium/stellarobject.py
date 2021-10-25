@@ -123,7 +123,6 @@ class StellarObject(NamedObject):
         #else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
         self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center)
-        self.abs_magnitude = 1000.0
         self.oid = None
         self.oid_color = None
         #Flags

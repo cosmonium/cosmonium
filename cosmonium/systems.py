@@ -38,7 +38,6 @@ class StellarSystem(StellarObject):
         self.primary = None
         self.has_halo = False
         self.was_visible = False
-        self.abs_magnitude = None
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
         return SystemAnchor(self, orbit, rotation, point_color)
@@ -252,7 +251,6 @@ class Barycenter(StellarSystem):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('body_class', 'star')
         StellarSystem.__init__(self, *args, **kwargs)
-        self.abs_magnitude = None
         self.has_halo = True
 
     def is_emissive(self):
