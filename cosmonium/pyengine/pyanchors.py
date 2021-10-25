@@ -204,7 +204,10 @@ class StellarAnchor(AnchorBase):
         elif self.content & self.Reflective != 0:
             if star is not None:
                 reflected = self.get_luminosity(star)
-                self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
+                if reflected > 0:
+                    self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
+                else:
+                    self._app_magnitude = 99.0
             else:
                 self._app_magnitude = 99.0
         else:

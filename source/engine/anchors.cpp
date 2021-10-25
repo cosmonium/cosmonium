@@ -341,7 +341,11 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
   } else if ((content & Reflective) != 0) {
       if (star != 0) {
         double reflected = get_luminosity(star);
-        _app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), distance_to_obs);
+        if (reflected > 0.0) {
+          _app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), distance_to_obs);
+        } else {
+          _app_magnitude = 1000.0;
+        }
       } else {
         _app_magnitude = 99.0;
       }
