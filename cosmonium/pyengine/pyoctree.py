@@ -39,7 +39,7 @@ class OctreeNode(object):
         self.has_children = False
         self.children = [None, None, None, None, None, None, None, None]
         self.leaves = []
-        self.max_magnitude = 99.0
+        self.max_magnitude = 1000.0
         self.rebuild_needed = False
         #TODO: Right now an octree contains anything
         self.content = ~0

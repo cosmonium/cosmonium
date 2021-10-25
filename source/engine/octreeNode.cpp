@@ -39,7 +39,7 @@ OctreeNode::OctreeNode(int level, OctreeNode *parent, LPoint3d center, double wi
   children()
 {
     radius = width / 2.0 * sqrt(3);
-    max_magnitude = 99.0;
+    max_magnitude = 1000.0;
 }
 
 OctreeNode::~OctreeNode(void)

@@ -56,8 +56,8 @@ class AnchorBase():
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
         self._equatorial = LQuaterniond()
-        self._abs_magnitude = 99.0
-        self._app_magnitude = 99.0
+        self._abs_magnitude = 1000.0
+        self._app_magnitude = 1000.0
         self._extend = 0.0
         self._height_under = 0.0
         self._albedo = 0.5
@@ -199,7 +199,7 @@ class StellarAnchor(AnchorBase):
     def update_app_magnitude(self, star):
         #TODO: Should be done by inheritance ?
         if self.distance_to_obs == 0:
-            self._app_magnitude = 99.0
+            self._app_magnitude = 1000.0
             return
         if self.content & self.Emissive != 0:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
@@ -209,9 +209,9 @@ class StellarAnchor(AnchorBase):
                 if reflected > 0:
                     self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
                 else:
-                    self._app_magnitude = 99.0
+                    self._app_magnitude = 1000.0
             else:
-                self._app_magnitude = 99.0
+                self._app_magnitude = 1000.0
         else:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
         self.visible = self.visible and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
@@ -266,7 +266,7 @@ class SystemAnchor(DynamicStellarAnchor):
         if luminosity > 0.0:
             self._abs_magnitude = lum_to_abs_mag(luminosity)
         else:
-            self._abs_magnitude = 99.0
+            self._abs_magnitude = 1000.0
 
     def traverse(self, visitor):
         if visitor.enter_system(self):

@@ -83,7 +83,7 @@ class UpdateTraverser(AnchorTraverser):
         if distance > 0.0:
             faintest = app_to_abs_mag(self.limit, distance)
         else:
-            faintest = 99.0
+            faintest = 1000.0
         for leaf in octree_node.leaves:
             abs_magnitude = leaf._abs_magnitude
             traverse = False
@@ -163,7 +163,7 @@ class FindLightSourceTraverser(AnchorTraverser):
         if distance > 0.0:
             faintest = app_to_abs_mag(self.limit, distance)
         else:
-            faintest = 99.0
+            faintest = 1000.0
         for leaf in octree_node.leaves:
             abs_magnitude = leaf._abs_magnitude
             if abs_magnitude < faintest:

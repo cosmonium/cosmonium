@@ -82,8 +82,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
   _equatorial(LQuaterniond::ident_quat()),
-  _abs_magnitude(99.0),
-  _app_magnitude(99.0),
+  _abs_magnitude(1000.0),
+  _app_magnitude(1000.0),
   _extend(0.0),
   _height_under(0.0),
   _albedo(0.0),
@@ -335,7 +335,7 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
 {
   // TODO: Should be done by inheritance ?
   if (distance_to_obs == 0) {
-    _app_magnitude = 99.0;
+    _app_magnitude = 1000.0;
     return;
   }
   if ((content & Emissive) != 0) {
@@ -349,7 +349,7 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
           _app_magnitude = 1000.0;
         }
       } else {
-        _app_magnitude = 99.0;
+        _app_magnitude = 1000.0;
       }
   } else {
     _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
@@ -422,7 +422,7 @@ SystemAnchor:: rebuild(void)
     if (luminosity > 0.0) {
         _abs_magnitude = lum_to_abs_mag(luminosity);
     } else {
-        _abs_magnitude = 99.0;
+        _abs_magnitude = 1000.0;
     }
 }
 

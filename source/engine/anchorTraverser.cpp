@@ -124,7 +124,7 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(An
     if (distance > 0.0) {
         faintest = app_to_abs_mag(limit, distance);
     } else {
-        faintest = 99.0;
+        faintest = 1000.0;
     }
     for (auto leaf : leaves) {
         double abs_magnitude = leaf->get_absolute_magnitude();
@@ -256,7 +256,7 @@ FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vec
   if (distance > 0.0) {
     faintest = app_to_abs_mag(limit, distance);
   } else {
-    faintest = 99.0;
+    faintest = 1000.0;
   }
   for (auto leaf : leaves) {
     double abs_magnitude = leaf->_abs_magnitude;
