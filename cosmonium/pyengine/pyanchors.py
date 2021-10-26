@@ -197,11 +197,15 @@ class StellarAnchor(AnchorBase):
             return 0.0
 
     def update_app_magnitude(self, star):
-        #TODO: Should be done by inheritance ?
+        #TODO: Should be done by inheritance !
         if self.distance_to_obs == 0:
             self._app_magnitude = 1000.0
             return
-        if self.content & self.Emissive != 0:
+        if hasattr(self, 'primary') and self.primary is not None:
+            self.primary.update_app_magnitude(star)
+            self._app_magnitude = self.primary._app_magnitude
+            self._abs_magnitude = self.primary._abs_magnitude
+        elif self.content & self.Emissive != 0:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
         elif self.content & self.Reflective != 0:
             if star is not None:
@@ -228,9 +232,14 @@ class DynamicStellarAnchor(StellarAnchor):
 class SystemAnchor(DynamicStellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         DynamicStellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color)
+        self.primary = None
         self.children = []
 
+    def set_primary(self, primary):
+        self.primary = primary
+
     def add_child(self, child):
+        #Primary is still managed by StellarSystem
         self.children.append(child)
         child.parent = self
         if not self.rebuild_needed:
@@ -248,7 +257,6 @@ class SystemAnchor(DynamicStellarAnchor):
     def rebuild(self):
         content = self.System
         extend = 0
-        luminosity = 0.0
         for child in self.children:
             if child.rebuild_needed:
                 child.rebuild()
@@ -257,16 +265,21 @@ class SystemAnchor(DynamicStellarAnchor):
             orbit_size = child.orbit.get_apparent_radius()
             if child._extend + orbit_size > extend:
                 extend = child._extend + orbit_size
-            #TODO: We should instead check if the child is emissive or not
-            if child._abs_magnitude is not None:
-                luminosity += abs_mag_to_lum(child._abs_magnitude)
-        self.rebuild_needed = False
         self.content = content
         self._extend = extend
-        if luminosity > 0.0:
-            self._abs_magnitude = lum_to_abs_mag(luminosity)
+        luminosity = 0.0
+        if self.primary is None:
+            for child in self.children:
+                #TODO: We should instead check if the child is emissive or not
+                if child._abs_magnitude is not None:
+                    luminosity += abs_mag_to_lum(child._abs_magnitude)
+            if luminosity > 0.0:
+                self._abs_magnitude = lum_to_abs_mag(luminosity)
+            else:
+                self._abs_magnitude = 1000.0
         else:
-            self._abs_magnitude = 1000.0
+            self._abs_magnitude = self.primary._abs_magnitude
+        self.rebuild_needed = False
 
     def traverse(self, visitor):
         if visitor.enter_system(self):

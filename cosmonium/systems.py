@@ -187,6 +187,7 @@ class SimpleSystem(StellarSystem):
             self.primary = None
         if primary is not None:
             self.primary = primary
+            self.anchor.set_primary(primary.anchor)
             primary.set_system(self)
             self.body_class = primary.body_class
             #TODO: What to do ?

@@ -222,13 +222,17 @@ private:
 
 PUBLISHED:
   virtual void traverse(AnchorTraverser &visitor);
+  virtual void update_app_magnitude(AnchorBase *star = 0);
   virtual void rebuild(void);
 
   void add_child(AnchorBase *child);
   void remove_child(AnchorBase *child);
 
+  void set_primary(AnchorBase *primary);
+
 public:
   std::vector<PT(AnchorBase)> children;
+  PT(AnchorBase) primary;
 
   MAKE_TYPE("SystemAnchor", StellarAnchor);
 };

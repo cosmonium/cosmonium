@@ -363,7 +363,8 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color) :
-    StellarAnchor(System, ref_object, orbit, rotation, point_color)
+    StellarAnchor(System, ref_object, orbit, rotation, point_color),
+    primary(nullptr)
 {
 }
 
@@ -391,6 +392,12 @@ SystemAnchor::remove_child(AnchorBase *child)
 }
 
 void
+SystemAnchor::set_primary(AnchorBase *primary)
+{
+  this->primary = primary;
+}
+
+void
 SystemAnchor::traverse(AnchorTraverser &visitor)
 {
   if (visitor.enter_system(this)) {
@@ -399,11 +406,22 @@ SystemAnchor::traverse(AnchorTraverser &visitor)
 }
 
 void
+SystemAnchor::update_app_magnitude(AnchorBase *star)
+{
+  if (primary != nullptr) {
+    primary->update_app_magnitude(star);
+    _abs_magnitude = primary->_abs_magnitude;
+    _app_magnitude = primary->_app_magnitude;
+  } else {
+    StellarAnchor::update_app_magnitude(star);
+  }
+}
+
+void
 SystemAnchor:: rebuild(void)
 {
     content = System;
     _extend = 0;
-    double luminosity = 0.0;
     for (auto child : children) {
         if (child->rebuild_needed) {
             child->rebuild();
@@ -413,17 +431,24 @@ SystemAnchor:: rebuild(void)
         if (child->_extend + position_bounding_radius > _extend) {
             _extend = child->_extend + position_bounding_radius;
         }
-        //TODO: We need to handle the reflective case
-        if ((child->content & Emissive) != 0) {
-            luminosity += abs_mag_to_lum(child->_abs_magnitude);
-        }
+    }
+    if (primary == nullptr) {
+      double luminosity = 0.0;
+      for (auto child : children) {
+          //TODO: We need to handle the reflective case
+          if ((child->content & Emissive) != 0) {
+              luminosity += abs_mag_to_lum(child->_abs_magnitude);
+          }
+      }
+      if (luminosity > 0.0) {
+          _abs_magnitude = lum_to_abs_mag(luminosity);
+      } else {
+          _abs_magnitude = 1000.0;
+      }
+    } else {
+      _abs_magnitude = primary->_abs_magnitude;
     }
     rebuild_needed = false;
-    if (luminosity > 0.0) {
-        _abs_magnitude = lum_to_abs_mag(luminosity);
-    } else {
-        _abs_magnitude = 1000.0;
-    }
 }
 
 TypeHandle OctreeAnchor::_type_handle;
