@@ -37,7 +37,6 @@ class StellarSystem(StellarObject):
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
-        self.was_visible = False
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
         return SystemAnchor(self, orbit, rotation, point_color)
