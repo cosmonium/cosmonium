@@ -95,7 +95,7 @@ class Orbit(VisibleObject):
     @classmethod
     def create_shader(cls):
         cls.appearance = ModelAppearance(attribute_color=True)
-        if settings.use_inv_scaling:
+        if settings.use_depth_scaling:
             vertex_control = LargeObjectVertexControl()
         else:
             vertex_control = None
