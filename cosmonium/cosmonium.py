@@ -1457,11 +1457,12 @@ class Cosmonium(CosmoniumBase):
                 if self.selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene")
                     print("\tPosition", self.selected.scene_anchor.scene_position, '(Offset:', self.selected.scene_anchor.world_body_center_offset, ')')
-                    print("\tScale", self.selected.scene_anchor.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.scene_anchor.scene_scale_factor, ')')
+                    print("\tScale", self.selected.scene_anchor.scene_scale_factor)
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
                     print("\tDistance", self.selected.surface.instance.get_pos().length())
+                    print("\tScale", self.selected.surface.get_scale() * self.selected.scene_anchor.scene_scale_factor)
                     print("\tInstance Ready:", self.selected.surface.instance_ready)
                     if self.selected.atmosphere is not None:
                         pass#print("\tAtm size", self.selected.atmosphere.get_pixel_height())
