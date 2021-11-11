@@ -140,17 +140,15 @@ class StellarSystem(StellarObject):
     def remove_child(self, child):
         self.remove_child_fast(child)
 
-    def remove_components(self):
-        StellarObject.remove_components(self)
-        #Not really components, but that's the easiest way to remove the children's instances
-        print("Remove children", self.get_name())
+    def on_resolved(self):
+        StellarObject.on_resolved(self)
         for child in self.children:
-            child.remove_instance()
+            child.create_orbit_object()
 
-    def remove_instance(self):
-        StellarObject.remove_instance(self)
+    def on_point(self):
+        StellarObject.on_point(self)
         for child in self.children:
-            child.remove_instance()
+            child.remove_orbit_object()
 
     def get_extend(self):
         return self.anchor._extend

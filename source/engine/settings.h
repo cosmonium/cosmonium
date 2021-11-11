@@ -41,7 +41,6 @@ PUBLISHED:
   double scale;
   bool offset_body_center;
   double min_body_size;
-  double lowest_app_magnitude;
 };
 
 extern Settings settings;

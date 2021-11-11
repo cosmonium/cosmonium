@@ -70,8 +70,10 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   point_color(point_color),
   star(nullptr),
   //Flags
+  was_visible(false),
   visible(false),
   visibility_override(false),
+  was_resolved(false),
   resolved(false),
   update_id(~0),
   update_frozen(false),
@@ -296,11 +298,13 @@ StellarAnchor::update_observer(Observer &observer, unsigned long int update_id)
       vector_to_obs = 0.0;
       visible_size = 0.0;
   }
+  was_visible = visible;
+  was_resolved = resolved;
   double radius = _extend;
   if (distance_to_obs > radius) {
       bool in_view = observer.rel_frustum->is_sphere_in(rel_position, radius);
       resolved = visible_size > settings.min_body_size;
-      visible = in_view; // and (visible_size > 1.0 or _app_magnitude < settings.lowest_app_magnitude);
+      visible = in_view;
   } else {
       // We are in the object
       resolved = true;
@@ -354,7 +358,6 @@ StellarAnchor::update_app_magnitude(AnchorBase *star)
   } else {
     _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
   }
-  visible = visible && (visible_size > 1.0 || _app_magnitude < settings.lowest_app_magnitude);
 }
 
 TypeHandle SystemAnchor::_type_handle;

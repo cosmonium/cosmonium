@@ -44,8 +44,10 @@ class AnchorBase():
         self.parent = None
         self.rebuild_needed = False
         #Flags
+        self.was_visible = False
         self.visible = False
         self.visibility_override = False
+        self.was_resolved = False
         self.resolved = False
         self.update_id = 0
         self.update_frozen = False
@@ -174,6 +176,8 @@ class StellarAnchor(AnchorBase):
         self.rel_position = rel_position
         self.vector_to_obs = vector_to_obs
         self.distance_to_obs = distance_to_obs
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
         self.visible = visible
         self.resolved = resolved
         self.visible_size = visible_size
@@ -218,7 +222,6 @@ class StellarAnchor(AnchorBase):
                 self._app_magnitude = 1000.0
         else:
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
-        self.visible = self.visible and (self.visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
 
 class FixedStellarAnchor(StellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):

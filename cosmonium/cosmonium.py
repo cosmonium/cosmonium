@@ -398,7 +398,14 @@ class Cosmonium(CosmoniumBase):
         self.nav_controllers = []
         self.nav = None
         self.gui = None
+        self.old_visibles = []
         self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = []
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
         self.global_light_sources = []
         self.orbits = []
         self.shadow_casters = []
@@ -1018,7 +1025,6 @@ class Cosmonium(CosmoniumBase):
         c_settings.scale = settings.scale
         c_settings.offset_body_center = settings.offset_body_center
         c_settings.min_body_size = settings.min_body_size
-        c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
 
     def update_c_observer(self):
         if CObserver is not None:
@@ -1038,7 +1044,7 @@ class Cosmonium(CosmoniumBase):
         pixel_size = self.observer.pixel_size
         traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude, self.update_id)
         self.universe.anchor.traverse(traverser)
-        self.visibles = traverser.get_collected()
+        self.visibles = list(traverser.get_collected())
         self.components.update(time, dt)
         self.components.update_obs(self.observer)
         self.components.check_visibility(frustum, pixel_size)
@@ -1109,12 +1115,48 @@ class Cosmonium(CosmoniumBase):
             anchor.update_app_magnitude(star)
 
     @pstat
+    def update_states(self):
+        visibles = []
+        resolved = []
+        for anchor in self.visibles:
+            visible = anchor.resolved or anchor._app_magnitude < settings.lowest_app_magnitude
+            if visible:
+                visibles.append(anchor)
+                if not anchor.was_visible:
+                    self.becoming_visibles.append(anchor)
+                if anchor.resolved:
+                    resolved.append(anchor)
+            else:
+                if anchor.was_visible:
+                    self.no_longer_visibles.append(anchor)
+            anchor.visible = visible
+        for anchor in self.extra:
+            if anchor in self.visibles: continue
+            if not (anchor._app_magnitude < settings.lowest_app_magnitude):
+                if anchor.was_visible:
+                    self.no_longer_visibles.append(anchor)
+                anchor.visible = False
+        for anchor in self.old_visibles:
+            if not anchor in self.visibles:
+                self.no_longer_visibles.append(anchor)
+                anchor.was_visible = anchor.visible
+                anchor.visible = False
+        self.visibles = visibles
+        self.resolved = resolved
+        for anchor in resolved:
+            if not anchor.was_resolved:
+                self.becoming_resolved.append(anchor)
+        for anchor in self.old_resolved:
+            if not anchor in self.resolved:
+                self.no_longer_resolved.append(anchor)
+
+    @pstat
     def find_orbits(self):
         #TODO: This is a bit crappy, this whole method should be moved in the renderer
         top_systems = []
-        for visible in self.visibles:
+        for visible in self.resolved:
             #TODO: The test to see if the object is a root system is a bit crude...
-            if visible.resolved and visible.content & AnchorBase.System != 0 and visible.parent.content == ~0:
+            if visible.content & AnchorBase.System != 0 and visible.parent.content == ~0:
                 top_systems.append(visible)
         traverser = FindObjectsInVisibleResolvedSystemsTraverser()
         for system in top_systems:
@@ -1132,17 +1174,17 @@ class Cosmonium(CosmoniumBase):
         else:
             star = None
         if star is None: return
-        for visible_object in self.visibles:
-            if not visible_object.resolved: continue
-            if visible_object.content & AnchorBase.System != 0: continue
-            if visible_object.content & AnchorBase.Reflective == 0: continue
-            if visible_object.body.lights is None:
+        for anchor in self.resolved:
+            if anchor.content & AnchorBase.System != 0: continue
+            if anchor.content & AnchorBase.Reflective == 0: continue
+            body = anchor.body
+            if body.lights is None:
                 lights = LightSources()
-                visible_object.body.set_lights(lights)
-            light = visible_object.body.lights.get_light_for(star.body)
+                body.set_lights(lights)
+            light = body.lights.get_light_for(star.body)
             if light is None:
-                light = SurrogateLight(star.body, visible_object.body)
-                visible_object.body.lights.add_light(light)
+                light = SurrogateLight(star.body, body)
+                body.lights.add_light(light)
             light.update_light()
 
     @pstat
@@ -1151,12 +1193,11 @@ class Cosmonium(CosmoniumBase):
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
         if len(self.global_light_sources) == 0: return
         reflectives = []
-        for visible_object in self.visibles:
-            if not visible_object.resolved: continue
-            if visible_object.content & AnchorBase.System != 0: continue
-            if visible_object.content & AnchorBase.Reflective == 0: continue
-            visible_object.body.start_shadows_update()
-            reflectives.append(visible_object)
+        for anchor in self.resolved:
+            if anchor.content & AnchorBase.System != 0: continue
+            if anchor.content & AnchorBase.Reflective == 0: continue
+            anchor.body.start_shadows_update()
+            reflectives.append(anchor)
 
         for light_source in self.global_light_sources:
             for reflective in reflectives:
@@ -1177,26 +1218,29 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def check_scattering(self):
-        for visible_object in self.visibles:
-            if not visible_object.resolved: continue
+        for anchor in self.resolved:
             #TODO: We need to test the type of the parent anchor
-            if visible_object.parent.content == ~0: continue
-            primary = visible_object.parent.body.primary
+            if anchor.parent.content == ~0: continue
+            primary = anchor.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
             if primary.anchor.content & AnchorBase.System != 0: continue
-            if primary.atmosphere is not None and primary.init_components and (visible_object._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
-                primary.atmosphere.add_shape_object(visible_object.body.surface)
+            if primary.atmosphere is not None and primary.init_components and (anchor._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
+                primary.atmosphere.add_shape_object(anchor.body.surface)
 
     @pstat
     def update_height_under(self):
-        for visible_object in self.visibles:
-            if not visible_object.resolved: continue
-            visible_object._height_under = visible_object.body.get_height_under(self.observer._local_position)
+        for anchor in self.resolved:
+            anchor._height_under = anchor.body.get_height_under(self.observer._local_position)
 
     @pstat
     def update_instances(self):
-        self.components.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        observer = self.observer
+        camera_pos = self.observer.get_camera_pos()
+        camera_rot = self.observer.get_camera_rot()
+        frustum = self.observer.rel_frustum
+        pixel_size = self.observer.pixel_size
+        self.components.check_and_update_instance(camera_pos, camera_rot)
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
             occluder.body.scene_anchor.update()
@@ -1204,10 +1248,39 @@ class Cosmonium(CosmoniumBase):
             #visible.update_scene(self.c_observer)
             visible.body.scene_anchor.update()
             self.renderer.add_object(visible.body)
+        for newly_visible in self.becoming_visibles:
+            #print("NEW VISIBLE", newly_visible.body.get_name())
+            newly_visible.body.on_visible()
+            if newly_visible.resolved:
+                newly_visible.body.on_resolved()
+        for newly_resolved in self.becoming_resolved:
+            #print("NEW RESOLVED", newly_resolved.body.get_name())
+            newly_resolved.body.on_resolved()
+        for old_resolved in self.no_longer_resolved:
+            #print("OLD RESOLVED", old_resolved.body.get_name())
+            old_resolved.body.on_point()
+        for old_visible in self.no_longer_visibles:
+            #print("OLD VISIBLE", old_visible.body.get_name())
+            if old_visible.resolved:
+                old_visible.body.on_point()
+            old_visible.body.on_hidden()
         self.renderer.render(self.observer)
-        self.ship.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        for visible in self.visibles:
+            body = visible.body
+            #TODO: this will update the body's components
+            body.update_visible_obs(observer)
+            body.check_visible_visibility(frustum, pixel_size)
+            body.check_and_update_visible_instance(camera_pos, camera_rot)
+        for resolved in self.resolved:
+            body = resolved.body
+            #TODO: this will update the body's components
+            body.update_obs(self.observer)
+            body.check_visibility(frustum, pixel_size)
+            body.check_and_update_instance(camera_pos, camera_rot)
+
+        self.ship.check_and_update_instance(camera_pos, camera_rot)
         for controller in self.controllers_to_update:
-            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot())
+            controller.check_and_update_instance(camera_pos, camera_rot)
         self.gui.update_status()
 
     @pstat
@@ -1275,6 +1348,14 @@ class Cosmonium(CosmoniumBase):
         # Reset all states
         self.update_id += 1
         self.to_update_extra = []
+        self.old_visibles = self.visibles
+        self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = self.resolved
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
         self.renderer.reset()
         self.update_c_settings()
 
@@ -1309,6 +1390,7 @@ class Cosmonium(CosmoniumBase):
 
         self.find_global_light_sources()
         self.update_magnitudes()
+        self.update_states()
         self.find_local_lights()
         self.find_orbits()
         self.check_scattering()

@@ -180,10 +180,6 @@ class CompositeObject(BaseObject):
         BaseObject.__init__(self, name)
         self.components = []
         self.lights = None
-        self.init = False
-
-    def create_components(self):
-        pass
 
     def add_component(self, component):
         if component is not None:

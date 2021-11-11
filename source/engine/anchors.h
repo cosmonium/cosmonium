@@ -115,8 +115,10 @@ public:
 
 PUBLISHED:
   //Flags
+  bool was_visible;
   bool visible;
   bool visibility_override;
+  bool was_resolved;
   bool resolved;
   unsigned long int update_id;
   bool update_frozen;
