@@ -60,7 +60,7 @@ def do_load(filepath):
             (ra, decl, const) = data
             if const != prev_const and prev_const is not None:
                 #print("Adding constellation", prev_const, const)
-                create_line(points, prev_ra, prev_decl, first_ra, first_decl)                
+                create_line(points, prev_ra, prev_decl, first_ra, first_decl)
                 boundary = Boundary(prev_const, points)
                 boundaries[prev_const] = boundary
                 points = []
@@ -78,7 +78,7 @@ def do_load(filepath):
             prev_decl = decl
         elif line != '':
             print("Malformed line", data)
-    create_line(points, prev_ra, prev_decl, first_ra, first_decl)                
+    create_line(points, prev_ra, prev_decl, first_ra, first_decl)
     boundary = Boundary(const, points)
     boundaries[const] = boundary
     return boundaries

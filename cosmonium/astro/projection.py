@@ -20,7 +20,8 @@
 
 from panda3d.core import LVector3d
 
-from ..astro.astro import calc_orientation
+from .astro import calc_orientation
+from . import units
 
 class InfinitePosition:
     def __init__(self, right_ascension, declination):
@@ -29,4 +30,5 @@ class InfinitePosition:
         self.orientation = calc_orientation(self.right_ascension, self.declination)
 
     def project(self, time, center, radius):
-        return self.orientation.xform(LVector3d(0, 0, radius))
+        position = self.orientation.xform(LVector3d(0, 0, radius))
+        return units.J2000_Orientation.xform(position)
