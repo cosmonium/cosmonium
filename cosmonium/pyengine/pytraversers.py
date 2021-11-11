@@ -174,24 +174,6 @@ class FindLightSourceTraverser(AnchorTraverser):
                 else:
                     leaf.traverse(self)
 
-class FindObjectsInVisibleResolvedSystemsTraverser(AnchorTraverser):
-    def __init__(self):
-        self.anchors = []
-
-    def get_collected(self):
-        return self.anchors
-
-    def traverse_anchor(self, anchor):
-        self.anchors.append(anchor)
-
-    def enter_system(self, anchor):
-        self.anchors.append(anchor)
-        return anchor.visible and anchor.resolved
-
-    def traverse_system(self, anchor):
-        for child in anchor.children:
-            child.traverse(self)
-
 class FindShadowCastersTraverser(AnchorTraverser):
     def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
         self.target = target

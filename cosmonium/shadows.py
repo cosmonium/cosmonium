@@ -128,7 +128,7 @@ class ShadowCasterBase(object):
     def add_target(self, shape_object):
         pass
 
-    def update(self):
+    def update(self, scene_manager):
         pass
 
 class ShadowMapShadowCaster(ShadowCasterBase):
@@ -148,7 +148,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def create(self):
         if self.shadow_map is not None: return
         self.create_camera()
-        self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraMask)
+        self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraFlag)
 
     def remove_camera(self):
         pass
@@ -165,8 +165,8 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def is_valid(self):
         return self.shadow_map is not None
 
-    def update(self):
-        radius = self.occluder.get_extend() / settings.scale
+    def update(self, scene_manager):
+        radius = self.occluder.get_extend() / scene_manager.scale
         self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
         #The shadow frustum origin is at the light center which is one radius away from the object
         #So the near plane is 0 to coincide with the boundary of the object
@@ -182,6 +182,8 @@ class ShadowMapDataSource(DataSource):
         self.use_bias = use_bias
 
     def apply(self, shape, instance):
+        if self.caster.shadow_map is None:
+            print("ERROR", self.name, self.caster, shape)
         shape.instance.set_shader_input('%s_depthmap' % self.name, self.caster.shadow_map.depthmap)
         shape.instance.set_shader_input("%sLightSource" % self.name, self.caster.shadow_map.cam)
         if self.caster.occluder is None:
@@ -252,8 +254,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
         self.shadow_map = None
         self.shadow_camera = None
 
-    def update(self):
-        ShadowMapShadowCaster.update(self)
+    def update(self, scene_manager):
+        ShadowMapShadowCaster.update(self, scene_manager)
         self.shadow_map.set_pos(self.light.light_instance.get_pos(render))
 
     def add_target(self, shape_object, self_shadow=False):

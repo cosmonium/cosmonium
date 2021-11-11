@@ -51,7 +51,7 @@ class WaterNode():
 
         self.waterNP = self.parent.instance.attachNewNode(maker.generate())
         self.waterNP.hide(BaseObject.AllCamerasMask)
-        self.waterNP.show(BaseObject.DefaultCameraMask)
+        self.waterNP.show(BaseObject.DefaultCameraFlag)
         self.waterNP.setHpr(0, -90, 0)
         self.waterNP.setPos(self.x, self.y, self.z)
         self.waterNP.setScale(self.size, self.size, 1.0)
@@ -95,7 +95,7 @@ class WaterNode():
             #sa = sa.setShader(loader.loadShader('shaders/splut3Clipped.sha') )
 
             cam = cls.watercamNP.node()
-            cam.set_camera_mask(BaseObject.WaterCameraMask)
+            cam.set_camera_mask(BaseObject.WaterCameraFlag)
             cam.getLens().setFov(base.camLens.getFov())
             cam.getLens().setNear(0.01)
             cam.getLens().setFar(float("inf"))

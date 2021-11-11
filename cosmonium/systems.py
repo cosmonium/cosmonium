@@ -44,6 +44,12 @@ class StellarSystem(StellarObject):
     def is_system(self):
         return True
 
+    def check_settings(self):
+        StellarObject.check_settings(self)
+        for child in self.children:
+            if child.orbit_object is not None:
+                child.orbit_object.check_settings()
+
     def apply_func(self, func):
         StellarObject.apply_func(self, func)
         for child in self.children:
@@ -140,18 +146,33 @@ class StellarSystem(StellarObject):
     def remove_child(self, child):
         self.remove_child_fast(child)
 
-    def on_resolved(self):
-        StellarObject.on_resolved(self)
+    def on_resolved(self, scene_manager):
+        StellarObject.on_resolved(self, scene_manager)
         for child in self.children:
             child.create_orbit_object()
 
-    def on_point(self):
-        StellarObject.on_point(self)
+    def on_point(self, scene_manager):
+        StellarObject.on_point(self, scene_manager)
         for child in self.children:
             child.remove_orbit_object()
 
     def get_extend(self):
         return self.anchor._extend
+
+    def check_visibility(self, frustum, pixel_size):
+        StellarObject.check_visibility(self, frustum, pixel_size)
+        if not self.anchor.resolved: return
+        for child in self.children:
+            if child.orbit_object is not None:
+                child.orbit_object.check_visibility(frustum, pixel_size)
+
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+        StellarObject.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
+        for child in self.children:
+            if child.orbit_object is not None:
+                child.orbit_object.check_and_update_instance(scene_manager, camera_pos, camera_rot)
+                if child.orbit_object.instance is not None:
+                    scene_manager.add_spread_object(child.orbit_object.instance)
 
 class OctreeSystem(StellarSystem):
     def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):

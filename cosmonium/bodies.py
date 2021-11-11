@@ -461,8 +461,8 @@ class DeepSpaceObject(EmissiveBody):
     def get_height_under(self, position):
         return 0.0
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
-        EmissiveBody.check_and_update_instance(self, camera_pos, camera_rot)
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+        EmissiveBody.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
         app_magnitude = self.get_app_magnitude()
         self.surface.appearance.set_magnitude(self, self.surface.shape, self.surface.shader, self.anchor._abs_magnitude, app_magnitude, self.anchor.visible_size)
 

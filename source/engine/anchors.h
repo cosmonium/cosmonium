@@ -141,6 +141,7 @@ PUBLISHED:
   double distance_to_obs;
   LVector3d  vector_to_obs;
   double visible_size;
+  double z_distance;
 
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };

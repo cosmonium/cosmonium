@@ -27,7 +27,9 @@ from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
 from .sprites import SimplePoint, RoundDiskPointSprite
 
 class PointsSet(VisibleObject):
+    default_camera_mask = VisibleObject.DefaultCameraFlag
     tex = None
+
     def __init__(self, use_sprites=True, use_sizes=True, points_size=2, sprite=None, background=None, shader=None):
         VisibleObject.__init__(self, 'pointsset')
         self.gnode = GeomNode('starfield')
@@ -66,7 +68,7 @@ class PointsSet(VisibleObject):
             self.instance.setBin('background', self.background)
         self.instance.set_depth_write(False)
         self.instance.hide(self.AllCamerasMask)
-        self.instance.show(self.DefaultCameraMask)
+        self.instance.show(self.default_camera_mask)
 
     def reset(self):
         self.points = []

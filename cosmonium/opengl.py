@@ -255,7 +255,7 @@ def check_and_create_rendering_buffers(showbase):
     depth_buffer = None
     aux_buffer = None
     if settings.use_inverse_z:
-        render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
+        showbase.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
         depth_buffer = Texture()
         showbase.win.set_clear_depth(0)
         float_depth = True

@@ -86,7 +86,7 @@ class Shape:
     async def create_instance(self):
         return None
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -212,9 +212,9 @@ class CompositeShapeObject(VisibleObject):
             tasks.append(component.create_instance())
         return gather(*tasks)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:
-            component.update_instance(camera_pos, camera_rot)
+            component.update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -225,7 +225,7 @@ class CompositeShapeObject(VisibleObject):
             component.remove_instance()
 
 class ShapeObject(VisibleObject):
-    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.WaterCameraMask | VisibleObject.ShadowCameraMask
+    default_camera_mask = VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.sources = DataSourcesHandler()
@@ -370,7 +370,6 @@ class ShapeObject(VisibleObject):
         shape_instance.reparent_to(self.instance)
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
-        #self.instance.reparent_to(self.context.world)
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.default_camera_mask)
         if self.appearance is not None:
@@ -482,15 +481,15 @@ class ShapeObject(VisibleObject):
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.body.get_apparent_radius(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if not self.instance_ready: return
-        self.shape.update_instance(camera_pos, camera_rot)
+        self.shape.update_instance(scene_manager, camera_pos, camera_rot)
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
             self.shape.place_patches(self.body)
         self.sources.update_shape_data(self.shape)
         for shadow_caster in self.shadow_casters.values():
-            shadow_caster.update()
+            shadow_caster.update(scene_manager)
         if self.shadows.rebuild_needed:
             self.update_shader()
             self.shadows.rebuild_needed = False

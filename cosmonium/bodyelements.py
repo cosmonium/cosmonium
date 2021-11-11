@@ -51,8 +51,8 @@ class Ring(ShapeObject):
     def do_create_shadow_caster_for(self, light_source):
         return RingShadowCaster(light_source, self)
 
-    def update_instance(self, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, camera_pos, camera_rot)
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
         self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
@@ -203,8 +203,8 @@ class Atmosphere(ShapeObject):
         ShapeObject.update_user_parameters(self)
         self.update_scattering()
 
-    def update_instance(self, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, camera_pos, camera_rot)
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
         self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
@@ -251,7 +251,7 @@ class Clouds(EllipsoidFlatSurface):
     def check_settings(self):
         self.set_shown(settings.show_clouds)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if not self.instance_ready: return
         self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 
@@ -270,7 +270,7 @@ class Clouds(EllipsoidFlatSurface):
                 if self.appearance.transparency:
                     self.instance.set_depth_write(False)
             self.inside = inside
-        return EllipsoidFlatSurface.update_instance(self, camera_pos, camera_rot)
+        return EllipsoidFlatSurface.update_instance(self, scene_manager, camera_pos, camera_rot)
 
     def remove_instance(self):
         EllipsoidFlatSurface.remove_instance(self)

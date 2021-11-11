@@ -48,9 +48,10 @@ Observer::get_absolute_orientation(void)
 }
 
 void
-Observer::update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation)
+Observer::update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation, LVector3d camera_vector)
 {
   _absolute_reference_point = absolute_reference_point;
   _local_position = local_position;
   _orientation = orientation;
+  this->camera_vector = camera_vector;
 }

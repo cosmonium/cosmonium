@@ -32,15 +32,15 @@ import logging
 import gettext
 
 from .parsers.configparser import configParser
-from .foundation import BaseObject, CompositeObject
+from .foundation import BaseObject
+from .scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
-from .renderers.renderer import Renderer
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
 from .anchors import AnchorBase, StellarAnchor
-from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
+from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
 from .universe import Universe
 from .annotations import Grid
@@ -85,6 +85,7 @@ import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
 from cosmonium.octree import CObserver, c_settings
+from cosmonium.sceneworld import ObserverCenteredWorld
 
 # Patch gettext classes
 if sys.version_info < (3, 8):
@@ -122,8 +123,8 @@ class CosmoniumBase(ShowBase):
         if not self.app_config.test_start:
             create_main_window(self)
             check_opengl_config(self)
-            self.create_additional_display_regions()
-            self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask)
+            #self.create_additional_display_regions()
+            self.near_cam = None
         else:
             self.buttonThrowers = [NodePath('dummy')]
             self.camera = NodePath('dummy')
@@ -143,13 +144,9 @@ class CosmoniumBase(ShowBase):
         cache.init_cache()
         self.register_events()
 
-        self.world = self.render.attachNewNode("world")
-        self.annotation = self.render.attachNewNode("annotation")
-        self.annotation.hide(BaseObject.AllCamerasMask)
-        self.annotation.show(BaseObject.DefaultCameraMask)
+        self.common_state = NodePath("<state>")
 
-        self.world.setShaderAuto()
-        self.annotation.setShaderAuto()
+        self.common_state.setShaderAuto()
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
@@ -304,8 +301,8 @@ class CosmoniumBase(ShowBase):
                 configParser.save()
         if self.observer is not None:
             self.observer.set_film_size(width, height)
-            self.render.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
-            self.render.setShaderInput("pixel_size", self.observer.pixel_size)
+            self.common_state.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
+            self.common_state.setShaderInput("pixel_size", self.observer.pixel_size)
         if self.gui is not None:
             self.gui.update_size(width, height)
         if settings.color_picking and self.oid_texture is not None:
@@ -317,22 +314,22 @@ class CosmoniumBase(ShowBase):
         PStatClient.connect()
 
     def toggle_wireframe(self):
-        self.world.clear_render_mode()
+        self.common_state.clear_render_mode()
         if self.wireframe_filled:
             self.wireframe_filled = False
             self.wireframe = False
         self.wireframe = not self.wireframe
         if self.wireframe:
-            self.world.set_render_mode_wireframe()
+            self.common_state.set_render_mode_wireframe()
 
     def toggle_filled_wireframe(self):
-        self.world.clear_render_mode()
+        self.common_state.clear_render_mode()
         if self.wireframe:
             self.wireframe = False
             self.wireframe_filled = False
         self.wireframe_filled = not self.wireframe_filled
         if self.wireframe_filled:
-            self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
+            self.common_state.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
     def toggle_stereoscopic_framebuffer(self):
         settings.stereoscopic_framebuffer = not settings.stereoscopic_framebuffer
@@ -428,17 +425,17 @@ class Cosmonium(CosmoniumBase):
             self.near_cam = None
 
         self.universe = Universe(self)
-        self.components = CompositeObject('<root>')
-        self.components.visible = True
+        self.background = ObserverCenteredWorld()
+        self.background.background = True
 
         if settings.color_picking:
             self.oid_texture = Texture()
             self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
             self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
-            self.render.set_shader_input("oid_store", self.oid_texture)
+            self.common_state.set_shader_input("oid_store", self.oid_texture)
         else:
             self.oid_texture = None
-        self.observer = CameraHolder(self.camera, self.camLens)
+        self.observer = CameraHolder(self.camera, self.cam, self.camLens)
         self.autopilot = AutoPilot(self)
         self.mouse = Mouse(self, self.oid_texture)
         if self.near_cam is not None:
@@ -500,18 +497,33 @@ class Cosmonium(CosmoniumBase):
         self.nav.register_events(self)
         self.gui.register_events(self)
 
-        self.renderer = Renderer(self)
-        
-        render.setAntialias(AntialiasAttrib.MMultisample)
+        self.scene_manager = None
+        print("Using scene manager '{}'".format(settings.scene_manager))
+        if settings.scene_manager == 'static':
+            self.scene_manager = StaticSceneManager()
+        if settings.scene_manager == 'dynamic':
+            self.scene_manager = DynamicSceneManager()
+        elif settings.scene_manager == 'region':
+            self.scene_manager = RegionSceneManager()
+        else:
+            print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
+        self.scene_manager.init_camera(self.observer)
+        self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+
+        self.background.on_visible(self.scene_manager)
+
+        self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
-        self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
+        self.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 
         self.set_ambient(settings.global_ambient)
 
         self.equatorial_grid = Grid("Equatorial", J2000_Orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.background.add_component(self.equatorial_grid)
         self.equatorial_grid.set_shown(settings.show_equatorial_grid)
 
         self.ecliptic_grid = Grid("Ecliptic", J200_EclipticOrientation, LColor(0.28,  0.28,  0.38, 1))
+        self.background.add_component(self.ecliptic_grid)
         self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
 
         self.time.set_current_date()
@@ -548,8 +560,8 @@ class Cosmonium(CosmoniumBase):
         near_cam_node = Camera('nearcam')
         self.near_cam = self.camera.attach_new_node(near_cam_node)
         self.near_dr.setCamera(self.near_cam)
-        self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
-        self.near_cam.node().get_lens().set_near_far(units.m /settings.scale, float('inf'))
+        self.near_cam.node().set_camera_mask(BaseObject.NearCameraFlag)
+        self.near_cam.node().get_lens().set_near_far(units.m /self.scene_manager.scale, float('inf'))
 
     def add_camera_controller(self, camera_controller):
         self.camera_controllers.append(camera_controller)
@@ -677,22 +689,22 @@ class Cosmonium(CosmoniumBase):
         if self.hdr > 3: self.hdr = 0
         print("HDR:", self.hdr)
         if self.hdr == 0:
-            self.world.clearAttrib(LightRampAttrib.getClassType())
+            self.common_state.clearAttrib(LightRampAttrib.getClassType())
         elif self.hdr == 1:
-            self.world.setAttrib(LightRampAttrib.makeHdr0())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr0())
         elif self.hdr == 2:
-            self.world.setAttrib(LightRampAttrib.makeHdr1())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr1())
         elif self.hdr == 3:
-            self.world.setAttrib(LightRampAttrib.makeHdr2())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
         if settings.screenshot_path is not None:
             state = self.gui.hide_with_state()
-            self.annotation.hide()
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag)
             base.graphicsEngine.renderFrame()
             filename = self.screenshot(namePrefix=settings.screenshot_path)
             self.gui.show_with_state(state)
-            self.annotation.show()
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
             if filename is not None:
                 print("Saving screenshot without annotation into", filename)
             else:
@@ -916,7 +928,7 @@ class Cosmonium(CosmoniumBase):
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
         if self.globalAmbient is not None:
-            self.world.clearLight(self.globalAmbientPath)
+            self.common_state.clearLight(self.globalAmbientPath)
             self.globalAmbientPath.removeNode()
         self.globalAmbient=AmbientLight('globalAmbient')
         if settings.srgb:
@@ -927,9 +939,9 @@ class Cosmonium(CosmoniumBase):
         print("Ambient light level:  %.2f" % settings.global_ambient)
         self.gui.update_info("Ambient light level:  %.2f" % settings.global_ambient, duration=0.5, fade=1.0)
         self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
-        self.globalAmbientPath = self.world.attachNewNode(self.globalAmbient)
-        self.world.setLight(self.globalAmbientPath)
-        self.render.set_shader_input("global_ambient", settings.corrected_global_ambient)
+        self.globalAmbientPath = self.common_state.attachNewNode(self.globalAmbient)
+        self.common_state.setLight(self.globalAmbientPath)
+        self.common_state.set_shader_input("global_ambient", settings.corrected_global_ambient)
         configParser.save()
 
     def incr_ambient(self, ambient_incr):
@@ -1018,22 +1030,15 @@ class Cosmonium(CosmoniumBase):
 
     def update_c_settings(self):
         if c_settings is None: return
-        c_settings.use_depth_scaling = settings.use_depth_scaling
-        c_settings.use_inv_scaling = settings.use_inv_scaling
-        c_settings.use_log_scaling = settings.use_log_scaling
-        c_settings.camera_at_origin = settings.camera_at_origin
-        c_settings.scale = settings.scale
-        c_settings.offset_body_center = settings.offset_body_center
         c_settings.min_body_size = settings.min_body_size
 
     def update_c_observer(self):
         if CObserver is not None:
             self.c_observer = CObserver()
-            self.c_observer.update(self.observer._global_position, self.observer._local_position, self.observer._orientation)
+            self.c_observer.update(self.observer._global_position, self.observer._local_position, self.observer._orientation, self.observer.camera_vector)
             self.c_observer.frustum = self.observer.frustum
             self.c_observer.rel_frustum = self.observer.rel_frustum
             self.c_observer.pixel_size = self.observer.pixel_size
-            self.c_observer.midPlane = self.observer.midPlane
         else:
             self.c_observer = self.observer
 
@@ -1045,9 +1050,10 @@ class Cosmonium(CosmoniumBase):
         traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude, self.update_id)
         self.universe.anchor.traverse(traverser)
         self.visibles = list(traverser.get_collected())
-        self.components.update(time, dt)
-        self.components.update_obs(self.observer)
-        self.components.check_visibility(frustum, pixel_size)
+        self.visibles.sort(key=lambda v: v.z_distance)
+        self.background.update(time, dt)
+        self.background.update_obs(self.observer)
+        self.background.check_visibility(frustum, pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1151,23 +1157,6 @@ class Cosmonium(CosmoniumBase):
                 self.no_longer_resolved.append(anchor)
 
     @pstat
-    def find_orbits(self):
-        #TODO: This is a bit crappy, this whole method should be moved in the renderer
-        top_systems = []
-        for visible in self.resolved:
-            #TODO: The test to see if the object is a root system is a bit crude...
-            if visible.content & AnchorBase.System != 0 and visible.parent.content == ~0:
-                top_systems.append(visible)
-        traverser = FindObjectsInVisibleResolvedSystemsTraverser()
-        for system in top_systems:
-            system.traverse(traverser)
-        self.orbits = list(map(lambda anchor: anchor.body, traverser.get_collected()))
-
-    @pstat
-    def update_orbits(self):
-        self.renderer.add_orbits(self.orbits)
-
-    @pstat
     def find_local_lights(self):
         if len(self.global_light_sources) > 0:
             star = self.global_light_sources[0]
@@ -1236,47 +1225,46 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_instances(self):
         observer = self.observer
+        scene_manager = self.scene_manager
         camera_pos = self.observer.get_camera_pos()
         camera_rot = self.observer.get_camera_rot()
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
-        self.components.check_and_update_instance(camera_pos, camera_rot)
+        self.background.check_and_update_instance(scene_manager, camera_pos, camera_rot)
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
-            occluder.body.scene_anchor.update()
+            occluder.body.scene_anchor.update(scene_manager)
         for visible in self.visibles:
             #visible.update_scene(self.c_observer)
-            visible.body.scene_anchor.update()
-            self.renderer.add_object(visible.body)
+            visible.body.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
             #print("NEW VISIBLE", newly_visible.body.get_name())
-            newly_visible.body.on_visible()
+            newly_visible.body.on_visible(scene_manager)
             if newly_visible.resolved:
-                newly_visible.body.on_resolved()
+                newly_visible.body.on_resolved(scene_manager)
         for newly_resolved in self.becoming_resolved:
             #print("NEW RESOLVED", newly_resolved.body.get_name())
-            newly_resolved.body.on_resolved()
+            newly_resolved.body.on_resolved(scene_manager)
         for old_resolved in self.no_longer_resolved:
             #print("OLD RESOLVED", old_resolved.body.get_name())
-            old_resolved.body.on_point()
+            old_resolved.body.on_point(scene_manager)
         for old_visible in self.no_longer_visibles:
             #print("OLD VISIBLE", old_visible.body.get_name())
             if old_visible.resolved:
-                old_visible.body.on_point()
-            old_visible.body.on_hidden()
-        self.renderer.render(self.observer)
+                old_visible.body.on_point(self.scene_manager)
+            old_visible.body.on_hidden(scene_manager)
         for visible in self.visibles:
             body = visible.body
             #TODO: this will update the body's components
             body.update_visible_obs(observer)
             body.check_visible_visibility(frustum, pixel_size)
-            body.check_and_update_visible_instance(camera_pos, camera_rot)
+            body.check_and_update_visible_instance(scene_manager, camera_pos, camera_rot)
         for resolved in self.resolved:
             body = resolved.body
             #TODO: this will update the body's components
             body.update_obs(self.observer)
             body.check_visibility(frustum, pixel_size)
-            body.check_and_update_instance(camera_pos, camera_rot)
+            body.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
         self.ship.check_and_update_instance(camera_pos, camera_rot)
         for controller in self.controllers_to_update:
@@ -1322,27 +1310,13 @@ class Cosmonium(CosmoniumBase):
             if body_distance < distance:
                 nearest_body = visible.body
                 distance = body_distance
-        if nearest_body is not None and self.nearest_body != nearest_body:
-            self.nearest_body = nearest_body
-            print("New nearest visible object:", nearest_body.get_name())
-        if settings.auto_scale:
-            if nearest_body is None:
-                settings.scale = settings.max_scale
-            elif distance is None:
-                settings.scale = settings.max_scale
-            elif distance <= 0:
-                settings.scale = settings.min_scale
-            elif distance < settings.max_scale * 10:
-                settings.scale = max(distance / 10, settings.min_scale)
-            else:
-                settings.scale = settings.max_scale
-            if settings.set_frustum:
-                #near_plane = min(distance / settings.scale / 2.0, settings.near_plane)
-                if settings.scale < 1.0:
-                    near_plane = settings.scale
-                else:
-                    near_plane = settings.near_plane
-                self.observer.update_near_plane(near_plane)
+        if nearest_body is not None:
+            if self.nearest_body != nearest_body:
+                self.nearest_body = nearest_body
+                print("New nearest visible object:", nearest_body.get_name())
+        else:
+            distance = None
+        return distance
 
     def time_task(self, task):
         # Reset all states
@@ -1356,7 +1330,6 @@ class Cosmonium(CosmoniumBase):
         self.resolved = []
         self.becoming_resolved = []
         self.no_longer_resolved = []
-        self.renderer.reset()
         self.update_c_settings()
 
         #Update time and camera
@@ -1386,30 +1359,30 @@ class Cosmonium(CosmoniumBase):
         self.update_universe(self.time.time_full, dt)
 
         nearest_system, nearest_visible_system = self.find_nearest_system()
-        self.update_nearest_system(nearest_system, nearest_visible_system)
+        #TODO: anchors should be distance sorted
+        distance = self.update_nearest_system(nearest_system, nearest_visible_system)
+        self.scene_manager.update_scene_and_camera(distance, self.observer)
 
         self.find_global_light_sources()
         self.update_magnitudes()
         self.update_states()
         self.find_local_lights()
-        self.find_orbits()
         self.check_scattering()
         self.update_height_under()
 
         if self.trigger_check_settings:
             for visible in self.visibles:
                 visible.body.check_settings()
-            for orbit in self.orbits:
-                orbit.check_settings()
-            self.components.check_settings()
+            self.background.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
-        self.update_orbits()
         self.find_shadows()
         self.update_instances()
+        self.scene_manager.build_scene(self.common_state, self.win, self.observer, self.visibles, self.resolved)
+        self.scene_manager.add_background_object(self.background.scene_anchor.instance)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
@@ -1423,7 +1396,7 @@ class Cosmonium(CosmoniumBase):
 
     def print_debug(self):
         print("Global:")
-        print("\tscale", settings.scale)
+        print("\tscale", self.scene_manager.scale)
         print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
         print("\tFoV", self.camLens.get_fov())
         print("Camera:")

@@ -124,20 +124,6 @@ protected:
   LPoint3d position;
 };
 
-class FindObjectsInVisibleResolvedSystemsTraverser : public AnchorTraverserCollector
-{
-PUBLISHED:
-  virtual void traverse_anchor(AnchorBase *anchor);
-
-  virtual bool enter_system(SystemAnchor *anchor);
-
-  virtual void traverse_system(SystemAnchor *anchor);
-
-  virtual bool enter_octree_node(OctreeNode *octree_node);
-
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
-};
-
 class FindShadowCastersTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:

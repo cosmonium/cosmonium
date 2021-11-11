@@ -18,11 +18,11 @@
 
 
 try:
-    from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor, UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
+    from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor, UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
     from .pyengine.pyanchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
-    from .pyengine.pytraversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindObjectsInVisibleResolvedSystemsTraverser, FindShadowCastersTraverser
+    from .pyengine.pytraversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser

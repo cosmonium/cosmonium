@@ -30,8 +30,9 @@ from . import utils
 from math import sin, cos, acos, tan, atan, sqrt, pi
 
 class CameraBase(object):
-    def __init__(self, cam, lens):
+    def __init__(self, camera_np, cam, lens):
         #Camera node
+        self.camera_np = camera_np
         self.cam = cam
         self.camLens = lens
         self.realCamLens = None
@@ -46,32 +47,21 @@ class CameraBase(object):
         #Current zoom factor
         self.zoom_factor = 1.0
         self.linked_cams = []
+        self.inverse_z = False
 
     def add_linked_cam(self, cam):
         self.linked_cams.append(cam)
 
     def init(self):
         self.realCamLens = self.camLens.make_copy()
-        self.update_near_plane(settings.near_plane)
-        print("Planes: ", self.camLens.getNear(), self.camLens.getFar())
         self.init_fov()
 
-    def update_near_plane(self, near_plane):
-        if settings.infinite_far_plane:
-            far_plane = float('inf')
-        else:
-            far_plane = settings.far_plane
+    def update_planes(self, near_plane, far_plane):
         if settings.use_inverse_z:
-            self.camLens.setNearFar(settings.far_plane, near_plane)
+            self.camLens.setNearFar(far_plane, near_plane)
         else:
             self.camLens.setNearFar(near_plane, far_plane)
         self.realCamLens.setNearFar(near_plane, far_plane)
-        if settings.auto_infinite_plane:
-            self.infinity = near_plane / settings.lens_far_limit / 1000
-        else:
-            self.infinity = settings.infinite_plane
-        self.midPlane = self.infinity / settings.mid_plane_ratio
-        render.setShaderInput("midPlane", self.midPlane)
 
     def init_fov(self):
         if base.pipe is not None:
@@ -266,8 +256,8 @@ class RotateAnchorHelper():
 
 class CameraHolder(CameraBase):
     #TODO: this should inherit from the Anchor base class
-    def __init__(self, cam, lens):
-        CameraBase.__init__(self, cam, lens)
+    def __init__(self, camera_np, cam, lens):
+        CameraBase.__init__(self, camera_np, cam, lens)
         self.frame = AbsoluteReferenceFrame()
         self._global_position = LPoint3d()
         self.camera_global_pos = self._global_position
@@ -350,13 +340,13 @@ class CameraHolder(CameraBase):
         self._orientation = self.get_rot()
         self.camera_vector = self._orientation.xform(LVector3d.forward())
         if not settings.camera_at_origin:
-            self.cam.setPos(*self.get_camera_pos())
-        self.cam.setQuat(LQuaternion(*self.get_camera_rot()))
+            self.camera_np.setPos(*self.get_camera_pos())
+        self.camera_np.setQuat(LQuaternion(*self.get_camera_rot()))
         if self.realCamLens is not None:
-            mat = self.cam.getMat()
+            mat = self.camera_np.getMat()
             bh = self.realCamLens.make_bounds()
             self.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
-            mat = self.cam.getMat()
+            mat = self.camera_np.getMat()
             bh = self.realCamLens.make_bounds()
             self.frustum = InfiniteFrustum(bh, mat, self.get_position())
 

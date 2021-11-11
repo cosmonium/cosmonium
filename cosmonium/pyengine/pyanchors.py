@@ -68,6 +68,7 @@ class AnchorBase():
         self.distance_to_obs = 0
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
+        self.z_distance = 0.0
 
     def set_rebuild_needed(self):
         self.rebuild_needed = True
@@ -161,9 +162,12 @@ class StellarAnchor(AnchorBase):
         if distance_to_obs > 0.0:
             vector_to_obs = -rel_position / distance_to_obs
             visible_size = self._extend / (distance_to_obs * observer.pixel_size)
+            coef = -vector_to_obs.dot(observer.camera_vector)
+            self.z_distance = distance_to_obs * coef
         else:
             vector_to_obs = LVector3d()
             visible_size = 0.0
+            self.z_distance = 0.0
         radius = self._extend
         if distance_to_obs > radius:
             in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)

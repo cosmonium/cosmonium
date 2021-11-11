@@ -29,7 +29,7 @@ class Debug:
         base.bufferViewer.toggleEnable()
 
     def list_scene(self):
-        render.ls()
+        self.engine.scene_manager.ls()
 
     def open_scene_explorer(self):
         render.explore()

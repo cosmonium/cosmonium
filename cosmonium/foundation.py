@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVecBase3, NodePath, LColor, DrawMask
+from panda3d.core import LVecBase3, NodePath, LColor, DrawMask, OmniBoundingVolume
 from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
@@ -34,17 +34,19 @@ from . import settings
 class BaseObject(object):
     context = None
     default_shown = True
+    DefaultCameraFlag = DrawMask.bit(0)
+    AnnotationCameraFlag = DrawMask.bit(1)
+    NearCameraFlag = DrawMask.bit(2)
+    WaterCameraFlag = DrawMask.bit(29)
+    ShadowCameraFlag = DrawMask.bit(30)
     AllCamerasMask = DrawMask.all_on()
-    DefaultCameraMask = DrawMask.bit(0)
-    NearCameraMask = DrawMask.bit(1)
-    WaterCameraMask = DrawMask.bit(29)
-    ShadowCameraMask = DrawMask.bit(30)
 
     def __init__(self, name):
         self.name =name
         self.shown = self.default_shown
         self.visible = False
         self.parent = None
+        self.scene_anchor = None
 
     def get_name(self):
         return self.name
@@ -63,6 +65,9 @@ class BaseObject(object):
 
     def set_lights(self, lights):
         pass
+
+    def set_scene_anchor(self, scene_anchor):
+        self.scene_anchor = scene_anchor
 
     def show(self):
         self.shown = True
@@ -107,7 +112,7 @@ class BaseObject(object):
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -159,14 +164,14 @@ class VisibleObject(BaseObject):
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.shown and self.visible:
             self.do_show()
-            self.update_instance(camera_pos, camera_rot)
+            self.update_instance(scene_manager, camera_pos, camera_rot)
         else:
             self.do_hide()
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
     def set_lights(self, lights):
@@ -181,11 +186,22 @@ class CompositeObject(BaseObject):
         self.components = []
         self.lights = None
 
+    def set_lights(self, lights):
+        self.lights = lights
+        for component in self.components:
+            component.set_lights(lights)
+
+    def set_scene_anchor(self, scene_anchor):
+        BaseObject.set_scene_anchor(self, scene_anchor)
+        for component in self.components:
+            component.set_scene_anchor(scene_anchor)
+
     def add_component(self, component):
         if component is not None:
             self.components.append(component)
             component.set_parent(self)
             component.set_lights(self.lights)
+            component.set_scene_anchor(self.scene_anchor)
 
     def remove_component(self, component):
         if component is None: return
@@ -238,9 +254,9 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:
-            component.check_and_update_instance(camera_pos, camera_rot)
+            component.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -250,11 +266,6 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.remove_instance()
 
-    def set_lights(self, lights):
-        self.lights = lights
-        for component in self.components:
-            component.set_lights(lights)
-
 class ObjectLabel(VisibleObject):
     default_shown = False
     ignore_light = True
@@ -263,6 +274,7 @@ class ObjectLabel(VisibleObject):
     appearance = None
     shader = None
     color_picking = True
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, name, label_source):
         VisibleObject.__init__(self, name)
@@ -309,7 +321,6 @@ class ObjectLabel(VisibleObject):
         self.label.setText(name)
         self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
         #node=label.generate()
-        #self.instance = self.context.annotation.attachNewNode(node)
         #self.instance.setBillboardPointEye()
         #node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
         #node.setPythonTag('owner', self.label_source)
@@ -326,8 +337,12 @@ class ObjectLabel(VisibleObject):
         #Using a card holder as look_at() is changing the hpr parameters
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparent_to(self.scene_anchor.unshifted_instance)
         self.instance_ready = True
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
 
         if self.shader is None:
             self.create_shader()

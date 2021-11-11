@@ -314,7 +314,7 @@ class RaphSkyBox(DirectObject):
     def init(self, config):
         skynode = base.camera.attachNewNode('skybox')
         base.camera.hide(BaseObject.AllCamerasMask)
-        base.camera.show(BaseObject.DefaultCameraMask | BaseObject.WaterCameraMask)
+        base.camera.show(BaseObject.DefaultCameraFlag | BaseObject.WaterCameraFlag)
         self.skybox = loader.loadModel('ralph-data/models/rgbCube')
         self.skybox.reparentTo(skynode)
 
@@ -633,7 +633,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.shadow_caster = None
         self.set_ambient(0.3)
 
-        self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask | BaseObject.NearCameraMask)
+        self.cam.node().set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.NearCameraFlag)
         self.observer = CameraHolder(self.camera, self.camLens)
         self.observer.init()
 

@@ -114,7 +114,7 @@ class TiledShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.heightscale = scale
 
-    def create_culling_frustum(self, camera):
+    def create_culling_frustum(self, scene_manager, camera):
         cam_transform_mat = camera.cam.getNetTransform().getMat()
         transform_mat = LMatrix4()
         transform_mat.invert_from(self.instance.getNetTransform().getMat())

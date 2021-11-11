@@ -1228,7 +1228,7 @@ class PatchedShapeBase(Shape):
     def xform_cam_to_model(self, camera_pos):
         pass
 
-    def create_culling_frustum(self, camera):
+    def create_culling_frustum(self, scene_manager, camera):
         pass
 
     def create_frustum_node(self):
@@ -1256,7 +1256,7 @@ class PatchedShapeBase(Shape):
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
-        self.create_culling_frustum(self.owner.context.observer)
+        self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
         self.create_frustum_node()
         self.to_split = []
         self.to_merge = []
@@ -1416,7 +1416,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
 
-    def create_culling_frustum(self, camera):
+    def create_culling_frustum(self, scene_manager, camera):
         min_radius = self.parent.body.surface.get_min_radius() / self.parent.height_scale
         altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
         cam_transform_mat = camera.cam.getNetTransform().getMat()
@@ -1441,7 +1441,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             self.model_body_center_offset[2] /= scale[2]
         else:
             self.model_body_center_offset = LVector3d()
-        self.culling_frustum = HorizonCullingFrustum(camera.realCamLens, self.parent.height_scale / settings.scale, transform_mat, min_radius, altitude_to_min_radius,
+        self.culling_frustum = HorizonCullingFrustum(camera.realCamLens, self.parent.height_scale / scene_manager.scale, transform_mat, min_radius, altitude_to_min_radius,
                                                      self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
                                                      settings.cull_far_patches, settings.cull_far_patches_threshold)
 

@@ -330,9 +330,9 @@ class VisibleShip(ShipBase):
         self.ship_object.check_and_update_instance(camera_pos, camera_rot)
         self.instance = self.ship_object.instance
         self.instance.hide(self.AllCamerasMask)
-        self.instance.show(self.NearCameraMask)
-        self.instance.show(self.WaterCameraMask)
-        self.instance.show(self.ShadowCameraMask)
+        self.instance.show(self.NearCameraFlag)
+        self.instance.show(self.WaterCameraFlag)
+        self.instance.show(self.ShadowCameraFlag)
         self.update_light(camera_pos)
         if self.create_own_shadow_caster:
             if self.shadow_caster is None:

@@ -23,7 +23,8 @@ from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, Geo
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
-from .foundation import VisibleObject, CompositeObject, ObjectLabel, LabelledObject
+from .foundation import VisibleObject, ObjectLabel, LabelledObject
+from .sceneanchor import SceneAnchor
 from .namedobject import NamedObject
 from .astro.orbits import FixedPosition
 from .astro.projection import InfinitePosition
@@ -44,13 +45,14 @@ class BackgroundLabel(ObjectLabel):
     def create_instance(self):
         ObjectLabel.create_instance(self)
         self.instance.setBin('background', self.label_source.background_level)
+        infinity = self.context.scene_manager.infinity
         if self.label_source is not None:
-            self.rel_position = self.label_source.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
+            self.rel_position = self.label_source.project(0, self.context.observer.camera_global_pos, infinity)
         else:
             self.rel_position = None
         if self.rel_position != None:
             self.instance.setPos(*self.rel_position)
-            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * self.context.observer.infinity)
+            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * infinity)
         else:
             scale = 0.0
         if scale < 1e-7:
@@ -63,7 +65,7 @@ class BackgroundLabel(ObjectLabel):
         if self.visible and self.instance is not None:
             self.visible = frustum.is_sphere_in(self.rel_position, 0)
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, scene_manager, camera_pos, orientation):
         self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
 
@@ -73,7 +75,7 @@ class Orbit(VisibleObject):
     selected_color = LColor(1.0, 0.0, 0.0, 1.0)
     appearance = None
     shader = None
-    default_camera_mask = VisibleObject.DefaultCameraMask
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
@@ -208,7 +210,7 @@ class Orbit(VisibleObject):
 class RotationAxis(VisibleObject):
     default_shown = False
     ignore_light = True
-    default_camera_mask = VisibleObject.DefaultCameraMask
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-axis')
@@ -239,7 +241,7 @@ class RotationAxis(VisibleObject):
         self.instance = NodePath(self.node)
         self.instance.setRenderModeThickness(settings.axis_thickness)
         self.instance.setColor(srgb_to_linear(self.body.get_orbit_color()))
-        self.instance.reparentTo(self.body.scene_anchor.unshifted_instance)
+        self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.set_light_off(1)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
@@ -260,7 +262,7 @@ class RotationAxis(VisibleObject):
         else:
             self.visible = False
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.instance is not None:
             self.instance.set_scale(*self.get_scale())
             self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
@@ -271,7 +273,8 @@ class RotationAxis(VisibleObject):
 class ReferenceAxis(VisibleObject):
     default_shown = False
     ignore_light = True
-    default_camera_mask = VisibleObject.DefaultCameraMask
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
+
     def __init__(self, body):
         VisibleObject.__init__(self, body.get_ascii_name() + '-axis')
         self.body = body
@@ -283,7 +286,7 @@ class ReferenceAxis(VisibleObject):
     def create_instance(self):
         if self.instance is not None: return self.instance
         self.instance = load_panda_model_sync(self.model)
-        self.instance.reparent_to(self.body.scene_anchor.unshifted_instance)
+        self.instance.reparent_to(self.scene_anchor.unshifted_instance)
         self.instance.set_light_off(1)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
@@ -291,7 +294,7 @@ class ReferenceAxis(VisibleObject):
         self.instance.show(self.default_camera_mask)
         return self.instance
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.instance:
             self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
             self.instance.set_scale(*self.get_scale())
@@ -302,6 +305,9 @@ class ReferenceAxis(VisibleObject):
 class Grid(VisibleObject):
     ignore_light = True
     default_shown = False
+    shader = None
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
+
     def __init__(self, name, orientation, color):
         VisibleObject.__init__(self, name)
         self.visible = True
@@ -318,10 +324,20 @@ class Grid(VisibleObject):
         if show is not None:
             self.set_shown(show)
 
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance()
+        cls.appearance.has_vertex_color = True
+        cls.appearance.has_material = False
+        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader.color_picking = False
+
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
+        #TODO: This sould be simply drawn in the background bin
+        infinity = self.context.scene_manager.infinity
         for r in range(1, self.nbOfRings + 1):
             for i in range(self.nbOfPoints):
                 angle = 2 * pi / self.nbOfPoints * i
@@ -329,7 +345,7 @@ class Grid(VisibleObject):
                 y = sin(angle) * sin( pi * r / (self.nbOfRings + 1) )
                 z = sin( -pi / 2 + pi * r / (self.nbOfRings + 1) )
 
-                self.vertexWriter.addData3f((self.context.observer.infinity * x, self.context.observer.infinity * y, self.context.observer.infinity * z))
+                self.vertexWriter.addData3f((infinity * x, infinity * y, infinity * z))
                 if r == self.nbOfRings / 2 + 1:
                     self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
@@ -341,7 +357,7 @@ class Grid(VisibleObject):
                 y = sin(2*pi * s / self.nbOfSectors) * sin(angle)
                 z = cos(angle)
 
-                self.vertexWriter.addData3f((self.context.observer.infinity * x , self.context.observer.infinity * y, self.context.observer.infinity * z))
+                self.vertexWriter.addData3f((infinity * x , infinity * y, infinity * z))
                 if s == 0:
                     self.colorwriter.addData4(srgb_to_linear((self.color.x * 1.5, 0, 0, 1)))
                 else:
@@ -370,9 +386,19 @@ class Grid(VisibleObject):
         self.node = GeomNode("grid")
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
+        if self.shader is None:
+            self.create_shader()
+        self.appearance.apply(self, self.instance)
+        self.shader.apply(self, self.appearance, self.instance)
         self.instance.setRenderModeThickness(settings.grid_thickness)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.setQuat(LQuaternion(*self.orientation))
+        self.instance.setBin('background', settings.grid_depth)
+        self.instance.set_depth_write(False)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
 
     def set_orientation(self, orientation):
         self.orientation = orientation
@@ -380,6 +406,8 @@ class Grid(VisibleObject):
             self.instance.setQuat(LQuaternion(*self.orientation))
 
 class Asterism(VisibleObject):
+    shader = None
+
     def __init__(self, name):
         VisibleObject.__init__(self, name)
         self.visible = True
@@ -390,6 +418,14 @@ class Asterism(VisibleObject):
 
     def check_settings(self):
         self.set_shown(settings.show_asterisms)
+
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance()
+        cls.appearance.has_vertex_color = True
+        cls.appearance.has_material = False
+        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader.color_picking = False
 
     def set_segments_list(self, segments):
         self.segments = segments
@@ -418,8 +454,8 @@ class Asterism(VisibleObject):
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.anchor.update_and_update_observer(0, self.context.c_observer)
-                position, distance, scale_factor = self.calc_scene_params(star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
+                star.anchor.update_and_update_observer(0, self.context.c_observer, 0)
+                position, distance, scale_factor = SceneAnchor.calc_scene_params(self.context.scene_manager, star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.camera_global_pos = old_cam_pos
@@ -438,10 +474,16 @@ class Asterism(VisibleObject):
         self.node = GeomNode("asterism")
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
+        if self.shader is None:
+            self.create_shader()
+        self.appearance.apply(self, self.instance)
+        self.shader.apply(self, self.appearance, self.instance)
         self.instance.setRenderModeThickness(settings.asterism_thickness)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.setBin('background', settings.asterisms_depth)
         self.instance.set_depth_write(False)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
 
 class NamedAsterism(LabelledObject):
     ignore_light = True
@@ -480,6 +522,8 @@ class NamedAsterism(LabelledObject):
 class Boundary(VisibleObject):
     ignore_light = True
     default_shown = True
+    shader = None
+
     def __init__(self, name, points = [], color = None):
         VisibleObject.__init__(self, name)
         self.visible = True
@@ -491,6 +535,14 @@ class Boundary(VisibleObject):
     def check_settings(self):
         self.set_shown(settings.show_boundaries)
 
+    @classmethod
+    def create_shader(cls):
+        cls.appearance = ModelAppearance()
+        cls.appearance.has_vertex_color = True
+        cls.appearance.has_material = False
+        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader.color_picking = False
+
     def set_points_list(self, points):
         self.points = points
 
@@ -498,8 +550,9 @@ class Boundary(VisibleObject):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
+        infinity = self.context.scene_manager.infinity
         for point in self.points:
-            position = point.project(0, self.context.observer.camera_global_pos, self.context.observer.infinity)
+            position = point.project(0, self.context.observer.camera_global_pos, infinity)
             self.vertexWriter.addData3f(*position)
             self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
@@ -514,12 +567,18 @@ class Boundary(VisibleObject):
         self.node = GeomNode("boundary")
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
+        if self.shader is None:
+            self.create_shader()
+        self.appearance.apply(self, self.instance)
+        self.shader.apply(self, self.appearance, self.instance)
         self.instance.setRenderModeThickness(settings.boundary_thickness)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.setBin('background', settings.boundaries_depth)
         self.instance.set_depth_write(False)
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
 
-class Constellation(NamedObject):
+class Constellation(NamedObject, LabelledObject):
     ignore_light = True
     default_shown = True
     background_level = settings.constellations_depth
@@ -531,38 +590,16 @@ class Constellation(NamedObject):
         self.visible = True
         self.center = center
         self.boundary = boundary
-        self.components = CompositeObject(name)
-        self.components.visible = True
+        self.visible = True
         self.create_components()
-
-    def set_parent(self, parent):
-        pass
-
-    def set_lights(self, lights):
-        pass
 
     def create_label_instance(self):
         return BackgroundLabel(self.get_ascii_name() + '-label', self)
 
     def create_components(self):
         self.create_label()
-        self.components.add_component(self.label)
-        self.components.add_component(self.boundary)
-
-    def check_settings(self):
-        self.components.check_settings()
-
-    def update(self, time, dt):
-        self.components.update(time, dt)
-
-    def update_obs(self, observer):
-        self.components.update_obs(observer)
-
-    def check_visibility(self, frustum, pixel_size):
-        self.components.check_visibility(frustum, pixel_size)
-
-    def check_and_update_instance(self, camera_pos, camera_rot):
-        self.components.check_and_update_instance(camera_pos, camera_rot)
+        self.add_component(self.label)
+        self.add_component(self.boundary)
 
     def project(self, time, center, distance):
         return self.center.project(time, center, distance)

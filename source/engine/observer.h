@@ -38,13 +38,13 @@ PUBLISHED:
 
   virtual LQuaterniond get_absolute_orientation(void);
 
-  virtual void update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation);
+  virtual void update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation, LVector3d camera_vector);
 
 PUBLISHED:
   double pixel_size;
   InfiniteFrustum *frustum;
   InfiniteFrustum *rel_frustum;
-  double midPlane;
+  LVector3d camera_vector;
 
 protected:
   //Cached values

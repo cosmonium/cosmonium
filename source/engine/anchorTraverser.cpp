@@ -274,38 +274,6 @@ FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vec
   }
 }
 
-void
-FindObjectsInVisibleResolvedSystemsTraverser::traverse_anchor(AnchorBase *anchor)
-{
-  collected.push_back(anchor);
-}
-
-bool
-FindObjectsInVisibleResolvedSystemsTraverser::enter_system(SystemAnchor *anchor)
-{
-  collected.push_back(anchor);
-  return anchor->visible and anchor->resolved;
-}
-
-void
-FindObjectsInVisibleResolvedSystemsTraverser::traverse_system(SystemAnchor *anchor)
-{
-  for (auto child : anchor->children) {
-    child->traverse(*this);
-  }
-}
-
-bool
-FindObjectsInVisibleResolvedSystemsTraverser::enter_octree_node(OctreeNode *octree_node)
-{
-  return false;
-}
-
-void
-FindObjectsInVisibleResolvedSystemsTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves)
-{
-}
-
 FindShadowCastersTraverser::FindShadowCastersTraverser(AnchorBase *target, LVector3d vector_to_light_source, double distance_to_light_source, double light_source_radius) :
   target(target),
   vector_to_light_source(vector_to_light_source),

@@ -91,8 +91,8 @@ class Surface(ShapeObject):
         (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
 
-    def update_instance(self, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, camera_pos, camera_rot)
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
         self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
 

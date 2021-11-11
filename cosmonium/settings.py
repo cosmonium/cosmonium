@@ -120,9 +120,11 @@ screenshot_format = "png"
 
 last_script_path = None
 
+scene_manager = 'dynamic'
+
 use_inv_scaling=True
 use_log_scaling=False
-use_depth_scaling = use_inv_scaling or use_log_scaling
+use_depth_scaling = scene_manager == 'dynamic' and (use_inv_scaling or use_log_scaling)
 auto_scale=True
 lens_far_limit = 1e-7
 scale=1000.0
@@ -235,6 +237,7 @@ default_window_height = 600
 
 #These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
+grid_depth = 5
 asterisms_depth = 10
 constellations_depth = 15
 boundaries_depth = 20

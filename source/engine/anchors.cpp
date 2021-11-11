@@ -93,7 +93,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   rel_position(0.0),
   distance_to_obs(0.0),
   vector_to_obs(0.0),
-  visible_size(0.0)
+  visible_size(0.0),
+  z_distance(0.0)
 {
   Py_INCREF(ref_object);
 }
@@ -294,9 +295,12 @@ StellarAnchor::update_observer(Observer &observer, unsigned long int update_id)
   if (distance_to_obs > 0.0) {
       vector_to_obs = -rel_position / distance_to_obs;
       visible_size = _extend / (distance_to_obs * observer.pixel_size);
+      double coef = -vector_to_obs.dot(observer.camera_vector);
+      z_distance = distance_to_obs * coef;
   } else {
       vector_to_obs = 0.0;
       visible_size = 0.0;
+      z_distance = 0.0;
   }
   was_visible = visible;
   was_resolved = resolved;

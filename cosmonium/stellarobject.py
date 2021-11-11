@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d, LVector3d, LVector3, LColor
+from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
 
 from .foundation import CompositeObject, ObjectLabel
 from .namedobject import NamedObject
@@ -60,22 +60,16 @@ class StellarBodyLabel(ObjectLabel):
                 self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
         self.fade = clamp(self.fade, 0.0, 1.0)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         body = self.label_source
         if body.is_emissive() and (not body.anchor.resolved or body.background):
-            if body.scene_anchor.scene_position != None:
-                self.instance.setPos(*body.scene_anchor.scene_position)
-                scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.scene_anchor.scene_distance)
-            else:
-                scale = 0.0
+            self.instance.set_pos(LPoint3())
+            scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.distance_to_obs)
         else:
-            offset = body.get_apparent_radius() * 1.01
-            rel_front_pos = body.anchor.rel_position - camera_rot.xform(LPoint3d(0, offset, 0))
-            vector_to_obs = LVector3d(-rel_front_pos)
-            distance_to_obs = vector_to_obs.length()
-            vector_to_obs /= distance_to_obs
-            position, distance, scale_factor = self.label_source.scene_anchor.calc_scene_params(rel_front_pos, rel_front_pos, distance_to_obs, vector_to_obs)
-            self.instance.setPos(*position)
+            offset = body.get_extend()
+            position = - camera_rot.xform(LPoint3d(0, offset, 0))
+            distance = body.anchor.distance_to_obs - offset
+            self.instance.set_pos(*position)
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * distance)
         self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
@@ -143,7 +137,9 @@ class StellarObject(NamedObject):
         self.lights = None
 
         self.visible_components = CompositeObject(self.get_ascii_name())
+        self.visible_components.set_scene_anchor(self.scene_anchor)
         self.components = CompositeObject(self.get_ascii_name())
+        self.components.set_scene_anchor(self.scene_anchor)
 
     def set_parent(self, parent):
         self.parent = parent
@@ -261,18 +257,24 @@ class StellarObject(NamedObject):
         self.body_class = body_class
 
     def create_orbit_object(self):
-        if self.orbit_object is None and not isinstance(self.anchor.orbit, FixedPosition):
+        if self.orbit_object is None and self.anchor.orbit.is_dynamic():
             self.orbit_object = Orbit(self)
-            self.components.add_component(self.orbit_object)
             self.orbit_object.check_settings()
 
-    def set_orbit(self, orbit):
+    def remove_orbit_object(self):
         if self.orbit_object is not None:
             self.orbit_object.remove_instance()
             self.orbit_object = None
-            self.components.remove_component(self.orbit_object)
+
+    def set_orbit(self, orbit):
+        if self.orbit_object is not None:
+            self.remove_orbit_object()
+            recreate = True
+        else:
+            recreate = False
         self.anchor.orbit = orbit
-        self.create_orbit_object()
+        if recreate:
+            self.create_orbit_object()
 
     def set_rotation(self, rotation):
         self.anchor.rotation = rotation
@@ -434,45 +436,45 @@ class StellarObject(NamedObject):
     def check_visibility(self, frustum, pixel_size):
         self.components.check_visibility(frustum, pixel_size)
 
-    def on_visible(self):
+    def on_visible(self, scene_manager):
         if not self.init_visible_components:
+            self.scene_anchor.create_instance(scene_manager)
+            self.scene_anchor.update(scene_manager)
             self.create_label()
             self.label.check_settings()
             self.visible_components.add_component(self.label)
             self.visible_components.visible = True
             self.init_visible_components = True
 
-    def on_hidden(self):
+    def on_hidden(self, scene_manager):
         if self.init_visible_components:
             self.visible_components.remove_component(self.label)
             self.label = None
+            self.scene_anchor.remove_instance()
             self.init_visible_components = False
 
-    def on_resolved(self):
+    def on_resolved(self, scene_manager):
         if not self.init_components:
-            self.scene_anchor.create_instance()
-            self.scene_anchor.update()
             self.create_components()
             self.components.visible = True
             self.check_settings()
             self.init_components = True
 
-    def on_point(self):
+    def on_point(self, scene_manager):
         if self.init_components:
             self.components.remove_instance()
-            self.scene_anchor.remove_instance()
             self.remove_components()
             self.init_components = False
 
-    def check_and_update_visible_instance(self, camera_pos, camera_rot):
-        self.visible_components.check_and_update_instance(camera_pos, camera_rot)
+    def check_and_update_visible_instance(self, scene_manager, camera_pos, camera_rot):
+        self.visible_components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         StellarObject.nb_instance += 1
         if self.lights is not None:
             self.lights.update_instances(camera_pos)
         self.update_components(camera_pos)
-        self.components.check_and_update_instance(camera_pos, camera_rot)
+        self.components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     def show_rotation_axis(self):
         if self.rotation_axis:
