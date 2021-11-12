@@ -499,16 +499,19 @@ class Cosmonium(CosmoniumBase):
 
         self.scene_manager = None
         print("Using scene manager '{}'".format(settings.scene_manager))
-        if settings.scene_manager == 'static':
-            self.scene_manager = StaticSceneManager()
-        if settings.scene_manager == 'dynamic':
+        if self.app_config.test_start:
             self.scene_manager = DynamicSceneManager()
-        elif settings.scene_manager == 'region':
-            self.scene_manager = RegionSceneManager()
         else:
-            print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
-        self.scene_manager.init_camera(self.observer)
-        self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+            if settings.scene_manager == 'static':
+                self.scene_manager = StaticSceneManager()
+            elif settings.scene_manager == 'dynamic':
+                self.scene_manager = DynamicSceneManager()
+            elif settings.scene_manager == 'region':
+                self.scene_manager = RegionSceneManager()
+            else:
+                print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
+            self.scene_manager.init_camera(self.observer)
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
 
         self.background.on_visible(self.scene_manager)
 
