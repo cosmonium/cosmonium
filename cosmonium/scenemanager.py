@@ -187,7 +187,7 @@ class DynamicSceneManager(SceneManagerBase):
         self.root.ls()
 
 class RegionSceneManager(SceneManagerBase):
-    min_near = 1e-3
+    min_near = 1e-6
     def __init__(self):
         SceneManagerBase.__init__(self)
         self.regions = []
