@@ -23,6 +23,7 @@ from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
 from .foundation import CompositeObject, ObjectLabel
 from .namedobject import NamedObject
 from .annotations import ReferenceAxis, RotationAxis, Orbit
+from .bodyelements import Halo
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
 from .sceneanchor import SceneAnchor
 from .astro.frame import SynchroneReferenceFrame
@@ -127,6 +128,7 @@ class StellarObject(NamedObject):
         self.orbit_object = None
         self.rotation_axis = None
         self.reference_axis = None
+        self.resolved_halo = None
         self.init_visible_components = False
         self.init_components = False
         objectsDB.add(self)
@@ -240,6 +242,9 @@ class StellarObject(NamedObject):
         if self.has_reference_axis:
             self.reference_axis = ReferenceAxis(self)
             self.components.add_component(self.reference_axis)
+        if self.has_resolved_halo:
+            self.resolved_halo = Halo(self)
+            self.components.add_component(self.resolved_halo)
 
     def update_components(self, camera_pos):
         pass
@@ -249,6 +254,8 @@ class StellarObject(NamedObject):
         self.rotation_axis = None
         self.components.remove_component(self.reference_axis)
         self.reference_axis = None
+        self.components.remove_component(self.resolved_halo)
+        self.resolved_halo = None
 
     def set_system(self, system):
         self.system = system

@@ -163,14 +163,14 @@ class DynamicSceneManager(SceneManagerBase):
         for object_to_render in visibles:
             if object_to_render.visible:
                 body = object_to_render.body
-                self.add_point(object_to_render.point_color, body.scene_anchor.scene_position, object_to_render.visible_size, object_to_render._app_magnitude, body.oid_color)
-                if body.has_resolved_halo:
-                    self.add_halo(object_to_render.point_color, body.scene_anchor.scene_position, object_to_render.visible_size, object_to_render._app_magnitude, body.oid_color)
+                if object_to_render.visible_size < settings.min_body_size * 2:
+                    self.add_point(object_to_render.point_color, body.scene_anchor.scene_position, object_to_render.visible_size, object_to_render._app_magnitude, body.oid_color)
+                    if settings.show_halo and object_to_render._app_magnitude < settings.smallest_glare_mag:
+                        self.add_halo(object_to_render.point_color, body.scene_anchor.scene_position, object_to_render.visible_size, object_to_render._app_magnitude, body.oid_color)
         self.pointset.update()
         self.haloset.update()
 
     def add_point(self, point_color, scene_position, visible_size, app_magnitude, oid_color):
-        if visible_size < settings.min_body_size * 2:
             scale = mag_to_scale(app_magnitude)
             if scale > 0:
                 color = point_color * scale
@@ -178,7 +178,6 @@ class DynamicSceneManager(SceneManagerBase):
                 self.pointset.add_point(scene_position, color, size, oid_color)
 
     def add_halo(self, point_color, scene_position, visible_size, app_magnitude, oid_color):
-        if settings.show_halo and app_magnitude < settings.smallest_glare_mag:
             coef = settings.smallest_glare_mag - app_magnitude + 6.0
             radius = max(1.0, visible_size)
             size = radius * coef * 2.0
