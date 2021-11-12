@@ -120,7 +120,7 @@ screenshot_format = "png"
 
 last_script_path = None
 
-scene_manager = 'dynamic'
+scene_manager = 'region'
 
 use_inv_scaling=True
 use_log_scaling=False
