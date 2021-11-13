@@ -236,8 +236,9 @@ class RegionSceneManager(SceneManagerBase):
             if not resolved.visible: continue
             if not resolved.body.virtual_object and resolved.body.scene_anchor.instance is not None:
                 if not resolved.body.background:
-                    near = (resolved.z_distance - resolved._extend) / self.scale
-                    far = (resolved.z_distance + resolved._extend) / self.scale
+                    coef = -resolved.vector_to_obs.dot(camera.camera_vector) * camera.cos_fov2
+                    near = (resolved.distance_to_obs  - resolved._extend)* coef / self.scale
+                    far = (resolved.distance_to_obs + resolved._extend) * coef / self.scale
                     near = max(near, self.min_near)
                     region = SceneRegion(self, near, far)
                     region.add_body(resolved.body)

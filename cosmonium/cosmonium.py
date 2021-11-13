@@ -1434,6 +1434,7 @@ class Cosmonium(CosmoniumBase):
                     print("Scene")
                     print("\tPosition", self.selected.scene_anchor.scene_position, '(Offset:', self.selected.scene_anchor.world_body_center_offset, ')')
                     print("\tScale", self.selected.scene_anchor.scene_scale_factor)
+                    print("\tZ distance", self.selected.anchor.z_distance)
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
