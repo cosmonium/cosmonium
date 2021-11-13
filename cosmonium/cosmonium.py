@@ -1464,8 +1464,8 @@ class Cosmonium(CosmoniumBase):
                         print("\tCoord:", coord, "Distance:", patch.quadtree_node.distance)
                         print("\tflat:", patch.flat_coord)
                         if patch.instance is not None:
-                            print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(self.world))
-                            print("\tDistance:", patch.instance.get_pos(self.world).length())
+                            print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(render))
+                            print("\tDistance:", patch.instance.get_pos(render).length())
                             print("\tScale:", patch.instance.get_scale())
                             if patch.quadtree_node.offset is not None:
                                 print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * self.selected.get_apparent_radius())
