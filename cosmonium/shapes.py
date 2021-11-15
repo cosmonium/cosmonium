@@ -206,10 +206,10 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.add_after_effect(after_effect)
 
-    async def create_instance(self):
+    async def create_instance(self, scene_anchor):
         tasks = []
         for component in self.components:
-            tasks.append(component.create_instance())
+            tasks.append(component.create_instance(scene_anchor))
         return gather(*tasks)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
