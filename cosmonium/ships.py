@@ -188,6 +188,9 @@ class ShipBase(VisibleObject):
     def set_light(self, light):
         pass
 
+    def create_light(self):
+        pass
+
     def is_flat(self):
         return True
 
