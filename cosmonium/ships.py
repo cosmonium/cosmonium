@@ -104,6 +104,9 @@ class ShipBase(VisibleObject):
     def get_frame_rot(self):
         return self._frame_rotation
 
+    def get_local_position(self):
+        return self._local_position
+
     def get_position_of(self, rel_position):
         return self._global_position + self.frame.get_local_position(rel_position)
 
@@ -275,9 +278,6 @@ class VisibleShip(ShipBase):
 
     def get_extend(self):
         return self.radius
-
-    def get_local_position(self):
-        return self._local_position
 
     #TODO: Should be refactored with StellarBody !
     def create_light(self):
