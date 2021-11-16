@@ -297,9 +297,9 @@ class HeightmapFlatSurface(FlatSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
-        self.sources.append(self.heightmap)
+        self.sources.add_source(self.heightmap)
         if biome is not None:
-            self.sources.append(biome)
+            self.sources.add_source(biome)
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
