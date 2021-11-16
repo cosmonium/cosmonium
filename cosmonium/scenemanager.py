@@ -79,7 +79,7 @@ class StaticSceneManager(SceneManagerBase):
         pass
 
     def build_scene(self, state, win, camera, visibles, resolved):
-        self.root.set_state(state)
+        self.root.set_state(state.get_state())
 
     def ls(self):
         self.root.ls()
