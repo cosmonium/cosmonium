@@ -310,8 +310,9 @@ class SurfaceBodyMover(CartesianBodyMover):
         self.set_altitude(self.get_altitude() + step)
 
 class ShipSurfaceBodyMover(ShipMover):
-    def __init__(self, body):
+    def __init__(self, body, surface):
         ShipMover.__init__(self, body)
+        self.surface = surface
         self.altitude = 0.0
 
     def update(self):
@@ -338,7 +339,7 @@ class ShipSurfaceBodyMover(ShipMover):
 
     def set_altitude(self, altitude):
         pos = self.body.get_pos()
-        distance = self.body.frame.body.get_height_under(pos)
+        distance = self.surface.get_height_under(pos)
         new_frame_pos = LPoint3d(self.body.get_frame_pos())
         new_frame_pos[2] = distance + altitude
         self.body.set_frame_pos(new_frame_pos)
