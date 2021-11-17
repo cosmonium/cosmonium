@@ -1202,7 +1202,7 @@ class PatchedShapeBase(Shape):
         else:
             pad = ''
         print(pad, patch.str_id(), hex(id(patch)))
-        print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
+        print(pad, '  Visible' if patch.quadtree_node.visible else '  Not visible', patch.quadtree_node.patch_in_view)
         if patch.shown: print(pad, '  Shown')
         if not patch.instance_ready: print(pad, '  Instance not ready')
         if patch.task is not None: print(pad, '  Task running')
