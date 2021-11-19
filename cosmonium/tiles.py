@@ -112,7 +112,7 @@ class MeshTerrainLayer(PatchLayer):
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
-        self.heightscale = scale
+        self.scale = scale
 
     def create_culling_frustum(self, scene_manager, camera):
         cam_transform_mat = camera.cam.getNetTransform().getMat()
@@ -122,7 +122,7 @@ class TiledShape(PatchedShapeBase):
         self.culling_frustum = CullingFrustum(camera.realCamLens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
     def global_to_shape_coord(self, x, y):
-        return (x / self.heightscale, y / self.heightscale)
+        return (x / self.scale, y / self.scale)
 
     def find_patch_at(self, coord):
         (x, y) = coord
@@ -198,9 +198,9 @@ class TiledShape(PatchedShapeBase):
         patch.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
-        model_camera_pos = camera_pos / self.heightscale
+        model_camera_pos = camera_pos / self.scale
         (x, y) = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, LVector3d(), (x, y))
 
     def get_scale(self):
-        return LVector3(self.heightscale, self.heightscale, self.heightscale)
+        return LVector3(self.scale)
