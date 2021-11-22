@@ -564,6 +564,12 @@ class PatchBase(Shape):
         self.children = []
         self.quadtree_node.remove_children()
 
+    def __str__(self):
+        return f"{id(self):x} {self.str_id()}"
+
+    def __repr__(self):
+        return f"{id(self):x} {self.str_id()}"
+
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
 
