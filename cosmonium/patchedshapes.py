@@ -261,18 +261,31 @@ class PatchNeighbours(PatchNeighboursBase):
                 valid.append(neighbour)
         self.neighbours[PatchBase.WEST] = valid
 
-    def replace_neighbours(self, face, olds, news):
+    def split_opposite_neighbours(self, face, news):
         opposite = PatchBase.opposite_face[face]
         for neighbour_patch in self.neighbours[face]:
             neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
+            try:
+                neighbour_list.remove(self.patch)
+                for new in news:
+                    if not new in neighbour_list:
+                        neighbour_list.append(new)
+            except ValueError:
+                pass
+
+    def merge_opposite_neighbours(self, face, olds):
+        opposite = PatchBase.opposite_face[face]
+        for neighbour_patch in self.neighbours[face]:
+            neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
+            found = False
             for old in olds:
                 try:
                     neighbour_list.remove(old)
+                    found = True
                 except ValueError:
                     pass
-            for new in news:
-                if not new in neighbour_list:
-                    neighbour_list.append(new)
+            if found and not self.patch in neighbour_list:
+                    neighbour_list.append(self.patch)
 
     def split_neighbours(self, update):
         (bl, br, tr, tl) = self.patch.children
@@ -281,10 +294,10 @@ class PatchNeighbours(PatchNeighboursBase):
         br.set_all_neighbours([tr], self.get_neighbours(PatchBase.EAST), self.get_neighbours(PatchBase.SOUTH), [bl])
         bl.set_all_neighbours([tl], [br], self.get_neighbours(PatchBase.SOUTH), self.get_neighbours(PatchBase.WEST))
         neighbours = self.get_all_neighbours()
-        self.replace_neighbours(PatchBase.NORTH, [self.patch], [tl, tr])
-        self.replace_neighbours(PatchBase.EAST, [self.patch], [tr, br])
-        self.replace_neighbours(PatchBase.SOUTH, [self.patch], [bl, br])
-        self.replace_neighbours(PatchBase.WEST,  [self.patch], [tl, bl])
+        self.split_opposite_neighbours(PatchBase.NORTH, [tl, tr])
+        self.split_opposite_neighbours(PatchBase.EAST, [tr, br])
+        self.split_opposite_neighbours(PatchBase.SOUTH, [bl, br])
+        self.split_opposite_neighbours(PatchBase.WEST, [tl, bl])
         for (i, new) in enumerate((tl, tr, br, bl)):
             #text = ['tl', 'tr', 'br', 'bl']
             #print("*** Child", text[i], '***')
@@ -297,28 +310,29 @@ class PatchNeighbours(PatchNeighboursBase):
         self.clear_all_neighbours()
 
     def merge_neighbours(self, update):
-        (bl, br, tr, tl) = self.patch.children
+        children = self.patch.children
+        (bl, br, tr, tl) = children
         north = []
         for neighbour in tl.get_neighbours(PatchBase.NORTH) + tr.get_neighbours(PatchBase.NORTH):
-            if neighbour not in north:
+            if neighbour not in north and neighbour not in children:
                 north.append(neighbour)
         east = []
         for neighbour in tr.get_neighbours(PatchBase.EAST) + br.get_neighbours(PatchBase.EAST):
-            if neighbour not in east:
+            if neighbour not in east and neighbour not in children:
                 east.append(neighbour)
         south = []
         for neighbour in bl.get_neighbours(PatchBase.SOUTH) + br.get_neighbours(PatchBase.SOUTH):
-            if neighbour not in south:
+            if neighbour not in south and neighbour not in children:
                 south.append(neighbour)
         west = []
         for neighbour in tl.get_neighbours(PatchBase.WEST) + bl.get_neighbours(PatchBase.WEST):
-            if neighbour not in west:
+            if neighbour not in west and neighbour not in children:
                 west.append(neighbour)
         self.set_all_neighbours(north, east, south, west)
-        self.replace_neighbours(PatchBase.NORTH, [tl, tr], [self.patch])
-        self.replace_neighbours(PatchBase.EAST, [tr, br], [self.patch])
-        self.replace_neighbours(PatchBase.SOUTH, [bl, br], [self.patch])
-        self.replace_neighbours(PatchBase.WEST,  [tl, bl], [self.patch])
+        self.merge_opposite_neighbours(PatchBase.NORTH, [tl, tr])
+        self.merge_opposite_neighbours(PatchBase.EAST, [tr, br])
+        self.merge_opposite_neighbours(PatchBase.SOUTH, [bl, br])
+        self.merge_opposite_neighbours(PatchBase.WEST,  [tl, bl])
         self.calc_outer_tessellation_level(update)
         for neighbour in north + east + south + west:
             neighbour.calc_outer_tessellation_level(update)
