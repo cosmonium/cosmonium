@@ -65,7 +65,7 @@ biome:
             noise: perlin
             octaves: 4
             length: 16.384
-layers:
+layers2:
   - shape:
       type: mesh
       model: 'ralph-data/models/trees/tree1'
@@ -101,7 +101,7 @@ water:
     level: 0
     visible: true
     scale: 8
-fog:
+fog2:
     falloff: 0.035
     density: 10
     ground: -300
