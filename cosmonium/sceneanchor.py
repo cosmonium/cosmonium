@@ -25,13 +25,15 @@ from . import settings
 from math import log
 
 class SceneAnchor:
-    def __init__(self, anchor, support_offset_body_center):
+    def __init__(self, anchor, support_offset_body_center, apply_orientation=False):
         self.anchor = anchor
         self.support_offset_body_center = support_offset_body_center
+        self.apply_orientation = apply_orientation
         self.instance = None
         self.shifted_instance = None
         self.unshifted_instance = None
         self.scene_position = LPoint3d()
+        self.scene_orientation = LQuaternion()
         self.scene_scale_factor = 0.0
         self.scene_rel_position = LPoint3d()
         self.world_body_center_offset = LVector3d()
@@ -69,6 +71,9 @@ class SceneAnchor:
                 self.unshifted_instance.set_pos(LPoint3())
         if self.instance is not None:
             self.instance.set_pos(*self.scene_position)
+            if self.apply_orientation:
+                self.scene_orientation = LQuaternion(*anchor._orientation)
+                self.instance.set_quat(self.scene_orientation)
             self.instance.set_scale(self.scene_scale_factor)
 
     @classmethod
@@ -101,12 +106,46 @@ class SceneAnchor:
             scale_factor = ratio / scene_manager.scale
         return position, distance, scale_factor
 
-class ObserverSceneAnchor:
-    def __init__(self):
+class AbsoluteSceneAnchor:
+    def __init__(self, anchor):
+        self.anchor = anchor
         self.instance = None
         self.shifted_instance = None
         self.unshifted_instance = None
         self.scene_position = LPoint3d()
+        self.scene_distance = 0.0
+        self.scene_scale_factor = 0.0
+        self.scene_rel_position = LPoint3d()
+
+    def create_instance(self, scene_manager):
+        if self.instance is None:
+            self.instance = NodePath('static-anchor')
+            scene_manager.attach_new_anchor(self.instance)
+            self.shifted_instance = self.instance.attach_new_node('shifted-anchor')
+            self.unshifted_instance = self.instance.attach_new_node('unshifted-anchor')
+
+    def remove_instance(self):
+        if self.instance is not None:
+            self.instance.remove_node()
+            self.instance = None
+            self.shifted_instance = None
+            self.unshifted_instance = None
+
+    def update(self, scene_manager):
+        if settings.camera_at_origin:
+            self.scene_position = self.anchor.rel_position / scene_manager.scale
+            self.instance.set_pos(*self.scene_position)
+        self.scene_scale_factor = 1.0 / scene_manager.scale
+        self.instance.set_scale(self.scene_scale_factor)
+
+class ObserverSceneAnchor:
+    def __init__(self, anchor):
+        self.anchor = anchor
+        self.instance = None
+        self.shifted_instance = None
+        self.unshifted_instance = None
+        self.scene_position = LPoint3d()
+        self.scene_distance = 0.0
         self.scene_scale_factor = 0.0
         self.scene_rel_position = LPoint3d()
 
@@ -125,4 +164,8 @@ class ObserverSceneAnchor:
             self.unshifted_instance = None
 
     def update(self, scene_manager):
-        pass
+        if not settings.camera_at_origin:
+            self.scene_position = self.anchor._position / scene_manager.scale
+            self.instance.set_pos(*self.scene_position)
+        self.scene_scale_factor = 1.0 / scene_manager.scale
+        self.instance.set_scale(self.scene_scale_factor)

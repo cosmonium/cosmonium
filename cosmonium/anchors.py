@@ -25,4 +25,5 @@ except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
     from .pyengine.pyanchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
+    from .pyengine.pyanchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
     from .pyengine.pytraversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser

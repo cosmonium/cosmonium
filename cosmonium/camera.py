@@ -200,7 +200,7 @@ class OrbitTargetHelper():
         self.delta_y = 0
         self.orbit_speed_x = orbit_speed_x
         self.orbit_speed_z = orbit_speed_z
-        center = target.get_rel_position_to(self.anchor._global_position)
+        center = target.calc_absolute_relative_position_to(self.anchor._global_position)
         self.orbit_center = self.anchor.frame.get_frame_position(center)
         orbit_position = self.anchor.get_frame_pos()
         self.orbit_dir = self.orbit_center - orbit_position

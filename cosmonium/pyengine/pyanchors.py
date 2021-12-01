@@ -29,6 +29,7 @@ from .. import settings
 
 from math import sqrt, asin, pi
 from time import time
+from cosmonium.astro.frame import AbsoluteReferenceFrame
 
 class AnchorBase():
     Emissive   = 1
@@ -108,6 +109,9 @@ class AnchorBase():
     def get_apparent_magnitude(self):
         return self._app_magnitude
 
+    def calc_absolute_relative_position_to(self, position):
+        return (self._global_position - position) + self.get_local_position()
+
     def calc_absolute_relative_position(self, anchor):
         reference_point_delta = anchor._global_position - self._global_position
         local_delta = anchor._local_position - self._local_position
@@ -121,36 +125,6 @@ class AnchorBase():
 
     def update(self, time, update_id):
         pass
-
-    def update_observer(self, observer, update_id):
-        pass
-
-    def update_and_update_observer(self, time, observer, update_id):
-        self.update(time, update_id)
-        self.update_observer(observer, update_id)
-
-    def update_app_magnitude(self, star):
-        pass
-
-class CartesianAnchor(AnchorBase):
-    pass
-
-class StellarAnchor(AnchorBase):
-    def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        AnchorBase.__init__(self, anchor_class, body, point_color)
-        self.orbit = orbit
-        self.rotation = rotation
-        #TODO: Should be done properly
-        orbit.body = body
-        rotation.body = body
-
-    def update(self, time, update_id):
-        if self.update_id == update_id: return
-        self._orientation = self.rotation.get_absolute_rotation_at(time)
-        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
-        self._local_position = self.orbit.get_local_position_at(time)
-        self._global_position = self.orbit.get_absolute_reference_point_at(time)
-        self._position = self._global_position + self._local_position
 
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
@@ -185,6 +159,145 @@ class StellarAnchor(AnchorBase):
         self.visible = visible
         self.resolved = resolved
         self.visible_size = visible_size
+
+    def update_and_update_observer(self, time, observer, update_id):
+        self.update(time, update_id)
+        self.update_observer(observer, update_id)
+
+    def update_app_magnitude(self, star):
+        pass
+
+
+class CartesianAnchor(AnchorBase):
+    def __init__(self, frame):
+        AnchorBase.__init__(self, None, None, None)
+        self.frame = frame
+        self._frame_position = LPoint3d()
+        self._frame_orientation = LQuaterniond()
+
+    def get_apparent_radius(self):
+        return self._extend
+
+    def set_frame(self, frame):
+        #Get position and rotation in the absolute reference frame
+        pos = self.get_pos()
+        rot = self.get_rot()
+        #Update reference frame
+        self.frame = frame
+        #Set back the position to calculate the position in the new reference frame
+        self.set_pos(pos)
+        self.set_rot(rot)
+
+    def do_update(self):
+        #TODO: _position should be global + local !
+        self._position = self.get_local_position()
+        self._local_position = self.get_local_position()
+        self._orientation = self.get_absolute_orientation()
+
+    def update(self, time, dt):
+        self.do_update()
+
+    def change_reference_point(self, new_global_pos):
+        old_local = self.frame.get_local_position(self._frame_position)
+        new_local = (self._global_position - new_global_pos) + old_local
+        self._global_position = new_global_pos
+        self._frame_position = self.frame.get_frame_position(new_local)
+        self.do_update()
+
+    def set_frame_position(self, position):
+        self._frame_position = position
+
+    def get_frame_position(self):
+        return self._frame_position
+
+    def set_frame_orientation(self, rotation):
+        self._frame_orientation = rotation
+
+    def get_frame_orientation(self):
+        return self._frame_orientation
+
+    def get_local_position(self):
+        return self.frame.get_local_position(self._frame_position)
+
+    def set_local_position(self, position):
+        self._frame_position = self.frame.get_frame_position(position)
+
+    def set_absolute_position(self, position):
+        position -= self._global_position
+        self._frame_position = self.frame.get_frame_position(position)
+
+    def get_absolute_orientation(self):
+        return self.frame.get_absolute_orientation(self._frame_orientation)
+
+    def set_absolute_orientation(self, orientation):
+        self._frame_orientation = self.frame.get_frame_orientation(orientation)
+
+class OriginAnchor(CartesianAnchor):
+    def __init__(self):
+        CartesianAnchor.__init__(self, AbsoluteReferenceFrame())
+
+class FlatSurfaceAnchor(OriginAnchor):
+    def __init__(self, surface):
+        OriginAnchor.__init__(self)
+        self.surface = surface
+
+    def update_observer(self, observer, update_id):
+        if self.update_id == update_id: return
+        self.vector_to_obs = LPoint3d(observer.get_pos())
+        self.vector_to_obs.normalize()
+        self.distance_to_obs = observer._local_position.get_z()# - self.get_height(self.observer._local_position)
+        self._height_under = self.surface.get_height_at(observer._local_position[0], observer._local_position[1])
+        self.rel_position = self._local_position - observer._local_position
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
+        self.visible_size = 0.0
+        self.z_distance = 0.0
+        self.visible = True
+        self.resolved = True
+
+class ObserverAnchor(CartesianAnchor):
+    def __init__(self):
+        CartesianAnchor.__init__(self, AbsoluteReferenceFrame())
+
+    def update(self, time, update_id):
+        #TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
+        pass
+
+    def update_observer(self, observer, update_id):
+        if self.update_id == update_id: return
+        self._position = LPoint3d(observer._position)
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
+        self.rel_position = LPoint3d()
+        self.distance_to_obs = 0
+        self.vector_to_obs = LVector3d()
+        self.visible_size = 0.0
+        self.z_distance = 0.0
+        self.visible = True
+        self.resolved = True
+
+
+class ControlledCartesianAnchor(CartesianAnchor):
+    def update(self, time, update_id):
+        pass
+
+
+class StellarAnchor(AnchorBase):
+    def __init__(self, anchor_class, body, orbit, rotation, point_color):
+        AnchorBase.__init__(self, anchor_class, body, point_color)
+        self.orbit = orbit
+        self.rotation = rotation
+        #TODO: Should be done properly
+        orbit.body = body
+        rotation.body = body
+
+    def update(self, time, update_id):
+        if self.update_id == update_id: return
+        self._orientation = self.rotation.get_absolute_rotation_at(time)
+        self._equatorial = self.rotation.get_equatorial_orientation_at(time)
+        self._local_position = self.orbit.get_local_position_at(time)
+        self._global_position = self.orbit.get_absolute_reference_point_at(time)
+        self._position = self._global_position + self._local_position
 
     def get_luminosity(self, star):
         vector_to_star = self.calc_absolute_relative_position(star)
