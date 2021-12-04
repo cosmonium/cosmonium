@@ -39,7 +39,7 @@ from .opengl import request_opengl_config, check_opengl_config, create_main_wind
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
-from .anchors import AnchorBase, StellarAnchor
+from .anchors import StellarAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
 from .universe import Universe
@@ -1167,8 +1167,8 @@ class Cosmonium(CosmoniumBase):
             star = None
         if star is None: return
         for anchor in self.resolved:
-            if anchor.content & AnchorBase.System != 0: continue
-            if anchor.content & AnchorBase.Reflective == 0: continue
+            if anchor.content & StellarAnchor.System != 0: continue
+            if anchor.content & StellarAnchor.Reflective == 0: continue
             body = anchor.body
             if body.lights is None:
                 lights = LightSources()
@@ -1186,8 +1186,8 @@ class Cosmonium(CosmoniumBase):
         if len(self.global_light_sources) == 0: return
         reflectives = []
         for anchor in self.resolved:
-            if anchor.content & AnchorBase.System != 0: continue
-            if anchor.content & AnchorBase.Reflective == 0: continue
+            if anchor.content & StellarAnchor.System != 0: continue
+            if anchor.content & StellarAnchor.Reflective == 0: continue
             anchor.body.start_shadows_update()
             reflectives.append(anchor)
 
@@ -1216,7 +1216,7 @@ class Cosmonium(CosmoniumBase):
             primary = anchor.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
-            if primary.anchor.content & AnchorBase.System != 0: continue
+            if primary.anchor.content & StellarAnchor.System != 0: continue
             if primary.atmosphere is not None and primary.init_components and (anchor._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
                 primary.atmosphere.add_shape_object(anchor.body.surface)
 

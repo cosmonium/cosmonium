@@ -19,7 +19,7 @@
 
 
 from ..astro.astro import abs_to_app_mag, app_to_abs_mag
-from .pyanchors import AnchorBase
+from .pyanchors import StellarAnchor
 
 from math import asin, pi
 
@@ -137,11 +137,11 @@ class FindLightSourceTraverser(AnchorTraverser):
         #TODO: Is global position accurate enough ?
         global_delta = anchor._global_position - self.position
         distance = (global_delta).length()
-        return anchor.content & AnchorBase.Emissive != 0 and (distance == 0 or abs_to_app_mag(anchor._abs_magnitude, distance) < self.limit)
+        return anchor.content & StellarAnchor.Emissive != 0 and (distance == 0 or abs_to_app_mag(anchor._abs_magnitude, distance) < self.limit)
 
     def traverse_system(self, anchor):
         for child in anchor.children:
-            if child.content & AnchorBase.Emissive == 0: continue
+            if child.content & StellarAnchor.Emissive == 0: continue
             #TODO: Is global position accurate enough ?
             global_delta = child._global_position - self.position
             distance = (global_delta).length()
@@ -217,11 +217,11 @@ class FindShadowCastersTraverser(AnchorTraverser):
         return cast_shadow
 
     def traverse_anchor(self, anchor):
-        if anchor != self.target and anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor):
+        if anchor != self.target and anchor.content & StellarAnchor.Reflective != 0 and self.check_cast_shadow(anchor):
             self.anchors.append(anchor)
 
     def enter_system(self, anchor):
-        enter = anchor in self.parent_systems or (anchor.content & AnchorBase.Reflective != 0 and self.check_cast_shadow(anchor))
+        enter = anchor in self.parent_systems or (anchor.content & StellarAnchor.Reflective != 0 and self.check_cast_shadow(anchor))
         #TODO: We should trigger update here if needed (using update_id) instead of deferring update to next frame
         anchor.force_update = enter
         return enter

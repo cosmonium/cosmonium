@@ -32,16 +32,7 @@ from time import time
 from cosmonium.astro.frame import AbsoluteReferenceFrame
 
 class AnchorBase():
-    Emissive   = 1
-    Reflective = 2
-    System     = 4
-    def __init__(self, anchor_class, body, point_color):
-        self.content = anchor_class
-        self.body = body
-        #TODO: To remove
-        if point_color is None:
-            point_color = LColor(1.0, 1.0, 1.0, 1.0)
-        self.point_color = point_color
+    def __init__(self):
         self.parent = None
         self.rebuild_needed = False
         #Flags
@@ -58,12 +49,8 @@ class AnchorBase():
         self._global_position = LPoint3d()
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
-        self._equatorial = LQuaterniond()
-        self._abs_magnitude = 1000.0
-        self._app_magnitude = 1000.0
         self._extend = 0.0
         self._height_under = 0.0
-        self._albedo = 0.5
         #Scene parameters
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
@@ -96,18 +83,6 @@ class AnchorBase():
 
     def get_absolute_orientation(self):
         return self._orientation
-
-    def get_equatorial_rotation(self):
-        return self._equatorial
-
-    def get_sync_rotation(self):
-        return self._orientation
-
-    def get_absolute_magnitude(self):
-        return self._abs_magnitude
-
-    def get_apparent_magnitude(self):
-        return self._app_magnitude
 
     def calc_absolute_relative_position_to(self, position):
         return (self._global_position - position) + self.get_local_position()
@@ -170,7 +145,7 @@ class AnchorBase():
 
 class CartesianAnchor(AnchorBase):
     def __init__(self, frame):
-        AnchorBase.__init__(self, None, None, None)
+        AnchorBase.__init__(self)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
@@ -283,13 +258,38 @@ class ControlledCartesianAnchor(CartesianAnchor):
 
 
 class StellarAnchor(AnchorBase):
+    Emissive   = 1
+    Reflective = 2
+    System     = 4
     def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        AnchorBase.__init__(self, anchor_class, body, point_color)
+        AnchorBase.__init__(self)
+        self.content = anchor_class
+        self.body = body
+        #TODO: To remove
+        if point_color is None:
+            point_color = LColor(1.0, 1.0, 1.0, 1.0)
+        self.point_color = point_color
         self.orbit = orbit
         self.rotation = rotation
+        self._abs_magnitude = 1000.0
+        self._app_magnitude = 1000.0
+        self._equatorial = LQuaterniond()
+        self._albedo = 0.5
         #TODO: Should be done properly
         orbit.body = body
         rotation.body = body
+
+    def get_equatorial_rotation(self):
+        return self._equatorial
+
+    def get_sync_rotation(self):
+        return self._orientation
+
+    def get_absolute_magnitude(self):
+        return self._abs_magnitude
+
+    def get_apparent_magnitude(self):
+        return self._app_magnitude
 
     def update(self, time, update_id):
         if self.update_id == update_id: return
