@@ -89,6 +89,20 @@ class ShadowMap(object):
                                        1.0))
         self.cam.set_pos(self.cam.get_pos() - LVector3(new_center.x, new_center.y, new_center.z))
 
+    def set_lens(self, size, near, far, direction):
+        lens = self.node.get_lens()
+        lens.set_film_size(size)
+        lens.setNear(near)
+        lens.setFar(far)
+        lens.set_view_vector(LVector3(*direction), LVector3.up())
+
+    def get_lens(self):
+        return self.node.get_lens()
+
+    def set_direction(self, direction):
+        lens = self.node.get_lens()
+        lens.set_view_vector(LVector3(*direction), LVector3.up())
+
     def get_pos(self):
         return self.cam.get_pos()
 
