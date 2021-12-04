@@ -189,18 +189,19 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         self.shadow_camera.get_lens().set_view_vector(LVector3(*self.light.light_direction), LVector3.up())
 
 class ShadowMapDataSource(DataSource):
-    def __init__(self, name, caster, use_bias):
+    def __init__(self, name, caster, use_bias, calculate_shadow_coef):
         DataSource.__init__(self, 'shadowmap-' + name)
         self.name = name
         self.caster = caster
         self.use_bias = use_bias
+        self.calculate_shadow_coef = calculate_shadow_coef
 
     def apply(self, shape, instance):
         if self.caster.shadow_map is None:
             print("ERROR", self.name, self.caster, shape)
         shape.instance.set_shader_input('%s_depthmap' % self.name, self.caster.shadow_map.depthmap)
         shape.instance.set_shader_input("%sLightSource" % self.name, self.caster.shadow_map.cam)
-        if self.caster.occluder is None:
+        if not self.calculate_shadow_coef or self.caster.occluder is None:
             shape.instance.set_shader_input('%s_shadow_coef' % self.name, 1.0)
 
     def update(self, shape, instance):
@@ -214,7 +215,7 @@ class ShadowMapDataSource(DataSource):
             instance.set_shader_input('%s_shadow_normal_bias' % self.name, normal_bias)
             instance.set_shader_input('%s_shadow_slope_bias' % self.name, slope_bias)
             instance.set_shader_input('%s_shadow_depth_bias' % self.name, depth_bias)
-        if self.caster.occluder is not None:
+        if self.calculate_shadow_coef and self.caster.occluder is not None:
             light = self.caster.light
             occluder = self.caster.occluder
             body = shape.owner
@@ -230,7 +231,9 @@ class ShadowMapDataSource(DataSource):
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
-            instance.set_shader_input('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
+        else:
+            ar_ratio = 1.0
+        instance.set_shader_input('%s_shadow_coef' % self.name, min(max(ar_ratio * ar_ratio, 0.0), 1.0))
 
     def clear_shape_data(self, shape, instance):
         instance.clearShaderInput('%s_depthmap' % self.name)
@@ -440,7 +443,7 @@ class ShadowMapShadows(ShadowBase):
             print("Add shadow caster", caster.name, "on", self.target.owner.get_name())
             shadow_shader =  ShaderShadowMap(caster.name, use_bias=self_shadow)
             self.shader_components[caster] = shadow_shader
-            data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow)
+            data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow, calculate_shadow_coef=True)
             self.target.sources.add_source(data_source)
             self.data_sources[caster] = data_source
             self.target.shader.add_shadows(shadow_shader)
