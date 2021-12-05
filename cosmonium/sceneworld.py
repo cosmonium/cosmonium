@@ -60,13 +60,14 @@ class Worlds:
 
 
 class SceneWorld:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.anchor = None
         self.scene_anchor = None
 
 class SimpleWorld(SceneWorld):
-    def __init__(self):
-        SceneWorld.__init__(self)
+    def __init__(self, name):
+        SceneWorld.__init__(self, name)
         self.anchor = self.create_anchor()
         self.anchor.body = self
         self.scene_anchor = self.create_scene_anchor()
@@ -120,8 +121,8 @@ class SimpleWorld(SceneWorld):
         return self.apparent_radius
 
 class CartesianWorld(SimpleWorld):
-    def __init__(self):
-        SimpleWorld.__init__(self)
+    def __init__(self, name):
+        SimpleWorld.__init__(self, name)
         self.components.visible = True
 
     def create_anchor(self):
@@ -158,8 +159,8 @@ class CartesianWorld(SimpleWorld):
         return (self._global_position - position) + self.get_local_position()
 
 class OriginCenteredWorld(SimpleWorld):
-    def __init__(self):
-        SimpleWorld.__init__(self)
+    def __init__(self, name):
+        SimpleWorld.__init__(self, name)
         self.components.visible = True
 
     def create_anchor(self):
@@ -170,8 +171,8 @@ class OriginCenteredWorld(SimpleWorld):
 
 
 class FlatTerrainWorld(OriginCenteredWorld):
-    def __init__(self):
-        OriginCenteredWorld.__init__(self)
+    def __init__(self, name):
+        OriginCenteredWorld.__init__(self, name)
         self.terrain = None
 
     def create_anchor(self):
@@ -189,8 +190,8 @@ class FlatTerrainWorld(OriginCenteredWorld):
             return 0
 
 class ObserverCenteredWorld(SimpleWorld):
-    def __init__(self):
-        SimpleWorld.__init__(self)
+    def __init__(self, name):
+        SimpleWorld.__init__(self, name)
         self.components.visible = True
 
     def create_anchor(self):

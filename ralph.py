@@ -362,7 +362,7 @@ class RaphSkyBox(DirectObject):
 
 class RalphWord(CartesianWorld):
     def __init__(self, name, ship_object, radius, enable_physics):
-        CartesianWorld.__init__(self)
+        CartesianWorld.__init__(self, name)
         self.add_component(ship_object)
         self.ship_object = ship_object
         self.current_state = None
@@ -693,7 +693,7 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             self.fog = None
         self.surface = self.terrain_object
-        self.terrain_world = FlatTerrainWorld()
+        self.terrain_world = FlatTerrainWorld("terrain")
         self.terrain_world.on_visible(self.scene_manager)
         self.terrain_world.set_terrain(self.terrain_object)
         self.terrain_object.set_body(self.terrain_world)
