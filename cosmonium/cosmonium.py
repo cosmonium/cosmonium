@@ -55,6 +55,7 @@ from .parsers import parsers
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
+from .controllers import ShipMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
@@ -425,7 +426,7 @@ class Cosmonium(CosmoniumBase):
             self.near_cam = None
 
         self.universe = Universe(self)
-        self.background = ObserverCenteredWorld()
+        self.background = ObserverCenteredWorld("background")
         self.background.background = True
 
         if settings.color_picking:
@@ -628,8 +629,8 @@ class Cosmonium(CosmoniumBase):
         old_ship = self.ship
         self.ship = ship
         if self.ship is not None:
-            self.autopilot.set_ship(self.ship)
-            self.nav.set_ship(self.ship)
+            self.autopilot.set_controller(ShipMover(self.ship.anchor))
+            self.nav.set_controller(ShipMover(self.ship.anchor))
             if old_ship is not None:
                 self.ship.copy(old_ship)
             if self.camera_controller is not None:
@@ -958,7 +959,7 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.set_frame(OrbitReferenceFrame(body.anchor))
+            self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
             self.update_extra(self.follow)
             self.observer.set_frame(OrbitReferenceFrame(body.anchor))
         else:
@@ -1081,6 +1082,7 @@ class Cosmonium(CosmoniumBase):
     def update_ship(self, time, dt):
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
+        self.ship.anchor.update(time, dt)
         self.ship.update(time, dt)
         self.ship.update_obs(self.observer)
         self.ship.check_visibility(frustum, pixel_size)
@@ -1269,7 +1271,7 @@ class Cosmonium(CosmoniumBase):
             body.check_visibility(frustum, pixel_size)
             body.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
-        self.ship.check_and_update_instance(camera_pos, camera_rot)
+        self.ship.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(camera_pos, camera_rot)
         self.gui.update_status()
@@ -1297,7 +1299,7 @@ class Cosmonium(CosmoniumBase):
                 print("New nearest system:", nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.ship.change_global(nearest_system.get_global_position())
+                self.ship.anchor.change_reference_point(nearest_system.get_global_position())
                 self.camera_controller.update(self.time.time_full, 0)
                 self.observer.change_global(nearest_system.get_global_position())
                 self.autopilot.pop_position()

@@ -21,30 +21,17 @@
 from panda3d.core import LPoint3d, LVector3d, LVector3, LQuaterniond, LColor
 from panda3d.core import DirectionalLight
 
-from .astro.frame import AbsoluteReferenceFrame
-from .foundation import VisibleObject
+from .sceneworld import CartesianWorld
 from .camera import CameraController
 from .parameters import ParametersGroup
 from .shadows import CustomShadowMapShadowCaster
-from . import utils
 
-from math import pi
-
-class ShipBase(VisibleObject):
+class ShipBase(CartesianWorld):
     editable = False
     orbit_rot_camera = True
     def __init__(self, name):
-        VisibleObject.__init__(self, name)
+        CartesianWorld.__init__(self, name)
         self.camera_modes = [CameraController.FIXED, CameraController.TRACK]
-
-        self.frame = AbsoluteReferenceFrame()
-        self._frame_position = LPoint3d()
-        self._frame_rotation = LQuaterniond()
-
-        self._position = LPoint3d()
-        self._global_position = LPoint3d()
-        self._local_position = LPoint3d()
-        self._orientation = LQuaterniond()
 
         self.camera_distance = 0.0
         self.camera_pos = LPoint3d()
@@ -57,11 +44,6 @@ class ShipBase(VisibleObject):
     def supports_camera_mode(self, mode):
         return mode in self.camera_modes
 
-    def copy(self, other):
-        self.frame = other.frame
-        self._frame_position = other._frame_position
-        self._frame_rotation = other._frame_rotation
-
     def get_camera_hints(self):
         return {'distance': self.camera_distance,
                 'position': self.camera_pos,
@@ -71,146 +53,6 @@ class ShipBase(VisibleObject):
         self.camera_distance = camera_distance
         self.camera_pos = camera_pos
         self.camera_rot = camera_rot
-
-    def set_frame(self, frame):
-        #Get position and rotation in the absolute reference frame
-        pos = self.get_pos()
-        rot = self.get_rot()
-        #Update reference frame
-        self.frame = frame
-        #Set back the position to calculate the position in the new reference frame
-        self.set_pos(pos)
-        self.set_rot(rot)
-
-    def change_global(self, new_global_pos):
-        old_local = self.frame.get_local_position(self._frame_position)
-        new_local = (self._global_position - new_global_pos) + old_local
-        self._global_position = new_global_pos
-        self._frame_position = self.frame.get_frame_position(new_local)
-        self.do_update()
-
-    def get_position(self):
-        return self._global_position + self.frame.get_local_position(self._frame_position)
-
-    def set_frame_pos(self, position):
-        self._frame_position = position
-
-    def get_frame_pos(self):
-        return self._frame_position
-
-    def set_frame_rot(self, rotation):
-        self._frame_rotation = rotation
-
-    def get_frame_rot(self):
-        return self._frame_rotation
-
-    def get_local_position(self):
-        return self._local_position
-
-    def get_position_of(self, rel_position):
-        return self._global_position + self.frame.get_local_position(rel_position)
-
-    def get_rel_position_to(self, position):
-        return (self._global_position - position) + self.get_local_position()
-
-    def get_rel_position_of(self, position, local=True):
-        if not local:
-            position -= self._global_position
-        return self.frame.get_frame_position(position)
-
-    def get_rel_rotation_of(self, orientation):
-        return self.frame.get_frame_orientation(orientation)
-
-    def set_pos(self, position, local=True):
-        if not local:
-            position -= self._global_position
-        self._frame_position = self.frame.get_frame_position(position)
-
-    def get_pos(self):
-        return self.frame.get_local_position(self._frame_position)
-
-    def set_rot(self, orientation):
-        self._frame_rotation = self.frame.get_frame_orientation(orientation)
-
-    def get_rot(self):
-        return self.frame.get_absolute_orientation(self._frame_rotation)
-
-    def do_update(self):
-        #TODO: _position should be global + local !
-        self._position = self.get_pos()
-        self._local_position = self.get_pos()
-        self._orientation = self.get_rot()
-
-    def update(self, time, dt):
-        self.do_update()
-
-    def turn_back(self):
-        new_rot = utils.relative_rotation(self.get_rot(), LVector3d.up(), pi)
-        self.set_rot(new_rot)
-
-    def step(self, delta, absolute=True):
-        if absolute:
-            self.set_pos(self.get_pos() + delta)
-        else:
-            self._frame_position += delta
-
-    def turn(self, orientation, absolute=True):
-        if absolute:
-            self.set_rot(orientation)
-        else:
-            self._frame_rotation = orientation
-
-    def step_turn(self, delta, absolute=True):
-        if absolute:
-            self.set_rot(delta * self.get_rot())
-        else:
-            self._frame_rotation = delta * self._frame_rotation
-
-    def calc_look_at(self, target, rel=True, position=None):
-        if not rel:
-            if position is None:
-                position = self.get_pos()
-            direction = LVector3d(target - position)
-        else:
-            direction = LVector3d(target)
-        direction.normalize()
-        local_direction = self.get_rot().conjugate().xform(direction)
-        angle = LVector3d.forward().angleRad(local_direction)
-        axis = LVector3d.forward().cross(local_direction)
-        if axis.length() > 0.0:
-            new_rot = utils.relative_rotation(self.get_rot(), axis, angle)
-#         new_rot=LQuaterniond()
-#         lookAt(new_rot, direction, LVector3d.up())
-        else:
-            new_rot = self.get_rot()
-        return new_rot, angle
-
-    def set_parent(self, parent):
-        pass
-
-    def set_light(self, light):
-        pass
-
-    def create_light(self):
-        pass
-
-    def is_flat(self):
-        return True
-
-    def update_obs(self, observer):
-        pass
-
-    def check_visibility(self, frustum, pixel_size):
-        pass
-
-    def check_settings(self):
-        pass
-
-    def check_and_update_instance(self, camera_pos, camera_rot):
-        pass
-
-    def remove_instance(self):
-        pass
 
     def set_state(self, new_state):
         pass

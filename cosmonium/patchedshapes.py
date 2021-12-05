@@ -1323,6 +1323,10 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
 
+    def __init__(self, factory, heightmap=None, lod_control=None):
+        PatchedShapeBase.__init__(self, factory, heightmap, lod_control)
+        self.model_body_center_offset = LVector3d()
+
     def create_culling_frustum(self, scene_manager, camera):
         min_radius = self.parent.body.surface.get_min_radius() / self.parent.height_scale
         altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - self.parent.height_scale) / self.parent.height_scale

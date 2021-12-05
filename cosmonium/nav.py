@@ -29,18 +29,15 @@ class NavigationController:
         self.base = None
         self.camera = None
         self.camera_controller = None
-        self.ship = None
+        self.controller = None
 
-    def init(self, base, camera, camera_controller, ship):
+    def init(self, base, camera, camera_controller, controller):
         self.base = base
         self.camera = camera
         self.camera_controller = camera_controller
-        self.ship = ship
+        self.controller = controller
 
     def set_target(self, target):
-        pass
-
-    def set_controller(self, controller):
         pass
 
     def get_name(self):
@@ -62,8 +59,8 @@ class NavigationController:
     def remove_events(self, event_ctrl):
         pass
 
-    def set_ship(self, ship):
-        self.ship = ship
+    def set_controller(self, controller):
+        self.controller = controller
 
     def set_camera_controller(self, camera_controller):
         self.camera_controller = camera_controller
@@ -112,23 +109,22 @@ class InteractiveNavigationController(NavigationController):
         self.wheel_direction = direction
 
     def stash_position(self):
-        self.orbit_center = self.ship.get_position_of(self.orbit_center)
+        self.orbit_center = self.controller.anchor.calc_absolute_position_of(self.orbit_center)
 
     def pop_position(self):
-        self.orbit_center = self.ship.get_rel_position_of(self.orbit_center, local=False)
+        self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(self.orbit_center)
 
     def create_orbit_params(self, target):
-        cam_rot = True
-        #Orbiting around a body involve both the ship and the camera controller
-        #The orbit position is set on the ship while the camera orientation is set on the camera controller
-        #The position must be done in the ship frame otherwise the orbit point will drift away
-        center = target.get_rel_position_to(self.ship._global_position)
-        self.orbit_center = self.ship.frame.get_frame_position(center)
-        self.orbit_start = self.ship.get_frame_pos() - self.orbit_center
-        if self.ship.orbit_rot_camera:
+        #Orbiting around a body involve both the object and the camera controller
+        #The orbit position is set on the object while the camera orientation is set on the camera controller
+        #The position must be done in the object frame otherwise the orbit point will drift away
+        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(center)
+        self.orbit_start = self.controller.get_frame_position() - self.orbit_center
+        if self.controller.orbit_rot_camera:
             self.orbit_orientation = self.camera_controller.get_rot()
         else:
-            self.orbit_orientation = self.ship.get_frame_rot()
+            self.orbit_orientation = self.controller.get_frame_orientation()
 
     def do_orbit(self, z_angle, x_angle):
         z_rotation = LQuaterniond()
@@ -142,13 +138,13 @@ class InteractiveNavigationController(NavigationController):
             print("Wrong orbit axis :", e)
         combined = x_rotation * z_rotation
         new_rot = self.orbit_orientation * combined
-        if self.ship.orbit_rot_camera:
+        if self.controller.orbit_rot_camera:
             self.camera_controller.set_rot(new_rot)
         else:
-            self.ship.set_frame_rot(new_rot)
+            self.controller.set_frame_orientation(new_rot)
         try:
-            if self.ship.orbit_rot_camera:
-                orbit_orientation = self.ship.get_rel_rotation_of(self.orbit_orientation)
+            if self.controller.orbit_rot_camera:
+                orbit_orientation = self.controller.anchor.calc_frame_orientation_of(self.orbit_orientation)
             else:
                 orbit_orientation = self.orbit_orientation
             orbit_z_axis = orbit_orientation.xform(LVector3d.up())
@@ -159,7 +155,7 @@ class InteractiveNavigationController(NavigationController):
             print("Wrong orbit axis :", e)
         combined = x_rotation * z_rotation
         delta = combined.xform(self.orbit_start)
-        self.ship.set_frame_pos(delta + self.orbit_center)
+        self.controller.set_frame_position(delta + self.orbit_center)
 
 class FreeNav(InteractiveNavigationController):
     distance_speed = 2.0
@@ -396,42 +392,37 @@ class FreeNav(InteractiveNavigationController):
             else:
                 self.speed /= exp(dt*3)
         y = self.speed * dt
-        self.stepRelative(0, y, 0)
+        self.controller.step_relative(y)
 
         if settings.damped_nav:
             self.rot_speed *= exp(-dt * self.rotation_damping)
             self.rot_speed += LVector3d(rot_x, rot_y, rot_z) * self.rotation_speed * dt
         else:
             self.rot_speed = LVector3d(rot_x, rot_y, rot_z) * self.rotation_speed
-        self.turn( LVector3d.right(), self.rot_speed.x * dt)
-        self.turn( LVector3d.forward(), self.rot_speed.y * dt)
-        self.turn( LVector3d.up(), self.rot_speed.z * dt)
+        self.turn(LVector3d.right(), self.rot_speed.x * dt)
+        self.turn(LVector3d.forward(), self.rot_speed.y * dt)
+        self.turn(LVector3d.up(), self.rot_speed.z * dt)
         self.change_altitude(distance * self.distance_speed * dt)
 
     def turn(self, axis, angle):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
-        self.ship.step_turn(rot, absolute=False)
-
-    def stepRelative(self, x = 0, y = 0, z = 0):
-        direction=LVector3d(x,y,z)
-        delta = self.ship.get_frame_rot().xform(direction)
-        self.ship.step(delta, absolute=False)
+        self.controller.step_turn(rot)
 
     def change_altitude(self, rate):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        direction = target.get_rel_position_to(self.ship._global_position) - self.ship.get_pos()
-        height = target.get_height_under(self.ship.get_pos())
+        direction = target.get_rel_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
+        height = target.get_height_under(self.controller.get_local_position())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
         direction.normalize()
         if altitude > 0:
             if rate < 0 or altitude >= settings.min_altitude:
-                self.ship.step(direction * altitude * rate, absolute=True)
+                self.controller.delta_local(direction * altitude * rate)
         else:
-            self.ship.set_pos(target.anchor._local_position - direction * (height + settings.min_altitude))
+            self.controller.set_local_position(target.anchor._local_position - direction * (height + settings.min_altitude))
 
 class WalkNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4
@@ -566,11 +557,11 @@ class WalkNav(InteractiveNavigationController):
 
     def step(self, distance):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
-        ship_pos = self.ship.get_pos()
-        (lon, lat, vert) = self.body.get_lonlatvert_under(ship_pos)
-        direction = self.ship.get_rot().xform(LVector3d(0, distance, 0))
+        object_position = self.controller.get_local_position()
+        (lon, lat, vert) = self.body.get_lonlatvert_under(object_position)
+        direction = self.controller.get_rot().xform(LVector3d(0, distance, 0))
         projected = direction - vert * direction.dot(vert)
-        position = self.body.cartesian_to_spherical(self.ship.get_pos())
+        position = self.body.cartesian_to_spherical(self.controller.get_local_position())
         delta_x = lon.dot(projected) * arc_to_angle
         delta_y = lat.dot(projected) * arc_to_angle
         new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
@@ -582,7 +573,7 @@ class WalkNav(InteractiveNavigationController):
         else:
             print("Patch not found for", x, y, '->', new_position[2])
         new_position = self.body.spherical_to_cartesian(new_position)
-        self.ship.set_pos(new_position)
+        self.controller.set_local_position(new_position)
 #         target_pos = new_position + direction * 10 * units.m
 #         target_pos = self.body.cartesian_to_spherical(target_pos)
 #         (x, y, distance) = self.body.spherical_to_xy(target_pos)
@@ -592,26 +583,26 @@ class WalkNav(InteractiveNavigationController):
 #         else:
 #             print("Patch not found for", x, y, '->', target_pos[2])
 #         target_pos = self.body.spherical_to_cartesian(target_pos)
-#         rot, angle = self.ship.calc_look_at(target_pos, rel=False)
-        #self.ship.set_rot(rot)
+#         rot, angle = self.controller.calc_look_at(target_pos, rel=False)
+        #self.controller.set_rot(rot)
         #print(angle)
 
     def change_altitude(self, rate):
         if rate == 0.0: return
-        direction=(self.body.get_rel_position_to(self.ship._global_position) - self.ship.get_pos())
-        height = self.body.get_height_under(self.ship.get_pos())
+        direction=(self.body.get_rel_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position())
+        height = self.body.get_height_under(self.controller.get_local_position())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
         if altitude < settings.min_altitude:
             altitude = altitude - settings.min_altitude
             rate = 1.0
         direction.normalize()
-        self.ship.step(direction*altitude*rate, absolute=True)
+        self.controller.delta_local(direction*altitude*rate)
 
     def turn(self, axis, angle):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
-        self.ship.step_turn(rot, absolute=False)
+        self.controller.step_turn(rot)
 
 class ControlNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4

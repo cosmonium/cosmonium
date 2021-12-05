@@ -24,12 +24,13 @@ from ..foundation import BaseObject
 from ..octree import OctreeNode
 from ..astro import units
 from ..astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
+from ..astro.frame import AbsoluteReferenceFrame
+from .. import utils
 
 from .. import settings
 
 from math import sqrt, asin, pi
 from time import time
-from cosmonium.astro.frame import AbsoluteReferenceFrame
 
 class AnchorBase():
     def __init__(self):
@@ -150,18 +151,23 @@ class CartesianAnchor(AnchorBase):
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
 
+    def copy(self, other):
+        self.frame = other.frame
+        self._frame_position = other._frame_position
+        self._frame_rotation = other._frame_rotation
+
     def get_apparent_radius(self):
         return self._extend
 
     def set_frame(self, frame):
         #Get position and rotation in the absolute reference frame
-        pos = self.get_pos()
-        rot = self.get_rot()
+        pos = self.get_local_position()
+        rot = self.get_absolute_orientation()
         #Update reference frame
         self.frame = frame
         #Set back the position to calculate the position in the new reference frame
-        self.set_pos(pos)
-        self.set_rot(rot)
+        self.set_local_position(pos)
+        self.set_absolute_orientation(rot)
 
     def do_update(self):
         #TODO: _position should be global + local !
@@ -206,6 +212,40 @@ class CartesianAnchor(AnchorBase):
 
     def set_absolute_orientation(self, orientation):
         self._frame_orientation = self.frame.get_frame_orientation(orientation)
+
+    def calc_absolute_position_of(self, frame_position):
+        return self._global_position + self.frame.get_local_position(frame_position)
+
+    def calc_relative_position_to(self, position):
+        return (self._global_position - position) + self.get_local_position()
+
+    def calc_frame_position_of_absolute(self, position):
+        return self.frame.get_frame_position(position - self._global_position)
+
+    def calc_frame_position_of_local(self, position):
+        return self.frame.get_frame_position(position)
+
+    def calc_frame_orientation_of(self, orientation):
+        return self.frame.get_frame_orientation(orientation)
+
+    def calc_look_at2(self, target, rel=True, position=None):
+        if not rel:
+            if position is None:
+                position = self.get_pos()
+            direction = LVector3d(target - position)
+        else:
+            direction = LVector3d(target)
+        direction.normalize()
+        local_direction = self.get_absolute_orientation().conjugate().xform(direction)
+        angle = LVector3d.forward().angleRad(local_direction)
+        axis = LVector3d.forward().cross(local_direction)
+        if axis.length() > 0.0:
+            new_rot = utils.relative_rotation(self.get_absolute_orientation(), axis, angle)
+#         new_rot=LQuaterniond()
+#         lookAt(new_rot, direction, LVector3d.up())
+        else:
+            new_rot = self.get_absolute_orientation()
+        return new_rot, angle
 
 class OriginAnchor(CartesianAnchor):
     def __init__(self):
