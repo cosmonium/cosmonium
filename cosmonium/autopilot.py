@@ -291,7 +291,7 @@ class AutoPilot(object):
         if not self.ui.selected: return
         target = self.ui.selected
         lat = pi / 2
-        if target.rotation.is_flipped():
+        if target.anchor.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
@@ -299,7 +299,7 @@ class AutoPilot(object):
         if not self.ui.selected: return
         target = self.ui.selected
         lat = -pi / 2
-        if target.rotation.is_flipped():
+        if target.anchor.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
