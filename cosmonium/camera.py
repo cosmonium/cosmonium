@@ -22,6 +22,7 @@ from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
+from .anchors import CartesianAnchor
 from .astro.frame import AbsoluteReferenceFrame
 from .octree import InfiniteFrustum #TODO: should not be in octree
 from . import settings
@@ -258,15 +259,8 @@ class CameraHolder(CameraBase):
     #TODO: this should inherit from the Anchor base class
     def __init__(self, camera_np, cam, lens):
         CameraBase.__init__(self, camera_np, cam, lens)
-        self.frame = AbsoluteReferenceFrame()
-        self._global_position = LPoint3d()
-        self.camera_global_pos = self._global_position
-        self._position = LPoint3d()
-        self._local_position = LPoint3d()
-        self._orientation = LQuaterniond()
+        self.anchor = CartesianAnchor(AbsoluteReferenceFrame())
         self.camera_vector = LVector3d()
-        self._frame_position = LPoint3d()
-        self._frame_rotation = LQuaterniond()
         self.has_scattering = False
         self.scattering = None
         self.apply_scattering = 0
@@ -277,68 +271,62 @@ class CameraHolder(CameraBase):
         self.update_shader_needed = True
 
     def set_frame(self, frame):
-        #Get position and rotation in the absolute reference frame
-        pos = self.get_pos()
-        rot = self.get_rot()
-        #Update reference frame
-        self.frame = frame
-        #Set back the position to calculate the position in the new reference frame
-        self.set_pos(pos)
-        self.set_rot(rot)
+        self.anchor.set_frame(frame)
 
     def change_global(self, new_global_pos):
-        if self._global_position == new_global_pos: return
-        old_local = self.frame.get_local_position(self._frame_position)
-        new_local = (self._global_position - new_global_pos) + old_local
-        self._global_position = new_global_pos
-        self.camera_global_pos = self._global_position
-        self._frame_position = self.frame.get_frame_position(new_local)
+        self.anchor.change_reference_point(new_global_pos)
 
     def get_position(self):
-        return self._global_position + self._local_position
+        return self.anchor.get_absolute_position()
 
     def set_frame_pos(self, position):
-        self._frame_position = position
+        self.anchor.set_frame_position(position)
 
     def get_frame_pos(self):
-        return self._frame_position
+        return self.anchor.get_frame_position()
 
     def set_frame_rot(self, rotation):
-        self._frame_rotation = rotation
+        self.anchor.set_frame_orientation(rotation)
 
     def get_frame_rot(self):
-        return self._frame_rotation
+        return self.anchor.get_frame_orientation()
 
     def set_pos(self, position, local=True):
         if not local:
-            position -= self._global_position
-        self._frame_position = self.frame.get_frame_position(position)
+            self.anchor.set_absolute_position(position)
+        else:
+            self.anchor.set_local_position(position)
 
     def get_pos(self):
         return self.frame.get_local_position(self._frame_position)
 
     def set_rot(self, orientation):
-        self._frame_rotation = self.frame.get_frame_orientation(orientation)
+        self.anchor.set_absolute_orientation(orientation)
 
     def get_rot(self):
-        return self.frame.get_absolute_orientation(self._frame_rotation)
+        return self.anchor.get_absolute_orientation()
 
     #TODO: Absolete API to be replaced by the above Anchor API
     def get_camera_pos(self):
-        return self._local_position
+        return self.anchor.get_local_position()
 
     def get_camera_rot(self):
-        return self._orientation
+        return self.anchor.get_absolute_orientation()
+
+    @property
+    def _global_position(self):
+        return self.anchor.get_absolute_reference_point()
+
+    @property
+    def _local_position(self):
+        return self.anchor.get_local_position()
 
     def get_camera_vector(self):
         return self.camera_vector
 
     def update(self):
-        #TODO: _position should be global + local !
-        self._position = self.get_pos()
-        self._local_position = self.get_pos()
-        self._orientation = self.get_rot()
-        self.camera_vector = self._orientation.xform(LVector3d.forward())
+        self.anchor.do_update()
+        self.camera_vector = self.anchor._orientation.xform(LVector3d.forward())
         if not settings.camera_at_origin:
             self.camera_np.setPos(*self.get_camera_pos())
         self.camera_np.setQuat(LQuaternion(*self.get_camera_rot()))
