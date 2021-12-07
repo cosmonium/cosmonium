@@ -70,18 +70,6 @@ class AnchorBase():
     def traverse(self, visitor):
         visitor.traverse_anchor(self)
 
-    def get_absolute_reference_point(self):
-        return self._global_position
-
-    def get_absolute_position(self):
-        return self._global_position + self._local_position
-
-    def get_local_position(self):
-        return self._local_position
-
-    def get_absolute_orientation(self):
-        return self._orientation
-
     def calc_absolute_relative_position_to(self, position):
         return (self._global_position - position) + self.get_local_position()
 
@@ -200,6 +188,12 @@ class CartesianAnchor(AnchorBase):
     def set_local_position(self, position):
         self._frame_position = self.frame.get_frame_position(position)
 
+    def get_absolute_reference_point(self):
+        return self._global_position
+
+    def get_absolute_position(self):
+        return self._global_position + self.get_local_position()
+
     def set_absolute_position(self, position):
         position -= self._global_position
         self._frame_position = self.frame.get_frame_position(position)
@@ -315,6 +309,18 @@ class StellarAnchor(AnchorBase):
         #TODO: Should be done properly
         orbit.body = body
         rotation.body = body
+
+    def get_absolute_reference_point(self):
+        return self._global_position
+
+    def get_absolute_position(self):
+        return self._global_position + self._local_position
+
+    def get_local_position(self):
+        return self._local_position
+
+    def get_absolute_orientation(self):
+        return self._orientation
 
     def get_equatorial_rotation(self):
         return self._equatorial
