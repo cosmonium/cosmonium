@@ -218,10 +218,10 @@ class SurfaceReferenceFrame(AnchorReferenceFrame):
         self.lat = lat
 
     def get_center(self):
-        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+        return self.body.anchor.get_local_position() + self.body.anchor.get_sync_rotation().xform(self.get_center_parent_frame())
 
     def get_orientation(self):
-        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+        return self.get_orientation_parent_frame() * self.body.anchor.get_sync_rotation()
 
     #TODO: workaround until proper hierarchical frames are implemented
     def get_center_parent_frame(self):
@@ -244,10 +244,10 @@ class CartesianSurfaceReferenceFrame(AnchorReferenceFrame):
         self.position = position
 
     def get_center(self):
-        return self.body.get_local_position() + self.body.get_sync_rotation().xform(self.get_center_parent_frame())
+        return self.body.anchor.get_local_position() + self.body.anchor.get_sync_rotation().xform(self.get_center_parent_frame())
 
     def get_orientation(self):
-        return self.get_orientation_parent_frame() * self.body.get_sync_rotation()
+        return self.get_orientation_parent_frame() * self.body.anchor.get_sync_rotation()
 
     #TODO: workaround until proper hierarchical frames are implemented
     def get_center_parent_frame(self):

@@ -241,9 +241,6 @@ class SimpleSystem(StellarSystem):
     def is_emissive(self):
         return self.primary.is_emissive()
 
-    def get_equatorial_rotation(self):
-        return self.primary.get_equatorial_rotation()
-
     def get_label_text(self):
         return self.primary.get_label_text()
 

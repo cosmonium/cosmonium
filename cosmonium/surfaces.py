@@ -77,13 +77,13 @@ class Surface(ShapeObject):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.body.get_local_position()
-        object_orientation = self.body.get_abs_rotation()
+        object_position = self.body.anchor.get_local_position()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.body.get_abs_rotation()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 
@@ -153,13 +153,13 @@ class EllipsoidSurface(Surface):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.body.get_local_position()
-        object_orientation = self.body.get_abs_rotation()
+        object_position = self.body.anchor.get_local_position()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.body.get_abs_rotation()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 

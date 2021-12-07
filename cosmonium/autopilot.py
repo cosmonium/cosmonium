@@ -201,7 +201,7 @@ class AutoPilot(object):
             distance_unit = target.get_extend()
         print("Go to front", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         position = None
         if star:
             if target.lights is not None and len(target.lights.lights) > 0:
@@ -215,7 +215,7 @@ class AutoPilot(object):
                     position = target.parent.primary
         if position is not None:
             print("Looking from", position.get_name())
-            position = position.get_rel_position_to(self.controller.get_absolute_reference_point())
+            position = position.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         else:
             position = self.controller.get_local_position()
         direction = center - position
@@ -235,7 +235,7 @@ class AutoPilot(object):
             distance_unit = target.get_extend()
         print("Go to", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         direction = center - self.controller.get_local_position()
         direction.normalize()
         new_position = center - direction * distance * distance_unit
@@ -253,7 +253,7 @@ class AutoPilot(object):
             distance_unit = target.get_extend()
         print("Go to long-lat", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         new_position = (longitude, latitude, distance * distance_unit)
         new_position = target.spherical_to_cartesian(new_position)
         direction = center - new_position
@@ -267,7 +267,7 @@ class AutoPilot(object):
             duration = settings.slow_move
         print("Go to surface", target.get_name())
         self.ui.sync_selected()
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         direction = self.controller.get_local_position() - center
         new_orientation = LQuaterniond()
         lookAt(new_orientation, direction)
@@ -342,7 +342,7 @@ class AutoPilot(object):
 
     def do_change_distance(self, delta, rate):
         target = self.ui.selected
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         min_distance = target.get_apparent_radius()
         natural_distance = 4.0 * min_distance
         relative_pos = self.controller.get_local_position() - center
@@ -364,7 +364,7 @@ class AutoPilot(object):
 
     def do_orbit(self, delta, axis, rate):
         target = self.ui.selected
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         center = self.controller.anchor.calc_frame_position_of_local(center)
         relative_pos = self.controller.get_frame_position() - center
         rot=LQuaterniond()

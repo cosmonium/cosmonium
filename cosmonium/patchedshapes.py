@@ -1370,8 +1370,8 @@ class EllipsoidPatchedShape(PatchedShapeBase):
                     patch.bounds_shape.instance.setPos(*patch_offset)
 
     def xform_cam_to_model(self, camera_pos):
-        position = self.parent.body.get_local_position()
-        orientation = self.parent.body.get_abs_rotation()
+        position = self.parent.body.anchor.get_local_position()
+        orientation = self.parent.body.anchor.get_absolute_orientation()
         #TODO: Should receive as parameter !
         camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)

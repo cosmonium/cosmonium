@@ -481,7 +481,7 @@ class CameraController(EventsControllerBase):
             duration = settings.fast_move
         if target is None: return
         if cmd: print("Center on", target.get_name())
-        center = target.get_rel_position_to(self.reference_point._global_position)
+        center = target.anchor.calc_absolute_relative_position_to(self.reference_point._global_position)
         self.lookat(center, duration=duration, proportional=proportional)
 
     def update(self, time, dt):

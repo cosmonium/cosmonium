@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -41,12 +41,3 @@ class Universe(OctreeSystem):
 
     def get_fullname(self, separator='/'):
         return ''
-
-    def get_distance(self, time):
-        return 0
-
-    def get_absolute_reference_point(self):
-        return LPoint3d()
-    
-    def get_abs_rotation(self):
-        return self._orientation

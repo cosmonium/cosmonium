@@ -70,9 +70,6 @@ class AnchorBase():
     def traverse(self, visitor):
         visitor.traverse_anchor(self)
 
-    def get_global_position(self):
-        return self._global_position
-
     def get_absolute_reference_point(self):
         return self._global_position
 

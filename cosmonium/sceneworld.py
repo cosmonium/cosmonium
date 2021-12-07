@@ -155,9 +155,6 @@ class CartesianWorld(SimpleWorld):
     def set_frame_pos(self, frame_position):
         self.anchor._local_position = frame_position
 
-    def get_rel_position_to(self, position):
-        return (self._global_position - position) + self.get_local_position()
-
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):
         SimpleWorld.__init__(self, name)

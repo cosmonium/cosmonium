@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -337,27 +337,6 @@ class StellarObject(NamedObject):
 
     def get_app_magnitude(self):
         return self.anchor.get_apparent_magnitude()
-
-    def get_absolute_reference_point(self):
-        return self.anchor.get_absolute_reference_point()
-
-    def get_local_position(self):
-        return self.anchor._local_position
-
-    def get_position(self):
-        return self.get_absolute_reference_point() + self.get_local_position()
-
-    def get_rel_position_to(self, position):
-        return (self.get_absolute_reference_point() - position) + self.get_local_position()
-
-    def get_abs_rotation(self):
-        return self.anchor._orientation
-
-    def get_equatorial_rotation(self):
-        return self.anchor._equatorial
-
-    def get_sync_rotation(self):
-        return self.anchor._orientation
 
     def frame_cartesian_to_spherical(self, position):
         distance = position.length()

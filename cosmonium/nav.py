@@ -118,7 +118,7 @@ class InteractiveNavigationController(NavigationController):
         #Orbiting around a body involve both the object and the camera controller
         #The orbit position is set on the object while the camera orientation is set on the camera controller
         #The position must be done in the object frame otherwise the orbit point will drift away
-        center = target.get_rel_position_to(self.controller.get_absolute_reference_point())
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
         if self.controller.orbit_rot_camera:
@@ -413,7 +413,7 @@ class FreeNav(InteractiveNavigationController):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        direction = target.get_rel_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
+        direction = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
         height = target.get_height_under(self.controller.get_local_position())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
@@ -589,7 +589,7 @@ class WalkNav(InteractiveNavigationController):
 
     def change_altitude(self, rate):
         if rate == 0.0: return
-        direction=(self.body.get_rel_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position())
+        direction=(self.body.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position())
         height = self.body.get_height_under(self.controller.get_local_position())
         altitude = direction.length() - height
         #print(direction.length(), height, altitude)
