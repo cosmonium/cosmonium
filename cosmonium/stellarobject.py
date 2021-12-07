@@ -338,17 +338,17 @@ class StellarObject(NamedObject):
     def get_app_magnitude(self):
         return self.anchor.get_apparent_magnitude()
 
-    def get_global_position(self):
-        return self.anchor._global_position
+    def get_absolute_reference_point(self):
+        return self.anchor.get_absolute_reference_point()
 
     def get_local_position(self):
         return self.anchor._local_position
 
     def get_position(self):
-        return self.get_global_position() + self.get_local_position()
+        return self.get_absolute_reference_point() + self.get_local_position()
 
     def get_rel_position_to(self, position):
-        return (self.get_global_position() - position) + self.get_local_position()
+        return (self.get_absolute_reference_point() - position) + self.get_local_position()
 
     def get_abs_rotation(self):
         return self.anchor._orientation

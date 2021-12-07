@@ -45,7 +45,7 @@ class Universe(OctreeSystem):
     def get_distance(self, time):
         return 0
 
-    def get_global_position(self):
+    def get_absolute_reference_point(self):
         return LPoint3d()
     
     def get_abs_rotation(self):

@@ -1299,9 +1299,9 @@ class Cosmonium(CosmoniumBase):
                 print("New nearest system:", nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.ship.anchor.change_reference_point(nearest_system.get_global_position())
+                self.ship.anchor.change_reference_point(nearest_system.get_absolute_reference_point())
                 self.camera_controller.update(self.time.time_full, 0)
-                self.observer.change_global(nearest_system.get_global_position())
+                self.observer.change_global(nearest_system.get_absolute_reference_point())
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:
@@ -1417,7 +1417,7 @@ class Cosmonium(CosmoniumBase):
             print("\tApp magnitude:", self.selected.get_app_magnitude(), '(', self.selected.get_abs_magnitude(), ')')
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
-            print("\tGlobal position", self.selected.get_global_position())
+            print("\tGlobal position", self.selected.get_absolute_reference_point())
             print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.anchor.orbit.get_frame_position_at(self.time.time_full), ')')
             print("\tRotation", self.selected.get_abs_rotation())
             print("\tOrientation", self.selected.anchor._orientation)

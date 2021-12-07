@@ -118,7 +118,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     if distance is not None:
         distance *= units.Ly
     elif parent is not None:
-        distance = parent.get_global_position().length()
+        distance = parent.get_absolute_reference_point().length()
     if app_magnitude != None and distance != None:
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     if texture is not None:

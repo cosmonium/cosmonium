@@ -130,7 +130,7 @@ class AnchorReferenceFrame(ReferenceFrame):
         return self.anchor.get_local_position()
 
     def get_absolute_reference_point(self):
-        return self.anchor.get_global_position()
+        return self.anchor.get_absolute_reference_point()
 
     def __str__(self):
         return self.__class__.__name__ + '(' + self.anchor.body.get_name() + ')'
