@@ -110,7 +110,7 @@ class WaterNode():
     def update(cls, task):
         # Reflection plane
         if settings.camera_at_origin:
-            camera_offset = -cls.observer._local_position[2] + cls.z
+            camera_offset = -cls.observer.get_local_position()[2] + cls.z
         else:
             camera_offset = cls.z
         waterPlane = Plane(Vec3(0, 0, camera_offset + 1), Point3(0, 0, camera_offset))

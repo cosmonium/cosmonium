@@ -258,7 +258,7 @@ class FlatSurfaceAnchor(OriginAnchor):
 
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
-        self.vector_to_obs = LPoint3d(observer.get_pos())
+        self.vector_to_obs = LPoint3d(observer.get_local_position())
         self.vector_to_obs.normalize()
         self.distance_to_obs = observer._local_position.get_z()# - self.get_height(self.observer._local_position)
         self._height_under = self.surface.get_height_at(observer._local_position[0], observer._local_position[1])

@@ -199,7 +199,8 @@ class PhysicsBox():
         self.physics_instance.node().set_mass(self.mass)
         self.physics_instance.node().add_shape(shape)
         self.physics_instance.setCollideMask(BitMask32.allOn())
-        position = observer._local_position + observer._orientation.xform(LPoint3d(0, 15, 5))
+        #TODO: Replace with calc_absolute_...
+        position = observer.get_local_position() + observer.get_absolute_orientation().xform(LPoint3d(0, 15, 5))
         self.physics_instance.set_pos(*position)
         self.physics.add(self.physics_instance)
 
@@ -215,12 +216,12 @@ class PhysicsBox():
         local_position = LPoint3d(*self.physics_instance.get_pos())
         local_rotation = LQuaterniond(*self.physics_instance.get_quat())
         if settings.camera_at_origin:
-            scene_rel_position = local_position - observer._local_position
+            scene_rel_position = local_position - observer.get_local_position()
         else:
             scene_rel_position = local_position
         self.instance.set_pos(*scene_rel_position)
         self.instance.set_quat(LQuaternion(*local_rotation))
-        if (local_position - observer._local_position).length() > self.limit:
+        if (local_position - observer.get_local_position()).length() > self.limit:
             print("Object is too far, removing it")
             self.remove_instance()
             return False
@@ -763,7 +764,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.worlds.update(0, 0)
         self.worlds.update_obs(self.observer)
         self.worlds.check_visibility(self.observer.frustum, self.observer.pixel_size)
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_local_position(), self.observer.get_absolute_orientation())
         #self.ralph.create_light()
         if self.ralph_config.physics.enable:
             for physic_object in self.physic_objects:
@@ -772,7 +773,7 @@ class RoamingRalphDemo(CosmoniumBase):
         # Set up the camera
         render.set_shader_input("camera", self.camera.get_pos())
 
-        self.terrain.update_instance(self.scene_manager, self.observer.get_camera_pos(), None)
+        self.terrain.update_instance(self.scene_manager, self.observer.get_local_position(), None)
 
         taskMgr.add(self.move, "moveTask")
 
@@ -822,9 +823,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.worlds.update_obs(self.observer)
         self.worlds.check_visibility(self.observer.frustum, self.observer.pixel_size)
         for world  in self.worlds.worlds:
-            world.anchor._height_under = world.get_height_under(self.observer._local_position)
+            world.anchor._height_under = world.get_height_under(self.observer.get_local_position())
             world.scene_anchor.update(self.scene_manager)
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_camera_pos(), self.observer.get_camera_rot())
+        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_local_position(), self.observer.get_absolute_orientation())
 
         self.scene_manager.build_scene(self.common_state, self.win, self.observer, [], [])
 
@@ -834,7 +835,7 @@ class RoamingRalphDemo(CosmoniumBase):
         print("Height:", self.get_height(self.ralph_world.anchor._local_position),
               self.terrain_object.get_height_at(self.ralph_world.anchor._local_position[0], self.ralph_world.anchor._local_position[1]))
         print("Ralph:", self.ralph_world.anchor._local_position, self.ralph_world.anchor._frame_position, self.ralph_world.anchor._frame_orientation.get_hpr(), self.ralph_world.anchor._orientation.get_hpr())
-        print("Camera:", self.observer._local_position, self.observer._orientation.get_hpr())
+        print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",

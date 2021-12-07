@@ -1065,7 +1065,7 @@ class Cosmonium(CosmoniumBase):
                 self.controllers_to_update.append(controller)
         #TODO: Should be done in update_extra
         #if self.selected is not None:
-        #    self.selected.calc_height_under(self.observer.get_camera_pos())
+        #    self.selected.calc_height_under(self.observer.get_local_position())
         for controller in self.controllers_to_update:
             controller.update_obs(self.observer)
         for controller in self.controllers_to_update:
@@ -1073,8 +1073,8 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def find_global_light_sources(self):
-        position = self.observer._global_position + self.observer._local_position
-        traverser = FindLightSourceTraverser(-10, position)
+        position = self.observer.get_local_position()
+        traverser = FindLightSourceTraverser(-10, self.observer.get_absolute_position())
         self.universe.anchor.traverse(traverser)
         self.global_light_sources = traverser.get_collected()
         #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
@@ -1225,14 +1225,14 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_height_under(self):
         for anchor in self.resolved:
-            anchor._height_under = anchor.body.get_height_under(self.observer._local_position)
+            anchor._height_under = anchor.body.get_height_under(self.observer.get_local_position())
 
     @pstat
     def update_instances(self):
         observer = self.observer
         scene_manager = self.scene_manager
-        camera_pos = self.observer.get_camera_pos()
-        camera_rot = self.observer.get_camera_rot()
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
         frustum = self.observer.rel_frustum
         pixel_size = self.observer.pixel_size
         self.background.check_and_update_instance(scene_manager, camera_pos, camera_rot)
@@ -1405,10 +1405,10 @@ class Cosmonium(CosmoniumBase):
         print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
         print("\tFoV", self.camLens.get_fov())
         print("Camera:")
-        print("\tGlobal position", self.observer.camera_global_pos)
-        print("\tLocal position", self.observer.get_camera_pos())
-        print("\tRotation", self.observer.get_camera_rot())
-        print("\tFrame position", self.observer._frame_position, "rotation", self.observer._frame_rotation)
+        print("\tGlobal position", self.observer.get_absolute_reference_point())
+        print("\tLocal position", self.observer.get_local_position())
+        print("\tRotation", self.observer.get_absolute_orientation())
+        print("\tFrame position", self.observer.get_frame_position(), "rotation", self.observer.get_frame_orientation())
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
@@ -1449,7 +1449,7 @@ class Cosmonium(CosmoniumBase):
                         print("Patches:", len(self.selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
+                projection = self.selected.cartesian_to_spherical(self.observer.get_local_position())
                 xy = self.selected.spherical_to_xy(projection)
                 print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
                 height = self.selected.anchor._height_under

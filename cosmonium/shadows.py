@@ -335,7 +335,7 @@ class SphereShadowDataSource(DataSource):
             print("ERROR: No lights for", shape, shape.owner.get_name())
             return
         self.light = self.shadow_casters.shadow_casters[0].light
-        observer = shape.owner.context.observer._position
+        observer = shape.owner.context.observer.get_local_position()
         scale = shape.owner.scene_anchor.scene_scale_factor
         if self.far_sun:
             vector = shape.owner.anchor._local_position - self.light.source.anchor._local_position

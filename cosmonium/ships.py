@@ -146,7 +146,7 @@ class VisibleShip(ShipBase):
         self.ship_object.update(time, dt)
 
     def update_obs(self, observer):
-        self.rel_position = self._local_position - observer._local_position
+        self.rel_position = self._local_position - observer.get_local_position()
         self.distance_to_obs = self.rel_position.length()
         self.vector_to_obs = self.rel_position / self.distance_to_obs
         if self.context.nearest_system is not None:

@@ -1148,7 +1148,7 @@ class PatchedShapeBase(Shape):
             node.add_geom(geom)
             self.frustum_node.attach_new_node(node)
             self.frustum_rel_position = -self.owner.scene_rel_position
-            self.frustum_node.set_quat(self.owner.context.observer.get_camera_rot())
+            self.frustum_node.set_quat(self.owner.context.observer.get_absolute_orientation())
             #The frustum position is updated in place_patches()
 
     @pstat

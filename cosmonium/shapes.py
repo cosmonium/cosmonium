@@ -476,7 +476,7 @@ class ShapeObject(VisibleObject):
             self.sources.apply_shape_data(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
-        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+        if self.shape.update_lod(self.context.observer.get_local_position(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.body.get_apparent_radius(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size)
