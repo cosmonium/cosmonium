@@ -592,7 +592,7 @@ class Cosmonium(CosmoniumBase):
         self.camera_controller = camera_controller
         if camera_controller.require_target():
             self.camera_controller.set_target(self.track)
-        self.camera_controller.activate(self.observer, self.ship)
+        self.camera_controller.activate(self.observer, self.ship.anchor)
         if position is not None and rotation is not None:
             self.camera_controller.set_pos(position)
             self.camera_controller.set_rot(rotation)
@@ -635,14 +635,14 @@ class Cosmonium(CosmoniumBase):
                 self.ship.copy(old_ship)
             if self.camera_controller is not None:
                 if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
-                    self.camera_controller.set_reference_point(self.ship)
+                    self.camera_controller.set_reference_point(self.ship.anchor)
                     self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
                 else:
                     #Current camera controller is not supported by the ship, switch to the first one supported
                     for camera_controller in self.camera_controllers:
                         if self.ship.supports_camera_mode(camera_controller.camera_mode):
                             #Apply the current camera controller to be able to switch
-                            self.camera_controller.set_reference_point(self.ship)
+                            self.camera_controller.set_reference_point(self.ship.anchor)
                             self.set_camera_controller(camera_controller)
                             break
                     else:

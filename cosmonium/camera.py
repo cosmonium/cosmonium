@@ -528,7 +528,7 @@ class FixedCameraController(CameraController):
             self.state = self.STATE_DEFAULT
 
     def prepare_movement(self):
-        self.reference_point.anchor.set_absolute_orientation(self.get_rot())
+        self.reference_point.set_absolute_orientation(self.get_rot())
         self.frame_rot = LQuaterniond()
 
     def look_back(self):
@@ -537,7 +537,7 @@ class FixedCameraController(CameraController):
         self.set_frame_rot(look_back_rot * self.frame_rot)
 
     def update(self, time, dt):
-        self.camera.change_global(self.reference_point.anchor.get_absolute_reference_point())
+        self.camera.change_global(self.reference_point.get_absolute_reference_point())
         self.camera.set_local_position(self.get_pos())
         if self.state == self.STATE_DEFAULT:
             self.camera.set_absolute_orientation(self.get_rot())

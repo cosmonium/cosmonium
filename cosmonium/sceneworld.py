@@ -131,30 +131,6 @@ class CartesianWorld(SimpleWorld):
     def create_scene_anchor(self):
         return SceneAnchor(self.anchor, False, True)
 
-    @property
-    def _global_position(self):
-        return self.anchor._global_position
-
-    @property
-    def _local_position(self):
-        return self.anchor._local_position
-
-    @property
-    def _orientation(self):
-        return self.anchor._orientation
-
-    def get_pos(self):
-        return self.anchor.get_absolute_position()
-
-    def get_local_position(self):
-        return self.anchor.get_local_position()
-
-    def get_frame_pos(self):
-        return self.anchor.get_local_position()
-
-    def set_frame_pos(self, frame_position):
-        self.anchor._local_position = frame_position
-
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
