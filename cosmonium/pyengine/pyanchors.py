@@ -138,8 +138,9 @@ class CartesianAnchor(AnchorBase):
 
     def copy(self, other):
         self.frame = other.frame
+        self._global_position = other._global_position
         self._frame_position = other._frame_position
-        self._frame_rotation = other._frame_rotation
+        self._frame_orientation = other._frame_orientation
 
     def get_apparent_radius(self):
         return self._extend
