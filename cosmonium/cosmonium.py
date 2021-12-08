@@ -738,7 +738,7 @@ class Cosmonium(CosmoniumBase):
     def reset_nav(self):
         print("Reset nav")
         self.follow = None
-        self.ship.set_frame(AbsoluteReferenceFrame())
+        self.ship.anchor.set_frame(AbsoluteReferenceFrame())
         self.observer.set_frame(AbsoluteReferenceFrame())
         self.sync = None
         if self.fly:
@@ -963,7 +963,7 @@ class Cosmonium(CosmoniumBase):
             self.update_extra(self.follow)
             self.observer.set_frame(OrbitReferenceFrame(body.anchor))
         else:
-            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
@@ -977,11 +977,11 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.ship.set_frame(SynchroneReferenceFrame(body.anchor))
+            self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
             self.update_extra(self.sync)
             self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
         else:
-            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
