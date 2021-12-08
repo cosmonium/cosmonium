@@ -258,10 +258,14 @@ class RegionSceneManager(SceneManagerBase):
             if not resolved.visible: continue
             if not resolved.body.virtual_object and resolved.body.scene_anchor.instance is not None:
                 if not resolved.body.background:
-                    coef = -resolved.vector_to_obs.dot(camera.anchor.camera_vector)
-                    near = (resolved.distance_to_obs  - resolved.get_bounding_radius()) * coef  * camera.cos_fov2 / self.scale
-                    far = (resolved.distance_to_obs + resolved.get_bounding_radius()) * coef / self.scale
-                    near = max(near, self.min_near)
+                    if resolved.distance_to_obs > 0:
+                        coef = -resolved.vector_to_obs.dot(camera.anchor.camera_vector)
+                        near = (resolved.distance_to_obs  - resolved.get_bounding_radius()) * coef  * camera.cos_fov2 / self.scale
+                        far = (resolved.distance_to_obs + resolved.get_bounding_radius()) * coef / self.scale
+                        near = max(near, self.min_near)
+                    else:
+                        near = self.min_near
+                        far = self.min_near + resolved.get_bounding_radius() * 5 / self.scale
                     region = SceneRegion(self, near, far)
                     region.add_body(resolved.body)
                     while len(self.regions) > 0 and region.overlap(self.regions[-1]):

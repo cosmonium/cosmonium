@@ -70,7 +70,17 @@ class VisibleShip(ShipBase):
     def __init__(self, name, ship_object, radius):
         ShipBase.__init__(self, name)
         self.ship_object = ship_object
+        #TODO: Remove this
+        self.ship_object.color_picking = False
+        self.ship_object.shader.color_picking = False
         self.radius = radius
+        self.add_component(ship_object)
+        #TODO: Remove this
+        self.anchor.content = 2
+        self.anchor._extend = radius
+        self.ship_object.set_scale(LVector3d(self.radius, self.radius, self.radius))
+        return
+
         #TODO: Should be refactored with StellarBody !
         self.shown = True
         self.visible = True
@@ -102,17 +112,17 @@ class VisibleShip(ShipBase):
         self.shadow_caster = None
         self.create_own_shadow_caster = True
 
-    def check_settings(self):
+    def check_settings2(self):
         self.ship_object.check_settings()
         if self.shadow_caster is not None:
             self.shadow_caster.check_settings()
 
-    def get_user_parameters(self):
+    def get_user_parameters2(self):
         parameters = self.ship_object.get_user_parameters()
         group = ParametersGroup(self.get_name(), parameters)
         return group
 
-    def update_user_parameters(self):
+    def update_user_parameters2(self):
         self.ship_object.update_user_parameters()
 
     def get_apparent_radius(self):
@@ -145,7 +155,7 @@ class VisibleShip(ShipBase):
         ShipBase.update(self, time, dt)
         self.ship_object.update(time, dt)
 
-    def update_obs(self, observer):
+    def update_obs2(self, observer):
         self.rel_position = self._local_position - observer.get_local_position()
         self.distance_to_obs = self.rel_position.length()
         self.vector_to_obs = self.rel_position / self.distance_to_obs
@@ -161,14 +171,14 @@ class VisibleShip(ShipBase):
                 self.remove_light()
         self.ship_object.update_obs(observer)
 
-    def check_visibility(self, frustum, pixel_size):
+    def check_visibility2(self, frustum, pixel_size):
         self.ship_object.check_visibility(frustum, pixel_size)
 
     def update_shader(self):
         ShipBase.update_shader(self)
         self.ship_object.update_shader()
 
-    def check_and_update_instance(self, camera_pos, camera_rot):
+    def check_and_update_instance2(self, camera_pos, camera_rot):
         self.scene_rel_position = self.rel_position
         self.scene_position, self.scene_distance, self.scene_scale_factor = self.calc_scene_params(self.rel_position, self._position, self.distance_to_obs, self.vector_to_obs)
         self.scene_orientation = self._orientation
@@ -188,7 +198,7 @@ class VisibleShip(ShipBase):
             self.shadow_caster.add_target(self.ship_object)
             self.ship_object.shadows.end_update()
 
-    def remove_instance(self):
+    def remove_instance2(self):
         self.ship_object.remove_instance()
         self.instance = None
         if self.shadow_caster is not None:

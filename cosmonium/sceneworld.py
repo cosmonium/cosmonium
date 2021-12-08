@@ -22,6 +22,7 @@ from .foundation import CompositeObject
 from .anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
 from cosmonium.astro.frame import AbsoluteReferenceFrame
+from cosmonium.namedobject import NamedObject
 
 class Worlds:
     def __init__(self):
@@ -30,6 +31,9 @@ class Worlds:
     def add_world(self, world):
         self.worlds.append(world)
 
+    def remove_world(self, world):
+        self.worlds.remove(world)
+
     def update_anchor(self, time, update_id):
         for world in self.worlds:
             world.anchor.update(time, update_id)
@@ -37,6 +41,12 @@ class Worlds:
     def update_anchor_obs(self, observer, update_id):
         for world in self.worlds:
             world.anchor.update_observer(observer, update_id)
+
+    def update_scene_anchor(self, scene_manager):
+        for world in self.worlds:
+            #TODO: This is a hack
+            world.scene_anchor.create_instance(scene_manager)
+            world.scene_anchor.update(scene_manager)
 
     def update(self, time, dt):
         for world in self.worlds:
@@ -59,9 +69,11 @@ class Worlds:
             world.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
 
-class SceneWorld:
+class SceneWorld(NamedObject):
+    virtual_object = False
+    background = False
     def __init__(self, name):
-        self.name = name
+        NamedObject.__init__(self, [name], None, None)
         self.anchor = None
         self.scene_anchor = None
 
@@ -71,6 +83,7 @@ class SimpleWorld(SceneWorld):
         self.anchor = self.create_anchor()
         self.anchor.body = self
         self.scene_anchor = self.create_scene_anchor()
+        self.lights = None
 
         self.components = CompositeObject('<root>')
         self.components.set_scene_anchor(self.scene_anchor)
@@ -84,11 +97,18 @@ class SimpleWorld(SceneWorld):
     def create_scene_anchor(self):
         raise NotImplementedError()
 
+    def set_lights(self, lights):
+        if self.lights is not None:
+            self.lights.remove_all()
+        self.lights = lights
+        self.components.set_lights(lights)
+
     def get_height_under(self, position):
         return 0.0
 
     def on_visible(self, scene_manager):
         self.scene_anchor.create_instance(scene_manager)
+        self.scene_anchor.update(scene_manager)
 
     def on_hidden(self, scene_manager):
         self.scene_anchor.remove_instance()
@@ -104,6 +124,13 @@ class SimpleWorld(SceneWorld):
     def check_settings(self):
         self.components.check_settings()
 
+    def on_resolved(self, scene_manager):
+        #TODO!
+        self.on_visible(scene_manager)
+
+    def on_point(self, scene_manager):
+        pass
+
     def update(self, time, dt):
         self.components.update(time, dt)
 
@@ -113,7 +140,27 @@ class SimpleWorld(SceneWorld):
     def check_visibility(self, frustum, pixel_size):
         self.components.check_visibility(frustum, pixel_size)
 
+    def get_components(self):
+        return self.components.components
+
+    def start_shadows_update(self):
+        #TODO: Add method in CompositeObject
+        for component in self.components.components:
+            component.start_shadows_update()
+
+    def self_shadows_update(self, light_source):
+        pass
+
+    def add_shadow_target(self, light_source, target):
+        pass
+
+    def end_shadows_update(self):
+        for component in self.components.components:
+            component.end_shadows_update()
+
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.lights is not None:
+            self.lights.update_instances(camera_pos)
         self.components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     #TODO: To remove

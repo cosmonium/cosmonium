@@ -86,7 +86,7 @@ import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
 from cosmonium.octree import c_settings
-from cosmonium.sceneworld import ObserverCenteredWorld
+from cosmonium.sceneworld import ObserverCenteredWorld, Worlds
 
 # Patch gettext classes
 if sys.version_info < (3, 8):
@@ -427,6 +427,7 @@ class Cosmonium(CosmoniumBase):
         if self.app_config.test_start:
             self.near_cam = None
 
+        self.worlds = Worlds()
         self.universe = Universe(self)
         self.background = ObserverCenteredWorld("background")
         self.background.background = True
@@ -624,17 +625,18 @@ class Cosmonium(CosmoniumBase):
 
     def set_ship(self, ship):
         if self.ship is not None:
-            self.universe.remove_component(self.ship)
-            self.autopilot.set_ship(None)
-            self.nav.set_ship(None)
+            self.worlds.remove_world(self.ship)
+            self.autopilot.set_controller(None)
+            self.nav.set_controller(None)
             self.camera_controller.set_reference_anchor(None)
         old_ship = self.ship
         self.ship = ship
         if self.ship is not None:
+            self.worlds.add_world(self.ship)
             self.autopilot.set_controller(ShipMover(self.ship.anchor))
             self.nav.set_controller(ShipMover(self.ship.anchor))
             if old_ship is not None:
-                self.ship.copy(old_ship)
+                self.ship.anchor.copy(old_ship.anchor)
             if self.camera_controller is not None:
                 if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
                     self.camera_controller.set_reference_anchor(self.ship.anchor)
@@ -1038,6 +1040,11 @@ class Cosmonium(CosmoniumBase):
         if c_settings is None: return
         c_settings.min_body_size = settings.min_body_size
 
+    def update_worlds(self, time, dt):
+        self.worlds.update_anchor(time, self.update_id)
+        self.worlds.update_anchor_obs(self.observer.anchor, self.update_id)
+        self.worlds.update(time, dt)
+
     @pstat
     def update_universe(self, time, dt):
         traverser = UpdateTraverser(time, self.observer.anchor, settings.lowest_app_magnitude, self.update_id)
@@ -1067,14 +1074,6 @@ class Cosmonium(CosmoniumBase):
         self.universe.anchor.traverse(traverser)
         self.global_light_sources = traverser.get_collected()
         #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
-
-    def update_ship(self, time, dt):
-        frustum = self.observer.anchor.rel_frustum
-        pixel_size = self.observer.anchor.pixel_size
-        self.ship.anchor.update(time, self.update_id)
-        self.ship.update(time, dt)
-        self.ship.update_obs(self.observer)
-        self.ship.check_visibility(frustum, pixel_size)
 
     def _add_extra(self, to_add):
         if to_add is None: return
@@ -1136,6 +1135,8 @@ class Cosmonium(CosmoniumBase):
                 if anchor.was_visible:
                     self.no_longer_visibles.append(anchor)
                 anchor.visible = False
+        for world in self.worlds.worlds:
+            resolved.append(world.anchor)
         for anchor in self.old_visibles:
             if not anchor in self.visibles:
                 self.no_longer_visibles.append(anchor)
@@ -1203,7 +1204,7 @@ class Cosmonium(CosmoniumBase):
     def check_scattering(self):
         for anchor in self.resolved:
             #TODO: We need to test the type of the parent anchor
-            if anchor.parent.content == ~0: continue
+            if anchor.parent is None or anchor.parent.content == ~0: continue
             primary = anchor.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
@@ -1259,8 +1260,7 @@ class Cosmonium(CosmoniumBase):
             body.update_obs(self.observer)
             body.check_visibility(frustum, pixel_size)
             body.check_and_update_instance(scene_manager, camera_pos, camera_rot)
-
-        self.ship.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
+        self.worlds.update_scene_anchor(scene_manager)
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(camera_pos, camera_rot)
         self.gui.update_status()
@@ -1336,7 +1336,6 @@ class Cosmonium(CosmoniumBase):
         self.time.update_time(dt)
         self.update_extra(self.selected, self.follow, self.sync, self.track)
         self.nav.update(self.time.time_full, dt)
-        self.update_ship(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
         self.update_extra_observer()
 
@@ -1350,6 +1349,7 @@ class Cosmonium(CosmoniumBase):
         StellarObject.nb_instance = 0
 
         self.update_universe(self.time.time_full, dt)
+        self.update_worlds(self.time.time_full, dt)
 
         nearest_system, nearest_visible_system = self.find_nearest_system()
         #TODO: anchors should be distance sorted

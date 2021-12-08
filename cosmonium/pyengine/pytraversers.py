@@ -185,7 +185,7 @@ class FindShadowCastersTraverser(AnchorTraverser):
         self.anchors = []
         self.parent_systems = []
         parent = target.parent
-        while parent.content != ~0:
+        while parent is not None and parent.content != ~0:
             self.parent_systems.append(parent)
             parent = parent.parent
 
