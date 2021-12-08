@@ -476,10 +476,10 @@ class ShapeObject(VisibleObject):
             self.sources.apply_shape_data(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
-        if self.shape.update_lod(self.context.observer.get_local_position(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+        if self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.body.get_apparent_radius(), self.body.anchor.distance_to_obs, self.context.observer.pixel_size)
+            self.appearance.update_lod(self.shape, self.owner.get_apparent_radius(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.shape.instance is not None:
@@ -488,7 +488,7 @@ class ShapeObject(VisibleObject):
         self.shape.update_instance(scene_manager, camera_pos, camera_rot)
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
-            self.shape.place_patches(self.body)
+            self.shape.place_patches(self.owner)
         for shadow_caster in self.shadow_casters.values():
             shadow_caster.update(scene_manager)
         if self.shadows.rebuild_needed:
