@@ -58,9 +58,9 @@ class AppState(object):
         self.time_full = cosmonium.time.time_full
         self.running = cosmonium.time.running
 
-        self.global_position = cosmonium.ship._global_position
-        self.position = cosmonium.ship._frame_position
-        self.orientation = cosmonium.ship._frame_rotation
+        self.global_position = cosmonium.ship.anchor.get_absolute_reference_point()
+        self.position = cosmonium.ship.anchor.get_frame_position()
+        self.orientation = cosmonium.ship.anchor.get_frame_orientation()
         self.absolute = False
 
         self.fov = cosmonium.observer.get_fov()
@@ -108,11 +108,11 @@ class AppState(object):
             else:
                 cosmonium.ship._global_position = LPoint3d()
         if self.absolute:
-            cosmonium.ship.set_pos(self.position)
-            cosmonium.ship.set_rot(self.orientation)
+            cosmonium.ship.set_local_position(self.position)
+            cosmonium.ship.set_absolute_orientation(self.orientation)
         else:
-            cosmonium.ship.set_frame_pos(self.position)
-            cosmonium.ship.set_frame_rot(self.orientation)
+            cosmonium.ship.anchor.set_frame_position(self.position)
+            cosmonium.ship.anchor.set_frame_orientation(self.orientation)
 
         cosmonium.observer.set_fov(self.fov)
 
