@@ -529,7 +529,7 @@ class MeshShape(Shape):
         self.offset = offset
         if rotation is None:
             rotation = LQuaterniond()
-        if scale is None and not auto_scale_mesh:
+        if scale is None:
             scale = LVector3d(1, 1, 1)
         self.scale_factor = scale
         self.rotation = rotation
