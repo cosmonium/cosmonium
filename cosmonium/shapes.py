@@ -240,6 +240,7 @@ class ShapeObject(VisibleObject):
         self.sources.add_source(self.appearance)
         self.instance_ready = False
         self.owner = None
+        self.oid_color = None
         self.shadows = MultiShadows(self)
         self.shadow_casters = {}
         self.first_patch = True
