@@ -103,6 +103,6 @@ class LightSources(DataSource):
         for light in self.lights:
             light.apply(instance)
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         for light in self.lights:
             light.update(instance)

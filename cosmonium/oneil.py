@@ -486,7 +486,7 @@ class ONeilScatteringDataSourceBase(DataSource):
         DataSource.__init__(self, 'scattering')
         self.parameters = parameters
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         body = self.parameters.body
         #TODO: This should not be managed here
         if body.lights is None or len(body.lights.lights) == 0:

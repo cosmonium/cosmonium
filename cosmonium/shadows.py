@@ -204,7 +204,7 @@ class ShadowMapDataSource(DataSource):
         if not self.calculate_shadow_coef or self.caster.occluder is None:
             shape.instance.set_shader_input('%s_shadow_coef' % self.name, 1.0)
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         #TODO: Shadow parameters should not be retrieved like that
         appearance = shape.parent.appearance
         if self.use_bias:
@@ -295,7 +295,7 @@ class RingShadowDataSource(DataSource):
         DataSource.__init__(self, 'ring-shadow')
         self.ring = ring
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is not None:
             instance.set_shader_input('shadow_ring_tex',texture)
@@ -330,18 +330,17 @@ class SphereShadowDataSource(DataSource):
         self.far_sun = far_sun
         self.oblate_occluder = oblate_occluder
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         if len(self.shadow_casters.shadow_casters) == 0:
             print("ERROR: No lights for", shape, shape.owner.get_name())
             return
         self.light = self.shadow_casters.shadow_casters[0].light
-        observer = shape.owner.context.observer.get_local_position()
         scale = shape.owner.scene_anchor.scene_scale_factor
         if self.far_sun:
             vector = shape.owner.anchor.get_local_position() - self.light.source.anchor.get_local_position()
             distance_to_light_source = vector.length()
             instance.set_shader_input('star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source))
-        star_center = (self.light.source.anchor.get_local_position() - observer) * scale
+        star_center = (self.light.source.anchor.get_local_position() - camera_pos) * scale
         star_radius = self.light.source.get_apparent_radius() * scale
         instance.set_shader_input('star_center', star_center)
         instance.set_shader_input('star_radius', star_radius)
@@ -357,7 +356,7 @@ class SphereShadowDataSource(DataSource):
                 break
             nb_of_occluders += 1
             occluder = shadow_caster.occluder
-            centers.append((occluder.anchor.get_local_position() - observer) * scale)
+            centers.append((occluder.anchor.get_local_position() - camera_pos) * scale)
             radius = occluder.get_apparent_radius()
             radii.append(radius * scale)
             if self.oblate_occluder:

@@ -77,7 +77,7 @@ class DataSource:
     def apply(self, shape, instance):
         pass
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         pass
 
     def clear_shape_data(self, shape, instance):
@@ -130,11 +130,10 @@ class DataSourcesHandler:
     def apply_shape_data(self, shape):
         for source in self.sources:
             source.apply(shape, shape.instance)
-            source.update(shape, shape.instance)
 
-    def update_shape_data(self, shape):
+    def update_shape_data(self, shape, camera_pos, camera_rot):
         for source in self.sources:
-            source.update(shape, shape.instance)
+            source.update(shape, shape.instance, camera_pos, camera_rot)
 
     def clear_shape_data(self, shape, instance):
         for source in self.sources:

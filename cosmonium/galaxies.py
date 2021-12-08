@@ -577,7 +577,7 @@ class GalaxyDataSource(DataSource):
         instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
         instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         instance.setShaderInput("scale_factor", shape.owner.scene_anchor.scene_scale_factor)
 
 class GalaxyPointControl(PointControl):
