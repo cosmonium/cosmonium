@@ -265,7 +265,7 @@ class RotationAxis(VisibleObject):
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.instance is not None:
             self.instance.set_scale(*self.get_scale())
-            self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+            self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
     def get_scale(self):
         return self.body.surface.get_scale()
@@ -296,7 +296,7 @@ class ReferenceAxis(VisibleObject):
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.instance:
-            self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+            self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
             self.instance.set_scale(*self.get_scale())
 
     def get_scale(self):

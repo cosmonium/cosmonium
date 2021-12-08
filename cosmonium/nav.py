@@ -422,7 +422,7 @@ class FreeNav(InteractiveNavigationController):
             if rate < 0 or altitude >= settings.min_altitude:
                 self.controller.delta_local(direction * altitude * rate)
         else:
-            self.controller.set_local_position(target.anchor._local_position - direction * (height + settings.min_altitude))
+            self.controller.set_local_position(target.anchor.get_local_position() - direction * (height + settings.min_altitude))
 
 class WalkNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4

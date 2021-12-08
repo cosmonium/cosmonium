@@ -832,9 +832,9 @@ class RoamingRalphDemo(CosmoniumBase):
         return task.cont
 
     def print_debug(self):
-        print("Height:", self.get_height(self.ralph_world.anchor._local_position),
-              self.terrain_object.get_height_at(self.ralph_world.anchor._local_position[0], self.ralph_world.anchor._local_position[1]))
-        print("Ralph:", self.ralph_world.anchor._local_position, self.ralph_world.anchor._frame_position, self.ralph_world.anchor._frame_orientation.get_hpr(), self.ralph_world.anchor._orientation.get_hpr())
+        print("Height:", self.get_height(self.ralph_world.anchor.get_local_position()),
+              self.terrain_object.get_height_at(self.ralph_world.anchor.get_local_position()[0], self.ralph_world.anchor.get_local_position()[1]))
+        print("Ralph:", self.ralph_world.anchor.get_local_position(), self.ralph_world.anchor.get_frame_position(), self.ralph_world.anchor.get_frame_orientation().get_hpr(), self.ralph_world.anchor.get_absolute_orientation().get_hpr())
         print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
 
 parser = argparse.ArgumentParser()

@@ -71,16 +71,16 @@ class AnchorBase():
         visitor.traverse_anchor(self)
 
     def calc_absolute_relative_position_to(self, position):
-        return (self._global_position - position) + self.get_local_position()
+        return (self.get_absolute_reference_point() - position) + self.get_local_position()
 
     def calc_absolute_relative_position(self, anchor):
-        reference_point_delta = anchor._global_position - self._global_position
-        local_delta = anchor._local_position - self._local_position
+        reference_point_delta = anchor.get_absolute_reference_point() - self.get_absolute_reference_point()
+        local_delta = anchor.get_local_position() - self.get_local_position()
         delta = reference_point_delta + local_delta
         return delta
 
     def calc_local_distance_to(self, anchor):
-        local_delta = anchor._local_position - self._local_position
+        local_delta = anchor.get_local_position() - self.get_local_position()
         length = local_delta.length()
         return (local_delta / length, length)
 
@@ -163,10 +163,10 @@ class CartesianAnchor(AnchorBase):
     def update(self, time, dt):
         self.do_update()
 
-    def change_reference_point(self, new_global_pos):
+    def change_reference_point(self, new_reference_point):
         old_local = self.frame.get_local_position(self._frame_position)
-        new_local = (self._global_position - new_global_pos) + old_local
-        self._global_position = new_global_pos
+        new_local = (self._global_position - new_reference_point) + old_local
+        self._global_position = new_reference_point
         self._frame_position = self.frame.get_frame_position(new_local)
         self.do_update()
 

@@ -94,7 +94,7 @@ class Surface(ShapeObject):
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
 class EllipsoidSurface(Surface):
     def __init__(self, name=None, category=None, resolution=None, attribution=None,

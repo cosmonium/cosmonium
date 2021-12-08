@@ -96,7 +96,7 @@ class Ring(ShapeObject):
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
@@ -248,7 +248,7 @@ class Atmosphere(ShapeObject):
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
     def remove_instance(self):
         ShapeObject.remove_instance(self)
@@ -295,7 +295,7 @@ class Clouds(EllipsoidFlatSurface):
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor._orientation))
+        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
         inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:

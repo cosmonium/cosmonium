@@ -201,7 +201,7 @@ class OrbitTargetHelper():
         self.delta_y = 0
         self.orbit_speed_x = orbit_speed_x
         self.orbit_speed_z = orbit_speed_z
-        center = target.calc_absolute_relative_position_to(self.anchor._global_position)
+        center = target.calc_absolute_relative_position_to(self.anchor.get_absolute_reference_point())
         self.orbit_center = self.anchor.frame.get_frame_position(center)
         orbit_position = self.anchor.get_frame_position()
         self.orbit_dir = self.orbit_center - orbit_position
@@ -421,11 +421,11 @@ class CameraController(EventsControllerBase):
         self._frame_orientation = rotation
 
     def set_local_position(self, position):
-        frame_pos = self.reference_anchor._orientation.conjugate().xform(position - self.reference_anchor._local_position) - self.reference_position
+        frame_pos = self.reference_anchor._orientation.conjugate().xform(position - self.reference_anchor.get_local_position()) - self.reference_position
         self.set_frame_position(frame_pos)
 
     def get_local_position(self):
-        return self.reference_anchor._local_position + self.reference_anchor._orientation.xform(self._frame_position + self.reference_position)
+        return self.reference_anchor.get_local_position() + self.reference_anchor._orientation.xform(self._frame_position + self.reference_position)
 
     def set_orientation(self, rotation):
         rotation = rotation * self.reference_anchor._orientation.conjugate() * self.reference_orientation.conjugate()
@@ -481,7 +481,7 @@ class CameraController(EventsControllerBase):
             duration = settings.fast_move
         if target is None: return
         if cmd: print("Center on", target.get_name())
-        center = target.anchor.calc_absolute_relative_position_to(self.reference_anchor._global_position)
+        center = target.anchor.calc_absolute_relative_position_to(self.reference_anchor.get_absolute_reference_point())
         self.lookat(center, duration=duration, proportional=proportional)
 
     def update(self, time, dt):
@@ -577,7 +577,7 @@ class TrackCameraController(CameraController):
     def update(self, time, dt):
         self.center_on_object(self.target, duration=0, cmd=False)
 
-        self.camera.change_global(self.reference_anchor._global_position)
+        self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(self.get_local_position())
         self.camera.set_absolute_orientation(self.get_orientation())
         self.camera.update()
@@ -606,7 +606,7 @@ class LookAroundCameraController(CameraController):
             z_rotation.setFromAxisAngleRad(-z_angle, LVector3d.up())
             self._frame_orientation = x_rotation * z_rotation
 
-        self.camera.change_global(self.reference_anchor._global_position)
+        self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(self.get_local_position())
         self.camera.set_absolute_orientation(self.get_orientation())
         self.camera.update()
@@ -634,7 +634,7 @@ class FollowCameraController(CameraController):
 
         self.camera.update()
         camera_position = self.camera.get_local_position()
-        vector_to_reference = self.reference_anchor._local_position - camera_position
+        vector_to_reference = self.reference_anchor.get_local_position() - camera_position
         distance = vector_to_reference.length()
         vector_to_reference.normalize()
         if min_distance > 0 and distance == 0:
@@ -645,12 +645,12 @@ class FollowCameraController(CameraController):
         if distance < min_distance:
             camera_position = camera_position - vector_to_reference * (min_distance - distance)
 
-        vector_to_reference = self.reference_anchor._local_position - camera_position
+        vector_to_reference = self.reference_anchor.get_local_position() - camera_position
         vector_to_reference.normalize()
         camera_orientation = LQuaterniond()
         look_at(camera_orientation, vector_to_reference, self.reference_anchor._orientation.xform(LVector3d.up()))
 
-        self.camera.change_global(self.reference_anchor._global_position)
+        self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(camera_position)
         self.camera.set_absolute_orientation(camera_orientation)
         self.camera.update()
@@ -712,7 +712,7 @@ class SurfaceFollowCameraController(CameraController):
         self.body = body
 
     def calc_projected_orientation(self):
-        projected_vector_to_reference = self.reference_anchor._local_position - self.camera.get_local_position()
+        projected_vector_to_reference = self.reference_anchor.get_local_position() - self.camera.get_local_position()
         projected_vector_to_reference[2] = 0.0
         projected_vector_to_reference.normalize()
         orientation = LQuaterniond()
@@ -732,11 +732,11 @@ class SurfaceFollowCameraController(CameraController):
             self.state = self.STATE_DEFAULT
 
     def do_change_distance(self, step):
-        vector_to_reference = self.reference_anchor._local_position - self.camera.get_local_position()
+        vector_to_reference = self.reference_anchor.get_local_position() - self.camera.get_local_position()
         distance = vector_to_reference.length()
         vector_to_reference.normalize()
         new_distance = max(self.reference_min_distance, distance * (1.0 + step))
-        new_position = self.reference_anchor._local_position - vector_to_reference * new_distance
+        new_position = self.reference_anchor.get_local_position() - vector_to_reference * new_distance
         self.distance = new_distance / self.reference_anchor.get_apparent_radius()
         surface_height = self.body.get_height_under(new_position)
         self.height = new_position[2] - surface_height
@@ -745,15 +745,15 @@ class SurfaceFollowCameraController(CameraController):
 
     def update_limits(self):
         camera_position = self.camera.get_local_position()
-        vector_to_reference = self.reference_anchor._local_position - camera_position
-        self.height = max(self.min_height, camera_position[2] - self.reference_anchor._local_position[2])
+        vector_to_reference = self.reference_anchor.get_local_position() - camera_position
+        self.height = max(self.min_height, camera_position[2] - self.reference_anchor.get_local_position()[2])
         vector_to_reference[2] = 0.0
         distance = vector_to_reference.length()
         self.distance = max(self.reference_min_distance, distance / self.reference_anchor.get_apparent_radius())
 
     def update_lookat(self):
         camera_position = self.camera.get_local_position()
-        vector_to_reference = self.reference_anchor._local_position - camera_position
+        vector_to_reference = self.reference_anchor.get_local_position() - camera_position
         vector_to_reference.normalize()
         camera_orientation = LQuaterniond()
         look_at(camera_orientation, vector_to_reference, self.reference_anchor._orientation.xform(LVector3d.up()))
@@ -797,7 +797,7 @@ class SurfaceFollowCameraController(CameraController):
             min_distance = self.reference_anchor.get_apparent_radius() * self.distance
             max_distance = self.reference_anchor.get_apparent_radius() * self.distance * self.max_distance
             camera_position = self.camera.get_local_position()
-            projected_vector_to_reference = self.reference_anchor._local_position - camera_position
+            projected_vector_to_reference = self.reference_anchor.get_local_position() - camera_position
             projected_vector_to_reference[2] = 0.0
             distance = projected_vector_to_reference.length()
             projected_vector_to_reference.normalize()
@@ -810,19 +810,19 @@ class SurfaceFollowCameraController(CameraController):
                 camera_position = camera_position - projected_vector_to_reference * (min_distance - distance)
 
             surface_height = self.body.anchor._height_under
-            target_height = self.reference_anchor._local_position[2]
+            target_height = self.reference_anchor.get_local_position()[2]
             #print(self.height, self.min_height, surface_height, target_height)
             if surface_height + self.min_height < target_height + self.height:
                 new_camera_height = target_height + self.height
             else:
                 new_camera_height = surface_height + self.min_height
             camera_position[2] = new_camera_height
-            vector_to_reference = self.reference_anchor._local_position - camera_position
+            vector_to_reference = self.reference_anchor.get_local_position() - camera_position
             vector_to_reference.normalize()
             camera_orientation = LQuaterniond()
             look_at(camera_orientation, vector_to_reference, self.reference_anchor._orientation.xform(LVector3d.up()))
 
-            self.camera.change_global(self.reference_anchor._global_position)
+            self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
             self.camera.set_local_position(camera_position)
             self.camera.set_absolute_orientation(camera_orientation)
             self.camera.update()

@@ -1219,7 +1219,7 @@ class Cosmonium(CosmoniumBase):
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
             if primary.anchor.content & StellarAnchor.System != 0: continue
-            if primary.atmosphere is not None and primary.init_components and (anchor._local_position - primary.anchor._local_position).length() < primary.atmosphere.radius:
+            if primary.atmosphere is not None and primary.init_components and (anchor.get_local_position() - primary.anchor.get_local_position()).length() < primary.atmosphere.radius:
                 primary.atmosphere.add_shape_object(anchor.body.surface)
 
     @pstat
@@ -1419,8 +1419,7 @@ class Cosmonium(CosmoniumBase):
                 print("\tPhase:", self.selected.get_phase())
             print("\tGlobal position", self.selected.anchor.get_absolute_reference_point())
             print("\tLocal position", self.selected.anchor.get_local_position(), '(Frame:', self.selected.anchor.orbit.get_frame_position_at(self.time.time_full), ')')
-            print("\tRotation", self.selected.anchor.get_absolute_orientation())
-            print("\tOrientation", self.selected.anchor._orientation)
+            print("\tOrientation", self.selected.anchor.get_absolute_orientation())
             print("\tVector to obs", self.selected.anchor.vector_to_obs)
             print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ') Override:', self.selected.anchor.visibility_override)
             print("\tUpdate frozen:", self.selected.anchor.update_frozen)

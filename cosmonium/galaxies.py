@@ -95,7 +95,7 @@ class GalaxyAppearance(AppearanceBase):
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             if shape.is_flat():
-                axis = owner.anchor._orientation.xform(LVector3d.up())
+                axis = owner.anchor.get_absolute_orientation().xform(LVector3d.up())
                 cosa = abs(axis.dot(owner.anchor.vector_to_obs))
                 coef = max(self.min_coef, sqrt(cosa))
             else:

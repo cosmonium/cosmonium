@@ -42,7 +42,7 @@ class SurrogateLight:
         self.light_instance = self.target.scene_anchor.unshifted_instance.attach_new_node(self.light_node)
 
     def update_light(self):
-        self.light_direction = self.target.anchor._local_position - self.source.anchor._local_position
+        self.light_direction = self.target.anchor.get_local_position() - self.source.anchor.get_local_position()
         self.light_distance = self.light_direction.length()
         self.light_direction /= self.light_distance
 

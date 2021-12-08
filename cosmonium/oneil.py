@@ -500,14 +500,14 @@ class ONeilScatteringDataSourceBase(DataSource):
         body_scale = self.parameters.body.surface.get_scale()
         descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
         rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.parent.body.anchor._orientation)
+        orientation = LQuaternion(*shape.parent.body.anchor.get_absolute_orientation())
         orientation.extract_to_matrix(rotation_mat)
         rotation_mat_inv = LMatrix4()
         rotation_mat_inv.invert_from(rotation_mat)
         descale_mat = rotation_mat_inv * descale * rotation_mat
         pos = body.anchor.rel_position
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = light_source.anchor._local_position - body.anchor._local_position
+        star_pos = light_source.anchor.get_local_position() - body.anchor.get_local_position()
         scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
         scaled_star_pos.normalize()
         camera_height = scaled_pos.length()

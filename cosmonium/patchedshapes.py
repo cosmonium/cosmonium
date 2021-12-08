@@ -1337,7 +1337,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             inv_scale = LVector3d(1.0 / scale[0], 1.0 / scale[1], 1.0 / scale[2])
             upper.set_scale_mat(inv_scale)
             rot_mat = LMatrix3()
-            self.parent.body.anchor._orientation.conjugate().extract_to_matrix(rot_mat)
+            self.parent.body.anchor.get_absolute_orientation().conjugate().extract_to_matrix(rot_mat)
             upper *= rot_mat
             transform_mat = LMatrix4(upper, upper.xform(-self.parent.body.scene_position))
         else:
@@ -1345,7 +1345,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             transform_mat.invert_from(self.instance.getNetTransform().getMat())
         transform_mat = cam_transform_mat * transform_mat
         if self.parent.body.support_offset_body_center and settings.offset_body_center:
-            self.model_body_center_offset = self.parent.body.anchor._orientation.conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
+            self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
             scale = self.parent.body.surface.get_scale()
             self.model_body_center_offset[0] /= scale[0]
             self.model_body_center_offset[1] /= scale[1]

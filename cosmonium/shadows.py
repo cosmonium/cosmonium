@@ -221,13 +221,13 @@ class ShadowMapDataSource(DataSource):
             body = shape.owner
             self_radius = occluder.get_apparent_radius()
             body_radius = body.get_apparent_radius()
-            position = occluder.anchor._local_position
-            body_position = body.anchor._local_position
+            position = occluder.anchor.get_local_position()
+            body_position = body.anchor.get_local_position()
             pa = body_position - position
             distance = abs(pa.length() - body_radius)
             if distance != 0:
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(light.source.get_apparent_radius() / ((light.source.anchor._local_position - body_position).length() - body_radius))
+                star_ar = asin(light.source.get_apparent_radius() / ((light.source.anchor.get_local_position() - body_position).length() - body_radius))
                 ar_ratio = self_ar /star_ar
             else:
                 ar_ratio = 1.0
@@ -299,7 +299,7 @@ class RingShadowDataSource(DataSource):
         (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is not None:
             instance.set_shader_input('shadow_ring_tex',texture)
-        normal = shape.owner.anchor._orientation.xform(LVector3d.up())
+        normal = shape.owner.anchor.get_absolute_orientation().xform(LVector3d.up())
         instance.set_shader_input('ring_normal', normal)
         instance.set_shader_input('ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor)
         instance.set_shader_input('ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor)
@@ -338,10 +338,10 @@ class SphereShadowDataSource(DataSource):
         observer = shape.owner.context.observer.get_local_position()
         scale = shape.owner.scene_anchor.scene_scale_factor
         if self.far_sun:
-            vector = shape.owner.anchor._local_position - self.light.source.anchor._local_position
+            vector = shape.owner.anchor.get_local_position() - self.light.source.anchor.get_local_position()
             distance_to_light_source = vector.length()
             instance.set_shader_input('star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source))
-        star_center = (self.light.source.anchor._local_position - observer) * scale
+        star_center = (self.light.source.anchor.get_local_position() - observer) * scale
         star_radius = self.light.source.get_apparent_radius() * scale
         instance.set_shader_input('star_center', star_center)
         instance.set_shader_input('star_radius', star_radius)
@@ -357,7 +357,7 @@ class SphereShadowDataSource(DataSource):
                 break
             nb_of_occluders += 1
             occluder = shadow_caster.occluder
-            centers.append((occluder.anchor._local_position - observer) * scale)
+            centers.append((occluder.anchor.get_local_position() - observer) * scale)
             radius = occluder.get_apparent_radius()
             radii.append(radius * scale)
             if self.oblate_occluder:
@@ -365,7 +365,7 @@ class SphereShadowDataSource(DataSource):
                 planet_scale = occluder.surface.get_scale()
                 descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
                 rotation_mat = LMatrix4()
-                orientation = LQuaternion(*occluder.anchor._orientation)
+                orientation = LQuaternion(*occluder.anchor.get_absolute_orientation())
                 orientation.extract_to_matrix(rotation_mat)
                 rotation_mat_inv = LMatrix4()
                 rotation_mat_inv.invert_from(rotation_mat)
