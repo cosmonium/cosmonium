@@ -583,8 +583,8 @@ class Cosmonium(CosmoniumBase):
             if self.track is None:
                 return
         if self.camera_controller is not None:
-            position = self.camera_controller.get_pos()
-            rotation = self.camera_controller.get_rot()
+            position = self.camera_controller.get_local_position()
+            rotation = self.camera_controller.get_local_orientation()
             self.camera_controller.deactivate()
         else:
             position = None
@@ -594,8 +594,8 @@ class Cosmonium(CosmoniumBase):
             self.camera_controller.set_target(self.track)
         self.camera_controller.activate(self.observer, self.ship.anchor)
         if position is not None and rotation is not None:
-            self.camera_controller.set_pos(position)
-            self.camera_controller.set_rot(rotation)
+            self.camera_controller.set_local_position(position)
+            self.camera_controller.set_local_orientation(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         self.nav.set_camera_controller(camera_controller)

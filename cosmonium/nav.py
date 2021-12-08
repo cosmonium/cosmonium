@@ -122,7 +122,7 @@ class InteractiveNavigationController(NavigationController):
         self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
         if self.controller.orbit_rot_camera:
-            self.orbit_orientation = self.camera_controller.get_orientation()
+            self.orbit_orientation = self.camera_controller.get_local_orientation()
         else:
             self.orbit_orientation = self.controller.get_frame_orientation()
 
@@ -139,7 +139,7 @@ class InteractiveNavigationController(NavigationController):
         combined = x_rotation * z_rotation
         new_rot = self.orbit_orientation * combined
         if self.controller.orbit_rot_camera:
-            self.camera_controller.set_orientation(new_rot)
+            self.camera_controller.set_local_orientation(new_rot)
         else:
             self.controller.set_frame_orientation(new_rot)
         try:
@@ -559,7 +559,7 @@ class WalkNav(InteractiveNavigationController):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
         object_position = self.controller.get_local_position()
         (lon, lat, vert) = self.body.get_lonlatvert_under(object_position)
-        direction = self.controller.get_orientation().xform(LVector3d(0, distance, 0))
+        direction = self.controller.get_local_orientation().xform(LVector3d(0, distance, 0))
         projected = direction - vert * direction.dot(vert)
         position = self.body.cartesian_to_spherical(self.controller.get_local_position())
         delta_x = lon.dot(projected) * arc_to_angle

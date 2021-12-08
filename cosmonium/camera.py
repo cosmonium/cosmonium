@@ -427,16 +427,16 @@ class CameraController(EventsControllerBase):
     def get_local_position(self):
         return self.reference_anchor.get_local_position() + self.reference_anchor._orientation.xform(self._frame_position + self.reference_position)
 
-    def set_orientation(self, rotation):
+    def set_local_orientation(self, rotation):
         rotation = rotation * self.reference_anchor._orientation.conjugate() * self.reference_orientation.conjugate()
         self.set_frame_orientation(rotation)
 
-    def get_orientation(self):
+    def get_local_orientation(self):
         rotation = self.get_frame_orientation() * self.reference_orientation * self.reference_anchor._orientation
         return rotation
 
     def calc_look_at(self, position, target):
-        abs_rotation = self.get_orientation()
+        abs_rotation = self.get_local_orientation()
         direction = LVector3d(target - position)
         direction.normalize()
         local_direction = abs_rotation.conjugate().xform(direction)
@@ -452,16 +452,16 @@ class CameraController(EventsControllerBase):
         rotation = origin + delta * step
         rotation.normalize()
         #TODO: should be relative to ship orientation
-        self.set_orientation(rotation)
+        self.set_local_orientation(rotation)
         if step == 1.0:
             self.current_interval = None
 
     def lookat(self, target, duration = 2.0, proportional=True):
-        abs_rotation = self.get_orientation()
+        abs_rotation = self.get_local_orientation()
         new_rotation, angle = self.calc_look_at(self.reference_anchor.get_local_position(), target)
         if settings.debug_jump: duration = 0
         if duration == 0:
-            self.set_orientation(new_rotation)
+            self.set_local_orientation(new_rotation)
         else:
             if proportional:
                 duration = duration * angle / pi
@@ -528,7 +528,7 @@ class FixedCameraController(CameraController):
             self.state = self.STATE_DEFAULT
 
     def prepare_movement(self):
-        self.reference_anchor.set_absolute_orientation(self.get_orientation())
+        self.reference_anchor.set_absolute_orientation(self.get_local_orientation())
         self._frame_orientation = LQuaterniond()
 
     def look_back(self):
@@ -540,10 +540,10 @@ class FixedCameraController(CameraController):
         self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(self.get_local_position())
         if self.state == self.STATE_DEFAULT:
-            self.camera.set_absolute_orientation(self.get_orientation())
+            self.camera.set_absolute_orientation(self.get_local_orientation())
         elif self.state == self.STATE_MOUSE_DRAG:
             self.mouse_control.update()
-            self.set_orientation(self.camera.get_absolute_orientation())
+            self.set_local_orientation(self.camera.get_absolute_orientation())
         else:
             print("Unknown state", self.state)
         self.camera.update()
@@ -579,7 +579,7 @@ class TrackCameraController(CameraController):
 
         self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(self.get_local_position())
-        self.camera.set_absolute_orientation(self.get_orientation())
+        self.camera.set_absolute_orientation(self.get_local_orientation())
         self.camera.update()
 
 class LookAroundCameraController(CameraController):
@@ -608,7 +608,7 @@ class LookAroundCameraController(CameraController):
 
         self.camera.change_global(self.reference_anchor.get_absolute_reference_point())
         self.camera.set_local_position(self.get_local_position())
-        self.camera.set_absolute_orientation(self.get_orientation())
+        self.camera.set_absolute_orientation(self.get_local_orientation())
         self.camera.update()
 
 class FollowCameraController(CameraController):
