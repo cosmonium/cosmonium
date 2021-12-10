@@ -22,7 +22,7 @@ from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
-from .anchors import CartesianAnchor
+from .anchors import CameraAnchor
 from .astro.frame import AbsoluteReferenceFrame
 from .octree import InfiniteFrustum #TODO: should not be in octree
 from . import settings
@@ -259,8 +259,7 @@ class CameraHolder(CameraBase):
     #TODO: this should inherit from the Anchor base class
     def __init__(self, camera_np, cam, lens):
         CameraBase.__init__(self, camera_np, cam, lens)
-        self.anchor = CartesianAnchor(AbsoluteReferenceFrame())
-        self.camera_vector = LVector3d()
+        self.anchor = CameraAnchor(AbsoluteReferenceFrame())
         self.frustum = None
         self.rel_frustum = None
         self.has_scattering = False
@@ -320,12 +319,15 @@ class CameraHolder(CameraBase):
     def _local_position(self):
         return self.anchor.get_local_position()
 
+    @property
+    def camera_vector(self):
+        return self.anchor.camera_vector
+
     def get_camera_vector(self):
-        return self.camera_vector
+        return self.anchor.camera_vector
 
     def update(self):
         self.anchor.do_update()
-        self.camera_vector = self.anchor.get_absolute_orientation().xform(LVector3d.forward())
         if not settings.camera_at_origin:
             self.camera_np.set_pos(*self.get_local_position())
         self.camera_np.set_quat(LQuaternion(*self.get_absolute_orientation()))

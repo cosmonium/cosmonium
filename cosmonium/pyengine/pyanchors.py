@@ -239,6 +239,17 @@ class CartesianAnchor(AnchorBase):
             new_rot = self.get_absolute_orientation()
         return new_rot, angle
 
+
+class CameraAnchor(CartesianAnchor):
+    def __init__(self, frame):
+        CartesianAnchor.__init__(self, frame)
+        self.camera_vector = LVector3d()
+
+    def do_update(self):
+        CartesianAnchor.do_update(self)
+        self.camera_vector = self.get_absolute_orientation().xform(LVector3d.forward())
+
+
 class OriginAnchor(CartesianAnchor):
     def __init__(self):
         CartesianAnchor.__init__(self, AbsoluteReferenceFrame())
