@@ -272,7 +272,7 @@ class ObserverAnchor(CartesianAnchor):
 
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
-        self._position = LPoint3d(observer._position)
+        self.copy(observer.anchor)
         self.was_visible = self.visible
         self.was_resolved = self.resolved
         self.rel_position = LPoint3d()
