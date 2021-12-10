@@ -22,11 +22,18 @@
 
 TypeHandle InfiniteFrustum::_type_handle;
 
-InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatrix4 &view_mat, const LPoint3d &view_position):
+InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatrix4 &view_mat,
+    const LPoint3d &view_position, bool zero_near):
   position(view_position)
 {
+  // Panda3D frustem has side planes stored from 0 to 3, near plane is 4 and far plane is 5
+  // To make an infinite frustum, we drop the far plane
   for (int i = 0; i < 5; ++i) {
     LPlane plane = frustum.get_plane(i + 1) * view_mat;
+    if (zero_near && i == 4) {
+      // Set the distance of the near plane to 0
+      plane[3] = 0.0;
+    }
     planes[i][0] = plane[0];
     planes[i][1] = plane[1];
     planes[i][2] = plane[2];
