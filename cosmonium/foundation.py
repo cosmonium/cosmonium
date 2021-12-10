@@ -47,9 +47,13 @@ class BaseObject(object):
         self.visible = False
         self.parent = None
         self.scene_anchor = None
+        self.owner = None
 
     def get_name(self):
         return self.name
+
+    def set_owner(self, owner):
+        self.owner = owner
 
     def get_user_parameters(self):
         return None
@@ -131,10 +135,6 @@ class VisibleObject(BaseObject):
         self.instance = None
         #TODO: Should be handled properly
         self.instance_ready = False
-        self.owner = None
-
-    def set_owner(self, owner):
-        self.owner = owner
 
     def check_and_create_instance(self):
         if not self.instance:
@@ -189,6 +189,11 @@ class CompositeObject(BaseObject):
         BaseObject.__init__(self, name)
         self.components = []
         self.lights = None
+
+    def set_owner(self, owner):
+        BaseObject.set_owner(self, owner)
+        for component in self.components:
+            component.set_owner(owner)
 
     def set_lights(self, lights):
         self.lights = lights
