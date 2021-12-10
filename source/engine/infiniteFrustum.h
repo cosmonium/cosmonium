@@ -23,13 +23,16 @@
 #include "pandabase.h"
 #include "luse.h"
 #include "plane.h"
+#include "referenceCount.h"
+#include"type_utils.h"
 
 class BoundingHexahedron;
 
-class InfiniteFrustum
+class InfiniteFrustum : public TypedObject, public ReferenceCount
 {
 PUBLISHED:
     InfiniteFrustum(BoundingHexahedron const & frustum, const LMatrix4 &view_mat, const LPoint3d &view_position);
+    virtual ~InfiniteFrustum(void);
     bool is_sphere_in(LPoint3d const &center, double radius) const;
 
     LPoint3d get_position(void) const;
@@ -37,6 +40,7 @@ PUBLISHED:
 protected:
     LPlaned planes[5];
     LPoint3d position;
+    MAKE_TYPE_2("InfiniteFrustum", TypedObject, ReferenceCount);
 };
 
 #endif //INFINITE_FRUSTUM_H

@@ -25,7 +25,7 @@
 #include "luse.h"
 #include"type_utils.h"
 
-class AnchorBase;
+class StellarAnchor;
 
 class ReferenceFrame : public TypedObject, public ReferenceCount
 {
@@ -96,14 +96,14 @@ PUBLISHED:
 class AnchorReferenceFrame : public ReferenceFrame
 {
 PUBLISHED:
-  AnchorReferenceFrame(AnchorBase *anchor = 0);
+  AnchorReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   AnchorReferenceFrame(AnchorReferenceFrame const &other);
 
 PUBLISHED:
-  AnchorBase *get_anchor(void);
-  void set_anchor(AnchorBase *anchor);
+StellarAnchor *get_anchor(void);
+  void set_anchor(StellarAnchor *anchor);
   MAKE_PROPERTY(anchor, get_anchor, set_anchor);
 
   virtual LPoint3d get_center(void);
@@ -111,7 +111,7 @@ PUBLISHED:
   virtual LPoint3d get_absolute_reference_point(void);
 
 protected:
-  PT(AnchorBase) anchor;
+  PT(StellarAnchor) anchor;
 
   MAKE_TYPE("AnchorReferenceFrame", ReferenceFrame);
 };
@@ -119,7 +119,7 @@ protected:
 class J2000EclipticReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  J2000EclipticReferenceFrame(AnchorBase *anchor = 0);
+  J2000EclipticReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   J2000EclipticReferenceFrame(J2000EclipticReferenceFrame const &other);
@@ -135,7 +135,7 @@ PUBLISHED:
 class J2000EquatorialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  J2000EquatorialReferenceFrame(AnchorBase *anchor = 0);
+  J2000EquatorialReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   J2000EquatorialReferenceFrame(J2000EquatorialReferenceFrame const &other);
@@ -151,7 +151,7 @@ PUBLISHED:
 class CelestialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  CelestialReferenceFrame(AnchorBase *anchor = 0,
+  CelestialReferenceFrame(StellarAnchor *anchor = 0,
       double right_ascension=0.0,
       double declination=0.0,
       double longitude_at_node=0.0);
@@ -180,7 +180,7 @@ protected:
 class OrbitReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  OrbitReferenceFrame(AnchorBase *anchor = 0);
+  OrbitReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   OrbitReferenceFrame(OrbitReferenceFrame const &other);
@@ -196,7 +196,7 @@ PUBLISHED:
 class EquatorialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  EquatorialReferenceFrame(AnchorBase *anchor = 0);
+  EquatorialReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   EquatorialReferenceFrame(EquatorialReferenceFrame const &other);
@@ -212,7 +212,7 @@ PUBLISHED:
 class SynchroneReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  SynchroneReferenceFrame(AnchorBase *anchor = 0);
+  SynchroneReferenceFrame(StellarAnchor *anchor = 0);
 
 protected:
   SynchroneReferenceFrame(SynchroneReferenceFrame const &other);

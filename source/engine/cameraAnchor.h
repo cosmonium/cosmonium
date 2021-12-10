@@ -17,40 +17,38 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OBSERVER_H
-#define OBSERVER_H
+#ifndef CAMERAANCHOR_H
+#define CAMERAANCHOR_H
 
-#include "pandabase.h"
-#include "luse.h"
+#include "cartesianAnchor.h"
 
 class InfiniteFrustum;
 
-class Observer
+class CameraAnchor : public CartesianAnchor
 {
 PUBLISHED:
-  virtual ~Observer(void);
+  CameraAnchor(PyObject *ref_object, ReferenceFrame *frame);
+  virtual ~CameraAnchor(void);
 
-  virtual LPoint3d get_absolute_reference_point(void);
+  virtual void do_update(void);
 
-  virtual LPoint3d get_absolute_position(void);
+  InfiniteFrustum *get_frustum(void);
+  void set_frustum(InfiniteFrustum *frustum);
+  MAKE_PROPERTY(frustum, get_frustum, set_frustum);
 
-  virtual LPoint3d get_local_position(void);
-
-  virtual LQuaterniond get_absolute_orientation(void);
-
-  virtual void update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation, LVector3d camera_vector);
+  InfiniteFrustum *get_relative_frustum(void);
+  void set_relative_frustum(InfiniteFrustum *frustum);
+  MAKE_PROPERTY(rel_frustum, get_relative_frustum, set_relative_frustum);
 
 PUBLISHED:
   double pixel_size;
-  InfiniteFrustum *frustum;
-  InfiniteFrustum *rel_frustum;
   LVector3d camera_vector;
 
-protected:
-  //Cached values
-  LPoint3d _absolute_reference_point;
-  LPoint3d _local_position;
-  LQuaterniond _orientation;
+public:
+  PT(InfiniteFrustum) frustum;
+  PT(InfiniteFrustum) rel_frustum;
+
+  MAKE_TYPE("CameraAnchor", CartesianAnchor);
 };
 
 #endif

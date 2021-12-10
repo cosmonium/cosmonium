@@ -20,7 +20,7 @@
 #include "anchorTraverser.h"
 #include "anchors.h"
 #include "octreeNode.h"
-#include "observer.h"
+#include "cameraAnchor.h"
 #include "infiniteFrustum.h"
 #include "astro.h"
 #include "dcast.h"
@@ -29,7 +29,12 @@ AnchorTraverser::~AnchorTraverser(void)
 {
 }
 void
-AnchorTraverser::traverse_anchor(AnchorBase *anchor)
+AnchorTraverser::traverse_anchor(StellarAnchor *anchor)
+{
+}
+
+void
+AnchorTraverser::traverse_anchor(CartesianAnchor *anchor)
 {
 }
 
@@ -64,11 +69,11 @@ AnchorTraverserCollector::get_collected_at(int index) const
 
 
 void
-AnchorTraverser::traverse_octree_node(OctreeNode *anchor, std::vector<PT(AnchorBase)> &leaves)
+AnchorTraverser::traverse_octree_node(OctreeNode *anchor, std::vector<PT(StellarAnchor)> &leaves)
 {
 }
 
-UpdateTraverser::UpdateTraverser(double time, Observer &observer, double limit, unsigned long int update_id):
+UpdateTraverser::UpdateTraverser(double time, CameraAnchor &observer, double limit, unsigned long int update_id):
     time(time),
     observer(observer),
     limit(limit),
@@ -77,7 +82,7 @@ UpdateTraverser::UpdateTraverser(double time, Observer &observer, double limit, 
 }
 
 void
-UpdateTraverser::traverse_anchor(AnchorBase *anchor)
+UpdateTraverser::traverse_anchor(StellarAnchor *anchor)
 {
     anchor->update_and_update_observer(time, observer, update_id);
     anchor->update_id = update_id;
@@ -116,7 +121,7 @@ UpdateTraverser::enter_octree_node(OctreeNode *octree_node)
 }
 
 void
-UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves)
+UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves)
 {
     LPoint3d frustum_position = observer.frustum->get_position();
     double distance = (octree_node->center - frustum_position).length() - octree_node->radius;
@@ -147,7 +152,7 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(An
     }
 }
 
-FindClosestSystemTraverser::FindClosestSystemTraverser(Observer &observer, AnchorBase *system, double distance) :
+FindClosestSystemTraverser::FindClosestSystemTraverser(CameraAnchor &observer, AnchorBase *system, double distance) :
     observer(observer),
     system(system),
     distance(distance)
@@ -161,7 +166,7 @@ FindClosestSystemTraverser::get_closest_system(void)
 }
 
 void
-FindClosestSystemTraverser::traverse_anchor(AnchorBase *anchor)
+FindClosestSystemTraverser::traverse_anchor(StellarAnchor *anchor)
 {
 }
 
@@ -185,7 +190,7 @@ FindClosestSystemTraverser::enter_octree_node(OctreeNode *octree_node)
 }
 
 void
-FindClosestSystemTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves)
+FindClosestSystemTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves)
 {
   for (auto leaf : leaves) {
     LPoint3d global_delta = leaf->get_absolute_reference_point() - observer.get_absolute_reference_point();
@@ -204,7 +209,7 @@ FindLightSourceTraverser::FindLightSourceTraverser(double limit, LPoint3d positi
 }
 
 void
-FindLightSourceTraverser::traverse_anchor(AnchorBase *anchor)
+FindLightSourceTraverser::traverse_anchor(StellarAnchor *anchor)
 {
   collected.push_back(anchor);
 }
@@ -249,7 +254,7 @@ FindLightSourceTraverser::enter_octree_node(OctreeNode *octree_node)
 }
 
 void
-FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves)
+FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves)
 {
   double distance = (octree_node->center - position).length() - octree_node->radius;
   double faintest;
@@ -323,7 +328,7 @@ FindShadowCastersTraverser::check_cast_shadow(AnchorBase *occluder)
 }
 
 void
-FindShadowCastersTraverser::traverse_anchor(AnchorBase *anchor)
+FindShadowCastersTraverser::traverse_anchor(StellarAnchor *anchor)
 {
   if (anchor != target && (anchor->content & AnchorBase::Reflective) != 0 && check_cast_shadow(anchor)) {
     collected.push_back(anchor);
@@ -355,6 +360,6 @@ FindShadowCastersTraverser::enter_octree_node(OctreeNode *octree_node)
 }
 
 void
-FindShadowCastersTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves)
+FindShadowCastersTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves)
 {
 }

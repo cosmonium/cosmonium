@@ -20,7 +20,6 @@
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LColor
 
-from ..foundation import BaseObject
 from ..octree import OctreeNode
 from ..astro import units
 from ..astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
@@ -33,7 +32,9 @@ from math import sqrt, asin, pi
 from time import time
 
 class AnchorBase():
-    def __init__(self):
+    def __init__(self, anchor_class, body):
+        self.content = anchor_class
+        self.body = body
         self.parent = None
         self.rebuild_needed = False
         #Flags
@@ -130,20 +131,23 @@ class AnchorBase():
 
 
 class CartesianAnchor(AnchorBase):
-    def __init__(self, frame):
-        AnchorBase.__init__(self)
+    def __init__(self, anchor_class, body, frame):
+        AnchorBase.__init__(self, anchor_class, body)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
 
     def copy(self, other):
-        self.frame = other.frame
-        self._global_position = other._global_position
-        self._frame_position = other._frame_position
-        self._frame_orientation = other._frame_orientation
+        self.frame = other.get_frame()
+        self._global_position = other.get_absolute_reference_point()
+        self._frame_position = other.get_frame_position()
+        self._frame_orientation = other.get_frame_orientation()
 
     def get_apparent_radius(self):
         return self._extend
+
+    def get_frame(self):
+        return self.frame
 
     def set_frame(self, frame):
         #Get position and rotation in the absolute reference frame
@@ -241,8 +245,8 @@ class CartesianAnchor(AnchorBase):
 
 
 class CameraAnchor(CartesianAnchor):
-    def __init__(self, frame):
-        CartesianAnchor.__init__(self, frame)
+    def __init__(self, body, frame):
+        CartesianAnchor.__init__(self, 0, body, frame)
         self.camera_vector = LVector3d()
         self.frustum = None
         self.rel_frustum = None
@@ -254,21 +258,25 @@ class CameraAnchor(CartesianAnchor):
 
 
 class OriginAnchor(CartesianAnchor):
-    def __init__(self):
-        CartesianAnchor.__init__(self, AbsoluteReferenceFrame())
+    def __init__(self, anchor_class, body):
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame())
 
 class FlatSurfaceAnchor(OriginAnchor):
-    def __init__(self, surface):
-        OriginAnchor.__init__(self)
+    def __init__(self, anchor_class, body, surface):
+        OriginAnchor.__init__(self, anchor_class, body)
+        self.surface = surface
+
+    def set_surface(self, surface):
         self.surface = surface
 
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
         self.vector_to_obs = LPoint3d(observer.get_local_position())
         self.vector_to_obs.normalize()
-        self.distance_to_obs = observer._local_position.get_z()# - self.get_height(self.observer._local_position)
-        self._height_under = self.surface.get_height_at(observer._local_position[0], observer._local_position[1])
-        self.rel_position = self._local_position - observer._local_position
+        observer_local_position = observer.get_local_position()
+        self.distance_to_obs = observer_local_position.get_z()# - self.get_height(self.observer._local_position)
+        self._height_under = self.surface.get_height_at(observer_local_position[0], observer_local_position[1])
+        self.rel_position = self._local_position - observer_local_position
         self.was_visible = self.visible
         self.was_resolved = self.resolved
         self.visible_size = 0.0
@@ -277,8 +285,8 @@ class FlatSurfaceAnchor(OriginAnchor):
         self.resolved = True
 
 class ObserverAnchor(CartesianAnchor):
-    def __init__(self):
-        CartesianAnchor.__init__(self, AbsoluteReferenceFrame())
+    def __init__(self, anchor_class, body):
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame())
 
     def update(self, time, update_id):
         #TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
@@ -308,9 +316,7 @@ class StellarAnchor(AnchorBase):
     Reflective = 2
     System     = 4
     def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        AnchorBase.__init__(self)
-        self.content = anchor_class
-        self.body = body
+        AnchorBase.__init__(self, anchor_class, body)
         #TODO: To remove
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)

@@ -133,7 +133,7 @@ J2000BarycentricEquatorialReferenceFrame::get_absolute_reference_point(void)
 
 TypeHandle AnchorReferenceFrame::_type_handle;
 
-AnchorReferenceFrame::AnchorReferenceFrame(AnchorBase *anchor) :
+AnchorReferenceFrame::AnchorReferenceFrame(StellarAnchor *anchor) :
     anchor(anchor)
 {
 }
@@ -143,14 +143,14 @@ AnchorReferenceFrame::AnchorReferenceFrame(AnchorReferenceFrame const &other) :
 {
 }
 
-AnchorBase *
+StellarAnchor *
 AnchorReferenceFrame::get_anchor(void)
 {
   return anchor;
 }
 
 void
-AnchorReferenceFrame::set_anchor(AnchorBase *anchor)
+AnchorReferenceFrame::set_anchor(StellarAnchor *anchor)
 {
   this->anchor = anchor;
 }
@@ -169,7 +169,7 @@ AnchorReferenceFrame::get_absolute_reference_point(void)
 
 TypeHandle J2000EclipticReferenceFrame::_type_handle;
 
-J2000EclipticReferenceFrame::J2000EclipticReferenceFrame(AnchorBase *anchor) :
+J2000EclipticReferenceFrame::J2000EclipticReferenceFrame(StellarAnchor *anchor) :
     AnchorReferenceFrame(anchor)
 {
 }
@@ -193,7 +193,7 @@ J2000EclipticReferenceFrame::get_orientation(void)
 
 TypeHandle J2000EquatorialReferenceFrame::_type_handle;
 
-J2000EquatorialReferenceFrame::J2000EquatorialReferenceFrame(AnchorBase *anchor) :
+J2000EquatorialReferenceFrame::J2000EquatorialReferenceFrame(StellarAnchor *anchor) :
     AnchorReferenceFrame(anchor)
 {
 }
@@ -219,7 +219,7 @@ J2000EquatorialReferenceFrame::get_orientation(void)
 
 TypeHandle CelestialReferenceFrame::_type_handle;
 
-CelestialReferenceFrame::CelestialReferenceFrame(AnchorBase *anchor,
+CelestialReferenceFrame::CelestialReferenceFrame(StellarAnchor *anchor,
     double right_ascension,
     double declination,
     double longitude_at_node) :
@@ -271,7 +271,7 @@ CelestialReferenceFrame::get_orientation(void)
 
 TypeHandle OrbitReferenceFrame::_type_handle;
 
-OrbitReferenceFrame::OrbitReferenceFrame(AnchorBase *anchor) :
+OrbitReferenceFrame::OrbitReferenceFrame(StellarAnchor *anchor) :
     AnchorReferenceFrame(anchor)
 {
 }
@@ -295,7 +295,7 @@ OrbitReferenceFrame::get_orientation(void)
 
 TypeHandle EquatorialReferenceFrame::_type_handle;
 
-EquatorialReferenceFrame::EquatorialReferenceFrame(AnchorBase *anchor) :
+EquatorialReferenceFrame::EquatorialReferenceFrame(StellarAnchor *anchor) :
     AnchorReferenceFrame(anchor)
 {
 }
@@ -319,7 +319,7 @@ EquatorialReferenceFrame::get_orientation(void)
 
 TypeHandle SynchroneReferenceFrame::_type_handle;
 
-SynchroneReferenceFrame::SynchroneReferenceFrame(AnchorBase *anchor) :
+SynchroneReferenceFrame::SynchroneReferenceFrame(StellarAnchor *anchor) :
     AnchorReferenceFrame(anchor)
 {
 }

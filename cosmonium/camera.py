@@ -259,7 +259,7 @@ class CameraHolder(CameraBase):
     #TODO: this should inherit from the Anchor base class
     def __init__(self, camera_np, cam, lens):
         CameraBase.__init__(self, camera_np, cam, lens)
-        self.anchor = CameraAnchor(AbsoluteReferenceFrame())
+        self.anchor = CameraAnchor(self, AbsoluteReferenceFrame())
         self.has_scattering = False
         self.scattering = None
         self.apply_scattering = 0

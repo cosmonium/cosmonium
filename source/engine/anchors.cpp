@@ -18,11 +18,11 @@
  */
 
 #include "anchors.h"
+#include "cameraAnchor.h"
 #include "orbits.h"
 #include "rotations.h"
 #include "octreeNode.h"
 #include "anchorTraverser.h"
-#include "observer.h"
 #include "infiniteFrustum.h"
 #include "settings.h"
 #include "astro.h"
@@ -64,11 +64,9 @@ AnchorTreeBase::set_rebuild_needed(void)
 
 TypeHandle AnchorBase::_type_handle;
 
-AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color) :
+AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
-  point_color(point_color),
-  star(nullptr),
   //Flags
   was_visible(false),
   visible(false),
@@ -83,12 +81,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _global_position(0.0),
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
-  _equatorial(LQuaterniond::ident_quat()),
-  _abs_magnitude(1000.0),
-  _app_magnitude(1000.0),
   _extend(0.0),
   _height_under(0.0),
-  _albedo(0.0),
   //Scene parameters
   rel_position(0.0),
   distance_to_obs(0.0),
@@ -119,32 +113,23 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_INCREF(this->ref_object);
 }
 
-LColor
-AnchorBase::get_point_color(void)
+LPoint3d
+AnchorBase::calc_absolute_relative_position(AnchorBase *anchor)
 {
-  return point_color;
+  LPoint3d reference_point_delta = anchor->get_absolute_reference_point() - _global_position;
+  LPoint3d local_delta = anchor->get_local_position() - get_local_position();
+  LPoint3d delta = reference_point_delta + local_delta;
+  return delta;
+}
+
+LPoint3d
+AnchorBase::calc_absolute_relative_position_to(LPoint3d position)
+{
+  return (get_absolute_reference_point() - position) + get_local_position();
 }
 
 void
-AnchorBase::set_point_color(LColor color)
-{
-  this->point_color = color;
-}
-
-AnchorBase *
-AnchorBase::get_star(void)
-{
-  return star;
-}
-
-void
-AnchorBase::set_star(AnchorBase *star)
-{
-  this->star = star;
-}
-
-void
-AnchorBase::update_and_update_observer(double time, Observer &observer, unsigned long int update_id)
+AnchorBase::update_and_update_observer(double time, CameraAnchor &observer, unsigned long int update_id)
 {
   update(time, update_id);
   update_observer(observer, update_id);
@@ -157,9 +142,18 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color) :
-    AnchorBase(anchor_class, ref_object, point_color),
+    AnchorBase(anchor_class, ref_object),
     orbit(orbit),
-    rotation(rotation)
+    rotation(rotation),
+    point_color(point_color),
+    _equatorial(LQuaterniond::ident_quat()),
+    _abs_magnitude(1000.0),
+    _app_magnitude(1000.0),
+    _albedo(0.0)
+{
+}
+
+StellarAnchor::~StellarAnchor(void)
 {
 }
 
@@ -187,6 +181,18 @@ StellarAnchor::set_rotation(RotationBase * rotation)
   this->rotation = rotation;
 }
 
+LColor
+StellarAnchor::get_point_color(void)
+{
+  return point_color;
+}
+
+void
+StellarAnchor::set_point_color(LColor color)
+{
+  this->point_color = color;
+}
+
 void
 StellarAnchor::traverse(AnchorTraverser &visitor)
 {
@@ -197,6 +203,7 @@ void
 StellarAnchor::rebuild(void)
 {
 }
+
 LPoint3d
 StellarAnchor::get_absolute_reference_point(void)
 {
@@ -284,7 +291,7 @@ diff(LPoint3d a, LPoint3d b)
 }
 
 void
-StellarAnchor::update_observer(Observer &observer, unsigned long int update_id)
+StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_id)
 {
   if (update_id == this->update_id) return;
   //Use a function to do the diff, to work around a probable compiler bug
@@ -317,7 +324,7 @@ StellarAnchor::update_observer(Observer &observer, unsigned long int update_id)
 }
 
 double
-StellarAnchor::get_luminosity(AnchorBase *star)
+StellarAnchor::get_luminosity(StellarAnchor *star)
 {
     LVector3d vector_to_star = calc_absolute_relative_position(star);
     double distance_to_star = vector_to_star.length();
@@ -339,7 +346,7 @@ StellarAnchor::get_luminosity(AnchorBase *star)
 }
 
 void
-StellarAnchor::update_app_magnitude(AnchorBase *star)
+StellarAnchor::update_app_magnitude(StellarAnchor *star)
 {
   // TODO: Should be done by inheritance ?
   if (distance_to_obs == 0) {
@@ -376,7 +383,7 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
 }
 
 void
-SystemAnchor::add_child(AnchorBase *child)
+SystemAnchor::add_child(StellarAnchor *child)
 {
     children.push_back(child);
     child->parent = this;
@@ -386,7 +393,7 @@ SystemAnchor::add_child(AnchorBase *child)
 }
 
 void
-SystemAnchor::remove_child(AnchorBase *child)
+SystemAnchor::remove_child(StellarAnchor *child)
 {
   auto it = std::find(children.begin(), children.end(), child);
   if (it != children.end()) {
@@ -399,7 +406,7 @@ SystemAnchor::remove_child(AnchorBase *child)
 }
 
 void
-SystemAnchor::set_primary(AnchorBase *primary)
+SystemAnchor::set_primary(StellarAnchor *primary)
 {
   this->primary = primary;
 }
@@ -413,7 +420,7 @@ SystemAnchor::traverse(AnchorTraverser &visitor)
 }
 
 void
-SystemAnchor::update_app_magnitude(AnchorBase *star)
+SystemAnchor::update_app_magnitude(StellarAnchor *star)
 {
   if (primary != nullptr) {
     primary->update_app_magnitude(star);

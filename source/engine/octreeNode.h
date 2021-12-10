@@ -26,7 +26,7 @@
 
 #include <vector>
 
-class AnchorBase;
+class StellarAnchor;
 class AnchorTraverser;
 
 class OctreeNode : public AnchorTreeBase
@@ -39,12 +39,12 @@ PUBLISHED:
   void rebuild(void);
   void traverse(AnchorTraverser &traverser);
 
-  void add(AnchorBase *anchor);
+  void add(StellarAnchor *anchor);
 
   size_t get_num_children(void) const;
   size_t get_num_leaves(void) const;
   OctreeNode *get_child(int index);
-  AnchorBase *get_leaf(int index) const;
+  StellarAnchor *get_leaf(int index) const;
 
   MAKE_SEQ(get_leaves, get_num_leaves, get_leaf);
 
@@ -52,8 +52,8 @@ PUBLISHED:
   void write(std::ostream &out, int indent_level = 0) const;
 
 protected:
-  void add_in_child(AnchorBase *leaf, LPoint3d const &position, double magnitude);
-  void _add(AnchorBase *leaf, LPoint3d const &position, double magnitude);
+  void add_in_child(StellarAnchor *leaf, LPoint3d const &position, double magnitude);
+  void _add(StellarAnchor *leaf, LPoint3d const &position, double magnitude);
   void split(void);
 
 PUBLISHED:
@@ -73,7 +73,7 @@ PUBLISHED:
 
 protected:
     PT(OctreeNode) children[8];
-    std::vector<PT(AnchorBase)> leaves;
+    std::vector<PT(StellarAnchor)> leaves;
 };
 
 inline std::ostream &operator << (std::ostream &out, const OctreeNode &octree)

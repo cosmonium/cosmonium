@@ -760,11 +760,11 @@ class RoamingRalphDemo(CosmoniumBase):
         self.worlds.update_anchor(0, 0)
         self.camera_controller.update(0, 0)
         self.mover.update()
-        self.worlds.update_anchor_obs(self.observer, 0)
+        self.worlds.update_anchor_obs(self.observer.anchor, 0)
         self.worlds.update(0, 0)
-        self.worlds.update_obs(self.observer)
-        self.worlds.check_visibility(self.observer.frustum, self.observer.pixel_size)
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_local_position(), self.observer.get_absolute_orientation())
+        self.worlds.update_obs(self.observer.anchor)
+        self.worlds.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
+        self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
         #self.ralph.create_light()
         if self.ralph_config.physics.enable:
             for physic_object in self.physic_objects:
@@ -790,7 +790,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.controller.update(0, dt)
         self.mover.update()
         self.camera_controller.update(0, dt)
-        self.worlds.update_anchor_obs(self.observer, self.update_id)
+        self.worlds.update_anchor_obs(self.observer.anchor, self.update_id)
 
         if self.ralph_config.physics.enable:
             to_remove = []
@@ -820,12 +820,12 @@ class RoamingRalphDemo(CosmoniumBase):
         render.set_shader_input("camera", self.camera.get_pos())
 
         self.worlds.update(0, dt)
-        self.worlds.update_obs(self.observer)
-        self.worlds.check_visibility(self.observer.frustum, self.observer.pixel_size)
+        self.worlds.update_obs(self.observer.anchor)
+        self.worlds.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
         for world  in self.worlds.worlds:
-            world.anchor._height_under = world.get_height_under(self.observer.get_local_position())
+            world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
             world.scene_anchor.update(self.scene_manager)
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.get_local_position(), self.observer.get_absolute_orientation())
+        self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
 
         self.scene_manager.build_scene(self.common_state, self.win, self.observer, [], [])
 

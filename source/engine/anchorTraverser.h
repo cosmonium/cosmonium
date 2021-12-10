@@ -26,16 +26,20 @@
 #include <vector>
 
 class AnchorBase;
+class StellarAnchor;
+class CartesianAnchor;
 class SystemAnchor;
 class OctreeNode;
-class Observer;
+class CameraAnchor;
 
 class AnchorTraverser : public ReferenceCount
 {
 PUBLISHED:
   virtual ~AnchorTraverser(void);
 
-  virtual void traverse_anchor(AnchorBase *anchor);
+  virtual void traverse_anchor(StellarAnchor *anchor);
+
+  virtual void traverse_anchor(CartesianAnchor *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -43,7 +47,7 @@ PUBLISHED:
 
   virtual bool enter_octree_node(OctreeNode *octree_node);
 
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
+  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 };
 
 class AnchorTraverserCollector : public AnchorTraverser
@@ -61,9 +65,9 @@ protected:
 class UpdateTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:
-  UpdateTraverser(double time, Observer &observer, double limit, unsigned long int update_id);
+  UpdateTraverser(double time, CameraAnchor &observer, double limit, unsigned long int update_id);
 
-  virtual void traverse_anchor(AnchorBase *anchor);
+  virtual void traverse_anchor(StellarAnchor *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -71,11 +75,11 @@ PUBLISHED:
 
   virtual bool enter_octree_node(OctreeNode *octree_node);
 
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
+  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 
 protected:
   double time;
-  Observer &observer;
+  CameraAnchor &observer;
   double limit;
   unsigned long int update_id;
 };
@@ -83,12 +87,12 @@ protected:
 class FindClosestSystemTraverser : public AnchorTraverser
 {
 PUBLISHED:
-  FindClosestSystemTraverser(Observer &observer, AnchorBase *system = 0, double distance = 0);
+  FindClosestSystemTraverser(CameraAnchor &observer, AnchorBase *system = 0, double distance = 0);
 
   AnchorBase *get_closest_system(void);
   MAKE_PROPERTY(closest_system, get_closest_system);
 
-  virtual void traverse_anchor(AnchorBase *anchor);
+  virtual void traverse_anchor(StellarAnchor *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -96,10 +100,10 @@ PUBLISHED:
 
   virtual bool enter_octree_node(OctreeNode *octree_node);
 
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
+  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 
 protected:
-  Observer &observer;
+  CameraAnchor &observer;
   PT(AnchorBase) system;
   double distance;
 };
@@ -109,7 +113,7 @@ class FindLightSourceTraverser : public AnchorTraverserCollector
 PUBLISHED:
   FindLightSourceTraverser(double limit, LPoint3d position);
 
-  virtual void traverse_anchor(AnchorBase *anchor);
+  virtual void traverse_anchor(StellarAnchor *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -117,7 +121,7 @@ PUBLISHED:
 
   virtual bool enter_octree_node(OctreeNode *octree_node);
 
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
+  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 
 protected:
   double limit;
@@ -131,7 +135,7 @@ PUBLISHED:
 
   bool check_cast_shadow(AnchorBase *anchor);
 
-  virtual void traverse_anchor(AnchorBase *anchor);
+  virtual void traverse_anchor(StellarAnchor *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -139,7 +143,7 @@ PUBLISHED:
 
   virtual bool enter_octree_node(OctreeNode *octree_node);
 
-  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(AnchorBase)> &leaves);
+  virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 
 protected:
   AnchorBase *target;

@@ -39,7 +39,7 @@ from .opengl import request_opengl_config, check_opengl_config, create_main_wind
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
-from .anchors import StellarAnchor
+from .anchors import StellarAnchor, CartesianAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
 from .universe import Universe
@@ -85,7 +85,7 @@ import platform
 import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
-from cosmonium.octree import CObserver, c_settings
+from cosmonium.octree import c_settings
 from cosmonium.sceneworld import ObserverCenteredWorld
 
 # Patch gettext classes
@@ -1069,7 +1069,7 @@ class Cosmonium(CosmoniumBase):
     def update_ship(self, time, dt):
         frustum = self.observer.anchor.rel_frustum
         pixel_size = self.observer.anchor.pixel_size
-        self.ship.anchor.update(time, dt)
+        self.ship.anchor.update(time, self.update_id)
         self.ship.update(time, dt)
         self.ship.update_obs(self.observer)
         self.ship.check_visibility(frustum, pixel_size)
@@ -1394,6 +1394,7 @@ class Cosmonium(CosmoniumBase):
         print("\tGlobal position", self.observer.get_absolute_reference_point())
         print("\tLocal position", self.observer.get_local_position())
         print("\tRotation", self.observer.get_absolute_orientation())
+        print("\tCamera vector", self.observer.anchor.camera_vector)
         print("\tFrame position", self.observer.get_frame_position(), "rotation", self.observer.get_frame_orientation())
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))

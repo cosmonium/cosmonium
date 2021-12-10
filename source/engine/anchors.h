@@ -26,7 +26,7 @@
 #include"type_utils.h"
 
 class AnchorTraverser;
-class Observer;
+class CameraAnchor;
 class OrbitBase;
 class RotationBase;
 class OctreeNode;
@@ -66,21 +66,13 @@ PUBLISHED:
     Reflective = 2,
     System = 4
   };
-  AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color);
+  AnchorBase(unsigned int anchor_class, PyObject *ref_object);
 
   virtual ~AnchorBase(void);
 
   PyObject *get_object(void) const;
   void set_body(PyObject *ref_object); //TODO: Is set needed ?
   MAKE_PROPERTY(body, get_object, set_body);
-
-  LColor get_point_color(void);
-  void set_point_color(LColor color);
-  MAKE_PROPERTY(point_color, get_point_color, set_point_color);
-
-  AnchorBase *get_star(void);
-  void set_star(AnchorBase  *star = 0);
-  MAKE_PROPERTY(star, get_star, set_star);
 
   virtual LPoint3d get_absolute_reference_point(void) = 0;
 
@@ -92,26 +84,26 @@ PUBLISHED:
 
   virtual LQuaterniond get_absolute_orientation(void) = 0;
 
-  virtual LQuaterniond get_equatorial_rotation(void) = 0;
+  virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
 
-  virtual LQuaterniond get_sync_rotation(void) = 0;
-
-  virtual double  get_absolute_magnitude(void) = 0;
-
-  virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor) = 0;
+  virtual LPoint3d calc_absolute_relative_position_to(LPoint3d position);
 
   virtual void update(double time, unsigned long int update_id) = 0;
 
-  virtual void update_observer(Observer &observer, unsigned long int update_id) = 0;
+  virtual void update_observer(CameraAnchor &observer, unsigned long int update_id) = 0;
 
-  virtual void update_and_update_observer(double time, Observer &observer, unsigned long int update_id);
+  virtual void update_and_update_observer(double time, CameraAnchor &observer, unsigned long int update_id);
 
-  virtual void update_app_magnitude(AnchorBase *star = 0) = 0;
+  INLINE double get_apparent_radius(void) { return get_position_bounding_radius(); }
+
+  LPoint3d get_cached_absolute_position(void) const { return _global_position; }
+
+  LPoint3d get_cached_local_position(void) { return _local_position; }
+
+  LQuaterniond get_cached_absolute_orientation(void) {return _orientation; }
 
 public:
   PyObject *ref_object;
-  LColor point_color;
-  PT(AnchorBase) star;
 
 PUBLISHED:
   //Flags
@@ -124,19 +116,20 @@ PUBLISHED:
   bool update_frozen;
   bool force_update;
 
+public:
   //Cached values
-  LPoint3d _position;
   LPoint3d _global_position;
   LPoint3d _local_position;
+
+PUBLISHED:
+  //TODO: These should have getter and setter
+  LPoint3d _position;
   LQuaterniond _orientation;
-  LQuaterniond _equatorial;
-  double _abs_magnitude;
-  double _app_magnitude;
   double _extend;
   double _height_under;
-  double _albedo;
 
   //Scene parameters
+  //TODO: These should have getter
   LPoint3d rel_position;
   double distance_to_obs;
   LVector3d  vector_to_obs;
@@ -146,6 +139,8 @@ PUBLISHED:
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };
 
+LPoint3d diff(LPoint3d a, LPoint3d b);
+
 class StellarAnchor : public AnchorBase
 {
 PUBLISHED:
@@ -154,6 +149,7 @@ PUBLISHED:
       OrbitBase *orbit,
       RotationBase *rotation,
       LColor point_color);
+  virtual ~StellarAnchor(void);
 
   OrbitBase *get_orbit(void);
   void set_orbit(OrbitBase * orbit);
@@ -162,6 +158,10 @@ PUBLISHED:
   RotationBase *get_rotation(void);
   void set_rotation(RotationBase * rotation);
   MAKE_PROPERTY(rotation, get_rotation, set_rotation);
+
+  LColor get_point_color(void);
+  void set_point_color(LColor color);
+  MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
   virtual void traverse(AnchorTraverser &visitor);
 
@@ -191,18 +191,27 @@ PUBLISHED:
 
   virtual void update(double time, unsigned long int update_id);
 
-  virtual void update_observer(Observer &observer, unsigned long int update_id);
+  virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
 
-  virtual void update_app_magnitude(AnchorBase *star = 0);
+  virtual void update_app_magnitude(StellarAnchor *star = 0);
 
   //TODO: Temporary until Python code is aligned
-  MAKE_PROPERTY(_global_position, get_absolute_reference_point);
-  MAKE_PROPERTY(_local_position, get_local_position);
   MAKE_PROPERTY(_abs_magnitude, get_absolute_magnitude, set_absolute_magnitude);
   MAKE_PROPERTY(_app_magnitude, get_apparent_magnitude);
 
 public:
-  double get_luminosity(AnchorBase *star);
+  double get_luminosity(StellarAnchor *star);
+
+public:
+  LQuaterniond _equatorial;
+  double _abs_magnitude;
+  double _app_magnitude;
+
+PUBLISHED:
+  double _albedo;
+
+public:
+  LColor point_color;
 
 protected:
   PT(OrbitBase) orbit;
@@ -225,17 +234,17 @@ private:
 
 PUBLISHED:
   virtual void traverse(AnchorTraverser &visitor);
-  virtual void update_app_magnitude(AnchorBase *star = 0);
+  virtual void update_app_magnitude(StellarAnchor *star = 0);
   virtual void rebuild(void);
 
-  void add_child(AnchorBase *child);
-  void remove_child(AnchorBase *child);
+  void add_child(StellarAnchor *child);
+  void remove_child(StellarAnchor *child);
 
-  void set_primary(AnchorBase *primary);
+  void set_primary(StellarAnchor *primary);
 
 public:
-  std::vector<PT(AnchorBase)> children;
-  PT(AnchorBase) primary;
+  std::vector<PT(StellarAnchor)> children;
+  PT(StellarAnchor) primary;
 
   MAKE_TYPE("SystemAnchor", StellarAnchor);
 };

@@ -126,7 +126,7 @@ class CartesianWorld(SimpleWorld):
         self.components.visible = True
 
     def create_anchor(self):
-        return CartesianAnchor(AbsoluteReferenceFrame())
+        return CartesianAnchor(0, self, AbsoluteReferenceFrame())
 
     def create_scene_anchor(self):
         return SceneAnchor(self.anchor, False, True)
@@ -145,15 +145,15 @@ class OriginCenteredWorld(SimpleWorld):
 
 class FlatTerrainWorld(OriginCenteredWorld):
     def __init__(self, name):
-        OriginCenteredWorld.__init__(self, name)
         self.terrain = None
+        OriginCenteredWorld.__init__(self, name)
 
     def create_anchor(self):
-        return FlatSurfaceAnchor(None)
+        return FlatSurfaceAnchor(0, self, self.terrain)
 
     def set_terrain(self, terrain):
         self.terrain = terrain
-        self.anchor.surface = terrain
+        self.anchor.set_surface(terrain)
         self.add_component(terrain)
 
     def get_height_under(self, position):
@@ -168,7 +168,7 @@ class ObserverCenteredWorld(SimpleWorld):
         self.components.visible = True
 
     def create_anchor(self):
-        return ObserverAnchor()
+        return ObserverAnchor(0, self)
 
     def create_scene_anchor(self):
         return ObserverSceneAnchor(self.anchor)

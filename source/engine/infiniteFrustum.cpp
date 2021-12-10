@@ -20,6 +20,8 @@
 #include "infiniteFrustum.h"
 #include "boundingHexahedron.h"
 
+TypeHandle InfiniteFrustum::_type_handle;
+
 InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatrix4 &view_mat, const LPoint3d &view_position):
   position(view_position)
 {
@@ -30,6 +32,10 @@ InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatr
     planes[i][2] = plane[2];
     planes[i][3] = plane[3] - planes[i].get_normal().dot(position);
   }
+}
+
+InfiniteFrustum::~InfiniteFrustum(void)
+{
 }
 
 LPoint3d

@@ -18,7 +18,9 @@
 
 
 try:
-    from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor, UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
+    from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor
+    from cosmonium_engine import CartesianAnchor, CameraAnchor
+    from cosmonium_engine import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
@@ -27,3 +29,5 @@ except ImportError as e:
     from .pyengine.pyanchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
     from .pyengine.pyanchors import CartesianAnchor, CameraAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
     from .pyengine.pytraversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
+
+from .pyengine.pyanchors import FlatSurfaceAnchor, OriginAnchor, ObserverAnchor

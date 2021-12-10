@@ -17,41 +17,50 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "observer.h"
 
-Observer::~Observer(void)
+#include "cameraAnchor.h"
+#include "infiniteFrustum.h"
+
+
+TypeHandle CameraAnchor::_type_handle;
+
+CameraAnchor::CameraAnchor(PyObject *ref_object, ReferenceFrame *frame) :
+  CartesianAnchor(0, ref_object, frame),
+  camera_vector(0.0)
 {
 }
 
-LPoint3d
-Observer::get_absolute_reference_point(void)
+CameraAnchor::~CameraAnchor(void)
 {
-  return _absolute_reference_point;
-}
-
-LPoint3d
-Observer::get_absolute_position(void)
-{
-  return _absolute_reference_point + _local_position;
-}
-
-LPoint3d
-Observer::get_local_position(void)
-{
-  return _local_position;
-}
-
-LQuaterniond
-Observer::get_absolute_orientation(void)
-{
-  return _orientation;
 }
 
 void
-Observer::update(LPoint3d absolute_reference_point, LPoint3d local_position, LQuaterniond orientation, LVector3d camera_vector)
+CameraAnchor::do_update(void)
 {
-  _absolute_reference_point = absolute_reference_point;
-  _local_position = local_position;
-  _orientation = orientation;
-  this->camera_vector = camera_vector;
+  CartesianAnchor::do_update();
+  camera_vector = get_absolute_orientation().xform(LVector3d::forward());
+}
+
+InfiniteFrustum *
+CameraAnchor::get_frustum(void)
+{
+  return frustum;
+}
+
+void
+CameraAnchor::set_frustum(InfiniteFrustum *frustum)
+{
+  this->frustum = frustum;
+}
+
+InfiniteFrustum *
+CameraAnchor::get_relative_frustum(void)
+{
+  return rel_frustum;
+}
+
+void
+CameraAnchor::set_relative_frustum(InfiniteFrustum *frustum)
+{
+  this->rel_frustum = frustum;
 }

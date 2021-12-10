@@ -99,13 +99,13 @@ OctreeNode::traverse(AnchorTraverser &traverser)
 }
 
 void
-OctreeNode::add(AnchorBase *leaf)
+OctreeNode::add(StellarAnchor *leaf)
 {
   _add(leaf, leaf->get_absolute_reference_point(), leaf->get_absolute_magnitude());
 }
 
 void
-OctreeNode::add_in_child(AnchorBase *leaf, LPoint3d const &position, double magnitude)
+OctreeNode::add_in_child(StellarAnchor *leaf, LPoint3d const &position, double magnitude)
 {
     int index = 0;
     if (position[0] >= center[0]) index |= 1;
@@ -136,7 +136,7 @@ OctreeNode::add_in_child(AnchorBase *leaf, LPoint3d const &position, double magn
 }
 
 void
-OctreeNode::_add(AnchorBase *leaf, LPoint3d const &position, double magnitude)
+OctreeNode::_add(StellarAnchor *leaf, LPoint3d const &position, double magnitude)
 {
     if (magnitude < max_magnitude) {
         max_magnitude = magnitude;
@@ -155,7 +155,7 @@ OctreeNode::_add(AnchorBase *leaf, LPoint3d const &position, double magnitude)
 void
 OctreeNode::split(void)
 {
-    std::vector<PT(AnchorBase)> new_leaves;
+    std::vector<PT(StellarAnchor)> new_leaves;
     for (const auto leaf : leaves) {
         const auto position = leaf->get_absolute_reference_point();
         if (leaf->get_absolute_magnitude() < threshold || (center - position).length() < leaf->_extend) {
@@ -178,7 +178,7 @@ OctreeNode::get_child(int index)
   }
 }
 
-AnchorBase *
+StellarAnchor *
 OctreeNode::get_leaf(int index) const
 {
   return leaves[index];
