@@ -1036,28 +1036,15 @@ class Cosmonium(CosmoniumBase):
         if c_settings is None: return
         c_settings.min_body_size = settings.min_body_size
 
-    def update_c_observer(self):
-        if CObserver is not None:
-            self.c_observer = CObserver()
-            self.c_observer.update(self.observer._global_position, self.observer._local_position, self.observer._orientation, self.observer.camera_vector)
-            self.c_observer.frustum = self.observer.frustum
-            self.c_observer.rel_frustum = self.observer.rel_frustum
-            self.c_observer.pixel_size = self.observer.pixel_size
-        else:
-            self.c_observer = self.observer
-
     @pstat
     def update_universe(self, time, dt):
-        self.update_c_observer()
-        frustum = self.observer.rel_frustum
-        pixel_size = self.observer.pixel_size
-        traverser = UpdateTraverser(time, self.c_observer, settings.lowest_app_magnitude, self.update_id)
+        traverser = UpdateTraverser(time, self.observer.anchor, settings.lowest_app_magnitude, self.update_id)
         self.universe.anchor.traverse(traverser)
         self.visibles = list(traverser.get_collected())
         self.visibles.sort(key=lambda v: v.z_distance)
         self.background.update(time, dt)
-        self.background.update_obs(self.observer)
-        self.background.check_visibility(frustum, pixel_size)
+        self.background.update_obs(self.observer.anchor)
+        self.background.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1067,9 +1054,9 @@ class Cosmonium(CosmoniumBase):
         #if self.selected is not None:
         #    self.selected.calc_height_under(self.observer.get_local_position())
         for controller in self.controllers_to_update:
-            controller.update_obs(self.observer)
+            controller.update_obs(self.observer.anchor)
         for controller in self.controllers_to_update:
-            controller.check_visibility(frustum, pixel_size)
+            controller.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
 
     @pstat
     def find_global_light_sources(self):
@@ -1080,8 +1067,8 @@ class Cosmonium(CosmoniumBase):
         #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
 
     def update_ship(self, time, dt):
-        frustum = self.observer.rel_frustum
-        pixel_size = self.observer.pixel_size
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
         self.ship.anchor.update(time, dt)
         self.ship.update(time, dt)
         self.ship.update_obs(self.observer)
@@ -1110,7 +1097,7 @@ class Cosmonium(CosmoniumBase):
 
     def update_extra_observer(self):
         for anchor in self.extra:
-            anchor.update_observer(self.c_observer, self.update_id)
+            anchor.update_observer(self.observer.anchor, self.update_id)
             anchor.update_id = self.update_id
 
     @pstat
@@ -1233,8 +1220,8 @@ class Cosmonium(CosmoniumBase):
         scene_manager = self.scene_manager
         camera_pos = self.observer.get_local_position()
         camera_rot = self.observer.get_absolute_orientation()
-        frustum = self.observer.rel_frustum
-        pixel_size = self.observer.pixel_size
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
         self.background.check_and_update_instance(scene_manager, camera_pos, camera_rot)
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
@@ -1287,7 +1274,7 @@ class Cosmonium(CosmoniumBase):
                 closest_visible_system = visible
                 distance = visible.distance_to_obs
         #Use that system to boostrap the tree traversal
-        traverser = FindClosestSystemTraverser(self.c_observer, closest_visible_system, distance)
+        traverser = FindClosestSystemTraverser(self.observer.anchor, closest_visible_system, distance)
         self.universe.anchor.traverse(traverser)
         closest_system = traverser.closest_system.body if traverser.closest_system is not None else None
         closest_visible_system = closest_visible_system.body if closest_visible_system is not None else None
@@ -1349,7 +1336,6 @@ class Cosmonium(CosmoniumBase):
         self.nav.update(self.time.time_full, dt)
         self.update_ship(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
-        self.update_c_observer()
         self.update_extra_observer()
 
         update = pstats.levelpstat('update', 'Bodies')

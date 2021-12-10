@@ -244,6 +244,9 @@ class CameraAnchor(CartesianAnchor):
     def __init__(self, frame):
         CartesianAnchor.__init__(self, frame)
         self.camera_vector = LVector3d()
+        self.frustum = None
+        self.rel_frustum = None
+        self.pixel_size = 0.0
 
     def do_update(self):
         CartesianAnchor.do_update(self)
@@ -283,7 +286,7 @@ class ObserverAnchor(CartesianAnchor):
 
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
-        self.copy(observer.anchor)
+        self.copy(observer)
         self.was_visible = self.visible
         self.was_resolved = self.resolved
         self.rel_position = LPoint3d()

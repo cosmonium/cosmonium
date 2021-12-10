@@ -260,8 +260,6 @@ class CameraHolder(CameraBase):
     def __init__(self, camera_np, cam, lens):
         CameraBase.__init__(self, camera_np, cam, lens)
         self.anchor = CameraAnchor(AbsoluteReferenceFrame())
-        self.frustum = None
-        self.rel_frustum = None
         self.has_scattering = False
         self.scattering = None
         self.apply_scattering = 0
@@ -334,10 +332,11 @@ class CameraHolder(CameraBase):
         if self.realCamLens is not None:
             mat = self.camera_np.getMat()
             bh = self.realCamLens.make_bounds()
-            self.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
+            self.anchor.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
             mat = self.camera_np.getMat()
             bh = self.realCamLens.make_bounds()
-            self.frustum = InfiniteFrustum(bh, mat, self.anchor.get_absolute_position())
+            self.anchor.frustum = InfiniteFrustum(bh, mat, self.anchor.get_absolute_position())
+        self.anchor.pixel_size = self.pixel_size
 
 class EventsControllerBase(DirectObject):
     wheel_event_duration = 0.1
