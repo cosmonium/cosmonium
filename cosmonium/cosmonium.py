@@ -431,6 +431,7 @@ class Cosmonium(CosmoniumBase):
         self.universe = Universe(self)
         self.background = ObserverCenteredWorld("background")
         self.background.background = True
+        self.worlds.add_world(self.background)
 
         if settings.color_picking:
             self.oid_texture = Texture()
@@ -516,8 +517,6 @@ class Cosmonium(CosmoniumBase):
                 print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
             self.scene_manager.init_camera(self.observer)
             self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
-
-        self.background.on_visible(self.scene_manager)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
@@ -1051,9 +1050,6 @@ class Cosmonium(CosmoniumBase):
         self.universe.anchor.traverse(traverser)
         self.visibles = list(traverser.get_collected())
         self.visibles.sort(key=lambda v: v.z_distance)
-        self.background.update(time, dt)
-        self.background.update_obs(self.observer.anchor)
-        self.background.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1225,7 +1221,6 @@ class Cosmonium(CosmoniumBase):
         camera_rot = self.observer.get_absolute_orientation()
         frustum = self.observer.anchor.rel_frustum
         pixel_size = self.observer.anchor.pixel_size
-        self.background.check_and_update_instance(scene_manager, camera_pos, camera_rot)
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
             occluder.body.scene_anchor.update(scene_manager)
@@ -1366,7 +1361,7 @@ class Cosmonium(CosmoniumBase):
         if self.trigger_check_settings:
             for visible in self.visibles:
                 visible.body.check_settings()
-            self.background.check_settings()
+            self.worlds.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
@@ -1375,7 +1370,6 @@ class Cosmonium(CosmoniumBase):
         self.find_shadows()
         self.update_instances()
         self.scene_manager.build_scene(self.common_state, self.win, self.observer, self.visibles, self.resolved)
-        self.scene_manager.add_background_object(self.background.scene_anchor.instance)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
