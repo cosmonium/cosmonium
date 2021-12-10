@@ -47,7 +47,7 @@ class BackgroundLabel(ObjectLabel):
         self.instance.setBin('background', self.label_source.background_level)
         infinity = self.context.scene_manager.infinity
         if self.label_source is not None:
-            self.rel_position = self.label_source.project(0, self.context.observer.camera_global_pos, infinity)
+            self.rel_position = self.label_source.project(0, self.context.observer.get_absolute_position(), infinity)
         else:
             self.rel_position = None
         if self.rel_position != None:
@@ -447,18 +447,22 @@ class Asterism(VisibleObject):
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
         #TODO: Ugly hack to calculate star position from the sun...
-        old_cam_pos = self.context.observer.camera_global_pos
-        self.context.observer.camera_global_pos = LPoint3d()
+        old_global_position = self.context.observer.anchor._global_position
+        old_local_position = self.context.observer.anchor._local_position
+        self.context.observer.anchor._global_position = LPoint3d()
+        self.context.observer.anchor._local_position = LPoint3d()
         self.context.update_c_observer()
+        self.context.update_id += 1
         for segment in self.segments:
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.anchor.update_and_update_observer(0, self.context.c_observer, 0)
+                star.anchor.update_and_update_observer(0, self.context.c_observer, self.context.update_id)
                 position, distance, scale_factor = SceneAnchor.calc_scene_params(self.context.scene_manager, star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
-        self.context.observer.camera_global_pos = old_cam_pos
+        self.context.observer.anchor._global_position = old_global_position
+        self.context.observer.anchor._local_position = old_local_position
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for segment in self.segments:
@@ -552,7 +556,7 @@ class Boundary(VisibleObject):
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
         infinity = self.context.scene_manager.infinity
         for point in self.points:
-            position = point.project(0, self.context.observer.camera_global_pos, infinity)
+            position = point.project(0, self.context.observer.get_absolute_position(), infinity)
             self.vertexWriter.addData3f(*position)
             self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
