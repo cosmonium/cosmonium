@@ -129,7 +129,7 @@ class Orbit(VisibleObject):
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
-        delta = self.body.parent.get_local_position()
+        delta = self.body.parent.anchor.get_local_position()
         if self.orbit.is_periodic():
             epoch = self.context.time.time_full - self.orbit.period / 2
             step = self.orbit.period / (self.nbOfPoints - 1)
