@@ -17,10 +17,10 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CARTESIANANCHORS_H
-#define CARTESIANANCHORS_H
+#ifndef CARTESIANANCHOR_H
+#define CARTESIANANCHOR_H
 
-#include "anchors.h"
+#include "anchor.h"
 
 class ReferenceFrame;
 

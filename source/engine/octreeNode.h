@@ -22,7 +22,7 @@
 
 #include "pandabase.h"
 #include "luse.h"
-#include "anchors.h"
+#include "anchor.h"
 
 #include <vector>
 

@@ -18,7 +18,10 @@
  */
 
 #include "anchorTraverser.h"
-#include "anchors.h"
+#include "anchor.h"
+#include "stellarAnchor.h"
+#include "systemAnchor.h"
+#include "octreeAnchor.h"
 #include "octreeNode.h"
 #include "cameraAnchor.h"
 #include "infiniteFrustum.h"

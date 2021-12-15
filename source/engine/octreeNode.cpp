@@ -18,7 +18,8 @@
  */
 
 #include "octreeNode.h"
-#include "anchors.h"
+#include "anchor.h"
+#include "stellarAnchor.h"
 #include "anchorTraverser.h"
 
 #include "iostream"
