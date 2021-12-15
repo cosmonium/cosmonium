@@ -92,7 +92,7 @@ class UpdateTraverser(AnchorTraverser):
                 if distance > 0.0:
                     app_magnitude = abs_to_app_mag(abs_magnitude, distance)
                     if app_magnitude < self.limit:
-                        traverse = frustum.is_sphere_in(leaf._global_position, leaf._extend)
+                        traverse = frustum.is_sphere_in(leaf._global_position, leaf.bounding_radius)
                 else:
                     traverse = True
             if traverse:
@@ -178,7 +178,7 @@ class FindShadowCastersTraverser(AnchorTraverser):
     def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
         self.target = target
         self.body_position = target._local_position
-        self.body_bounding_radius = target._extend
+        self.body_bounding_radius = target.bounding_radius
         self.vector_to_light_source = vector_to_light_source
         self.distance_to_light_source = distance_to_light_source
         self.light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - self.body_bounding_radius))
@@ -195,7 +195,7 @@ class FindShadowCastersTraverser(AnchorTraverser):
     def check_cast_shadow(self, occluder):
         cast_shadow = False
         occluder_position = occluder._local_position
-        occluder_bounding_radius = occluder._extend
+        occluder_bounding_radius = occluder.bounding_radius
         relative_position = occluder_position - self.body_position
         t = self.vector_to_light_source.dot(relative_position)
         #print(occluder.body.get_name(), t)

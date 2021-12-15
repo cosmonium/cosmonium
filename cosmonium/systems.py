@@ -156,8 +156,8 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.remove_orbit_object()
 
-    def get_extend(self):
-        return self.anchor._extend
+    def get_bounding_radius(self):
+        return self.anchor.get_bounding_radius()
 
     def check_visibility(self, frustum, pixel_size):
         StellarObject.check_visibility(self, frustum, pixel_size)

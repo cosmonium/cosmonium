@@ -85,15 +85,15 @@ void
 SystemAnchor:: rebuild(void)
 {
     content = System;
-    _extend = 0;
+    bounding_radius = 0;
     for (auto child : children) {
         if (child->rebuild_needed) {
             child->rebuild();
         }
         content |= child->content;
-        double position_bounding_radius = child->get_position_bounding_radius();
-        if (child->_extend + position_bounding_radius > _extend) {
-            _extend = child->_extend + position_bounding_radius;
+        double farthest_distance = child->get_position_bounding_radius() + child->get_bounding_radius();
+        if (farthest_distance > bounding_radius) {
+          bounding_radius = farthest_distance;
         }
     }
     if (primary == nullptr) {

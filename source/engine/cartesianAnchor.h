@@ -30,11 +30,11 @@ PUBLISHED:
   CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame);
   virtual ~CartesianAnchor(void);
 
+  virtual double get_position_bounding_radius(void);
+
   virtual void traverse(AnchorTraverser &visitor);
 
   virtual void rebuild(void);
-
-  virtual double get_position_bounding_radius(void);
 
   void copy(CartesianAnchor const &other);
 

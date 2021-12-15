@@ -118,7 +118,7 @@ class VisibleShip(ShipBase):
     def get_apparent_radius(self):
         return self.radius
 
-    def get_extend(self):
+    def get_bounding_radius(self):
         return self.radius
 
     #TODO: Should be refactored with StellarBody !
@@ -132,7 +132,7 @@ class VisibleShip(ShipBase):
 
     def update_light(self, camera_pos):
         if self.light_source is None: return
-        pos = self.get_local_position() + self.vector_to_star * self.get_extend()
+        pos = self.get_local_position() + self.vector_to_star * self.get_bounding_radius()
         self.place_pos_only(self.light_source, pos, camera_pos, self.distance_to_obs, self.vector_to_obs)
         self.directional_light.setDirection(LVector3(*-self.vector_to_star))
 

@@ -729,7 +729,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_world.on_visible(self.scene_manager)
         #self.ralph_world.add_component(self.ralph_shape_object)
         self.worlds.add_world(self.ralph_world)
-        self.ralph_world.anchor._extend = 1.5
+        self.ralph_world.anchor.set_bounding_radius(1.5)
         self.ralph_shape_object.body = self.ralph_world
         self.ralph_shape_object.set_owner(self.ralph_world)
         if self.shadows:

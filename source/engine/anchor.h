@@ -71,13 +71,17 @@ PUBLISHED:
   void set_body(PyObject *ref_object); //TODO: Is set needed ?
   MAKE_PROPERTY(body, get_object, set_body);
 
+  double get_bounding_radius(void);
+
+  void set_bounding_radius(double bounding_radius);
+
+  virtual double get_position_bounding_radius(void) = 0;
+
   virtual LPoint3d get_absolute_reference_point(void) = 0;
 
   virtual LPoint3d get_absolute_position(void) = 0;
 
   virtual LPoint3d get_local_position(void) = 0;
-
-  virtual double get_position_bounding_radius(void) = 0;
 
   virtual LQuaterniond get_absolute_orientation(void) = 0;
 
@@ -91,7 +95,7 @@ PUBLISHED:
 
   virtual void update_and_update_observer(double time, CameraAnchor &observer, unsigned long int update_id);
 
-  INLINE double get_apparent_radius(void) { return get_position_bounding_radius(); }
+  INLINE double get_apparent_radius(void) { return get_bounding_radius(); }
 
   LPoint3d get_cached_absolute_position(void) const { return _global_position; }
 
@@ -122,7 +126,6 @@ PUBLISHED:
   //TODO: These should have getter and setter
   LPoint3d _position;
   LQuaterniond _orientation;
-  double _extend;
   double _height_under;
 
   //Scene parameters
@@ -132,6 +135,9 @@ PUBLISHED:
   LVector3d  vector_to_obs;
   double visible_size;
   double z_distance;
+
+protected:
+  double bounding_radius;
 
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };

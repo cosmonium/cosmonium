@@ -143,7 +143,7 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(St
             if (distance > 0.0) {
                 double app_magnitude = abs_to_app_mag(abs_magnitude, distance);
                 if (app_magnitude < limit) {
-                    traverse = observer.frustum->is_sphere_in(leaf->get_absolute_position(), leaf->_extend);
+                    traverse = observer.frustum->is_sphere_in(leaf->get_absolute_position(), leaf->get_bounding_radius());
                 }
             } else {
                 traverse = true;
@@ -289,7 +289,7 @@ FindShadowCastersTraverser::FindShadowCastersTraverser(AnchorBase *target, LVect
   parent_systems()
 {
   body_position = target->get_local_position();
-  body_bounding_radius = target->_extend;
+  body_bounding_radius = target->get_bounding_radius();
   light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - body_bounding_radius));
   AnchorTreeBase *parent = target->parent;
   while (parent->content != ~0) {
@@ -303,7 +303,7 @@ FindShadowCastersTraverser::check_cast_shadow(AnchorBase *occluder)
 {
   bool cast_shadow = false;
   LPoint3d occluder_position = occluder->get_local_position();
-  double occluder_bounding_radius = occluder->_extend;
+  double occluder_bounding_radius = occluder->get_bounding_radius();
   LPoint3d relative_position = occluder_position - body_position;
   double t = vector_to_light_source.dot(relative_position);
   if (t >= 0 && t <= distance_to_light_source) {

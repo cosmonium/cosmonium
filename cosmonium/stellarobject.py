@@ -67,7 +67,7 @@ class StellarBodyLabel(ObjectLabel):
             self.instance.set_pos(LPoint3())
             scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.distance_to_obs)
         else:
-            offset = body.get_extend()
+            offset = body.get_bounding_radius()
             position = - camera_rot.xform(LPoint3d(0, offset, 0))
             distance = body.anchor.distance_to_obs - offset
             self.instance.set_pos(*position)
@@ -329,7 +329,7 @@ class StellarObject(NamedObject):
     def get_apparent_radius(self):
         return 0
 
-    def get_extend(self):
+    def get_bounding_radius(self):
         return self.get_apparent_radius()
 
     def get_abs_magnitude(self):

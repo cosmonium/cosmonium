@@ -125,7 +125,7 @@ class OctreeNode(object):
         center = self.center
         for leaf in self.leaves:
             position = leaf._global_position
-            if leaf._abs_magnitude < self.threshold or (center - position).length() < leaf._extend:
+            if leaf._abs_magnitude < self.threshold or (center - position).length() < leaf.bounding_radius:
                 new_leaves.append(leaf)
             else:
                 self._add_in_child(leaf, position, leaf._abs_magnitude)

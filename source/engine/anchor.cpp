@@ -73,7 +73,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object) :
   _global_position(0.0),
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
-  _extend(0.0),
+  bounding_radius(0.0),
   _height_under(0.0),
   //Scene parameters
   rel_position(0.0),
@@ -103,6 +103,18 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+double
+AnchorBase::get_bounding_radius(void)
+{
+  return bounding_radius;
+}
+
+void
+AnchorBase::set_bounding_radius(double bounding_radius)
+{
+  this->bounding_radius = bounding_radius;
 }
 
 LPoint3d

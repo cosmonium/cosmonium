@@ -159,7 +159,7 @@ OctreeNode::split(void)
     std::vector<PT(StellarAnchor)> new_leaves;
     for (const auto leaf : leaves) {
         const auto position = leaf->get_absolute_reference_point();
-        if (leaf->get_absolute_magnitude() < threshold || (center - position).length() < leaf->_extend) {
+        if (leaf->get_absolute_magnitude() < threshold || (center - position).length() < leaf->get_bounding_radius()) {
             new_leaves.push_back(leaf);
         } else {
             add_in_child(leaf, position, leaf->get_absolute_magnitude());

@@ -49,7 +49,7 @@ class SurrogateLight:
     def update_instance(self, camera_pos):
         if self.light_instance is None:
             self.create_light_node()
-        pos = - self.light_direction * self.target.get_extend()
+        pos = - self.light_direction * self.target.get_bounding_radius()
         self.light_instance.set_pos(*pos)
         self.light_node.set_direction(LVector3(*self.light_direction))
 

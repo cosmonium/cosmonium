@@ -83,7 +83,7 @@ class StellarBody(StellarObject):
         if self.ring is not None:
             self.ring.set_body(self)
             self.ring.set_owner(self)
-        self.anchor._extend = self.get_extend()
+        self.anchor.set_bounding_radius(self.get_bounding_radius())
 
     def get_or_create_system(self):
         if self.system is None:
@@ -229,7 +229,7 @@ class StellarBody(StellarObject):
         else:
             return self.get_apparent_radius()
 
-    def get_extend(self):
+    def get_bounding_radius(self):
         extend = 0
         if self.ring is not None:
             extend = max(extend, self.ring.outer_radius)

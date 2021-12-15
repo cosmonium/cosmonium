@@ -198,7 +198,7 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to front", target.get_name())
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
@@ -232,7 +232,7 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to", target.get_name())
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
@@ -250,7 +250,7 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to long-lat", target.get_name())
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
@@ -283,7 +283,7 @@ class AutoPilot(object):
         else:
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
-                distance_unit = target.get_extend()
+                distance_unit = target.get_bounding_radius()
             distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, lat, duration, distance)
 
@@ -311,7 +311,7 @@ class AutoPilot(object):
         else:
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
-                distance_unit = target.get_extend()
+                distance_unit = target.get_bounding_radius()
             distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, 0, duration, distance)
 

@@ -85,6 +85,12 @@ StellarAnchor::set_point_color(LColor color)
   this->point_color = color;
 }
 
+double
+StellarAnchor::get_position_bounding_radius(void)
+{
+  return orbit->get_bounding_radius();
+}
+
 void
 StellarAnchor::traverse(AnchorTraverser &visitor)
 {
@@ -112,12 +118,6 @@ LPoint3d
 StellarAnchor::get_local_position(void)
 {
   return _local_position;
-}
-
-double
-StellarAnchor::get_position_bounding_radius(void)
-{
-  return orbit->get_bounding_radius();
 }
 
 LQuaterniond
@@ -193,7 +193,7 @@ StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_
   distance_to_obs = rel_position.length();
   if (distance_to_obs > 0.0) {
       vector_to_obs = -rel_position / distance_to_obs;
-      visible_size = _extend / (distance_to_obs * observer.pixel_size);
+      visible_size = bounding_radius / (distance_to_obs * observer.pixel_size);
       double coef = -vector_to_obs.dot(observer.camera_vector);
       z_distance = distance_to_obs * coef;
   } else {
@@ -203,7 +203,7 @@ StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_
   }
   was_visible = visible;
   was_resolved = resolved;
-  double radius = _extend;
+  double radius = bounding_radius;
   if (distance_to_obs > radius) {
       bool in_view = observer.rel_frustum->is_sphere_in(rel_position, radius);
       resolved = visible_size > settings.min_body_size;
@@ -225,7 +225,7 @@ StellarAnchor::get_luminosity(StellarAnchor *star)
     double area = 4 * M_PI * distance_to_star * distance_to_star * 1000 * 1000; // Units are in km
     if (area > 0.0) {
         double irradiance = star_power / area;
-        double surface = M_PI * _extend * _extend * 1000 * 1000; // # Units are in km
+        double surface = M_PI * bounding_radius * bounding_radius * 1000 * 1000; // # Units are in km
         double received_energy = irradiance * surface;
         double reflected_energy = received_energy * _albedo;
         double phase_angle = vector_to_obs.dot(vector_to_star);

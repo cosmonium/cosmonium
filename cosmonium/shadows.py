@@ -180,7 +180,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         return self.shadow_map is not None
 
     def update(self, scene_manager):
-        radius = self.occluder.get_extend() / scene_manager.scale
+        radius = self.occluder.get_bounding_radius() / scene_manager.scale
         self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
         #The shadow frustum origin is at the light center which is one radius away from the object
         #So the near plane is 0 to coincide with the boundary of the object

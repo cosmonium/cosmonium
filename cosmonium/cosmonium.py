@@ -1188,7 +1188,7 @@ class Cosmonium(CosmoniumBase):
                 if surrogate_light is None: continue
                 reflective.body.self_shadows_update(surrogate_light)
                 #print("TEST", reflective.body.get_name())
-                traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source._extend)
+                traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source.get_bounding_radius())
                 self.nearest_system.anchor.traverse(traverser)
                 #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
                 for occluder in traverser.get_collected():
@@ -1402,7 +1402,7 @@ class Cosmonium(CosmoniumBase):
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
             print("\tDistance:", self.selected.anchor.distance_to_obs / units.Km, 'Km')
-            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_extend(), "Km", "Visible:", self.selected.anchor.visible, self.selected.anchor.visible_size, "px")
+            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_bounding_radius(), "Km", "Visible:", self.selected.anchor.visible, self.selected.anchor.visible_size, "px")
             print("\tApp magnitude:", self.selected.get_app_magnitude(), '(', self.selected.get_abs_magnitude(), ')')
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())

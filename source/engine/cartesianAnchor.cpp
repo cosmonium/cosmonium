@@ -53,7 +53,7 @@ CartesianAnchor::rebuild(void)
 double
 CartesianAnchor::get_position_bounding_radius(void)
 {
-  return _extend;
+  return 0;
 }
 
 void
@@ -212,7 +212,7 @@ CartesianAnchor::update_observer(CameraAnchor &observer, unsigned long int updat
   distance_to_obs = rel_position.length();
   if (distance_to_obs > 0.0) {
       vector_to_obs = -rel_position / distance_to_obs;
-      visible_size = _extend / (distance_to_obs * observer.pixel_size);
+      visible_size = bounding_radius / (distance_to_obs * observer.pixel_size);
       double coef = -vector_to_obs.dot(observer.camera_vector);
       z_distance = distance_to_obs * coef;
   } else {
@@ -222,7 +222,7 @@ CartesianAnchor::update_observer(CameraAnchor &observer, unsigned long int updat
   }
   was_visible = visible;
   was_resolved = resolved;
-  double radius = _extend;
+  double radius = bounding_radius;
   if (distance_to_obs > radius) {
       bool in_view = observer.rel_frustum->is_sphere_in(rel_position, radius);
       resolved = visible_size > settings.min_body_size;

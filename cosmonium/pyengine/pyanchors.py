@@ -51,7 +51,7 @@ class AnchorBase():
         self._global_position = LPoint3d()
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
-        self._extend = 0.0
+        self.bounding_radius = 0.0
         self._height_under = 0.0
         #Scene parameters
         self.rel_position = LPoint3d()
@@ -70,6 +70,15 @@ class AnchorBase():
 
     def traverse(self, visitor):
         visitor.traverse_anchor(self)
+
+    def get_bounding_radius(self):
+        return self.bounding_radius
+
+    def set_bounding_radius(self, bounding_radius):
+        self.bounding_radius = bounding_radius
+
+    def get_apparent_radius(self):
+        return self.get_bounding_radius()
 
     def calc_absolute_relative_position_to(self, position):
         return (self.get_absolute_reference_point() - position) + self.get_local_position()
@@ -97,14 +106,14 @@ class AnchorBase():
         vector_to_obs = -rel_position / distance_to_obs
         if distance_to_obs > 0.0:
             vector_to_obs = -rel_position / distance_to_obs
-            visible_size = self._extend / (distance_to_obs * observer.pixel_size)
+            visible_size = self.bounding_radius / (distance_to_obs * observer.pixel_size)
             coef = -vector_to_obs.dot(observer.camera_vector)
             self.z_distance = distance_to_obs * coef
         else:
             vector_to_obs = LVector3d()
             visible_size = 0.0
             self.z_distance = 0.0
-        radius = self._extend
+        radius = self.bounding_radius
         if distance_to_obs > radius:
             in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)
             resolved = visible_size > settings.min_body_size
@@ -143,9 +152,6 @@ class CartesianAnchor(AnchorBase):
         self._frame_position = other.get_frame_position()
         self._frame_orientation = other.get_frame_orientation()
 
-    def get_apparent_radius(self):
-        return self._extend
-
     def get_frame(self):
         return self.frame
 
@@ -167,6 +173,9 @@ class CartesianAnchor(AnchorBase):
 
     def update(self, time, dt):
         self.do_update()
+
+    def get_position_bounding_radius(self):
+        return 0.0
 
     def set_absolute_reference_point(self, new_reference_point):
         old_local = self.frame.get_local_position(self._frame_position)
@@ -331,6 +340,9 @@ class StellarAnchor(AnchorBase):
         orbit.body = body
         rotation.body = body
 
+    def get_position_bounding_radius(self):
+        return self.orbit.get_apparent_radius()
+
     def get_absolute_reference_point(self):
         return self._global_position
 
@@ -371,7 +383,7 @@ class StellarAnchor(AnchorBase):
         area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
         if area > 0.0:
             irradiance = star_power / area
-            surface = pi * self._extend * self._extend * 1000 * 1000 # Units are in km
+            surface = pi * self.bounding_radius * self.bounding_radius * 1000 * 1000 # Units are in km
             received_energy = irradiance * surface
             reflected_energy = received_energy * self._albedo
             phase_angle = self.vector_to_obs.dot(vector_to_star)
@@ -440,17 +452,16 @@ class SystemAnchor(DynamicStellarAnchor):
 
     def rebuild(self):
         content = self.System
-        extend = 0
+        bounding_radius = 0
         for child in self.children:
             if child.rebuild_needed:
                 child.rebuild()
             content |= child.content
-            #TODO: Must also support anchor without orbits ?
-            orbit_size = child.orbit.get_apparent_radius()
-            if child._extend + orbit_size > extend:
-                extend = child._extend + orbit_size
+            farthest_distance = child.get_position_bounding_radius() + child.bounding_radius
+            if farthest_distance > bounding_radius:
+                bounding_radius = farthest_distance
         self.content = content
-        self._extend = extend
+        self.bounding_radius = bounding_radius
         luminosity = 0.0
         if self.primary is None:
             for child in self.children:
@@ -473,13 +484,13 @@ class OctreeAnchor(SystemAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         SystemAnchor.__init__(self, body, orbit, rotation, point_color)
         #TODO: Turn this into a parameter or infer it from the children
-        self._extend = 100000.0 * units.Ly
+        self.bounding_radius = 100000.0 * units.Ly
         #TODO: Should be configurable
-        abs_mag = app_to_abs_mag(6.0, self._extend * sqrt(3))
+        abs_mag = app_to_abs_mag(6.0, self.bounding_radius * sqrt(3))
         #TODO: position should be extracted from orbit
         self.octree = OctreeNode(0, self,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             self._extend,
+                             self.bounding_radius,
                              abs_mag)
         #TODO: Right now an octree contains anything
         self.content = ~0

@@ -47,6 +47,8 @@ PUBLISHED:
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
+  virtual double get_position_bounding_radius(void);
+
   virtual void traverse(AnchorTraverser &visitor);
 
   virtual void rebuild(void);
@@ -56,8 +58,6 @@ PUBLISHED:
   virtual LPoint3d get_absolute_position(void);
 
   virtual LPoint3d get_local_position(void);
-
-  virtual double get_position_bounding_radius(void);
 
   virtual LQuaterniond get_absolute_orientation(void);
 
