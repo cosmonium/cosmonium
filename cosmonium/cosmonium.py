@@ -206,6 +206,8 @@ class CosmoniumBase(ShowBase):
         else:
             data.append("win-size %d %d" % (settings.win_width, settings.win_height))
         data.append("lens-far-limit %g" % settings.lens_far_limit)
+        data.append("transform-cache 0")
+        data.append("state-cache 0")
         loadPrcFileData("", '\n'.join(data))
         if settings.prc_file is not None:
             config_file = settings.prc_file
