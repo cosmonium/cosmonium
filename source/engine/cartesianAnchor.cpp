@@ -88,16 +88,6 @@ CartesianAnchor::do_update(void)
 }
 
 void
-CartesianAnchor::change_reference_point(LPoint3d new_reference_point)
-{
-  LPoint3d old_local = frame->get_local_position(_frame_position);
-  LPoint3d new_local = (_global_position - new_reference_point) + old_local;
-  _global_position = new_reference_point;
-  _frame_position = frame->get_frame_position(new_local);
-  do_update();
-}
-
-void
 CartesianAnchor::set_frame_position(LPoint3d position)
 {
   _frame_position = position;
@@ -137,6 +127,16 @@ LPoint3d
 CartesianAnchor::get_absolute_reference_point(void)
 {
   return _global_position;
+}
+
+void
+CartesianAnchor::set_absolute_reference_point(LPoint3d new_reference_point)
+{
+  LPoint3d old_local = frame->get_local_position(_frame_position);
+  LPoint3d new_local = (_global_position - new_reference_point) + old_local;
+  _global_position = new_reference_point;
+  _frame_position = frame->get_frame_position(new_local);
+  do_update();
 }
 
 LPoint3d

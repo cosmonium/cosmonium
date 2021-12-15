@@ -447,10 +447,10 @@ class Asterism(VisibleObject):
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
         #TODO: Ugly hack to calculate star position from the sun...
-        old_global_position = self.context.observer.anchor._global_position
-        old_local_position = self.context.observer.anchor._local_position
-        self.context.observer.anchor._global_position = LPoint3d()
-        self.context.observer.anchor._local_position = LPoint3d()
+        old_global_position = self.context.observer.anchor.get_absolute_reference_point()
+        old_local_position = self.context.observer.anchor.get_local_position()
+        self.context.observer.anchor.set_absolute_reference_point(LPoint3d())
+        self.context.observer.anchor.set_local_position(LPoint3d())
         self.context.update_id += 1
         for segment in self.segments:
             if len(segment) < 2: continue
@@ -460,8 +460,8 @@ class Asterism(VisibleObject):
                 position, distance, scale_factor = SceneAnchor.calc_scene_params(self.context.scene_manager, star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
-        self.context.observer.anchor._global_position = old_global_position
-        self.context.observer.anchor._local_position = old_local_position
+        self.context.observer.anchor.set_absolute_reference_point(old_global_position)
+        self.context.observer.anchor.set_local_position(old_local_position)
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for segment in self.segments:

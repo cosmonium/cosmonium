@@ -168,7 +168,7 @@ class CartesianAnchor(AnchorBase):
     def update(self, time, dt):
         self.do_update()
 
-    def change_reference_point(self, new_reference_point):
+    def set_absolute_reference_point(self, new_reference_point):
         old_local = self.frame.get_local_position(self._frame_position)
         new_local = (self._global_position - new_reference_point) + old_local
         self._global_position = new_reference_point

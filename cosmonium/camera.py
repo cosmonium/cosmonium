@@ -273,7 +273,7 @@ class CameraHolder(CameraBase):
         self.anchor.set_frame(frame)
 
     def change_global(self, new_global_pos):
-        self.anchor.change_reference_point(new_global_pos)
+        self.anchor.set_absolute_reference_point(new_global_pos)
 
     def set_frame_position(self, position):
         self.anchor.set_frame_position(position)

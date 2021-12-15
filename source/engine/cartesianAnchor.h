@@ -44,8 +44,6 @@ PUBLISHED:
 
   virtual void do_update(void);
 
-  void change_reference_point(LPoint3d new_reference_point);
-
   void set_frame_position(LPoint3d position);
 
   LPoint3d get_frame_position(void);
@@ -59,6 +57,8 @@ PUBLISHED:
   void set_local_position(LPoint3d position);
 
   virtual LPoint3d get_absolute_reference_point(void);
+
+  virtual void set_absolute_reference_point(LPoint3d new_reference_point);
 
   virtual LPoint3d get_absolute_position(void);
 

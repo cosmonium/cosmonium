@@ -1286,7 +1286,7 @@ class Cosmonium(CosmoniumBase):
                 print("New nearest system:", nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.ship.anchor.change_reference_point(nearest_system.anchor.get_absolute_reference_point())
+                self.ship.anchor.set_absolute_reference_point(nearest_system.anchor.get_absolute_reference_point())
                 self.camera_controller.update(self.time.time_full, 0)
                 self.observer.change_global(nearest_system.anchor.get_absolute_reference_point())
                 self.autopilot.pop_position()
