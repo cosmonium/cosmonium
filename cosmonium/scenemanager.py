@@ -24,6 +24,7 @@ from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, 
 from .pointsset import PointsSet
 from .foundation import BaseObject
 from .utils import mag_to_scale
+from .pstats import pstat
 from . import settings
 
 class SceneManagerBase:
@@ -174,6 +175,7 @@ class DynamicSceneManager(SceneManagerBase):
             self.infinity = self.infinite_plane
         self.midPlane = self.infinity / self.mid_plane_ratio
 
+    @pstat
     def build_scene(self, state, win, camera, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.setShaderInput("midPlane", self.midPlane)
@@ -247,6 +249,7 @@ class RegionSceneManager(SceneManagerBase):
             region.remove()
         self.regions = []
 
+    @pstat
     def build_scene(self, world, win, camera, visibles, resolved):
         state = world.get_state()
         self.clear_scene()
