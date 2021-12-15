@@ -193,7 +193,7 @@ class Orbit(VisibleObject):
         if self.body.parent.anchor.visible and self.body.parent.scene_anchor.instance is not None and self.body.shown and self.orbit:
             distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
-                size = self.orbit.get_apparent_radius() / (distance_to_obs * pixel_size)
+                size = self.orbit.get_bounding_radius() / (distance_to_obs * pixel_size)
             else:
                 size = 0.0
             self.visible = size > settings.orbit_fade

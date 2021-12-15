@@ -341,7 +341,7 @@ class StellarAnchor(AnchorBase):
         rotation.body = body
 
     def get_position_bounding_radius(self):
-        return self.orbit.get_apparent_radius()
+        return self.orbit.get_bounding_radius()
 
     def get_absolute_reference_point(self):
         return self._global_position

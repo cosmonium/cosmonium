@@ -56,7 +56,7 @@ class StellarBodyLabel(ObjectLabel):
             self.fade = 1.0
         else:
             if body.anchor.distance_to_obs > 0.0:
-                size = body.anchor.orbit.get_apparent_radius() / (body.anchor.distance_to_obs * pixel_size)
+                size = body.anchor.get_position_bounding_radius() / (body.anchor.distance_to_obs * pixel_size)
                 self.visible = size > settings.label_fade
                 self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
         self.fade = clamp(self.fade, 0.0, 1.0)

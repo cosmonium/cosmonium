@@ -67,9 +67,6 @@ class Orbit(object):
         return None
 
     def get_bounding_radius(self):
-        return self.get_apparent_radius()
-
-    def get_apparent_radius(self):
         return 0.0
 
 class FixedPosition(Orbit):
@@ -172,7 +169,7 @@ class EllipticalOrbit(Orbit):
     def get_time_of_perihelion(self):
         return self.epoch - self.mean_anomaly / self.mean_motion
 
-    def get_apparent_radius(self):
+    def get_bounding_radius(self):
         return abs(self.apocenter_distance)
 
     def get_frame_position_at(self, time):

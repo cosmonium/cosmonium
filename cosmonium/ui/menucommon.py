@@ -35,7 +35,7 @@ def create_orbiting_bodies_menu_items(engine, body):
             if child != body:
                 children.append(child)
         if len(children) > 0:
-            children.sort(key=lambda x: x.anchor.orbit.get_apparent_radius())
+            children.sort(key=lambda x: x.anchor.orbit.get_bounding_radius())
             subitems = []
             for child in children:
                 if isinstance(child, SimpleSystem):

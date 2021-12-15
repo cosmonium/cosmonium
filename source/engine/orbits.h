@@ -62,9 +62,6 @@ PUBLISHED:
 
   virtual double get_bounding_radius(void);
 
-  //Temporary until Python code is aligned
-  double get_apparent_radius(void) { return get_bounding_radius(); }
-
   MAKE_TYPE_2("OrbitBase", TypedObject, ReferenceCount);
 
 protected:
