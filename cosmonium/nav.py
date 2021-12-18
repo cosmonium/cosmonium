@@ -119,7 +119,7 @@ class InteractiveNavigationController(NavigationController):
         #The orbit position is set on the object while the camera orientation is set on the camera controller
         #The position must be done in the object frame otherwise the orbit point will drift away
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
-        self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(center)
+        self.orbit_center = self.controller.anchor.calc_frame_position_of_local(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
         if self.controller.orbit_rot_camera:
             self.orbit_orientation = self.camera_controller.get_local_orientation()
