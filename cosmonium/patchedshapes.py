@@ -34,6 +34,7 @@ from . import settings
 
 from math import cos, sin, pi, sqrt, copysign, log
 from collections import deque
+from itertools import chain
 import struct
 
 try:
@@ -181,17 +182,17 @@ class PatchNoNeighbours(PatchNeighboursBase):
 class PatchNeighbours(PatchNeighboursBase):
     def __init__(self, patch):
         self.patch = patch
-        self.neighbours = [[], [], [], []]
+        self.neighbours = [set(), set(), set(), set()]
 
     def set_neighbours(self, face, neighbours):
         self.neighbours[face] = neighbours
 
     def add_neighbour(self, face, neighbour):
         if neighbour not in self.neighbours[face]:
-            self.neighbours[face].append(neighbour)
+            self.neighbours[face].add(neighbour)
 
     def get_neighbours(self, face):
-        return [] + self.neighbours[face]
+        return set(self.neighbours[face])
 
     #TODO: This should be moved to QuadTreeNode, and name is wrong
     def _collect_side_neighbours(self, result, side):
@@ -210,10 +211,10 @@ class PatchNeighbours(PatchNeighboursBase):
                 tl.neighbours._collect_side_neighbours(result, side)
                 bl.neighbours._collect_side_neighbours(result, side)
         else:
-            result.append(self.patch)
+            result.add(self.patch)
 
     def collect_side_neighbours(self, side):
-        result = []
+        result = set()
         self._collect_side_neighbours(result, side)
         return result
 
@@ -233,10 +234,10 @@ class PatchNeighbours(PatchNeighboursBase):
                 tl.neighbours._collect_neighbours(result, side)
                 bl.neighbours._collect_neighbours(result, side)
         else:
-            result += self.neighbours[side]
+            result |= self.neighbours[side]
 
     def collect_neighbours(self, side):
-        result = []
+        result = set()
         self._collect_neighbours(result, side)
         return result
 
@@ -247,12 +248,12 @@ class PatchNeighbours(PatchNeighboursBase):
         self.neighbours[PatchBase.WEST] = west
 
     def clear_all_neighbours(self):
-        self.neighbours = [[], [], [], []]
+        self.neighbours = [set(), set(), set(), set()]
 
     def get_all_neighbours(self):
-        neighbours = []
+        neighbours = set()
         for i in range(4):
-            neighbours += self.neighbours[i]
+            neighbours |= self.neighbours[i]
         return neighbours
 
     def get_neighbour_lower_lod(self, face):
@@ -263,79 +264,78 @@ class PatchNeighbours(PatchNeighboursBase):
         return lower_lod
 
     def remove_detached_neighbours(self):
-        valid = []
+        valid = set()
         patch = self.patch
         for neighbour in self.neighbours[PatchBase.NORTH]:
             if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.append(neighbour)
+                valid.add(neighbour)
         self.neighbours[PatchBase.NORTH] = valid
-        valid = []
+        valid = set()
         for neighbour in self.neighbours[PatchBase.SOUTH]:
             if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.append(neighbour)
+                valid.add(neighbour)
         self.neighbours[PatchBase.SOUTH] = valid
-        valid = []
+        valid = set()
         for neighbour in self.neighbours[PatchBase.EAST]:
             if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.append(neighbour)
+                valid.add(neighbour)
         self.neighbours[PatchBase.EAST] = valid
-        valid = []
+        valid = set()
         for neighbour in self.neighbours[PatchBase.WEST]:
             if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.append(neighbour)
+                valid.add(neighbour)
         self.neighbours[PatchBase.WEST] = valid
 
     def split_opposite_neighbours(self, face, news):
         opposite = PatchBase.opposite_face[face]
         for neighbour_patch in self.neighbours[face]:
-            neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
-            #print(f"Replace {self.patch} with {news} in {neighbour_list} of {neighbour_patch}")
+            neighbours = neighbour_patch.neighbours.neighbours[opposite]
+            #print(f"Replace {self.patch} with {news} in {neighbours} of {neighbour_patch}")
             try:
-                neighbour_list.remove(self.patch)
+                neighbours.remove(self.patch)
                 for new in news:
-                    if not new in neighbour_list:
-                        neighbour_list.append(new)
-            except ValueError:
+                    neighbours.add(new)
+            except KeyError:
                 pass
-            #print("Result", neighbour_list)
+            #print("Result", neighbours)
 
     def merge_opposite_neighbours(self, face, olds):
         opposite = PatchBase.opposite_face[face]
         for neighbour_patch in self.neighbours[face]:
-            neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
-            #print(f"Replace {olds} with {self.patch} in {neighbour_list} of {neighbour_patch}")
+            neighbours= neighbour_patch.neighbours.neighbours[opposite]
+            #print(f"Replace {olds} with {self.patch} in {neighbours} of {neighbour_patch}")
             found = False
             for old in olds:
                 try:
-                    neighbour_list.remove(old)
+                    neighbours.remove(old)
                     found = True
-                except ValueError:
+                except KeyError:
                     pass
-            if found and not self.patch in neighbour_list:
-                    neighbour_list.append(self.patch)
-            #print("Result", neighbour_list)
+            if found and not self.patch in neighbours:
+                    neighbours.add(self.patch)
+            #print("Result", neighbours)
 
     #TODO: This should be moved to QuadTreeNode
     def _do_collect_children(self, result, side):
         if len(self.patch.children) != 0:
             (bl, br, tr, tl) = self.patch.children
             if side == PatchBase.NORTH:
-                result.append(tl)
-                result.append(tr)
+                result.add(tl)
+                result.add(tr)
             elif side == PatchBase.EAST:
-                result.append(tr)
-                result.append(br)
+                result.add(tr)
+                result.add(br)
             elif side == PatchBase.SOUTH:
-                result.append(bl)
-                result.append(br)
+                result.add(bl)
+                result.add(br)
             elif side == PatchBase.WEST:
-                result.append(tl)
-                result.append(bl)
+                result.add(tl)
+                result.add(bl)
             for child in self.patch.children:
                 child.neighbours._do_collect_children(result, side)
 
     def collect_children(self, side):
-        result = []
+        result = set()
         return result
 
     def split_neighbours(self, update):
@@ -363,25 +363,25 @@ class PatchNeighbours(PatchNeighboursBase):
     def merge_neighbours(self, update):
         children = self.patch.children
         (bl, br, tr, tl) = children
-        north = []
-        for neighbour in tl.neighbours.collect_neighbours(PatchBase.NORTH) + tr.neighbours.collect_neighbours(PatchBase.NORTH):
-            if neighbour not in north and neighbour not in children:
-                north.append(neighbour)
+        north = set()
+        for neighbour in chain(tl.neighbours.collect_neighbours(PatchBase.NORTH),tr.neighbours.collect_neighbours(PatchBase.NORTH)):
+            if neighbour not in children:
+                north.add(neighbour)
         north_children = self.collect_children(PatchBase.NORTH)
-        east = []
-        for neighbour in tr.neighbours.collect_neighbours(PatchBase.EAST) + br.neighbours.collect_neighbours(PatchBase.EAST):
-            if neighbour not in east and neighbour not in children:
-                east.append(neighbour)
+        east = set()
+        for neighbour in chain(tr.neighbours.collect_neighbours(PatchBase.EAST), br.neighbours.collect_neighbours(PatchBase.EAST)):
+            if neighbour not in children:
+                east.add(neighbour)
         east_children = self.collect_children(PatchBase.EAST)
-        south = []
-        for neighbour in bl.neighbours.collect_neighbours(PatchBase.SOUTH) + br.neighbours.collect_neighbours(PatchBase.SOUTH):
-            if neighbour not in south and neighbour not in children:
-                south.append(neighbour)
+        south = set()
+        for neighbour in chain(bl.neighbours.collect_neighbours(PatchBase.SOUTH), br.neighbours.collect_neighbours(PatchBase.SOUTH)):
+            if neighbour not in children:
+                south.add(neighbour)
         south_children = self.collect_children(PatchBase.SOUTH)
-        west = []
-        for neighbour in tl.neighbours.collect_neighbours(PatchBase.WEST) + bl.neighbours.collect_neighbours(PatchBase.WEST):
-            if neighbour not in west and neighbour not in children:
-                west.append(neighbour)
+        west = set()
+        for neighbour in chain(tl.neighbours.collect_neighbours(PatchBase.WEST), bl.neighbours.collect_neighbours(PatchBase.WEST)):
+            if neighbour not in children:
+                west.add(neighbour)
         west_children = self.collect_children(PatchBase.WEST)
         self.set_all_neighbours(north, east, south, west)
         self.merge_opposite_neighbours(PatchBase.NORTH, north_children)
@@ -389,7 +389,7 @@ class PatchNeighbours(PatchNeighboursBase):
         self.merge_opposite_neighbours(PatchBase.SOUTH, south_children)
         self.merge_opposite_neighbours(PatchBase.WEST,  west_children)
         self.calc_outer_tessellation_level(update)
-        for neighbour in north + east + south + west:
+        for neighbour in chain(north, east, south, west):
             neighbour.calc_outer_tessellation_level(update)
 
     def calc_outer_tessellation_level(self, update):
