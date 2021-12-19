@@ -115,11 +115,11 @@ class TiledShape(PatchedShapeBase):
         self.scale = scale
 
     def create_culling_frustum(self, scene_manager, camera):
-        cam_transform_mat = camera.cam.getNetTransform().getMat()
+        cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
         transform_mat = LMatrix4()
-        transform_mat.invert_from(self.instance.getNetTransform().getMat())
+        transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        self.culling_frustum = CullingFrustum(camera.realCamLens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
+        self.culling_frustum = CullingFrustum(camera.lens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
     def global_to_shape_coord(self, x, y):
         return (x / self.scale, y / self.scale)

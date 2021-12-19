@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
+from panda3d.core import PerspectiveLens, NodePath, LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
@@ -31,12 +31,9 @@ from . import utils
 from math import sin, cos, acos, tan, atan, sqrt, pi
 
 class CameraBase(object):
-    def __init__(self, camera_np, cam, lens):
-        #Camera node
-        self.camera_np = camera_np
-        self.cam = cam
-        self.camLens = lens
-        self.realCamLens = None
+    def __init__(self):
+        self .camera_np = NodePath('observer')
+        self.lens = PerspectiveLens()
         #Field of view (vertical)
         self.default_fov = None
         self.fov = None
@@ -48,21 +45,12 @@ class CameraBase(object):
         #Current zoom factor
         self.zoom_factor = 1.0
         self.linked_cams = []
-        self.inverse_z = False
 
     def add_linked_cam(self, cam):
         self.linked_cams.append(cam)
 
     def init(self):
-        self.realCamLens = self.camLens.make_copy()
         self.init_fov()
-
-    def update_planes(self, near_plane, far_plane):
-        if settings.use_inverse_z:
-            self.camLens.setNearFar(far_plane, near_plane)
-        else:
-            self.camLens.setNearFar(near_plane, far_plane)
-        self.realCamLens.setNearFar(near_plane, far_plane)
 
     def init_fov(self):
         if base.pipe is not None:
@@ -76,7 +64,7 @@ class CameraBase(object):
         self.fov = settings.default_fov
         self.do_set_fov(settings.default_fov)
         self.default_fov = settings.default_fov
-        self.default_focal = self.realCamLens.get_focal_length()
+        self.default_focal = self.lens.get_focal_length()
         self.set_film_size(self.width, self.height)
 
     def do_set_fov_lens(self, lens, hfov, vfov):
@@ -85,8 +73,7 @@ class CameraBase(object):
 
     def do_set_fov(self, fov):
         hfov = 2 * atan(tan(fov * pi / 180 / 2) * self.width / self.height) * 180 / pi
-        self.do_set_fov_lens(self.camLens, hfov, fov)
-        self.do_set_fov_lens(self.realCamLens, hfov, fov)
+        self.do_set_fov_lens(self.lens, hfov, fov)
         for cam in self.linked_cams:
             self.do_set_fov_lens(cam.node().get_lens(), hfov, fov)
         self.fov = fov
@@ -101,18 +88,17 @@ class CameraBase(object):
         lens.set_focal_length(focal)
 
     def set_film_size(self, width, height):
-        self.do_set_film_size_lens(self.camLens, width, height)
-        self.do_set_film_size_lens(self.realCamLens, width, height)
+        self.do_set_film_size_lens(self.lens, width, height)
         for cam in self.linked_cams:
             self.do_set_film_size_lens(cam.node().get_lens(), width, height)
         self.height = height
         self.width = width
-        self.fov = self.realCamLens.getVfov()
+        self.fov = self.lens.get_vfov()
         self.update_zoom_factor()
         self.calc_pixel_size()
 
     def update_zoom_factor(self):
-        self.zoom_factor = self.realCamLens.get_focal_length() / self.default_focal
+        self.zoom_factor = self.lens.get_focal_length() / self.default_focal
 
     def zoom(self, factor):
         zoom_factor = self.zoom_factor * factor
@@ -159,7 +145,7 @@ class CameraBase(object):
 
     def calc_exact_pixel_size_of(self, distance, radius):
         v=LPoint4(0.0, distance, radius, 1.0)
-        w = self.realCamLens.getProjectionMat().xform(v)
+        w = self.lens.get_projection_mat().xform(v)
         if w[3] == 0.0:
             return 0
         return w[1] / w[3] * self.height
@@ -257,8 +243,8 @@ class RotateAnchorHelper():
 
 class CameraHolder(CameraBase):
     #TODO: this should inherit from the Anchor base class
-    def __init__(self, camera_np, cam, lens):
-        CameraBase.__init__(self, camera_np, cam, lens)
+    def __init__(self):
+        CameraBase.__init__(self)
         self.anchor = CameraAnchor(self, AbsoluteReferenceFrame())
         self.has_scattering = False
         self.scattering = None
@@ -329,13 +315,10 @@ class CameraHolder(CameraBase):
         if not settings.camera_at_origin:
             self.camera_np.set_pos(*self.get_local_position())
         self.camera_np.set_quat(LQuaternion(*self.get_absolute_orientation()))
-        if self.realCamLens is not None:
-            mat = self.camera_np.getMat()
-            bh = self.realCamLens.make_bounds()
-            self.anchor.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
-            mat = self.camera_np.getMat()
-            bh = self.realCamLens.make_bounds()
-            self.anchor.frustum = InfiniteFrustum(bh, mat, self.anchor.get_absolute_position())
+        mat = self.camera_np.get_mat()
+        bh = self.lens.make_bounds()
+        self.anchor.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
+        self.anchor.frustum = InfiniteFrustum(bh, mat, self.anchor.get_absolute_position())
         self.anchor.pixel_size = self.pixel_size
 
 class EventsControllerBase(DirectObject):
@@ -518,8 +501,8 @@ class FixedCameraController(CameraController):
     def mouse_click_event(self):
         if not self.state == self.STATE_DEFAULT: return
         self.mouse_control = RotateAnchorHelper(self.camera)
-        orbit_speed_z = self.camera.realCamLens.getHfov() / 180 * pi / 2
-        orbit_speed_x = self.camera.realCamLens.getVfov() / 180 * pi / 2
+        orbit_speed_z = self.camera.lens.get_hfov() / 180 * pi / 2
+        orbit_speed_x = self.camera.lens.get_vfov() / 180 * pi / 2
         self.mouse_control.start(orbit_speed_x, orbit_speed_z)
         self.state = self.STATE_MOUSE_DRAG
 

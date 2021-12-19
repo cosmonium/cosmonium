@@ -636,9 +636,10 @@ class RoamingRalphDemo(CosmoniumBase):
         self.shadows = True
 
         self.cam.node().set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.NearCameraFlag)
-        self.observer = CameraHolder(self.camera, self.cam, self.camLens)
+        self.observer = CameraHolder()
         self.observer.init()
         self.scene_manager = StaticSceneManager()
+        self.scene_manager.init_camera(self.observer, self.cam)
         self.scene_manager.scale = 1.0
         self.worlds = Worlds()
 
@@ -825,6 +826,9 @@ class RoamingRalphDemo(CosmoniumBase):
         for world  in self.worlds.worlds:
             world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
             world.scene_anchor.update(self.scene_manager)
+
+        self.scene_manager.update_scene_and_camera(0, self.observer)
+
         self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
 
         self.scene_manager.build_scene(self.common_state, self.win, self.observer, [], [])

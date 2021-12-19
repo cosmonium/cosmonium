@@ -44,16 +44,16 @@ class SceneManagerBase:
     def add_background_object(self, instance):
         raise NotImplementedError()
 
-    def init_camera(self, camera):
+    def init_camera(self, camera_holder, default_camera):
         raise NotImplementedError()
 
     def set_camera_mask(self, flags):
         raise NotImplementedError()
 
-    def update_scene_and_camera(self, distance_to_nearest, camera):
+    def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         raise NotImplementedError()
 
-    def build_scene(self, state, win, camera, visibles, resolved):
+    def build_scene(self, state, win, camera_holder, visibles, resolved):
         raise NotImplementedError()
 
     def ls(self):
@@ -62,9 +62,15 @@ class SceneManagerBase:
 class StaticSceneManager(SceneManagerBase):
     def __init__(self):
         SceneManagerBase.__init__(self)
-        self.near_plane = settings.near_plane
-        self.far_plane = settings.far_plane
+        self.camera = None
+        self.lens = None
         self.infinite_far_plane = settings.infinite_far_plane
+        self.near_plane = settings.near_plane
+        if self.infinite_far_plane:
+            self.far_plane = float('inf')
+        else:
+            self.far_plane = settings.far_plane
+        self.infinite_plane = settings.infinite_plane
         self.auto_infinite_plane = settings.auto_infinite_plane
         self.lens_far_limit = settings.lens_far_limit
         self.root = render.attach_new_node('root')
@@ -79,26 +85,24 @@ class StaticSceneManager(SceneManagerBase):
     def add_background_object(self, instance):
         instance.reparent_to(self.root)
 
-    def init_camera(self, camera):
-        if self.infinite_far_plane:
-            far_plane = float('inf')
-        else:
-            far_plane = self.far_plane
+    def init_camera(self, camera_holder, default_camera):
+        self.camera = default_camera
+        self.lens = default_camera.node().get_lens()
         if self.auto_infinite_plane:
             self.infinity = self.near_plane / self.lens_far_limit / 1000
         else:
             self.infinity = self.infinite_plane
-        print("Planes: ", self.near_plane, far_plane)
-        camera.update_planes(self.near_plane, far_plane)
-        self.camera = camera.cam
+        print("Planes: ", self.near_plane, self.far_plane)
+        self.lens.set_near_far(self.near_plane, self.far_plane)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
 
-    def update_scene_and_camera(self, distance_to_nearest, camera):
-        pass
+    def update_scene_and_camera(self, distance_to_nearest, camera_holder):
+        self.camera.set_pos(camera_holder.camera_np.get_pos())
+        self.camera.set_quat(camera_holder.camera_np.get_quat())
 
-    def build_scene(self, state, win, camera, visibles, resolved):
+    def build_scene(self, state, win, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
 
     def ls(self):
@@ -107,10 +111,16 @@ class StaticSceneManager(SceneManagerBase):
 class DynamicSceneManager(SceneManagerBase):
     def __init__(self):
         SceneManagerBase.__init__(self)
+        self.camera = None
+        self.lens = None
         self.near_plane = settings.near_plane
-        self.far_plane = settings.far_plane
-        self.infinite_plane = settings.infinite_plane
         self.infinite_far_plane = settings.infinite_far_plane
+        if self.infinite_far_plane:
+            self.far_plane = float('inf')
+        else:
+            self.far_plane = settings.far_plane
+        self.inverse_z = settings.use_inverse_z
+        self.infinite_plane = settings.infinite_plane
         self.auto_infinite_plane = settings.auto_infinite_plane
         self.lens_far_limit = settings.lens_far_limit
         self.auto_scale = settings.auto_scale
@@ -136,23 +146,25 @@ class DynamicSceneManager(SceneManagerBase):
     def add_background_object(self, instance):
         instance.reparent_to(self.root)
 
-    def init_camera(self, camera):
-        if self.infinite_far_plane:
-            far_plane = float('inf')
+    def update_planes(self):
+        if self.inverse_z:
+            self.lens.set_near_far(self.far_plane, self.near_plane)
         else:
-            far_plane = self.far_plane
-        print("Planes: ", self.near_plane, far_plane)
-        camera.update_planes(self.near_plane, far_plane)
-        self.camera = camera.cam
+            self.lens.set_near_far(self.near_plane, self.far_plane)
+
+    def init_camera(self, camera_holder, default_camera):
+        self.camera = default_camera
+        self.lens = camera_holder.lens.make_copy()
+        self.camera.node().set_lens(self.lens)
+        print("Planes: ", self.near_plane, self.far_plane)
+        self.update_planes()
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
 
-    def update_scene_and_camera(self, distance_to_nearest, camera):
-        if self.infinite_far_plane:
-            far_plane = float('inf')
-        else:
-            far_plane = self.far_plane
+    def update_scene_and_camera(self, distance_to_nearest, camera_holder):
+        self.lens = camera_holder.lens.make_copy()
+        self.camera.node().set_lens(self.lens)
         if self.auto_scale:
             if distance_to_nearest is None:
                 self.scale = self.max_scale
@@ -165,18 +177,20 @@ class DynamicSceneManager(SceneManagerBase):
             if self.set_frustum:
                 #near_plane = min(distance_to_nearest / settings.scale / 2.0, settings.near_plane)
                 if self.scale < 1.0:
-                    near_plane = self.scale
+                    self.near_plane = self.scale
                 else:
-                    near_plane = self.near_plane
-                camera.update_planes(near_plane, far_plane)
+                    self.near_plane = self.near_plane
+        self.update_planes()
         if self.auto_infinite_plane:
-            self.infinity = near_plane / self.lens_far_limit / 1000
+            self.infinity = self.near_plane / self.lens_far_limit / 1000
         else:
             self.infinity = self.infinite_plane
         self.midPlane = self.infinity / self.mid_plane_ratio
+        self.camera.set_pos(camera_holder.camera_np.get_pos())
+        self.camera.set_quat(camera_holder.camera_np.get_quat())
 
     @pstat
-    def build_scene(self, state, win, camera, visibles, resolved):
+    def build_scene(self, state, win, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.setShaderInput("midPlane", self.midPlane)
         self.pointset.reset()
@@ -233,7 +247,7 @@ class RegionSceneManager(SceneManagerBase):
     def add_background_object(self, instance):
         instance.reparent_to(self.background_region.root)
 
-    def init_camera(self, camera):
+    def init_camera(self, camera_holder, default_camera):
         pass
 
     def set_camera_mask(self, flags):
@@ -241,7 +255,7 @@ class RegionSceneManager(SceneManagerBase):
         for region in self.regions:
             region.set_camera_mask(flags)
 
-    def update_scene_and_camera(self, distance_to_nearest, camera):
+    def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         pass
 
     def clear_scene(self):
@@ -250,7 +264,7 @@ class RegionSceneManager(SceneManagerBase):
         self.regions = []
 
     @pstat
-    def build_scene(self, world, win, camera, visibles, resolved):
+    def build_scene(self, world, win, camera_holder, visibles, resolved):
         state = world.get_state()
         self.clear_scene()
         background_resolved = []
@@ -259,8 +273,8 @@ class RegionSceneManager(SceneManagerBase):
             if not resolved.body.virtual_object and resolved.body.scene_anchor.instance is not None:
                 if not resolved.body.background:
                     if resolved.distance_to_obs > 0:
-                        coef = -resolved.vector_to_obs.dot(camera.anchor.camera_vector)
-                        near = (resolved.distance_to_obs  - resolved.get_bounding_radius()) * coef  * camera.cos_fov2 / self.scale
+                        coef = -resolved.vector_to_obs.dot(camera_holder.anchor.camera_vector)
+                        near = (resolved.distance_to_obs  - resolved.get_bounding_radius()) * coef  * camera_holder.cos_fov2 / self.scale
                         far = (resolved.distance_to_obs + resolved.get_bounding_radius()) * coef / self.scale
                         near = max(near, self.min_near)
                     else:
@@ -313,7 +327,7 @@ class RegionSceneManager(SceneManagerBase):
             base = 0.0
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
-                region.create(win, state, camera, self.camera_mask, base, min(base + region_size, 1 - 1e-6), sort_index)
+                region.create(win, state, camera_holder, self.camera_mask, base, min(base + region_size, 1 - 1e-6), sort_index)
                 base += region_size
         self.attach_spread_objects()
         self.spread_objects = []
@@ -376,17 +390,17 @@ class SceneRegion:
         self.near = min(self.near, other.near)
         self.far = max(self.far, other.far)
 
-    def create(self, win, state, camera, camera_mask, section_near, section_far, sort_index):
+    def create(self, win, state, camera_holder, camera_mask, section_near, section_far, sort_index):
         self.root.set_state(state)
         for body in self.bodies:
             body.scene_anchor.instance.reparent_to(self.root)
         self.cam = Camera("region-cam")
         self.cam.set_camera_mask(camera_mask)
-        lens = camera.camLens.make_copy()
+        lens = camera_holder.lens.make_copy()
         lens.set_near_far(self.near * 0.99, self.far * 1.01)
         self.cam.set_lens(lens)
         self.cam_np = self.root.attach_new_node(self.cam)
-        self.cam_np.set_quat(camera.camera_np.get_quat())
+        self.cam_np.set_quat(camera_holder.camera_np.get_quat())
         self.win = win
         self.region = win.make_display_region((0, 1, 0, 1))
         self.region.disable_clears()

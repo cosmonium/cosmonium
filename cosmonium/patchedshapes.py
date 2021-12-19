@@ -1330,7 +1330,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     def create_culling_frustum(self, scene_manager, camera):
         min_radius = self.parent.body.surface.get_min_radius() / self.parent.height_scale
         altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
-        cam_transform_mat = camera.cam.getNetTransform().getMat()
+        cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
         if False:
             upper = LMatrix3()
             scale = self.parent.body.surface.get_scale() * self.parent.body.scene_scale_factor
@@ -1342,7 +1342,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             transform_mat = LMatrix4(upper, upper.xform(-self.parent.body.scene_position))
         else:
             transform_mat = LMatrix4()
-            transform_mat.invert_from(self.instance.getNetTransform().getMat())
+            transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
         if self.parent.body.support_offset_body_center and settings.offset_body_center:
             self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
@@ -1352,7 +1352,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             self.model_body_center_offset[2] /= scale[2]
         else:
             self.model_body_center_offset = LVector3d()
-        self.culling_frustum = HorizonCullingFrustum(camera.realCamLens, self.parent.height_scale / scene_manager.scale, transform_mat, min_radius, altitude_to_min_radius,
+        self.culling_frustum = HorizonCullingFrustum(camera.lens, self.parent.height_scale / scene_manager.scale, transform_mat, min_radius, altitude_to_min_radius,
                                                      self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
                                                      settings.cull_far_patches, settings.cull_far_patches_threshold)
 

@@ -440,7 +440,7 @@ class Cosmonium(CosmoniumBase):
             self.common_state.set_shader_input("oid_store", self.oid_texture)
         else:
             self.oid_texture = None
-        self.observer = CameraHolder(self.camera, self.cam, self.camLens)
+        self.observer = CameraHolder()
         self.autopilot = AutoPilot(self)
         self.mouse = Mouse(self, self.oid_texture)
         if self.near_cam is not None:
@@ -515,7 +515,7 @@ class Cosmonium(CosmoniumBase):
                 self.scene_manager = RegionSceneManager()
             else:
                 print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
-            self.scene_manager.init_camera(self.observer)
+            self.scene_manager.init_camera(self.observer, self.cam)
             self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
@@ -1384,8 +1384,8 @@ class Cosmonium(CosmoniumBase):
     def print_debug(self):
         print("Global:")
         print("\tscale", self.scene_manager.scale)
-        print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
-        print("\tFoV", self.camLens.get_fov())
+        print("\tPlanes", self.observer.lens.get_near(), self.observer.lens.get_far())
+        print("\tFoV", self.observer.lens.get_fov())
         print("Camera:")
         print("\tGlobal position", self.observer.get_absolute_reference_point())
         print("\tLocal position", self.observer.get_local_position())

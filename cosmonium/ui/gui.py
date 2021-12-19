@@ -286,8 +286,7 @@ class Gui(object):
             self.hud.bottomRight.set(0, "%s (%.0fx)" % (date, self.time.multiplier))
         else:
             self.hud.bottomRight.set(0, _("%s (Paused)") % (date))
-        #self.hud.bottomRight.set(1, "FOV: %.0f°/%.0f°" % (self.cosmonium.realCamLens.getHfov(), self.cosmonium.realCamLens.getVfov()))
-        self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.realCamLens.getVfov()) + (self.camera.zoom_factor, )))
+        self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.lens.get_vfov()) + (self.camera.zoom_factor, )))
 
     def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
