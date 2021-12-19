@@ -18,8 +18,6 @@
 #
 
 
-from copy import copy
-
 # Coordinate System
 # Panda3D Coordinate system : Z-Up Right-handed
 #    x : right
@@ -49,18 +47,3 @@ except ImportError as e:
 
 BodyReferenceFrame = AnchorReferenceFrame
 AbsoluteReferenceFrame = J2000BarycentricEclipticReferenceFrame
-
-class FramesDB(object):
-    def __init__(self):
-        self.frames = {}
-
-    def register_frame(self, frame_name, frame):
-        self.frames[frame_name] = frame
-
-    def get(self, name):
-        if name in self.frames:
-            return copy(self.frames[name])
-        else:
-            print("DB frames:", "Frame", name, "not found")
-
-frames_db = FramesDB()

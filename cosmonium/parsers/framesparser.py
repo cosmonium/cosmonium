@@ -23,7 +23,7 @@ from ..astro.frame import J2000EquatorialReferenceFrame, J2000BarycentricEquator
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
 from ..astro.frame import BodyReferenceFrame
-from ..astro.frame import frames_db
+from ..astro.framesdb import frames_db
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser

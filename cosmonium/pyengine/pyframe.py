@@ -262,18 +262,3 @@ class CartesianSurfaceReferenceFrame(AnchorReferenceFrame):
         rotation = LQuaterniond()
         look_at(rotation, lon, vert)
         return rotation
-
-class FramesDB(object):
-    def __init__(self):
-        self.frames = {}
-
-    def register_frame(self, frame_name, frame):
-        self.frames[frame_name] = frame
-
-    def get(self, name):
-        if name in self.frames:
-            return copy(self.frames[name])
-        else:
-            print("DB frames:", "Frame", name, "not found")
-
-frames_db = FramesDB()
