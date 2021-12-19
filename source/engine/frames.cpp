@@ -352,8 +352,8 @@ RelativeReferenceFrame::RelativeReferenceFrame(ReferenceFrame *parent_frame, LPo
 
 RelativeReferenceFrame::RelativeReferenceFrame(RelativeReferenceFrame const &other) :
     parent_frame(other.parent_frame),
-    frame_position(frame_position),
-    frame_orientation(frame_orientation)
+    frame_position(other.frame_position),
+    frame_orientation(other.frame_orientation)
 {
 }
 
