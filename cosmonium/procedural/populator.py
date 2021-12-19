@@ -75,9 +75,9 @@ class TerrainPopulatorBase(object):
             count += 1
         return offsets
 
-    async def create_object_template(self):
+    async def create_object_template(self, scene_anchor):
         if self.object_template.instance is None:
-            await self.object_template.create_instance()
+            await self.object_template.create_instance(scene_anchor)
             self.configure_object_template()
 
     def delete_object_template(self):
@@ -87,12 +87,12 @@ class TerrainPopulatorBase(object):
     def configure_object_template(self):
         pass
 
-    async def create_instance(self):
-        await self.create_object_template()
+    async def create_instance(self, scene_anchor):
+        await self.create_object_template(scene_anchor)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.object_template.instance is not None and self.object_template.instance_ready:
-            self.object_template.update_instance(camera_pos, camera_rot)
+            self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         if self.object_template.instance is not None and self.object_template.instance_ready:
@@ -280,11 +280,11 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
                                           self.object_template.shape.isntance)
         self.rebuild = False
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             if self.rebuild:
                 self.generate_table()
-            self.object_template.update_instance(camera_pos, camera_rot)
+            self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
 
 class TerrainPopulatorPatch(object):
     def __init__(self, data=None):
