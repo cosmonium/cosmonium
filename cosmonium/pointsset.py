@@ -20,7 +20,7 @@
 
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, OmniBoundingVolume, DrawMask
+from panda3d.core import NodePath, OmniBoundingVolume, DrawMask, ShaderAttrib
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
 from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
@@ -38,7 +38,7 @@ class PointsSet(VisibleObject):
         self.use_oids = True
         self.background = background
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True)
+            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=StaticSizePointControl())
         self.shader = shader
 
         self.reset()
@@ -69,6 +69,9 @@ class PointsSet(VisibleObject):
         self.instance.set_depth_write(False)
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.default_camera_mask)
+        if self.use_sizes:
+            attrib = self.instance.get_attrib(ShaderAttrib)
+            self.instance.setAttrib(attrib.set_flag(ShaderAttrib.F_shader_point_size, True))
 
     def reset(self):
         self.points = []
