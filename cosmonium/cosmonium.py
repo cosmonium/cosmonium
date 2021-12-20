@@ -115,6 +115,7 @@ class CosmoniumBase(ShowBase):
         self.wireframe_filled = False
         self.trigger_check_settings = True
         self.request_fullscreen = False
+        self.common_state = NodePath("<state>")
 
         configParser.load()
         self.init_lang()
@@ -144,8 +145,6 @@ class CosmoniumBase(ShowBase):
         self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
-
-        self.common_state = NodePath("<state>")
 
         self.common_state.setShaderAuto()
 
