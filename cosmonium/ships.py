@@ -65,6 +65,7 @@ class NoShip(ShipBase):
         return 0.0
 
 class VisibleShip(ShipBase):
+    anchor_class = 2
     editable = True
     orbit_rot_camera = False
     def __init__(self, name, ship_object, radius):
@@ -75,9 +76,7 @@ class VisibleShip(ShipBase):
         self.ship_object.shader.color_picking = False
         self.radius = radius
         self.add_component(ship_object)
-        #TODO: Remove this
-        self.anchor.content = 2
-        self.anchor._extend = radius
+        self.anchor.set_bounding_radius(radius)
         self.ship_object.set_scale(LVector3d(self.radius, self.radius, self.radius))
         return
 
