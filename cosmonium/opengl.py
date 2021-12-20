@@ -261,6 +261,7 @@ def check_and_create_rendering_buffers(showbase):
         float_depth = True
         depth_bits = 24
     else:
+        showbase.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
         float_depth = False
         depth_bits = 1
     if False:

@@ -23,7 +23,7 @@ from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowPropertie
 from panda3d.core import Texture, CardMaker, CullBinManager
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
-from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
+from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
 
 from direct.task.Task import Task
@@ -519,7 +519,6 @@ class Cosmonium(CosmoniumBase):
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
-        self.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 
         self.set_ambient(settings.global_ambient)
 
