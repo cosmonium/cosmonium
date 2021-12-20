@@ -168,12 +168,13 @@ class SimpleWorld(SceneWorld):
         return self.apparent_radius
 
 class CartesianWorld(SimpleWorld):
+    anchor_class = 0
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
         self.components.visible = True
 
     def create_anchor(self):
-        return CartesianAnchor(0, self, AbsoluteReferenceFrame())
+        return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame())
 
     def create_scene_anchor(self):
         return SceneAnchor(self.anchor, False, True)
