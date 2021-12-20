@@ -129,8 +129,8 @@ class CosmoniumBase(ShowBase):
         else:
             self.buttonThrowers = [NodePath('dummy')]
             self.camera = NodePath('dummy')
-            self.cam = self.camera.attach_new_node('dummy')
-            self.camLens = PerspectiveLens()
+            self.cam = self.camera.attach_new_node(Camera('camera', PerspectiveLens()))
+            self.camLens = self.cam.node().get_lens()
             settings.shader_version = 130
 
         #TODO: should find a better way than patching classes...
@@ -504,9 +504,7 @@ class Cosmonium(CosmoniumBase):
 
         self.scene_manager = None
         print("Using scene manager '{}'".format(settings.scene_manager))
-        if self.app_config.test_start:
-            self.scene_manager = DynamicSceneManager()
-        else:
+        if not self.app_config.test_start:
             if settings.scene_manager == 'static':
                 self.scene_manager = StaticSceneManager()
             elif settings.scene_manager == 'dynamic':
@@ -515,8 +513,10 @@ class Cosmonium(CosmoniumBase):
                 self.scene_manager = RegionSceneManager()
             else:
                 print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
-            self.scene_manager.init_camera(self.observer, self.cam)
-            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+        else:
+            self.scene_manager = DynamicSceneManager()
+        self.scene_manager.init_camera(self.observer, self.cam)
+        self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
