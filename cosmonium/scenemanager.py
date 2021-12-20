@@ -230,6 +230,7 @@ class RegionSceneManager(SceneManagerBase):
         self.background_region = None
         self.camera_mask = None
         self.infinity = 1e9
+        self.inverse_z = settings.use_inverse_z
 
     def attach_new_anchor(self, instance):
         pass
@@ -327,7 +328,7 @@ class RegionSceneManager(SceneManagerBase):
             base = 0.0
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
-                region.create(win, state, camera_holder, self.camera_mask, base, min(base + region_size, 1 - 1e-6), sort_index)
+                region.create(win, state, camera_holder, self.camera_mask, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
                 base += region_size
         self.attach_spread_objects()
         self.spread_objects = []
@@ -390,14 +391,17 @@ class SceneRegion:
         self.near = min(self.near, other.near)
         self.far = max(self.far, other.far)
 
-    def create(self, win, state, camera_holder, camera_mask, section_near, section_far, sort_index):
+    def create(self, win, state, camera_holder, camera_mask, inverse_z, section_near, section_far, sort_index):
         self.root.set_state(state)
         for body in self.bodies:
             body.scene_anchor.instance.reparent_to(self.root)
         self.cam = Camera("region-cam")
         self.cam.set_camera_mask(camera_mask)
         lens = camera_holder.lens.make_copy()
-        lens.set_near_far(self.near * 0.99, self.far * 1.01)
+        if inverse_z:
+            lens.set_near_far(self.far * 1.01, self.near * 0.99)
+        else:
+            lens.set_near_far(self.near * 0.99, self.far * 1.01)
         self.cam.set_lens(lens)
         self.cam_np = self.root.attach_new_node(self.cam)
         self.cam_np.set_quat(camera_holder.camera_np.get_quat())
@@ -409,7 +413,10 @@ class SceneRegion:
         self.region.set_camera(self.cam_np)
         self.region.set_scissor_enabled(False)
         self.region.set_sort(sort_index)
-        self.region.set_depth_range(section_near, section_far)
+        if inverse_z:
+            self.region.set_depth_range(section_far, section_near)
+        else:
+            self.region.set_depth_range(section_near, section_far)
         if self.has_points:
             self.pointset.update()
             self.haloset.update()
