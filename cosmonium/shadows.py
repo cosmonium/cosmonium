@@ -197,8 +197,6 @@ class ShadowMapDataSource(DataSource):
         self.calculate_shadow_coef = calculate_shadow_coef
 
     def apply(self, shape, instance):
-        if self.caster.shadow_map is None:
-            print("ERROR", self.name, self.caster, shape)
         shape.instance.set_shader_input('%s_depthmap' % self.name, self.caster.shadow_map.depthmap)
         shape.instance.set_shader_input("%sLightSource" % self.name, self.caster.shadow_map.cam)
         if not self.calculate_shadow_coef or self.caster.occluder is None:
@@ -414,14 +412,14 @@ class SphereShadows(ShadowBase):
         self.nb_updates -= 1
         if self.nb_updates == 0:
             if self.empty() and self.had_sphere_occluder:
-                print("Remove sphere shadow component on", self.target.owner.get_name())
+                print("Remove sphere shadow component on", self.target.owner.get_name(), self.target.get_name() or '')
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.shader_component)
                 self.target.sources.remove_source(self.data_source)
                 self.rebuild_needed = True
             elif not self.had_sphere_occluder and not self.empty():
                 self.target.shader.add_shadows(self.shader_component)
                 self.target.sources.add_source(self.data_source)
-                print("Add sphere shadow component on", self.target.owner.get_name())
+                print("Add sphere shadow component on", self.target.owner.get_name()), self.target.get_name() or ''
                 self.rebuild_needed = True
         return self.rebuild_needed
 
@@ -439,7 +437,7 @@ class ShadowMapShadows(ShadowBase):
         if not caster.is_valid(): return
         self.casters.append(caster)
         if not caster in self.old_casters:
-            print("Add shadow caster", caster.name, "on", self.target.owner.get_name())
+            print("Add shadow caster", caster.name, "on", self.target.owner.get_name(), self.target.get_name() or '')
             shadow_shader =  ShaderShadowMap(caster.name, use_bias=self_shadow)
             self.shader_components[caster] = shadow_shader
             data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow, calculate_shadow_coef=True)
@@ -451,7 +449,7 @@ class ShadowMapShadows(ShadowBase):
             self.old_casters.remove(caster)
 
     def clear_shadows(self):
-        for caster in self.old_casters:
+        for caster in self.casters:
             data_source = self.data_sources[caster]
             self.target.sources.remove_source(data_source)
         self.casters = []
@@ -469,7 +467,7 @@ class ShadowMapShadows(ShadowBase):
         self.nb_updates -= 1
         if self.nb_updates == 0:
             for caster in self.old_casters:
-                print("Remove shadow caster", caster.name, "on", self.target.owner.get_name())
+                print("Remove shadow caster", caster.name, "on", self.target.owner.get_name(), self.target.get_name() or '')
                 shadow_shader = self.shader_components[caster]
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
                 del self.shader_components[caster]
