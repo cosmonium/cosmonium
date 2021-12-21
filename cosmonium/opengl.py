@@ -238,7 +238,7 @@ def check_opengl_config(base):
 
 def check_and_create_rendering_buffers(showbase):
     if not settings.render_scene_to_buffer:
-        return
+        return showbase.win, []
 
     if not settings.buffer_texture:
         print("Render to buffer not supported")
@@ -298,4 +298,4 @@ def check_and_create_rendering_buffers(showbase):
     final_quad.set_shader(final_quad_shader)
     final_quad.set_shader_input("color_buffer", color_buffer)
     final_quad.set_shader_input("exposure", 2)
-    return textures
+    return manager.buffers[0], textures

@@ -142,7 +142,7 @@ class CosmoniumBase(ShowBase):
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
-        self.render_textures = check_and_create_rendering_buffers(self)
+        self.render_buffer, self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
 
@@ -1367,7 +1367,7 @@ class Cosmonium(CosmoniumBase):
 
         self.find_shadows()
         self.update_instances()
-        self.scene_manager.build_scene(self.common_state, self.win, self.observer, self.visibles, self.resolved)
+        self.scene_manager.build_scene(self.common_state, self.render_buffer, self.observer, self.visibles, self.resolved)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
