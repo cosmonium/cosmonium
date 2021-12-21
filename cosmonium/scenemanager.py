@@ -324,8 +324,12 @@ class RegionSceneManager(SceneManagerBase):
                 current_region.add_point(visible)
         if len(self.regions) > 0:
             region_size = 1.0 / len(self.regions)
-            # Start with the nearest region, which will start a depth 0 (i.e. near plane)
-            base = 0.0
+            if not self.inverse_z:
+                # Start with the nearest region, which will start a depth 0 (i.e. near plane)
+                base = 0.0
+            else:
+                base = 1.0
+                region_size = -region_size
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
                 region.create(win, state, camera_holder, self.camera_mask, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
