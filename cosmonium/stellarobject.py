@@ -408,7 +408,7 @@ class StellarObject(NamedObject):
             if self.system is not None:
                 self.system.set_visibility_override(override)
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
-            self.check_visibility(self.context.observer.frustum, self.context.observer.pixel_size)
+            self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 
     def update_visible_obs(self, observer):
         self.visible_components.update_obs(observer)
