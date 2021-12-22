@@ -39,12 +39,10 @@ class LodControl(object):
         return False
 
     def should_instanciate(self, patch, apparent_patch_size, distance):
-        #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return (patch.visible or patch.lod == 0) and len(patch.children) == 0
+        return patch.visible and len(patch.children) == 0
 
     def should_remove(self, patch, apparent_patch_size, distance):
-        #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return (not patch.visible and patch.lod != 0)
+        return not patch.visible
 
 #The lod control classes uses hysteresis to avoid cycle of split/merge due to
 #precision errors.
