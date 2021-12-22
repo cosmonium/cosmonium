@@ -22,7 +22,7 @@ from panda3d.core import LQuaterniond, LVector3d
 
 from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
 
-from ..astro.frame import J2000EquatorialReferenceFrame
+from ..astro.frame import J2000BarycentricEclipticReferenceFrame
 
 from math import asin, atan2, pi
 
@@ -77,7 +77,7 @@ class FixedRotation(Rotation):
 
 class UnknownRotation(FixedRotation):
     def __init__(self):
-        FixedRotation.__init__(self, LQuaterniond(), J2000EquatorialReferenceFrame())
+        FixedRotation.__init__(self, LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
 
 class UniformRotation(Rotation):
     dynamic = True
