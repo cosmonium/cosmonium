@@ -99,17 +99,17 @@ class AppState(object):
         cosmonium.time_task(None)
 
         if self.global_position is not None:
-            cosmonium.ship._global_position = self.global_position
+            cosmonium.ship.anchor.set_absolute_reference_point(self.global_position)
         else:
             if self.sync is not None:
-                cosmonium.ship._global_position = self.sync.anchor._global_position
+                cosmonium.ship.anchor.set_absolute_reference_point(self.sync.anchor.get_absolute_reference_point())
             elif self.follow:
-                cosmonium.ship._global_position = self.follow.anchor._global_position
+                cosmonium.ship.anchor.set_absolute_reference_point(self.follow.anchor.get_absolute_reference_point())
             else:
-                cosmonium.ship._global_position = LPoint3d()
+                cosmonium.ship.anchor.set_absolute_reference_point(LPoint3d())
         if self.absolute:
-            cosmonium.ship.set_local_position(self.position)
-            cosmonium.ship.set_absolute_orientation(self.orientation)
+            cosmonium.ship.anchor.set_local_position(self.position)
+            cosmonium.ship.anchor.set_absolute_orientation(self.orientation)
         else:
             cosmonium.ship.anchor.set_frame_position(self.position)
             cosmonium.ship.anchor.set_frame_orientation(self.orientation)
