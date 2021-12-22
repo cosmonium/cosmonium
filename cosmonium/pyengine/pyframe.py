@@ -146,10 +146,6 @@ class J2000EquatorialReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):
         return self.orientation
 
-class J2000BarycentricEquatorialReferenceFrame(J2000EquatorialReferenceFrame):
-    def __init__(self):
-        J2000EquatorialReferenceFrame.__init__(self, SolBarycenter())
-
 class RelativeReferenceFrame(ReferenceFrame):
     def __init__(self, parent_frame, position, orientation):
         ReferenceFrame.__init__(self)
