@@ -51,14 +51,7 @@ class BackgroundLabel(ObjectLabel):
         else:
             self.rel_position = None
         if self.rel_position != None:
-            self.instance.setPos(*self.rel_position)
-            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * infinity)
-        else:
-            scale = 0.0
-        if scale < 1e-7:
-            print("Label too far", self.get_name())
-            scale = 1e-7
-        self.instance.setScale(scale)
+            self.instance.set_pos(*self.rel_position)
 
     def check_visibility(self, frustum, pixel_size):
         ObjectLabel.check_visibility(self, frustum, pixel_size)
@@ -67,6 +60,18 @@ class BackgroundLabel(ObjectLabel):
 
     def update_instance(self, scene_manager, camera_pos, orientation):
         self.look_at.set_pos(LVector3(*(orientation.xform(LVector3d.forward()))))
+        if self.rel_position != None:
+            distance = self.rel_position.length()
+            vector = self.rel_position / distance
+            z_coef = vector.dot(self.context.observer.anchor.camera_vector)
+            z_distance = distance * z_coef
+            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * z_distance)
+        else:
+            scale = 0.0
+        if scale < 1e-7:
+            print("Label too far", self.get_name())
+            scale = 1e-7
+        self.instance.set_scale(scale)
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(orientation.xform(LVector3d.up()))))
 
 class Orbit(VisibleObject):
