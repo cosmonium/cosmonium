@@ -107,11 +107,13 @@ class SimpleWorld(SceneWorld):
         return 0.0
 
     def on_visible(self, scene_manager):
+        self.components.visible = True
         self.scene_anchor.create_instance(scene_manager)
         self.scene_anchor.update(scene_manager)
 
     def on_hidden(self, scene_manager):
         self.scene_anchor.remove_instance()
+        self.components.visible = False
 
     def add_component(self, component):
         self.components.add_component(component)
@@ -171,7 +173,6 @@ class CartesianWorld(SimpleWorld):
     anchor_class = 0
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
-        self.components.visible = True
 
     def create_anchor(self):
         return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame())
@@ -182,7 +183,6 @@ class CartesianWorld(SimpleWorld):
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
-        self.components.visible = True
 
     def create_anchor(self):
         return OriginAnchor()

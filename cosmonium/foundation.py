@@ -256,6 +256,8 @@ class CompositeObject(BaseObject):
             component.update_obs(observer)
 
     def check_visibility(self, frustum, pixel_size):
+        if self.parent != None:
+            self.visible = self.parent.shown and self.parent.visible
         for component in self.components:
             component.check_visibility(frustum, pixel_size)
 

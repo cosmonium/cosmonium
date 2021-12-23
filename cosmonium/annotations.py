@@ -310,7 +310,6 @@ class Grid(VisibleObject):
 
     def __init__(self, name, orientation, color):
         VisibleObject.__init__(self, name)
-        self.visible = True
         self.nbOfPoints = 360
         self.nbOfRings = 17
         self.nbOfSectors = 24
@@ -410,7 +409,6 @@ class Asterism(VisibleObject):
 
     def __init__(self, name):
         VisibleObject.__init__(self, name)
-        self.visible = True
         self.color = bodyClasses.get_orbit_color('constellation')
         self.position = LPoint3d(0, 0, 0)
         self.segments = []
@@ -496,7 +494,6 @@ class NamedAsterism(LabelledObject):
 
     def __init__(self, name):
         LabelledObject.__init__(self, name)
-        self.visible = True
         self.create_components()
 
     def create_label_instance(self):
@@ -529,7 +526,6 @@ class Boundary(VisibleObject):
 
     def __init__(self, name, points = [], color = None):
         VisibleObject.__init__(self, name)
-        self.visible = True
         if color is None:
             color = bodyClasses.get_orbit_color('boundary')
         self.color = color
@@ -590,10 +586,8 @@ class Constellation(NamedObject, LabelledObject):
     def __init__(self, name, center, boundary):
         NamedObject.__init__(self, name, [])
         LabelledObject.__init__(self, name)
-        self.visible = True
         self.center = center
         self.boundary = boundary
-        self.visible = True
         self.create_components()
 
     def create_label_instance(self):
