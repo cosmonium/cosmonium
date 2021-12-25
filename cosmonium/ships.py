@@ -58,6 +58,7 @@ class ShipBase(CartesianWorld):
         pass
 
 class NoShip(ShipBase):
+    virtual_object = True
     def __init__(self):
         ShipBase.__init__(self, "No ship")
 
