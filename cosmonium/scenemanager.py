@@ -223,6 +223,7 @@ class DynamicSceneManager(SceneManagerBase):
 
 class RegionSceneManager(SceneManagerBase):
     min_near = 1e-6
+    max_near_reagion = 1e5
     def __init__(self):
         SceneManagerBase.__init__(self)
         self.regions = []
@@ -301,8 +302,14 @@ class RegionSceneManager(SceneManagerBase):
             farthest_region = SceneRegion(self, self.regions[-1].far, float('inf'))
             self.regions.append(farthest_region)
             if self.regions[0].near > self.min_near:
-                nearest_region = SceneRegion(self, self.min_near, self.regions[0].near)
-                self.regions.insert(0, nearest_region)
+                if self.regions[0].near / self.min_near > self.max_near_reagion:
+                    nearest_region = SceneRegion(self, self.min_near * self.max_near_reagion, self.regions[0].near)
+                    self.regions.insert(0, nearest_region)
+                    nearest_region = SceneRegion(self, self.min_near, self.min_near * self.max_near_reagion)
+                    self.regions.insert(0, nearest_region)
+                else:
+                    nearest_region = SceneRegion(self, self.min_near, self.regions[0].near)
+                    self.regions.insert(0, nearest_region)
             self.background_region = farthest_region
             #print("R", list(map(lambda r: (r.bodies[0].get_name() if len(r.bodies) > 0 else "empty") + f" : {r.near}:{r.far}", self.regions)))
         else:
