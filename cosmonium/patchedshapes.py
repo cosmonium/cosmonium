@@ -846,7 +846,7 @@ class PatchedShapeBase(Shape):
             #Position the frustum relative to the body
             #If lod checking is enabled, the position should be 0, the position of the camera
             #If lod checking is frozen, we use the old relative position
-            self.frustum_node.set_pos(*(self.parent.body.scene_position + self.frustum_rel_position * self.owner.scene_scale_factor))
+            self.frustum_node.set_pos(*(self.parent.body.scene_anchor.scene_position + self.frustum_rel_position * self.owner.scene_anchor.scene_scale_factor))
             #TODO: The frustum is not correctly placed when lod is frozen and scale is changing
 
     def xform_cam_to_model(self, camera_pos):
@@ -864,7 +864,7 @@ class PatchedShapeBase(Shape):
             node = GeomNode('frustum_node')
             node.add_geom(geom)
             self.frustum_node.attach_new_node(node)
-            self.frustum_rel_position = -self.owner.scene_rel_position
+            self.frustum_rel_position = -self.owner.scene_anchor.scene_rel_position
             self.frustum_node.set_quat(self.owner.context.observer.get_absolute_orientation())
             #The frustum position is updated in place_patches()
 
