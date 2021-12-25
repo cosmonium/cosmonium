@@ -324,10 +324,10 @@ class RegionSceneManager(SceneManagerBase):
         if settings.render_sprite_points:
             for visible in visibles:
                 if visible.resolved: continue
-                while visible.z_distance > current_region.far and current_region_index + 1 < len(self.regions):
+                while visible.z_distance  / self.scale > current_region.far and current_region_index + 1 < len(self.regions):
                     current_region_index += 1
                     current_region = self.regions[current_region_index]
-                #print("ADD", visible.body.get_name(), visible.z_distance, "TO", current_region_index)
+                #print("ADD", visible.body.get_name(), visible.z_distance, "TO", current_region_index, current_region.near, current_region.far)
                 current_region.add_point(visible)
         if len(self.regions) > 0:
             region_size = 1.0 / len(self.regions)
