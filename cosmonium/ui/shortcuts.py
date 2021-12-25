@@ -57,7 +57,7 @@ class Shortcuts(DirectObject):
         'f10': 'save-screenshot',
         'shift-f10': 'save-screenshot-no-gui',
         'f11': 'debug-scene-ls',
-        'shift-f11': 'debug-scene-explore',
+        'control-f11': 'debug-scene-explore',
         'f12': 'debug-scene-analyze',
         'shift-f12': 'debug-print-tasks',
 
@@ -177,6 +177,7 @@ class Shortcuts(DirectObject):
             for (key, event) in self.keymap.items():
                 key = key.replace('control', 'meta')
                 modified_keymap[key] = event
+            modified_keymap['shift-f11'] = modified_keymap['f11']
             Shortcuts.keymap = modified_keymap
 
         if Shortcuts.eventmap is None:
