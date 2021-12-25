@@ -41,7 +41,8 @@ PUBLISHED:
 class CullingFrustum : public CullingFrustumBase
 {
 PUBLISHED:
-    CullingFrustum(Lens *lens, LMatrix4 transform_mat, bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin);
+    CullingFrustum(Lens *lens, LMatrix4 transform_mat, double near, double far,
+        bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin);
     virtual bool is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double patch_offset);
 
 protected:
@@ -55,7 +56,8 @@ protected:
 class HorizonCullingFrustum : public CullingFrustumBase
 {
 PUBLISHED:
-    HorizonCullingFrustum(Lens *lens, double scale, LMatrix4 transform_mat, double min_radius, double altitude_to_min_radius, unsigned int max_lod,
+    HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
+        double near, double min_radius, double altitude_to_min_radius, double scale, unsigned int max_lod,
         bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin,
         bool cull_far_patches, unsigned int cull_far_patches_threshold);
     virtual bool is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double patch_offset);

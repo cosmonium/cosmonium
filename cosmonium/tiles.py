@@ -119,7 +119,9 @@ class TiledShape(PatchedShapeBase):
         transform_mat = LMatrix4()
         transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        self.culling_frustum = CullingFrustum(camera.lens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
+        near = camera.lens.get_near()
+        far = camera.lens.get_far()
+        self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
     def global_to_shape_coord(self, x, y):
         return (x / self.scale, y / self.scale)

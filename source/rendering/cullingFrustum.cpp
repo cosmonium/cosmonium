@@ -36,13 +36,15 @@ CullingFrustumBase::is_patch_in_view(QuadTreeNode *patch)
   return is_bb_in_view(patch->bounds, patch->normal, patch->offset);
 }
 
-CullingFrustum::CullingFrustum(Lens *lens, LMatrix4 transform_mat, bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin) :
-    lens(lens),
+CullingFrustum::CullingFrustum(Lens *lens, LMatrix4 transform_mat, double near, double far,
+    bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin) :
     offset_body_center(offset_body_center),
     model_body_center_offset(model_body_center_offset),
     shift_patch_origin(shift_patch_origin)
 {
-  lens_bounds = lens->make_bounds();
+  this->lens = lens->make_copy();
+  this->lens->set_near_far(near, far);
+  lens_bounds = this->lens->make_bounds();
   DCAST(BoundingHexahedron, lens_bounds)->xform(transform_mat);
 }
 
@@ -61,7 +63,8 @@ CullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double pa
   return (intersect & BoundingVolume::IF_some) != 0;
 }
 
-HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, double scale, LMatrix4 transform_mat, double min_radius, double altitude_to_min_radius, unsigned int max_lod,
+HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
+    double near, double min_radius, double altitude_to_min_radius, double scale, unsigned int max_lod,
     bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin,
     bool cull_far_patches, unsigned int cull_far_patches_threshold) :
     offset_body_center(offset_body_center),
@@ -77,9 +80,7 @@ HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, double scale, LMatrix4 
   }
   double limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius));
   double far = limit * scale;
-  //Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
-  //TODO: get the actual value from the config
-  this->lens->set_near_far(far * 1e-6, far);
+  this->lens->set_near_far(near, far);
   lens_bounds = this->lens->make_bounds();
   DCAST(BoundingHexahedron, lens_bounds)->xform(transform_mat);
 }

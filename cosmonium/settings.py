@@ -84,6 +84,7 @@ patch_max_vertex_size = 64
 patch_min_density = 32
 patch_max_density = 64
 patch_constant_density = 32
+use_horizon_culling = True
 cull_far_patches = False
 cull_far_patches_threshold = 10
 
@@ -126,7 +127,7 @@ use_inv_scaling=True
 use_log_scaling=False
 use_depth_scaling = scene_manager == 'dynamic' and (use_inv_scaling or use_log_scaling)
 auto_scale=True
-lens_far_limit = 1e-7
+lens_far_limit = 1e-12
 scale=1000.0
 min_scale = 0.02
 max_scale=1000.0

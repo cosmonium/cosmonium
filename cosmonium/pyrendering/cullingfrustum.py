@@ -32,9 +32,10 @@ class CullingFrustumBase:
         return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
 
 class CullingFrustum(CullingFrustumBase):
-    def __init__(self, lens, transform_mat, offset_body_center, model_body_center_offset, shift_patch_origin):
-        self.lens = lens
-        self.lens_bounds = self.lens.makeBounds()
+    def __init__(self, lens, transform_mat, near, far, offset_body_center, model_body_center_offset, shift_patch_origin):
+        self.lens = lens.make_copy()
+        self.lens.set_near_far(near, far)
+        self.lens_bounds = self.lens.make_bounds()
         self.lens_bounds.xform(transform_mat)
         self.offset_body_center = offset_body_center
         self. model_body_center_offset = model_body_center_offset
@@ -52,18 +53,16 @@ class CullingFrustum(CullingFrustumBase):
         return (intersect & BoundingBox.IF_some) != 0
 
 class HorizonCullingFrustum(CullingFrustumBase):
-    def __init__(self, lens, scale, transform_mat, min_radius, altitude_to_min_radius, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
-        lens = lens.make_copy()
+    def __init__(self, lens, transform_mat, near, min_radius, altitude_to_min_radius, scale, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
+        self.lens = lens.make_copy()
         if cull_far_patches and max_lod > cull_far_patches_threshold:
             factor = 2.0 / (1 << ((max_lod - cull_far_patches_threshold) // 2))
         else:
             factor = 2.0
         limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
         far = limit * scale
-        #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
-        #TODO: get the actual value from the config
-        lens.set_near_far(far * 1e-6, far)
-        self.lens_bounds = lens.make_bounds()
+        self.lens.set_near_far(near, far)
+        self.lens_bounds = self.lens.make_bounds()
         self.lens_bounds.xform(transform_mat)
         self.offset_body_center = offset_body_center
         self.model_body_center_offset = model_body_center_offset
