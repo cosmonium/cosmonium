@@ -54,11 +54,7 @@ class NebulaYamlParser(YamlModuleParser):
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), nebula)
         for surface in surfaces:
             nebula.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(nebula)
-        if parent_name is not None:
-            return None
-        else:
-            return nebula
+        parent.add_child_fast(nebula)
+        return nebula
 
 ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser())

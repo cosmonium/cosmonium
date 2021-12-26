@@ -76,17 +76,13 @@ class ReflectiveYamlParser(YamlModuleParser):
             surfaces = SurfaceYamlParser.decode(data.get('surfaces'), body)
         for surface in surfaces:
             body.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(body)
+        parent.add_child_fast(body)
         controller_data = data.get('controller')
         if controller_data is not None:
             controller_class = ControllerYamlParser.decode(controller_data)
             controller = controller_class(body)
             self.app.add_controller(controller)
-        if parent_name is not None:
-            return None
-        else:
-            return body
+        return body
 
 ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))
 ObjectYamlParser.register_object_parser('planet', ReflectiveYamlParser('planet'))

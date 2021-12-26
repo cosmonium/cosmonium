@@ -81,13 +81,6 @@ class UniverseYamlParser(YamlModuleParser):
 
     def decode(self, data, parent=None):
         children = ObjectYamlParser.decode(data.get('children', []), self.universe)
-        if not isinstance(children, list):
-            children = [children]
-        for child in children:
-            if child is None:
-                pass
-            else:
-                self.universe.add_child_fast(child)
 
 class IncludeYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):

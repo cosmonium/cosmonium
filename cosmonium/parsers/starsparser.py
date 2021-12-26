@@ -76,11 +76,8 @@ class StarYamlParser(YamlModuleParser):
             surfaces = []
         for surface in surfaces:
             star.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(star)
-            return None
-        else:
-            return star
+        parent.add_child_star_fast(star)
+        return star
     
 class StarSurfaceFactoryYamlParser(YamlModuleParser):
     @classmethod

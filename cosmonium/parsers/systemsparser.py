@@ -38,18 +38,10 @@ class SystemYamlParser(YamlModuleParser):
         orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
-        children = data.get('children', [])
-        children = ObjectYamlParser.decode(children, system)
-        for child in children:
-            if isinstance(child, Star):
-                system.add_child_star_fast(child)
-            else:
-                system.add_child_fast(child)
-        if explicit_parent:
-            parent.add_child_fast(system)
-            return None
-        else:
-            return system
+        children_data = data.get('children', [])
+        children = ObjectYamlParser.decode(children_data, system)
+        parent.add_child_fast(system)
+        return system
 
 class BarycenterYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
@@ -61,15 +53,10 @@ class BarycenterYamlParser(YamlModuleParser):
         orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
         system = Barycenter(translated_names, source_names, orbit=orbit, rotation=rotation)
-        children = data.get('children', [])
-        children = ObjectYamlParser.decode(children, system)
-        for child in children:
-            system.add_child_fast(child)
-        if explicit_parent:
-            parent.add_child_fast(system)
-            return None
-        else:
-            return system
+        children_data = data.get('children', [])
+        children = ObjectYamlParser.decode(children_data, system)
+        parent.add_child_fast(system)
+        return system
 
 ObjectYamlParser.register_object_parser('system', SystemYamlParser())
 ObjectYamlParser.register_object_parser('barycenter', BarycenterYamlParser())

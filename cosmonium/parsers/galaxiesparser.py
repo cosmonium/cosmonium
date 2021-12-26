@@ -183,10 +183,7 @@ class GalaxyYamlParser(YamlModuleParser):
                     radius_units=radius_units,
                     orbit=orbit,
                     rotation=rotation)
-        if explicit_parent:
-            parent.add_child_fast(galaxy)
-            return None
-        else:
-            return galaxy
+        parent.add_child_fast(galaxy)
+        return galaxy
 
 ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())
