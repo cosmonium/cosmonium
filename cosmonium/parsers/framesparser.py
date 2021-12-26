@@ -75,9 +75,9 @@ class FrameYamlParser(YamlModuleParser):
         return SurfaceReferenceFrame(anchor, long * long_units, lat * lat_units)
 
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(self, data, parent=None, default='j2000ecliptic'):
         if data is None:
-            data = {'type': 'j2000ecliptic'}
+            data = {'type': default}
         (object_type, parameters) = self.get_type_and_data(data)
         object_type = object_type.lower()
         if object_type == 'j2000ecliptic':
