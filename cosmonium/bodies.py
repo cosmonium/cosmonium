@@ -46,6 +46,69 @@ class SurfaceFactory(object):
     def create(self, body):
         return None
 
+class StellarRings(StellarObject):
+    anchor_class = StellarAnchor.Reflective
+    def __init__(self, names, source_names, rings_object, orbit, rotation, body_class, point_color,
+                 description=''):
+        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+        self.rings_object = rings_object
+        self.rings_object.set_body(self)
+        self.rings_object.set_owner(self)
+        self.surface = rings_object
+        self.anchor._height_under = self.rings_object.outer_radius
+        self.anchor.set_bounding_radius(self.get_bounding_radius())
+
+    def is_emissive(self):
+        return False
+
+    def get_phase(self):
+        return 1.0
+
+    def get_apparent_radius(self):
+        return self.rings_object.outer_radius
+
+    def start_shadows_update(self):
+        for component in self.get_components():
+            component.start_shadows_update()
+
+    def self_shadows_update(self, light_source):
+        pass
+
+    def add_shadow_target(self, light_source, target):
+        for component in target.get_components():
+            self.rings_object.add_shadow_target(light_source, component)
+
+    def end_shadows_update(self):
+        for component in self.get_components():
+            component.end_shadows_update()
+
+    def configure_shape(self):
+        self.rings_object.configure_shape()
+
+    def unconfigure_shape(self):
+        self.rings_object.unconfigure_shape()
+
+    def get_components(self):
+        components = []
+        components.append(self.rings_object)
+        return components
+
+    def create_components(self):
+        StellarObject.create_components(self)
+        self.components.add_component(self.rings_object)
+        self.rings_object.set_oid_color(self.oid_color)
+        self.components.update_shader()
+        self.configure_shape()
+
+    def update_components(self, camera_pos):
+        pass
+
+    def remove_components(self):
+        self.components.update_shader()
+        self.unconfigure_shape()
+        StellarObject.remove_components(self)
+
+
 class StellarBody(StellarObject):
     has_rotation_axis = True
     has_reference_axis = True
@@ -53,12 +116,11 @@ class StellarBody(StellarObject):
     def __init__(self, names, source_names, radius, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
-                 atmosphere=None, ring=None, clouds=None,
+                 atmosphere=None, clouds=None,
                  body_class=None, point_color=None,
                  description=''):
         StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
         self.surface = None
-        self.ring = ring
         self.clouds = clouds
         self.atmosphere = atmosphere
         self.surface = surface
@@ -80,9 +142,6 @@ class StellarBody(StellarObject):
         if self.atmosphere is not None:
             self.atmosphere.set_body(self)
             self.atmosphere.set_owner(self)
-        if self.ring is not None:
-            self.ring.set_body(self)
-            self.ring.set_owner(self)
         self.anchor.set_bounding_radius(self.get_bounding_radius())
 
     def get_or_create_system(self):
@@ -92,7 +151,8 @@ class StellarBody(StellarObject):
             system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
             #TODO: The system name should be translated correctly
             self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
-            self.parent.add_child_fast(self.system)
+            if self.parent is not None:
+                self.parent.add_child_fast(self.system)
             #system_orbit.set_body(self.system)
             orbit = LocalFixedPosition(frame=OrbitReferenceFrame(self.system.anchor), frame_position=LPoint3d())
             self.set_orbit(orbit)
@@ -151,9 +211,6 @@ class StellarBody(StellarObject):
             self.auto_surface = True
         self.components.add_component(self.surface)
         self.surface.set_oid_color(self.oid_color)
-        if self.ring is not None:
-            self.components.add_component(self.ring)
-            self.ring.set_oid_color(self.oid_color)
         if self.clouds is not None:
             self.components.add_component(self.clouds)
             self.clouds.set_oid_color(self.oid_color)
@@ -171,7 +228,6 @@ class StellarBody(StellarObject):
         self.components.remove_component(self.surface)
         if self.auto_surface:
             self.surface = None
-        self.components.remove_component(self.ring)
         self.components.remove_component(self.clouds)
         self.components.remove_component(self.atmosphere)
 
@@ -180,8 +236,6 @@ class StellarBody(StellarObject):
         components = []
         if self.surface is not None:
             components.append(self.surface)
-        if self.ring is not None:
-            components.append(self.ring)
         if self.clouds is not None:
             components.append(self.clouds)
         if self.atmosphere is not None:
@@ -191,8 +245,6 @@ class StellarBody(StellarObject):
     def configure_shape(self):
         if self.surface is not None:
             self.surface.configure_shape()
-        if self.ring is not None:
-            self.ring.configure_shape()
         if self.clouds is not None:
             self.clouds.configure_shape()
         if self.atmosphere is not None:
@@ -203,8 +255,6 @@ class StellarBody(StellarObject):
             self.atmosphere.unconfigure_shape()
         if self.clouds is not None:
             self.clouds.unconfigure_shape()
-        if self.ring is not None:
-            self.ring.unconfigure_shape()
         if self.surface is not None:
             self.surface.unconfigure_shape()
 
@@ -231,8 +281,6 @@ class StellarBody(StellarObject):
 
     def get_bounding_radius(self):
         extend = 0
-        if self.ring is not None:
-            extend = max(extend, self.ring.outer_radius)
         if self.surface is not None and self.surface.is_spherical():
             extend = max(extend, self.surface.get_max_radius())
         else:
@@ -333,12 +381,6 @@ class ReflectiveBody(StellarBody):
 
     def self_shadows_update(self, light_source):
         self.surface.add_self_shadow(light_source)
-        if self.ring is not None:
-            if self.clouds is not None:
-                self.ring.shadow_caster.add_target(light_source, self.clouds)
-            if self.surface is not None:
-                self.ring.add_shadow_target(light_source, self.surface)
-                self.surface.add_shadow_target(light_source, self.ring)
 
     def add_shadow_target(self, light_source, target):
         for component in target.get_components():
@@ -405,7 +447,7 @@ class Star(EmissiveBody):
                  surface=None, surface_factory=None,
                  orbit=None, rotation=None,
                  abs_magnitude=None, temperature=None, spectral_type=None,
-                 atmosphere=None, ring=None, clouds=None,
+                 atmosphere=None, clouds=None,
                  body_class='star',  point_color=None,
                  description=''):
         if spectral_type is None:
@@ -434,7 +476,7 @@ class Star(EmissiveBody):
                               surface=surface, surface_factory=surface_factory,
                               orbit=orbit, rotation=rotation,
                               abs_magnitude=abs_magnitude,
-                              atmosphere=atmosphere, ring=ring, clouds=clouds,
+                              atmosphere=atmosphere, clouds=clouds,
                               body_class=body_class, point_color=point_color,
                               description=description)
 

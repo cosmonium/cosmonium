@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,18 +18,18 @@
 #
 
 
-from panda3d.core import LColor, LVector3
+from panda3d.core import LColor
 
 from ..bodies import ReflectiveBody
-from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .atmospheresparser import AtmosphereYamlParser
-from .elementsparser import CloudsYamlParser, RingsYamlParser
+from .elementsparser import CloudsYamlParser
 from .surfacesparser import SurfaceYamlParser
+from .ringsparser import StellarRingsYamlParser
 from .framesparser import FrameYamlParser
 from .controllersparser import ControllerYamlParser
 from .utilsparser import check_parent, get_radius_scale
@@ -50,7 +50,6 @@ class ReflectiveYamlParser(YamlModuleParser):
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
         clouds = CloudsYamlParser.decode(data.get('clouds'))
-        rings = RingsYamlParser.decode(data.get('rings'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
         frame = FrameYamlParser.decode(data.get('frame'), actual_parent)
@@ -64,7 +63,6 @@ class ReflectiveYamlParser(YamlModuleParser):
                               scale=scale,
                               orbit=orbit,
                               rotation=rotation,
-                              ring=rings,
                               atmosphere=atmosphere,
                               clouds=clouds,
                               point_color=point_color,
@@ -82,6 +80,16 @@ class ReflectiveYamlParser(YamlModuleParser):
             controller_class = ControllerYamlParser.decode(controller_data)
             controller = controller_class(body)
             self.app.add_controller(controller)
+        rings = data.get('rings')
+        if rings is not None:
+            rings['name'] = data['name'] + "'s rings"
+            rings_parser = StellarRingsYamlParser('rings')
+            if parent.primary is not body:
+                system = body.get_or_create_system()
+                body = system
+            else:
+                system = parent
+            rings_parser.decode(rings, system)
         return body
 
 ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))

@@ -63,7 +63,6 @@ class StarYamlParser(YamlModuleParser):
                     surface_factory=factory,
                     orbit=orbit,
                     rotation=rotation,
-                    ring=rings,
                     clouds=clouds,
                     abs_magnitude=abs_magnitude,
                     temperature=temperature,
