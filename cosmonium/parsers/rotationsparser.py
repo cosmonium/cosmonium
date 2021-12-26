@@ -105,8 +105,12 @@ class FixedRotationYamlParser(YamlModuleParser):
 
 class RotationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, frame=None, parent=None):
-        if data is None: return UnknownRotation()
+    def decode(cls, data, frame=None, parent=None, default=None):
+        if data is None:
+            if default is not None:
+                data = {'type': default}
+            else:
+                return UnknownRotation()
         (object_type, parameters) = cls.get_type_and_data(data)
         if object_type == 'uniform':
             rotation = UniformYamlParser.decode(parameters, frame, parent)
