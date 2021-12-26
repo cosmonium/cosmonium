@@ -44,7 +44,7 @@ class BodyClasses(object):
         if body_class in self.classes:
             return self.classes[body_class]
         else:
-            print("Unknown body class '%s", body_class)
+            print("Unknown body class '%s'" % body_class)
             return None
 
     def get_show(self, body_class):
