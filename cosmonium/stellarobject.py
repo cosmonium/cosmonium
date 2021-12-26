@@ -101,6 +101,7 @@ class StellarObject(NamedObject):
     has_resolved_halo = False
     virtual_object = False
     support_offset_body_center = True
+    allow_scattering = False
     background = False
     nb_update = 0
     nb_obs = 0

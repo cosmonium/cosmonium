@@ -306,6 +306,7 @@ class StellarBody(StellarObject):
 
 class ReflectiveBody(StellarBody):
     anchor_class = StellarAnchor.Reflective
+    allow_scattering = True
     def __init__(self, *args, **kwargs):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)

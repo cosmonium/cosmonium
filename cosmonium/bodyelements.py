@@ -162,6 +162,7 @@ class Atmosphere(ShapeObject):
 
     def add_shape_object(self, shape_object):
         if shape_object in self.shape_objects: return
+        print("Add scattering on", shape_object.get_name())
         self.shape_objects.append(shape_object)
         if shape_object in self.attenuated_objects:
             self.attenuated_objects.remove(shape_object)
@@ -170,6 +171,7 @@ class Atmosphere(ShapeObject):
 
     def remove_shape_object(self, shape_object):
         if shape_object in self.shape_objects:
+            print("Remove scattering on", shape_object.get_name())
             self.shape_objects.remove(shape_object)
             if self.shown:
                 self.remove_scattering_on(shape_object)

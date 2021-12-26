@@ -1199,6 +1199,7 @@ class Cosmonium(CosmoniumBase):
         for anchor in self.resolved:
             #TODO: We need to test the type of the parent anchor
             if anchor.parent is None or anchor.parent.content == ~0: continue
+            if not anchor.body.allow_scattering: continue
             primary = anchor.parent.body.primary
             if primary is None: continue
             #TODO: We should not do an explicit test like this here
