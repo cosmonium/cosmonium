@@ -292,7 +292,7 @@ FindShadowCastersTraverser::FindShadowCastersTraverser(AnchorBase *target, LVect
   body_bounding_radius = target->get_bounding_radius();
   light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - body_bounding_radius));
   AnchorTreeBase *parent = target->parent;
-  while (parent->content != ~0) {
+  while (parent != nullptr && parent->content != ~0) {
     parent_systems.push_back(DCAST(AnchorBase, parent));
     parent = parent->parent;
   }
