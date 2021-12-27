@@ -1027,9 +1027,9 @@ class PatchedShapeBase(Shape):
             self.dump_patch(patch, padding=False)
 
     def _dump_stats(self, stats_array, patch):
-        stats_array[0] += patch.visible
+        stats_array[0] += patch.quadtree_node.visible
         stats_array[1] += patch.shown
-        stats_array[7] += (patch.visible and not patch.instance_ready)
+        stats_array[7] += (patch.quadtree_node.visible and not patch.instance_ready)
         if patch.task is not None: stats_array[8] += 1
         stats_array[9] += 1
         for child in patch.children:
