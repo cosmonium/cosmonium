@@ -461,19 +461,6 @@ class RalphControl(EventsControllerBase):
 class FakeLightSource:
     light_color = LColor(1, 1, 1, 1)
 
-class FakeOccluder:
-    def __init__(self, radius):
-        self.radius = radius
-
-    def get_ascii_name(self):
-        return 'shadows'
-
-    def get_name(self):
-        return 'shadows'
-
-    def get_apparent_radius(self):
-        return self.radius
-
 class SimpleShadowCaster(CustomShadowMapShadowCaster):
     def update(self):
         pass
@@ -672,17 +659,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light.light_direction = LVector3d(1, 0, 0)
         self.lights.add_light(self.light)
 
-        if self.shadows:
-            self.occluder = FakeOccluder(self.ralph_config.shadow_size)
-            self.shadow_caster = SimpleShadowCaster(self.light, self.occluder)
-            #self.shadow_caster = ShadowMap(1024)
-            self.shadow_caster.create()
-            self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
-            self.shadow_caster.shadow_map.set_pos(-self.skybox.light_dir * self.ralph_config.shadow_box_length / 2.0)
-            self.shadow_caster.shadow_map.snap_cam = True
-        else:
-            self.shadow_caster = None
-
         self.create_terrain()
         for component in self.ralph_config.layers:
             self.terrain.add_component(component)
@@ -703,6 +679,15 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_world.context = self
         self.terrain_world.model_body_center_offset = 0.0
         self.worlds.add_world(self.terrain_world)
+
+        if self.shadows:
+            self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
+            #self.shadow_caster = ShadowMap(1024)
+            self.shadow_caster.create()
+            self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
+            self.shadow_caster.shadow_map.snap_cam = True
+        else:
+            self.shadow_caster = None
 
         if self.shadows:
             shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
