@@ -107,6 +107,15 @@ class SimpleWorld(SceneWorld):
     def get_height_under(self, position):
         return 0.0
 
+    def set_visibility_override(self, override):
+        if override == self.anchor.visibility_override: return
+        if override:
+            self.anchor.visibility_override = True
+        else:
+            self.anchor.visibility_override = False
+            #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
+            self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
+
     def on_visible(self, scene_manager):
         self.components.visible = True
         self.scene_anchor.create_instance(scene_manager)
