@@ -581,7 +581,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def update_shader(self):
         self.terrain.update_shader()
-        self.ralph.update_shader()
+        self.ralph_shape_object.update_shader()
 
     #TODO: Needed by patchedshapes.py update_lod()
     def get_min_radius(self):
