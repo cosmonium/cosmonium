@@ -22,6 +22,9 @@ from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from ..shaders import BasicShader
 from ..shapes import ShapeObject, MeshShape
+from ..ships import VisibleShip
+from ..camera import CameraController
+from ..surfaces import MeshSurface
 from ..astro import units
 
 from .yamlparser import YamlModuleParser
@@ -29,8 +32,6 @@ from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
 from .shadersparser import LightingModelYamlParser
-from cosmonium.ships import VisibleShip
-from cosmonium.camera import CameraController
 
 class BaseShipYamlParser(YamlModuleParser):
     camera_modes = []
@@ -66,7 +67,7 @@ class BaseShipYamlParser(YamlModuleParser):
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model,
                              use_model_texcoord=not extra.get('create-uv', False))
-        ship_object = ShapeObject('ship', shape=shape, appearance=appearance, shader=shader)
+        ship_object = MeshSurface('ship', shape=shape, appearance=appearance, shader=shader)
         if camera_distance is None:
             if camera_pos is None:
                 camera_distance = 5.0
