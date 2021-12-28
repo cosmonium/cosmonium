@@ -795,13 +795,13 @@ class RoamingRalphDemo(CosmoniumBase):
             self.directionalLight.setDirection(self.skybox.light_dir)
 
         if self.shadow_caster is not None:
-            vec = self.ralph_shape.instance.getPos() - self.camera.getPos()
+            vec = self.ralph_world.anchor.get_local_position() - self.observer.anchor.get_local_position()
             vec.set_z(0)
             dist = vec.length()
             vec.normalize()
             #TODO: Should use the directional light to set the pos
             self.shadow_caster.shadow_map.set_direction(self.skybox.light_dir)
-            self.shadow_caster.shadow_map.set_pos(self.ralph_shape.instance.get_pos() - vec * dist + vec * self.ralph_config.shadow_size / 2)
+            self.shadow_caster.shadow_map.set_pos(self.ralph_world.anchor.get_local_position() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
         render.set_shader_input("camera", self.camera.get_pos())
 
