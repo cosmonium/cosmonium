@@ -414,6 +414,7 @@ class ShapeObject(VisibleObject):
         self.shadows.end_update()
 
     def add_shadow_target(self, light_source, target):
+        if not self.instance_ready: return
         self.create_shadow_caster_for(light_source)
         self.shadow_casters[light_source].add_target(target)
 

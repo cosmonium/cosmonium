@@ -185,8 +185,7 @@ class MeshSurface(Surface):
 
     def add_self_shadow(self, light_source):
         #Add self-shadowing for non-spherical objects
-        #TODO: It's a bit convoluted to do it like that...
-        if self.body.anchor.visible and self.body.anchor.resolved:
+        if self.instance_ready:
             self.create_shadow_caster_for(light_source)
             self.shadow_casters[light_source].add_target(self, self_shadow=True)
 
