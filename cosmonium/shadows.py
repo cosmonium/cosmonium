@@ -18,10 +18,10 @@
 #
 
 
-from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput
-from panda3d.core import Texture, OrthographicLens, PandaNode, NodePath
+from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput, Camera
+from panda3d.core import Texture, OrthographicLens
 from panda3d.core import LVector3, LPoint3, LVector3d, LPoint4, Mat4
-from panda3d.core import ColorWriteAttrib, LColor, CullFaceAttrib, RenderState, DepthOffsetAttrib
+from panda3d.core import ColorWriteAttrib, LColor, CullFaceAttrib, RenderState
 from panda3d.core import LMatrix4, PTA_LMatrix4, LQuaternion
 
 from .foundation import BaseObject
@@ -41,40 +41,48 @@ class ShadowMap(object):
         self.shadow_caster = None
         self.snap_cam = settings.shadows_snap_cam
 
-    def create(self):
+    def create(self, scene_anchor):
         winprops = WindowProperties.size(self.size, self.size)
         props = FrameBufferProperties()
-        props.setRgbColor(0)
-        props.setAlphaBits(0)
-        props.setDepthBits(1)
-        self.buffer = base.graphicsEngine.makeOutput(
-            base.pipe, "shadowsBuffer", -2,
+        props.set_rgb_color(0)
+        props.set_alpha_bits(0)
+        props.set_depth_bits(1)
+        win = base.win
+        self.buffer = base.graphics_engine.make_output(
+            win.get_pipe(), "shadows-buffer", -2,
             props, winprops,
-            GraphicsPipe.BFRefuseWindow,
-            base.win.getGsg(), base.win)
+            GraphicsPipe.BF_refuse_window,
+            win.get_gsg(), win)
 
         if not self.buffer:
             print("Video driver cannot create an offscreen buffer.")
             return
         self.depthmap = Texture()
-        self.buffer.addRenderTexture(self.depthmap, GraphicsOutput.RTMBindOrCopy,
-                                 GraphicsOutput.RTPDepthStencil)
+        self.buffer.add_render_texture(self.depthmap, GraphicsOutput.RTM_bind_or_copy,
+                                       GraphicsOutput.RTP_depth_stencil)
 
-        self.depthmap.setMinfilter(Texture.FTShadow)
-        self.depthmap.setMagfilter(Texture.FTShadow)
-        self.depthmap.setBorderColor(LColor(1, 1, 1, 1))
-        self.depthmap.setWrapU(Texture.WMBorderColor)
-        self.depthmap.setWrapV(Texture.WMBorderColor)
+        self.depthmap.set_minfilter(Texture.FT_shadow)
+        self.depthmap.set_magfilter(Texture.FT_shadow)
+        self.depthmap.set_border_color(LColor(1, 1, 1, 1))
+        self.depthmap.set_wrap_u(Texture.WM_border_color)
+        self.depthmap.set_wrap_v(Texture.WM_border_color)
 
-        self.cam = base.makeCamera(self.buffer, lens=OrthographicLens())
-        self.cam.reparent_to(render)
+        cam = Camera("shadow-cam")
+        self.cam = scene_anchor.unshifted_instance.attach_new_node(cam)
+        cam.set_lens(OrthographicLens())
+        dr = self.buffer.make_display_region(0, 1, 0, 1)
+        dr.disable_clears()
+        dr.set_scissor_enabled(False)
+        dr.set_camera(self.cam)
+        # Don't use set_scene, the scene of the display region will be the root node of the camera
+        # and will be automatically updated
+
         self.node = self.cam.node()
         self.node.setInitialState(RenderState.make(CullFaceAttrib.make_reverse(),
                                                    ColorWriteAttrib.make(ColorWriteAttrib.M_none),
                                                    ))
-        self.node.setScene(render)
         if settings.debug_shadow_frustum:
-            self.node.showFrustum()
+            self.node.show_frustum()
 
     def align_cam(self):
         mvp = Mat4(base.render.get_transform(self.cam).get_mat() * self.get_lens().get_projection_mat())
@@ -92,8 +100,7 @@ class ShadowMap(object):
     def set_lens(self, size, near, far, direction):
         lens = self.node.get_lens()
         lens.set_film_size(size)
-        lens.setNear(near)
-        lens.setFar(far)
+        lens.set_near_far(near, far)
         lens.set_view_vector(LVector3(*direction), LVector3.up())
 
     def get_lens(self):
@@ -117,7 +124,7 @@ class ShadowMap(object):
         self.cam = None
         self.depthmap = None
         self.buffer.set_active(False)
-        base.graphicsEngine.removeWindow(self.buffer)
+        base.graphics_engine.remove_window(self.buffer)
         self.buffer = None
 
 class ShadowCasterBase(object):
@@ -180,7 +187,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         return self.shadow_map is not None
 
     def update(self, scene_manager):
-        radius = self.occluder.get_bounding_radius() / scene_manager.scale
+        radius = self.occluder.get_bounding_radius()
         self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
         #The shadow frustum origin is at the light center which is one radius away from the object
         #So the near plane is 0 to coincide with the boundary of the object
@@ -258,7 +265,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def create_camera(self):
         print("Create shadow camera for", self.occluder.get_name())
         self.shadow_map = ShadowMap(settings.shadow_size)
-        self.shadow_map.create()
+        self.shadow_map.create(self.occluder.scene_anchor)
         self.shadow_camera = self.shadow_map.node
 
     def remove_camera(self):
@@ -271,7 +278,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def update(self, scene_manager):
         ShadowMapShadowCaster.update(self, scene_manager)
-        self.shadow_map.set_pos(self.light.light_instance.get_pos(render))
+        self.shadow_map.set_pos(self.light.light_instance.get_pos())
 
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)
