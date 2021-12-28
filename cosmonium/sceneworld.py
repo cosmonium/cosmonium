@@ -72,6 +72,7 @@ class Worlds:
 class SceneWorld(NamedObject):
     virtual_object = False
     background = False
+    support_offset_body_center = False
     def __init__(self, name):
         NamedObject.__init__(self, [name], None, None)
         self.anchor = None
