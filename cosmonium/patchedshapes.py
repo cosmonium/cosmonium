@@ -1063,8 +1063,9 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
         # TODO: This does not work with oblate bodies
-        near = max(1e-6, (self.parent.body.anchor.distance_to_obs - max_radius) * self.parent.body.scene_anchor.scene_scale_factor)
-        far = (self.parent.body.anchor.distance_to_obs + max_radius) * self.parent.body.scene_anchor.scene_scale_factor
+        coef = -self.owner.anchor.vector_to_obs.dot(camera.anchor.camera_vector)
+        near = max(1e-6, (self.parent.body.anchor.distance_to_obs - max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor)
+        far = (self.parent.body.anchor.distance_to_obs + max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor
         if settings.use_horizon_culling:
             self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, min_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
                                                          self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
