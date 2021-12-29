@@ -19,7 +19,7 @@
 
 
 from panda3d.core import OmniBoundingVolume, GeomNode, Texture
-from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix3, LMatrix4, LVecBase4i
+from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
 from panda3d.core import NodePath
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from direct.task.Task import gather
@@ -856,8 +856,10 @@ class PatchedShapeBase(Shape):
             #Position the frustum relative to the body
             #If lod checking is enabled, the position should be 0, the position of the camera
             #If lod checking is frozen, we use the old relative position
-            self.frustum_node.set_pos(*(self.parent.body.scene_anchor.scene_position + self.frustum_rel_position * self.owner.scene_anchor.scene_scale_factor))
-            #TODO: The frustum is not correctly placed when lod is frozen and scale is changing
+            self.frustum_node.set_pos(*self.frustum_rel_position)
+            # The cullling frustum is scaled with the scene_scale_factor, the generated geometry is then too small
+            # we must undo this scaling
+            self.frustum_node.set_scale(1 / owner.scene_anchor.scene_scale_factor)
 
     def xform_cam_to_model(self, camera_pos):
         pass
@@ -865,17 +867,19 @@ class PatchedShapeBase(Shape):
     def create_culling_frustum(self, scene_manager, camera):
         pass
 
-    def create_frustum_node(self):
+    def create_frustum_node(self, scene_anchor):
         if self.frustum_node is not None:
             self.frustum_node.remove_node()
         if settings.debug_lod_frustum:
             geom = self.culling_frustum.lens.make_geometry()
-            self.frustum_node = render.attach_new_node('frustum')
+            self.frustum_node = scene_anchor.unshifted_instance.attach_new_node('frustum')
             node = GeomNode('frustum_node')
             node.add_geom(geom)
             self.frustum_node.attach_new_node(node)
-            self.frustum_rel_position = -self.owner.scene_anchor.scene_rel_position
+            self.frustum_rel_position = -self.owner.anchor.rel_position
             self.frustum_node.set_quat(self.owner.context.observer.get_absolute_orientation())
+            self.frustum_node.set_color(LColor(1, 0, 0, 1))
+            self.frustum_node.set_light_off(True)
             #The frustum position is updated in place_patches()
 
     @pstat
@@ -891,7 +895,7 @@ class PatchedShapeBase(Shape):
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
         self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
-        self.create_frustum_node()
+        self.create_frustum_node(self.owner.scene_anchor)
         self.to_split = []
         self.to_merge = []
         self.to_show = []
@@ -1063,7 +1067,9 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
         # TODO: This does not work with oblate bodies
+        # We use z-distance and not the actual distance for the culling frustum near and far planes
         coef = -self.owner.anchor.vector_to_obs.dot(camera.anchor.camera_vector)
+        # The near and far planes must be scaled with the scene_scale_factor as we are using the net transform matrix
         near = max(1e-6, (self.parent.body.anchor.distance_to_obs - max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor)
         far = (self.parent.body.anchor.distance_to_obs + max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor
         if settings.use_horizon_culling:
