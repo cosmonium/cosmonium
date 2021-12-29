@@ -60,11 +60,12 @@ class BoundingBoxShape():
         if self.instance is not None: return
         self.instance = geometry.BoundingBoxGeom(self.box)
         if BoundingBoxShape.state is None:
-            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(1, 0, 0, 1)),#0.3, 1.0, 0.5, 1.0)),
+            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(0.3, 1.0, 0.5, 1.0)),
                                                       RenderModeAttrib.make(RenderModeAttrib.M_wireframe),
                                                       CullFaceAttrib.make(CullFaceAttrib.M_cull_clockwise),
                                                       ShaderAttrib.make().set_shader_auto(True))
         self.instance.set_state(self.state)
+        self.instance.set_light_off(True)
         return self.instance
 
     def remove_instance(self):
