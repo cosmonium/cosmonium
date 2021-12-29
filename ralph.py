@@ -513,7 +513,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                                                         density=settings.patch_constant_density,
                                                                         max_lod=self.ralph_config.max_lod))
         self.create_terrain_shader()
-        self.terrain_object = HeightmapFlatSurface(
+        self.terrain_surface = HeightmapFlatSurface(
                                'surface',
                                0, self.ralph_config.tile_size,
                                self.terrain_shape,
@@ -522,9 +522,8 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.ralph_config.appearance,
                                self.terrain_shader,
                                clickable=False)
-        self.terrain_object.set_body(self)
         self.terrain = CompositeShapeObject("terrain")
-        self.terrain.add_component(self.terrain_object)
+        self.terrain.add_component(self.terrain_surface)
 
     async def create_instance(self):
         #TODO: Should do init correctly
@@ -553,14 +552,14 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
-        height = self.terrain_object.get_height_at(position[0], position[1])
+        height = self.terrain_surface.get_height_at(position[0], position[1])
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
 
     #Used by populator
     def get_height_patch(self, patch, u, v):
-        height = self.terrain_object.get_height_patch(patch, u, v)
+        height = self.terrain_surface.get_height_patch(patch, u, v)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
@@ -659,26 +658,25 @@ class RoamingRalphDemo(CosmoniumBase):
         self.lights.add_light(self.light)
 
         self.create_terrain()
-        for component in self.ralph_config.layers:
-            self.terrain.add_component(component)
-            self.terrain_shape.add_linked_object(component)
-
         if self.ralph_config.fog_parameters is not None:
             self.fog = Fog(**self.ralph_config.fog_parameters)
             self.terrain.add_after_effect(self.fog)
             self.skybox.set_fog(self.fog)
         else:
             self.fog = None
-        self.surface = self.terrain_object
         self.terrain_world = FlatTerrainWorld("terrain")
         self.terrain_world.on_visible(self.scene_manager)
-        self.terrain_world.set_terrain(self.terrain_object)
-        self.terrain_object.set_body(self.terrain_world)
         self.terrain_world.add_component(self.terrain)
+        self.terrain_world.set_terrain(self.terrain_surface)
+        self.terrain_surface.set_body(self.terrain_world)
         self.terrain_world.surface = self
         self.terrain_world.context = self
         self.terrain_world.model_body_center_offset = 0.0
         self.worlds.add_world(self.terrain_world)
+        for component in self.ralph_config.layers:
+            self.terrain.add_component(component)
+            component.set_terrain(self.terrain_surface)
+            self.terrain_shape.add_linked_object(component)
 
         if self.shadows:
             self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
@@ -691,8 +689,8 @@ class RoamingRalphDemo(CosmoniumBase):
 
         if self.shadows:
             shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
-            self.terrain_object.sources.add_source(shadows_data_source)
-        self.terrain_object.sources.add_source(self.lights)
+            self.terrain_surface.sources.add_source(shadows_data_source)
+        self.terrain.add_source(self.lights)
 
         await self.create_instance()
         self.create_tile(0, 0)
@@ -821,7 +819,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def print_debug(self):
         print("Height:", self.get_height(self.ralph_world.anchor.get_local_position()),
-              self.terrain_object.get_height_at(self.ralph_world.anchor.get_local_position()[0], self.ralph_world.anchor.get_local_position()[1]))
+              self.terrain_surface.get_height_at(self.ralph_world.anchor.get_local_position()[0], self.ralph_world.anchor.get_local_position()[1]))
         print("Ralph:", self.ralph_world.anchor.get_local_position(), self.ralph_world.anchor.get_frame_position(), self.ralph_world.anchor.get_frame_orientation().get_hpr(), self.ralph_world.anchor.get_absolute_orientation().get_hpr())
         print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
 
