@@ -87,7 +87,8 @@ class StaticSceneManager(SceneManagerBase):
 
     def init_camera(self, camera_holder, default_camera):
         self.camera = default_camera
-        self.lens = default_camera.node().get_lens()
+        self.lens = camera_holder.lens.make_copy()
+        self.camera.node().set_lens(self.lens)
         if self.auto_infinite_plane:
             self.infinity = self.near_plane / self.lens_far_limit / 1000
         else:
@@ -99,6 +100,8 @@ class StaticSceneManager(SceneManagerBase):
         self.camera.node().set_camera_mask(flags)
 
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
+        self.lens = camera_holder.lens.make_copy()
+        self.camera.node().set_lens(self.lens)
         self.camera.set_pos(camera_holder.camera_np.get_pos())
         self.camera.set_quat(camera_holder.camera_np.get_quat())
 
