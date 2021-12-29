@@ -178,10 +178,11 @@ class Shape:
                 self.instance.setCollideMask(BitMask32.all_off())
 
 class CompositeShapeObject(VisibleObject):
-    def __init__(self):
+    def __init__(self, name):
+        VisibleObject.__init__(self, name)
         self.components = []
         self.owner = None
-        self.parent = None
+        self.task = None
 
     def add_component(self, component):
         self.components.append(component)
@@ -189,7 +190,7 @@ class CompositeShapeObject(VisibleObject):
         component.set_owner(self.owner)
 
     def set_parent(self, parent):
-        self.parent = parent
+        VisibleObject.set_parent(self, parent)
         for component in self.components:
             component.set_parent(self.parent)
 
@@ -210,11 +211,22 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.add_after_effect(after_effect)
 
+    def task_done(self, task):
+        self.task = None
+
+    #TODO: Temporarily stolen from foundation to be able to spawn task
+    def check_and_create_instance(self):
+        if not self.task:
+            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
+
     async def create_instance(self, scene_anchor):
         tasks = []
         for component in self.components:
             tasks.append(component.create_instance(scene_anchor))
-        return gather(*tasks)
+        await gather(*tasks)
+        #TODO: Needed for VisibleObject methods
+        self.instance = scene_anchor.instance.attach_new_node("dummy")
+        self.instance_ready = True
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:

@@ -523,11 +523,10 @@ class RoamingRalphDemo(CosmoniumBase):
                                self.terrain_shader,
                                clickable=False)
         self.terrain_object.set_body(self)
-        self.terrain = CompositeShapeObject()
+        self.terrain = CompositeShapeObject("terrain")
         self.terrain.add_component(self.terrain_object)
 
     async def create_instance(self):
-        await self.terrain.create_instance(self.terrain_world.scene_anchor)
         #TODO: Should do init correctly
         WaterNode.z = self.water.level
         WaterNode.observer = self.observer
@@ -723,7 +722,6 @@ class RoamingRalphDemo(CosmoniumBase):
             shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
             self.ralph_shape_object.sources.add_source(shadows_data_source)
         self.ralph_shape_object.sources.add_source(self.lights)
-        await self.ralph_shape_object.create_instance(self.ralph_world.scene_anchor)
         #self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
         #self.ralph.create_own_shadow_caster = False
 
