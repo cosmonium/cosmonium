@@ -39,7 +39,7 @@ sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import AmbientLight, DirectionalLight, LColor
+from panda3d.core import LColor
 from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion, BitMask32, NodePath
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
@@ -52,7 +52,6 @@ from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
-from cosmonium.ships import ActorShip, NoShip
 from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistanceLodControl
@@ -628,24 +627,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_manager.scale = 1.0
         self.worlds = Worlds()
 
-        self.model_body_center_offset = LVector3d()
-        self.light_color = LColor(1, 1, 1, 1)
         self.context = self
         self.oid_color = 0
         self.oid_texture = None
-        #Needed for create_light to work
-        self.nearest_system = self
-        self.star = self
-        self.primary = None
-        self.size = self.ralph_config.tile_size #TODO: Needed by populator
 
         self.skybox = RaphSkyBox()
         self.skybox.init(self.ralph_config)
         self.skybox.set_light_angle(45)
-
-        self.ambientLight = AmbientLight("ambientLight")
-        self.ambientLight.setColor((settings.global_ambient, settings.global_ambient, settings.global_ambient, 1))
-        render.setLight(render.attachNewNode(self.ambientLight))
 
         base.setFrameRateMeter(True)
 
@@ -680,7 +668,6 @@ class RoamingRalphDemo(CosmoniumBase):
 
         if self.shadows:
             self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
-            #self.shadow_caster = ShadowMap(1024)
             self.shadow_caster.create()
             self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
             self.shadow_caster.shadow_map.snap_cam = True
@@ -720,8 +707,6 @@ class RoamingRalphDemo(CosmoniumBase):
             shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
             self.ralph_shape_object.sources.add_source(shadows_data_source)
         self.ralph_shape_object.sources.add_source(self.lights)
-        #self.ralph = RalphShip('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
-        #self.ralph.create_own_shadow_caster = False
 
         self.camera_controller = SurfaceFollowCameraController()
         #self.camera_controller = FixedCameraController()
@@ -748,13 +733,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.worlds.update_obs(self.observer.anchor)
         self.worlds.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
         self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
-        #self.ralph.create_light()
         if self.ralph_config.physics.enable:
             for physic_object in self.physic_objects:
                 physic_object.update(self.observer)
-
-        # Set up the camera
-        render.set_shader_input("camera", self.camera.get_pos())
 
         self.terrain.update_instance(self.scene_manager, self.observer.get_local_position(), None)
 
@@ -786,10 +767,7 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.physic_objects.remove(physic_object)
 
         #TODO: Proper light management should be added
-        self.light_color = self.skybox.light_color
         self.light.light_direction = self.skybox.light_dir
-        if False and self.directionalLight is not None:
-            self.directionalLight.setDirection(self.skybox.light_dir)
 
         if self.shadow_caster is not None:
             vec = self.ralph_world.anchor.get_local_position() - self.observer.anchor.get_local_position()
@@ -799,8 +777,6 @@ class RoamingRalphDemo(CosmoniumBase):
             #TODO: Should use the directional light to set the pos
             self.shadow_caster.shadow_map.set_direction(self.skybox.light_dir)
             self.shadow_caster.shadow_map.set_pos(self.ralph_world.anchor.get_local_position() - vec * dist + vec * self.ralph_config.shadow_size / 2)
-
-        render.set_shader_input("camera", self.camera.get_pos())
 
         self.worlds.update(0, dt)
         self.worlds.update_obs(self.observer.anchor)
