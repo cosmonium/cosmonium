@@ -823,11 +823,6 @@ class PatchedShapeBase(Shape):
                 if self.no_bounds:
                     self.instance.node().setBounds(OmniBoundingVolume())
                     self.instance.node().setFinal(1)
-            tasks = []
-            for linked_object in self.linked_objects:
-                tasks.append(linked_object.create_instance())
-            if len(tasks) > 0:
-                gather(*tasks)
         return self.instance
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
