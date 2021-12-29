@@ -212,7 +212,6 @@ class FlatTerrainWorld(OriginCenteredWorld):
     def set_terrain(self, terrain):
         self.terrain = terrain
         self.anchor.set_surface(terrain)
-        self.add_component(terrain)
 
     def get_height_under(self, position):
         if self.terrain is not None:

@@ -675,6 +675,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_world.on_visible(self.scene_manager)
         self.terrain_world.set_terrain(self.terrain_object)
         self.terrain_object.set_body(self.terrain_world)
+        self.terrain_world.add_component(self.terrain)
         self.terrain_world.surface = self
         self.terrain_world.context = self
         self.terrain_world.model_body_center_offset = 0.0
