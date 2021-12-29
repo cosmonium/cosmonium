@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -114,11 +114,14 @@ class InteractiveNavigationController(NavigationController):
     def pop_position(self):
         self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(self.orbit_center)
 
-    def create_orbit_params(self, target):
+    def create_orbit_params(self, target, surface=False):
         #Orbiting around a body involve both the object and the camera controller
         #The orbit position is set on the object while the camera orientation is set on the camera controller
         #The position must be done in the object frame otherwise the orbit point will drift away
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+        if surface:
+            # Set the orbit center at the surface of the body
+            center += target.anchor.vector_to_obs * target.anchor._height_under
         self.orbit_center = self.controller.anchor.calc_frame_position_of_local(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
         if self.controller.orbit_rot_camera:
@@ -166,7 +169,7 @@ class FreeNav(InteractiveNavigationController):
         InteractiveNavigationController.__init__(self)
         self.speed = 0.0
         self.rot_speed = LVector3d()
-        self.mouseTrackClick = False
+        self.mouse_orbit = False
         self.keyboardTrack = False
         self.startX = None
         self.startY = None
@@ -218,8 +221,9 @@ class FreeNav(InteractiveNavigationController):
         event_ctrl.accept("s", self.stop)
         event_ctrl.accept("x", self.align_camera)
 
-        event_ctrl.accept("mouse3", self.OnTrackClick )
-        event_ctrl.accept("mouse3-up", self.OnTrackRelease )
+        event_ctrl.accept("mouse3", self.on_orbit_click, [False])
+        event_ctrl.accept("shift-mouse3", self.on_orbit_click, [True])
+        event_ctrl.accept("mouse3-up", self.on_orbit_release)
 
         self.register_wheel_events(event_ctrl)
 
@@ -254,6 +258,7 @@ class FreeNav(InteractiveNavigationController):
         event_ctrl.ignore("s")
 
         event_ctrl.ignore("mouse3")
+        event_ctrl.ignore("shift-mouse3")
         event_ctrl.ignore("mouse3-up")
 
         self.remove_wheel_events(event_ctrl)
@@ -278,33 +283,40 @@ class FreeNav(InteractiveNavigationController):
     def align_camera(self):
         self.camera_controller.prepare_movement()
 
-    def OnTrackClick(self):
+    def on_orbit_click(self, orbit_surface):
         if not self.base.mouseWatcherNode.hasMouse(): return
         mpos = self.base.mouseWatcherNode.getMouse()
         self.start_x = mpos.get_x()
         self.start_y = mpos.get_y()
         target = self.select_target()
         if target is not None:
-            self.mouseTrackClick = True
-            arc_length = pi * target.get_apparent_radius()
-            apparent_size = arc_length / ((target.anchor.distance_to_obs - target.anchor._height_under) * self.camera.pixel_size)
-            if apparent_size != 0.0:
-                self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
-                self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
+            self.mouse_orbit = True
+            if orbit_surface:
+                # When orbiting a point on the surface, the orbit speed should be constant
+                self.orbit_angle_x = pi / 3
+                self.orbit_angle_y = pi / 3
             else:
-                self.orbit_angle_x = pi
-                self.orbit_angle_y = pi
-            self.create_orbit_params(target)
+                # Adapt the orbit speed so that orbiting is still manageable when close to the body
+                arc_length = pi * target.get_apparent_radius()
+                apparent_size = arc_length / ((target.anchor.distance_to_obs - target.anchor._height_under) * self.camera.pixel_size)
+                if apparent_size != 0.0:
+                    self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
+                    self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
+                else:
+                    # Body has no defined surface, use constant orbit speed
+                    self.orbit_angle_x = pi
+                    self.orbit_angle_y = pi
+            self.create_orbit_params(target, orbit_surface)
 
-    def OnTrackRelease(self):
-        self.mouseTrackClick = False
+    def on_orbit_release(self):
+        self.mouse_orbit = False
 
     def update(self, time, dt):
         rot_x = 0.0
         rot_y = 0.0
         rot_z = 0.0
         distance = 0.0
-        if self.mouseTrackClick and self.base.mouseWatcherNode.hasMouse():
+        if self.mouse_orbit and self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
             delta_x = mpos.get_x() - self.start_x
             delta_y = mpos.get_y() - self.start_y
