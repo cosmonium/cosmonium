@@ -1660,10 +1660,6 @@ class OffsetScaleInstanceControl(InstanceControl):
         code.append("world_vertex4 = p3d_ModelMatrix * vec4(model_vertex4.xyz * offset_data.w, model_vertex4.w);")
         code.append("world_vertex4 = world_vertex4 + vec4(offset_data.xyz, 0.0);")
 
-    def update_shader_shape_static(self, shape, appearance):
-        if appearance.offsets is not None:
-            shape.instance.set_shader_input('instances_offset', appearance.offsets)
-
 class ShaderDataSource(ShaderComponent):
     def has_source_for(self, source):
         return False

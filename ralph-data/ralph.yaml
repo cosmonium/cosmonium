@@ -65,7 +65,7 @@ biome:
             noise: perlin
             octaves: 4
             length: 16.384
-layers2:
+layers:
   - shape:
       type: mesh
       model: 'ralph-data/models/trees/tree1'

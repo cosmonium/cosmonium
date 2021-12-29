@@ -424,7 +424,6 @@ class ModelAppearance(AppearanceBase):
         self.has_attribute_color = attribute_color
         self.has_material = material
         self.has_occlusion_channel = occlusion_channel
-        self.offsets = None
         #TODO: This should be factored out...
         self.normal_map_tangent_space = True
         self.nb_textures_coord = 0

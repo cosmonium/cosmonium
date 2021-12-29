@@ -284,7 +284,9 @@ class HeightmapSurface(EllipsoidSurface):
         return height
 
 class FlatSurface(Surface):
-    pass
+    @property
+    def size(self):
+        return self.shape.scale
 
 class HeightmapFlatSurface(FlatSurface):
     def __init__(self, name,
