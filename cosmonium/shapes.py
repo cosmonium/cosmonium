@@ -202,6 +202,10 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.check_settings()
 
+    def add_source(self, source):
+        for component in self.components:
+            component.add_source(source)
+
     def add_after_effect(self, after_effect):
         for component in self.components:
             component.add_after_effect(after_effect)
@@ -303,6 +307,12 @@ class ShapeObject(VisibleObject):
 
     def set_shader(self, shader):
         self.shader = shader
+
+    def add_source(self, source):
+        self.sources.add_source(source)
+
+    def get_source(self, name):
+        return self.sources.get_source(name)
 
     def add_after_effect(self, after_effect):
         if self.shader is not None:
