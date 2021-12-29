@@ -93,6 +93,15 @@ class DataSourcesHandler:
     def __init__(self):
         self.sources = []
 
+    def get_source(self, name):
+        source = None
+        for source in self.sources:
+            if source.name == name:
+                break
+        else:
+            print(f"Source {name} not found")
+        return source
+
     def add_source(self, source):
         self.sources.append(source)
 
