@@ -45,6 +45,10 @@ PUBLISHED:
         bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin);
     virtual bool is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double patch_offset);
 
+    INLINE Lens *get_lens(void) { return lens; }
+
+    MAKE_PROPERTY(lens, get_lens);
+
 protected:
     PT(Lens) lens;
     PT(BoundingVolume) lens_bounds;
