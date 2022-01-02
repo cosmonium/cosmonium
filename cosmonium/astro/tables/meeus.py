@@ -16,40 +16,17 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
-
-from panda3d.core import LQuaterniond
 
 from ..elementsdb import orbit_elements_db
-from ..orbits import FuncOrbit
-from ..frame import J2000HeliocentricEclipticReferenceFrame
-from .. import units
 
 try:
-    from cosmonium_engine import pluto_pos
+    from cosmonium_engine import MeeusPlutoOrbit
     loaded = True
 except ImportError as e:
     print("WARNING: Could not load Meeus C implementation")
     print("\t", e)
     loaded = False
 
-class PlutoOrbit(FuncOrbit):
-    def __init__(self, period, semi_major_axis, eccentricity):
-        FuncOrbit.__init__(self, period * units.JYear, semi_major_axis * units.AU, eccentricity, J2000HeliocentricEclipticReferenceFrame())
-
-    def is_periodic(self):
-        return True
-
-    def is_closed(self):
-        return False
-
-    def get_frame_position_at(self, time):
-        return pluto_pos(time)
-
-    def get_frame_rotation_at(self, time):
-        return LQuaterniond()
-
 orbit_elements_db.register_category('meeus', 100)
 if loaded:
-    orbit_elements_db.register_element('meeus', 'pluto-system', PlutoOrbit(247.736916416,  39.4450697, 0.25024871))
+    orbit_elements_db.register_element('meeus', 'pluto-system', MeeusPlutoOrbit(247.736916416,  39.4450697, 0.25024871))

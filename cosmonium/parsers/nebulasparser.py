@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..bodies import EmissiveBody
 from ..catalogs import objectsDB
@@ -51,16 +49,12 @@ class NebulaYamlParser(YamlModuleParser):
                     rotation=rotation)
         nebula.has_resolved_halo = False
         if data.get('surfaces') is None:
-            surfaces = [SurfaceYamlParser.decode_surface(data, None, {}, nebula)]
+            surfaces = [SurfaceYamlParser.decode_surface(data, {}, nebula)]
         else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, nebula)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), nebula)
         for surface in surfaces:
             nebula.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(nebula)
-        if parent_name is not None:
-            return None
-        else:
-            return nebula
+        parent.add_child_fast(nebula)
+        return nebula
 
 ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser())

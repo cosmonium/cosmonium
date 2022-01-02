@@ -17,14 +17,13 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import TextureStage, Texture, TexGenAttrib, GeomVertexRewriter
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, OmniBoundingVolume
 from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
+from panda3d.core import ShaderAttrib
 
 from .appearances import AppearanceBase
 from .shapes import Shape
@@ -44,6 +43,7 @@ from . import settings
 from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from random import random, gauss, choice, seed
 from cosmonium.utils import srgb_to_linear
+from cosmonium.datasource import DataSource
 
 class Galaxy(DeepSpaceObject):
     has_rotation_axis = False
@@ -67,6 +67,7 @@ class Galaxy(DeepSpaceObject):
         if appearance is None:
             appearance = GalaxyAppearance()
         surface = EllipsoidFlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
+        surface.sources.add_source(GalaxyDataSource())
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
                               orbit=orbit, rotation=rotation,
@@ -94,16 +95,19 @@ class GalaxyAppearance(AppearanceBase):
     def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
         if shape.instance is not None:
             if shape.is_flat():
-                axis = owner.scene_orientation.xform(LVector3d.up())
-                cosa = abs(axis.dot(owner.vector_to_obs))
+                axis = owner.anchor.get_absolute_orientation().xform(LVector3d.up())
+                cosa = abs(axis.dot(owner.anchor.vector_to_obs))
                 coef = max(self.min_coef, sqrt(cosa))
             else:
                 coef = 1.0
             scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
-            size = owner.get_apparent_radius() / owner.distance_to_obs
+            size = owner.get_apparent_radius() / owner.anchor.distance_to_obs
             if size > 1.0:
                 scale = max(1.0/255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         if self.texture is None:
@@ -116,10 +120,12 @@ class GalaxyAppearance(AppearanceBase):
 
     def apply(self, shape, instance):
         shape.instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
-        self.texture.apply(shape)
+        self.texture.apply(shape, instance)
         shape.instance.set_depth_write(False)
         if self.background is not None:
             shape.instance.setBin('background', settings.deep_space_depth)
+        if self.transparency:
+            instance.setShaderInput("transparency_level", self.transparency_level)
         shape.instance_ready = True
 
     def get_user_parameters(self):
@@ -158,6 +164,12 @@ class GalaxyShapeBase(Shape):
 
     def create_points(self, radius=1.0):
         return None
+
+    def shape_done(self):
+        # Indicates that the attached shader also contro the size of the rendered points
+        attrib = self.instance.getAttrib(ShaderAttrib)
+        attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
+        self.instance.setAttrib(attrib2)
 
     def apply(self):
         self.instance.node().setBounds(OmniBoundingVolume())
@@ -557,6 +569,17 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
+class GalaxyDataSource(DataSource):
+    def __init__(self):
+        DataSource.__init__(self, 'galaxy')
+
+    def apply(self, shape, instance):
+        instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
+        instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        instance.setShaderInput("scale_factor", shape.owner.scene_anchor.scene_scale_factor)
+
 class GalaxyPointControl(PointControl):
     use_vertex = True
     world_vertex = True
@@ -586,11 +609,3 @@ class GalaxyPointControl(PointControl):
 
     def fragment_shader(self, code):
         code.append("total_emission_color *= attenuation;")
-
-    def update_shader_shape_static(self, shape, appearance):
-        PointControl.update_shader_shape_static(self, shape, appearance)
-        shape.instance.setShaderInput("apparent_radius", shape.owner.get_apparent_radius())
-        shape.instance.setShaderInput("max_sprite_size", settings.max_sprite_size)
-
-    def update_shader_shape(self, shape, appearance):
-        shape.instance.setShaderInput("scale_factor", shape.owner.scene_scale_factor)

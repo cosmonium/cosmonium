@@ -17,17 +17,10 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LPoint3d
 
-from ..astro.astro import abs_to_app_mag, app_to_abs_mag
-
 from math import sqrt
-
-def OctreeLeaf(ref_object, *args):
-    return ref_object
 
 class OctreeNode(object):
     max_level = 200
@@ -35,8 +28,9 @@ class OctreeNode(object):
     nb_cells = 0
     nb_leaves = 0
     child_threshold = 0.5 # + 1.5 #Correspond roughly to 1/4 less luminosity
-    def __init__(self, level, center, width, threshold, index = -1):
+    def __init__(self, level, parent, center, width, threshold, index = -1):
         self.level = level
+        self.parent = parent
         self.width = width
         self.radius = self.width / 2.0 * sqrt(3)
         self.center = center
@@ -45,7 +39,10 @@ class OctreeNode(object):
         self.has_children = False
         self.children = [None, None, None, None, None, None, None, None]
         self.leaves = []
-        self.max_magnitude = 99.0
+        self.max_magnitude = 1000.0
+        self.rebuild_needed = False
+        #TODO: Right now an octree contains anything
+        self.content = ~0
         OctreeNode.nb_cells += 1
 
     def get_num_children(self):
@@ -58,14 +55,25 @@ class OctreeNode(object):
     def get_num_leaves(self):
         return len(self.leaves)
 
-    def traverse(self, traverser):
-        traverser.traverse(self, self.leaves)
+    def set_rebuild_needed(self):
+        self.rebuild_needed = True
+        if self.parent is not None:
+            self.parent.set_rebuild_needed()
+
+    def rebuild(self):
         for child in self.children:
-            if child is not None and traverser.enter(child):
+            if child is not None and child.rebuild_needed:
+                child.rebuild()
+        rebuild_needed = False
+
+    def traverse(self, traverser):
+        traverser.traverse_octree_node(self)
+        for child in self.children:
+            if child is not None and traverser.enter_octree_node(child):
                 child.traverse(traverser)
 
     def add(self, leaf):
-        self._add(leaf, leaf.get_global_position(), leaf.abs_magnitude)
+        self._add(leaf, leaf._global_position, leaf._abs_magnitude)
 
     def get_child(self, index):
         return self.children[index]
@@ -96,7 +104,7 @@ class OctreeNode(object):
                 child_center.z += child_offset
             else:
                 child_center.z -= child_offset
-            child = OctreeNode(self.level + 1, child_center, self.width / 2.0, self.threshold + self.child_threshold, index)
+            child = OctreeNode(self.level + 1, self, child_center, self.width / 2.0, self.threshold + self.child_threshold, index)
             self.children[index] = child
         self.children[index]._add(obj, position, magnitude)
 
@@ -106,6 +114,7 @@ class OctreeNode(object):
             self.max_magnitude = magnitude
         if not self.has_children or magnitude < self.threshold:
             self.leaves.append(obj)
+            obj.parent = self
         else:
             self._add_in_child(obj, position, magnitude)
         if self.level < self.max_level and len(self.leaves) >= self.max_leaves and not self.has_children:
@@ -115,11 +124,11 @@ class OctreeNode(object):
         new_leaves = []
         center = self.center
         for leaf in self.leaves:
-            position = leaf.get_global_position()
-            if leaf.get_abs_magnitude() < self.threshold or (center - position).length() < leaf._extend:
+            position = leaf._global_position
+            if leaf._abs_magnitude < self.threshold or (center - position).length() < leaf.bounding_radius:
                 new_leaves.append(leaf)
             else:
-                self._add_in_child(leaf, position, leaf.get_abs_magnitude())
+                self._add_in_child(leaf, position, leaf._abs_magnitude)
         self.leaves = new_leaves
         self.has_children = True
 
@@ -141,54 +150,3 @@ class OctreeNode(object):
     def print_stats(self):
         print("Nb cells:", self.nb_cells)
         print("Nb leaves:", self.nb_leaves)
-
-class VisibleObjectsTraverser(object):
-    def __init__(self, frustum, limit, update_id):
-        self.frustum = frustum
-        self.limit = limit
-        self.update_id = update_id
-        self.collected_leaves = []
-
-    def get_num_leaves(self):
-        return len(self.collected_leaves)
-
-    def get_leaf(self, index):
-        return self.collected_leaves[index]
-
-    def get_leaves(self):
-        return self.collected_leaves
-
-    def get_objects(self):
-        return self.collected_leaves
-
-    def enter(self, octree):
-        distance = (octree.center - self.frustum.get_position()).length() - octree.radius
-        if distance <= 0.0:
-            return True
-        if abs_to_app_mag(octree.max_magnitude, distance) > self.limit:
-            return False
-        return self.frustum.is_sphere_in(octree.center, octree.radius)
-
-    def traverse(self, octree, leaves):
-        frustum = self.frustum
-        frustum_position = frustum.get_position()
-        distance = (octree.center - frustum_position).length() - octree.radius
-        if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
-        else:
-            faintest = 99.0
-        for leaf in leaves:
-            abs_magnitude = leaf.get_abs_magnitude()
-            add = False
-            if abs_magnitude < faintest:
-                direction = leaf._global_position - frustum_position
-                distance = direction.length()
-                if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
-                        add = self.frustum.is_sphere_in(leaf._global_position, leaf._extend)
-                else:
-                    add = True
-            if add:
-                self.collected_leaves.append(leaf)
-                leaf.update_id = self.update_id

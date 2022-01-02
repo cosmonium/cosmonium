@@ -17,7 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 
 from panda3d.core import LVector2
 

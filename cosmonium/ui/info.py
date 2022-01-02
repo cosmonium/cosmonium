@@ -18,15 +18,14 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
 from ..surfaces import Surface
-from ..astro.orbits import Orbit, FixedPosition, FixedOrbit, EllipticalOrbit, FuncOrbit
-from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation, FuncRotation
+from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FunctionOrbit
+from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
+from ..astro.astro import orientation_to_equatorial
 from ..astro import bayer
 from ..astro import units
 
@@ -78,7 +77,7 @@ def elliptic_orbit_info(orbit):
     texts = []
     sma = orbit.pericenter_distance / (1.0 - orbit.eccentricity)
     texts.append([_("Semi-major axis"), "%s" % toUnit(sma, units.lengths_scale)])
-    texts.append([_("Period"), "%s" % toUnit(abs(orbit.period), units.times_scale)])
+    texts.append([_("Period"), "%s" % toUnit(abs(orbit.get_period()), units.times_scale)])
     texts.append([_("Eccentricity"), "%g" % (orbit.eccentricity)])
     texts.append([_("Inclination"), "%g°" % (orbit.inclination * 180 / pi)])
     texts.append([_("Ascending Node"), "%g°" % (orbit.ascending_node * 180 / pi)])
@@ -88,8 +87,10 @@ def elliptic_orbit_info(orbit):
     texts.append([_("Epoch"), "%s" % date])
     return [_("Orbit"), texts]
 
-def rotation_info(orbit):
-    return None
+def rotation_info(rotation):
+    texts = []
+    texts.append([_("Type"), rotation.__class__.__name__])
+    return [_("Rotation"), texts]
 
 def unknown_rotation_info(rotation):
     texts = [[_("Unknown rotation"), ""]]
@@ -98,11 +99,9 @@ def unknown_rotation_info(rotation):
 def uniform_rotation_info(rotation):
     texts = []
     #TODO: should give simulation time !
-    (ra, de) = rotation.calc_axis_ra_de(0)
-    if isinstance(rotation, SynchronousRotation):
-        texts.append([_("Period"), _("Synchronous")])
-    else:
-        texts.append([_("Period"), toUnit(abs(rotation.period), units.times_scale)])
+    orientation = rotation.get_equatorial_orientation_at(0)
+    (ra, de) = orientation_to_equatorial(orientation)
+    texts.append([_("Period"), toUnit(abs(rotation.get_period()), units.times_scale)])
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
     texts.append([_("Meridian"), "%g°" % (rotation.meridian_angle * 180 / pi)])
@@ -110,9 +109,17 @@ def uniform_rotation_info(rotation):
     texts.append([_("Epoch"), "%s" % date])
     return [_("Rotation"), texts]
 
-def func_rotation_info(orbit):
+def synchronous_rotation_info(rotation):
     texts = []
-    texts.append([_("Type"), orbit.__class__.__name__])
+    #TODO: should give simulation time !
+    orientation = rotation.get_equatorial_orientation_at(0)
+    (ra, de) = orientation_to_equatorial(orientation)
+    texts.append([_("Period"), _("Synchronous")])
+    texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
+    texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
+    texts.append([_("Meridian"), "%g°" % (rotation.meridian_angle * 180 / pi)])
+    date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(rotation.epoch)
+    texts.append([_("Epoch"), "%s" % date])
     return [_("Rotation"), texts]
 
 def surface(surface):
@@ -169,8 +176,8 @@ def stellar_object(body):
     general.append([_("Category"), body.body_class])
     if body.description != '':
         general.append([_("Description"), body.description])
-    texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+    texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     return texts
 
 def stellar_body(body):
@@ -194,11 +201,11 @@ def stellar_body(body):
     general.append([_("Rings"), _("Yes") if body.ring is not None else _("No")])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedOrbit):
-        texts.append(ObjectInfo.get_info_for(body.system.orbit))
+    if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
+        texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
     else:
-        texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+        texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     if body.surface is not None:
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
@@ -217,11 +224,11 @@ def star(body):
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.description != '':
         general.append([_("Description"), body.description])
-    if body.system is not None and isinstance(body.orbit, FixedOrbit):
+    if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
         texts.append(ObjectInfo.get_info_for(body.system.orbit))
     else:
-        texts.append(ObjectInfo.get_info_for(body.orbit))
-    texts.append(ObjectInfo.get_info_for(body.rotation))
+        texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
+    texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     if body.surface is not None:
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
@@ -229,13 +236,12 @@ def star(body):
 ObjectInfo.register(object, default_info)
 ObjectInfo.register(Orbit, orbit_info)
 ObjectInfo.register(FixedPosition, fixed_orbit_info)
-ObjectInfo.register(FuncOrbit, func_orbit_info)
+ObjectInfo.register(FunctionOrbit, func_orbit_info)
 ObjectInfo.register(EllipticalOrbit, elliptic_orbit_info)
 ObjectInfo.register(Rotation, rotation_info)
 ObjectInfo.register(UniformRotation, uniform_rotation_info)
-ObjectInfo.register(SynchronousRotation, uniform_rotation_info)
+ObjectInfo.register(SynchronousRotation, synchronous_rotation_info)
 ObjectInfo.register(UnknownRotation, unknown_rotation_info)
-ObjectInfo.register(FuncRotation, func_rotation_info)
 ObjectInfo.register(Surface, surface)
 ObjectInfo.register(StellarObject, stellar_object)
 ObjectInfo.register(StellarBody, stellar_body)

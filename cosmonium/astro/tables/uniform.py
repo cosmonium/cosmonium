@@ -17,13 +17,22 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from ..frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
-from .. import units
-from ..rotations import create_uniform_rotation
+from ..frame import J2000EclipticReferenceFrame
+from ..rotations import UniformRotation
+from ..astro import calc_orientation_from_incl_an
 from ..elementsdb import rotation_elements_db
+from .. import units
+
+from math import pi
+
+def create_uniform_rotation(period, inclination, ascending_node):
+    flipped = period < 0
+    orientation = calc_orientation_from_incl_an(inclination * units.Deg,
+                                                ascending_node * units.Deg,
+                                                flipped)
+    mean_motion = 2 * pi / (period * units.Hour)
+    return UniformRotation(orientation, mean_motion, 0, units.J2000, J2000EclipticReferenceFrame())
 
 uniform_rotations={}
 

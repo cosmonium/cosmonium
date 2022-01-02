@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -17,21 +17,19 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from panda3d.core import LColor, LVector3
+from panda3d.core import LColor
 
 from ..bodies import ReflectiveBody
-from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .atmospheresparser import AtmosphereYamlParser
-from .elementsparser import CloudsYamlParser, RingsYamlParser
+from .elementsparser import CloudsYamlParser
 from .surfacesparser import SurfaceYamlParser
+from .ringsparser import StellarRingsYamlParser
 from .framesparser import FrameYamlParser
 from .controllersparser import ControllerYamlParser
 from .utilsparser import check_parent, get_radius_scale
@@ -51,8 +49,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         radius, ellipticity, scale = get_radius_scale(data, None)
         albedo = data.get('albedo', 0.5)
         atmosphere = AtmosphereYamlParser.decode(data.get('atmosphere'))
-        clouds = CloudsYamlParser.decode(data.get('clouds'), atmosphere)
-        rings = RingsYamlParser.decode(data.get('rings'))
+        clouds = CloudsYamlParser.decode(data.get('clouds'))
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
         frame = FrameYamlParser.decode(data.get('frame'), actual_parent)
@@ -66,29 +63,34 @@ class ReflectiveYamlParser(YamlModuleParser):
                               scale=scale,
                               orbit=orbit,
                               rotation=rotation,
-                              ring=rings,
                               atmosphere=atmosphere,
                               clouds=clouds,
                               point_color=point_color,
                               albedo=albedo)
         if data.get('surfaces') is None:
             surfaces = []
-            surfaces.append(SurfaceYamlParser.decode_surface(data, atmosphere, {}, body))
+            surfaces.append(SurfaceYamlParser.decode_surface(data, {}, body))
         else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), atmosphere, body)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), body)
         for surface in surfaces:
             body.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(body)
+        parent.add_child_fast(body)
         controller_data = data.get('controller')
         if controller_data is not None:
             controller_class = ControllerYamlParser.decode(controller_data)
             controller = controller_class(body)
             self.app.add_controller(controller)
-        if parent_name is not None:
-            return None
-        else:
-            return body
+        rings = data.get('rings')
+        if rings is not None:
+            rings['name'] = data['name'] + "'s rings"
+            rings_parser = StellarRingsYamlParser('rings')
+            if parent.primary is not body:
+                system = body.get_or_create_system()
+                body = system
+            else:
+                system = parent
+            rings_parser.decode(rings, system)
+        return body
 
 ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))
 ObjectYamlParser.register_object_parser('planet', ReflectiveYamlParser('planet'))

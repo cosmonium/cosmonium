@@ -3,8 +3,6 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from menu import DropDownMenu, PopupMenu
 

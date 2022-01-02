@@ -18,8 +18,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
 
@@ -54,7 +52,7 @@ class TextureBase(object):
     async def load(self, tasks_tree, patch):
         pass
 
-    def apply(self, shape):
+    def apply(self, shape, instance):
         pass
 
     def apply_shader(self, instance, input_name, texture, texture_lod):
@@ -359,7 +357,7 @@ class SimpleTexture(TextureBase):
             if texture is not None:
                 self.convert_texture(texture)
 
-    def apply(self, shape):
+    def apply(self, shape, instance):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             #print("USE DEFAULT", shape.str_id())
@@ -376,17 +374,17 @@ class SimpleTexture(TextureBase):
         if shape.vanish_borders:
             self.vanish(texture)
         if self.panda:
-            self.apply_panda(shape, texture, texture_lod)
+            self.apply_panda(shape, instance, texture, texture_lod)
         else:
-            self.apply_shader(shape, self.input_name, texture, texture_lod)
+            self.apply_shader(instance, self.input_name, texture, texture_lod)
         self.configure_instance(shape.instance)
 
-    def apply_panda(self, shape, texture, texture_lod):
+    def apply_panda(self, shape, instance, texture, texture_lod):
         texture_stage = TextureStage(shape.str_id() + self.__class__.__name__)
         self.init_texture_stage(texture_stage, texture)
         if self.tex_matrix:
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
-        shape.instance.setTexture(texture_stage, texture, 1)
+        instance.set_texture(texture_stage, texture, 1)
 
     def clear_patch(self, patch):
         self.source.clear_patch(patch)
@@ -444,8 +442,8 @@ class VisibleTexture(SimpleTexture):
                                         TextureStage.CSTexture, TextureStage.COSrcColor,
                                         TextureStage.CSConstant, TextureStage.COSrcColor)
 
-    def apply(self, shape):
-        SimpleTexture.apply(self, shape)
+    def apply(self, shape, instance):
+        SimpleTexture.apply(self, shape, instance)
         if self.source.is_patched() and settings.debug_vt:
             self.debug_borders()
 
@@ -567,7 +565,7 @@ class TextureArray(TextureBase):
                 self.convert_texture(texture)
                 self.mipmap(texture)
 
-    def apply(self, instance):
+    def apply(self, shape, instance):
         self.apply_shader(instance, self.input_name, self.texture, None)
 
     def clear_patch(self, patch):

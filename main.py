@@ -18,8 +18,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 import sys
 import os
@@ -53,7 +51,8 @@ from cosmonium.spaceengine import textures
 from cosmonium import settings
 
 #import orbits and rotations elements to add them to the DB
-from cosmonium.astro.tables import uniform, vsop87, wgccre, lieske_e5, elp82, meeus, gust86, dourneau, rckin, htc20
+from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87
+from cosmonium.astro.tables import uniform, wgccre
 
 import argparse
 import os
@@ -225,7 +224,7 @@ class CosmoniumApp(Cosmonium):
         parser.set_translation(self.load_lang('main', locale))
         universeYamlParser.set_universe(self.universe)
         parser.load_and_parse(self.app_config.common)
-        parser.load_and_parse(self.app_config.main, self.universe)
+        parser.load_and_parse(self.app_config.main, self.background)
         for extra in self.app_config.extra:
             if os.path.isdir(extra):
                 self.load_dir(parser, extra)

@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePath
 from panda3d.core import lookAt
@@ -39,7 +37,7 @@ from math import acos, pi, exp, log
 class AutoPilot(object):
     def __init__(self, ui):
         self.ui = ui
-        self.ship = None
+        self.controller = None
         self.camera_controller =None
         self.current_interval = None
         self.timed_interval = None
@@ -48,8 +46,8 @@ class AutoPilot(object):
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
 
-    def set_ship(self, ship):
-        self.ship = ship
+    def set_controller(self, controller):
+        self.controller = controller
 
     def set_camera_controller(self, camera_controller):
         self.camera_controller = camera_controller
@@ -63,16 +61,16 @@ class AutoPilot(object):
             self.timed_interval = None
 
     def stash_position(self):
-        self.start_pos = self.ship.get_position_of(self.start_pos)
-        self.end_pos = self.ship.get_position_of(self.end_pos)
+        self.start_pos = self.controller.anchor.calc_absolute_position_of(self.start_pos)
+        self.end_pos = self.controller.anchor.calc_absolute_position_of(self.end_pos)
 
     def pop_position(self):
-        self.start_pos = self.ship.get_rel_position_of(self.start_pos, local=False)
-        self.end_pos = self.ship.get_rel_position_of(self.end_pos, local=False)
+        self.start_pos = self.controller.anchor.calc_frame_position_of_absolute(self.start_pos)
+        self.end_pos = self.controller.anchor.calc_frame_position_of_absolute(self.end_pos)
 
     def do_move(self, step):
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.ship.set_frame_pos(position)
+        self.controller.set_frame_position(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -80,15 +78,15 @@ class AutoPilot(object):
         if settings.debug_jump: duration = 0
         if duration == 0:
             if absolute:
-                self.ship.set_pos(new_pos)
+                self.controller.set_local_position(new_pos)
             else:
-                self.ship.set_frame_pos(new_pos)
+                self.controller.set_frame_position(new_pos)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             if absolute:
-                self.start_pos = self.ship.get_frame_pos()
-                self.end_pos = self.ship.get_rel_position_of(new_pos)
+                self.start_pos = self.controller.get_frame_position()
+                self.end_pos = self.controller.anchor.calc_frame_position_of_local(new_pos)
             if ease:
                 blend_type = 'easeInOut'
             else:
@@ -128,9 +126,9 @@ class AutoPilot(object):
     def do_move_and_rot(self, step):
         rot = LQuaterniond(*self.fake.getQuat())
         rot.normalize()
-        self.ship.set_frame_rot(rot)
+        self.controller.set_frame_orientation(rot)
         position = self.end_pos * step + self.start_pos * (1.0 - step)
-        self.ship.set_frame_pos(position)
+        self.controller.set_frame_position(position)
         if step == 1.0:
             self.current_interval = None
 
@@ -139,24 +137,24 @@ class AutoPilot(object):
         self.camera_controller.prepare_movement()
         if duration == 0:
             if absolute:
-                self.ship.set_pos(new_pos)
-                self.ship.set_rot(new_rot)
+                self.controller.set_local_position(new_pos)
+                self.controller.set_absolute_orientation(new_rot)
             else:
-                self.ship.set_frame_pos(new_pos)
-                self.ship.set_frame_rot(new_rot)
+                self.controller.set_frame_position(new_pos)
+                self.controller.set_frame_orientation(new_rot)
         else:
             if self.current_interval != None:
                 self.current_interval.pause()
             self.fake = NodePath('fake')
             if absolute:
-                self.start_pos = self.ship.get_frame_pos()
-                self.end_pos = self.ship.get_rel_position_of(new_pos)
-                start_rot = self.ship.get_frame_rot()
-                end_rot = self.ship.get_rel_rotation_of(new_rot)
+                self.start_pos = self.controller.get_frame_position()
+                self.end_pos = self.controller.anchor.calc_frame_position_of_local(new_pos)
+                start_rot = self.controller.get_frame_orientation()
+                end_rot = self.controller.anchor.calc_frame_orientation_of(new_rot)
             else:
-                self.start_pos = self.ship.get_frame_pos()
+                self.start_pos = self.controller.get_frame_position()
                 self.end_pos = new_pos
-                start_rot = self.ship.get_frame_rot()
+                start_rot = self.controller.get_frame_orientation()
                 end_rot = new_rot
             self.fake.set_quat(LQuaternion(*start_rot))
             nodepath_lerp = Sequence()
@@ -180,7 +178,7 @@ class AutoPilot(object):
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
         if up is None:
             up = LVector3d.up()
-        frame = SynchroneReferenceFrame(target)
+        frame = SynchroneReferenceFrame(target.anchor)
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")
@@ -200,25 +198,26 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to front", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.ship._global_position)
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         position = None
         if star:
-            position = target.star
+            if target.lights is not None and len(target.lights.lights) > 0:
+                position = target.lights.lights[0].source
         else:
             if target.parent is not None and isinstance(target.parent, SimpleSystem):
                 if target.parent.primary == target:
-                    if target.star is not target:
-                        position = target.star
+                    if target.lights is not None and len(target.lights.lights) > 0:
+                        position = target.lights.lights[0].source
                 else:
                     position = target.parent.primary
         if position is not None:
             print("Looking from", position.get_name())
-            position = position.get_rel_position_to(self.ship._global_position)
+            position = position.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         else:
-            position = self.ship.get_pos()
+            position = self.controller.get_local_position()
         direction = center - position
         direction.normalize()
         new_position = center - direction * distance * distance_unit
@@ -233,11 +232,11 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.ship._global_position)
-        direction = center - self.ship.get_pos()
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+        direction = center - self.controller.get_local_position()
         direction.normalize()
         new_position = center - direction * distance * distance_unit
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
@@ -251,10 +250,10 @@ class AutoPilot(object):
             distance = settings.default_distance
         distance_unit = target.get_apparent_radius()
         if distance_unit == 0.0:
-            distance_unit = target.get_extend()
+            distance_unit = target.get_bounding_radius()
         print("Go to long-lat", target.get_name())
         self.ui.follow_selected()
-        center = target.get_rel_position_to(self.ship._global_position)
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         new_position = (longitude, latitude, distance * distance_unit)
         new_position = target.spherical_to_cartesian(new_position)
         direction = center - new_position
@@ -268,11 +267,11 @@ class AutoPilot(object):
             duration = settings.slow_move
         print("Go to surface", target.get_name())
         self.ui.sync_selected()
-        center = target.get_rel_position_to(self.ship._global_position)
-        direction = self.ship.get_pos() - center
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+        direction = self.controller.get_local_position() - center
         new_orientation = LQuaterniond()
         lookAt(new_orientation, direction)
-        height = target.get_height_under(self.ship.get_pos()) + 10 * units.m
+        height = target.get_height_under(self.controller.get_local_position()) + 10 * units.m
         new_position = center + new_orientation.xform(LVector3d(0, height, 0))
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
@@ -284,15 +283,15 @@ class AutoPilot(object):
         else:
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
-                distance_unit = target.get_extend()
-            distance = target.distance_to_obs / distance_unit
+                distance_unit = target.get_bounding_radius()
+            distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, lat, duration, distance)
 
     def go_north(self, duration=None, zoom=False):
         if not self.ui.selected: return
         target = self.ui.selected
         lat = pi / 2
-        if target.rotation.is_flipped():
+        if target.anchor.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
@@ -300,7 +299,7 @@ class AutoPilot(object):
         if not self.ui.selected: return
         target = self.ui.selected
         lat = -pi / 2
-        if target.rotation.is_flipped():
+        if target.anchor.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
@@ -312,50 +311,50 @@ class AutoPilot(object):
         else:
             distance_unit = target.get_apparent_radius()
             if distance_unit == 0.0:
-                distance_unit = target.get_extend()
-            distance = target.distance_to_obs / distance_unit
+                distance_unit = target.get_bounding_radius()
+            distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, 0, duration, distance)
 
     def align_on_ecliptic(self, duration=None):
         if duration is None:
             duration = settings.fast_move
-        ecliptic_normal = self.ship._frame_rotation.conjugate().xform(J2000EclipticReferenceFrame.orientation.xform(LVector3d.up()))
+        ecliptic_normal = self.controller.get_frame_orientation().conjugate().xform(J2000EclipticReferenceFrame.orientation.xform(LVector3d.up()))
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
         if direction < 0:
             angle = 2 * pi - angle
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
-        self.ship.step_turn(rot, absolute=False)
+        self.controller.step_turn(rot, absolute=False)
         #self.move_and_rotate_to(position, orientation, duration=duration)
 
     def align_on_equatorial(self, duration=None):
         if duration is None:
             duration = settings.fast_move
-        ecliptic_normal = self.ship._frame_rotation.conjugate().xform(J2000EquatorialReferenceFrame.orientation.xform(LVector3d.up()))
+        ecliptic_normal = self.controller.get_frame_orientation().conjugate().xform(J2000EquatorialReferenceFrame.orientation.xform(LVector3d.up()))
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
         if direction < 0:
             angle = 2 * pi - angle
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
-        self.ship.step_turn(rot, absolute=False)
+        self.controller.step_turn(rot, absolute=False)
 
     def do_change_distance(self, delta, rate):
         target = self.ui.selected
-        center = target.get_rel_position_to(self.ship._global_position)
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         min_distance = target.get_apparent_radius()
         natural_distance = 4.0 * min_distance
-        relative_pos = self.ship.get_pos() - center
+        relative_pos = self.controller.get_local_position() - center
 
-        if target.distance_to_obs < min_distance:
-            min_distance = target.distance_to_obs * 0.5
+        if target.anchor.distance_to_obs < min_distance:
+            min_distance = target.anchor.distance_to_obs * 0.5
 
-        if target.distance_to_obs >= min_distance and natural_distance != 0:
-            r = (target.distance_to_obs - min_distance) / natural_distance
+        if target.anchor.distance_to_obs >= min_distance and natural_distance != 0:
+            r = (target.anchor.distance_to_obs - min_distance) / natural_distance
             new_distance = min_distance + natural_distance * exp(log(r) + rate * delta)
-            new_pos = relative_pos * (new_distance / target.distance_to_obs)
-            self.ship.set_pos(center + new_pos)
+            new_pos = relative_pos * (new_distance / target.anchor.distance_to_obs)
+            self.controller.set_local_position(center + new_pos)
 
     def change_distance(self, rate, duration=None):
         print("Change distance")
@@ -365,18 +364,18 @@ class AutoPilot(object):
 
     def do_orbit(self, delta, axis, rate):
         target = self.ui.selected
-        center = target.get_rel_position_to(self.ship._global_position)
-        center = self.ship.get_rel_position_of(center)
-        relative_pos = self.ship.get_frame_pos() - center
+        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+        center = self.controller.anchor.calc_frame_position_of_local(center)
+        relative_pos = self.controller.get_frame_position() - center
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
-        rot2 = self.ship._frame_rotation.conjugate() * rot * self.ship._frame_rotation
+        rot2 = self.controller.get_frame_orientation().conjugate() * rot * self.controller.get_frame_orientation()
         rot2.normalize()
         distance = relative_pos.length()
         relative_pos.normalize()
         new_pos = rot2.xform(relative_pos) * distance
-        self.ship.set_frame_pos(new_pos + center)
-        self.ship.turn(self.ship._frame_rotation * rot2, absolute=False)
+        self.controller.set_frame_position(new_pos + center)
+        self.controller.turn(self.controller.get_frame_orientation() * rot2, absolute=False)
 
     def orbit(self, axis, rate, duration=None):
         print("Orbit")
@@ -387,7 +386,7 @@ class AutoPilot(object):
     def do_rotate(self, delta, axis, rate):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
-        self.ship.step_turn(rot, absolute=False)
+        self.controller.step_turn(rot, absolute=False)
 
     def rotate(self, axis, rate, duration=None):
         print("Rotate")

@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
@@ -46,7 +44,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         shader = BasicShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target)
         surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
-                              appearance=Appearance(colorScale=body.point_color,
+                              appearance=Appearance(colorScale=body.anchor.point_color,
                                                     texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
                                                                                                                  self.size),
                                                                            srgb=False)),

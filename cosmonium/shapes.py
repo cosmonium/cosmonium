@@ -17,50 +17,27 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import GeomNode, LQuaternion, LQuaterniond
 from panda3d.core import LVecBase3, LPoint3d, LVector3, LVector3d
 from panda3d.core import NodePath, BitMask32, ModelPool
 from panda3d.core import CollisionSphere, CollisionNode, OmniBoundingVolume
-from panda3d.core import Material
+from panda3d.core import Material, LColor
 from direct.task.Task import gather
 from direct.actor.Actor import Actor
 
 from .foundation import VisibleObject
+from .datasource import DataSourcesHandler
 from .shaders import AutoShader
 from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from .shadows import MultiShadows
 from .parameters import ParametersGroup, AutoUserParameter, UserParameter
+#TODO: There shouldn't be a dependency towards astro
+from .astro import units
 
 from . import geometry
 from . import settings
-
-class ShapeTasksTree:
-    def __init__(self, sources):
-        self.sources = sources
-        self.named_tasks = {source.name: None for source in sources}
-        self.tasks = []
-
-    def add_task_for(self, source, coro):
-        task = taskMgr.add(coro)
-        self.named_tasks[source.name] = task
-        self.tasks.append(task)
-
-    def collect_patch_tasks(self, patch, owner):
-        for source in self.sources:
-            source.create_load_patch_data_task(self, patch, owner)
-
-    def collect_tasks(self, shape, owner):
-        for source in self.sources:
-            source.create_load_task(self, shape, owner)
-
-    async def run_tasks(self):
-        await gather(*self.tasks)
-        self.named_tasks = {}
-        self.tasks = []
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -84,9 +61,6 @@ class Shape:
 
     def get_name(self):
         return 'shape ' + self.owner.get_name()
-
-    def get_oid_color(self):
-        return self.owner.oid_color
 
     def get_user_parameters(self):
         return None
@@ -112,7 +86,7 @@ class Shape:
     async def create_instance(self):
         return None
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -204,10 +178,11 @@ class Shape:
                 self.instance.setCollideMask(BitMask32.all_off())
 
 class CompositeShapeObject(VisibleObject):
-    def __init__(self):
+    def __init__(self, name):
+        VisibleObject.__init__(self, name)
         self.components = []
         self.owner = None
-        self.parent = None
+        self.task = None
 
     def add_component(self, component):
         self.components.append(component)
@@ -215,7 +190,7 @@ class CompositeShapeObject(VisibleObject):
         component.set_owner(self.owner)
 
     def set_parent(self, parent):
-        self.parent = parent
+        VisibleObject.set_parent(self, parent)
         for component in self.components:
             component.set_parent(self.parent)
 
@@ -228,19 +203,34 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             component.check_settings()
 
+    def add_source(self, source):
+        for component in self.components:
+            component.add_source(source)
+
     def add_after_effect(self, after_effect):
         for component in self.components:
             component.add_after_effect(after_effect)
 
-    async def create_instance(self):
+    def task_done(self, task):
+        self.task = None
+
+    #TODO: Temporarily stolen from foundation to be able to spawn task
+    def check_and_create_instance(self):
+        if not self.task:
+            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
+
+    async def create_instance(self, scene_anchor):
         tasks = []
         for component in self.components:
-            tasks.append(component.create_instance())
-        return gather(*tasks)
+            tasks.append(component.create_instance(scene_anchor))
+        await gather(*tasks)
+        #TODO: Needed for VisibleObject methods
+        self.instance = scene_anchor.instance.attach_new_node("dummy")
+        self.instance_ready = True
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:
-            component.update_instance(camera_pos, camera_rot)
+            component.update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -251,29 +241,31 @@ class CompositeShapeObject(VisibleObject):
             component.remove_instance()
 
 class ShapeObject(VisibleObject):
-    default_camera_mask = VisibleObject.DefaultCameraMask | VisibleObject.WaterCameraMask | VisibleObject.ShadowCameraMask
+    default_camera_mask = VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
-        self.sources = []
+        self.sources = DataSourcesHandler()
         self.shape = None
+        self.owner = None
         self.set_shape(shape)
         self.appearance = appearance
         if shader is None:
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
-        self.sources.append(self.appearance)
+        self.sources.add_source(self.appearance)
         self.instance_ready = False
         self.owner = None
+        self.oid_color = None
         self.shadows = MultiShadows(self)
-        self.shadow_caster = None
+        self.shadow_casters = {}
         self.first_patch = True
         self.task = None
 
     def check_settings(self):
         self.shape.check_settings()
-        if self.shadow_caster is not None:
-            self.shadow_caster.check_settings()
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.check_settings()
         self.update_shader()
 
     def get_user_parameters(self):
@@ -282,8 +274,9 @@ class ShapeObject(VisibleObject):
             group.add_parameters(self.shape.get_user_parameters())
         if self.appearance is not None:
             group.add_parameters(self.appearance.get_user_parameters())
-        if self.shader is not None:
-            group.add_parameters(self.shader.get_user_parameters())
+        #TODO: DataSourcesHandler should have an iterator interface
+        for source in self.sources.sources:
+            group.add_parameters(source.get_user_parameters())
         return group
 
     def update_user_parameters(self):
@@ -297,27 +290,41 @@ class ShapeObject(VisibleObject):
         if self.shape is not None:
             self.shape.parent = None
             self.shape.set_owner(None)
+            self.sources.remove_source_by_name('shape')
         self.shape = shape
         if shape is not None:
             self.shape.parent = self
-            self.shape.set_owner(self.parent)
+            self.shape.set_owner(self.owner)
             data_source = self.shape.get_data_source()
             if data_source is not None:
-                self.sources.append(data_source)
+                self.sources.add_source(data_source)
 
     def set_owner(self, owner):
         self.owner = owner
+        self.shape.set_owner(owner)
 
-    def set_parent(self, parent):
-        VisibleObject.set_parent(self, parent)
-        if self.shape is not None:
-            self.shape.set_owner(parent)
+    def set_lights(self, lights):
+        self.sources.remove_source_by_name('lights')
+        if lights is not None:
+            self.sources.add_source(lights)
+
+    def set_oid_color(self, oid_color):
+        self.oid_color = oid_color
+
+    def get_oid_color(self):
+        return self.oid_color
 
     def set_appearance(self, appearance):
         self.appearance = appearance
 
     def set_shader(self, shader):
         self.shader = shader
+
+    def add_source(self, source):
+        self.sources.add_source(source)
+
+    def get_source(self, name):
+        return self.sources.get_source(name)
 
     def add_after_effect(self, after_effect):
         if self.shader is not None:
@@ -335,8 +342,27 @@ class ShapeObject(VisibleObject):
     def get_scale(self):
         return self.shape.get_scale()
 
+    def set_scattering(self, scattering_source, scattering_shader):
+        self.sources.remove_source_by_name('scattering')
+        self.shader.set_scattering(scattering_shader)
+        self.update_shader()
+        self.sources.add_source(scattering_source)
+        if self.instance is not None:
+            scattering_source.apply(self.shape, self.instance)
+
+    def remove_scattering(self):
+        self.shader.remove_scattering()
+        self.update_shader()
+        self.sources.remove_source_by_name('scattering')
+        if self.instance is not None:
+            #scattering_source.un_apply(self.instance)
+            pass
+
     def is_flat(self):
         return True
+
+    def is_spherical(self):
+        return self.shape.is_spherical()
 
     def task_done(self, task):
         self.task = None
@@ -344,12 +370,18 @@ class ShapeObject(VisibleObject):
     #TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
-            self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
+            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
 
-    async def create_instance(self):
+    async def create_instance(self, scene_anchor):
         self.instance = NodePath('shape')
         #TODO: Temporarily here until foundation.show() is corrected
-        self.instance.reparent_to(self.context.world)
+        if scene_anchor.instance is None:
+            print("NO INSTANCE FOR", self, self.owner.get_name())
+            return
+        if self.shape.patchable:
+            self.instance.reparent_to(scene_anchor.shifted_instance)
+        else:
+            self.instance.reparent_to(scene_anchor.unshifted_instance)
         shape_instance = await self.shape.create_instance()
         if shape_instance is None:
             print("ERROR: Could not create the shape instance")
@@ -361,36 +393,41 @@ class ShapeObject(VisibleObject):
         shape_instance.reparent_to(self.instance)
         self.shape.set_clickable(self.clickable)
         self.shape.apply_owner()
-        #self.instance.reparent_to(self.context.world)
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.default_camera_mask)
         if self.appearance is not None:
             #TODO: should be done somewhere else
             self.appearance.bake()
+        #TODO: Should be moved to shape_task
         if self.context.observer.has_scattering:
             self.context.observer.scattering.add_attenuated_object(self)
+        self.instance.set_scale(self.get_scale())
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.configure_render_order()
+        if settings.color_picking and self.get_oid_color() is not None:
+            self.instance.set_shader_input("color_picking", self.get_oid_color())
         self.schedule_jobs()
 
     def configure_render_order(self):
         pass
 
-    def create_shadow_caster(self):
+    def do_create_shadow_caster_for(self, light_source):
         pass
 
-    def create_shadows(self):
-        if self.shadow_caster is None:
-            self.create_shadow_caster()
-        self.owner.set_visibility_override(True)
-        self.shadow_caster.create()
+    def create_shadow_caster_for(self, light_source):
+        if not light_source in self.shadow_casters:
+            shadow_caster = self.do_create_shadow_caster_for(light_source)
+            self.shadow_casters[light_source] = shadow_caster
+            if not shadow_caster.is_analytic():
+                self.owner.set_visibility_override(True)
+        self.shadow_casters[light_source].create()
 
-    def remove_shadows(self):
-        if self.shadow_caster is not None:
-            self.shadow_caster.remove()
-            self.owner.set_visibility_override(False)
-            self.shadow_caster = None
+    def remove_all_shadows(self):
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.remove()
+        self.owner.set_visibility_override(False)
+        self.shadow_casters = {}
 
     def start_shadows_update(self):
         self.shadows.start_update()
@@ -398,28 +435,25 @@ class ShapeObject(VisibleObject):
     def end_shadows_update(self):
         self.shadows.end_update()
 
-    def add_shadow_target(self, target):
-        if self.shadow_caster is None:
-            self.create_shadows()
-        if self.shadow_caster is not None:
-            self.shadow_caster.add_target(target)
+    def add_shadow_target(self, light_source, target):
+        if not self.instance_ready: return
+        self.create_shadow_caster_for(light_source)
+        self.shadow_casters[light_source].add_target(target)
+
+    def add_self_shadow(self, light_source):
+        pass
 
     async def patch_task(self, patch):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
         if self.shape.task is not None:
             await self.shape.task
-        for source in self.sources:
-            source.create_patch_data(patch)
-        tasks_tree = ShapeTasksTree(self.sources)
-        tasks_tree.collect_patch_tasks(patch, self)
-        await tasks_tree.run_tasks()
+        await self.sources.load_patch_data(patch)
         if patch.instance is not None:
-            for source in self.sources:
-                source.apply_patch_data(patch, patch.instance)
+            self.sources.apply_patch_data(patch)
             patch.instance_ready = True
             if self.shader is not None:
                 if self.first_patch:
-                    self.shader.apply(self.shape, self.appearance)
+                    self.shader.apply(self.shape, self.appearance, self.shape.instance)
                     self.first_patch = False
             patch.patch_done()
             self.shape.patch_done(patch)
@@ -427,18 +461,13 @@ class ShapeObject(VisibleObject):
 
     async def shape_task(self, shape):
         #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
-        tasks_tree = ShapeTasksTree(self.sources)
-        tasks_tree.collect_tasks(shape, self)
-        await tasks_tree.run_tasks()
+        await self.sources.load_shape_data(shape)
         if shape.instance is not None:
-            for source in self.sources:
-                source.apply(shape, shape.instance)
+            self.sources.apply_shape_data(shape)
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
-                self.shader.apply(shape, self.appearance)
-                #TODO: Why update() should be called here ?
-                self.shader.update(self.shape, self.appearance)
+                self.shader.apply(shape, self.appearance, self.shape.instance)
             shape.shape_done()
         #print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
@@ -457,14 +486,9 @@ class ShapeObject(VisibleObject):
         if patch.lod > 0:
             #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready, id(patch.instance))
             patch.instance_ready = True
-            for source in self.sources:
-                source.create_patch_data(patch)
-                source.apply_patch_data(patch, patch.instance)
+            self.sources.early_apply_patch_data(patch)
             patch.patch_done()
             self.shape.patch_done(patch)
-
-    def check_visibility(self, pixel_size):
-        self.visible = self.parent != None and self.parent.shown and self.parent.visible and self.parent.resolved
 
     def update_shape(self):
         if self.instance is not None and self.shape is not None and self.instance_ready:
@@ -472,45 +496,41 @@ class ShapeObject(VisibleObject):
 
     def update_shader(self):
         if self.instance is not None and self.shader is not None and self.instance_ready:
-            self.shader.apply(self.shape, self.appearance)
+            self.shader.apply(self.shape, self.appearance, self.shape.instance)
+            self.sources.apply_shape_data(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
-        if self.shape.update_lod(self.context.observer.get_camera_pos(), self.parent.distance_to_obs, self.context.observer.pixel_size, self.appearance):
+        if self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
             self.schedule_jobs()
         if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.parent.get_apparent_radius(), self.parent.distance_to_obs, self.context.observer.pixel_size)
+            self.appearance.update_lod(self.shape, self.owner.get_apparent_radius(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size)
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.shape.instance is not None:
+            self.sources.update_shape_data(self.shape, camera_pos, camera_rot)
         if not self.instance_ready: return
-        self.place_instance(self.instance, self.parent)
-        self.shape.update_instance(camera_pos, camera_rot)
-        if not self.shape.patchable and settings.offset_body_center and self.parent is not None:
-            #TODO: Should be done in place_instance, but that would make several if...
-            self.instance.setPos(*(self.parent.scene_position + self.parent.world_body_center_offset))
-        if self.shape.patchable and settings.offset_body_center and self.parent is not None:
-            #In case of oblate shape, the offset can not be used directly to retrieve the body center
-            #The scale must be applied to the offset to retrieve the real center
-            offset = self.instance.getMat().xform(LVector3(*self.shape.owner.model_body_center_offset))
-            self.parent.projected_world_body_center_offset = LVector3d(*offset.get_xyz())
+        self.shape.update_instance(scene_manager, camera_pos, camera_rot)
         self.update_lod(camera_pos, camera_rot)
         if self.shape.patchable:
-            self.shape.place_patches(self.parent)
-        if self.shadow_caster is not None:
-            self.shadow_caster.update()
-        if self.shadows.update_needed:
+            self.shape.place_patches(self.owner)
+        for shadow_caster in self.shadow_casters.values():
+            shadow_caster.update(scene_manager)
+        if self.shadows.rebuild_needed:
             self.update_shader()
-            self.shadows.update_needed = False
+            self.shadows.rebuild_needed = False
         if self.context.observer.apply_scattering > 0:
             self.context.observer.scattering.add_attenuated_object(self)
-        if self.shader is not None:
-            self.shader.update(self.shape, self.appearance)
 
     def remove_instance(self):
+        # This method could be called even if the instance does not exist
+        if self.instance is None: return
+        self.sources.clear_shape_data(self.shape, self.shape.instance)
         self.shadows.clear_shadows()
         self.appearance.clear_all()
-        self.shader.clear_all()
         self.shape.remove_instance()
-        self.instance = None
+        if self.instance is not None:
+            self.instance.remove_node()
+            self.instance = None
         self.instance_ready = False
         if self.context.observer.has_scattering:
             self.context.observer.scattering.remove_attenuated_object(self)
@@ -519,7 +539,6 @@ class ShapeObject(VisibleObject):
     def remove_patch(self, patch):
         #TODO: This should be reworked and moved into a dedicated class
         self.appearance.clear_patch(patch)
-        self.shader.clear_patch(self.shape, patch)
 
 class MeshShape(Shape):
     deferred_instance = True
@@ -533,7 +552,7 @@ class MeshShape(Shape):
         self.offset = offset
         if rotation is None:
             rotation = LQuaterniond()
-        if scale is None and not auto_scale_mesh:
+        if scale is None:
             scale = LVector3d(1, 1, 1)
         self.scale_factor = scale
         self.rotation = rotation
@@ -541,6 +560,10 @@ class MeshShape(Shape):
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
+        if auto_scale_mesh and self.scale_factor is not None:
+            self.radius = max(*self.scale_factor)
+        else:
+            self.radius = 0.0
 
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
@@ -581,7 +604,10 @@ class MeshShape(Shape):
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             scale_factor = 1.0 / major
-            self.scale_factor = LVector3d(scale_factor, scale_factor, scale_factor)
+            self.scale_factor *= scale_factor
+        else:
+            self.scale_factor *= units.m
+            self.radius = max(*self.scale_factor)
         if self.flatten:
             self.mesh.flattenStrong()
         self.update_shape()

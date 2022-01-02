@@ -18,8 +18,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LVector2
 
@@ -38,7 +36,7 @@ from ..parsers.configparser import configParser
 from .shortcuts import Shortcuts
 from .hud import HUD
 from .query import Query
-from .objecteditor import ObjectEditor
+from .objecteditor import ObjectEditorWindow
 from .textwindow import TextWindow
 from .filewindow import FileWindow
 from .infopanel import InfoPanel
@@ -100,7 +98,7 @@ class Gui(object):
         self.height = 0
         self.update_size(self.screen_width, self.screen_height)
         self.opened_windows = []
-        self.editor = ObjectEditor(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.info = InfoPanel(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
@@ -211,15 +209,15 @@ class Gui(object):
             names = utils.join_names(bayer.decode_names(selected.get_names()))
             self.hud.title.set_text(names)
             radius = selected.get_apparent_radius()
-            if selected.virtual_object or selected.distance_to_obs > 10 * radius:
-                self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.distance_to_obs, units.lengths_scale))
+            if selected.virtual_object or selected.anchor.distance_to_obs > 10 * radius:
+                self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.anchor.distance_to_obs, units.lengths_scale))
             else:
                 if selected.surface is not None and not selected.surface.is_flat():
-                    distance = selected.distance_to_obs - selected._height_under
-                    altitude = selected.distance_to_obs - radius
+                    distance = selected.anchor.distance_to_obs - selected.anchor._height_under
+                    altitude = selected.anchor.distance_to_obs - radius
                     self.hud.topLeft.set(0, _("Altitude: ") + toUnit(altitude, units.lengths_scale) + " (" + _("Ground: ")  + toUnit(distance, units.lengths_scale) + ")")
                 else:
-                    altitude = selected.distance_to_obs - radius
+                    altitude = selected.anchor.distance_to_obs - radius
                     self.hud.topLeft.set(0, _("Altitude: ")  + toUnit(altitude, units.lengths_scale))
             if not selected.virtual_object:
                 self.hud.topLeft.set(1, _("Radius: ") + "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))
@@ -288,8 +286,7 @@ class Gui(object):
             self.hud.bottomRight.set(0, "%s (%.0fx)" % (date, self.time.multiplier))
         else:
             self.hud.bottomRight.set(0, _("%s (Paused)") % (date))
-        #self.hud.bottomRight.set(1, "FOV: %.0f°/%.0f°" % (self.cosmonium.realCamLens.getHfov(), self.cosmonium.realCamLens.getVfov()))
-        self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.realCamLens.getVfov()) + (self.camera.zoom_factor, )))
+        self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.lens.get_vfov()) + (self.camera.zoom_factor, )))
 
     def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)

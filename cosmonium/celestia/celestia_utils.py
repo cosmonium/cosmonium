@@ -17,15 +17,16 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..astro import bayer
 from ..astro import units
-from ..astro.orbits import FixedOrbit, create_elliptical_orbit
-from ..astro.rotations import UnknownRotation, create_uniform_rotation
+from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
+from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.frame import BodyReferenceFrame, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from ..astro.astro import calc_orientation_from_incl_an
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
+
+from math import pi
 
 def names_list(name):
     return name.split(':')
@@ -43,31 +44,34 @@ def instanciate_custom_orbit(data, parent):
         element_name = "celestia:" + data
     orbit = orbit_elements_db.get(element_name)
     if orbit is None:
-        orbit = FixedOrbit(frame = J2000EclipticReferenceFrame())
+        #TODO: An error should be raised instead !
+        orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
     #TODO: this should not be done arbitrarily
     if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.body is None:
         orbit.frame.set_body(parent)
     return orbit
 
 def instanciate_elliptical_orbit(data, global_coord):
-    semi_major_axis=None
+    semi_major_axis = None
     if global_coord:
-        semi_major_axis_units=units.AU
-        pericenter_distance_units=units.AU
-        period_units=units.JYear
+        semi_major_axis_units = units.AU
+        pericenter_distance_units = units.AU
+        period_units = units.JYear
     else:
-        semi_major_axis_units=units.Km
-        pericenter_distance_units=units.Km
-        period_units=units.Day
-    pericenter_distance=None
-    period=None
-    eccentricity=0.0
-    inclination=0
-    ascending_node=0.0
-    arg_of_periapsis=None
-    long_of_pericenter=None
-    mean_anomaly=None
-    mean_longitude=0.0
+        semi_major_axis_units = units.Km
+        pericenter_distance_units = units.Km
+        period_units = units.Day
+    pericenter_distance = None
+    period = None
+    eccentricity = 0.0
+    inclination = 0
+    ascending_node = 0.0
+    arg_of_periapsis = None
+    long_of_pericenter = None
+    mean_anomaly = None
+    mean_longitude = 0.0
+    epoch = units.J2000
+
     for (key, value) in data.items():
         if key == 'SemiMajorAxis':
             semi_major_axis = value
@@ -93,19 +97,40 @@ def instanciate_elliptical_orbit(data, global_coord):
             mean_longitude = value
         else:
             print("Key of EllipticalOrbit", key, "not supported")
-    return create_elliptical_orbit(semi_major_axis=semi_major_axis,
-        semi_major_axis_units=semi_major_axis_units,
-        pericenter_distance=pericenter_distance,
-        pericenter_distance_units=pericenter_distance_units,
-        period=period,
-        period_units=period_units,
-        eccentricity=eccentricity,
-        inclination=inclination,
-        ascending_node=ascending_node,
-        arg_of_periapsis=arg_of_periapsis,
-        long_of_pericenter=long_of_pericenter,
-        mean_anomaly=mean_anomaly,
-        mean_longitude=mean_longitude)
+    if pericenter_distance is None:
+        if semi_major_axis is None:
+            #TODO: raise error
+            pericenter_distance = 1
+        else:
+            pericenter_distance = semi_major_axis  * semi_major_axis_units * (1.0 - eccentricity)
+    else:
+        pericenter_distance = pericenter_distance * pericenter_distance_units
+
+    if period is None:
+        #TODO: raise error
+        period = 1.0
+    period = period * period_units
+
+    if arg_of_periapsis is None:
+        if long_of_pericenter is None:
+            arg_of_periapsis = 0.0
+        else:
+            arg_of_periapsis = (long_of_pericenter - ascending_node) % 360.0
+    if mean_anomaly is None:
+        mean_anomaly = (mean_longitude - (arg_of_periapsis + ascending_node)) % 360
+
+    #TODO: The real frame should be given in parameter
+    frame = J2000EquatorialReferenceFrame()
+    return EllipticalOrbit(frame,
+                           epoch,
+                           2 * pi / period,
+                           mean_anomaly * units.Deg,
+                           pericenter_distance,
+                           eccentricity,
+                           arg_of_periapsis * units.Deg,
+                           inclination * units.Deg,
+                           ascending_node * units.Deg
+                           )
 
 def instanciate_frame(universe, data, parent, global_coord):
     frame_center = parent
@@ -158,21 +183,23 @@ def instanciate_custom_rotation(data, parent):
     return rotation
 
 def instanciate_uniform_rotation(data, global_coord):
-    period=None
-    sync=True
+    period = None
+    sync = True
     if global_coord:
-        period_units=units.Hour
+        period_units = units.Hour
     else:
-        period_units=units.Day
-    inclination=0.0
-    ascending_node=0.0
-    meridian_angle=0.0
+        period_units = units.Day
+    inclination = 0.0
+    ascending_node = 0.0
+    meridian_angle = 0.0
+    epoch  = units.J2000
+
     for (key, value) in data.items():
         if key == 'Period':
             period = value
             sync=False
         elif key == 'Epoch':
-            pass #= value
+            epoch = epoch
         elif key == 'Inclination':
             inclination = value
         elif key == 'AscendingNode':
@@ -181,13 +208,16 @@ def instanciate_uniform_rotation(data, global_coord):
             meridian_angle = value
         else:
             print("Key of UniformRotation", key, "not supported")
-    return create_uniform_rotation(
-                              period=period,
-                              sync=sync,
-                              period_units=period_units,
-                              inclination=inclination,
-                              ascending_node=ascending_node,
-                              meridian_angle=meridian_angle)
+    flipped = period is not None and period < 0
+    orientation = calc_orientation_from_incl_an(inclination * units.Deg,
+                                                ascending_node * units.Deg,
+                                                flipped)
+    frame = J2000EquatorialReferenceFrame()
+    if sync:
+        return SynchronousRotation(orientation, meridian_angle * units.Deg, epoch, frame)
+    else:
+        mean_motion = 2 * pi / (period * period_units)
+        return UniformRotation(orientation, mean_motion, meridian_angle * units.Deg, epoch, frame)
 
 def instanciate_precessing_rotation(data):
     return UnknownRotation()

@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..bodies import Star
 from ..catalogs import objectsDB
@@ -54,7 +52,7 @@ class StarYamlParser(YamlModuleParser):
             factory = proceduralStarSurfaceFactoryDB.get(factory_name)
         else:
             factory = None
-        clouds = CloudsYamlParser.decode(data.get('clouds'), None)
+        clouds = CloudsYamlParser.decode(data.get('clouds'))
         rings = RingsYamlParser.decode(data.get('rings'))
         star = Star(translated_names,
                     source_names=source_names,
@@ -65,24 +63,20 @@ class StarYamlParser(YamlModuleParser):
                     surface_factory=factory,
                     orbit=orbit,
                     rotation=rotation,
-                    ring=rings,
                     clouds=clouds,
                     abs_magnitude=abs_magnitude,
                     temperature=temperature,
                     spectral_type=spectral_type)
         surfaces = data.get('surfaces')
         if surfaces is not None:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), None, star)
+            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), star)
             factory = None
         else:
             surfaces = []
         for surface in surfaces:
             star.add_surface(surface)
-        if explicit_parent:
-            parent.add_child_fast(star)
-            return None
-        else:
-            return star
+        parent.add_child_star_fast(star)
+        return star
     
 class StarSurfaceFactoryYamlParser(YamlModuleParser):
     @classmethod

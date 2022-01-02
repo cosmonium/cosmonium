@@ -21,9 +21,6 @@
 # Start with a temperature, in Kelvin, somewhere between 1000 and 40000.  (Other values may work,
 # but I can't make any promises about the quality of the algorithm's estimates above 40000 K.)
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 from panda3d.core import LColor
 from math import log, pow

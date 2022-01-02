@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LVector3d, LQuaterniond
 
@@ -32,7 +30,7 @@ from .yamlparser import YamlModuleParser
 
 class MeshYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, radius):
         if isinstance(data, str):
             data = {'model': data}
         model = data.get('model')
@@ -41,7 +39,10 @@ class MeshYamlParser(YamlModuleParser):
         auto_scale_mesh = data.get('auto-scale', True)
         offset = data.get('offset', None)
         rotation_data = data.get('rotation', None)
-        scale = data.get('scale', None)
+        if auto_scale_mesh and radius is not None:
+            scale = LVector3d(radius)
+        else:
+            scale = data.get('scale', None)
         if offset is not None:
             offset = LVector3d(*offset)
         if rotation_data is not None:
@@ -65,7 +66,7 @@ class RayMarchingYamlParser(YamlModuleParser):
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, default='patched-sphere'):
+    def decode(self, data, default='patched-sphere', radius=None):
         shape = None
         extra = {}
         (shape_type, shape_data) = self.get_type_and_data(data, default)
@@ -86,7 +87,7 @@ class ShapeYamlParser(YamlModuleParser):
         elif shape_type == 'se-sphere':
             shape = SpaceEnginePatchedSquareShape()
         elif shape_type == 'mesh':
-            shape, extra = MeshYamlParser.decode(shape_data)
+            shape, extra = MeshYamlParser.decode(shape_data, radius)
         elif shape_type == 'raymarching':
             shape, extra = RayMarchingYamlParser.decode(shape_data)
         else:

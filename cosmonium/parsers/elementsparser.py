@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..bodyelements import Clouds, Ring
 from ..shaders import BasicShader
@@ -32,7 +30,7 @@ from .shadersparser import LightingModelYamlParser
 
 class CloudsYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, atmosphere):
+    def decode(self, data):
         if data is None: return None
         height = float(data.get('height'))
         shape, extra = ShapeYamlParser.decode(data.get('shape'))
@@ -48,8 +46,6 @@ class CloudsYamlParser(YamlModuleParser):
         lighting_model = None
         shader = BasicShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
-        if atmosphere is not None:
-            atmosphere.add_shape_object(clouds)
         return clouds
 
 class RingsYamlParser(YamlModuleParser):

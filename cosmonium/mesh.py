@@ -17,16 +17,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import loadPrcFileData, Filename, get_model_path
 
-import sys
 import os
 
-if sys.version_info[0] >= 3:
-    import gltf
+import gltf
 
 from .dircontext import defaultDirContext, main_dir
 from . import cache
@@ -38,8 +34,7 @@ def init_mesh_loader():
         loadPrcFileData("", "load-file-type p3assimp\n"
                             "assimp-gen-normals #t\n"
                             "assimp-smooth-normal-angle 90\n")
-    if sys.version_info[0] >= 3:
-        gltf.patch_loader(None)
+    gltf.patch_loader(None)
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
     get_model_path().prepend_directory(Filename.from_os_specific(os.path.join(main_dir, 'models')))
@@ -55,3 +50,6 @@ async def load_model(pattern, context=defaultDirContext):
 
 async def load_panda_model(pattern):
     return await loader.loadModel(pattern, blocking=False)
+
+def load_panda_model_sync(pattern):
+    return loader.loadModel(pattern)

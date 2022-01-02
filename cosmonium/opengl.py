@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import load_prc_file_data
 from panda3d.core import DepthTestAttrib, Texture
@@ -236,10 +234,11 @@ def check_opengl_config(base):
     print("Render to buffer:", settings.buffer_texture)
     print("Floating point buffer:", settings.floating_point_buffer)
     print("Texture array:", settings.texture_array)
+    print("Color picking", settings.color_picking)
 
 def check_and_create_rendering_buffers(showbase):
     if not settings.render_scene_to_buffer:
-        return
+        return showbase.win, []
 
     if not settings.buffer_texture:
         print("Render to buffer not supported")
@@ -256,14 +255,19 @@ def check_and_create_rendering_buffers(showbase):
     depth_buffer = None
     aux_buffer = None
     if settings.use_inverse_z:
-        render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
+        showbase.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
         depth_buffer = Texture()
         showbase.win.set_clear_depth(0)
         float_depth = True
         depth_bits = 24
     else:
+        showbase.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
         float_depth = False
         depth_bits = 1
+    if False:
+        float_depth = False
+        depth_bits = 1
+        depth_buffer = Texture()
     if settings.render_scene_to_float:
         if settings.floating_point_buffer:
             rgba_bits = (32, 32, 32, 32)
@@ -294,4 +298,4 @@ def check_and_create_rendering_buffers(showbase):
     final_quad.set_shader(final_quad_shader)
     final_quad.set_shader_input("color_buffer", color_buffer)
     final_quad.set_shader_input("exposure", 2)
-    return textures
+    return manager.buffers[0], textures

@@ -17,10 +17,8 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from ..surfaces import EllipsoidFlatSurface, HeightmapSurface
+from ..surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders import BasicShader
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
@@ -34,13 +32,13 @@ from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .shapesparser import ShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
-from .shadersparser import LightingModelYamlParser, ShaderAppearanceYamlParser
+from .shadersparser import LightingModelYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .utilsparser import get_radius_scale
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
-    def decode_surface(self, data, atmosphere, previous, owner):
+    def decode_surface(self, data, previous, owner):
         name = data.get('name', None)
         category_name = data.get('category', 'visible')
         category = surfaceCategoryDB.get(category_name)
@@ -57,11 +55,10 @@ class SurfaceYamlParser(YamlModuleParser):
         shape = data.setdefault('shape', previous.get('shape'))
         appearance = data.setdefault('appearance', previous.get('appearance'))
         lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
-        shader_appearance = data.setdefault('shader-appearance', previous.get('shader-appearance'))
         if shape is None and heightmap_data is not None:
             shape = 'sqrt-sphere'
         if shape is not None:
-            shape, extra = ShapeYamlParser.decode(shape)
+            shape, extra = ShapeYamlParser.decode(shape, radius=radius)
         if heightmap_data is not None:
             if isinstance(heightmap_data, dict):
                 name = data.get('name', 'heightmap')
@@ -89,53 +86,57 @@ class SurfaceYamlParser(YamlModuleParser):
                 appearance = 'textures'
             appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        shader_appearance = ShaderAppearanceYamlParser.decode(shader_appearance, appearance)
-        if shape.patchable:
-            if appearance.texture is None or appearance.texture.source.procedural:
-                shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
-                                                           density=settings.patch_constant_density))
+        shader_appearance = appearance.get_shader_appearance()
+        if shape.is_spherical():
+            if shape.patchable:
+                if appearance.texture is None or appearance.texture.source.procedural:
+                    shape.set_lod_control(VertexSizeLodControl(settings.patch_max_vertex_size,
+                                                               density=settings.patch_constant_density))
+                else:
+                    shape.set_lod_control(TextureOrVertexSizeLodControl(settings.patch_max_vertex_size,
+                                                                        min_density=settings.patch_min_density,
+                                                                        density=settings.patch_max_density))
+            if heightmap is None:
+                shader = BasicShader(lighting_model=lighting_model,
+                                     appearance=shader_appearance,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
+                                      radius=radius, oblateness=ellipticity, scale=scale,
+                                      shape=shape, appearance=appearance, shader=shader)
             else:
-                shape.set_lod_control(TextureOrVertexSizeLodControl(settings.patch_max_vertex_size,
-                                                                    min_density=settings.patch_min_density,
-                                                                    density=settings.patch_max_density))
-        if heightmap is None:
-            shader = BasicShader(lighting_model=lighting_model,
-                                 appearance=shader_appearance,
-                                 use_model_texcoord=not extra.get('create-uv', False))
-            surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
-                                  radius=radius, oblateness=ellipticity, scale=scale,
-                                  shape=shape, appearance=appearance, shader=shader)
+                data_source = []
+                #TODO: The configuration of the data store can not be done like that
+                if shape.data_store is not None:
+                    data_source.append(shape.data_store.get_shader_data_source())
+                data_source.append(heightmap.get_data_source(shape.data_store is not None))
+                appearance_source = appearance.get_data_source()
+                if appearance_source is not None:
+                    data_source.append(appearance_source)
+                shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
+                                     data_source=data_source,
+                                     appearance=shader_appearance,
+                                     lighting_model=lighting_model,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = HeightmapSurface(name,
+                                           #category=category, resolution=resolution, source=source,
+                                           radius=radius, oblateness=ellipticity, scale=scale,
+                                           height_scale=radius, height_base=radius,
+                                           shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         else:
-            data_source = []
-            #TODO: The configuration of the data store can not be done like that
-            if shape.data_store is not None:
-                data_source.append(shape.data_store.get_shader_data_source())
-            data_source.append(heightmap.get_data_source(shape.data_store is not None))
-            appearance_source = appearance.get_data_source()
-            if appearance_source is not None:
-                data_source.append(appearance_source)
-            shader_appearance = appearance.get_shader_appearance()
-            shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
-                                 data_source=data_source,
-                                 appearance=shader_appearance,
-                                 lighting_model=lighting_model,
-                                 use_model_texcoord=not extra.get('create-uv', False))
-            surface = HeightmapSurface(name,
-                                       #category=category, resolution=resolution, source=source,
-                                       radius=radius, oblateness=ellipticity, scale=scale,
-                                       height_scale=radius, height_base=radius,
-                                       shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
-        if atmosphere is not None:
-            atmosphere.add_shape_object(surface)
+                shader = BasicShader(lighting_model=lighting_model,
+                                     appearance=shader_appearance,
+                                     use_model_texcoord=not extra.get('create-uv', False))
+                surface = MeshSurface(name, category=category, resolution=resolution, attribution=attribution,
+                                      shape=shape, appearance=appearance, shader=shader)
         return surface
 
     @classmethod
-    def decode(self, data, atmosphere, owner):
+    def decode(self, data, owner):
         surfaces = []
         #TODO: Should do surface element cloning instead of reparsing
         previous = {}
         for entry in data:
-            surface = self.decode_surface(entry, atmosphere, previous, owner)
+            surface = self.decode_surface(entry, previous, owner)
             surfaces.append(surface)
             previous = entry
         return surfaces
@@ -150,7 +151,7 @@ class StandaloneSurfaceYamlParser(YamlModuleParser):
             print("ERROR: Parent '%s' of surface '%s' not found" % (parent_name, name))
             return None
         active = data.get('active', 'True')
-        surface = SurfaceYamlParser.decode_surface(data, parent.atmosphere, {}, parent)
+        surface = SurfaceYamlParser.decode_surface(data, {}, parent)
         parent.add_surface(surface)
         if active:
             parent.set_surface(surface)

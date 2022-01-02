@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..astro import units
 from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
@@ -69,7 +67,7 @@ class FilterYamlParser(YamlModuleParser):
 
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, name, patched, radius):
+    def decode(self, data, name, patched, radius=None, scale=1.0, coord_scale=1.0):
         heightmap_type = data.get('type', 'procedural')
         min_height = data.get('min-height', None)
         max_height = data.get('max-height', None)
@@ -109,6 +107,10 @@ class HeightmapYamlParser(YamlModuleParser):
             scale_length = data.get('scale-length', 1.0)
             scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
             scale_length *= scale_length_units
+            min_height /= scale
+            max_height /= scale
+            height_scale /= scale
+            height_offset /= scale
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
         filter = FilterYamlParser.decode(data.get('filter'))
         if heightmap_type == 'procedural':
@@ -120,7 +122,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 func = data.get('noise')
                 print("Warning: 'noise' entry is deprecated, use 'func' instead'")
             heightmap_function = noise_parser.decode(func)
-            heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, 1.0)
+            heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, coord_scale)
             #TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures 
             heightmap_class = ShaderPatchedHeightmap
         else:

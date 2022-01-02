@@ -17,12 +17,10 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..universe import Universe
 from ..annotations import Boundary
-from ..astro.orbits import InfinitePosition
+from ..astro.projection import InfinitePosition
 from ..astro import units
 from ..dircontext import defaultDirContext
 
@@ -48,7 +46,7 @@ def do_load(filepath, universe):
                 universe.add_component(boundary)
                 points = []
             prev_const = const
-            position = InfinitePosition(right_asc=float(ra), right_asc_unit=units.HourAngle, declination=float(decl))
+            position = InfinitePosition(float(ra) * units.HourAngle, declination=float(decl) * units.Deg)
             points.append(position)
         else:
             print("Malformed line", data)

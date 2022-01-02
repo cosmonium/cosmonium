@@ -17,15 +17,13 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import Texture, CardMaker, CullBinManager
 from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
-from panda3d.core import LColor, NodePath, PerspectiveLens, DepthTestAttrib
+from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
 
 from direct.task.Task import Task
@@ -35,18 +33,20 @@ import gettext
 
 from .parsers.configparser import configParser
 from .foundation import BaseObject
+from .scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
 from .dircontext import defaultDirContext
 from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
 from .stellarobject import StellarObject
-from .bodies import StellarBody, ReflectiveBody
 from .systems import StellarSystem, SimpleSystem
+from .bodies import StellarBody, ReflectiveBody
+from .anchors import StellarAnchor, CartesianAnchor
+from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
+from .lights import SurrogateLight, LightSources
 from .universe import Universe
 from .annotations import Grid
-from .pointsset import PointsSet
-from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
-from .astro.frame import J2000EquatorialReferenceFrame, J2000EclipticReferenceFrame
-from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
-from .astro.frame import SurfaceReferenceFrame
+from .astro.frame import BodyReferenceFrame
+from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
+#TODO: from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 
@@ -55,6 +55,7 @@ from .parsers import parsers
 
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
+from .controllers import ShipMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
@@ -83,6 +84,9 @@ import subprocess
 import platform
 import sys
 import os
+from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
+from cosmonium.octree import c_settings
+from cosmonium.sceneworld import ObserverCenteredWorld, Worlds
 
 # Patch gettext classes
 if sys.version_info < (3, 8):
@@ -111,6 +115,7 @@ class CosmoniumBase(ShowBase):
         self.wireframe_filled = False
         self.trigger_check_settings = True
         self.request_fullscreen = False
+        self.common_state = NodePath("<state>")
 
         configParser.load()
         self.init_lang()
@@ -120,40 +125,34 @@ class CosmoniumBase(ShowBase):
         if not self.app_config.test_start:
             create_main_window(self)
             check_opengl_config(self)
-            self.create_additional_display_regions()
-            self.cam.node().set_camera_mask(BaseObject.DefaultCameraMask)
+            #self.create_additional_display_regions()
+            self.near_cam = None
         else:
             self.buttonThrowers = [NodePath('dummy')]
             self.camera = NodePath('dummy')
-            self.cam = self.camera.attach_new_node('dummy')
-            self.camLens = PerspectiveLens()
+            self.cam = self.camera.attach_new_node(Camera('camera', PerspectiveLens()))
+            self.camLens = self.cam.node().get_lens()
             settings.shader_version = 130
 
         #TODO: should find a better way than patching classes...
         BaseObject.context = self
+        StellarObject.context = self
         YamlModuleParser.app = self
         BodyController.context = self
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
-        self.render_textures = check_and_create_rendering_buffers(self)
+        self.render_buffer, self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
 
-        self.world = self.render.attachNewNode("world")
-        self.annotation = self.render.attachNewNode("annotation")
-        self.annotation.hide(BaseObject.AllCamerasMask)
-        self.annotation.show(BaseObject.DefaultCameraMask)
-
-        self.world.setShaderAuto()
-        self.annotation.setShaderAuto()
+        self.common_state.setShaderAuto()
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
 
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
-        print(CullBinManager.get_global_ptr())
 
     def load_lang(self, domain, locale_path):
         languages = None
@@ -206,6 +205,8 @@ class CosmoniumBase(ShowBase):
         else:
             data.append("win-size %d %d" % (settings.win_width, settings.win_height))
         data.append("lens-far-limit %g" % settings.lens_far_limit)
+        data.append("transform-cache 0")
+        data.append("state-cache 0")
         loadPrcFileData("", '\n'.join(data))
         if settings.prc_file is not None:
             config_file = settings.prc_file
@@ -302,8 +303,8 @@ class CosmoniumBase(ShowBase):
                 configParser.save()
         if self.observer is not None:
             self.observer.set_film_size(width, height)
-            self.render.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
-            self.render.setShaderInput("pixel_size", self.observer.pixel_size)
+            self.common_state.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
+            self.common_state.setShaderInput("pixel_size", self.observer.pixel_size)
         if self.gui is not None:
             self.gui.update_size(width, height)
         if settings.color_picking and self.oid_texture is not None:
@@ -315,22 +316,22 @@ class CosmoniumBase(ShowBase):
         PStatClient.connect()
 
     def toggle_wireframe(self):
-        self.world.clear_render_mode()
+        self.common_state.clear_render_mode()
         if self.wireframe_filled:
             self.wireframe_filled = False
             self.wireframe = False
         self.wireframe = not self.wireframe
         if self.wireframe:
-            self.world.set_render_mode_wireframe()
+            self.common_state.set_render_mode_wireframe()
 
     def toggle_filled_wireframe(self):
-        self.world.clear_render_mode()
+        self.common_state.clear_render_mode()
         if self.wireframe:
             self.wireframe = False
             self.wireframe_filled = False
         self.wireframe_filled = not self.wireframe_filled
         if self.wireframe_filled:
-            self.world.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
+            self.common_state.set_render_mode_filled_wireframe(settings.wireframe_fill_color)
 
     def toggle_stereoscopic_framebuffer(self):
         settings.stereoscopic_framebuffer = not settings.stereoscopic_framebuffer
@@ -385,17 +386,28 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
 
+        self.update_id = 0
         self.patch = None
         self.selected = None
         self.follow = None
         self.sync = None
         self.track = None
+        self.extra = []
         self.fly = False
         self.nav_controllers = []
         self.nav = None
         self.gui = None
-        self.last_visibles = []
+        self.old_visibles = []
         self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = []
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
+        self.global_light_sources = []
+        self.orbits = []
+        self.shadow_casters = []
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
@@ -414,16 +426,20 @@ class Cosmonium(CosmoniumBase):
         if self.app_config.test_start:
             self.near_cam = None
 
+        self.worlds = Worlds()
         self.universe = Universe(self)
+        self.background = ObserverCenteredWorld("background")
+        self.background.background = True
+        self.worlds.add_world(self.background)
 
         if settings.color_picking:
             self.oid_texture = Texture()
             self.oid_texture.setup_2d_texture(settings.win_width, settings.win_height, Texture.T_unsigned_byte, Texture.F_rgba8)
             self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
-            self.render.set_shader_input("oid_store", self.oid_texture)
+            self.common_state.set_shader_input("oid_store", self.oid_texture)
         else:
             self.oid_texture = None
-        self.observer = CameraHolder(self.camera, self.camLens)
+        self.observer = CameraHolder()
         self.autopilot = AutoPilot(self)
         self.mouse = Mouse(self, self.oid_texture)
         if self.near_cam is not None:
@@ -455,10 +471,9 @@ class Cosmonium(CosmoniumBase):
 
         self.load_universe()
 
-        self.universe.recalc_recursive()
-
-        self.splash.set_text("Building octree...")
-        self.universe.create_octree()
+        self.splash.set_text("Building tree...")
+        print("Building tree")
+        self.universe.rebuild()
         #self.universe.octree.print_summary()
         #self.universe.octree.print_stats()
 
@@ -486,24 +501,33 @@ class Cosmonium(CosmoniumBase):
         self.nav.register_events(self)
         self.gui.register_events(self)
 
-        self.pointset = PointsSet(use_sprites=True, sprite=GaussianPointSprite(size=16, fwhm=8))
-        if settings.render_sprite_points:
-            self.pointset.instance.reparentTo(self.world)
+        self.scene_manager = None
+        print("Using scene manager '{}'".format(settings.scene_manager))
+        if not self.app_config.test_start:
+            if settings.scene_manager == 'static':
+                self.scene_manager = StaticSceneManager()
+            elif settings.scene_manager == 'dynamic':
+                self.scene_manager = DynamicSceneManager()
+            elif settings.scene_manager == 'region':
+                self.scene_manager = RegionSceneManager()
+            else:
+                print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
+        else:
+            self.scene_manager = DynamicSceneManager()
+        self.scene_manager.init_camera(self.observer, self.cam)
+        self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
 
-        self.haloset = PointsSet(use_sprites=True, sprite=ExpPointSprite(size=256, max_value=0.6), background=settings.halo_depth)
-        if settings.render_sprite_points:
-            self.haloset.instance.reparentTo(self.world)
-
-        render.setAntialias(AntialiasAttrib.MMultisample)
+        self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
-        self.render.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
 
         self.set_ambient(settings.global_ambient)
 
-        self.equatorial_grid = Grid("Equatorial", J2000EquatorialReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.equatorial_grid = Grid("Equatorial", J2000_Orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.background.add_component(self.equatorial_grid)
         self.equatorial_grid.set_shown(settings.show_equatorial_grid)
 
-        self.ecliptic_grid = Grid("Ecliptic", J2000EclipticReferenceFrame.orientation, LColor(0.28,  0.28,  0.38, 1))
+        self.ecliptic_grid = Grid("Ecliptic", J200_EclipticOrientation, LColor(0.28,  0.28,  0.38, 1))
+        self.background.add_component(self.ecliptic_grid)
         self.ecliptic_grid.set_shown(settings.show_ecliptic_grid)
 
         self.time.set_current_date()
@@ -511,14 +535,14 @@ class Cosmonium(CosmoniumBase):
         for controller in self.body_controllers:
             controller.init()
 
-        self.universe.first_update()
+        #self.universe.first_update()
         self.camera_controller.update(self.time.time_full, 0)
-        self.universe.first_update_obs(self.observer)
+        #self.universe.first_update_obs(self.observer)
         self.window_event(None)
+
+        taskMgr.add(self.time_task, "time-task", sort=10)
+
         self.time_task(None)
-
-        taskMgr.add(self.time_task, "time-task")
-
         self.start_universe()
         if self.app_config.test_start:
             #TODO: this is where the tests should be inserted
@@ -540,8 +564,8 @@ class Cosmonium(CosmoniumBase):
         near_cam_node = Camera('nearcam')
         self.near_cam = self.camera.attach_new_node(near_cam_node)
         self.near_dr.setCamera(self.near_cam)
-        self.near_cam.node().set_camera_mask(BaseObject.NearCameraMask)
-        self.near_cam.node().get_lens().set_near_far(units.m /settings.scale, float('inf'))
+        self.near_cam.node().set_camera_mask(BaseObject.NearCameraFlag)
+        self.near_cam.node().get_lens().set_near_far(units.m /self.scene_manager.scale, float('inf'))
 
     def add_camera_controller(self, camera_controller):
         self.camera_controllers.append(camera_controller)
@@ -559,8 +583,8 @@ class Cosmonium(CosmoniumBase):
             if self.track is None:
                 return
         if self.camera_controller is not None:
-            position = self.camera_controller.get_pos()
-            rotation = self.camera_controller.get_rot()
+            position = self.camera_controller.get_local_position()
+            rotation = self.camera_controller.get_local_orientation()
             self.camera_controller.deactivate()
         else:
             position = None
@@ -568,10 +592,10 @@ class Cosmonium(CosmoniumBase):
         self.camera_controller = camera_controller
         if camera_controller.require_target():
             self.camera_controller.set_target(self.track)
-        self.camera_controller.activate(self.observer, self.ship)
+        self.camera_controller.activate(self.observer, self.ship.anchor)
         if position is not None and rotation is not None:
-            self.camera_controller.set_pos(position)
-            self.camera_controller.set_rot(rotation)
+            self.camera_controller.set_local_position(position)
+            self.camera_controller.set_local_orientation(rotation)
         if self.ship is not None:
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         self.nav.set_camera_controller(camera_controller)
@@ -598,28 +622,28 @@ class Cosmonium(CosmoniumBase):
 
     def set_ship(self, ship):
         if self.ship is not None:
-            self.universe.remove_component(self.ship)
-            self.autopilot.set_ship(None)
-            self.nav.set_ship(None)
-            self.camera_controller.set_reference_point(None)
+            self.worlds.remove_world(self.ship)
+            self.autopilot.set_controller(None)
+            self.nav.set_controller(None)
+            self.camera_controller.set_reference_anchor(None)
         old_ship = self.ship
         self.ship = ship
         if self.ship is not None:
-            self.universe.add_component(self.ship)
-            self.autopilot.set_ship(self.ship)
-            self.nav.set_ship(self.ship)
+            self.worlds.add_world(self.ship)
+            self.autopilot.set_controller(ShipMover(self.ship.anchor))
+            self.nav.set_controller(ShipMover(self.ship.anchor))
             if old_ship is not None:
-                self.ship.copy(old_ship)
+                self.ship.anchor.copy(old_ship.anchor)
             if self.camera_controller is not None:
                 if self.ship.supports_camera_mode(self.camera_controller.camera_mode):
-                    self.camera_controller.set_reference_point(self.ship)
+                    self.camera_controller.set_reference_anchor(self.ship.anchor)
                     self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
                 else:
                     #Current camera controller is not supported by the ship, switch to the first one supported
                     for camera_controller in self.camera_controllers:
                         if self.ship.supports_camera_mode(camera_controller.camera_mode):
                             #Apply the current camera controller to be able to switch
-                            self.camera_controller.set_reference_point(self.ship)
+                            self.camera_controller.set_reference_anchor(self.ship.anchor)
                             self.set_camera_controller(camera_controller)
                             break
                     else:
@@ -670,22 +694,22 @@ class Cosmonium(CosmoniumBase):
         if self.hdr > 3: self.hdr = 0
         print("HDR:", self.hdr)
         if self.hdr == 0:
-            self.world.clearAttrib(LightRampAttrib.getClassType())
+            self.common_state.clearAttrib(LightRampAttrib.getClassType())
         elif self.hdr == 1:
-            self.world.setAttrib(LightRampAttrib.makeHdr0())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr0())
         elif self.hdr == 2:
-            self.world.setAttrib(LightRampAttrib.makeHdr1())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr1())
         elif self.hdr == 3:
-            self.world.setAttrib(LightRampAttrib.makeHdr2())
+            self.common_state.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
         if settings.screenshot_path is not None:
             state = self.gui.hide_with_state()
-            self.annotation.hide()
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag)
             base.graphicsEngine.renderFrame()
             filename = self.screenshot(namePrefix=settings.screenshot_path)
             self.gui.show_with_state(state)
-            self.annotation.show()
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
             if filename is not None:
                 print("Saving screenshot without annotation into", filename)
             else:
@@ -702,6 +726,7 @@ class Cosmonium(CosmoniumBase):
             self.selected.set_selected(False)
         if body is not None:
             print("Select", body.get_name())
+            self.update_extra(body)
             body.set_selected(True)
         self.selected = body
         if self.fly:
@@ -714,7 +739,7 @@ class Cosmonium(CosmoniumBase):
     def reset_nav(self):
         print("Reset nav")
         self.follow = None
-        self.ship.set_frame(AbsoluteReferenceFrame())
+        self.ship.anchor.set_frame(AbsoluteReferenceFrame())
         self.observer.set_frame(AbsoluteReferenceFrame())
         self.sync = None
         if self.fly:
@@ -908,7 +933,7 @@ class Cosmonium(CosmoniumBase):
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
         if self.globalAmbient is not None:
-            self.world.clearLight(self.globalAmbientPath)
+            self.common_state.clearLight(self.globalAmbientPath)
             self.globalAmbientPath.removeNode()
         self.globalAmbient=AmbientLight('globalAmbient')
         if settings.srgb:
@@ -919,9 +944,9 @@ class Cosmonium(CosmoniumBase):
         print("Ambient light level:  %.2f" % settings.global_ambient)
         self.gui.update_info("Ambient light level:  %.2f" % settings.global_ambient, duration=0.5, fade=1.0)
         self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
-        self.globalAmbientPath = self.world.attachNewNode(self.globalAmbient)
-        self.world.setLight(self.globalAmbientPath)
-        self.render.set_shader_input("global_ambient", settings.corrected_global_ambient)
+        self.globalAmbientPath = self.common_state.attachNewNode(self.globalAmbient)
+        self.common_state.setLight(self.globalAmbientPath)
+        self.common_state.set_shader_input("global_ambient", settings.corrected_global_ambient)
         configParser.save()
 
     def incr_ambient(self, ambient_incr):
@@ -935,10 +960,11 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
-            self.observer.set_frame(RelativeReferenceFrame(body, body.orbit.frame))
+            self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
+            self.update_extra(self.follow)
+            self.observer.set_frame(OrbitReferenceFrame(body.anchor))
         else:
-            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
@@ -952,10 +978,11 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.ship.set_frame(SynchroneReferenceFrame(body))
-            self.observer.set_frame(SynchroneReferenceFrame(body))
+            self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
+            self.update_extra(self.sync)
+            self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
         else:
-            self.ship.set_frame(AbsoluteReferenceFrame())
+            self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
         if self.fly:
             #Disable fly mode when changing body
@@ -1006,68 +1033,306 @@ class Cosmonium(CosmoniumBase):
             else:
                 print("ERROR: surface '{}' not found".format(surface_name))
 
-    def reset_visibles(self):
-        self.visibles = []
+    def update_c_settings(self):
+        if c_settings is None: return
+        c_settings.min_body_size = settings.min_body_size
 
-    def add_visible(self, body):
-        self.visibles.append(body)
-
-    def print_visibles(self):
-        if self.last_visibles != self.visibles:
-            print("Visible bodies", len(self.visibles), ':', ', '.join(map(lambda x: x.get_name(), self.visibles)))
-        self.last_visibles = self.visibles
-
-    @pstat
-    def update_octree(self):
-        self.universe.build_octree_cells_list(settings.lowest_app_magnitude)
-        self.universe.add_extra_to_list(self.selected, self.follow, self.sync, self.track)
+    def update_worlds(self, time, dt):
+        self.worlds.update_anchor(time, self.update_id)
+        self.worlds.update_anchor_obs(self.observer.anchor, self.update_id)
+        self.worlds.update(time, dt)
 
     @pstat
     def update_universe(self, time, dt):
-        self.universe.update(time, dt)
+        traverser = UpdateTraverser(time, self.observer.anchor, settings.lowest_app_magnitude, self.update_id)
+        self.universe.anchor.traverse(traverser)
+        self.visibles = list(traverser.get_collected())
+        self.visibles.sort(key=lambda v: v.z_distance)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
                 controller.update(time, dt)
                 self.controllers_to_update.append(controller)
+        #TODO: Should be done in update_extra
+        #if self.selected is not None:
+        #    self.selected.calc_height_under(self.observer.get_local_position())
+        for controller in self.controllers_to_update:
+            controller.update_obs(self.observer.anchor)
+        for controller in self.controllers_to_update:
+            controller.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
 
     @pstat
-    def update_obs(self):
-        self.universe.update_obs(self.observer)
-        for controller in self.controllers_to_update:
-            controller.update_obs(self.observer)
+    def find_global_light_sources(self):
+        position = self.observer.get_local_position()
+        traverser = FindLightSourceTraverser(-10, self.observer.get_absolute_position())
+        self.universe.anchor.traverse(traverser)
+        self.global_light_sources = traverser.get_collected()
+        #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
+
+    def _add_extra(self, to_add):
+        if to_add is None: return
+        #TODO: this should not be done
+        if not isinstance(to_add, StellarAnchor): return
+        #TODO: There should be a mechanism to retrieve them
+        if isinstance(to_add.orbit.frame, BodyReferenceFrame):
+            self._add_extra(to_add.orbit.frame.anchor)
+        if isinstance(to_add.rotation.frame, BodyReferenceFrame):
+            self._add_extra(to_add.rotation.frame.anchor)
+        if not to_add in self.extra:
+            self.extra.append(to_add)
+
+    def update_extra(self, *args):
+        self.extra = []
+        #TODO: temporary
+        for body in args:
+            if body is None: continue
+            self._add_extra(body.anchor)
+        for anchor in self.extra:
+            anchor.update(self.time.time_full, self.update_id)
+
+    def update_extra_observer(self):
+        for anchor in self.extra:
+            anchor.update_observer(self.observer.anchor, self.update_id)
+            anchor.update_id = self.update_id
 
     @pstat
-    def update_visibility(self):
-        self.reset_visibles()
-        self.universe.check_visibility(self.observer.pixel_size)
-        for controller in self.controllers_to_update:
-            controller.check_visibility(self.observer.pixel_size)
-        self.print_visibles()
+    def update_magnitudes(self):
+        if len(self.global_light_sources) > 0:
+            star = self.global_light_sources[0]
+        else:
+            star = None
+        for visible_object in self.visibles:
+            visible_object.update_app_magnitude(star)
+        for anchor in self.extra:
+            #TODO: This will not work for objects in an another system
+            anchor.update_app_magnitude(star)
+
+    @pstat
+    def update_states(self):
+        visibles = []
+        resolved = []
+        for anchor in self.visibles:
+            visible = anchor.resolved or anchor._app_magnitude < settings.lowest_app_magnitude
+            if visible:
+                visibles.append(anchor)
+                if not anchor.was_visible:
+                    self.becoming_visibles.append(anchor)
+                if anchor.resolved:
+                    resolved.append(anchor)
+            else:
+                if anchor.was_visible:
+                    self.no_longer_visibles.append(anchor)
+            anchor.visible = visible
+        for anchor in self.extra:
+            if anchor in self.visibles: continue
+            if not (anchor._app_magnitude < settings.lowest_app_magnitude):
+                if anchor.was_visible:
+                    self.no_longer_visibles.append(anchor)
+                anchor.visible = False
+        for world in self.worlds.worlds:
+            resolved.append(world.anchor)
+        for anchor in self.old_visibles:
+            if not anchor in self.visibles:
+                self.no_longer_visibles.append(anchor)
+                anchor.was_visible = anchor.visible
+                anchor.visible = False
+        self.visibles = visibles
+        self.resolved = resolved
+        for anchor in resolved:
+            if not anchor.was_resolved:
+                self.becoming_resolved.append(anchor)
+        for anchor in self.old_resolved:
+            if not anchor in self.resolved:
+                self.no_longer_resolved.append(anchor)
+
+    @pstat
+    def find_local_lights(self):
+        if len(self.global_light_sources) > 0:
+            star = self.global_light_sources[0]
+        else:
+            star = None
+        if star is None: return
+        for anchor in self.resolved:
+            if anchor.content & StellarAnchor.System != 0: continue
+            if anchor.content & StellarAnchor.Reflective == 0: continue
+            body = anchor.body
+            if body.lights is None:
+                lights = LightSources()
+                body.set_lights(lights)
+            light = body.lights.get_light_for(star.body)
+            if light is None:
+                light = SurrogateLight(star.body, body)
+                body.lights.add_light(light)
+            light.update_light()
+
+    @pstat
+    def find_shadows(self):
+        self.shadow_casters = []
+        if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
+        if len(self.global_light_sources) == 0: return
+        reflectives = []
+        for anchor in self.resolved:
+            if anchor.content & StellarAnchor.System != 0: continue
+            if anchor.content & StellarAnchor.Reflective == 0: continue
+            anchor.body.start_shadows_update()
+            reflectives.append(anchor)
+
+        for light_source in self.global_light_sources:
+            for reflective in reflectives:
+                surrogate_light = reflective.body.lights.get_light_for(light_source.body)
+                if surrogate_light is None: continue
+                reflective.body.self_shadows_update(surrogate_light)
+                #print("TEST", reflective.body.get_name())
+                traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source.get_bounding_radius())
+                self.nearest_system.anchor.traverse(traverser)
+                #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+                for occluder in traverser.get_collected():
+                    if not occluder in self.shadow_casters:
+                        self.shadow_casters.append(occluder)
+                    occluder.body.add_shadow_target(surrogate_light, reflective.body)
+
+        for reflective in reflectives:
+            reflective.body.end_shadows_update()
+
+    @pstat
+    def check_scattering(self):
+        for anchor in self.resolved:
+            #TODO: We need to test the type of the parent anchor
+            if anchor.parent is None or anchor.parent.content == ~0: continue
+            if not anchor.body.allow_scattering: continue
+            primary = anchor.parent.body.primary
+            if primary is None: continue
+            #TODO: We should not do an explicit test like this here
+            if primary.anchor.content & StellarAnchor.System != 0: continue
+            if primary.atmosphere is not None and primary.init_components and (anchor.get_local_position() - primary.anchor.get_local_position()).length() < primary.atmosphere.radius:
+                primary.atmosphere.add_shape_object(anchor.body.surface)
+
+    @pstat
+    def update_height_under(self):
+        for anchor in self.resolved:
+            anchor._height_under = anchor.body.get_height_under(self.observer.get_local_position())
 
     @pstat
     def update_instances(self):
-        self.pointset.reset()
-        self.haloset.reset()
-        self.universe.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
+        observer = self.observer
+        scene_manager = self.scene_manager
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        for occluder in self.shadow_casters:
+        #    occluder.update_scene(self.c_observer)
+            occluder.body.scene_anchor.update(scene_manager)
+        for visible in self.visibles:
+            #visible.update_scene(self.c_observer)
+            visible.body.scene_anchor.update(scene_manager)
+        for newly_visible in self.becoming_visibles:
+            #print("NEW VISIBLE", newly_visible.body.get_name())
+            newly_visible.body.on_visible(scene_manager)
+            if newly_visible.resolved:
+                newly_visible.body.on_resolved(scene_manager)
+        for newly_resolved in self.becoming_resolved:
+            #print("NEW RESOLVED", newly_resolved.body.get_name())
+            newly_resolved.body.on_resolved(scene_manager)
+        for old_resolved in self.no_longer_resolved:
+            #print("OLD RESOLVED", old_resolved.body.get_name())
+            old_resolved.body.on_point(scene_manager)
+        for old_visible in self.no_longer_visibles:
+            #print("OLD VISIBLE", old_visible.body.get_name())
+            if old_visible.resolved:
+                old_visible.body.on_point(self.scene_manager)
+            old_visible.body.on_hidden(scene_manager)
+        for visible in self.visibles:
+            body = visible.body
+            #TODO: this will update the body's components
+            body.update_visible_obs(observer)
+            body.check_visible_visibility(frustum, pixel_size)
+            body.check_and_update_visible_instance(scene_manager, camera_pos, camera_rot)
+        for resolved in self.resolved:
+            body = resolved.body
+            #TODO: this will update the body's components
+            body.update_obs(self.observer)
+            body.check_visibility(frustum, pixel_size)
+            body.check_and_update_instance(scene_manager, camera_pos, camera_rot)
+        self.worlds.update_scene_anchor(scene_manager)
         for controller in self.controllers_to_update:
-            controller.check_and_update_instance(self.observer.get_camera_pos(), self.observer.get_camera_rot(), self.pointset)
-        self.pointset.update()
-        self.haloset.update()
+            controller.check_and_update_instance(camera_pos, camera_rot)
         self.gui.update_status()
 
+    @pstat
+    def find_nearest_system(self):
+        #First iter over the visible object to have a first closest system
+        distance = float('inf')
+        closest_visible_system = None
+        for visible in self.visibles:
+            #TODO: The test to see if the object is a root system is a bit crude...
+            if visible.distance_to_obs < distance and visible.parent.content == ~0:
+                closest_visible_system = visible
+                distance = visible.distance_to_obs
+        #Use that system to boostrap the tree traversal
+        traverser = FindClosestSystemTraverser(self.observer.anchor, closest_visible_system, distance)
+        self.universe.anchor.traverse(traverser)
+        closest_system = traverser.closest_system.body if traverser.closest_system is not None else None
+        closest_visible_system = closest_visible_system.body if closest_visible_system is not None else None
+        return (closest_system, closest_visible_system)
+
+    def update_nearest_system(self, nearest_system, nearest_visible_system):
+        if nearest_system != self.nearest_system:
+            if nearest_system is not None:
+                print("New nearest system:", nearest_system.get_name())
+                self.autopilot.stash_position()
+                self.nav.stash_position()
+                self.ship.anchor.set_absolute_reference_point(nearest_system.anchor.get_absolute_reference_point())
+                self.camera_controller.update(self.time.time_full, 0)
+                self.observer.change_global(nearest_system.anchor.get_absolute_reference_point())
+                self.autopilot.pop_position()
+                self.nav.pop_position()
+            else:
+                print("No more near system")
+            self.nearest_system = nearest_system
+
+        nearest_body = None
+        distance = float('inf')
+        for visible in self.visibles:
+            body_distance =  visible.distance_to_obs - visible._height_under
+            if body_distance < distance:
+                nearest_body = visible.body
+                distance = body_distance
+        if nearest_body is not None:
+            if self.nearest_body != nearest_body:
+                self.nearest_body = nearest_body
+                print("New nearest visible object:", nearest_body.get_name())
+        else:
+            distance = None
+        return distance
+
     def time_task(self, task):
+        # Reset all states
+        self.update_id += 1
+        self.to_update_extra = []
+        self.old_visibles = self.visibles
+        self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = self.resolved
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
+        self.update_c_settings()
+
+        #Update time and camera
         if task is not None:
             dt = globalClock.getDt()
         else:
             dt = 0
 
         self.gui.update()
-
         self.time.update_time(dt)
+        self.update_extra(self.selected, self.follow, self.sync, self.track)
         self.nav.update(self.time.time_full, dt)
+        self.camera_controller.update(self.time.time_full, dt)
+        self.update_extra_observer()
 
-        self.update_octree()
         update = pstats.levelpstat('update', 'Bodies')
         obs = pstats.levelpstat('obs', 'Bodies')
         visibility = pstats.levelpstat('visibility', 'Bodies')
@@ -1077,66 +1342,33 @@ class Cosmonium(CosmoniumBase):
         StellarObject.nb_visibility = 0
         StellarObject.nb_instance = 0
 
+        self.update_universe(self.time.time_full, dt)
+        self.update_worlds(self.time.time_full, dt)
+
+        nearest_system, nearest_visible_system = self.find_nearest_system()
+        #TODO: anchors should be distance sorted
+        distance = self.update_nearest_system(nearest_system, nearest_visible_system)
+        self.scene_manager.update_scene_and_camera(distance, self.observer)
+
+        self.find_global_light_sources()
+        self.update_magnitudes()
+        self.update_states()
+        self.find_local_lights()
+        self.check_scattering()
+        self.update_height_under()
+
         if self.trigger_check_settings:
-            self.universe.check_settings()
+            for visible in self.visibles:
+                visible.body.check_settings()
+            self.worlds.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
-        self.update_universe(self.time.time_full, self.time.dt)
-        self.camera_controller.update(self.time.time_full, self.time.dt)
-        self.update_obs()
-
-        if self.universe.nearest_system != self.nearest_system:
-            if self.universe.nearest_system is not None:
-                print("New nearest system:", self.universe.nearest_system.get_name())
-                self.autopilot.stash_position()
-                self.nav.stash_position()
-                self.ship.change_global(self.universe.nearest_system.get_global_position())
-                self.camera_controller.update(self.time.time_full, 0)
-                self.autopilot.pop_position()
-                self.nav.pop_position()
-            else:
-                print("No more near system")
-            if self.nearest_system is not None:
-                pass#self.nearest_system.remove_instance()
-                #self.nearest_system.update_obs(self.observer.get_camera_pos())
-                #self.universe.to_update.append(self.nearest_system)
-            self.nearest_system = self.universe.nearest_system
-
-        if self.nearest_system is not None:
-            if isinstance(self.nearest_system, StellarSystem):
-                (distance, body) = self.nearest_system.find_closest()
-            else:
-                body = self.nearest_system
-            if body is not None:
-                distance = body.distance_to_obs - body._height_under
-            if body is not None and self.nearest_body != body:
-                self.nearest_body = body
-                print("New nearest object:", body.get_name())
-        else:
-            body = None
-        if settings.auto_scale:
-            if body is None:
-                settings.scale = settings.max_scale
-            elif distance is None:
-                settings.scale = settings.max_scale
-            elif distance <= 0:
-                settings.scale = settings.min_scale
-            elif distance < settings.max_scale * 10:
-                settings.scale = max(distance / 10, settings.min_scale)
-            else:
-                settings.scale = settings.max_scale
-            if settings.set_frustum:
-                #near_plane = min(distance / settings.scale / 2.0, settings.near_plane)
-                if settings.scale < 1.0:
-                    near_plane = settings.scale
-                else:
-                    near_plane = settings.near_plane
-                self.observer.update_near_plane(near_plane)
-        self.update_visibility()
+        self.find_shadows()
         self.update_instances()
+        self.scene_manager.build_scene(self.common_state, self.render_buffer, self.observer, self.visibles, self.resolved)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
@@ -1150,46 +1382,47 @@ class Cosmonium(CosmoniumBase):
 
     def print_debug(self):
         print("Global:")
-        print("\tscale", settings.scale)
-        print("\tPlanes", self.camLens.get_near(), self.camLens.get_far())
-        print("\tFoV", self.camLens.get_fov())
+        print("\tscale", self.scene_manager.scale)
+        print("\tPlanes", self.observer.lens.get_near(), self.observer.lens.get_far())
+        print("\tFoV", self.observer.lens.get_fov())
         print("Camera:")
-        print("\tGlobal position", self.observer.camera_global_pos)
-        print("\tLocal position", self.observer.get_camera_pos())
-        print("\tRotation", self.observer.get_camera_rot())
-        print("\tFrame position", self.observer._frame_position, "rotation", self.observer._frame_rotation)
+        print("\tGlobal position", self.observer.get_absolute_reference_point())
+        print("\tLocal position", self.observer.get_local_position())
+        print("\tRotation", self.observer.get_absolute_orientation())
+        print("\tCamera vector", self.observer.anchor.camera_vector)
+        print("\tFrame position", self.observer.get_frame_position(), "rotation", self.observer.get_frame_orientation())
         if self.selected:
             print("Selected:", utils.join_names(self.selected.names))
             print("\tType:", self.selected.__class__.__name__)
-            print("\tDistance:", self.selected.distance_to_obs / units.Km, 'Km')
-            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_extend(), "Km", "Visible:", self.selected.visible, self.selected.visible_size, "px")
+            print("\tDistance:", self.selected.anchor.distance_to_obs / units.Km, 'Km')
+            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_bounding_radius(), "Km", "Visible:", self.selected.anchor.visible, self.selected.anchor.visible_size, "px")
             print("\tApp magnitude:", self.selected.get_app_magnitude(), '(', self.selected.get_abs_magnitude(), ')')
             if isinstance(self.selected, StellarBody):
                 print("\tPhase:", self.selected.get_phase())
-            print("\tGlobal position", self.selected.get_global_position())
-            print("\tLocal position", self.selected.get_local_position(), '(Frame:', self.selected.orbit.get_frame_position_at(self.time.time_full), ')')
-            print("\tRotation", self.selected.get_abs_rotation())
-            print("\tOrientation", self.selected._orientation)
-            print("\tVector to obs", self.selected.vector_to_obs)
-            print("\tVector to star", self.selected.vector_to_star, "Distance:", self.selected.distance_to_star)
-            print("\tVisible:", self.selected.visible, "Resolved:", self.selected.resolved, '(', self.selected.visible_size, ')', "In view:", self.selected.in_view)
-            print("\tUpdate frozen:", self.selected.update_frozen)
-            print("\tOrbit:", self.selected.orbit.__class__.__name__, self.selected.orbit.frame)
+            print("\tGlobal position", self.selected.anchor.get_absolute_reference_point())
+            print("\tLocal position", self.selected.anchor.get_local_position(), '(Frame:', self.selected.anchor.orbit.get_frame_position_at(self.time.time_full), ')')
+            print("\tOrientation", self.selected.anchor.get_absolute_orientation())
+            print("\tVector to obs", self.selected.anchor.vector_to_obs)
+            print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ') Override:', self.selected.anchor.visibility_override)
+            print("\tUpdate frozen:", self.selected.anchor.update_frozen)
+            print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
+            print("\tRotation:", self.selected.anchor.rotation.__class__.__name__, self.selected.anchor.rotation.frame)
             if self.selected.label is not None:
                 print("\tLabel visible:", self.selected.label.visible)
             if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
                 print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
-                print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
+                #print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(self.selected, StellarBody):
-                if self.selected.scene_scale_factor is not None:
+                if self.selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.scene_position, '(Offset:', self.selected.world_body_center_offset, ') distance:', self.selected.scene_distance)
-                    print("\tOrientation", self.selected.scene_orientation)
-                    print("\tScale", self.selected.scene_scale_factor, '(', self.selected.surface.get_scale() * self.selected.scene_scale_factor, ')')
+                    print("\tPosition", self.selected.scene_anchor.scene_position, '(Offset:', self.selected.scene_anchor.world_body_center_offset, ')')
+                    print("\tScale", self.selected.scene_anchor.scene_scale_factor)
+                    print("\tZ distance", self.selected.anchor.z_distance)
                 if self.selected.surface is not None and self.selected.surface.instance is not None:
                     print("Instance")
                     print("\tPosition", self.selected.surface.instance.get_pos())
                     print("\tDistance", self.selected.surface.instance.get_pos().length())
+                    print("\tScale", self.selected.surface.get_scale() * self.selected.scene_anchor.scene_scale_factor)
                     print("\tInstance Ready:", self.selected.surface.instance_ready)
                     if self.selected.atmosphere is not None:
                         pass#print("\tAtm size", self.selected.atmosphere.get_pixel_height())
@@ -1197,11 +1430,11 @@ class Cosmonium(CosmoniumBase):
                         print("Patches:", len(self.selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                projection = self.selected.cartesian_to_spherical(self.observer.get_camera_pos())
+                projection = self.selected.cartesian_to_spherical(self.observer.get_local_position())
                 xy = self.selected.spherical_to_xy(projection)
                 print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
-                height = self.selected._height_under
-                print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.distance_to_obs - height))
+                height = self.selected.anchor._height_under
+                print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.anchor.distance_to_obs - height))
                 if self.selected.surface is not None and self.selected.surface.shape.patchable:
                     x = projection[0] / pi / 2 + 0.5
                     y = 1.0 - (projection[1] / pi + 0.5)
@@ -1215,17 +1448,17 @@ class Cosmonium(CosmoniumBase):
                         print("\tCoord:", coord, "Distance:", patch.quadtree_node.distance)
                         print("\tflat:", patch.flat_coord)
                         if patch.instance is not None:
-                            print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(self.world))
-                            print("\tDistance:", patch.instance.get_pos(self.world).length())
+                            print("\tPosition:", patch.instance.get_pos(), patch.instance.get_pos(render))
+                            print("\tDistance:", patch.instance.get_pos(render).length())
                             print("\tScale:", patch.instance.get_scale())
                             if patch.quadtree_node.offset is not None:
                                 print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * self.selected.get_apparent_radius())
             else:
-                if self.selected.scene_scale_factor is not None:
+                if self.selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene:")
-                    print("\tPosition:", self.selected.scene_position, self.selected.scene_distance)
-                    print("\tOrientation:", self.selected.scene_orientation)
-                    print("\tScale:", self.selected.scene_scale_factor)
+                    print("\tPosition:", self.selected.scene_anchor.scene_position)
+                    print("\tOrientation:", self.selected.scene_anchor.scene_orientation)
+                    print("\tScale:", self.selected.scene_anchor.scene_scale_factor)
 
     def init_universe(self):
         pass

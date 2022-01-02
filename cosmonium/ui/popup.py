@@ -56,20 +56,20 @@ class Popup:
             subitems = create_orbits_menu_items(self.engine, over)
             if len(subitems) > 0:
                 items.append([_("Orbits"), 0, subitems])
-        items.append(self.menu_text(_('_Edit'), 0, 'gui-show-editor'))
-        subitems = []
-        #TODO: Should be moved to menucommon and use events
-        for info in extra_info:
-            name = info.get_name()
-            url = info.get_url_for(over)
-            if url is not None:
-                subitems.append([name, 0, self.browser.load, url])
-        if len(subitems) > 0:
-            items.append([_("More info"), 0, subitems])
+            items.append(self.menu_text(_('_Edit'), 0, 'gui-show-editor'))
+            subitems = []
+            #TODO: Should be moved to menucommon and use events
+            for info in extra_info:
+                name = info.get_name()
+                url = info.get_url_for(over)
+                if url is not None:
+                    subitems.append([name, 0, self.browser.load, url])
+            if len(subitems) > 0:
+                items.append([_("More info"), 0, subitems])
         if not self.gui.menubar_shown:
             if over is not None:
                 items.append(0)
-            items.append(self.menu_text(_('Show _menubar'), 0, self.show_menu))
+            items.append(self.menu_text(_('Show _menubar'), 0, self.gui.show_menu))
         return items
 
     def create(self, font, scale, over, popup_done=None):

@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LVecBase3
 from panda3d.core import CardMaker, NodePath, OmniBoundingVolume
@@ -33,6 +31,7 @@ from .. import settings
 from .shadernoise import NoiseSource
 
 from math import asin, cos
+
 
 class RayMarchingShape(Shape):
     templates = {}
@@ -54,7 +53,7 @@ class RayMarchingShape(Shape):
     def get_apparent_radius(self):
         return self.radius
 
-    def create_instance(self):
+    async def create_instance(self):
         self.instance = NodePath("card")
         card_maker = CardMaker("card")
         card_maker.set_frame(-1, 1, -1, 1)
@@ -70,29 +69,36 @@ class RayMarchingShape(Shape):
         return Shape.get_scale(self) * self.scale_factor
 
     def update_instance(self, camera_pos, orientation):
-        alpha = asin(self.radius / self.owner.distance_to_obs)
+        alpha = asin(self.radius / self.owner.anchor.distance_to_obs)
         self.scale_factor = 1.0 / cos(alpha)
 
-class RayMarchingAppearance(AppearanceBase):
-    def __init__(self, density_coef, density_power,
-                 absorption_factor, absorption_coef,
-                 mie_coef, phase_coef,
-                 source_power, emission_power, max_steps):
+
+class RayMarchingAppearanceBase(AppearanceBase):
+    def __init__(self, max_steps, hdr, exposure):
         AppearanceBase.__init__(self)
-        self.density_coef = density_coef
-        self.density_power = density_power
-        self.absorption_factor = absorption_factor
-        self.absorption_coef = absorption_coef
-        self.mie_coef = mie_coef
-        self.phase_coef = phase_coef
-        self.source_color = [1.0, 1.0, 1.0]
-        self.source_power = source_power
         self.max_steps = max_steps
-        self.emission_color = [1.0, 1.0, 1.0]
-        self.emission_power = emission_power
-        self.emissionColor = None
-        self.hdr = False
-        self.exposure = 4.0
+        self.hdr = hdr
+        self.exposure = exposure
+
+    def apply(self, shape, instance):
+        instance.setShaderInput("max_steps", int(self.max_steps))
+        instance.setShaderInput("exposure", self.exposure)
+
+    def update(self, shape, instance):
+        pos = shape.owner.anchor.rel_position
+        instance.setShaderInput("radius", shape.owner.get_apparent_radius())
+        instance.setShaderInput("center", pos)
+        instance.setShaderInput("origin", -pos)
+        instance.setShaderInput("scene_scale", settings.scale)
+
+    def get_user_parameters(self):
+        group = ParametersGroup('Raymarching',
+                AutoUserParameter('Steps', 'max_steps', self, AutoUserParameter.TYPE_INT, [1, 256]),
+                AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+                )
+        return group
+
 
 class RayMarchingShader(ShaderAppearance):
     use_vertex = True
@@ -134,6 +140,7 @@ bool raySphereIntersection(float radius, vec3 origin, vec3 direction, out float 
     }
 }
 ''')
+
     def fragment_extra(self, code):
         self.shader.fragment_shader.add_function(code, 'raySphereIntersection', self.ray_sphere_intersection)
 
@@ -181,24 +188,14 @@ bool raySphereIntersection(float radius, vec3 origin, vec3 direction, out float 
             code.append("  discard;")
         code.append("}")
 
-    def update_shader_shape_static(self, shape, appearance):
-        shape.instance.setShaderInput("max_steps", int(self.max_steps))
-        shape.instance.setShaderInput("exposure", self.exposure)
 
-    def update_shader_shape(self, shape, appearance):
-        pos = shape.owner.rel_position
-        shape.instance.setShaderInput("radius", shape.owner.get_apparent_radius())
-        shape.instance.setShaderInput("center", pos)
-        shape.instance.setShaderInput("origin", -pos)
-        shape.instance.setShaderInput("scene_scale", settings.scale)
+class SDFRayMarchingAppearance(RayMarchingAppearanceBase):
+    def __init__(self, shape, max_steps, hdr, exposure):
+        RayMarchingAppearanceBase.__init__(self, max_steps, hdr, exposure)
+        self.shape = shape
 
-    def get_user_parameters(self):
-        group = ParametersGroup('Raymarching',
-                AutoUserParameter('Steps', 'max_steps', self, AutoUserParameter.TYPE_INT, [1, 256]),
-                AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
-                AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
-                )
-        return group
+    def get_shader_appearance(self):
+        return SDFRayMarchingShader(self.shape)
 
 class SDFRayMarchingShader(RayMarchingShader):
     def __init__(self, shape, shader=None):
@@ -224,13 +221,41 @@ class SDFRayMarchingShader(RayMarchingShader):
         code.append("    }")
         code.append("    float step = d;")
 
+
+class BulgeRayMarchingAppearance(RayMarchingAppearanceBase):
+    def __init__(self, effective_intensity, effective_radius,
+                 emissive_color, emissive_scale,
+                 max_steps, hdr, exposure):
+        RayMarchingAppearanceBase.__init__(self, max_steps, hdr, exposure)
+        self.effective_intensity = effective_intensity
+        self.effective_radius = effective_radius
+        self.emissive_color = emissive_color
+        self.emissive_scale = emissive_scale
+
+    def get_shader_appearance(self):
+        return BulgeRayMarchingShader()
+
+    def appy(self, shape, instance):
+        RayMarchingAppearanceBase.apply(self, shape, instance)
+        instance.setShaderInput("effective_intensity", self.effective_intensity)
+        instance.setShaderInput("effective_radius", self.effective_radius)
+        instance.setShaderInput("emissive_color", self.emissive_color)
+        instance.setShaderInput("emissive_scale", self.emissive_scale)
+
+    def get_user_parameters(self):
+        group = RayMarchingShader.get_user_parameters(self)
+        group.add_parameters(
+                AutoUserParameter('Effective intensity', 'effective_intensity', self, AutoUserParameter.TYPE_FLOAT, [1e-10, 1e10], AutoUserParameter.SCALE_LOG),
+                AutoUserParameter('Effective radius', 'effective_radius', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
+                AutoUserParameter('Emissive color', 'emissive_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                AutoUserParameter('Emissive scale', 'emissive_scale', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
+                )
+        return group
+
+
 class BulgeRayMarchingShader(RayMarchingShader):
     def __init__(self, shader=None):
         RayMarchingShader.__init__(self, shader)
-        self.effective_intensity = 0.001
-        self.effective_radius = 0.5
-        self.emissive_color = [1, 1, 1]
-        self.emissive_scale = 1.0
 
     def get_id(self):
         name = RayMarchingShader.get_id(self)
@@ -253,25 +278,10 @@ class BulgeRayMarchingShader(RayMarchingShader):
         RayMarchingShader.loop_done(self, code)
         code.append("    surface_color.rgb *= emissive_scale;")
 
-    def update_shader_shape_static(self, shape, appearance):
-        RayMarchingShader.update_shader_shape_static(self, shape, appearance)
-        shape.instance.setShaderInput("effective_intensity", self.effective_intensity)
-        shape.instance.setShaderInput("effective_radius", self.effective_radius)
-        shape.instance.setShaderInput("emissive_color", self.emissive_color)
-        shape.instance.setShaderInput("emissive_scale", self.emissive_scale)
-
-    def get_user_parameters(self):
-        group = RayMarchingShader.get_user_parameters(self)
-        group.add_parameters(
-                AutoUserParameter('Effective intensity', 'effective_intensity', self, AutoUserParameter.TYPE_FLOAT, [1e-10, 1e10], AutoUserParameter.SCALE_LOG),
-                AutoUserParameter('Effective radius', 'effective_radius', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
-                AutoUserParameter('Emissive color', 'emissive_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                AutoUserParameter('Emissive scale', 'emissive_scale', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
-                )
-        return group
 
 class SDFShapeBase(NoiseSource):
     pass
+
 
 class SDFPointShape(SDFShapeBase):
     def __init__(self, position, dynamic=True, name=None, ranges={}):
@@ -292,6 +302,7 @@ class SDFPointShape(SDFShapeBase):
     def update(self, instance):
         if self.dynamic:
             instance.set_shader_input('%s' % self.str_id, self.position)
+
 
 class SDFSphereShape(SDFShapeBase):
     def __init__(self, position, radius, dynamic=True, name=None, ranges={}):
@@ -321,6 +332,22 @@ class SDFSphereShape(SDFShapeBase):
         group = ParametersGroup(self.name)
         group.add_parameters(AutoUserParameter('radius', 'radius', self, param_type=AutoUserParameter.TYPE_FLOAT, value_range=self.ranges.get('radius')))
         return [group]
+
+
+class VolumetricDensityRayMarchingAppearanceBase(RayMarchingAppearanceBase):
+    def __init__(self, density, max_steps, hdr, exposure):
+        RayMarchingAppearanceBase.__init__(self, max_steps, hdr, exposure)
+        self.density = density
+
+    def apply(self, shape, instance):
+        RayMarchingAppearanceBase.apply(self, shape, instance)
+        self.density.update(shape.instance)
+
+    def get_user_parameters(self):
+        group = RayMarchingAppearanceBase.get_user_parameters(self)
+        group.add_parameters(self.density.get_user_parameters())
+        return group
+
 
 class VolumetricDensityRayMarchingShaderBase(RayMarchingShader):
     def __init__(self, density, shader=None):
@@ -361,28 +388,55 @@ class VolumetricDensityRayMarchingShaderBase(RayMarchingShader):
         self.perform_scattering(code)
         code.append("    }")
 
-    def update_shader_shape_static(self, shape, appearance):
-        RayMarchingShader.update_shader_shape_static(self, shape, appearance)
-        self.density.update(shape.instance)
+
+class VolumetricDensityRayMarchingAppearance(VolumetricDensityRayMarchingAppearanceBase):
+    def __init__(self, density,
+                 absorption_factor, absorption_coef,
+                 mie_coef, phase_coef,
+                 source_color, source_power,
+                 emission_color, emission_power,
+                 max_steps, hdr, exposure):
+        VolumetricDensityRayMarchingAppearanceBase.__init__(self, density, max_steps, hdr, exposure)
+        self.absorption_factor = absorption_factor
+        self.absorption_coef = absorption_coef
+        self.mie_coef = mie_coef
+        self.phase_coef = phase_coef
+        self.source_color = source_color
+        self.source_power = source_power
+        self.emission_color = emission_color
+        self.emission_power = emission_power
+
+    def get_shader_appearance(self):
+        return VolumetricDensityRayMarchingShader(self.density)
+
+    def apply(self, shape, instance):
+        VolumetricDensityRayMarchingAppearanceBase.apply(self, shape, instance)
+        instance.setShaderInput("source_color", self.source_color)
+        instance.setShaderInput("source_power", self.source_power)
+        instance.setShaderInput("emission_color", srgb_to_linear_channel(self.emission_color[0]),
+                                                  srgb_to_linear_channel(self.emission_color[1]),
+                                                  srgb_to_linear_channel(self.emission_color[2]))
+        instance.setShaderInput("emission_power", self.emission_power )
+        instance.setShaderInput("absorption_coef", LVecBase3(*self.absorption_coef) * self.absorption_factor)
+        instance.setShaderInput("mie_coef", self.mie_coef)
+        instance.setShaderInput("phase_asymmetry_factor", self.phase_coef)
 
     def get_user_parameters(self):
-        group = RayMarchingShader.get_user_parameters(self)
-        group.add_parameters(self.density.get_user_parameters())
+        group = VolumetricDensityRayMarchingShaderBase.get_user_parameters(self)
+        group.add_parameters(
+                AutoUserParameter('Absorption factor', 'absorption_factor', self, AutoUserParameter.TYPE_FLOAT, [0, 100], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-10),
+                AutoUserParameter('Absorption coef', 'absorption_coef', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                AutoUserParameter('Mie coef', 'mie_coef', self, AutoUserParameter.TYPE_FLOAT, [0, 100], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-10),
+                AutoUserParameter('Phase', 'phase_coef', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
+                AutoUserParameter('Source power', 'source_power', self, AutoUserParameter.TYPE_FLOAT, [0, 1e15], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-15),
+                AutoUserParameter('Source color', 'source_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                AutoUserParameter('Emission power', 'emission_power', self, AutoUserParameter.TYPE_FLOAT, [0, 1e10], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-15),
+                AutoUserParameter('Emission color', 'emission_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
+                )
         return group
 
-class VolumetricDensityRayMarchingShader(VolumetricDensityRayMarchingShaderBase):
-    def __init__(self, density, shader=None):
-        VolumetricDensityRayMarchingShaderBase.__init__(self, density, shader)
-        self.absorption_factor = [0, 0, 0]
-        self.absorption_coef = 0
-        self.mie_coef = 0
-        self.phase_coef = 0
-        self.source_color = [1.0, 1.0, 1.0]
-        self.source_power = 0
-        self.emission_color = [1.0, 1.0, 1.0]
-        self.emission_power = 0
-        self.emissionColor = None
 
+class VolumetricDensityRayMarchingShader(VolumetricDensityRayMarchingShaderBase):
     def fragment_uniforms(self, code):
         VolumetricDensityRayMarchingShaderBase.fragment_uniforms(self, code)
         code.append("uniform vec3 absorption_coef;")
@@ -447,39 +501,33 @@ float cs_phase_func(float mu, float g)
         VolumetricDensityRayMarchingShaderBase.loop_done(self, code)
         code.append("  surface_color = vec4(total_luminance * (1 - acc_transmittance), acc_transmittance);")
 
-    def update_shader_shape_static(self, shape, appearance):
-        VolumetricDensityRayMarchingShaderBase.update_shader_shape_static(self, shape, appearance)
-        shape.instance.setShaderInput("source_color", self.source_color)
-        shape.instance.setShaderInput("source_power", self.source_power)
-        shape.instance.setShaderInput("emission_color", srgb_to_linear_channel(self.emission_color[0]),
-                                                        srgb_to_linear_channel(self.emission_color[1]),
-                                                        srgb_to_linear_channel(self.emission_color[2]))
-        shape.instance.setShaderInput("emission_power", self.emission_power )
-        shape.instance.setShaderInput("absorption_coef", LVecBase3(*self.absorption_coef) * self.absorption_factor)
-        shape.instance.setShaderInput("mie_coef", self.mie_coef)
-        shape.instance.setShaderInput("phase_asymmetry_factor", self.phase_coef)
+
+class VolumetricDensityEmissiveRayMarchingAppearance(VolumetricDensityRayMarchingAppearanceBase):
+    def __init__(self, density, emission_color, emission_power, max_steps, hdr, exposure):
+        VolumetricDensityRayMarchingAppearanceBase.__init__(self, density, max_steps, hdr, exposure)
+        self.emission_color = emission_color
+        self.emission_power = emission_power
+
+    def get_shader_appearance(self):
+        return VolumetricDensityEmissiveRayMarchingShader(self.density)
+
+    def apply(self, shape, instance):
+        VolumetricDensityRayMarchingAppearanceBase.apply(self, shape, instance)
+        instance.setShaderInput("emission_color", srgb_to_linear_channel(self.emission_color[0]),
+                                                  srgb_to_linear_channel(self.emission_color[1]),
+                                                  srgb_to_linear_channel(self.emission_color[2]))
+        instance.setShaderInput("emission_power", self.emission_power)
 
     def get_user_parameters(self):
-        group = VolumetricDensityRayMarchingShaderBase.get_user_parameters(self)
+        group = VolumetricDensityRayMarchingAppearanceBase.get_user_parameters(self)
         group.add_parameters(
-                AutoUserParameter('Absorption factor', 'absorption_factor', self, AutoUserParameter.TYPE_FLOAT, [0, 100], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-10),
-                AutoUserParameter('Absorption coef', 'absorption_coef', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                AutoUserParameter('Mie coef', 'mie_coef', self, AutoUserParameter.TYPE_FLOAT, [0, 100], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-10),
-                AutoUserParameter('Phase', 'phase_coef', self, AutoUserParameter.TYPE_FLOAT, [0, 1]),
-                AutoUserParameter('Source power', 'source_power', self, AutoUserParameter.TYPE_FLOAT, [0, 1e15], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-15),
-                AutoUserParameter('Source color', 'source_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
                 AutoUserParameter('Emission power', 'emission_power', self, AutoUserParameter.TYPE_FLOAT, [0, 1e10], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-15),
                 AutoUserParameter('Emission color', 'emission_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
                 )
         return group
 
-class VolumetricDensityEmissiveRayMarchingShader(VolumetricDensityRayMarchingShaderBase):
-    def __init__(self, density, shader=None):
-        VolumetricDensityRayMarchingShaderBase.__init__(self, density, shader)
-        self.emission_color = [1.0, 1.0, 1.0]
-        self.emission_power = 0
-        self.emissionColor = None
 
+class VolumetricDensityEmissiveRayMarchingShader(VolumetricDensityRayMarchingShaderBase):
     def get_id(self):
         name = RayMarchingShader.get_id(self)
         name += "-emissive"
@@ -494,18 +542,3 @@ class VolumetricDensityEmissiveRayMarchingShader(VolumetricDensityRayMarchingSha
     def perform_scattering(self, code):
         code.append("        vec3 light_emission_radiance = emission_color * emission_power * density * step / radius;")
         code.append("        surface_color.rgb += light_emission_radiance;")
-
-    def update_shader_shape_static(self, shape, appearance):
-        VolumetricDensityRayMarchingShaderBase.update_shader_shape_static(self, shape, appearance)
-        shape.instance.setShaderInput("emission_color", srgb_to_linear_channel(self.emission_color[0]),
-                                                        srgb_to_linear_channel(self.emission_color[1]),
-                                                        srgb_to_linear_channel(self.emission_color[2]))
-        shape.instance.setShaderInput("emission_power", self.emission_power )
-
-    def get_user_parameters(self):
-        group = VolumetricDensityRayMarchingShaderBase.get_user_parameters(self)
-        group.add_parameters(
-                AutoUserParameter('Emission power', 'emission_power', self, AutoUserParameter.TYPE_FLOAT, [0, 1e10], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-15),
-                AutoUserParameter('Emission color', 'emission_color', self, AutoUserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                )
-        return group

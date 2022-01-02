@@ -16,16 +16,16 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 try:
-    from cosmonium_engine import OctreeNode, OctreeLeaf, InfiniteFrustum, VisibleObjectsTraverser
-    hasOctreeLeaf = True
+    from cosmonium_engine import OctreeNode
+    from cosmonium_engine import InfiniteFrustum
+    from cosmonium_engine import Settings
+    c_settings = Settings.get_global_ptr()
     print("Using C++ Engine")
 except ImportError as e:
     print("WARNING: Could not load Octree C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.pyoctree import OctreeNode, OctreeLeaf, VisibleObjectsTraverser
+    from .pyengine.pyoctree import OctreeNode
     from .pyengine.pyfrustum import InfiniteFrustum
-    hasOctreeLeaf = False
+    c_settings = None

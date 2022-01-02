@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from direct.task.Task import gather
 
@@ -83,14 +81,14 @@ class TexturesDictionary(AppearanceBase):
         texture = block.textures_map[category]
         return texture.array_id
 
-    def apply_textures(self, instance):
+    def apply_textures(self, shape, instance):
         if self.texture_array:
             for texture in self.texture_arrays.values():
-                texture.apply(instance)
+                texture.apply(shape, instance)
         else:
             for entry in self.blocks.values():
                 for texture in entry.textures:
-                    texture.apply(instance)
+                    texture.apply(shape, instance)
 
     def load_textures(self, tasks_tree, shape, owner):
         tasks = []
@@ -115,7 +113,7 @@ class TexturesDictionary(AppearanceBase):
                     self.task = self.load_texture_array(tasks_tree, shape, owner)
                 else:
                     self.task = self.load_textures(tasks_tree, shape, owner)
-                self.task.setUponDeath(self.task_done)
+                self.task.add_done_callback(self.task_done)
             await self.task
             #TODO: loaded should be protected by a lock to avoid race condition with clear()
             self.loaded = True
@@ -123,7 +121,7 @@ class TexturesDictionary(AppearanceBase):
     def apply(self, shape, instance):
         if not self.loaded:
             print("ERROR: Applying not loaded texture")
-        self.apply_textures(instance)
+        self.apply_textures(shape, instance)
         instance.set_shader_input("detail_factor", self.scale_factor)
 
     def clear_textures(self):
@@ -144,7 +142,7 @@ class TexturesDictionary(AppearanceBase):
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
         AppearanceBase.update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size)
-        height_under = shape.owner._height_under
+        height_under = shape.parent.body.anchor._height_under
         distance = distance_to_obs - height_under
         if distance > 0.0:
             size = self.extend / (distance * pixel_size)
@@ -168,6 +166,9 @@ class ProceduralAppearance(AppearanceBase):
 
     def get_shader_appearance(self):
         return self.shader_appearance
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         await self.texture_source.load(tasks_tree, shape, owner)

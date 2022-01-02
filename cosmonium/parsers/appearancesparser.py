@@ -17,15 +17,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LColor
 
 from ..appearances import Appearance, ModelAppearance
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.appearances import ProceduralAppearance
-from ..procedural.raymarching import RayMarchingAppearance
 from ..procedural.textures import PatchedProceduralVirtualTextureSource, DetailTextureGenerationStage, DetailMapTextureGenerator
 from ..utils import TransparencyBlend
 
@@ -41,7 +38,7 @@ def decode_bias(data, appearance):
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, patched_shape=True):
+    def decode(self, data, heightmap, radius, patched_shape):
         source_parser = TextureSourceYamlParser()
         appearance = Appearance()
         tint = data.get('tint', None)
@@ -117,7 +114,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
 
 class ModelAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, heightmap, radius, patched_shape):
         material = data.get('material', True)
         vertex_color = data.get('vertex-color', True)
         occlusion_channel = data.get('occlusion-channel', False)
@@ -125,42 +122,25 @@ class ModelAppearanceYamlParser(YamlModuleParser):
         decode_bias(data, appearance)
         return appearance
 
-class RayMarchingAppeanceYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(self, data):
-        density_coef = data.get('density-coef', 10000.0)
-        density_power = data.get('density-power', 2)
-        absorption_factor = data.get('absorption-factor', 0.00001)
-        absorption_coef = data.get('absorption-coef', [1, 1, 1])
-        mie_coef = data.get('mie-coef', 0.1)
-        phase_coef = data.get('phase-coef', 0)
-        source_power = data.get('source-power', 10000.0)
-        emission_power = data.get('emission-power', 0.0)
-        max_steps = data.get('max-steps', 16)
-        return RayMarchingAppearance(density_coef, density_power,
-                                     absorption_factor, absorption_coef,
-                                     mie_coef, phase_coef,
-                                     source_power, emission_power, max_steps)
-
 class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius):
+    def decode(self, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         control_parser = TextureControlYamlParser()
-        textures_source = TextureDictionaryYamlParser.decode_textures_dictionary(textures_source)
+        textures_source = TextureDictionaryYamlParser.decode(textures_source)
         texture_control = control_parser.decode(control, heightmap, radius)
         appearance = ProceduralAppearance(texture_control, textures_source, heightmap)
         return appearance
 
 class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius):
+    def decode(self, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         size = data.get('size', 256)
         control_parser = TextureControlYamlParser()
-        textures_source = TextureDictionaryYamlParser.decode_textures_dictionary(textures_source)
+        textures_source = TextureDictionaryYamlParser.decode(textures_source)
         texture_control = control_parser.decode(control, heightmap, radius)
         tex_generator = DetailMapTextureGenerator(size, heightmap, texture_control, textures_source)
         texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
@@ -172,21 +152,24 @@ class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
         return appearance
 
 class AppearanceYamlParser(YamlModuleParser):
+    parsers = {}
     @classmethod
-    def decode(self, data, heightmap=None, radius=None, patched_shape=True):
-        (object_type, parameters) = self.get_type_and_data(data, 'textures', detect_trivial=False)
-        if object_type == 'textures':
-            appearance = TexturesAppearanceYamlParser.decode(parameters, patched_shape)
-        elif object_type == 'model':
-            appearance = ModelAppearanceYamlParser.decode(parameters)
-        elif object_type == 'procedural':
-            appearance = ProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
-        elif object_type == 'deferred-procedural':
-            appearance = DeferredProceduralAppearanceYamlParser.decode(parameters, heightmap, radius)
-        elif object_type == 'textures-dict':
-            appearance = TextureDictionaryYamlParser.decode_textures_dictionary(parameters)
+    def register(cls, name, parser):
+        cls.parsers[name] = parser
+
+    @classmethod
+    def decode(cls, data, heightmap=None, radius=None, patched_shape=True):
+        (object_type, parameters) = cls.get_type_and_data(data, 'textures', detect_trivial=False)
+        if object_type in cls.parsers:
+            parser = cls.parsers[object_type]
+            return parser.decode(parameters, heightmap, radius, patched_shape)
+            appearance = TexturesAppearanceYamlParser()
         else:
             print("Unknown appearance type '%s'" % object_type, data)
             appearance = None
         return appearance
 
+AppearanceYamlParser.register('textures', TexturesAppearanceYamlParser)
+AppearanceYamlParser.register('model', ModelAppearanceYamlParser)
+AppearanceYamlParser.register('procedural', ProceduralAppearanceYamlParser)
+AppearanceYamlParser.register('deferred-procedural', DeferredProceduralAppearanceYamlParser)

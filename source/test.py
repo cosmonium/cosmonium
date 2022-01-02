@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from panda3d.core import LPoint3d, LMatrix4, PerspectiveLens, LVector3
 from engine import OctreeNode, OctreeLeaf, InfiniteFrustum, VisibleObjectsTraverser

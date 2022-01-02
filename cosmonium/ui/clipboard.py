@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 import sys
 import os
@@ -38,10 +36,7 @@ class TkClipboard(Clipboard):
         has_tk = False
         self.r = None
         try:
-            if sys.version_info[0] < 3:
-                from Tkinter import Tk, TclError
-            else:
-                from tkinter import Tk, TclError
+            from tkinter import Tk, TclError
             has_tk = True
             print("Using Tk clipboard")
         except ImportError:

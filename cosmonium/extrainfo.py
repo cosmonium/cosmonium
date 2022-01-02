@@ -17,18 +17,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from .systems import SimpleSystem
 
-import sys
 import re
 
-if sys.version_info[0] < 3:
-    import urllib as urlquote
-else:
-    from urllib import parse as urlquote
+from urllib import parse as urlquote
 
 starts_with_digit = re.compile("^\d")
 

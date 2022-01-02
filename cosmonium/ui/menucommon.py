@@ -35,7 +35,7 @@ def create_orbiting_bodies_menu_items(engine, body):
             if child != body:
                 children.append(child)
         if len(children) > 0:
-            children.sort(key=lambda x: x.orbit.get_apparent_radius())
+            children.sort(key=lambda x: x.anchor.orbit.get_bounding_radius())
             subitems = []
             for child in children:
                 if isinstance(child, SimpleSystem):
@@ -63,7 +63,7 @@ def create_surfaces_menu_items(body):
         for surface in body.surfaces:
             name = surface.get_name()
             if surface.category is not None:
-                if name != '':
+                if name is not None:
                     name += " (%s)" % surface.category.name
                 else:
                     name = "%s" % surface.category.name

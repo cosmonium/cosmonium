@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2021 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -17,16 +17,16 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from panda3d.core import BoundingSphere, OmniBoundingVolume, GeomNode, Texture
-from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix3, LMatrix4, LVecBase4i
-from panda3d.core import NodePath, BoundingBox
+from panda3d.core import OmniBoundingVolume, GeomNode, Texture
+from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
+from panda3d.core import NodePath
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from direct.task.Task import gather
 
 from .shapes import Shape
+from .patchneighbours import PatchNeighbours
+from .datasource import DataSource
 from .shaders import DataStoreManagerDataSource, ParametersDataStoreDataSource
 from .textures import TexCoord
 from .pstats import pstat
@@ -36,7 +36,19 @@ from . import settings
 from math import cos, sin, pi, sqrt, copysign, log
 from collections import deque
 import struct
-from array import array
+
+try:
+    from cosmonium_engine import QuadTreeNode
+    from cosmonium_engine import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
+    from cosmonium_engine import LodResult
+    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
+except ImportError as e:
+    print("WARNING: Could not load Patch C implementation, fallback on python implementation")
+    print("\t", e)
+    from .pyrendering.quadtree import QuadTreeNode
+    from .pyrendering.cullingfrustum import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
+    from .pyrendering.lodresult import LodResult
+    from .pyrendering.lodcontrol import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
 
 class BoundingBoxShape():
     state = None
@@ -48,102 +60,18 @@ class BoundingBoxShape():
         if self.instance is not None: return
         self.instance = geometry.BoundingBoxGeom(self.box)
         if BoundingBoxShape.state is None:
-            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(1, 0, 0, 1)),#0.3, 1.0, 0.5, 1.0)),
+            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(0.3, 1.0, 0.5, 1.0)),
                                                       RenderModeAttrib.make(RenderModeAttrib.M_wireframe),
                                                       CullFaceAttrib.make(CullFaceAttrib.M_cull_clockwise),
                                                       ShaderAttrib.make().set_shader_auto(True))
         self.instance.set_state(self.state)
+        self.instance.set_light_off(True)
         return self.instance
 
     def remove_instance(self):
         if self.instance is not None:
             self.instance.remove_node()
             self.instance = None
-
-class PyCullingFrustumBase:
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
-        raise NotImplementedError()
-
-    def is_patch_in_view(self, patch):
-        return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
-
-class PyCullingFrustum(PyCullingFrustumBase):
-    def __init__(self, lens, transform_mat, offset_body_center, model_body_center_offset, shift_patch_origin):
-        self.lens = lens
-        self.lens_bounds = self.lens.makeBounds()
-        self.lens_bounds.xform(transform_mat)
-        self.offset_body_center = offset_body_center
-        self. model_body_center_offset = model_body_center_offset
-        self.shift_patch_origin = shift_patch_origin
-
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
-        offset = LVector3d()
-        if self.offset_body_center:
-            offset += self.model_body_center_offset
-        if self.shift_patch_origin:
-            offset = offset + patch_normal * patch_offset
-        offset = LPoint3(*offset)
-        obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
-        intersect = self.lens_bounds.contains(obj_bounds)
-        return (intersect & BoundingBox.IF_some) != 0
-
-class PyHorizonCullingFrustum(PyCullingFrustumBase):
-    def __init__(self, lens, scale, transform_mat, min_radius, altitude_to_min_radius, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
-        lens = lens.make_copy()
-        if cull_far_patches and max_lod > cull_far_patches_threshold:
-            factor = 2.0 / (1 << ((max_lod - cull_far_patches_threshold) // 2))
-        else:
-            factor = 2.0
-        limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
-        far = limit * scale
-        #Set the near plane to lens-far-limit * 10 * far to optmimize the size of the frustum
-        #TODO: get the actual value from the config
-        lens.set_near_far(far * 1e-6, far)
-        self.lens_bounds = lens.make_bounds()
-        self.lens_bounds.xform(transform_mat)
-        self.offset_body_center = offset_body_center
-        self.model_body_center_offset = model_body_center_offset
-        self.shift_patch_origin = shift_patch_origin
-
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
-        offset = LVector3d()
-        if self.offset_body_center:
-            offset += self.model_body_center_offset
-        if self.shift_patch_origin:
-            offset = offset + patch_normal * patch_offset
-        offset = LPoint3(*offset)
-        obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
-        intersect = self.lens_bounds.contains(obj_bounds)
-        return (intersect & BoundingBox.IF_some) != 0
-
-class PyLodResult():
-    def __init__(self):
-        self.to_split = []
-        self.to_merge = []
-        self.to_show = []
-        self.to_remove = []
-        self.max_lod = 0
-
-    def add_to_split(self, patch):
-        self.to_split.append(patch)
-
-    def add_to_merge(self, patch):
-        self.to_merge.append(patch)
-
-    def add_to_show(self, patch):
-        self.to_show.append(patch)
-
-    def add_to_remove(self, patch):
-        self.to_remove.append(patch)
-
-    def check_max_lod(self, patch):
-        self.max_lod = max(self.max_lod, patch.lod)
-
-    def sort_by_distance(self):
-        self.to_split.sort(key=lambda x: x.distance)
-        self.to_merge.sort(key=lambda x: x.distance)
-        self.to_show.sort(key=lambda x: x.distance)
-        self.to_remove.sort(key=lambda x: x.distance)
 
 class PatchLayer:
     def __init__(self):
@@ -205,212 +133,6 @@ class PatchFactory:
 
     def create_patch(self, parent, lod, x, y):
         pass
-
-class PatchNeighboursBase:
-    pass
-
-class PatchNoNeighbours(PatchNeighboursBase):
-    def __init__(self, patch):
-        self.patch = patch
-
-    def set_neighbours(self, face, neighbours):
-        pass
-
-    def add_neighbour(self, face, neighbour):
-        pass
-
-    def get_neighbours(self, face):
-        return []
-
-    def collect_side_neighbours(self, side):
-        return []
-
-    def set_all_neighbours(self, north, east, south, west):
-        pass
-
-    def clear_all_neighbours(self):
-        pass
-
-    def get_all_neighbours(self):
-        return []
-
-    def get_neighbour_lower_lod(self, face):
-        return self.patch.lod
-
-    def remove_detached_neighbours(self):
-        pass
-
-    def replace_neighbours(self, face, olds, news):
-        pass
-
-    def split_neighbours(self, update):
-        pass
-
-    def merge_neighbours(self, update):
-        pass
-
-    def calc_outer_tessellation_level(self, update):
-        pass
-
-class PatchNeighbours(PatchNeighboursBase):
-    def __init__(self, patch):
-        self.patch = patch
-        self.neighbours = [[], [], [], []]
-
-    def set_neighbours(self, face, neighbours):
-        self.neighbours[face] = neighbours
-
-    def add_neighbour(self, face, neighbour):
-        if neighbour not in self.neighbours[face]:
-            self.neighbours[face].append(neighbour)
-
-    def get_neighbours(self, face):
-        return [] + self.neighbours[face]
-
-    def _collect_side_neighbours(self, result, side):
-        if len(self.patch.children) != 0:
-            (bl, br, tr, tl) = self.patch.children
-            if side == PatchBase.NORTH:
-                tl.neighbours._collect_side_neighbours(result, side)
-                tr.neighbours._collect_side_neighbours(result, side)
-            elif side == PatchBase.EAST:
-                tr.neighbours._collect_side_neighbours(result, side)
-                br.neighbours._collect_side_neighbours(result, side)
-            elif side == PatchBase.SOUTH:
-                bl.neighbours._collect_side_neighbours(result, side)
-                br.neighbours._collect_side_neighbours(result, side)
-            elif side == PatchBase.WEST:
-                tl.neighbours._collect_side_neighbours(result, side)
-                bl.neighbours._collect_side_neighbours(result, side)
-        else:
-            result.append(self.patch)
-
-    def collect_side_neighbours(self, side):
-        result = []
-        self._collect_side_neighbours(result, side)
-        return result
-
-    def set_all_neighbours(self, north, east, south, west):
-        self.neighbours[PatchBase.NORTH] = north
-        self.neighbours[PatchBase.EAST] = east
-        self.neighbours[PatchBase.SOUTH] = south
-        self.neighbours[PatchBase.WEST] = west
-
-    def clear_all_neighbours(self):
-        self.neighbours = [[], [], [], []]
-
-    def get_all_neighbours(self):
-        neighbours = []
-        for i in range(4):
-            neighbours += self.neighbours[i]
-        return neighbours
-
-    def get_neighbour_lower_lod(self, face):
-        lower_lod = self.patch.lod
-        for neighbour in self.neighbours[face]:
-            #print(neighbour.lod)
-            lower_lod = min(lower_lod, neighbour.lod)
-        return lower_lod
-
-    def remove_detached_neighbours(self):
-        valid = []
-        patch = self.patch
-        for neighbour in self.neighbours[PatchBase.NORTH]:
-            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.NORTH] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.SOUTH]:
-            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.SOUTH] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.EAST]:
-            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.EAST] = valid
-        valid = []
-        for neighbour in self.neighbours[PatchBase.WEST]:
-            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.append(neighbour)
-        self.neighbours[PatchBase.WEST] = valid
-
-    def replace_neighbours(self, face, olds, news):
-        opposite = PatchBase.opposite_face[face]
-        for neighbour_patch in self.neighbours[face]:
-            neighbour_list = neighbour_patch.neighbours.neighbours[opposite]
-            for old in olds:
-                try:
-                    neighbour_list.remove(old)
-                except ValueError:
-                    pass
-            for new in news:
-                if not new in neighbour_list:
-                    neighbour_list.append(new)
-
-    def split_neighbours(self, update):
-        (bl, br, tr, tl) = self.patch.children
-        tl.set_all_neighbours(self.get_neighbours(PatchBase.NORTH), [tr], [bl], self.get_neighbours(PatchBase.WEST))
-        tr.set_all_neighbours(self.get_neighbours(PatchBase.NORTH), self.get_neighbours(PatchBase.EAST), [br], [tl])
-        br.set_all_neighbours([tr], self.get_neighbours(PatchBase.EAST), self.get_neighbours(PatchBase.SOUTH), [bl])
-        bl.set_all_neighbours([tl], [br], self.get_neighbours(PatchBase.SOUTH), self.get_neighbours(PatchBase.WEST))
-        neighbours = self.get_all_neighbours()
-        self.replace_neighbours(PatchBase.NORTH, [self.patch], [tl, tr])
-        self.replace_neighbours(PatchBase.EAST, [self.patch], [tr, br])
-        self.replace_neighbours(PatchBase.SOUTH, [self.patch], [bl, br])
-        self.replace_neighbours(PatchBase.WEST,  [self.patch], [tl, bl])
-        for (i, new) in enumerate((tl, tr, br, bl)):
-            #text = ['tl', 'tr', 'br', 'bl']
-            #print("*** Child", text[i], '***')
-            new.remove_detached_neighbours()
-            new.calc_outer_tessellation_level(update)
-        #print("Neighbours")
-        for neighbour in neighbours:
-            neighbour.remove_detached_neighbours()
-            neighbour.calc_outer_tessellation_level(update)
-        self.clear_all_neighbours()
-
-    def merge_neighbours(self, update):
-        (bl, br, tr, tl) = self.patch.children
-        north = []
-        for neighbour in tl.get_neighbours(PatchBase.NORTH) + tr.get_neighbours(PatchBase.NORTH):
-            if neighbour not in north:
-                north.append(neighbour)
-        east = []
-        for neighbour in tr.get_neighbours(PatchBase.EAST) + br.get_neighbours(PatchBase.EAST):
-            if neighbour not in east:
-                east.append(neighbour)
-        south = []
-        for neighbour in bl.get_neighbours(PatchBase.SOUTH) + br.get_neighbours(PatchBase.SOUTH):
-            if neighbour not in south:
-                south.append(neighbour)
-        west = []
-        for neighbour in tl.get_neighbours(PatchBase.WEST) + bl.get_neighbours(PatchBase.WEST):
-            if neighbour not in west:
-                west.append(neighbour)
-        self.set_all_neighbours(north, east, south, west)
-        self.replace_neighbours(PatchBase.NORTH, [tl, tr], [self.patch])
-        self.replace_neighbours(PatchBase.EAST, [tr, br], [self.patch])
-        self.replace_neighbours(PatchBase.SOUTH, [bl, br], [self.patch])
-        self.replace_neighbours(PatchBase.WEST,  [tl, bl], [self.patch])
-        self.calc_outer_tessellation_level(update)
-        for neighbour in north + east + south + west:
-            neighbour.calc_outer_tessellation_level(update)
-
-    def calc_outer_tessellation_level(self, update):
-        for face in range(4):
-            #print("Check face", PatchBase.text[face])
-            lod = self.get_neighbour_lower_lod(face)
-            delta = self.patch.lod - lod
-            outer_level = max(0, self.patch.max_level - delta)
-            new_level = 1 << outer_level
-            dest = PatchBase.conv[face]
-            if self.patch.tessellation_outer_level[dest] != new_level:
-                #print("Change from", self.tessellation_outer_level[dest], "to", new_level)
-                if not self.patch in update:
-                    update.append(self.patch)
-            self.patch.tessellation_outer_level[dest] = new_level
-            #print("Level", PatchBase.text[face], ":", delta, 1 << outer_level)
 
 class PatchDataStoreManager:
     def __init__(self, max_elem):
@@ -510,111 +232,7 @@ class PatchParametersDataStore:
         packed_data = struct.pack(self.pack_format, *data)
         data_buffer[offset : offset + self.data_size * 4] = packed_data
 
-class PyQuadTreeNode:
-    def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
-        Shape.__init__(self)
-        self.patch = patch
-        self.lod = lod
-        self.density = density
-        self.centre = centre
-        self.length = length
-        self.normal = normal
-        self.offset = offset
-        self.bounds = bounds
-        self.children = []
-        self.children_bb = []
-        self.children_normal = []
-        self.children_offset = []
-        self.shown = False
-        self.visible = False
-        self.distance = 0.0
-        self.instance_ready = False
-        self.apparent_size = None
-        self.patch_in_view = False
-
-    def set_shown(self, shown):
-        self.shown = shown
-
-    def set_instance_ready(self, instance_ready):
-        self.instance_ready = instance_ready
-
-    def add_child(self, child):
-        child.parent = self
-        self.children.append(child)
-        self.children_bb.append(child.bounds.make_copy())
-        self.children_normal.append(child.normal)
-        self.children_offset.append(child.offset)
-
-    def remove_children(self):
-        for child in self.children:
-            child.parent = None
-        self.children = []
-        self.children_bb = []
-        self.children_normal = []
-        self.children_offset = []
-
-    def can_merge_children(self):
-        if len(self.children) == 0:
-            return False
-        for child in self.children:
-            if len(child.children) != 0:
-                return False
-        return True
-
-    def in_patch(self, x, y):
-        return x >= self.x0 and x <= self.x1 and y >= self.y0 and y <= self.y1
-
-    def check_visibility(self, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
-        #Testing if we are inside the patch create visual artifacts
-        #The change of lod between patches is too noticeable
-        if False and self.in_patch(*local):
-            within_patch = True
-            self.distance = altitude
-        else:
-            within_patch = False
-            self.distance = max(altitude, (self.centre - model_camera_pos).length() - self.length * 0.7071067811865476)
-        self.patch_in_view = culling_frustum.is_patch_in_view(self)
-        self.visible = within_patch or self.patch_in_view
-        self.apparent_size = self.length / (self.distance * pixel_size)
-
-    def are_children_visibles(self, culling_frustum):
-        children_visible = len(self.children_bb) == 0
-        for (i, child_bb) in enumerate(self.children_bb):
-            if culling_frustum.is_bb_in_view(child_bb, self.children_normal[i], self.children_offset[i]):
-                children_visible = True
-                break
-        return children_visible
-
-    @pstat
-    def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
-        self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
-        lod_result.check_max_lod(self)
-        if len(self.children) != 0:
-            if self.can_merge_children() and lod_control.should_merge(self, self.apparent_size, self.distance):
-                lod_result.add_to_merge(self)
-            else:
-                for child in self.children:
-                    child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
-        else:
-            if self.visible and lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
-                if self.are_children_visibles(culling_frustum):
-                    lod_result.add_to_split(self)
-            if self.shown and lod_control.should_remove(self, self.apparent_size, self.distance):
-                lod_result.add_to_remove(self)
-            if not self.shown and lod_control.should_instanciate(self, self.apparent_size, self.distance):
-                lod_result.add_to_show(self)
-
-
 class PatchBase(Shape):
-    NORTH = 0
-    EAST = 1
-    SOUTH = 2
-    WEST = 3
-
-    opposite_face = [SOUTH, WEST, NORTH, EAST]
-    text = ['North', 'East', 'South', 'West']
-    conv = [WEST, SOUTH, EAST, NORTH]
-
     coord = None
 
     def __init__(self, parent, lod, density, surface_scale):
@@ -732,6 +350,12 @@ class PatchBase(Shape):
             child.shown = False
         self.children = []
         self.quadtree_node.remove_children()
+
+    def __str__(self):
+        return f"{id(self):x} {self.str_id()}"
+
+    def __repr__(self):
+        return f"{id(self):x} {self.str_id()}"
 
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
@@ -1199,12 +823,17 @@ class PatchedShapeBase(Shape):
                 if self.no_bounds:
                     self.instance.node().setBounds(OmniBoundingVolume())
                     self.instance.node().setFinal(1)
-            tasks = []
-            for linked_object in self.linked_objects:
-                tasks.append(linked_object.create_instance())
-            if len(tasks) > 0:
-                gather(*tasks)
         return self.instance
+
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.parent.body.support_offset_body_center and settings.offset_body_center:
+            self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
+            scale = self.parent.body.surface.get_scale()
+            self.model_body_center_offset[0] /= scale[0]
+            self.model_body_center_offset[1] /= scale[1]
+            self.model_body_center_offset[2] /= scale[2]
+        else:
+            self.model_body_center_offset = LVector3d()
 
     def remove_instance(self):
         self.remove_all_patches_instances()
@@ -1223,26 +852,30 @@ class PatchedShapeBase(Shape):
             #Position the frustum relative to the body
             #If lod checking is enabled, the position should be 0, the position of the camera
             #If lod checking is frozen, we use the old relative position
-            self.frustum_node.set_pos(*(self.owner.scene_position + self.frustum_rel_position * self.owner.scene_scale_factor))
-            #TODO: The frustum is not correctly placed when lod is frozen and scale is changing
+            self.frustum_node.set_pos(*self.frustum_rel_position)
+            # The cullling frustum is scaled with the scene_scale_factor, the generated geometry is then too small
+            # we must undo this scaling
+            self.frustum_node.set_scale(1 / owner.scene_anchor.scene_scale_factor)
 
     def xform_cam_to_model(self, camera_pos):
         pass
 
-    def create_culling_frustum(self, camera):
+    def create_culling_frustum(self, scene_manager, camera):
         pass
 
-    def create_frustum_node(self):
+    def create_frustum_node(self, scene_anchor):
         if self.frustum_node is not None:
             self.frustum_node.remove_node()
         if settings.debug_lod_frustum:
             geom = self.culling_frustum.lens.make_geometry()
-            self.frustum_node = render.attach_new_node('frustum')
+            self.frustum_node = scene_anchor.unshifted_instance.attach_new_node('frustum')
             node = GeomNode('frustum_node')
             node.add_geom(geom)
             self.frustum_node.attach_new_node(node)
-            self.frustum_rel_position = -self.owner.scene_rel_position
-            self.frustum_node.set_quat(self.owner.context.observer.get_camera_rot())
+            self.frustum_rel_position = -self.owner.anchor.rel_position
+            self.frustum_node.set_quat(self.owner.context.observer.get_absolute_orientation())
+            self.frustum_node.set_color(LColor(1, 0, 0, 1))
+            self.frustum_node.set_light_off(True)
             #The frustum position is updated in place_patches()
 
     @pstat
@@ -1251,14 +884,14 @@ class PatchedShapeBase(Shape):
             return
         if self.instance is None:
             return False
-        min_radius = self.owner.surface.get_min_radius()
+        min_radius = self.parent.body.surface.get_min_radius()
         if distance_to_obs < min_radius:
             print("Too low !")
             return False
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
-        altitude_to_ground = (self.owner.distance_to_obs - self.owner._height_under) / self.parent.height_scale
-        self.create_culling_frustum(self.owner.context.observer)
-        self.create_frustum_node()
+        altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
+        self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
+        self.create_frustum_node(self.owner.scene_anchor)
         self.to_split = []
         self.to_merge = []
         self.to_show = []
@@ -1371,7 +1004,7 @@ class PatchedShapeBase(Shape):
         else:
             pad = ''
         print(pad, patch.str_id(), hex(id(patch)))
-        print(pad, '  Visible' if patch.visible else '  Not visible', patch.patch_in_view)
+        print(pad, '  Visible' if patch.quadtree_node.visible else '  Not visible', patch.quadtree_node.patch_in_view)
         if patch.shown: print(pad, '  Shown')
         if not patch.instance_ready: print(pad, '  Instance not ready')
         if patch.task is not None: print(pad, '  Task running')
@@ -1394,9 +1027,9 @@ class PatchedShapeBase(Shape):
             self.dump_patch(patch, padding=False)
 
     def _dump_stats(self, stats_array, patch):
-        stats_array[0] += patch.visible
+        stats_array[0] += patch.quadtree_node.visible
         stats_array[1] += patch.shown
-        stats_array[7] += (patch.visible and not patch.instance_ready)
+        stats_array[7] += (patch.quadtree_node.visible and not patch.instance_ready)
         if patch.task is not None: stats_array[8] += 1
         stats_array[9] += 1
         for child in patch.children:
@@ -1417,34 +1050,35 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
 
-    def create_culling_frustum(self, camera):
-        min_radius = self.owner.surface.get_min_radius() / self.parent.height_scale
-        altitude_to_min_radius = (self.owner.distance_to_obs - self.parent.height_scale) / self.parent.height_scale
-        cam_transform_mat = camera.cam.getNetTransform().getMat()
-        if False:
-            upper = LMatrix3()
-            scale = self.owner.surface.get_scale() * self.owner.scene_scale_factor
-            inv_scale = LVector3d(1.0 / scale[0], 1.0 / scale[1], 1.0 / scale[2])
-            upper.set_scale_mat(inv_scale)
-            rot_mat = LMatrix3()
-            self.owner.scene_orientation.conjugate().extract_to_matrix(rot_mat)
-            upper *= rot_mat
-            transform_mat = LMatrix4(upper, upper.xform(-self.owner.scene_position))
-        else:
-            transform_mat = LMatrix4()
-            transform_mat.invert_from(self.instance.getNetTransform().getMat())
+    def __init__(self, factory, heightmap=None, lod_control=None):
+        PatchedShapeBase.__init__(self, factory, heightmap, lod_control)
+        self.model_body_center_offset = LVector3d()
+
+    def create_culling_frustum(self, scene_manager, camera):
+        min_radius = self.parent.body.surface.get_min_radius()
+        max_radius = self.parent.body.surface.get_max_radius()
+        altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - min_radius)
+        cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
+        transform_mat = LMatrix4()
+        transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        self.culling_frustum = HorizonCullingFrustum(camera.realCamLens, self.parent.height_scale / settings.scale, transform_mat, min_radius, altitude_to_min_radius,
-                                                     self.max_lod, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin,
-                                                     settings.cull_far_patches, settings.cull_far_patches_threshold)
+        # TODO: This does not work with oblate bodies
+        # We use z-distance and not the actual distance for the culling frustum near and far planes
+        coef = -self.owner.anchor.vector_to_obs.dot(camera.anchor.camera_vector)
+        # The near and far planes must be scaled with the scene_scale_factor as we are using the net transform matrix
+        near = max(1e-6, (self.parent.body.anchor.distance_to_obs - max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor)
+        far = (self.parent.body.anchor.distance_to_obs + max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor
+        if settings.use_horizon_culling:
+            self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, min_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
+                                                         self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
+                                                         settings.cull_far_patches, settings.cull_far_patches_threshold)
+        else:
+            self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin)
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
         if settings.offset_body_center or settings.shift_patch_origin:
-            if settings.offset_body_center:
-                body_offset = owner.model_body_center_offset
-            else:
-                body_offset = LVector3d()
+            body_offset = self.model_body_center_offset
             for patch in self.patches:
                 if settings.shift_patch_origin:
                     patch_offset = body_offset + patch.quadtree_node.normal * patch.offset
@@ -1455,13 +1089,13 @@ class EllipsoidPatchedShape(PatchedShapeBase):
                     patch.bounds_shape.instance.setPos(*patch_offset)
 
     def xform_cam_to_model(self, camera_pos):
-        position = self.owner.get_local_position()
-        orientation = self.owner.get_abs_rotation()
+        position = self.parent.body.anchor.get_local_position()
+        orientation = self.parent.body.anchor.get_absolute_orientation()
         #TODO: Should receive as parameter !
         camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.parent.height_scale)
-        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(camera_pos))
+        (x, y, distance) = self.parent.body.spherical_to_xy(self.parent.body.cartesian_to_spherical(camera_pos))
         return (model_camera_pos, model_camera_vector, (x, y))
 
     def local_to_model(self, point, position, orientation, scale):
@@ -1660,19 +1294,10 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
-class PatchedShapeDataSource:
+class PatchedShapeDataSource(DataSource):
     def __init__(self, shape):
-        self.name = 'shape'
+        DataSource.__init__(self, 'shape')
         self.shape = shape
-
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        tasks_tree.add_task_for(self, self.load_patch_data(patch, owner))
-
-    async def load_patch_data(self, patch, owner):
-        pass
 
     def apply_patch_data(self, patch, instance):
         if self.shape.data_store is not None:
@@ -1681,145 +1306,6 @@ class PatchedShapeDataSource:
         instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
         instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
 
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
-        pass
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        tasks_tree.add_task_for(self, self.load(shape, owner))
-
-    async def load(self, shape, owner):
-        pass
-
     def apply(self, shape, instance):
         if self.shape.data_store is not None:
             self.shape.data_store.apply(instance)
-
-class PyLodControl(object):
-    def __init__(self, density=32, max_lod=100):
-        self.density = density
-        self.max_lod = max_lod
-
-    def get_density_for(self, lod):
-        return self.density
-
-    def set_appearance(self, appearance):
-        pass
-
-    def set_texture_size(self, appearance):
-        pass
-
-    def should_split(self, patch, apparent_patch_size, distance):
-        return False
-
-    def should_merge(self, patch, apparent_patch_size, distance):
-        return False
-
-    def should_instanciate(self, patch, apparent_patch_size, distance):
-        #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return (patch.visible or patch.lod == 0) and len(patch.children) == 0
-
-    def should_remove(self, patch, apparent_patch_size, distance):
-        #TODO: Temporary fix for patched shape shadows, keep lod 0 patch visible
-        return (not patch.visible and patch.lod != 0)
-
-#The lod control classes uses hysteresis to avoid cycle of split/merge due to
-#precision errors.
-#When splitting the resulting patch will be 1.1 bigger than the merge limit
-#When merging, the resulting patch will be  1.1 smaller than the slit limit
-
-class PyTextureLodControl(PyLodControl):
-    def __init__(self, min_density, density, max_lod=100):
-        PyLodControl.__init__(self, density, max_lod)
-        self.min_density = min_density
-        self.texture_size = 0
-
-    def get_density_for(self, lod):
-        return max(self.min_density, self.density // (1 << lod))
-
-    def set_appearance(self, appearance):
-        self.appearance = appearance
-        if appearance is not None and appearance.texture is not None:
-            self.texture_size = appearance.texture.source.texture_size
-        else:
-            self.texture_size = 0
-
-    def set_texture_size(self, texture_size):
-        self.texture_size = texture_size
-
-    def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
-        return self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1 #and self.appearance.texture.can_split(patch)
-
-    def should_merge(self, patch, apparent_patch_size, distance):
-        return apparent_patch_size < self.texture_size / 1.1
-
-class PyTextureOrVertexSizeLodControl(PyTextureLodControl):
-    def __init__(self, max_vertex_size, min_density, density, max_lod=100):
-        PyTextureLodControl.__init__(self, min_density, density, max_lod)
-        self.max_vertex_size = max_vertex_size
-
-    def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
-        if self.texture_size > 0:
-            if apparent_patch_size > self.texture_size * 1.1:
-                return True
-        else:
-            apparent_vertex_size = apparent_patch_size / patch.density
-            return apparent_vertex_size > self.max_vertex_size
-
-    def should_merge(self, patch, apparent_patch_size, distance):
-        if self.texture_size > 0:
-            if apparent_patch_size < self.texture_size / 1.1:
-                return True
-        else:
-            apparent_vertex_size = apparent_patch_size / patch.density
-            return apparent_vertex_size < self.max_vertex_size / 1.1
-
-class PyVertexSizeLodControl(PyLodControl):
-    def __init__(self, max_vertex_size, density, max_lod=100):
-        PyLodControl.__init__(self, density, max_lod)
-        self.max_vertex_size = max_vertex_size
-
-    def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
-        apparent_vertex_size = apparent_patch_size / patch.density
-        to_split = apparent_vertex_size > self.max_vertex_size * 1.1
-        return to_split
-
-    def should_merge(self, patch, apparent_patch_size, distance):
-        apparent_vertex_size = apparent_patch_size / patch.density
-        to_merge = apparent_vertex_size < self.max_vertex_size / 1.1
-        return to_merge
-
-class PyVertexSizeMaxDistanceLodControl(PyVertexSizeLodControl):
-    def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
-        PyVertexSizeLodControl.__init__(self, max_vertex_size, density, max_lod)
-        self.max_distance = max_distance
-
-    def should_instanciate(self, patch, apparent_patch_size, distance):
-        return patch.visible and distance < self.max_distance
-
-    def should_remove(self, patch, apparent_patch_size, distance):
-        return not patch.visible
-
-try:
-    from cosmonium_engine import QuadTreeNode
-    from cosmonium_engine import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
-    from cosmonium_engine import LodResult
-    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
-except ImportError as e:
-    print("WARNING: Could not load Patch C implementation, fallback on python implementation")
-    print("\t", e)
-    QuadTreeNode = PyQuadTreeNode
-    CullingFrustumBase = PyCullingFrustumBase
-    CullingFrustum = PyCullingFrustum
-    HorizonCullingFrustum = PyHorizonCullingFrustum
-    LodResult = PyLodResult
-    LodControl = PyLodControl
-    TextureLodControl = PyTextureLodControl
-    TextureOrVertexSizeLodControl = PyTextureOrVertexSizeLodControl
-    VertexSizeLodControl = PyVertexSizeLodControl
-    VertexSizeMaxDistanceLodControl = PyVertexSizeMaxDistanceLodControl

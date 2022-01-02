@@ -17,10 +17,8 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from panda3d.core import LColor, LQuaterniond
+from panda3d.core import LColor, LQuaterniond, LPoint3d
 
 from . import config_parser
 from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit, \
@@ -29,23 +27,22 @@ from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orb
     names_list, body_path
 from .shaders import LunarLambertLightingModel
 
-from ..celestia.atmosphere import CelestiaAtmosphere, CelestiaScattering
-from ..universe import Universe
-from ..systems import StellarSystem, SimpleSystem
+from ..celestia.atmosphere import CelestiaAtmosphere
 from ..bodies import ReflectiveBody, ReferencePoint
 from ..surfaces import EllipsoidFlatSurface
 from ..bodyelements import Ring, Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LambertPhongLightingModel
-from ..astro.orbits import FixedOrbit
-from ..astro.rotations import FixedRotation, create_uniform_rotation
+from ..astro.orbits import AbsoluteFixedPosition
+from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
+from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
-from ..astro.frame import J2000EclipticReferenceFrame, RelativeReferenceFrame, EquatorialReferenceFrame
+from ..astro.frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
 from ..dircontext import defaultDirContext
 
 from time import time
-import sys
+from math import pi
 import io
 
 def get_color(value):
@@ -55,6 +52,17 @@ def get_color(value):
         return LColor(value[0], value[1], value[2], 1.0)
     print("Invalid color", value)
     return None
+
+def instanciate_legacy_rotation(period, obliquity, ascending_node, offset, epoch, frame):
+    flipped = period is not None and period < 0
+    orientation = calc_orientation_from_incl_an(obliquity * units.Deg,
+                                                ascending_node * units.Deg,
+                                                flipped)
+    if period is None:
+        return SynchronousRotation(orientation, offset * units.Deg, epoch, frame)
+    else:
+        mean_motion = 2 * pi / period
+        return UniformRotation(orientation, mean_motion, offset * units.Deg, epoch, frame)
 
 def instanciate_atmosphere(data):
     atmosphere = None
@@ -166,10 +174,12 @@ def instanciate_body(universe, names, is_planet, data, parent):
         body_class="planet"
         orbit_global_coord=True
         rotation_global_coord=True
+        rotation_period_units = units.Day
     else:
         body_class="moon"
         orbit_global_coord=False
         rotation_global_coord=False
+        rotation_period_units = units.Hour
     for (key, value) in data.items():
         if key == 'Radius':
             radius = value
@@ -268,16 +278,14 @@ def instanciate_body(universe, names, is_planet, data, parent):
         else:
             body_frame = EquatorialReferenceFrame(parent)
     if orbit is None:
-        orbit=FixedOrbit(frame=orbit_frame)
+        #TODO: Raise an error instead !
+        orbit=AbsoluteFixedPosition(frame=orbit_frame)
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = create_uniform_rotation(period=rotation_period,
-                                        inclination=rotation_obliquity,
-                                        ascending_node=rotation_ascending_node,
-                                        meridian_angle=rotation_offset,
-                                        epoch=rotation_epoch,
-                                        frame=body_frame)
+        rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
+                                               rotation_obliquity, rotation_ascending_node,
+                                               rotation_offset, rotation_epoch, body_frame)
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
@@ -329,13 +337,15 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
     custom_orbit = False
     custom_rotation = False
     if is_planet:
-        body_class="planet"
-        orbit_global_coord=True
-        rotation_global_coord=True
+        body_class = "planet"
+        orbit_global_coord = True
+        rotation_global_coord = True
+        rotation_period_units = units.Day
     else:
-        body_class="moon"
-        orbit_global_coord=False
-        rotation_global_coord=False
+        body_class = "moon"
+        orbit_global_coord = False
+        rotation_global_coord = False
+        rotation_period_units = units.Hour
     for (key, value) in data.items():
         if key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
@@ -381,16 +391,13 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
         else:
             body_frame = EquatorialReferenceFrame(parent)
     if orbit is None:
-        orbit=FixedOrbit(frame=orbit_frame)
+        orbit = AbsoluteFixedPosition(orbit_frame, LPoint3d())
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = create_uniform_rotation(period=rotation_period,
-                                        inclination=rotation_obliquity,
-                                        ascending_node=rotation_ascending_node,
-                                        meridian_angle=rotation_offset,
-                                        epoch=rotation_epoch,
-                                        frame=body_frame)
+        rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
+                                               rotation_obliquity, rotation_ascending_node,
+                                               rotation_offset, rotation_epoch, body_frame)
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
@@ -457,10 +464,3 @@ def load(config_parser, universe):
             parse_file(config_parser, universe)
     else:
         parse_file(config_parser, universe)
-
-if __name__ == '__main__':
-    universe=Universe()
-    sol=StellarSystem('Sol', FixedOrbit())
-    universe.add_child(sol)
-    if len(sys.argv) == 2:
-        parse_file(sys.argv[1], universe)

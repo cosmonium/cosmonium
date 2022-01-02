@@ -20,6 +20,8 @@
 
 from direct.showbase.DirectObject import DirectObject
 
+import sys
+
 class Shortcuts(DirectObject):
     keymap = {
         'control-q': 'exit',
@@ -55,7 +57,7 @@ class Shortcuts(DirectObject):
         'f10': 'save-screenshot',
         'shift-f10': 'save-screenshot-no-gui',
         'f11': 'debug-scene-ls',
-        'shift-f11': 'debug-scene-explore',
+        'control-f11': 'debug-scene-explore',
         'f12': 'debug-scene-analyze',
         'shift-f12': 'debug-print-tasks',
 
@@ -169,6 +171,15 @@ class Shortcuts(DirectObject):
         if not base.app_config.test_start:
             base.buttonThrowers[0].node().set_keystroke_event('keystroke')
         self.accept('keystroke', self.keystroke_event)
+
+        if sys.platform == 'darwin':
+            modified_keymap = {}
+            for (key, event) in self.keymap.items():
+                key = key.replace('control', 'meta')
+                modified_keymap[key] = event
+            modified_keymap['shift-f11'] = modified_keymap['f11']
+            Shortcuts.keymap = modified_keymap
+
         if Shortcuts.eventmap is None:
             Shortcuts.eventmap = {Shortcuts.keymap[key]: key for key in reversed(sorted(Shortcuts.keymap.keys()))}
         for (key, event) in self.keymap.items():

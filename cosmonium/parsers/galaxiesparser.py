@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..galaxies import LenticularGalaxyShape, EllipticalGalaxyShape, IrregularGalaxyShape, SpiralGalaxyShape, FullSpiralGalaxyShape, FullRingGalaxyShape
 from ..sprites import GaussianPointSprite, ExpPointSprite, RoundDiskPointSprite
@@ -185,10 +183,7 @@ class GalaxyYamlParser(YamlModuleParser):
                     radius_units=radius_units,
                     orbit=orbit,
                     rotation=rotation)
-        if explicit_parent:
-            parent.add_child_fast(galaxy)
-            return None
-        else:
-            return galaxy
+        parent.add_child_fast(galaxy)
+        return galaxy
 
 ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())

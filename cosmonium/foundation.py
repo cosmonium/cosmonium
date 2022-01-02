@@ -17,10 +17,8 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from panda3d.core import LVecBase3, LQuaternion, NodePath, LColor, DrawMask
+from panda3d.core import LVecBase3, NodePath, LColor, DrawMask, OmniBoundingVolume
 from panda3d.core import GeomNode, TextNode, CardMaker
 
 from .bodyclass import bodyClasses
@@ -33,57 +31,29 @@ from .shaders import FlatLightingModel, BasicShader
 from .utils import TransparencyBlend
 from . import settings
 
-from math import log
-
 class BaseObject(object):
     context = None
     default_shown = True
+    DefaultCameraFlag = DrawMask.bit(0)
+    AnnotationCameraFlag = DrawMask.bit(1)
+    NearCameraFlag = DrawMask.bit(2)
+    WaterCameraFlag = DrawMask.bit(29)
+    ShadowCameraFlag = DrawMask.bit(30)
     AllCamerasMask = DrawMask.all_on()
-    DefaultCameraMask = DrawMask.bit(0)
-    NearCameraMask = DrawMask.bit(1)
-    WaterCameraMask = DrawMask.bit(29)
-    ShadowCameraMask = DrawMask.bit(30)
 
-    def __init__(self, names=None):
-        self.set_names(names)
+    def __init__(self, name):
+        self.name =name
         self.shown = self.default_shown
         self.visible = False
-        self.light = None
         self.parent = None
-
-    def get_names(self):
-        return self.names
-
-    def set_names(self, names):
-        if names is None:
-            self.names = ['']
-        elif isinstance(names, (list, tuple)):
-            self.names = names
-        else:
-            self.names = [names]
-
-    def get_friendly_name(self):
-        return self.names[0]
+        self.scene_anchor = None
+        self.owner = None
 
     def get_name(self):
-        return self.names[0]
+        return self.name
 
-    def get_ascii_name(self):
-        return self.names[0].encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
-
-    def get_exact_name(self, text):
-        text = text.upper()
-        result = ''
-        for name in self.names:
-            if name.upper() == text:
-                result = name
-                break
-        else:
-            for name in self.source_names:
-                if name.upper() == text:
-                    result = name
-                    break
-        return result
+    def set_owner(self, owner):
+        self.owner = owner
 
     def get_user_parameters(self):
         return None
@@ -97,8 +67,11 @@ class BaseObject(object):
     def set_parent(self, parent):
         self.parent = parent
 
-    def set_light(self, light):
-        self.light = light
+    def set_lights(self, lights):
+        pass
+
+    def set_scene_anchor(self, scene_anchor):
+        self.scene_anchor = scene_anchor
 
     def show(self):
         self.shown = True
@@ -137,13 +110,13 @@ class BaseObject(object):
     def update_obs(self, observer):
         pass
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         pass
 
     def check_settings(self):
         pass
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
     def remove_instance(self):
@@ -152,58 +125,13 @@ class BaseObject(object):
     def update_shader(self):
         pass
 
-    def get_real_pos(self, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        return self.calc_scene_params(abs_position - camera_pos, abs_position, distance_to_obs, vector_to_obs)
-
-    def calc_scene_params(self, rel_position, abs_position, distance_to_obs, vector_to_obs):
-        if settings.camera_at_origin:
-            obj_position = rel_position
-        else:
-            obj_position = abs_position
-        midPlane = self.context.observer.midPlane
-        distance_to_obs /= settings.scale
-        if not settings.use_depth_scaling or distance_to_obs <= midPlane:
-            position = obj_position / settings.scale
-            distance = distance_to_obs
-            scale_factor = 1.0 / settings.scale
-        elif settings.use_inv_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - midPlane / distance_to_obs)
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        elif settings.use_log_scaling:
-            not_scaled = -vector_to_obs * midPlane
-            scaled_distance = midPlane * (1 - log(midPlane / distance_to_obs + 1, 2))
-            scaled = -vector_to_obs * scaled_distance
-            position = not_scaled + scaled
-            distance = midPlane + scaled_distance
-            ratio = distance / distance_to_obs
-            scale_factor = ratio / settings.scale
-        return position, distance, scale_factor
-
-    def place_pos_only(self, instance, abs_position, camera_pos, distance_to_obs, vector_to_obs):
-        position, distance, scale_factor = self.get_real_pos(abs_position, camera_pos, distance_to_obs, vector_to_obs)
-        instance.setPos(*position)
-
-    def place_instance(self, instance, parent):
-        instance.setPos(*self.parent.scene_position)
-        instance.setScale(*(self.get_scale() * self.parent.scene_scale_factor))
-        instance.setQuat(LQuaternion(*self.parent.scene_orientation))
-
-    def place_instance_params(self, instance, scene_position, scene_scale_factor, scene_orientation):
-        instance.setPos(*scene_position)
-        instance.setScale(self.get_scale() * scene_scale_factor)
-        instance.setQuat(LQuaternion(*scene_orientation))
 
 class VisibleObject(BaseObject):
     ignore_light = False
     patchable = False
 
-    def __init__(self, names=None):
-        BaseObject.__init__(self, names)
+    def __init__(self, name):
+        BaseObject.__init__(self, name)
         self.instance = None
         #TODO: Should be handled properly
         self.instance_ready = False
@@ -211,9 +139,6 @@ class VisibleObject(BaseObject):
     def check_and_create_instance(self):
         if not self.instance:
             self.create_instance()
-        if self.instance:
-            if self.light and not self.ignore_light:
-                self.instance.setLight(self.light)
 
     def create_instance(self):
         pass
@@ -236,45 +161,56 @@ class VisibleObject(BaseObject):
             self.instance.hide()
             self.instance.stash()
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
         if self.parent != None:
             self.visible = self.parent.shown and self.parent.visible
 
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.shown and self.visible:
             self.do_show()
-            self.update_instance(camera_pos, camera_rot)
+            self.update_instance(scene_manager, camera_pos, camera_rot)
         else:
             self.do_hide()
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
-    def set_light(self, light):
-        BaseObject.set_light(self, light)
-        if self.instance and not self.ignore_light:
-            self.instance.setLight(self.light)
+    def set_lights(self, lights):
+        pass
 
     def get_oid_color(self):
         return LColor()
 
 class CompositeObject(BaseObject):
-    def __init__(self, names):
-        BaseObject.__init__(self, names)
+    def __init__(self, name):
+        BaseObject.__init__(self, name)
         self.components = []
-        self.init = False
+        self.lights = None
 
-    def create_components(self):
-        pass
+    def set_owner(self, owner):
+        BaseObject.set_owner(self, owner)
+        for component in self.components:
+            component.set_owner(owner)
+
+    def set_lights(self, lights):
+        self.lights = lights
+        for component in self.components:
+            component.set_lights(lights)
+
+    def set_scene_anchor(self, scene_anchor):
+        BaseObject.set_scene_anchor(self, scene_anchor)
+        for component in self.components:
+            component.set_scene_anchor(scene_anchor)
 
     def add_component(self, component):
         if component is not None:
             self.components.append(component)
             component.set_parent(self)
-            component.set_light(self.light)
+            component.set_lights(self.lights)
+            component.set_scene_anchor(self.scene_anchor)
 
     def remove_component(self, component):
         if component is None: return
@@ -319,17 +255,19 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.update_obs(observer)
 
-    def check_visibility(self, pixel_size):
+    def check_visibility(self, frustum, pixel_size):
+        if self.parent != None:
+            self.visible = self.parent.shown and self.parent.visible
         for component in self.components:
-            component.check_visibility(pixel_size)
+            component.check_visibility(frustum, pixel_size)
 
     def check_settings(self):
         for component in self.components:
             component.check_settings()
 
-    def check_and_update_instance(self, camera_pos, camera_rot, pointset):
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:
-            component.check_and_update_instance(camera_pos, camera_rot, pointset)
+            component.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         for component in self.components:
@@ -339,11 +277,6 @@ class CompositeObject(BaseObject):
         for component in self.components:
             component.remove_instance()
 
-    def set_light(self, light):
-        BaseObject.set_light(self, light)
-        for component in self.components:
-            component.set_light(light)
-
 class ObjectLabel(VisibleObject):
     default_shown = False
     ignore_light = True
@@ -351,10 +284,13 @@ class ObjectLabel(VisibleObject):
     font = None
     appearance = None
     shader = None
+    color_picking = True
+    default_camera_mask = VisibleObject.AnnotationCameraFlag
 
-    def __init__(self, names):
-        VisibleObject.__init__(self, names)
+    def __init__(self, name, label_source):
+        VisibleObject.__init__(self, name)
         self.fade = 1.0
+        self.label_source = label_source
 
     @classmethod
     def create_shader(cls):
@@ -368,12 +304,13 @@ class ObjectLabel(VisibleObject):
         cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
         cls.appearance.alpha_mask = True
         cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader.color_picking = settings.color_picking and cls.color_picking
 
     def check_settings(self):
-        if self.parent.body_class is None:
-            print("No class for", self.parent.get_name())
+        if self.label_source.body_class is None:
+            print("No class for", self.label_source.get_name())
             return
-        self.set_shown(bodyClasses.get_show_label(self.parent.body_class))
+        self.set_shown(bodyClasses.get_show_label(self.label_source.body_class))
 
     @classmethod
     def load_font(cls):
@@ -386,20 +323,19 @@ class ObjectLabel(VisibleObject):
 
     def create_instance(self):
         #print("Create label for", self.get_name())
-        self.label = TextNode(self.parent.get_ascii_name() + '-label')
+        self.label = TextNode(self.label_source.get_ascii_name() + '-label')
         if not self.font_init:
             self.load_font()
         if self.font is not None:
             self.label.set_font(self.font)
-        name = bayer.decode_name(self.parent.get_label_text())
+        name = bayer.decode_name(self.label_source.get_label_text())
         self.label.setText(name)
-        self.label.setTextColor(*srgb_to_linear(self.parent.get_label_color()))
+        self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
         #node=label.generate()
-        #self.instance = self.context.annotation.attachNewNode(node)
         #self.instance.setBillboardPointEye()
         #node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
-        #node.setPythonTag('owner', self.parent)
-        cardMaker = CardMaker(self.get_ascii_name() + '-labelcard')
+        #node.setPythonTag('owner', self.label_source)
+        cardMaker = CardMaker(self.label_source.get_ascii_name() + '-labelcard')
         cardMaker.setFrame(self.label.getFrameActual())
         cardMaker.setColor(0, 0, 0, 0)
         card_node = cardMaker.generate()
@@ -412,38 +348,46 @@ class ObjectLabel(VisibleObject):
         #Using a card holder as look_at() is changing the hpr parameters
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
-        self.instance.reparentTo(self.context.annotation)
+        self.instance.reparent_to(self.scene_anchor.unshifted_instance)
         self.instance_ready = True
+        self.instance.node().setBounds(OmniBoundingVolume())
+        self.instance.node().setFinal(True)
+        self.instance.hide(self.AllCamerasMask)
+        self.instance.show(self.default_camera_mask)
 
         if self.shader is None:
             self.create_shader()
-        self.shader.apply(self, self.appearance)
-        self.shader.update(self, self.appearance)
+        self.appearance.apply(self, self.instance)
+        self.shader.apply(self, self.appearance, self.instance)
         TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
 
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         self.instance.set_depth_write(False)
         self.instance.set_color_scale(LColor(1, 1, 1, 1))
-        card_node.setPythonTag('owner', self.parent)
+        card_node.setPythonTag('owner', self.label_source)
         self.look_at = self.instance.attachNewNode("dummy")
 
 class LabelledObject(CompositeObject):
-    def __init__(self, names):
-        CompositeObject.__init__(self, names)
+    def __init__(self, name):
+        CompositeObject.__init__(self, name)
         self.label = None
 
+    def check_settings(self):
+        CompositeObject.check_settings(self)
+        if self.label is not None: self.label.check_settings()
+
     def create_label_instance(self):
-        return ObjectLabel(self.get_ascii_name() + '-label')
+        return ObjectLabel(self.get_ascii_name() + '-label', self)
 
     def create_label(self):
         if self.label is None:
             self.label = self.create_label_instance()
-            self.add_component(self.label)
+            #self.add_component(self.label)
 
     def remove_label(self):
         if self.label is not None:
             self.label.remove_instance()
-            self.remove_component(self.label)
+            #self.remove_component(self.label)
             self.label = None
 
     def show_label(self):

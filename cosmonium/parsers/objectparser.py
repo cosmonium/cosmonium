@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..dataattribution import DataAttribution, dataAttributionDB
@@ -83,13 +81,6 @@ class UniverseYamlParser(YamlModuleParser):
 
     def decode(self, data, parent=None):
         children = ObjectYamlParser.decode(data.get('children', []), self.universe)
-        if not isinstance(children, list):
-            children = [children]
-        for child in children:
-            if child is None:
-                pass
-            else:
-                self.universe.add_child_fast(child)
 
 class IncludeYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):

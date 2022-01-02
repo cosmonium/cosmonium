@@ -17,15 +17,13 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from ..astro.frame import J2000EclipticReferenceFrame, J2000HeliocentricEclipticReferenceFrame
-from ..astro.frame import J2000EquatorialReferenceFrame, J2000HeliocentricEquatorialReferenceFrame
+from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from ..astro.frame import J2000EquatorialReferenceFrame, J2000BarycentricEquatorialReferenceFrame
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
 from ..astro.frame import BodyReferenceFrame
-from ..astro.frame import frames_db
+from ..astro.framesdb import frames_db
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
@@ -35,12 +33,18 @@ class FrameYamlParser(YamlModuleParser):
     @classmethod
     def decode_j2000_ecliptic(cls, data, parent):
         body = data.get('center', parent)
-        return J2000EclipticReferenceFrame(body)
+        if body is not None and body.is_system() and body.primary is not None:
+            body = body.primary
+        anchor = body.anchor if body is not None else None
+        return J2000EclipticReferenceFrame(anchor)
 
     @classmethod
     def decode_j2000_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        return J2000EquatorialReferenceFrame(body)
+        if body is not None and body.is_system() and body.primary is not None:
+            body = body.primary
+        anchor = body.anchor if body is not None else None
+        return J2000EquatorialReferenceFrame(anchor)
 
     @classmethod
     def decode_equatorial(cls, data, parent):
@@ -48,12 +52,18 @@ class FrameYamlParser(YamlModuleParser):
         ra = data.get("ra", 0.0)
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
-        return CelestialReferenceFrame(body, right_asc=ra, declination=de, longitude_at_node=node)
+        if body is not None and body.is_system() and body.primary is not None:
+            body = body.primary
+        anchor = body.anchor if body is not None else None
+        return CelestialReferenceFrame(anchor, right_ascension=ra, declination=de, longitude_at_node=node)
 
     @classmethod
     def decode_mean_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        return EquatorialReferenceFrame(body)
+        if body is not None and body.is_system() and body.primary is not None:
+            body = body.primary
+        anchor = body.anchor if body is not None else None
+        return EquatorialReferenceFrame(anchor)
 
     @classmethod
     def decode_surface_frame(self, data, parent):
@@ -61,21 +71,23 @@ class FrameYamlParser(YamlModuleParser):
         long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
         lat = data.get('lat', 0.0)
         lat_units = AngleUnitsYamlParser.decode(data.get('lat-units', 'Deg'))
-        return SurfaceReferenceFrame(parent, long * long_units, lat * lat_units)
+        anchor = parent.anchor if parent is not None else None
+        return SurfaceReferenceFrame(anchor, long * long_units, lat * lat_units)
 
     @classmethod
-    def decode(self, data, parent=None):
-        if data is None: return J2000EclipticReferenceFrame(parent)
+    def decode(self, data, parent=None, default='j2000ecliptic'):
+        if data is None:
+            data = {'type': default}
         (object_type, parameters) = self.get_type_and_data(data)
         object_type = object_type.lower()
         if object_type == 'j2000ecliptic':
             return self.decode_j2000_ecliptic(parameters, parent)
         elif object_type == 'j2000equatorial':
             return self.decode_j2000_equatorial(parameters, parent )
-        elif object_type == 'j2000heliocentricecliptic':
-            return J2000HeliocentricEclipticReferenceFrame()
-        elif object_type == 'j2000heliocentricequatorial':
-            return J2000HeliocentricEquatorialReferenceFrame()
+        elif object_type == 'j2000barycentricecliptic':
+            return J2000BarycentricEclipticReferenceFrame()
+        elif object_type == 'j2000barycentricequatorial':
+            return J2000BarycentricEquatorialReferenceFrame()
         elif object_type == 'fixed':
             return SynchroneReferenceFrame()
         elif object_type == 'surface':
@@ -87,8 +99,8 @@ class FrameYamlParser(YamlModuleParser):
         else:
             frame = frames_db.get(object_type)
             #TODO: this should not be done arbitrarily
-            if isinstance(frame, BodyReferenceFrame):
-                frame.set_body(parent)
+            if parent is not None and isinstance(frame, BodyReferenceFrame):
+                frame.set_anchor(parent.anchor)
             return frame
 
 class NamedFrameYamlParser(YamlModuleParser):

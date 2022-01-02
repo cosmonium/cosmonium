@@ -17,19 +17,19 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, OmniBoundingVolume, DrawMask
+from panda3d.core import NodePath, OmniBoundingVolume, DrawMask, ShaderAttrib
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
 from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
 from .sprites import SimplePoint, RoundDiskPointSprite
 
 class PointsSet(VisibleObject):
+    default_camera_mask = VisibleObject.DefaultCameraFlag
     tex = None
+
     def __init__(self, use_sprites=True, use_sizes=True, points_size=2, sprite=None, background=None, shader=None):
         VisibleObject.__init__(self, 'pointsset')
         self.gnode = GeomNode('starfield')
@@ -38,7 +38,7 @@ class PointsSet(VisibleObject):
         self.use_oids = True
         self.background = background
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True)
+            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=StaticSizePointControl())
         self.shader = shader
 
         self.reset()
@@ -57,10 +57,10 @@ class PointsSet(VisibleObject):
         self.instance.node().setPythonTag('owner', self)
         #TODO: Should not use ModelAppearance !
         self.appearance = ModelAppearance(vertex_color=True)
-        if self.appearance is not None:
-            self.appearance.scan_model(self.instance)
+        self.appearance.scan_model(self.instance)
+        self.appearance.apply(self, self.instance)
         if self.shader is not None:
-            self.shader.apply(self, self.appearance)
+            self.shader.apply(self, self.appearance, self.instance)
         if self.use_sprites:
             self.instance.node().setBounds(OmniBoundingVolume())
             self.instance.node().setFinal(True)
@@ -68,7 +68,10 @@ class PointsSet(VisibleObject):
             self.instance.setBin('background', self.background)
         self.instance.set_depth_write(False)
         self.instance.hide(self.AllCamerasMask)
-        self.instance.show(self.DefaultCameraMask)
+        self.instance.show(self.default_camera_mask)
+        if self.use_sizes:
+            attrib = self.instance.get_attrib(ShaderAttrib)
+            self.instance.setAttrib(attrib.set_flag(ShaderAttrib.F_shader_point_size, True))
 
     def reset(self):
         self.points = []
@@ -109,11 +112,11 @@ class PointsSet(VisibleObject):
         geompoints.reserve_num_vertices(len(points))
         index = 0
         for (point, color, size, oid) in zip(points, colors, sizes, oids):
-            self.vwriter.addData3f(*point)
+            self.vwriter.addData3(*point)
             #self.colorwriter.addData3f(color[0], color[1], color[2])
             self.colorwriter.addData4(color)
             if self.use_sizes:
-                self.sizewriter.addData1f(size)
+                self.sizewriter.addData1(size)
             if self.use_oids:
                 self.oidwriter.addData4(oid)
             geompoints.addVertex(index)

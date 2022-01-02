@@ -17,20 +17,18 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
-from panda3d.core import OmniBoundingVolume, LColor
-from panda3d.core import PTAVecBase4f, Vec4F
+from panda3d.core import OmniBoundingVolume
+from panda3d.core import PTAVecBase4f
 from panda3d.core import Texture, GeomEnums
 
 from ..shaders import OffsetScaleInstanceControl
+from ..datasource import DataSource
 from .. import settings
 
 from random import random, uniform
 from array import array
 from itertools import chain
-import sys
 
 class TerrainObjectFactory(object):
     def __init__(self):
@@ -39,6 +37,7 @@ class TerrainObjectFactory(object):
     def create_object(self):
         return None
 
+# TODO: Should inherit from ShapeObject
 class TerrainPopulatorBase(object):
     def __init__(self, object_template, count, placer):
         self.terrain = None
@@ -53,11 +52,16 @@ class TerrainPopulatorBase(object):
 
     def set_owner(self, owner):
         self.owner = owner
-        self.terrain = owner
         self.object_template.set_owner(owner)
+
+    def set_terrain(self, terrain):
+        self.terrain = terrain
 
     def check_settings(self):
         pass
+
+    def add_source(self, source):
+        self.object_template.add_source(source)
 
     def add_after_effect(self, after_effect):
         self.object_template.add_after_effect(after_effect)
@@ -78,9 +82,9 @@ class TerrainPopulatorBase(object):
             count += 1
         return offsets
 
-    async def create_object_template(self):
+    async def create_object_template(self, scene_anchor):
         if self.object_template.instance is None:
-            await self.object_template.create_instance()
+            await self.object_template.create_instance(scene_anchor)
             self.configure_object_template()
 
     def delete_object_template(self):
@@ -90,12 +94,11 @@ class TerrainPopulatorBase(object):
     def configure_object_template(self):
         pass
 
-    async def create_instance(self):
-        await self.create_object_template()
+    async def create_instance(self, scene_anchor):
+        await self.create_object_template(scene_anchor)
 
-    def update_instance(self, camera_pos, camera_rot):
-        if self.object_template.instance is not None and self.object_template.instance_ready:
-            self.object_template.update_instance(camera_pos, camera_rot)
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_shader(self):
         if self.object_template.instance is not None and self.object_template.instance_ready:
@@ -181,16 +184,17 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
                 del self.patch_map[child]
         patch.children = []
 
-    def create_object_instances(self, patch, terrain_patch):
+    def create_object_instances(self, scene_anchor, patch, terrain_patch):
         pass
 
     def patch_done(self, terrain_patch):
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
             if patch.data is None:
+                scene_anchor = self.owner.scene_anchor
                 self.create_data_for(patch, terrain_patch)
                 self.visible_patches[terrain_patch] = patch
-                self.create_object_instances(patch, terrain_patch)
+                self.create_object_instances(scene_anchor, patch, terrain_patch)
 
     def create_patch_instance(self, terrain_patch):
         if not self.patch_valid(terrain_patch): return
@@ -198,18 +202,20 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             print("Populator create patch instance", terrain_patch.str_id())
         patch = self.create_patch_for(terrain_patch)
         if patch is not None and patch.data is not None:
+            scene_anchor = self.owner.scene_anchor
             self.visible_patches[terrain_patch] = patch
-            self.create_object_instances(patch, terrain_patch)
+            self.create_object_instances(scene_anchor, patch, terrain_patch)
 
-    def remove_object_instances(self, patch, terrain_patch):
+    def remove_object_instances(self, scene_anchor, patch, terrain_patch):
         pass
 
     def remove_patch_instance(self, terrain_patch):
         if settings.debug_lod_split_merge:
             print("Populator remove patch instance", terrain_patch.str_id())
         if terrain_patch in self.visible_patches:
+            scene_anchor = self.owner.scene_anchor
             patch = self.visible_patches[terrain_patch]
-            self.remove_object_instances(patch, terrain_patch)
+            self.remove_object_instances(scene_anchor, patch, terrain_patch)
             del self.visible_patches[terrain_patch]
 
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
@@ -220,22 +226,32 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
         #Hide the main instance
         self.object_template.instance.stash()
 
-    def create_object_instances(self, patch, terrain_patch):
+    def create_object_instances(self, scene_anchor, patch, terrain_patch):
         instances = []
         for (i, offset) in enumerate(patch.data):
             (x, y, height, scale) = offset
-            #TODO: This should be created in create_instance and derived from the parent
-            child = render.attach_new_node('instance_%d' % i)
-            self.object_template.instance.instanceTo(child)
+            child = scene_anchor.unshifted_instance.attach_new_node('instance_%d' % i)
+            self.object_template.instance.instance_to(child)
             child.set_pos(x, y, height)
             child.set_scale(scale)
             instances.append(child)
         patch.instances = instances
 
-    def remove_object_instances(self, patch, terrain_patch):
+    def remove_object_instances(self, scene_anchor, patch, terrain_patch):
         for instance in patch.instances:
             instance.remove_node()
         patch.instances = []
+
+class OffsetsDataSource(DataSource):
+    def __init__(self):
+        DataSource.__init__(self, "offsets")
+        self.offsets = None
+
+    def set_offsets(self, offsets):
+        self.offsets = offsets
+
+    def apply(self, shape, instance):
+        instance.set_shader_input('instances_offset', self.offsets)
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
@@ -248,11 +264,13 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         bounds = OmniBoundingVolume()
         self.object_template.instance.node().setBounds(bounds)
         self.object_template.instance.node().setFinal(1)
+        self.object_template.add_source(OffsetsDataSource())
+        self.generate_table()
 
-    def create_object_instances(self, patch, terrain_patch):
+    def create_object_instances(self, scene_anchor, patch, terrain_patch):
         self.rebuild = True
 
-    def remove_object_instances(self, patch, terrain_patch):
+    def remove_object_instances(self, scene_anchor, patch, terrain_patch):
         self.rebuild = True
 
     def generate_table(self):
@@ -273,22 +291,20 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
             texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
             flattened_data = list(chain.from_iterable(offsets))
             data = array("f", flattened_data)
-            if sys.version_info[0] < 3:
-                texture.setRamImage(data.tostring())
-            else:
-                texture.setRamImage(data.tobytes())
-            self.object_template.appearance.offsets = texture
+            texture.set_ram_image(data.tobytes())
+            data_source = self.object_template.get_source('offsets')
+            data_source.set_offsets(texture)
         else:
-            self.object_template.appearance.offsets = offsets
+            data_source.set_offsets(offsets)
         self.object_template.instance.set_instance_count(offsets_nb)
-        self.object_template.shader.apply(self.object_template.shape, self.object_template.appearance)
+        self.object_template.update_shader()
         self.rebuild = False
 
-    def update_instance(self, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
         if self.object_template.instance is not None and self.object_template.instance_ready:
             if self.rebuild:
                 self.generate_table()
-            self.object_template.update_instance(camera_pos, camera_rot)
 
 class TerrainPopulatorPatch(object):
     def __init__(self, data=None):
@@ -318,7 +334,8 @@ class RandomObjectPlacer(ObjectPlacer):
             y = uniform(-terrain.size, terrain.size)
             height = terrain.get_height((x, y))
         #TODO: Should not have such explicit dependency
-        if height > terrain.water.level:
+        #TODO: Disabled for now
+        if True or height > terrain.water.level:
             scale = uniform(0.1, 0.5)
             return (x, y, height, scale)
         else:

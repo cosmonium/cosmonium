@@ -17,15 +17,13 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from .shapes import ShapeObject
 from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from .shaders import ShaderSphereSelfShadow
 
 from math import floor, ceil
-from panda3d.core import LVector3
+from panda3d.core import LVector3, LQuaternion
 
 class SurfaceCategory(object):
     def __init__(self, name):
@@ -50,11 +48,13 @@ class Surface(ShapeObject):
         self.category = category
         self.resolution = resolution
         self.attribution = attribution
-        #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
-        self.owner = None
+        self.body = None
 
     def get_component_name(self):
         return _('Surface')
+
+    def set_body(self, body):
+        self.body = body
 
     def configure_render_order(self):
         self.instance.set_bin("front_to_back", 0)
@@ -77,19 +77,24 @@ class Surface(ShapeObject):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.owner.get_local_position()
-        object_orientation = self.owner.get_abs_rotation()
+        object_position = self.body.anchor.get_local_position()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.owner.get_abs_rotation()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 
     def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(position))
+        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
+
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
+        if not self.instance_ready: return
+        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
 class EllipsoidSurface(Surface):
     def __init__(self, name=None, category=None, resolution=None, attribution=None,
@@ -101,8 +106,6 @@ class EllipsoidSurface(Surface):
         self.scale = scale
         #TODO: This is a workaround for patchedshape scale, this should be fixed
         self.height_scale = self.radius
-        #TODO: parent is set to None when component is removed, so we use owner until this is done a better way...
-        self.owner = None
 
     def configure_shape(self):
         if self.scale is not None:
@@ -113,9 +116,14 @@ class EllipsoidSurface(Surface):
             scale = LVector3(self.radius, self.radius, self.radius)
         self.shape.set_scale(scale)
 
-    def create_shadow_caster(self):
-        self.shadow_caster = SphereShadowCaster(self.owner)
-        if self.owner.atmosphere is None:
+    def do_create_shadow_caster_for(self, light_source):
+        shadow_caster = SphereShadowCaster(light_source, self.body)
+        return shadow_caster
+
+    def add_self_shadow(self, light_source):
+        if self.body.atmosphere is None and not light_source in self.shadow_casters:
+            self.create_shadow_caster_for(light_source)
+            #TODO: A proper shadow caster should be added
             self.shader.add_shadows(ShaderSphereSelfShadow())
 
     def get_average_radius(self):
@@ -145,18 +153,18 @@ class EllipsoidSurface(Surface):
         return self.shape.get_lonlatvert_at(coord)
 
     def local_position_to_shape(self, position):
-        object_position = self.owner.get_local_position()
-        object_orientation = self.owner.get_abs_rotation()
+        object_position = self.body.anchor.get_local_position()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
         return shape_position
 
     def local_vector_to_shape(self, vector):
-        object_orientation = self.owner.get_abs_rotation()
+        object_orientation = self.body.anchor.get_absolute_orientation()
         shape_vector = object_orientation.conjugate().xform(vector)
         return shape_vector
 
     def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.owner.spherical_to_xy(self.owner.cartesian_to_spherical(position))
+        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
         return (x, y)
 
 class EllipsoidFlatSurface(EllipsoidSurface):
@@ -170,16 +178,16 @@ class MeshSurface(Surface):
     def is_flat(self):
         return False
 
-    def create_shadow_caster(self):
-        self.shadow_caster = CustomShadowMapShadowCaster(self.owner, None)
-        self.shadow_caster.add_target(self, self_shadow=True)
+    def do_create_shadow_caster_for(self, light_source):
+        shadow_caster = CustomShadowMapShadowCaster(light_source, self.body)
+        shadow_caster.add_target(self, self_shadow=True)
+        return shadow_caster
 
-    def start_shadows_update(self):
-        ShapeObject.start_shadows_update(self)
+    def add_self_shadow(self, light_source):
         #Add self-shadowing for non-spherical objects
-        #TODO: It's a bit convoluted to do it like that...
-        if self.owner.visible and self.owner.resolved:
-            self.shadow_caster.add_target(self, self_shadow=True)
+        if self.instance_ready:
+            self.create_shadow_caster_for(light_source)
+            self.shadow_casters[light_source].add_target(self, self_shadow=True)
 
     def get_height_at(self, x, y, strict=False):
         coord = self.shape.global_to_shape_coord(x, y)
@@ -199,9 +207,9 @@ class HeightmapSurface(EllipsoidSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
-        self.sources.append(self.heightmap)
+        self.sources.add_source(self.heightmap)
         if biome is not None:
-            self.sources.append(biome)
+            self.sources.add_source(biome)
         self.min_radius = self.heightmap_base + self.height_scale * self.heightmap.min_height
         self.max_radius = self.heightmap_base + self.height_scale * self.heightmap.max_height
         #TODO: Make a proper method for this...
@@ -276,7 +284,9 @@ class HeightmapSurface(EllipsoidSurface):
         return height
 
 class FlatSurface(Surface):
-    pass
+    @property
+    def size(self):
+        return self.shape.scale
 
 class HeightmapFlatSurface(FlatSurface):
     def __init__(self, name,
@@ -288,9 +298,9 @@ class HeightmapFlatSurface(FlatSurface):
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
-        self.sources.append(self.heightmap)
+        self.sources.add_source(self.heightmap)
         if biome is not None:
-            self.sources.append(biome)
+            self.sources.add_source(biome)
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)

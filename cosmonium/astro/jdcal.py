@@ -38,8 +38,6 @@ inspired by the IAU SOFA C library.
 :contact: prasanthhn@gmail.com
 :license: BSD (http://www.opensource.org/licenses/bsd-license.php)
 """
-from __future__ import division
-from __future__ import print_function
 import math
 
 __version__ = "1.3"

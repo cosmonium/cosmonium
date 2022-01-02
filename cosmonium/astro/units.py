@@ -17,8 +17,8 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
+
+from panda3d.core import LQuaterniond, LVector3d
 
 from . import jdcal
 
@@ -131,6 +131,11 @@ Deg_Per_Day = Deg / Day
 
 J2000 = 2451545.0
 J2000_Obliquity = 23.4392911
+
+J200_EclipticOrientation = LQuaterniond()
+
+J2000_Orientation = LQuaterniond()
+J2000_Orientation.setFromAxisAngleRad(-J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
 
 J2000_GalacticNorthRightAscension = hourMinSec(12, 51, 26.282)
 J2000_GalacticNorthDeclination = degMinSec(27, 7, 42.01)

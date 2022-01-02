@@ -17,15 +17,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LVector3d, LQuaterniond
 
-from .frame import J2000EquatorialReferenceFrame
 from . import units
 
-from math import pow, log, log10, exp, sqrt, asin, pi
+from math import pow, log, log10, exp, sqrt, asin, pi, atan2
 
 # Brightness increase factor for one magnitude
 magnitude_brightness_ratio = pow(10.0, 0.4)
@@ -80,7 +77,33 @@ def calc_orientation_from_incl_an(inclination, ascending_node, flipped=False):
     return inclination_quat * ascending_node_quat
 
 def calc_orientation(right_ascension, declination, flipped=False):
+    #Avoid invalid rotation conversion later due to declination getting above pi / 2
+    if declination == pi / 2:
+        declination -= 1e-9
+    elif declination == -pi / 2:
+        declination += 1e-9
+    if right_ascension > pi:
+        right_ascension -= 2 * pi
     inclination = pi / 2 - declination
     ascending_node = right_ascension + pi / 2
-    orientation = calc_orientation_from_incl_an(inclination, ascending_node, flipped)
-    return orientation * J2000EquatorialReferenceFrame.orientation
+    return calc_orientation_from_incl_an(inclination, ascending_node, flipped)
+
+def position_to_equatorial(position):
+    distance = position.length()
+    if distance > 0:
+        position = units.J2000_Orientation.conjugate().xform(position)
+        declination = asin(position[2] / distance)
+        right_ascension = atan2(position[1], position[0])
+    else:
+        declination = 0.0
+        right_ascension = 0.0
+    return (right_ascension, declination)
+
+def orientation_to_equatorial(orientation):
+    axis = orientation.xform(LVector3d.up())
+    projected = units.J2000_Orientation.conjugate().xform(axis)
+    declination = asin(min(projected[2], 1.0))
+    right_ascension = atan2(projected[1], projected[0])
+    if right_ascension < 0:
+        right_ascension += 2 * pi
+    return (right_ascension, declination)

@@ -17,13 +17,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
 from .patchedshapes import CullingFrustum, QuadTreeNode, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
+from .patchneighbours import PatchNeighboursBase
 from .textures import TexCoord
 from . import geometry
 from . import settings
@@ -114,17 +113,19 @@ class MeshTerrainLayer(PatchLayer):
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
-        self.heightscale = scale
+        self.scale = scale
 
-    def create_culling_frustum(self, camera):
-        cam_transform_mat = camera.cam.getNetTransform().getMat()
+    def create_culling_frustum(self, scene_manager, camera):
+        cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
         transform_mat = LMatrix4()
-        transform_mat.invert_from(self.instance.getNetTransform().getMat())
+        transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        self.culling_frustum = CullingFrustum(camera.realCamLens, transform_mat, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
+        near = camera.lens.get_near()
+        far = camera.lens.get_far()
+        self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
     def global_to_shape_coord(self, x, y):
-        return (x / self.heightscale, y / self.heightscale)
+        return (x / self.scale, y / self.scale)
 
     def find_patch_at(self, coord):
         (x, y) = coord
@@ -150,28 +151,28 @@ class TiledShape(PatchedShapeBase):
                 linked_object.create_root_patch(patch)
                 north = self.find_root_patch(patch.x, patch.y + 1)
                 if north is not None:
-                    neighbours = north.collect_side_neighbours(PatchBase.SOUTH)
+                    neighbours = north.collect_side_neighbours(PatchNeighboursBase.SOUTH)
                     for neighbour in neighbours:
-                        patch.add_neighbour(PatchBase.NORTH, neighbour)
-                        neighbour.add_neighbour(PatchBase.SOUTH, patch)
+                        patch.add_neighbour(PatchNeighboursBase.NORTH, neighbour)
+                        neighbour.add_neighbour(PatchNeighboursBase.SOUTH, patch)
                 east = self.find_root_patch(patch.x + 1, patch.y)
                 if east is not None:
-                    neighbours = east.collect_side_neighbours(PatchBase.WEST)
+                    neighbours = east.collect_side_neighbours(PatchNeighboursBase.WEST)
                     for neighbour in neighbours:
-                        patch.add_neighbour(PatchBase.EAST, neighbour)
-                        neighbour.add_neighbour(PatchBase.WEST, patch)
+                        patch.add_neighbour(PatchNeighboursBase.EAST, neighbour)
+                        neighbour.add_neighbour(PatchNeighboursBase.WEST, patch)
                 south = self.find_root_patch(patch.x, patch.y - 1)
                 if south is not None:
-                    neighbours = south.collect_side_neighbours(PatchBase.NORTH)
+                    neighbours = south.collect_side_neighbours(PatchNeighboursBase.NORTH)
                     for neighbour in neighbours:
-                        patch.add_neighbour(PatchBase.SOUTH, neighbour)
-                        neighbour.add_neighbour(PatchBase.NORTH, patch)
+                        patch.add_neighbour(PatchNeighboursBase.SOUTH, neighbour)
+                        neighbour.add_neighbour(PatchNeighboursBase.NORTH, patch)
                 west = self.find_root_patch(patch.x - 1, patch.y)
                 if west is not None:
-                    neighbours = west.collect_side_neighbours(PatchBase.EAST)
+                    neighbours = west.collect_side_neighbours(PatchNeighboursBase.EAST)
                     for neighbour in neighbours:
-                        patch.add_neighbour(PatchBase.WEST, neighbour)
-                        neighbour.add_neighbour(PatchBase.EAST, patch)
+                        patch.add_neighbour(PatchNeighboursBase.WEST, neighbour)
+                        neighbour.add_neighbour(PatchNeighboursBase.EAST, patch)
         return patch
 
     def split_patch(self, parent):
@@ -200,9 +201,9 @@ class TiledShape(PatchedShapeBase):
         patch.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
-        model_camera_pos = camera_pos / self.heightscale
+        model_camera_pos = camera_pos / self.scale
         (x, y) = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, LVector3d(), (x, y))
 
     def get_scale(self):
-        return LVector3(self.heightscale, self.heightscale, self.heightscale)
+        return LVector3(self.scale)

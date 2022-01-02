@@ -17,8 +17,6 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
 
 from panda3d.core import CollisionTraverser, CollisionNode, LPoint2
 from panda3d.core import CollisionHandlerQueue, CollisionRay
@@ -124,7 +122,7 @@ class Mouse(DirectObject):
         over_ray = self.find_over_ray()
         over = over_color
         if over_ray is not None:
-            if over is None or over.distance_to_obs > over_ray.distance_to_obs:
+            if over is None or over.anchor.distance_to_obs > over_ray.anchor.distance_to_obs:
                 over = over_ray
         if hasattr(over, "primary") and over.primary is not None:
             over = over.primary

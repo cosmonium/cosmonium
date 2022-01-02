@@ -7,10 +7,7 @@ print(filepath)
 sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 
-if sys.version_info >= (3, 0):
-    import builtins
-else:
-    import __builtin__ as builtins
+import builtins
 
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.dircontext import DirContext
