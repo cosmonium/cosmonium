@@ -74,7 +74,6 @@ class StaticSceneManager(SceneManagerBase):
         self.auto_infinite_plane = settings.auto_infinite_plane
         self.lens_far_limit = settings.lens_far_limit
         self.root = render.attach_new_node('root')
-        self.camera = None
 
     def attach_new_anchor(self, instance):
         instance.reparent_to(self.root)
@@ -95,6 +94,7 @@ class StaticSceneManager(SceneManagerBase):
             self.infinity = self.infinite_plane
         print("Planes: ", self.near_plane, self.far_plane)
         self.lens.set_near_far(self.near_plane, self.far_plane)
+        self.camera.reparent_to(self.root)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
@@ -161,6 +161,7 @@ class DynamicSceneManager(SceneManagerBase):
         self.camera.node().set_lens(self.lens)
         print("Planes: ", self.near_plane, self.far_plane)
         self.update_planes()
+        self.camera.reparent_to(self.root)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
