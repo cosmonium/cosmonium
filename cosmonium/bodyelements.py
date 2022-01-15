@@ -303,13 +303,14 @@ class Clouds(EllipsoidFlatSurface):
         if self.inside != inside:
             if inside:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
-                if not settings.use_inverse_z:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(0))
+                self.instance.setAttrib(DepthOffsetAttrib.make(0))
                 if self.appearance.transparency:
                     self.instance.set_depth_write(True)
             else:
                 self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
-                if not settings.use_inverse_z:
+                if settings.use_inverse_z:
+                    self.instance.setAttrib(DepthOffsetAttrib.make(-1))
+                else:
                     self.instance.setAttrib(DepthOffsetAttrib.make(1))
                 if self.appearance.transparency:
                     self.instance.set_depth_write(False)
