@@ -20,6 +20,10 @@
 
 from panda3d.core import PNMImage
 from panda3d.core import Texture, TexGenAttrib, TransparencyAttrib, TextureStage
+
+from .utils import linear_to_srgb_channel
+from . import settings
+
 from math import pi, log, exp, sqrt
 
 class PointObject(object):
@@ -61,6 +65,16 @@ class GenPointSprite(PointObject):
                 self.image = self.generate()
             self.texture = Texture()
             self.texture.load(self.image)
+        if settings.use_srgb:
+            texture_format = self.texture.get_format()
+            if texture_format == Texture.F_luminance:
+                self.texture.set_format(Texture.F_sluminance)
+            elif texture_format == Texture.F_luminance_alpha:
+                self.texture.set_format(Texture.F_sluminance_alpha)
+            elif texture_format == Texture.F_rgb:
+                self.texture.set_format(Texture.F_srgb)
+            elif texture_format == Texture.F_rgba:
+                self.texture.set_format(Texture.F_srgb_alpha)
         instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         instance.setTransparency(TransparencyAttrib.MAlpha, 1)
         instance.setTexture(TextureStage('ts'), self.texture, 1)
@@ -71,7 +85,8 @@ class RoundDiskPointSprite(GenPointSprite):
         self.max_value = max_value
 
     def generate(self):
-        p = PNMImage(self.size, self.size, num_channels=2, maxval=65535)
+        srgb = settings.use_srgb
+        p = PNMImage(self.size, self.size, num_channels=2)
         for y in range(self.size):
             ry = (y - self.half_size + 0.5) / (self.half_size - 1)
             for x in range(self.size):
@@ -84,7 +99,12 @@ class RoundDiskPointSprite(GenPointSprite):
                 else:
                     r = 1.0
                 r *= self.max_value
-                p.set_xel_a(x, y, r, r, r, r)
+                va = r * self.max_value
+                if srgb:
+                    vc = linear_to_srgb_channel(va)
+                else:
+                    vc = va
+                p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
 class GaussianPointSprite(GenPointSprite):
@@ -96,6 +116,7 @@ class GaussianPointSprite(GenPointSprite):
         self.max_value = max_value
 
     def generate(self):
+        srgb = settings.use_srgb
         p = PNMImage(self.size, self.size, num_channels=2)
         sigma = self.fwhm / (2 * sqrt(2 * log(2)))
         inv_sig2 = 1.0 / (2 * sigma * sigma)
@@ -106,8 +127,12 @@ class GaussianPointSprite(GenPointSprite):
                 rx = x - self.half_size + 0.5
                 dist2 = rx*rx + ry*ry
                 value = min(1.0, exp(- dist2 * inv_sig2) * inv_factor * self.fwhm)
-                v = value * self.max_value
-                p.set_xel_a(x, y, v, v, v, v)
+                va = value * self.max_value
+                if srgb:
+                    vc = linear_to_srgb_channel(va)
+                else:
+                    vc = va
+                p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
 class ExpPointSprite(GenPointSprite):
@@ -121,6 +146,7 @@ class ExpPointSprite(GenPointSprite):
         return self.size
 
     def generate(self):
+        srgb = settings.use_srgb
         p = PNMImage(self.size, self.size, num_channels=2)
         for y in range(self.size):
             ry = (y - self.half_size + 0.5) / self.size
@@ -128,8 +154,12 @@ class ExpPointSprite(GenPointSprite):
                 rx = (x - self.half_size + 0.5) / self.size
                 dist = sqrt(rx*rx + ry*ry)
                 value = min(1.0, pow(self.factor, dist))
-                v = value * self.max_value
-                p.set_xel_a(x, y, v, v, v, v)
+                va = value * self.max_value
+                if srgb:
+                    vc = linear_to_srgb_channel(va)
+                else:
+                    vc = va
+                p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
 class MergeSprite(GenPointSprite):
