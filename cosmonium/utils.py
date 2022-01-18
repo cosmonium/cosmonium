@@ -125,7 +125,7 @@ def  linear_to_srgb_channel(value):
     return 1.055 * pow(value, 0.41666) - 0.055 if(value > 0.0031308) else 12.92 * value
 
 def srgb_to_linear(color):
-    if settings.srgb:
+    if settings.use_srgb:
         return LColor(srgb_to_linear_channel(color[0]),
                       srgb_to_linear_channel(color[1]),
                       srgb_to_linear_channel(color[2]),
@@ -134,7 +134,7 @@ def srgb_to_linear(color):
         return color
 
 def linear_to_srgb(color):
-    if settings.srgb:
+    if settings.use_srgb:
         return LColor(linear_to_srgb_channel(color[0]),
                       linear_to_srgb_channel(color[1]),
                       linear_to_srgb_channel(color[2]),

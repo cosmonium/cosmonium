@@ -35,7 +35,8 @@ from .parsers.configparser import configParser
 from .foundation import BaseObject
 from .scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
 from .dircontext import defaultDirContext
-from .opengl import request_opengl_config, check_opengl_config, create_main_window, check_and_create_rendering_buffers
+from .opengl import OpenGLConfig
+from .pipeline.scenepipeline import ScenePipeline
 from .stellarobject import StellarObject
 from .systems import StellarSystem, SimpleSystem
 from .bodies import StellarBody, ReflectiveBody
@@ -123,8 +124,9 @@ class CosmoniumBase(ShowBase):
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
         if not self.app_config.test_start:
-            create_main_window(self)
-            check_opengl_config(self)
+            self.pipeline = ScenePipeline(engine=self.graphics_engine)
+            self.pipeline.init()
+            OpenGLConfig.check_opengl_config(self)
             #self.create_additional_display_regions()
             self.near_cam = None
         else:
@@ -142,7 +144,6 @@ class CosmoniumBase(ShowBase):
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
-        self.render_buffer, self.render_textures = check_and_create_rendering_buffers(self)
         cache.init_cache()
         self.register_events()
 
@@ -190,7 +191,7 @@ class CosmoniumBase(ShowBase):
 
     def panda_config(self):
         data = []
-        request_opengl_config(data)
+        OpenGLConfig.request_opengl_config(data)
         self.app_panda_config(data)
         data.append("text-encoding utf8")
         data.append("paste-emit-keystrokes #f")
@@ -305,6 +306,8 @@ class CosmoniumBase(ShowBase):
             self.observer.set_film_size(width, height)
             self.common_state.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
             self.common_state.setShaderInput("pixel_size", self.observer.pixel_size)
+        if self.pipeline is not None:
+            self.pipeline.update_win_size(width, height)
         if self.gui is not None:
             self.gui.update_size(width, height)
         if settings.color_picking and self.oid_texture is not None:
@@ -516,6 +519,8 @@ class Cosmonium(CosmoniumBase):
             self.scene_manager = DynamicSceneManager()
         self.scene_manager.init_camera(self.observer, self.cam)
         self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+        self.pipeline.create()
+        self.pipeline.set_scene_manager(self.scene_manager)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
@@ -936,7 +941,7 @@ class Cosmonium(CosmoniumBase):
             self.common_state.clearLight(self.globalAmbientPath)
             self.globalAmbientPath.removeNode()
         self.globalAmbient=AmbientLight('globalAmbient')
-        if settings.srgb:
+        if settings.use_srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
             corrected_ambient = settings.global_ambient
@@ -1368,7 +1373,7 @@ class Cosmonium(CosmoniumBase):
 
         self.find_shadows()
         self.update_instances()
-        self.scene_manager.build_scene(self.common_state, self.render_buffer, self.observer, self.visibles, self.resolved)
+        self.scene_manager.build_scene(self.common_state, self.observer, self.visibles, self.resolved)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)

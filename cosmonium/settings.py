@@ -246,23 +246,6 @@ deep_space_depth = 50
 halo_depth = 100
 
 shader_version = None
-core_profile = None
-render_scene_to_buffer = False
-render_scene_to_float = False
-non_power_of_two_textures = False
-disable_multisampling = False
-framebuffer_multisampling = False
-floating_point_buffer = False
-buffer_texture = False
-hdr = False
-srgb = False
-srgb_buffer = False
-srgb_texture = False
-software_srgb = False
-hardware_tessellation = False
-hardware_instancing = False
-texture_array = False
-aux_buffer = False
 color_picking = False
 
 # Window configuration

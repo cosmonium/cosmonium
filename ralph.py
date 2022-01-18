@@ -67,6 +67,7 @@ from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.utils import quaternion_from_euler
 from cosmonium.cosmonium import CosmoniumBase
+from cosmonium.opengl import OpenGLConfig
 from cosmonium import settings
 
 from cosmonium.astro import units
@@ -109,7 +110,7 @@ class TileFactory(PatchFactory):
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
-        if settings.hardware_tessellation:
+        if OpenGLConfig.hardware_tessellation:
             terrain_layer = GpuPatchTerrainLayer()
         else:
             terrain_layer = MeshTerrainLayer()
@@ -486,7 +487,7 @@ class RoamingRalphDemo(CosmoniumBase):
         data_source.append(self.ralph_config.heightmap.get_data_source(self.terrain_shape.data_store is not None))
         data_source.append(self.ralph_config.biome.get_data_source(self.terrain_shape.data_store is not None))
         data_source.append(self.ralph_config.appearance.get_data_source())
-        if settings.hardware_tessellation:
+        if OpenGLConfig.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()
         else:
             tessellation_control = None
@@ -565,7 +566,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
-        if settings.srgb:
+        if settings.use_srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
             corrected_ambient = settings.global_ambient
@@ -625,6 +626,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_manager = StaticSceneManager()
         self.scene_manager.init_camera(self.observer, self.cam)
         self.scene_manager.scale = 1.0
+        self.pipeline.create()
+        self.pipeline.set_scene_manager(self.scene_manager)
         self.worlds = Worlds()
 
         self.context = self
@@ -789,7 +792,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
 
-        self.scene_manager.build_scene(self.common_state, self.win, self.observer, [], [])
+        self.scene_manager.build_scene(self.common_state, self.observer, [], [])
 
         return task.cont
 

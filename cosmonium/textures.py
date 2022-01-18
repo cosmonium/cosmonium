@@ -427,7 +427,7 @@ class DataTexture(TextureBase):
 class VisibleTexture(SimpleTexture):
     def __init__(self, source, tint=None, srgb=None):
         if srgb is None:
-            srgb = settings.srgb
+            srgb = settings.use_srgb
         SimpleTexture.__init__(self, source, srgb=srgb)
         self.tint_color = tint
         self.transparent = False
@@ -527,7 +527,7 @@ class TextureArray(TextureBase):
         if textures is None:
             textures = []
         self.textures = textures
-        if not settings.srgb:
+        if not settings.use_srgb:
             srgb = False
         self.srgb = srgb
         for (i, texture) in enumerate(textures):

@@ -44,7 +44,7 @@ class Splash:
         self.text_height = self.text_scale + self.text_offset
         self.image_scale = 0.3
         self.bg_texture = loader.loadTexture("textures/splash-background.jpg")
-        if settings.srgb:
+        if settings.use_srgb:
             self.bg_texture.set_format(Texture.F_srgb)
         self.bg_texture.setWrapU(Texture.WM_clamp)
         self.bg_texture.setWrapV(Texture.WM_clamp)

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,40 +18,39 @@
 #
 
 
-from panda3d.core import Texture
-
-from .generator import RenderTarget, RenderStage, GeneratorChain, GeneratorPool
 from .shadernoise import NoiseShader, FloatTarget
 
+from ..pipeline.target import ProcessTarget
+from ..pipeline.stage import ProcessStage
+from ..pipeline.factory import PipelineFactory
+from ..pipeline.generator import GeneratorPool
 from ..heightmap import TextureHeightmapBase, HeightmapPatch, PatchedHeightmapBase
 from ..textures import TexCoord
 from .. import settings
 
-class HeightmapGenerationStage(RenderStage):
+class HeightmapGenerationStage(ProcessStage):
     def __init__(self, coord, width, height, noise_source):
-        RenderStage.__init__(self, "heightmap", (width, height))
+        ProcessStage.__init__(self, "heightmap")
         self.coord = coord
+        self.size = (width, height)
         self.noise_source = noise_source
+
+    def provides(self):
+        return {'heightmap': 'color'}
 
     def create_shader(self):
         shader = NoiseShader(coord=self.coord, noise_source=self.noise_source, noise_target=FloatTarget())
         shader.create_and_register_shader(None, None)
         return shader
 
-    def create(self):
-        self.target = RenderTarget()
-        (width, height) = self.get_size()
-        self.target.make_buffer(width, height, Texture.F_r32, to_ram=True)
-        self.target.set_shader(self.create_shader())
-
-    def create_textures(self, shader_data):
-        texture = Texture()
-        texture.set_wrap_u(Texture.WM_clamp)
-        texture.set_wrap_v(Texture.WM_clamp)
-        texture.set_anisotropic_degree(0)
-        texture.set_minfilter(Texture.FT_linear)
-        texture.set_magfilter(Texture.FT_linear)
-        return {'heightmap': texture}
+    def create(self, pipeline):
+        target = ProcessTarget(self.name)
+        target.set_one_shot(True)
+        self.add_target(target)
+        target.set_fixed_size(self.size)
+        target.add_color_target((32, 0, 0, 0), srgb_colors=False, to_ram=True)
+        target.create(pipeline)
+        target.set_shader(self.create_shader())
 
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
@@ -91,7 +90,7 @@ class ShaderHeightmap(TextureHeightmapBase):
 
     def do_load(self, shape):
         if not self.tex_id in ShaderHeightmap.tex_generators:
-            chain = GeneratorChain()
+            chain = PipelineFactory.instance().create_process_pipeline()
             stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
             chain.add_stage(stage)
             chain.create()
@@ -117,7 +116,7 @@ class HeightmapPatchGenerator():
     def create(self, coord):
         pool = GeneratorPool([])
         for i in range(settings.patch_pool_size):
-            chain = GeneratorChain()
+            chain = PipelineFactory.instance().create_process_pipeline()
             stage = HeightmapGenerationStage(coord, self.width, self.height, self.function)
             chain.add_stage(stage)
             pool.add_chain(chain)
@@ -139,7 +138,7 @@ class HeightmapPatchGenerator():
                                     }}
         #print("GEN", heightmap_patch.patch.str_id())
         result = await self.generator.generate(tid, shader_data)
-        data = result['heightmap'].get('heightmap')
+        data = result['heightmap'].get('color')
         return data
 
 class ShaderPatchedHeightmap(PatchedHeightmapBase):

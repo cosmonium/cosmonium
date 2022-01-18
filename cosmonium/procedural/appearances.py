@@ -36,7 +36,7 @@ class TexturesDictionary(AppearanceBase):
         self.scale_factor = scale_factor
         self.tiling = tiling
         if srgb is None:
-            srgb = settings.srgb
+            srgb = settings.use_srgb
         self.srgb = srgb
         self.nb_textures = 0
         self.nb_blocks = 0

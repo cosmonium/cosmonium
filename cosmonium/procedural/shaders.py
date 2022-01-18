@@ -19,7 +19,7 @@
 
 
 from ..shaders import ShaderDataSource, ShaderAppearance, StructuredShader, ShaderProgram, CompositeShaderDataSource
-from .generator import GeneratorVertexShader
+from ..pipeline.shaders import GeneratorVertexShader
 
 class TextureTiling:
     def __init__(self):

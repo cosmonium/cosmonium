@@ -21,12 +21,12 @@
 from panda3d.core import LVector3, LMatrix3, LMatrix4
 
 from ..shaders import StructuredShader, ShaderProgram, ShaderComponent
+from ..pipeline.shaders import GeneratorVertexShader
 from ..dircontext import defaultDirContext
 from ..textures import TexCoord
 from ..parameters import ParametersGroup, AutoUserParameter
 from .. import settings
 
-from .generator import GeneratorVertexShader
 
 class NoiseSource(object):
     last_id = 0

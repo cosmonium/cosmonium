@@ -191,7 +191,7 @@ class Appearance(AppearanceBase):
         self.shininess = shininess
         self.colorScale = colorScale
         if srgb is None:
-            srgb = settings.srgb
+            srgb = settings.use_srgb
         self.srgb = srgb
         if texture is not None:
             self.set_texture(texture, tint, transparency, transparency_level, transparency_blend)
@@ -417,7 +417,7 @@ class ModelAppearance(AppearanceBase):
         AppearanceBase.__init__(self)
         self.tex_transform = False
         if srgb is None:
-            srgb = settings.srgb
+            srgb = settings.use_srgb
         self.srgb = srgb
         #TODO: Should be inferred from model
         self.has_vertex_color = vertex_color

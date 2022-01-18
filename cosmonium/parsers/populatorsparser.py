@@ -20,6 +20,7 @@
 
 from ..astro import units
 from .. import settings
+from ..opengl import OpenGLConfig
 
 from .yamlparser import YamlModuleParser
 from ..procedural.populator import RandomObjectPlacer
@@ -45,7 +46,7 @@ class PlacerYamlParser(YamlModuleParser):
 class PopulatorYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        if settings.hardware_instancing:
+        if OpenGLConfig.hardware_instancing:
             default = 'gpu'
         else:
             default = 'cpu'

@@ -20,41 +20,40 @@
 
 from panda3d.core import Texture
 
-from .generator import RenderTarget, RenderStage, GeneratorChain, GeneratorPool
 from .shaders import DeferredDetailMapShader, TextureDictionaryDataSource
 from .shadernoise import NoiseShader
+
+from ..pipeline.target import ProcessTarget
+from ..pipeline.stage import ProcessStage
+from ..pipeline.factory import PipelineFactory
+from ..pipeline.generator import GeneratorPool
 from ..textures import TextureSource
 from .. import settings
 
-class TextureGenerationStage(RenderStage):
+class TextureGenerationStage(ProcessStage):
     def __init__(self, coord, width, height, noise_source, noise_target):
-        RenderStage.__init__(self, "texture", (width, height))
+        ProcessStage.__init__(self, "texture")
         self.coord = coord
+        self.size = (width, height)
         self.noise_source = noise_source
         self.noise_target = noise_target
+
+    def provides(self):
+        return {'texture': 'color'}
 
     def create_shader(self):
         shader = NoiseShader(coord=self.coord, noise_source=self.noise_source, noise_target=self.noise_target)
         shader.create_and_register_shader(None, None)
         return shader
 
-    def create(self):
-        self.target = RenderTarget()
-        (width, height) = self.get_size()
-        self.target.make_buffer(width, height, Texture.F_rgba, to_ram=False)
-        self.target.set_shader(self.create_shader())
-
-    def create_textures(self, shader_data):
-        texture = Texture()
-        texture.set_wrap_u(Texture.WM_clamp)
-        texture.set_wrap_v(Texture.WM_clamp)
-        texture.set_anisotropic_degree(0)
-        if shader_data['lod'] == 0:
-            texture.set_minfilter(Texture.FT_linear_mipmap_linear)
-        else:
-            texture.set_minfilter(Texture.FT_linear)
-        texture.set_magfilter(Texture.FT_linear)
-        return {'texture': texture}
+    def create(self, pipeline):
+        target = ProcessTarget(self.name)
+        target.set_one_shot(True)
+        self.add_target(target)
+        target.set_fixed_size(self.size)
+        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
+        target.create(pipeline)
+        target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
         if patch is not None:
@@ -70,9 +69,10 @@ class TextureGenerationStage(RenderStage):
                                'lod': 0
                               }
 
-class DetailTextureGenerationStage(RenderStage):
+class DetailTextureGenerationStage(ProcessStage):
     def __init__(self, width, height, data_store, heightmap, texture_control, texture_source):
-        RenderStage.__init__(self, "texture", (width, height))
+        ProcessStage.__init__(self, "texture")
+        self.size = (width, height)
         self.data_store = data_store
         self.heightmap = heightmap
         self.texture_control = texture_control
@@ -87,25 +87,16 @@ class DetailTextureGenerationStage(RenderStage):
         shader.create_and_register_shader(None, None)
         return shader
 
-    def create(self):
-        self.target = RenderTarget()
-        (width, height) = self.get_size()
-        self.target.make_buffer(width, height, Texture.F_rgba, to_ram=False)
+    def create(self, pipeline):
+        target = ProcessTarget(self.name)
+        target.set_one_shot(True)
+        self.add_target(target)
+        target.set_fixed_size(self.size)
+        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
+        target.create(pipeline)
         #TODO: Link is missing
         self.texture_control.create_shader_configuration(self.texture_source)
         self.target.set_shader(self.create_shader())
-
-    def create_textures(self, shader_data):
-        texture = Texture()
-        texture.set_wrap_u(Texture.WM_clamp)
-        texture.set_wrap_v(Texture.WM_clamp)
-        texture.set_anisotropic_degree(0)
-        if shader_data['lod'] == 0:
-            texture.set_minfilter(Texture.FT_linear_mipmap_linear)
-        else:
-            texture.set_minfilter(Texture.FT_linear)
-        texture.set_magfilter(Texture.FT_linear)
-        return {'texture': texture}
 
     def configure_data(self, data, shape, patch):
         data[self.name] = {'shape': shape,
@@ -122,7 +113,7 @@ class NoiseTextureGenerator():
         self.tex_generator = None
 
     def create(self, coord):
-        self.tex_generator =  GeneratorChain()
+        self.tex_generator =  PipelineFactory.instance().create_process_pipeline()
         self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
         self.tex_generator.add_stage(self.texture_stage)
         self.tex_generator.create()
@@ -140,7 +131,7 @@ class NoiseTextureGenerator():
         self.texture_stage.configure_data(shader_data, shape, patch)
         #print("GEN", patch.str_id())
         result = await self.tex_generator.generate(tasks_tree, shader_data)
-        texture = result[self.texture_stage.name].get('texture')
+        texture = result[self.texture_stage.name].get('color')
         return texture
 
 class DetailMapTextureGenerator():
@@ -155,7 +146,7 @@ class DetailMapTextureGenerator():
     def create(self, shape):
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
-            chain =  GeneratorChain()
+            chain = PipelineFactory.instance().create_process_pipeline()
             #TODO: Find anotherway to get the data store
             self.texture_stage = DetailTextureGenerationStage(self.texture_size, self.texture_size, shape.data_store, self.heightmap, self.texture_control, self.texture_source)
             chain.add_stage(self.texture_stage)
@@ -179,7 +170,7 @@ class DetailMapTextureGenerator():
         self.texture_stage.configure_data(shader_data, shape, patch)
         #print("GEN", patch.str_id())
         result = await self.tex_generator.generate("tex - " + patch.str_id(), shader_data)
-        texture = result[self.texture_stage.name]['texture']
+        texture = result[self.texture_stage.name].get('color')
         return texture
 
 class ProceduralVirtualTextureSource(TextureSource):

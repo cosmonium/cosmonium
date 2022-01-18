@@ -20,9 +20,9 @@
 
 from panda3d.core import Shader
 
+from .opengl import OpenGLConfig
 from .utils import TransparencyBlend
 from .cache import create_path_for
-from .parameters import ParametersGroup
 from . import settings
 
 import hashlib
@@ -168,7 +168,7 @@ float DecodeFloatRGBA( vec4 rgba ) {
     def create_shader_version(self, code):
         if self.version is not None:
             code.append("#version %d" % self.version)
-            if self.version >= 300 and settings.core_profile:
+            if self.version >= 300 and OpenGLConfig.core_profile:
                 code.append("#define texture2D texture")
 
     def create_layout(self, code):
@@ -955,7 +955,7 @@ class BasicShader(StructuredShader):
     def create_shader_configuration(self, appearance):
         self.nb_textures_coord = 1
 
-        self.normals_use_centroid = not settings.disable_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid
+        self.normals_use_centroid = settings.use_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid
         self.data_source.create_shader_configuration(appearance)
 
         self.appearance.create_shader_configuration(appearance)

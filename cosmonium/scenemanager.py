@@ -35,6 +35,20 @@ class SceneManagerBase:
         self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
         self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
 
+    def remove_main_region(self, camera):
+        region = None
+        for dr in base.win.get_display_regions():
+            drcam = dr.get_camera()
+            if drcam == camera:
+                region = dr
+                break
+        if region is not None:
+            base.win.remove_display_region(region)
+            region.set_active(False)
+
+    def set_target(self, target):
+        raise NotImplementedError()
+
     def attach_new_anchor(self, instance):
         raise NotImplementedError()
 
@@ -53,7 +67,7 @@ class SceneManagerBase:
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         raise NotImplementedError()
 
-    def build_scene(self, state, win, camera_holder, visibles, resolved):
+    def build_scene(self, state, camera_holder, visibles, resolved):
         raise NotImplementedError()
 
     def ls(self):
@@ -64,9 +78,11 @@ class StaticSceneManager(SceneManagerBase):
         SceneManagerBase.__init__(self)
         self.camera = None
         self.lens = None
-        self.infinite_far_plane = settings.infinite_far_plane
+        self.dr = None
+        self.inverse_z = settings.use_inverse_z
         self.near_plane = settings.near_plane
-        if self.infinite_far_plane:
+        self.infinite_far_plane = settings.infinite_far_plane
+        if self.infinite_far_plane and not self.inverse_z:
             self.far_plane = float('inf')
         else:
             self.far_plane = settings.far_plane
@@ -74,6 +90,14 @@ class StaticSceneManager(SceneManagerBase):
         self.auto_infinite_plane = settings.auto_infinite_plane
         self.lens_far_limit = settings.lens_far_limit
         self.root = render.attach_new_node('root')
+
+    def set_target(self, target):
+        print("Set Scene Manager target", target)
+        self.dr = target.make_display_region(0, 1, 0, 1)
+        self.dr.disable_clears()
+        self.dr.set_scissor_enabled(False)
+        self.dr.set_camera(self.camera)
+        self.dr.set_active(True)
 
     def attach_new_anchor(self, instance):
         instance.reparent_to(self.root)
@@ -93,8 +117,8 @@ class StaticSceneManager(SceneManagerBase):
         else:
             self.infinity = self.infinite_plane
         print("Planes: ", self.near_plane, self.far_plane)
-        self.lens.set_near_far(self.near_plane, self.far_plane)
         self.camera.reparent_to(self.root)
+        self.remove_main_region(default_camera)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
@@ -102,10 +126,14 @@ class StaticSceneManager(SceneManagerBase):
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         self.lens = camera_holder.lens.make_copy()
         self.camera.node().set_lens(self.lens)
+        if self.inverse_z:
+            self.lens.set_near_far(self.far_plane, self.near_plane)
+        else:
+            self.lens.set_near_far(self.near_plane, self.far_plane)
         self.camera.set_pos(camera_holder.camera_np.get_pos())
         self.camera.set_quat(camera_holder.camera_np.get_quat())
 
-    def build_scene(self, state, win, camera_holder, visibles, resolved):
+    def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
 
     def ls(self):
@@ -114,6 +142,7 @@ class StaticSceneManager(SceneManagerBase):
 class DynamicSceneManager(SceneManagerBase):
     def __init__(self):
         SceneManagerBase.__init__(self)
+        self.dr = None
         self.camera = None
         self.lens = None
         self.near_plane = settings.near_plane
@@ -140,6 +169,14 @@ class DynamicSceneManager(SceneManagerBase):
         if settings.render_sprite_points:
             self.haloset.instance.reparent_to(self.root)
 
+    def set_target(self, target):
+        print("Set Scene Manager target", target)
+        self.dr = target.make_display_region(0, 1, 0, 1)
+        self.dr.disable_clears()
+        self.dr.set_scissor_enabled(False)
+        self.dr.set_camera(self.camera)
+        self.dr.set_active(True)
+
     def attach_new_anchor(self, instance):
         instance.reparent_to(self.root)
 
@@ -162,6 +199,7 @@ class DynamicSceneManager(SceneManagerBase):
         print("Planes: ", self.near_plane, self.far_plane)
         self.update_planes()
         self.camera.reparent_to(self.root)
+        self.remove_main_region(default_camera)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
@@ -194,7 +232,7 @@ class DynamicSceneManager(SceneManagerBase):
         self.camera.set_quat(camera_holder.camera_np.get_quat())
 
     @pstat
-    def build_scene(self, state, win, camera_holder, visibles, resolved):
+    def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.setShaderInput("midPlane", self.midPlane)
         self.pointset.reset()
@@ -230,12 +268,17 @@ class RegionSceneManager(SceneManagerBase):
     max_near_reagion = 1e5
     def __init__(self):
         SceneManagerBase.__init__(self)
+        self.target = None
         self.regions = []
         self.spread_objects = []
         self.background_region = None
         self.camera_mask = None
         self.infinity = 1e9
         self.inverse_z = settings.use_inverse_z
+
+    def set_target(self, target):
+        print("Set Scene Manager target", target)
+        self.target = target
 
     def attach_new_anchor(self, instance):
         pass
@@ -254,7 +297,7 @@ class RegionSceneManager(SceneManagerBase):
         instance.reparent_to(self.background_region.root)
 
     def init_camera(self, camera_holder, default_camera):
-        pass
+        self.remove_main_region(default_camera)
 
     def set_camera_mask(self, flags):
         self.camera_mask = flags
@@ -270,7 +313,7 @@ class RegionSceneManager(SceneManagerBase):
         self.regions = []
 
     @pstat
-    def build_scene(self, world, win, camera_holder, visibles, resolved):
+    def build_scene(self, world, camera_holder, visibles, resolved):
         state = world.get_state()
         self.clear_scene()
         background_resolved = []
@@ -343,7 +386,7 @@ class RegionSceneManager(SceneManagerBase):
                 region_size = -region_size
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
-                region.create(win, state, camera_holder, self.camera_mask, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
+                region.create(self.target, state, camera_holder, self.camera_mask, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
                 base += region_size
         self.attach_spread_objects()
         self.spread_objects = []
@@ -359,7 +402,7 @@ class SceneRegion:
         self.bodies = []
         self.near = near
         self.far = far
-        self.win = None
+        self.target = None
         self.region = None
         self.root = NodePath('root')
         self.cam = None
@@ -406,7 +449,8 @@ class SceneRegion:
         self.near = min(self.near, other.near)
         self.far = max(self.far, other.far)
 
-    def create(self, win, state, camera_holder, camera_mask, inverse_z, section_near, section_far, sort_index):
+    def create(self, target, state, camera_holder, camera_mask, inverse_z, section_near, section_far, sort_index):
+        self.target = target
         self.root.set_state(state)
         for body in self.bodies:
             body.scene_anchor.instance.reparent_to(self.root)
@@ -420,8 +464,7 @@ class SceneRegion:
         self.cam.set_lens(lens)
         self.cam_np = self.root.attach_new_node(self.cam)
         self.cam_np.set_quat(camera_holder.camera_np.get_quat())
-        self.win = win
-        self.region = win.make_display_region((0, 1, 0, 1))
+        self.region = self.target.make_display_region((0, 1, 0, 1))
         self.region.disable_clears()
         #self.region.setClearColorActive(1)
         #self.region.setClearColor((1, 0, 0, 1))
@@ -437,8 +480,7 @@ class SceneRegion:
             self.haloset.update()
 
     def remove(self):
-        self.win.remove_display_region(self.region)
-        self.win = None
+        self.target.remove_display_region(self.region)
         self.region = None
         self.root = None
         self.cam = None

@@ -25,7 +25,10 @@ from .datasource import DataSource
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
-from .procedural.generator import GeneratorVertexShader, RenderTarget, RenderStage
+from .pipeline.shaders import GeneratorVertexShader
+from .pipeline.target import ProcessTarget
+from .pipeline.stage import ProcessStage
+from .pipeline.factory import PipelineFactory
 
 from math import pow, pi
 
@@ -162,10 +165,12 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.set_shader(shader)
 
     def create_generator(self):
-        self.lookuptable_generator = ONeilLookupTableRenderStage(self.lookup_size)
+        self.lookuptable_generator = PipelineFactory.instance().create_simple_pipeline()
+        stage = ONeilLookupTableRenderStage(self.lookup_size)
+        self.lookuptable_generator.add_stage(stage)
         self.lookuptable_generator.create()
-        self.lookuptable_generator.prepare({'parameters': self})
-        self.pbOpticalDepth = self.lookuptable_generator.textures['lookuptable']
+        self.lookuptable_generator.trigger({'lookuptable': {'parameters': self}})
+        self.pbOpticalDepth = self.lookuptable_generator.gather().get('lookuptable').get('color')
 
     def remove_instance(self):
         ONeilAtmosphereBase.remove_instance(self)
@@ -192,7 +197,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return ONeilScatteringDataSource(self)
 
     def generate_lookup_table(self):
-        self.lookuptable_generator.update({'parameters': self})
+        self.lookuptable_generator.trigger({'parameters': self})
 
     def get_lookup_table(self):
         if self.pbOpticalDepth is None:
@@ -676,29 +681,27 @@ class ONeilLookupTableShader(StructuredShader):
         instance.setShaderInput("fMieScaleHeight", parameters.mie_scale_depth)
         instance.setShaderInput("fScale", scale)
 
-class ONeilLookupTableRenderStage(RenderStage):
+class ONeilLookupTableRenderStage(ProcessStage):
     def __init__(self, size):
-        RenderStage.__init__(self, "lookuptable", (size, size))
+        ProcessStage.__init__(self, "lookuptable")
+        self.size = (size, size)
+
+    def provides(self):
+        return {'lookuptable': 'color'}
 
     def create_shader(self):
         shader = ONeilLookupTableShader()
         shader.create_and_register_shader(None, None)
         return shader
 
-    def create(self):
-        self.target = RenderTarget()
-        (width, height) = self.get_size()
-        self.target.make_buffer(width, height, Texture.F_rgb32, to_ram=False)
-        self.target.set_shader(self.create_shader())
-
-    def create_textures(self, shader_data):
-        texture = Texture()
-        texture.set_wrap_u(Texture.WM_clamp)
-        texture.set_wrap_v(Texture.WM_clamp)
-        texture.set_anisotropic_degree(0)
-        texture.set_minfilter(Texture.FT_linear)
-        texture.set_magfilter(Texture.FT_linear)
-        return {'lookuptable': texture}
+    def create(self, pipeline):
+        target = ProcessTarget(self.name)
+        target.set_one_shot(True)
+        self.add_target(target)
+        target.set_fixed_size(self.size)
+        target.add_color_target((32, 32, 32, 0), srgb_colors=False, to_ram=False)
+        target.create(pipeline)
+        target.set_shader(self.create_shader())
 
 class ONeilScattering(ONeilScatteringBase):
     str_id = 'oneil'
