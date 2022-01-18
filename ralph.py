@@ -50,12 +50,12 @@ from cosmonium.lights import LightSources, SurrogateLight
 from cosmonium.heightmapshaders import DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap
+from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap, ShaderPSSMShadowMap
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistanceLodControl
-from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster
+from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster, PSSMShadowMapDataSource
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
 from cosmonium.parsers.heightmapsparser import HeightmapYamlParser
@@ -496,7 +496,10 @@ class RoamingRalphDemo(CosmoniumBase):
                                           vertex_control=DisplacementVertexControl(self.ralph_config.heightmap),
                                           data_source=data_source)
         if self.shadows:
-            self.terrain_shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
+            if self.pssm_shadows:
+                self.terrain_shader.add_shadows(ShaderPSSMShadowMap('shadows'))
+            else:
+                self.terrain_shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
 
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
@@ -593,6 +596,7 @@ class RoamingRalphDemo(CosmoniumBase):
         settings.color_picking = False
         settings.scale = 1.0
         settings.use_depth_scaling = False
+        settings.infinite_far_plane = False
         self.gui = None
 
         if args.config is not None:
@@ -619,6 +623,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.shadow_caster = None
         self.set_ambient(0.3)
         self.shadows = True
+        self.pssm_shadows = True
 
         self.cam.node().set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.NearCameraFlag)
         self.observer = CameraHolder()
@@ -670,15 +675,22 @@ class RoamingRalphDemo(CosmoniumBase):
             self.terrain_shape.add_linked_object(component)
 
         if self.shadows:
-            self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
-            self.shadow_caster.create()
-            self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
-            self.shadow_caster.shadow_map.snap_cam = True
+            if self.pssm_shadows:
+                self.shadow_caster = PSSMShadowMapShadowCaster(self.light, self.terrain_world)
+                self.shadow_caster.create()
+            else:
+                self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
+                self.shadow_caster.create()
+                self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
+                self.shadow_caster.shadow_map.snap_cam = True
         else:
             self.shadow_caster = None
 
         if self.shadows:
-            shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
+            if self.pssm_shadows:
+                shadows_data_source = PSSMShadowMapDataSource('shadows', self.shadow_caster)
+            else:
+                shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
             self.terrain_surface.sources.add_source(shadows_data_source)
         self.terrain.add_source(self.lights)
 
@@ -696,7 +708,10 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
         self.ralph_shader = BasicShader()
         if self.shadows:
-            self.ralph_shader.add_shadows(ShaderShadowMap('shadows', use_bias=True))
+            if self.pssm_shadows:
+                self.ralph_shader.add_shadows(ShaderPSSMShadowMap('shadows'))
+            else:
+                self.ralph_shader.add_shadows(ShaderShadowMap('shadows', use_bias=True))
 
         self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
         self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
@@ -707,7 +722,10 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_shape_object.body = self.ralph_world
         self.ralph_shape_object.set_owner(self.ralph_world)
         if self.shadows:
-            shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
+            if self.pssm_shadows:
+                shadows_data_source = PSSMShadowMapDataSource('shadows', self.shadow_caster)
+            else:
+                shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
             self.ralph_shape_object.sources.add_source(shadows_data_source)
         self.ralph_shape_object.sources.add_source(self.lights)
 
@@ -773,13 +791,16 @@ class RoamingRalphDemo(CosmoniumBase):
         self.light.light_direction = self.skybox.light_dir
 
         if self.shadow_caster is not None:
-            vec = self.ralph_world.anchor.get_local_position() - self.observer.anchor.get_local_position()
-            vec.set_z(0)
-            dist = vec.length()
-            vec.normalize()
-            #TODO: Should use the directional light to set the pos
-            self.shadow_caster.shadow_map.set_direction(self.skybox.light_dir)
-            self.shadow_caster.shadow_map.set_pos(self.ralph_world.anchor.get_local_position() - vec * dist + vec * self.ralph_config.shadow_size / 2)
+            if self.pssm_shadows:
+                self.shadow_caster.update(self.scene_manager)
+            else:
+                vec = self.ralph_world.anchor.get_local_position() - self.observer.anchor.get_local_position()
+                vec.set_z(0)
+                dist = vec.length()
+                vec.normalize()
+                #TODO: Should use the directional light to set the pos
+                self.shadow_caster.shadow_map.set_direction(self.skybox.light_dir)
+                self.shadow_caster.shadow_map.set_pos(self.ralph_world.anchor.get_local_position() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
         self.worlds.update(0, dt)
         self.worlds.update_obs(self.observer.anchor)
