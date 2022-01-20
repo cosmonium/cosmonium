@@ -337,8 +337,8 @@ class StellarAnchor(AnchorBase):
         self._equatorial = LQuaterniond()
         self._albedo = 0.5
         #TODO: Should be done properly
-        orbit.body = body
-        rotation.body = body
+        #orbit.body = body
+        #rotation.body = body
 
     def get_position_bounding_radius(self):
         return self.orbit.get_bounding_radius()
