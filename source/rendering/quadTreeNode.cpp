@@ -106,11 +106,12 @@ QuadTreeNode::in_patch(LPoint2d local)
 void
 QuadTreeNode::check_visibility(CullingFrustumBase *culling_frustum, LPoint2d local, LPoint3d model_camera_pos, LVector3d model_camera_vector, double altitude, double pixel_size)
 {
-  bool within_patch = false;
+  bool within_patch;
   if (false && in_patch(local)) {
       within_patch = true;
       distance = altitude;
   } else {
+      within_patch = false;
       distance = max(altitude, (centre - model_camera_pos).length() - length * 0.7071067811865476);
   }
   patch_in_view = culling_frustum->is_patch_in_view(this);

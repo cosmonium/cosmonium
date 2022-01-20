@@ -69,8 +69,10 @@ class TextureLodControl(LodControl):
         self.texture_size = texture_size
 
     def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
-        return self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1 #and self.appearance.texture.can_split(patch)
+        if patch.lod < self.max_lod:
+            return self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1 #and self.appearance.texture.can_split(patch)
+        else:
+            return False
 
     def should_merge(self, patch, apparent_patch_size, distance):
         return apparent_patch_size < self.texture_size / 1.1
@@ -91,8 +93,7 @@ class TextureOrVertexSizeLodControl(TextureLodControl):
 
     def should_merge(self, patch, apparent_patch_size, distance):
         if self.texture_size > 0:
-            if apparent_patch_size < self.texture_size / 1.1:
-                return True
+            return apparent_patch_size < self.texture_size / 1.1
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size < self.max_vertex_size / 1.1
@@ -103,15 +104,15 @@ class VertexSizeLodControl(LodControl):
         self.max_vertex_size = max_vertex_size
 
     def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
-        apparent_vertex_size = apparent_patch_size / patch.density
-        to_split = apparent_vertex_size > self.max_vertex_size * 1.1
-        return to_split
+        if patch.lod < self.max_lod:
+            apparent_vertex_size = apparent_patch_size / patch.density
+            return apparent_vertex_size > self.max_vertex_size * 1.1
+        else:
+            return False
 
     def should_merge(self, patch, apparent_patch_size, distance):
         apparent_vertex_size = apparent_patch_size / patch.density
-        to_merge = apparent_vertex_size < self.max_vertex_size / 1.1
-        return to_merge
+        return apparent_vertex_size < self.max_vertex_size / 1.1
 
 class VertexSizeMaxDistanceLodControl(VertexSizeLodControl):
     def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
