@@ -151,7 +151,7 @@ VertexSizeMaxDistanceLodControl::VertexSizeMaxDistanceLodControl(double max_dist
 bool
 VertexSizeMaxDistanceLodControl::should_instanciate(QuadTreeNode *patch, double apparent_patch_size, double distance)
 {
-  return patch->visible && patch->children.size() == 0 && distance < max_distance;
+  return patch->visible && distance < max_distance;
 }
 
 bool
