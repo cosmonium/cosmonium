@@ -51,15 +51,12 @@ class QuadTreeNode:
         self.instance_ready = instance_ready
 
     def add_child(self, child):
-        child.parent = self
         self.children.append(child)
         self.children_bb.append(child.bounds.make_copy())
         self.children_normal.append(child.normal)
         self.children_offset.append(child.offset)
 
     def remove_children(self):
-        for child in self.children:
-            child.parent = None
         self.children = []
         self.children_bb = []
         self.children_normal = []
