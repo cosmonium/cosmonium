@@ -136,13 +136,13 @@ QuadTreeNode::check_lod(LodResult *lod_result, CullingFrustumBase *culling_frust
 {
   check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size);
   lod_result->check_max_lod(this);
-  //TODO: Should be checked before calling check_lod
-  for (auto child : children) {
-      child->check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control);
-  }
   if (children.size() != 0) {
       if (can_merge_children() && lod_control->should_merge(this, apparent_size, distance)) {
           lod_result->add_to_merge(this);
+      } else {
+          for (auto child : children) {
+              child->check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control);
+          }
       }
   } else {
       if (lod_control->should_split(this, apparent_size, distance) && (lod > 0 || instance_ready)) {
