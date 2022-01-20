@@ -142,6 +142,4 @@ protected:
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };
 
-LPoint3d diff(LPoint3d a, LPoint3d b);
-
 #endif
