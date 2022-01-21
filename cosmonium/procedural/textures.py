@@ -31,12 +31,14 @@ from ..textures import TextureSource
 from .. import settings
 
 class TextureGenerationStage(ProcessStage):
-    def __init__(self, coord, width, height, noise_source, noise_target):
+    def __init__(self, coord, width, height, noise_source, noise_target, alpha, srgb):
         ProcessStage.__init__(self, "texture")
         self.coord = coord
         self.size = (width, height)
         self.noise_source = noise_source
         self.noise_target = noise_target
+        self.alpha = alpha
+        self.srgb = srgb
 
     def provides(self):
         return {'texture': 'color'}
@@ -51,7 +53,11 @@ class TextureGenerationStage(ProcessStage):
         target.set_one_shot(True)
         self.add_target(target)
         target.set_fixed_size(self.size)
-        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
+        if self.alpha:
+            colors = (8, 8, 8, 8)
+        else:
+            colors = (8, 8, 8, 0)
+        target.add_color_target(colors, srgb_colors=self.srgb, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
@@ -106,15 +112,18 @@ class DetailTextureGenerationStage(ProcessStage):
                           }
 
 class NoiseTextureGenerator():
-    def __init__(self, size, noise, target):
+    def __init__(self, size, noise, target, alpha=False, srgb=False):
         self.texture_size = size
         self.noise = noise
         self.target = target
+        self.alpha = alpha
+        self.srgb = srgb
         self.tex_generator = None
 
     def create(self, coord):
         self.tex_generator =  PipelineFactory.instance().create_process_pipeline()
-        self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size, self.noise, self.target)
+        self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size,
+                                                    self.noise, self.target, alpha=self.alpha, srgb=self.srgb)
         self.tex_generator.add_stage(self.texture_stage)
         self.tex_generator.create()
 

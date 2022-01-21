@@ -85,17 +85,20 @@ class ProceduralTextureSourceYamlParser(YamlModuleParser):
             print("Warning: 'noise' entry is deprecated, use 'func' instead'")
         func = noise_parser.decode(func)
         target = data.get('target', 'gray')
+        has_alpha = False
+        use_srgb = False
         if target == 'gray':
             target = GrayTarget()
         elif target == 'alpha':
             target = AlphaTarget()
+            has_alpha = True
         else:
             print("Unknown noise target", target)
             target = None
         size = int(data.get('size', 256))
         frequency = float(data.get('frequency', 1.0))
         scale = float(data.get('scale', 1.0))
-        tex_generator = NoiseTextureGenerator(size, func, target)
+        tex_generator = NoiseTextureGenerator(size, func, target, alpha=has_alpha, srgb=use_srgb)
         if patched_shape:
             texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
         else:

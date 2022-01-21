@@ -42,7 +42,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
                                            density=settings.patch_constant_density)
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = BasicShader(lighting_model=FlatLightingModel())
-        tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target)
+        tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
         surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                               appearance=Appearance(colorScale=body.anchor.point_color,
                                                     texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
