@@ -47,7 +47,6 @@ from cosmonium.foundation import BaseObject
 from cosmonium.scenemanager import StaticSceneManager
 from cosmonium.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
 from cosmonium.lights import LightSources, SurrogateLight
-from cosmonium.heightmapshaders import DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders.rendering import RenderingShader
@@ -55,6 +54,7 @@ from cosmonium.shaders.fog import Fog
 from cosmonium.shaders.tesselation import ConstantTessellationControl
 from cosmonium.shaders.shadows.shadowmap import ShaderShadowMap
 from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
+from cosmonium.shaders.vertex_control.displacement import DisplacementVertexControl
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer

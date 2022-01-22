@@ -20,7 +20,7 @@
 
 from panda3d.core import LColor, Texture
 
-from .heightmapshaders import HeightmapDataSource
+from .shaders.data_source.heightmap import HeightmapDataSource
 from . import settings
 
 from math import floor

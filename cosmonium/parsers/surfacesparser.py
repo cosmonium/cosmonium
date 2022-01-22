@@ -21,9 +21,9 @@
 from ..surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders.rendering import RenderingShader
+from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
 from ..heightmap import heightmapRegistry
-from ..heightmapshaders import DisplacementVertexControl
 from ..shapes import MeshShape
 from ..catalogs import objectsDB
 from .. import settings

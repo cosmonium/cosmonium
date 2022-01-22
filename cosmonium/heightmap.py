@@ -22,7 +22,7 @@ from panda3d.core import Texture, LColor
 
 from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
-from .heightmapshaders import HeightmapDataSource
+from .shaders.data_source.heightmap import HeightmapDataSource
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .interpolators import HardwareInterpolator
 from .filters import BilinearFilter

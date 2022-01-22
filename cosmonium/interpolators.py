@@ -18,7 +18,7 @@
 #
 
 
-from .heightmapshaders import HeightmapDataSource
+from .shaders.data_source.heightmap import HeightmapDataSource
 
 class Interpolator:
     def get_data_source_interpolator(self):
