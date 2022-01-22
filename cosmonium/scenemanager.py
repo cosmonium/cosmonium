@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
 
 
 from panda3d.core import Camera, NodePath, DepthOffsetAttrib, LPoint3
+from panda3d.core import CollisionTraverser, CollisionNode
+from panda3d.core import CollisionHandlerQueue, CollisionRay
+from panda3d.core import GeomNode
 
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .pointsset import PointsSet
@@ -169,6 +172,21 @@ class DynamicSceneManager(SceneManagerBase):
         if settings.render_sprite_points:
             self.haloset.instance.reparent_to(self.root)
 
+    def pick_scene(self, mpos):
+        picker = CollisionTraverser()
+        pq = CollisionHandlerQueue()
+        picker_node = CollisionNode('mouseRay')
+        picker_np = self.camera.attach_new_node(picker_node)
+        picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
+        picker_ray = CollisionRay()
+        picker_node.add_solid(picker_ray)
+        picker.add_collider(picker_np, pq)
+        #picker.show_collisions(self.root)
+        picker_ray.set_from_lens(self.camera.node(), mpos.get_x(), mpos.get_y())
+        picker.traverse(self.root)
+        pq.sort_entries()
+        return pq
+
     def set_target(self, target):
         print("Set Scene Manager target", target)
         self.dr = target.make_display_region(0, 1, 0, 1)
@@ -263,6 +281,19 @@ class DynamicSceneManager(SceneManagerBase):
     def ls(self):
         self.root.ls()
 
+class CollisionEntriesCollection:
+    def __init__(self):
+        self.entries = []
+
+    def add_queue(self, queue):
+        self.entries += queue.entries
+
+    def get_num_entries(self):
+        return len(self.entries)
+
+    def get_entry(self, i):
+        return self.entries[i]
+
 class RegionSceneManager(SceneManagerBase):
     min_near = 1e-6
     max_near_reagion = 1e5
@@ -306,6 +337,24 @@ class RegionSceneManager(SceneManagerBase):
 
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         pass
+
+    def pick_scene(self, mpos):
+        picker = CollisionTraverser()
+        result = CollisionEntriesCollection()
+        for region in self.regions:
+            pq = CollisionHandlerQueue()
+            picker_ray = CollisionRay()
+            picker_node = CollisionNode('mouseRay')
+            picker_np = region.cam_np.attach_new_node(picker_node)
+            picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
+            picker_node.add_solid(picker_ray)
+            picker.add_collider(picker_np, pq)
+            picker_ray.set_from_lens(region.cam, mpos.get_x(), mpos.get_y())
+            #picker.show_collisions(region.root)
+            picker.traverse(region.root)
+            pq.sort_entries()
+            result.add_queue(pq)
+        return result
 
     def clear_scene(self):
         for region in self.regions:

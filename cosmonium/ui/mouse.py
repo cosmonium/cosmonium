@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,9 +18,7 @@
 #
 
 
-from panda3d.core import CollisionTraverser, CollisionNode, LPoint2
-from panda3d.core import CollisionHandlerQueue, CollisionRay
-from panda3d.core import GeomNode, LColor, Texture
+from panda3d.core import LPoint2, LColor
 from direct.showbase.DirectObject import DirectObject
 
 from direct.task.Task import Task
@@ -34,15 +32,6 @@ class Mouse(DirectObject):
         self.base = base
         self.picking_texture = oid_texture
         self.ui = None
-        self.picker = CollisionTraverser()
-        self.pq = CollisionHandlerQueue()
-        self.pickerNode = CollisionNode('mouseRay')
-        self.pickerNP = self.base.cam.attachNewNode(self.pickerNode)
-        self.pickerNode.setFromCollideMask(CollisionNode.getDefaultCollideMask() | GeomNode.getDefaultCollideMask())
-        self.pickerRay = CollisionRay()
-        self.pickerNode.addSolid(self.pickerRay)
-        self.picker.addCollider(self.pickerNP, self.pq)
-        #self.picker.showCollisions(render)
         self.mouse1_pos = None
         self.mouse3_pos = None
         self.accept('mouse1', self.mouse1_press)
@@ -82,16 +71,14 @@ class Mouse(DirectObject):
         over = None
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.getMouse()
-            self.pickerRay.setFromLens(self.base.camNode, mpos.getX(), mpos.getY())
-            self.picker.traverse(render)
-            if self.pq.getNumEntries() > 0:
-                self.pq.sortEntries()
-                np = self.pq.getEntry(0).getIntoNodePath().findNetPythonTag('owner')
-                owner = np.getPythonTag('owner')
+            pq = self.base.scene_manager.pick_scene(mpos)
+            if pq.get_num_entries() > 0:
+                np = pq.get_entry(0).get_into_node_path().find_net_python_tag('owner')
+                owner = np.get_python_tag('owner')
                 over = owner
-                np = self.pq.getEntry(0).getIntoNodePath().findNetPythonTag('patch')
+                np = pq.get_entry(0).get_into_node_path().find_net_python_tag('patch')
                 if np is not None:
-                    self.patch = np.getPythonTag('patch')
+                    self.patch = np.get_python_tag('patch')
                 else:
                     self.patch = None
         return over
