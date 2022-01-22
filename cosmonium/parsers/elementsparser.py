@@ -18,7 +18,8 @@
 #
 
 
-from ..bodyelements import Clouds, Ring
+from ..components.elements.rings import Rings
+from ..components.elements.clouds import Clouds
 from ..shaders import BasicShader
 from ..patchedshapes import VertexSizeLodControl, TextureLodControl, TextureOrVertexSizeLodControl
 from .. import settings
@@ -58,6 +59,5 @@ class RingsYamlParser(YamlModuleParser):
         appearance = AppearanceYamlParser.decode(data.get('appearance'), patched_shape=False)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = BasicShader(lighting_model=lighting_model)
-        rings = Ring(inner_radius, outer_radius, appearance, shader)
+        rings = Rings(inner_radius, outer_radius, appearance, shader)
         return rings
-

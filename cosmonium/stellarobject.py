@@ -25,7 +25,7 @@ from .namedobject import NamedObject
 from .components.annotations.reference_axes import ReferenceAxes
 from .components.annotations.rotation_axis import RotationAxis
 from .components.annotations.orbit import Orbit
-from .bodyelements import Halo
+from .components.elements.halo import Halo
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
 from .sceneanchor import SceneAnchor
 from .astro.frame import SynchroneReferenceFrame

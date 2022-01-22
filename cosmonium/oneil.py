@@ -20,7 +20,7 @@
 
 from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
-from .bodyelements import Atmosphere
+from .components.elements.atmosphere import Atmosphere
 from .datasource import DataSource
 from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
 from .utils import TransparencyBlend

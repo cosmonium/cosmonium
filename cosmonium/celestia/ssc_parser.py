@@ -30,7 +30,8 @@ from .shaders import LunarLambertLightingModel
 from ..celestia.atmosphere import CelestiaAtmosphere
 from ..bodies import ReflectiveBody, ReferencePoint
 from ..surfaces import EllipsoidFlatSurface
-from ..bodyelements import Ring, Clouds
+from ..components.elements.rings import Rings
+from ..components.elements.clouds import Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
 from ..shaders import BasicShader, LambertPhongLightingModel
@@ -138,10 +139,10 @@ def instanciate_rings(data):
         else:
             print("Key of Ring", key, "not supported")
     appearance.bake()
-    return Ring(inner_radius,
-                outer_radius,
-                appearance=appearance,
-                shader=BasicShader())
+    return Rings(inner_radius,
+                 outer_radius,
+                 appearance=appearance,
+                 shader=BasicShader())
 
 def instanciate_body(universe, names, is_planet, data, parent):
     appearance=Appearance()

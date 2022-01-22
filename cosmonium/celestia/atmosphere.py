@@ -20,7 +20,7 @@
 
 from panda3d.core import LVector3d
 
-from ..bodyelements import Atmosphere
+from ..components.elements.atmosphere import Atmosphere
 from ..utils import TransparencyBlend
 from ..shaders import BasicShader, AtmosphericScattering
 

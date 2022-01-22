@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,85 +18,16 @@
 #
 
 
-from panda3d.core import CullFaceAttrib, DepthOffsetAttrib
+from panda3d.core import CullFaceAttrib
 from panda3d.core import LQuaternion
-from panda3d.core import NodePath, CardMaker, OmniBoundingVolume
 
-from .foundation import VisibleObject
-from .appearances import Appearance
-from .sprites import ExpPointSprite
-from .shapes import ShapeObject, SphereShape, RingShape
-from .surfaces import EllipsoidFlatSurface
-from .utils import TransparencyBlend
-from .shaders import AtmosphericScattering
-from .shadows import RingShadowCaster
-from .parameters import AutoUserParameter
+from ...appearances import Appearance
+from ...shapes import ShapeObject, SphereShape
+from ...utils import TransparencyBlend
+from ...shaders import AtmosphericScattering
 
-from . import settings
-from direct.showbase.ShowBaseGlobal import globalClock
+from ... import settings
 
-class Halo(VisibleObject):
-    default_shown = True
-    ignore_light = True
-    default_camera_mask = VisibleObject.DefaultCameraFlag
-    halo_sprite = None
-
-    def __init__(self, body):
-        VisibleObject.__init__(self, body.get_ascii_name() + '-halo')
-        self.body = body
-
-    @classmethod
-    def create_halo_sprite(cls):
-        cls.halo_sprite = ExpPointSprite(size=256, max_value=0.6)
-
-    def create_instance(self):
-        if self.halo_sprite is None:
-            self.create_halo_sprite()
-        self.instance = NodePath("halo")
-        card_maker = CardMaker("card")
-        card_maker.set_frame(-1, 1, -1, 1)
-        node = card_maker.generate()
-        self.card_instance = self.instance.attach_new_node(node)
-        self.card_instance.setBillboardPointEye()
-        self.halo_sprite.apply(self.instance)
-        self.instance.setColor(self.body.anchor.point_color)
-        self.instance.reparent_to(self.scene_anchor.unshifted_instance)
-        self.instance.set_light_off(1)
-        self.instance.node().setBounds(OmniBoundingVolume())
-        self.instance.node().setFinal(True)
-        self.instance.hide(self.AllCamerasMask)
-        self.instance.show(self.default_camera_mask)
-
-    def update_instance(self, scene_manager, camera_pos, camera_rot):
-        if self.instance is not None:
-            self.instance.set_scale(*self.get_scale())
-
-    def get_scale(self):
-        coef = settings.smallest_glare_mag - self.body.anchor._app_magnitude + 6.0
-        return self.body.surface.get_scale() * coef
-
-class Ring(ShapeObject):
-    def __init__(self, inner_radius, outer_radius, appearance=None, shader=None):
-        ShapeObject.__init__(self, 'ring', appearance=appearance, shader=shader, clickable=True)
-        self.inner_radius = inner_radius
-        self.outer_radius = outer_radius
-        self.set_shape(RingShape(inner_radius, outer_radius))
-        self.body = None
-        self.shape.vanish_borders = True
-
-    def get_component_name(self):
-        return _('Rings')
-
-    def set_body(self, body):
-        self.body = body
-
-    def do_create_shadow_caster_for(self, light_source):
-        return RingShadowCaster(light_source, self)
-
-    def update_instance(self, scene_manager, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
-        if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
 class Atmosphere(ShapeObject):
     def __init__(self, shape=None, appearance=None, shader=None):
@@ -261,77 +192,3 @@ class Atmosphere(ShapeObject):
         self.context.observer.has_scattering = False
         self.context.observer.scattering = None
         self.context.observer.apply_scattering = 0
-
-class Clouds(EllipsoidFlatSurface):
-    def __init__(self, height, appearance, shader=None, shape=None):
-        if shape is None:
-            shape = SphereShape()
-        EllipsoidFlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
-        self.height = height
-        self.scale_base = None
-        self.inside = None
-        self.body = None
-        if appearance is not None:
-            #TODO: Disabled as it causes blinking
-            pass#appearance.check_transparency()
- 
-    def get_component_name(self):
-        return _('Clouds')
-
-    def set_body(self, body):
-        self.body = body
-
-    def configure_render_order(self):
-        self.instance.set_bin("transparent", 0)
-
-    def configure_shape(self):
-        self.radius = self.body.surface.get_average_radius() + self.height
-        #TODO : temporary until height_scale is removed from patchedshape
-        self.height_scale = self.radius
-        scale = self.body.surface.get_scale()
-        factor = 1.0 + self.height / self.body.surface.get_average_radius()
-        self.shape.set_scale(scale * factor)
-
-    def check_settings(self):
-        self.set_shown(settings.show_clouds)
-
-    def update_instance(self, scene_manager, camera_pos, camera_rot):
-        if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
-
-        inside = self.body.anchor.distance_to_obs < self.radius
-        if self.inside != inside:
-            if inside:
-                self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
-                self.instance.setAttrib(DepthOffsetAttrib.make(0))
-                if self.appearance.transparency:
-                    self.instance.set_depth_write(True)
-            else:
-                self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
-                if settings.use_inverse_z:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(-1))
-                else:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(1))
-                if self.appearance.transparency:
-                    self.instance.set_depth_write(False)
-            self.inside = inside
-        return EllipsoidFlatSurface.update_instance(self, scene_manager, camera_pos, camera_rot)
-
-    def remove_instance(self):
-        EllipsoidFlatSurface.remove_instance(self)
-        self.inside = None
-
-    def set_height(self, height):
-        self.height = height
-
-    def get_height(self):
-        return self.height
-
-    def get_user_parameters(self):
-        group = ShapeObject.get_user_parameters(self)
-        group.add_parameter(AutoUserParameter('Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.body.get_apparent_radius() * 0.01]))
-        return group
-
-    def update_user_parameters(self):
-        ShapeObject.update_user_parameters(self)
-        self.configure_shape()
