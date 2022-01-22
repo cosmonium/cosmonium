@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from direct.actor.Actor import Actor
 
 from .foundation import VisibleObject
 from .datasource import DataSourcesHandler
-from .shaders import AutoShader
+from .shaders.base import AutoShader
 from .dircontext import defaultDirContext
 from .mesh import load_model, load_panda_model
 from .shadows import MultiShadows

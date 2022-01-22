@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@ from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import NodePath, OmniBoundingVolume, DrawMask, ShaderAttrib
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
-from .shaders import BasicShader, FlatLightingModel, StaticSizePointControl
+from .shaders.rendering import RenderingShader
+from .shaders.lighting.flat import FlatLightingModel
+from .shaders.point_control import StaticSizePointControl
 from .sprites import SimplePoint, RoundDiskPointSprite
 
 class PointsSet(VisibleObject):
@@ -38,7 +40,7 @@ class PointsSet(VisibleObject):
         self.use_oids = True
         self.background = background
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=StaticSizePointControl())
+            shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=StaticSizePointControl())
         self.shader = shader
 
         self.reset()

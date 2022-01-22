@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from direct.task.Task import gather
 from .shapes import Shape
 from .patchneighbours import PatchNeighbours
 from .datasource import DataSource
-from .shaders import DataStoreManagerDataSource, ParametersDataStoreDataSource
+from .shaders.data_source.data_store import DataStoreManagerDataSource, ParametersDataStoreDataSource
 from .textures import TexCoord
 from .pstats import pstat
 from . import geometry

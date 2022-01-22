@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ from .parameters import ParametersGroup
 from .utils import srgb_to_linear
 from .astro import bayer
 from .appearances import ModelAppearance
-from .shaders import FlatLightingModel, BasicShader
+from .shaders.rendering import RenderingShader
+from .shaders.lighting.flat import FlatLightingModel
 from .utils import TransparencyBlend
 from . import settings
 
@@ -303,7 +304,7 @@ class ObjectLabel(VisibleObject):
         cls.appearance.transparency = True
         cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
         cls.appearance.alpha_mask = True
-        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = settings.color_picking and cls.color_picking
 
     def check_settings(self):

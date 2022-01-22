@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from panda3d.core import LVecBase3
 from panda3d.core import CardMaker, NodePath, OmniBoundingVolume
 
 from ..shapes import Shape
-from ..shaders import ShaderAppearance
+from ..shaders.appearance import ShaderAppearance
 from ..utils import TransparencyBlend, srgb_to_linear_channel
 from ..appearances import AppearanceBase
 from ..parameters import AutoUserParameter, ParametersGroup

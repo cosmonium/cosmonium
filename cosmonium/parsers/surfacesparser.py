@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from ..surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
 from ..surfaces import surfaceCategoryDB, SurfaceCategory
-from ..shaders import BasicShader
+from ..shaders.rendering import RenderingShader
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
 from ..heightmap import heightmapRegistry
 from ..heightmapshaders import DisplacementVertexControl
@@ -97,7 +97,7 @@ class SurfaceYamlParser(YamlModuleParser):
                                                                         min_density=settings.patch_min_density,
                                                                         density=settings.patch_max_density))
             if heightmap is None:
-                shader = BasicShader(lighting_model=lighting_model,
+                shader = RenderingShader(lighting_model=lighting_model,
                                      appearance=shader_appearance,
                                      use_model_texcoord=not extra.get('create-uv', False))
                 surface = EllipsoidFlatSurface(name, category=category, resolution=resolution, attribution=attribution,
@@ -112,7 +112,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 appearance_source = appearance.get_data_source()
                 if appearance_source is not None:
                     data_source.append(appearance_source)
-                shader = BasicShader(vertex_control=DisplacementVertexControl(heightmap),
+                shader = RenderingShader(vertex_control=DisplacementVertexControl(heightmap),
                                      data_source=data_source,
                                      appearance=shader_appearance,
                                      lighting_model=lighting_model,
@@ -123,7 +123,7 @@ class SurfaceYamlParser(YamlModuleParser):
                                            height_scale=radius, height_base=radius,
                                            shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         else:
-                shader = BasicShader(lighting_model=lighting_model,
+                shader = RenderingShader(lighting_model=lighting_model,
                                      appearance=shader_appearance,
                                      use_model_texcoord=not extra.get('create-uv', False))
                 surface = MeshSurface(name, category=category, resolution=resolution, attribution=attribution,

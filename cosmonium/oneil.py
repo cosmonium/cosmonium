@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,7 +22,10 @@ from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
 from .components.elements.atmosphere import Atmosphere
 from .datasource import DataSource
-from .shaders import StructuredShader, ShaderProgram, BasicShader, LightingModel, AtmosphericScattering
+from .shaders.base import StructuredShader, ShaderProgram
+from .shaders.rendering import RenderingShader
+from .shaders.lighting.base import LightingModel
+from .shaders.scattering import AtmosphericScattering
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
 from .pipeline.shaders import GeneratorVertexShader
@@ -81,7 +84,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.atm_normalize = atm_normalize
         self.hdr = hdr
         self.atm_hdr = atm_hdr
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
+        shader = RenderingShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     def set_body(self, body):
@@ -161,7 +164,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookup_samples = lookup_samples
         self.lookuptable_generator = None
         self.pbOpticalDepth = None
-        shader = BasicShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
+        shader = RenderingShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     def create_generator(self):

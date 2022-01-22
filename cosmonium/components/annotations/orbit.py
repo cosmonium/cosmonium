@@ -26,7 +26,9 @@ from panda3d.core import NodePath
 from ...foundation import VisibleObject
 from ...astro.orbits import FixedPosition
 from ...bodyclass import bodyClasses
-from ...shaders import BasicShader, FlatLightingModel, LargeObjectVertexControl
+from ...shaders.rendering import RenderingShader
+from ...shaders.lighting.flat import FlatLightingModel
+from ...shaders.vertex_control.spread_object import LargeObjectVertexControl
 from ...appearances import ModelAppearance
 from ...utils import srgb_to_linear
 from ... import settings
@@ -64,7 +66,7 @@ class Orbit(VisibleObject):
             vertex_control = LargeObjectVertexControl()
         else:
             vertex_control = None
-        cls.shader = BasicShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
+        cls.shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
 
     def check_settings(self):
         if self.body.body_class is None:

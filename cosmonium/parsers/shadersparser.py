@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,9 +18,12 @@
 #
 
 
-from ..shaders import FlatLightingModel, LambertPhongLightingModel, OrenNayarPhongLightingModel, CustomShaderComponent
+from ..shaders.lighting.flat import FlatLightingModel
+from ..shaders.lighting.lambert import LambertPhongLightingModel
+from ..shaders.lighting.oren_nayar import OrenNayarPhongLightingModel
+from ..shaders.custom import CustomShaderComponent
 from ..pbr import PbrLightingModel
-from ..shaders import TextureAppearance
+from ..shaders.appearance import TextureAppearance
 from ..celestia.shaders import LunarLambertLightingModel
 from .noiseparser import NoiseYamlParser
 from .yamlparser import YamlModuleParser

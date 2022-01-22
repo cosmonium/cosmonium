@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -27,7 +27,9 @@ from panda3d._rplight import PSSMCameraRig
 
 from .foundation import BaseObject
 from .datasource import DataSource
-from .shaders import ShaderShadowMap, ShaderRingShadow, ShaderSphereShadow
+from .shaders.shadows.shadowmap import ShaderShadowMap
+from .shaders.shadows.rings import ShaderRingsShadow
+from .shaders.shadows.ellipsoid import ShaderSphereShadow
 
 from . import settings
 
@@ -734,7 +736,7 @@ class MultiShadows(ShadowBase):
         if self.ring_shadow is None:
             print("Add ring shadow component")
             self.ring_shadow = shadow_caster
-            self.target.shader.add_shadows(ShaderRingShadow())
+            self.target.shader.add_shadows(ShaderRingsShadow())
             self.target.sources.add_source(RingShadowDataSource(self.ring_shadow.ring))
             self.rebuild_needed = True
         elif self.ring_shadow != shadow_caster:

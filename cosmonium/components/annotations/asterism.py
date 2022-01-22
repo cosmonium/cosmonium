@@ -29,7 +29,8 @@ from ...astro.projection import InfinitePosition
 from ...astro.astro import position_to_equatorial
 from ...astro import units
 from ...bodyclass import bodyClasses
-from ...shaders import BasicShader, FlatLightingModel
+from ...shaders.rendering import RenderingShader
+from ...shaders.lighting.flat import FlatLightingModel
 from ...appearances import ModelAppearance
 from ...utils import srgb_to_linear
 from ... import settings
@@ -57,7 +58,7 @@ class Asterism(VisibleObject):
         cls.appearance = ModelAppearance()
         cls.appearance.has_vertex_color = True
         cls.appearance.has_material = False
-        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = False
 
     def set_segments_list(self, segments):

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2020 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
-from ..shaders import BasicShader
+from ..shaders.rendering import RenderingShader
 from ..shapes import ShapeObject, MeshShape
 from ..ships import VisibleShip
 from ..camera import CameraController
@@ -65,7 +65,7 @@ class BaseShipYamlParser(YamlModuleParser):
                 appearance = 'textures'
         appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        shader = BasicShader(lighting_model=lighting_model,
+        shader = RenderingShader(lighting_model=lighting_model,
                              use_model_texcoord=not extra.get('create-uv', False))
         ship_object = MeshSurface('ship', shape=shape, appearance=appearance, shader=shader)
         if camera_distance is None:

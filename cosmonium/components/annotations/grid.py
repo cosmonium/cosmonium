@@ -24,7 +24,8 @@ from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
 from ...foundation import VisibleObject
-from ...shaders import BasicShader, FlatLightingModel
+from ...shaders.rendering import RenderingShader
+from ...shaders.lighting.flat import FlatLightingModel
 from ...appearances import ModelAppearance
 from ...utils import srgb_to_linear
 from ... import settings
@@ -58,7 +59,7 @@ class Grid(VisibleObject):
         cls.appearance = ModelAppearance()
         cls.appearance.has_vertex_color = True
         cls.appearance.has_material = False
-        cls.shader = BasicShader(lighting_model=FlatLightingModel())
+        cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = False
 
     def create_instance(self):

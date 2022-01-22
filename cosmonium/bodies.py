@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@ from .astro.astro import lum_to_abs_mag, abs_mag_to_lum, temp_to_radius
 from .astro.spectraltype import SpectralType, spectralTypeStringDecoder
 from .astro.blackbody import temp_to_RGB
 from .astro import units
-from .shaders import BasicShader, FlatLightingModel
+from .shaders.rendering import RenderingShader
+from .shaders.lighting.flat import FlatLightingModel
 from . import settings
 
 from math import asin, pi
@@ -437,7 +438,7 @@ class StarTexSurfaceFactory(SurfaceFactory):
     def create(self, body):
         shape = SphereShape()
         appearance = Appearance(emissionColor=body.point_color, texture=self.texture)
-        shader = BasicShader(lighting_model=FlatLightingModel())
+        shader = RenderingShader(lighting_model=FlatLightingModel())
         return EllipsoidFlatSurface('surface',
                            radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                            shape=shape, appearance=appearance, shader=shader)
@@ -525,7 +526,7 @@ class SkySphere(VisibleObject):
         if appearance.emissionColor is None:
             appearance.emissionColor = LColor(1, 1, 1, 1)
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel())
+            shader = RenderingShader(lighting_model=FlatLightingModel())
         self.shader = shader
 
     def create_instance(self):

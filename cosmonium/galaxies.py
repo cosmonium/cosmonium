@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -30,12 +30,13 @@ from .shapes import Shape
 from .surfaces import EllipsoidFlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
-from .shaders import PointControl
+from .shaders.point_control import PointControl
+from .shaders.rendering import RenderingShader
+from .shaders.lighting.flat import FlatLightingModel
 from .utils import TransparencyBlend
 from .parameters import AutoUserParameter, UserParameter
 
 from .bodies import DeepSpaceObject
-from .shaders import BasicShader, FlatLightingModel
 from .utils import mag_to_scale_nolimit
 from .astro import units
 from . import settings
@@ -61,7 +62,7 @@ class Galaxy(DeepSpaceObject):
         self.shape_type = shape_type
         shader = None
         if shader is None:
-            shader = BasicShader(lighting_model=FlatLightingModel(), point_control=GalaxyPointControl())
+            shader = RenderingShader(lighting_model=FlatLightingModel(), point_control=GalaxyPointControl())
         #Disable color picking as it has huge impact on performance
         shader.color_picking = False
         if appearance is None:

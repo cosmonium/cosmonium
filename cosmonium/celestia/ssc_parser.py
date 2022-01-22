@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@ from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
 from ..appearances import Appearance
 from ..shapes import MeshShape, SphereShape
-from ..shaders import BasicShader, LambertPhongLightingModel
+from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
 from ..astro.astro import calc_orientation_from_incl_an
@@ -119,7 +120,7 @@ def instanciate_atmosphere(data):
                                     rayleigh_scale_height = rayleigh_scale_height,
                                     absorption_coef = absorption_coef)
     if clouds_height != 0:
-        shader=BasicShader(lighting_model=LambertPhongLightingModel())
+        shader=RenderingShader(lighting_model=LambertPhongLightingModel())
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
 
@@ -142,7 +143,7 @@ def instanciate_rings(data):
     return Rings(inner_radius,
                  outer_radius,
                  appearance=appearance,
-                 shader=BasicShader())
+                 shader=RenderingShader())
 
 def instanciate_body(universe, names, is_planet, data, parent):
     appearance=Appearance()
@@ -305,7 +306,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
     surface = EllipsoidFlatSurface(
                           shape=shape,
                           appearance=appearance,
-                          shader=BasicShader(lighting_model=lighting_model))
+                          shader=RenderingShader(lighting_model=lighting_model))
     body = ReflectiveBody(names=names, source_names=[],
                           radius=radius,
                           surface=surface,

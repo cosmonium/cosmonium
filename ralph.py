@@ -2,7 +2,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -50,7 +50,11 @@ from cosmonium.lights import LightSources, SurrogateLight
 from cosmonium.heightmapshaders import DisplacementVertexControl
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders import BasicShader, Fog, ConstantTessellationControl, ShaderShadowMap, ShaderPSSMShadowMap
+from cosmonium.shaders.rendering import RenderingShader
+from cosmonium.shaders.fog import Fog
+from cosmonium.shaders.tesselation import ConstantTessellationControl
+from cosmonium.shaders.shadows.shadowmap import ShaderShadowMap
+from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
 from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
 from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
@@ -491,7 +495,7 @@ class RoamingRalphDemo(CosmoniumBase):
             tessellation_control = ConstantTessellationControl()
         else:
             tessellation_control = None
-        self.terrain_shader = BasicShader(appearance=self.ralph_config.appearance.get_shader_appearance(),
+        self.terrain_shader = RenderingShader(appearance=self.ralph_config.appearance.get_shader_appearance(),
                                           tessellation_control=tessellation_control,
                                           vertex_control=DisplacementVertexControl(self.ralph_config.heightmap),
                                           data_source=data_source)
@@ -706,7 +710,7 @@ class RoamingRalphDemo(CosmoniumBase):
                                       rotation=quaternion_from_euler(180, 0, 0),
                                       scale=LVector3d(0.2, 0.2, 0.2))
         self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
-        self.ralph_shader = BasicShader()
+        self.ralph_shader = RenderingShader()
         if self.shadows:
             if self.pssm_shadows:
                 self.ralph_shader.add_shadows(ShaderPSSMShadowMap('shadows'))

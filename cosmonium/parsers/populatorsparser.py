@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@ from ..opengl import OpenGLConfig
 
 from .yamlparser import YamlModuleParser
 from ..procedural.populator import RandomObjectPlacer
-from cosmonium.procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator
-from cosmonium.parsers.shapesparser import ShapeYamlParser
-from cosmonium.parsers.appearancesparser import AppearanceYamlParser
-from cosmonium.shaders import BasicShader
-from cosmonium.parsers.shadersparser import VertexControlYamlParser
-from cosmonium.shapes import ShapeObject, MeshShape
+from ..procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator
+from ..parsers.shapesparser import ShapeYamlParser
+from ..parsers.appearancesparser import AppearanceYamlParser
+from ..shaders.rendering import RenderingShader
+from ..parsers.shadersparser import VertexControlYamlParser
+from ..shapes import ShapeObject, MeshShape
 
 class PlacerYamlParser(YamlModuleParser):
     @classmethod
@@ -65,7 +65,7 @@ class PopulatorYamlParser(YamlModuleParser):
                 appearance = 'textures'
         appearance = AppearanceYamlParser.decode(appearance)
         vertex_control = VertexControlYamlParser.decode(populator_data.get('vertex', None))
-        shader = BasicShader(#lighting_model=lighting_model,
+        shader = RenderingShader(#lighting_model=lighting_model,
                              #scattering=scattering,
                              vertex_control=vertex_control,
                              use_model_texcoord=not extra.get('create-uv', False))

@@ -24,7 +24,7 @@ from panda3d.core import LQuaternion
 from ...appearances import Appearance
 from ...shapes import ShapeObject, SphereShape
 from ...utils import TransparencyBlend
-from ...shaders import AtmosphericScattering
+from ...shaders.scattering import AtmosphericScattering
 
 from ... import settings
 

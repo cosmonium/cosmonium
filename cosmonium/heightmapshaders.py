@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@
 #
 
 
-from .shaders import ShaderDataSource, VertexControl
+from .shaders.data_source.base import ShaderDataSource
+from .shaders.vertex_control.vertex_control import VertexControl
 from .textures import DataTexture
 from . import settings
 

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 
 from ..surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
-from ..shaders import BasicShader, FlatLightingModel
+from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.flat import FlatLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
 from ..bodies import SurfaceFactory
@@ -41,7 +42,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         lod_control = VertexSizeLodControl(max_vertex_size=settings.patch_max_vertex_size,
                                            density=settings.patch_constant_density)
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
-        shader = BasicShader(lighting_model=FlatLightingModel())
+        shader = RenderingShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
         surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
                               appearance=Appearance(colorScale=body.anchor.point_color,

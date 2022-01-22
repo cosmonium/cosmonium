@@ -18,7 +18,7 @@
 #
 
 
-from ...shaders import FileShader
+from ...shaders.base import FileShader
 from ..stage import SceneStage
 from ..target import ScreenTarget, ProcessTarget
 

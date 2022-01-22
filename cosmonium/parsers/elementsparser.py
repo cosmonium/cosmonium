@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
-from ..shaders import BasicShader
+from ..shaders.rendering import RenderingShader
 from ..patchedshapes import VertexSizeLodControl, TextureLodControl, TextureOrVertexSizeLodControl
 from .. import settings
 
@@ -45,7 +45,7 @@ class CloudsYamlParser(YamlModuleParser):
                                                                     min_density=settings.patch_min_density,
                                                                     density=settings.patch_max_density))
         lighting_model = None
-        shader = BasicShader(lighting_model=lighting_model)
+        shader = RenderingShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
         return clouds
 
@@ -58,6 +58,6 @@ class RingsYamlParser(YamlModuleParser):
         lighting_model = data.get('lighting-model')
         appearance = AppearanceYamlParser.decode(data.get('appearance'), patched_shape=False)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
-        shader = BasicShader(lighting_model=lighting_model)
+        shader = RenderingShader(lighting_model=lighting_model)
         rings = Rings(inner_radius, outer_radius, appearance, shader)
         return rings

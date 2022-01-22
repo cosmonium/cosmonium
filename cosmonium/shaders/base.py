@@ -1,0 +1,287 @@
+#
+#This file is part of Cosmonium.
+#
+#Copyright (C) 2018-2022 Laurent Deru.
+#
+#Cosmonium is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#Cosmonium is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+
+from panda3d.core import Shader
+
+from ..opengl import OpenGLConfig
+from ..cache import create_path_for
+from .. import settings
+
+import hashlib
+import os
+import re
+
+class ShaderBase(object):
+    shaders_cache = {}
+
+    def __init__(self):
+        self.shader = None
+
+    def get_shader_id(self):
+        return None
+
+    def define_shader(self, shape, appearance):
+        pass
+
+    def find_shader(self, shader_id):
+        if shader_id in self.shaders_cache:
+            return self.shaders_cache[shader_id]
+        return None
+
+    def create_shader(self):
+        pass
+
+    def create_and_register_shader(self, shape, appearance, force=False):
+        if force or self.shader is None:
+            self.define_shader(shape, appearance)
+            shader_id = self.get_shader_id()
+            self.shader = self.find_shader(shader_id)
+        if self.shader is None:
+            self.shader = self.create_shader()
+            shader_id = self.get_shader_id()
+            self.shaders_cache[shader_id] = self.shader
+
+    def apply(self, shape, appearance, instance):
+        if instance is None: return
+        self.create_and_register_shader(shape, appearance, force=True)
+        if self.shader is not None:
+            instance.setShader(self.shader)
+
+class AutoShader(ShaderBase):
+    def set_instance_control(self, instance_control):
+        print("AutoShader: set_instance_control not supported")
+
+    def set_scattering(self, scattering):
+        print("AutoShader: set_scattering not supported")
+
+    def add_shadows(self, shadows):
+        print("AutoShader: add_shadows not supported")
+
+    def remove_shadows(self, shape, appearance, shadow):
+        pass
+
+    def remove_all_shadows(self, shape, appearance):
+        pass
+
+    def add_after_effect(self, after_effect):
+        print("AutoShader: add_after_effect not supported")
+
+    def apply(self, shape, appearance):
+        pass
+
+class FileShader(ShaderBase):
+    def __init__(self, vertex='', fragment='', tess_control='', tess_evaluation=''):
+        ShaderBase.__init__(self)
+        self.vertex = vertex
+        self.tess_control = tess_control
+        self.tess_evaluation = tess_evaluation
+        self.geometry = ''
+        self.fragment = fragment
+
+    def get_shader_id(self):
+        return self.vertex + '-' + self.tess_control + '-' + self.tess_evaluation + '-' + self.fragment
+
+    def create_shader(self):
+        print("Loading shader", self.get_shader_id())
+        return Shader.load(Shader.SL_GLSL,
+                           vertex=self.vertex,
+                           tess_control=self.tess_control,
+                           tess_evaluation=self.tess_evaluation,
+                           geometry=self.geometry,
+                           fragment=self.fragment)
+
+class ShaderProgram(object):
+    def __init__(self, shader_type):
+        self.shader_type = shader_type
+        self.version = settings.shader_version
+        self.functions = {}
+
+    def clear_functions(self):
+        self.functions = {}
+
+    def add_function(self, code, name, func):
+        if not name in self.functions:
+            func(code)
+            self.functions[name] = True
+
+    def include(self, code, name, filename):
+        if not name in self.functions:
+            data = open(filename)
+            code += data.readlines()
+            self.functions[name] = True
+
+    def pi(self, code):
+        code.append("const float pi  = 3.14159265358;")
+
+    def to_srgb(self, code):
+        #See https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_framebuffer_sRGB.txt
+        code.append('''
+float to_srgb(float value) {
+    if(value < 0.0031308) {
+        return 12.92 * value;
+    } else {
+        return 1.055 * pow(value, 0.41666) - 0.055;
+    }
+}''')
+
+    def encode_rgba(self, code):
+        code.append('''
+vec4 EncodeFloatRGBA( float v ) {
+  //vec4 enc = vec4(1.0, 255.0, 65025.0, 16581375.0) * v;
+  vec4 enc = vec4(1.0, 255.0, 65535.0, 16777215.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0);
+  return enc;
+}''')
+
+    def add_encode_rgba(self, code):
+        self.add_function(code, 'EncodeFloatRGBA', self.encode_rgba)
+
+    def decode_rgba(self, code):
+        code.append('''
+float DecodeFloatRGBA( vec4 rgba ) {
+  //return dot( rgba, vec4(1.0, 1/255.0, 1/65025.0, 1/16581375.0) );
+  return dot( rgba, vec4(1.0, 1/255.0, 1/65535.0, 1/16777215.0) );
+}''')
+
+    def add_decode_rgba(self, code):
+        self.add_function(code, 'DecodeFloatRGBA', self.decode_rgba)
+
+    def create_shader_version(self, code):
+        if self.version is not None:
+            code.append("#version %d" % self.version)
+            if self.version >= 300 and OpenGLConfig.core_profile:
+                code.append("#define texture2D texture")
+
+    def create_layout(self, code):
+        pass
+
+    def create_uniforms(self, code):
+        pass
+
+    def create_inputs(self, code):
+        pass
+
+    def create_outputs(self, code):
+        pass
+
+    def create_extra(self, code):
+        self.add_function(code, 'pi', self.pi)
+
+    def create_body(self, code):
+        pass
+
+    def use_legacy_in(self, code):
+        new_code = []
+        if self.shader_type == 'vertex':
+            new_out = "attribute "
+        else:
+            new_out = "varying "
+        regex = re.compile("^\s*in\s+")
+        for line in code:
+            new_line = regex.sub(new_out, line)
+            new_code.append(new_line)
+        return new_code
+
+    def use_legacy_out(self, code):
+        if self.shader_type != 'vertex':
+            return code
+        new_code = []
+        regex = re.compile("^\s*out\s+")
+        for line in code:
+            new_line = regex.sub("varying ", line)
+            new_code.append(new_line)
+        return new_code
+
+    def generate_shader(self, dump=None, shader_id=''):
+        code = []
+        self.clear_functions()
+        self.create_shader_version(code)
+        code.append("// Shader layout ")
+        self.create_layout(code)
+        code.append("// Shader uniforms ")
+        self.create_uniforms(code)
+        code.append("// Shader inputs")
+        inputs = []
+        self.create_inputs(inputs)
+        if self.version < 130:
+            inputs = self.use_legacy_in(inputs)
+        code += inputs
+        code.append("// Shader outputs")
+        outputs = []
+        self.create_outputs(outputs)
+        if self.version < 130:
+            outputs = self.use_legacy_out(outputs)
+        code += outputs
+        self.create_extra(code)
+        code.append("void main() {")
+        self.create_body(code)
+        code.append("}")
+        shader = '\n'.join(code)
+        if dump is not None:
+            shaders_path = create_path_for('shaders')
+            with open(os.path.join(shaders_path, "%s.%s.glsl" % (dump, self.shader_type)), "w") as shader_file:
+                shader_file.write(shader)
+        return shader
+
+class StructuredShader(ShaderBase):
+    def __init__(self):
+        ShaderBase.__init__(self)
+        self.vertex_shader = None
+        self.tessellation_control_shader = None
+        self.tessellation_eval_shader = None
+        self.geometry_shader = None
+        self.fragment_shader = None
+
+    def create_shader(self):
+        shader_id = self.get_shader_id()
+        if settings.dump_shaders:
+            dump = hashlib.md5(shader_id.encode()).hexdigest()
+            print("Creating shader %s (%s)" %(shader_id, dump))
+        else:
+            dump = None
+            print("Creating shader", shader_id)
+
+        if self.vertex_shader:
+            vertex = self.vertex_shader.generate_shader(dump, shader_id)
+        else:
+            vertex = ''
+        if self.tessellation_control_shader:
+            tess_control = self.tessellation_control_shader.generate_shader(dump, shader_id)
+        else:
+            tess_control = ''
+        if self.tessellation_eval_shader:
+            tess_evaluation = self.tessellation_eval_shader.generate_shader(dump, shader_id)
+        else:
+            tess_evaluation = ''
+        if self.geometry_shader:
+            geometry = self.geometry_shader.generate_shader(dump, shader_id)
+        else:
+            geometry = ''
+        if self.fragment_shader:
+            fragment = self.fragment_shader.generate_shader(dump, shader_id)
+        else:
+            fragment = ''
+        return Shader.make(Shader.SL_GLSL,
+                           vertex=vertex,
+                           tess_control=tess_control,
+                           tess_evaluation=tess_evaluation,
+                           geometry=geometry,
+                           fragment=fragment)
