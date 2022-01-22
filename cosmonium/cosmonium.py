@@ -515,12 +515,14 @@ class Cosmonium(CosmoniumBase):
                 self.scene_manager = RegionSceneManager()
             else:
                 print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
+            self.scene_manager.remove_main_region(self.cam)
+            self.scene_manager.init_camera(self.observer, self.cam)
+            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+            self.pipeline.create()
+            self.pipeline.set_scene_manager(self.scene_manager)
         else:
             self.scene_manager = DynamicSceneManager()
-        self.scene_manager.init_camera(self.observer, self.cam)
-        self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
-        self.pipeline.create()
-        self.pipeline.set_scene_manager(self.scene_manager)
+            self.scene_manager.init_camera(self.observer, self.cam)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)

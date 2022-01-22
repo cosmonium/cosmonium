@@ -634,6 +634,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.observer.init()
         self.scene_manager = StaticSceneManager()
         self.scene_manager.init_camera(self.observer, self.cam)
+        self.scene_manager.remove_main_region(self.cam)
         self.scene_manager.scale = 1.0
         self.pipeline.create()
         self.pipeline.set_scene_manager(self.scene_manager)

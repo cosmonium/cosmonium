@@ -121,7 +121,6 @@ class StaticSceneManager(SceneManagerBase):
             self.infinity = self.infinite_plane
         print("Planes: ", self.near_plane, self.far_plane)
         self.camera.reparent_to(self.root)
-        self.remove_main_region(default_camera)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
@@ -217,7 +216,6 @@ class DynamicSceneManager(SceneManagerBase):
         print("Planes: ", self.near_plane, self.far_plane)
         self.update_planes()
         self.camera.reparent_to(self.root)
-        self.remove_main_region(default_camera)
 
     def set_camera_mask(self, flags):
         self.camera.node().set_camera_mask(flags)
@@ -328,7 +326,7 @@ class RegionSceneManager(SceneManagerBase):
         instance.reparent_to(self.background_region.root)
 
     def init_camera(self, camera_holder, default_camera):
-        self.remove_main_region(default_camera)
+        pass
 
     def set_camera_mask(self, flags):
         self.camera_mask = flags
