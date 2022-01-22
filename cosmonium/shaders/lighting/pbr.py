@@ -18,9 +18,9 @@
 #
 
 
-from .shaders.lighting.base import LightingModel
+from .base import LightingModel
 
-from . import settings
+from ... import settings
 
 class PbrLightingModel(LightingModel):
     use_vertex = True
