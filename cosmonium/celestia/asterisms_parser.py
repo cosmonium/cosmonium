@@ -18,7 +18,7 @@
 #
 
 
-from ..annotations import NamedAsterism
+from ..components.annotations.asterism import NamedAsterism
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro import bayer

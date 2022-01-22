@@ -22,7 +22,9 @@ from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
 
 from .foundation import CompositeObject, ObjectLabel
 from .namedobject import NamedObject
-from .annotations import ReferenceAxis, RotationAxis, Orbit
+from .components.annotations.reference_axes import ReferenceAxes
+from .components.annotations.rotation_axis import RotationAxis
+from .components.annotations.orbit import Orbit
 from .bodyelements import Halo
 from .anchors import FixedStellarAnchor, DynamicStellarAnchor
 from .sceneanchor import SceneAnchor
@@ -129,7 +131,7 @@ class StellarObject(NamedObject):
         #Components
         self.orbit_object = None
         self.rotation_axis = None
-        self.reference_axis = None
+        self.reference_axes = None
         self.resolved_halo = None
         self.init_visible_components = False
         self.init_components = False
@@ -242,8 +244,8 @@ class StellarObject(NamedObject):
             self.rotation_axis = RotationAxis(self)
             self.components.add_component(self.rotation_axis)
         if self.has_reference_axis:
-            self.reference_axis = ReferenceAxis(self)
-            self.components.add_component(self.reference_axis)
+            self.reference_axes = ReferenceAxes(self)
+            self.components.add_component(self.reference_axes)
         if self.has_resolved_halo:
             self.resolved_halo = Halo(self)
             self.components.add_component(self.resolved_halo)
@@ -254,8 +256,8 @@ class StellarObject(NamedObject):
     def remove_components(self):
         self.components.remove_component(self.rotation_axis)
         self.rotation_axis = None
-        self.components.remove_component(self.reference_axis)
-        self.reference_axis = None
+        self.components.remove_component(self.reference_axes)
+        self.reference_axes = None
         self.components.remove_component(self.resolved_halo)
         self.resolved_halo = None
 
@@ -477,16 +479,16 @@ class StellarObject(NamedObject):
             self.rotation_axis.toggle_shown()
 
     def show_reference_axis(self):
-        if self.reference_axis:
-            self.reference_axis.show()
+        if self.reference_axes:
+            self.reference_axes.show()
 
     def hide_reference_axis(self):
-        if self.reference_axis:
-            self.reference_axis.hide()
+        if self.reference_axes:
+            self.reference_axes.hide()
 
     def toggle_reference_axis(self):
-        if self.reference_axis:
-            self.reference_axis.toggle_shown()
+        if self.reference_axes:
+            self.reference_axes.toggle_shown()
 
     def show_orbit(self):
         if self.orbit_object:

@@ -18,7 +18,7 @@
 #
 
 
-from ..annotations import Constellation
+from ..components.annotations.constellation import Constellation
 from ..astro.projection import InfinitePosition
 from ..astro import units
 

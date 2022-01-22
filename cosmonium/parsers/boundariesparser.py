@@ -18,7 +18,7 @@
 #
 
 
-from ..annotations import Boundary
+from ..components.annotations.boundary import Boundary
 from ..astro.projection import InfinitePosition
 from ..astro import units
 from ..dircontext import defaultDirContext

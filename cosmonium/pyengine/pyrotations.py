@@ -63,11 +63,11 @@ class FixedRotation(Rotation):
 
     def get_user_parameters(self):
         group = Rotation.get_user_parameters(self)
-        group.add_parameters(self.reference_axis.get_user_parameters())
+        group.add_parameters(self.reference_axes.get_user_parameters())
         return group
 
     def update_user_parameters(self):
-        self.reference_axis.update_user_parameters()
+        self.reference_axes.update_user_parameters()
 
     def get_frame_equatorial_orientation_at(self, time):
         return self.rotation

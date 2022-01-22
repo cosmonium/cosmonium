@@ -44,7 +44,7 @@ from .anchors import StellarAnchor, CartesianAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
 from .universe import Universe
-from .annotations import Grid
+from .components.annotations.grid import Grid
 from .astro.frame import BodyReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
 #TODO: from .astro.frame import SurfaceReferenceFrame

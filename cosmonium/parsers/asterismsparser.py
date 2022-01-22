@@ -18,7 +18,7 @@
 #
 
 
-from ..annotations import Asterism
+from ..components.annotations.asterism import Asterism
 from ..astro.orbits import FixedPosition
 from ..catalogs import objectsDB
 

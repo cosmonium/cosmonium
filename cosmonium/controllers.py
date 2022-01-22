@@ -268,10 +268,10 @@ class CartesianBodyMover(BodyMover):
         return self.anchor.orbit.get_frame_position_at(0)
 
     def set_rot(self, rotation):
-        self.anchor.rotation.reference_axis.set_rotation(rotation)
+        self.anchor.rotation.reference_axes.set_rotation(rotation)
 
     def get_rot(self):
-        return self.anchor.rotation.reference_axis.get_rotation_at(0)
+        return self.anchor.rotation.reference_axes.get_rotation_at(0)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
@@ -330,10 +330,10 @@ class SurfaceBodyMover(CartesianBodyMover):
 
     def get_rot(self):
         #TODO: It's not really a reference axis...
-        return self.anchor.rotation.reference_axis.rotation
+        return self.anchor.rotation.reference_axes.rotation
 
     def set_rot(self, rotation):
-        self.anchor.rotation.reference_axis.rotation = rotation
+        self.anchor.rotation.reference_axes.rotation = rotation
 
     def get_altitude(self):
         return self.altitude
