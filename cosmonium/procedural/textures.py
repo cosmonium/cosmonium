@@ -102,7 +102,7 @@ class DetailTextureGenerationStage(ProcessStage):
         target.create(pipeline)
         #TODO: Link is missing
         self.texture_control.create_shader_configuration(self.texture_source)
-        self.target.set_shader(self.create_shader())
+        target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
         data[self.name] = {'shape': shape,
