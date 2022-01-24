@@ -177,7 +177,7 @@ class DetailMapTextureGenerator():
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
         self.texture_stage.configure_data(shader_data, shape, patch)
-        #print("GEN", patch.str_id())
+        #print("GEN TEX", patch.str_id())
         result = await self.tex_generator.generate("tex - " + patch.str_id(), shader_data)
         texture = result[self.texture_stage.name].get('color')
         return texture

@@ -38,7 +38,7 @@ class GeneratorChain(ProcessPipeline):
             if not settings.panda11 or not future.cancelled():
                 future.set_result(self.gather())
             else:
-                #print("Dropping result")
+                #print("Dropping result", tid)
                 pass
             self.schedule_next()
         return Task.cont
@@ -49,7 +49,7 @@ class GeneratorChain(ProcessPipeline):
             if not settings.panda11 or not future.cancelled():
                 self.trigger(shader_data)
                 break
-            #print("Remove cancelled job")
+            #print("Remove cancelled job", tid)
             self.queue.pop(0)
         else:
             self.busy = False

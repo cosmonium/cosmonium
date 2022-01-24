@@ -79,6 +79,7 @@ class Mouse(DirectObject):
                 np = pq.get_entry(0).get_into_node_path().find_net_python_tag('patch')
                 if np is not None:
                     self.patch = np.get_python_tag('patch')
+                    #print("PATCH", self.patch.str_id())
                 else:
                     self.patch = None
         return over

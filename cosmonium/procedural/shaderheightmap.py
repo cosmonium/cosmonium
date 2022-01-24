@@ -136,7 +136,7 @@ class HeightmapPatchGenerator():
                                      'global_coord_scale': self.coord_scale,
                                      'face': heightmap_patch.patch.face
                                     }}
-        #print("GEN", heightmap_patch.patch.str_id())
+        #print("GEN HM", heightmap_patch.patch.str_id())
         result = await self.generator.generate(tid, shader_data)
         data = result['heightmap'].get('color')
         return data
