@@ -24,7 +24,7 @@ from ..shaders.rendering import RenderingShader
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
 from ..heightmap import heightmapRegistry
-from ..shapes import MeshShape
+from ..shapes.mesh import MeshShape
 from ..catalogs import objectsDB
 from .. import settings
 

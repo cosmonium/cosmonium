@@ -24,7 +24,7 @@ from .stellarobject import StellarObject
 from .anchors import StellarAnchor
 from .systems import SimpleSystem
 from .foundation import VisibleObject
-from .shapes import SphereShape, ScaledSphereShape
+from .shapes.spheres import SphereShape, ScaledSphereShape
 from .surfaces import EllipsoidFlatSurface
 from .appearances import Appearance
 from .astro.frame import OrbitReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame

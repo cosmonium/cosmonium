@@ -18,7 +18,7 @@
 #
 
 
-from .shapes import ShapeObject
+from .shapes.shape_object import ShapeObject
 from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from .shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 

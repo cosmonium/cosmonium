@@ -29,7 +29,8 @@ from ..parsers.shapesparser import ShapeYamlParser
 from ..parsers.appearancesparser import AppearanceYamlParser
 from ..shaders.rendering import RenderingShader
 from ..parsers.shadersparser import VertexControlYamlParser
-from ..shapes import ShapeObject, MeshShape
+from ..shapes.shape_object import ShapeObject
+from ..shapes.mesh import MeshShape
 
 class PlacerYamlParser(YamlModuleParser):
     @classmethod

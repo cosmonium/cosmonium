@@ -22,7 +22,8 @@ from panda3d.core import CullFaceAttrib
 from panda3d.core import LQuaternion
 
 from ...appearances import Appearance
-from ...shapes import ShapeObject, SphereShape
+from ...shapes.shape_object import ShapeObject
+from ...shapes.spheres import SphereShape
 from ...utils import TransparencyBlend
 from ...shaders.scattering import AtmosphericScattering
 

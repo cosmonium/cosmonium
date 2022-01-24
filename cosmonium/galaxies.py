@@ -26,7 +26,7 @@ from panda3d.core import NodePath, StackedPerlinNoise3
 from panda3d.core import ShaderAttrib
 
 from .appearances import AppearanceBase
-from .shapes import Shape
+from .shapes.base import Shape
 from .surfaces import EllipsoidFlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource

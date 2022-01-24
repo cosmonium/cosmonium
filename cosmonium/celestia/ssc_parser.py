@@ -33,7 +33,8 @@ from ..surfaces import EllipsoidFlatSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
 from ..appearances import Appearance
-from ..shapes import MeshShape, SphereShape
+from ..shapes.mesh import MeshShape
+from ..shapes.spheres import SphereShape
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..astro.orbits import AbsoluteFixedPosition

@@ -55,7 +55,9 @@ from cosmonium.shaders.tesselation import ConstantTessellationControl
 from cosmonium.shaders.shadows.shadowmap import ShaderShadowMap
 from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
 from cosmonium.shaders.vertex_control.displacement import DisplacementVertexControl
-from cosmonium.shapes import ActorShape, CompositeShapeObject, ShapeObject
+from cosmonium.shapes.actor import ActorShape
+from cosmonium.shapes.composite import CompositeShapeObject
+from cosmonium.shapes.shape_object import ShapeObject
 from cosmonium.surfaces import HeightmapFlatSurface
 from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
 from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistanceLodControl

@@ -24,7 +24,7 @@ from panda3d.core import NodePath
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 from direct.task.Task import gather
 
-from .shapes import Shape
+from .shapes.base import Shape
 from .patchneighbours import PatchNeighbours
 from .datasource import DataSource
 from .shaders.data_source.data_store import DataStoreManagerDataSource, ParametersDataStoreDataSource

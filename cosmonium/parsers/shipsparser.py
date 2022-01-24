@@ -21,7 +21,7 @@
 from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from ..shaders.rendering import RenderingShader
-from ..shapes import ShapeObject, MeshShape
+from ..shapes.mesh import MeshShape
 from ..ships import VisibleShip
 from ..camera import CameraController
 from ..surfaces import MeshSurface

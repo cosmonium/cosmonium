@@ -18,13 +18,11 @@
 #
 
 
-from ..shapes import Shape
 from ..pstats import pstat
 
 
 class QuadTreeNode:
     def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
-        Shape.__init__(self)
         self.patch = patch
         self.lod = lod
         self.density = density

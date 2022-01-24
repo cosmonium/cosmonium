@@ -20,7 +20,8 @@
 
 from panda3d.core import LVector3d, LQuaterniond
 
-from ..shapes import SphereShape, IcoSphereShape, MeshShape
+from ..shapes.spheres import SphereShape, IcoSphereShape
+from ..shapes.mesh import MeshShape
 from ..patchedshapes import PatchedSpherePatchFactory, SquaredDistanceSquarePatchFactory, NormalizedSquarePatchFactory
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape

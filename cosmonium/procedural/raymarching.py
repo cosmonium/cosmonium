@@ -21,7 +21,7 @@
 from panda3d.core import LVecBase3
 from panda3d.core import CardMaker, NodePath, OmniBoundingVolume
 
-from ..shapes import Shape
+from ..shapes.base import Shape
 from ..shaders.appearance import ShaderAppearance
 from ..utils import TransparencyBlend, srgb_to_linear_channel
 from ..appearances import AppearanceBase

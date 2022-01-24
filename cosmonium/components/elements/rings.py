@@ -20,7 +20,8 @@
 
 from panda3d.core import LQuaternion
 
-from ...shapes import ShapeObject, RingShape
+from ...shapes.shape_object import ShapeObject
+from ...shapes.rings import RingsShape
 from ...shadows import RingShadowCaster
 
 
@@ -29,7 +30,7 @@ class Rings(ShapeObject):
         ShapeObject.__init__(self, 'ring', appearance=appearance, shader=shader, clickable=True)
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
-        self.set_shape(RingShape(inner_radius, outer_radius))
+        self.set_shape(RingsShape(inner_radius, outer_radius))
         self.body = None
         self.shape.vanish_borders = True
 
