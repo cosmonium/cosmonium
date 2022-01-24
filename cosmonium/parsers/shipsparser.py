@@ -24,7 +24,7 @@ from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 from ..ships import VisibleShip
 from ..camera import CameraController
-from ..surfaces import MeshSurface
+from ..components.elements.surfaces import MeshSurface
 from ..astro import units
 
 from .yamlparser import YamlModuleParser

@@ -18,9 +18,9 @@
 #
 
 
-from .shapes.shape_object import ShapeObject
-from .shadows import SphereShadowCaster, CustomShadowMapShadowCaster
-from .shaders.shadows.ellipsoid import ShaderSphereSelfShadow
+from ...shapes.shape_object import ShapeObject
+from ...shadows import SphereShadowCaster, CustomShadowMapShadowCaster
+from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 
 from math import floor, ceil
 from panda3d.core import LVector3, LQuaternion

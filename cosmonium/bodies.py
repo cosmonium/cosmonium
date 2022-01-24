@@ -25,7 +25,7 @@ from .anchors import StellarAnchor
 from .systems import SimpleSystem
 from .foundation import VisibleObject
 from .shapes.spheres import SphereShape, ScaledSphereShape
-from .surfaces import EllipsoidFlatSurface
+from .components.elements.surfaces import EllipsoidFlatSurface
 from .appearances import Appearance
 from .astro.frame import OrbitReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from .astro.orbits import LocalFixedPosition

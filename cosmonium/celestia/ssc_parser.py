@@ -29,7 +29,7 @@ from .shaders import LunarLambertLightingModel
 
 from ..celestia.atmosphere import CelestiaAtmosphere
 from ..bodies import ReflectiveBody, ReferencePoint
-from ..surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
 from ..appearances import Appearance

@@ -18,8 +18,8 @@
 #
 
 
-from ..surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
-from ..surfaces import surfaceCategoryDB, SurfaceCategory
+from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
+from ..components.elements.surfaces import surfaceCategoryDB, SurfaceCategory
 from ..shaders.rendering import RenderingShader
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl

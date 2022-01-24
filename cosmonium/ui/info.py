@@ -21,7 +21,7 @@
 
 from ..bodies import StellarObject, StellarBody, Star
 from ..dataattribution import dataAttributionDB
-from ..surfaces import Surface
+from ..components.elements.surfaces import Surface
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FunctionOrbit
 from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec

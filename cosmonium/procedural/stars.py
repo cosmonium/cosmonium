@@ -18,7 +18,7 @@
 #
 
 
-from ..surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.flat import FlatLightingModel

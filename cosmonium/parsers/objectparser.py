@@ -18,7 +18,7 @@
 #
 
 
-from ..surfaces import surfaceCategoryDB, SurfaceCategory
+from ..components.elements.surfaces import surfaceCategoryDB, SurfaceCategory
 from ..dataattribution import DataAttribution, dataAttributionDB
 
 from .yamlparser import YamlModuleParser

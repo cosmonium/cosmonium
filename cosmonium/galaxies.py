@@ -27,7 +27,7 @@ from panda3d.core import ShaderAttrib
 
 from .appearances import AppearanceBase
 from .shapes.base import Shape
-from .surfaces import EllipsoidFlatSurface
+from .components.elements.surfaces import EllipsoidFlatSurface
 from .sprites import ExpPointSprite
 from .textures import TransparentTexture, DirectTextureSource
 from .shaders.point_control import PointControl

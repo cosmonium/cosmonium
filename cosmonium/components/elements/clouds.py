@@ -23,10 +23,10 @@ from panda3d.core import LQuaternion
 
 from ...shapes.shape_object import ShapeObject
 from ...shapes.spheres import SphereShape
-from ...surfaces import EllipsoidFlatSurface
 from ...parameters import AutoUserParameter
-
 from ... import settings
+
+from .surfaces import EllipsoidFlatSurface
 
 
 class Clouds(EllipsoidFlatSurface):
