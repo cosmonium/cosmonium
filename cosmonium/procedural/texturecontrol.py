@@ -28,7 +28,7 @@ class TextureControl(ShaderComponent):
         self.name = name
 
     def get_sources_names(self):
-        return set('heightmap')
+        return set(['heightmap'])
 
     def collect_required_data(self, data):
         pass
@@ -110,7 +110,7 @@ class HeightTextureControl(TextureControl):
         self.entries = entries
 
     def get_sources_names(self):
-        sources = set('heightmap')
+        sources = set(['heightmap'])
         for entry in self.entries:
             sources.update(entry.texture_control.get_sources_names())
         return sources
@@ -178,7 +178,7 @@ class SlopeTextureControl(TextureControl):
         self.entries = entries
 
     def get_sources_names(self):
-        sources = set('heightmap')
+        sources = set(['heightmap'])
         for entry in self.entries:
             sources.update(entry.texture_control.get_sources_names())
         return sources
@@ -237,7 +237,7 @@ class BiomeControl(TextureControl):
         self.entries = entries
 
     def get_sources_names(self):
-        sources = set(self.biome_name)
+        sources = set([self.biome_name])
         for entry in self.entries:
             sources.update(entry.texture_control.get_sources_names())
         return sources
