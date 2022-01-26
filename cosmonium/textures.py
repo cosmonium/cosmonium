@@ -45,6 +45,8 @@ class TextureBase(object):
         self.panda = panda
         self.input_name = input_name
 
+    def add_as_source(self, shape):
+        pass
 
     def set_offset(self, offset):
         pass
@@ -125,6 +127,9 @@ class TextureSource(object):
         self.texture = None
         self.texture_size = 0
         self.attribution = attribution
+
+    def add_as_source(self, shape):
+        pass
 
     def is_patched(self):
         return False
@@ -329,6 +334,9 @@ class SimpleTexture(TextureBase):
         self.source = source
         self.offset = offset
         self.tex_matrix= True
+
+    def add_as_source(self, shape):
+        self.source.add_as_source(shape)
 
     def set_offset(self, offset):
         self.offset = offset

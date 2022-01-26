@@ -43,7 +43,8 @@ class ShapeObject(VisibleObject):
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
-        self.sources.add_source(self.appearance)
+        #Notusing add source as some dependencies of the appearance can also be sources
+        self.appearance.add_as_source(self)
         self.instance_ready = False
         self.owner = None
         self.oid_color = None

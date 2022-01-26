@@ -20,7 +20,7 @@
 
 from direct.task.Task import gather
 
-from ..appearances import AppearanceBase, Appearance, TexturesBlock
+from ..appearances import AppearanceBase, TexturesBlock
 from ..textures import TextureArray
 from ..astro import units
 from ..dircontext import defaultDirContext
@@ -30,9 +30,11 @@ from .shaders import TextureDictionaryDataSource, DetailMap
 
 from math import pi
 
+#TODO: TexturesDictionary should be a DataSource, not an Appearance
 class TexturesDictionary(AppearanceBase):
     def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=None, srgb=None, array=True, context=defaultDirContext):
         AppearanceBase.__init__(self)
+        self.name = 'tex-dict'
         self.scale_factor = scale_factor
         self.tiling = tiling
         if srgb is None:
@@ -105,6 +107,9 @@ class TexturesDictionary(AppearanceBase):
 
     def task_done(self, task):
         self.task = None
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         if not self.loaded:

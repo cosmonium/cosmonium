@@ -120,6 +120,9 @@ class NoiseTextureGenerator():
         self.srgb = srgb
         self.tex_generator = None
 
+    def add_as_source(self, shape):
+        pass
+
     def create(self, coord):
         self.tex_generator =  PipelineFactory.instance().create_process_pipeline()
         self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size,
@@ -152,6 +155,9 @@ class DetailMapTextureGenerator():
         self.tex_generator = None
         self.texture_stage = None
 
+    def add_as_source(self, shape):
+        shape.add_source(self.texture_source)
+
     def create(self, shape):
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
@@ -171,7 +177,7 @@ class DetailMapTextureGenerator():
         if self.tex_generator is None:
             self.create(shape)
         if not self.texture_source.loaded:
-            await self.texture_source.load(tasks_tree, None, None)
+            await self.texture_source.task
         shader_data = {}
         for source_name in self.texture_control.get_sources_names():
             if source_name in tasks_tree.named_tasks:
@@ -210,6 +216,9 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         self.map_patch = {}
         self.tex_generator = tex_generator
         self.procedural = True
+
+    def add_as_source(self, shape):
+        self.tex_generator.add_as_source(shape)
 
     def is_patched(self):
         return True

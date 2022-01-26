@@ -136,6 +136,9 @@ class AppearanceBase(DataSource):
         self.shadow_depth_bias = 0.1
         self.attribution = None
 
+    def add_as_source(self, shape):
+        shape.add_source(self)
+
     def bake(self):
         pass
 
@@ -358,6 +361,12 @@ class Appearance(AppearanceBase):
         if not shape.patchable and self.nb_textures > 0:
             #print("LOAD", shape, self.nb_textures)
             await self.load_textures(tasks_tree, shape, owner)
+
+    def add_as_source(self, shape):
+        AppearanceBase.add_as_source(self, shape)
+        #TODO: other textures should be added here (as a list to be more effective)
+        if self.texture:
+            self.texture.add_as_source(shape)
 
     def apply(self, shape, instance):
         #Override any material present on the shape (use ModelAppearance to keep it)
