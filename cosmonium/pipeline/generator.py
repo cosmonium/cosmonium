@@ -47,6 +47,7 @@ class GeneratorChain(ProcessPipeline):
         while len(self.queue) > 0:
             (tid, shader_data, future) = self.queue[0]
             if not settings.panda11 or not future.cancelled():
+                #print("TRIGGER", tid)
                 self.trigger(shader_data)
                 break
             #print("Remove cancelled job", tid)

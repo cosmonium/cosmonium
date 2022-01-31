@@ -179,9 +179,11 @@ class DetailMapTextureGenerator():
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
         self.texture_stage.configure_data(data, shape, patch)
-        #print("GEN TEX", patch.str_id())
+        #print(globalClock.get_frame_count(), "*** GEN TEX", patch.str_id())
         result = await self.tex_generator.generate("tex - " + patch.str_id(), data)
         texture = result[self.texture_stage.name].get('color')
+        texture.set_name("tex - " + patch.str_id())
+        #print(globalClock.get_frame_count(), "*** DONE TEX", patch.str_id())
         return texture
 
 class ProceduralVirtualTextureSource(TextureSource):
@@ -229,11 +231,11 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         return True
 
     async def load(self, tasks_tree, patch, color_space):
-        #print("LOAD", patch.str_id())
+        #print("LOAD TEX", patch.str_id())
         texture_info = None
         if not patch.str_id() in self.map_patch:
             texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch)
-            #print("READY", patch.str_id())
+            #print("READY TEX", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info
         else:
