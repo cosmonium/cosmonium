@@ -21,32 +21,20 @@
 from panda3d.core import Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture, NodePath
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
 
+from ..textures import TextureConfiguration
+
 
 class TextureTarget:
-    def __init__(self, to_ram, render_target,
-                 wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp, wrap_w=Texture.WM_clamp,
-                 anisotropic_degree=0,
-                 minfilter=Texture.FT_linear, magfilter=Texture.FT_linear):
+    def __init__(self, to_ram, render_target, config):
         self.texture = None
         self.to_ram = to_ram
         self.render_target = render_target
-        self.wrap_u = wrap_u
-        self.wrap_v = wrap_v
-        self.wrap_w = wrap_w
-        self.anisotropic_degree = anisotropic_degree
-        self.minfilter = minfilter
-        self.magfilter = magfilter
+        self.config = config
 
     def create(self):
-        texture = Texture()
-        texture.set_wrap_u(self.wrap_u)
-        texture.set_wrap_v(self.wrap_v)
-        texture.set_wrap_v(self.wrap_w)
-        texture.set_anisotropic_degree(self.anisotropic_degree)
-        texture.set_minfilter(self.minfilter)
-        texture.set_magfilter(self.magfilter)
-        self.texture = texture
-        return texture
+        self.texture = Texture()
+        self.config.apply(self.texture)
+        return self.texture
 
     def clear(self):
         self.texture = None
@@ -128,13 +116,13 @@ class BufferMixin:
     def get_attachment(self, name):
         return self.texture_targets[name].texture
 
-    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, **kwargs):
+    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration()):
         self.color_bits = color_bits
         self.srgb_colors = srgb_colors
-        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, **kwargs)
+        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config)
         self.texture_targets[name] = texture_target
 
-    def add_depth_target(self, depth_bits, stencil_bits=0, float_depth=False, name='depth', to_ram=False, **kwargs):
+    def add_depth_target(self, depth_bits, stencil_bits=0, float_depth=False, name='depth', to_ram=False, config=TextureConfiguration()):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
@@ -142,21 +130,21 @@ class BufferMixin:
             rtp = GraphicsOutput.RTP_depth_stencil
         else:
             rtp = GraphicsOutput.RTP_depth
-        texture_target = TextureTarget(to_ram, rtp, **kwargs)
+        texture_target = TextureTarget(to_ram, rtp, config)
         self.texture_targets[name] = texture_target
 
-    def add_depth(self, depth_bits, stencil_bits=0, float_depth=False, **kwargs):
+    def add_depth(self, depth_bits, stencil_bits=0, float_depth=False, config=TextureConfiguration()):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
 
-    def add_aux_target(self, aux_bits, name=None, to_ram=False, **kwargs):
+    def add_aux_target(self, aux_bits, name=None, to_ram=False, config=TextureConfiguration()):
         if self.aux_bits is None:
             self.aux_bits = aux_bits
         elif self.aux_bits != aux_bits:
             print("ERROR: aux bits must all the the same")
         #TODO: Map to int, hfloat, float
-        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux, **kwargs)
+        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux, config)
         self.texture_targets[name] = texture_target
 
     def set_multisamples(self, multisamples):

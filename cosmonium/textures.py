@@ -28,11 +28,38 @@ from . import settings
 
 import os
 
+
 class TexCoord(object):
     Flat = 0
     Cylindrical = 1
     NormalizedCube = 2
     SqrtCube = 3
+
+
+class TextureConfiguration:
+    def __init__(self, *,
+                 wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp, wrap_w=Texture.WM_clamp,
+                 anisotropic_degree=0,
+                 minfilter=Texture.FT_linear, magfilter=Texture.FT_linear,
+                 format=None):
+        self.wrap_u = wrap_u
+        self.wrap_v = wrap_v
+        self.wrap_w = wrap_w
+        self.anisotropic_degree = anisotropic_degree
+        self.minfilter = minfilter
+        self.magfilter = magfilter
+        self.format = format
+
+    def apply(self, texture):
+        if self.format is not None:
+            texture.set_format(format)
+        texture.set_wrap_u(self.wrap_u)
+        texture.set_wrap_v(self.wrap_v)
+        texture.set_wrap_w(self.wrap_w)
+        texture.set_anisotropic_degree(self.anisotropic_degree)
+        texture.set_minfilter(self.minfilter)
+        texture.set_magfilter(self.magfilter)
+
 
 class TextureBase(object):
     default_texture = None

@@ -27,7 +27,7 @@ from ..pipeline.target import ProcessTarget
 from ..pipeline.stage import ProcessStage
 from ..pipeline.factory import PipelineFactory
 from ..pipeline.generator import GeneratorPool
-from ..textures import TextureSource
+from ..textures import TextureConfiguration, TextureSource
 from .. import settings
 
 class TextureGenerationStage(ProcessStage):
@@ -57,7 +57,7 @@ class TextureGenerationStage(ProcessStage):
             colors = (8, 8, 8, 8)
         else:
             colors = (8, 8, 8, 0)
-        target.add_color_target(colors, srgb_colors=self.srgb, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
+        target.add_color_target(colors, srgb_colors=self.srgb, to_ram=False, config=TextureConfiguration(minfilter=Texture.FT_linear_mipmap_linear))
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
@@ -95,7 +95,7 @@ class DetailTextureGenerationStage(ProcessStage):
         target.set_one_shot(True)
         self.add_target(target)
         target.set_fixed_size(self.size)
-        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, minfilter=Texture.FT_linear_mipmap_linear)
+        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, config=TextureConfiguration(minfilter=Texture.FT_linear_mipmap_linear))
         target.create(pipeline)
         #TODO: Link is missing
         self.texture_control.create_shader_configuration(self.texture_source)
