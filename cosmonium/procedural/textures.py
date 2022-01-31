@@ -76,20 +76,17 @@ class TextureGenerationStage(ProcessStage):
                               }
 
 class DetailTextureGenerationStage(ProcessStage):
-    def __init__(self, width, height, data_store, heightmap, texture_control, texture_source):
+    def __init__(self, width, height, heightmap, texture_control, texture_source):
         ProcessStage.__init__(self, "texture")
         self.size = (width, height)
-        self.data_store = data_store
         self.heightmap = heightmap
         self.texture_control = texture_control
         self.texture_source = texture_source
 
     def create_shader(self):
         shader = DeferredDetailMapShader(self.heightmap, self.texture_control, self.texture_source)
-        if self.data_store is not None:
-            shader.data_source.add_source(self.data_store.get_shader_data_source())
         shader.data_source.add_source(TextureDictionaryDataSource(self.texture_source))
-        shader.data_source.add_source(self.heightmap.get_data_source(self.data_store is not None))
+        shader.data_source.add_source(self.heightmap.get_data_source(False))
         shader.create_and_register_shader(None, None)
         return shader
 
@@ -158,12 +155,11 @@ class DetailMapTextureGenerator():
     def add_as_source(self, shape):
         shape.add_source(self.texture_source)
 
-    def create(self, shape):
+    def create(self):
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
             chain = PipelineFactory.instance().create_process_pipeline()
-            #TODO: Find anotherway to get the data store
-            self.texture_stage = DetailTextureGenerationStage(self.texture_size, self.texture_size, shape.data_store, self.heightmap, self.texture_control, self.texture_source)
+            self.texture_stage = DetailTextureGenerationStage(self.texture_size, self.texture_size, self.heightmap, self.texture_control, self.texture_source)
             chain.add_stage(self.texture_stage)
             self.tex_generator.add_chain(chain)
         self.tex_generator.create()
@@ -175,7 +171,7 @@ class DetailMapTextureGenerator():
 
     async def generate(self, tasks_tree, shape, patch):
         if self.tex_generator is None:
-            self.create(shape)
+            self.create()
         if not self.texture_source.loaded:
             await self.texture_source.task
         shader_data = {}
