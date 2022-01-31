@@ -172,7 +172,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         stage = ONeilLookupTableRenderStage(self.lookup_size)
         self.lookuptable_generator.add_stage(stage)
         self.lookuptable_generator.create()
-        self.lookuptable_generator.trigger({'lookuptable': {'parameters': self}})
+        self.lookuptable_generator.trigger({'shader': {'lookuptable': {'parameters': self}}})
         self.pbOpticalDepth = self.lookuptable_generator.gather().get('lookuptable').get('color')
 
     def remove_instance(self):

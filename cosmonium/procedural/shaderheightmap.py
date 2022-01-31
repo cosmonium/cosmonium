@@ -137,7 +137,8 @@ class HeightmapPatchGenerator():
                                      'face': heightmap_patch.patch.face
                                     }}
         #print("GEN HM", heightmap_patch.patch.str_id())
-        result = await self.generator.generate(tid, shader_data)
+        data = {'shader': shader_data}
+        result = await self.generator.generate(tid, data)
         data = result['heightmap'].get('color')
         return data
 

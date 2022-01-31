@@ -204,12 +204,17 @@ class BufferMixin:
         else:
             self.target.set_active(True)
 
-    def prepare(self):
+    def prepare(self, prepare_data):
         if not self.one_shot:
             print("Can't call prepare on non one-shot target")
             return
         self.clear()
         self.create_textures()
+        if prepare_data is not None:
+            for texture_name, texture_target in self.texture_targets.items():
+                config = prepare_data.get(texture_name)
+                if config is not None:
+                    config.apply(texture_target.texture)
 
     def trigger(self):
         if not self.one_shot:

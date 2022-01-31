@@ -63,17 +63,17 @@ class TextureGenerationStage(ProcessStage):
 
     def configure_data(self, data, shape, patch):
         if patch is not None:
-            data[self.name] = {'offset': (patch.x0, patch.y0, 0.0),
-                               'scale': (patch.x1 - patch.x0, patch.y1 - patch.y0, 1.0),
-                               'face': patch.face,
-                               'lod': patch.lod
-                              }
+            data['shader'][self.name] = {'offset': (patch.x0, patch.y0, 0.0),
+                                         'scale': (patch.x1 - patch.x0, patch.y1 - patch.y0, 1.0),
+                                         'face': patch.face,
+                                         'lod': patch.lod
+                                         }
         else:
-            data[self.name] = {'offset': (0.0, 0.0, 0.0),
-                               'scale': (1.0, 1.0, 1.0),
-                               'face': -1,
-                               'lod': 0
-                              }
+            data['shader'][self.name] = {'offset': (0.0, 0.0, 0.0),
+                                         'scale': (1.0, 1.0, 1.0),
+                                         'face': -1,
+                                         'lod': 0
+                                         }
 
 class DetailTextureGenerationStage(ProcessStage):
     def __init__(self, width, height, heightmap, texture_control, texture_source):
@@ -102,11 +102,11 @@ class DetailTextureGenerationStage(ProcessStage):
         target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
-        data[self.name] = {'shape': shape,
-                           'patch': patch,
-                           'appearance': None,
-                           'lod': patch.lod
-                          }
+        data['shader'][self.name] = {'shape': shape,
+                                     'patch': patch,
+                                     'appearance': None,
+                                     'lod': patch.lod
+                                     }
 
 class NoiseTextureGenerator():
     def __init__(self, size, noise, target, alpha=False, srgb=False):
@@ -136,10 +136,10 @@ class NoiseTextureGenerator():
         if self.tex_generator is None:
             #TODO: This condition is needed for unpatched procedural ring, to be corrected
             self.create(patch.coord if patch else shape.coord)
-        shader_data = {}
-        self.texture_stage.configure_data(shader_data, shape, patch)
+        data = {'prepare': {}, 'shader': {}}
+        self.texture_stage.configure_data(data, shape, patch)
         #print("GEN", patch.str_id())
-        result = await self.tex_generator.generate(tasks_tree, shader_data)
+        result = await self.tex_generator.generate(tasks_tree, data)
         texture = result[self.texture_stage.name].get('color')
         return texture
 
@@ -174,13 +174,13 @@ class DetailMapTextureGenerator():
             self.create()
         if not self.texture_source.loaded:
             await self.texture_source.task
-        shader_data = {}
+        data = {'prepare': {}, 'shader': {}}
         for source_name in self.texture_control.get_sources_names():
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
-        self.texture_stage.configure_data(shader_data, shape, patch)
+        self.texture_stage.configure_data(data, shape, patch)
         #print("GEN TEX", patch.str_id())
-        result = await self.tex_generator.generate("tex - " + patch.str_id(), shader_data)
+        result = await self.tex_generator.generate("tex - " + patch.str_id(), data)
         texture = result[self.texture_stage.name].get('color')
         return texture
 

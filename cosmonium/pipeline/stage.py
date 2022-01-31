@@ -74,9 +74,9 @@ class PipelineStage():
 
 
 class ProcessStage(PipelineStage):
-    def prepare(self):
+    def prepare(self, prepare_data):
         for target in self.targets:
-            target.prepare()
+            target.prepare(prepare_data)
 
     def trigger(self):
         for target in self.targets:

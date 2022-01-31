@@ -70,10 +70,10 @@ class Pipeline:
 
 
 class ProcessPipeline(Pipeline):
-    def trigger(self, shader_data):
+    def trigger(self, data):
         for stage in self.ordered_stages:
-            stage.prepare()
-            stage.update_shader_data(shader_data.get(stage.name, {}))
+            stage.prepare(data.get('prepare', {}).get(stage.name, {}))
+            stage.update_shader_data(data.get('shader', {}).get(stage.name, {}))
             stage.trigger()
 
     def gather(self):
