@@ -372,25 +372,37 @@ struct HeightmapParameters {
         self.shader.fragment_shader.add_function(code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal)
 
     def vertex_shader_decl(self, code):
+        code.append("HeightmapParameters heightmap_%s_params;" % self.name)
         if self.data_store:
             code.append("vec4 encoded_data_%s;" % self.name)
             code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2, 0);" % self.name)
-            code.append("HeightmapParameters heightmap_%s_params;" % self.name)
             code.append("heightmap_%s_params.height_scale = encoded_data_%s.x;" % (self.name, self.name))
             code.append("heightmap_%s_params.u_scale = encoded_data_%s.y;" % (self.name, self.name))
             code.append("heightmap_%s_params.v_scale = encoded_data_%s.z;" % (self.name, self.name))
             code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2 + 1, 0);" % self.name)
             code.append("heightmap_%s_params.offset = encoded_data_%s.xy;" % (self.name, self.name))
             code.append("heightmap_%s_params.scale = encoded_data_%s.zw;" % (self.name, self.name))
+        else:
+            code.append("heightmap_%s_params.height_scale = heightmap_%s_height_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.u_scale = heightmap_%s_u_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.v_scale = heightmap_%s_v_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.offset = heightmap_%s_offset;" % (self.name, self.name))
+            code.append("heightmap_%s_params.scale = heightmap_%s_scale;" % (self.name, self.name))
 
     def fragment_shader_decl(self, code):
+        code.append("HeightmapParameters heightmap_%s_params;" % self.name)
         if self.data_store:
             code.append("vec4 encoded_data_%s;" % self.name)
             code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2, 0);" % self.name)
-            code.append("HeightmapParameters heightmap_%s_params;" % self.name)
             code.append("heightmap_%s_params.height_scale = encoded_data_%s.x;" % (self.name, self.name))
             code.append("heightmap_%s_params.u_scale = encoded_data_%s.y;" % (self.name, self.name))
             code.append("heightmap_%s_params.v_scale = encoded_data_%s.z;" % (self.name, self.name))
             code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2 + 1, 0);" % self.name)
             code.append("heightmap_%s_params.offset = encoded_data_%s.xy;" % (self.name, self.name))
             code.append("heightmap_%s_params.scale = encoded_data_%s.zw;" % (self.name, self.name))
+        else:
+            code.append("heightmap_%s_params.height_scale = heightmap_%s_height_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.u_scale = heightmap_%s_u_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.v_scale = heightmap_%s_v_scale;" % (self.name, self.name))
+            code.append("heightmap_%s_params.offset = heightmap_%s_offset;" % (self.name, self.name))
+            code.append("heightmap_%s_params.scale = heightmap_%s_scale;" % (self.name, self.name))
