@@ -92,7 +92,7 @@ class PatchData:
         self.loaded = False
         self.cloned = False
 
-    def configure_texture(self):
+    def retrieve_texture_data(self):
         pass
 
     def make_default_data(self):
@@ -101,7 +101,7 @@ class PatchData:
     def configure_data(self, texture):
         if texture is not None:
             self.texture = texture
-            self.configure_texture()
+            self.retrieve_texture_data()
             self.data_ready = True
             self.lod = self.patch.lod
             self.texture_offset = LVector2((self.overlap + 0.5) / self.width, (self.overlap + 0.5) / self.height)

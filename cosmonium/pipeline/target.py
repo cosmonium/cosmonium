@@ -33,7 +33,8 @@ class TextureTarget:
 
     def create(self):
         self.texture = Texture()
-        self.config.apply(self.texture)
+        if self.config is not None:
+            self.config.apply(self.texture)
         return self.texture
 
     def clear(self):

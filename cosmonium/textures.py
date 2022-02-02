@@ -19,7 +19,7 @@
 #
 
 
-from panda3d.core import TextureStage, Texture, LColor, PNMImage, CS_linear, CS_sRGB
+from panda3d.core import TextureStage, Texture, LColor, PNMImage
 
 from .dircontext import defaultDirContext
 from .utils import TransparencyBlend
@@ -38,17 +38,21 @@ class TexCoord(object):
 
 class TextureConfiguration:
     def __init__(self, *,
-                 wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp, wrap_w=Texture.WM_clamp,
+                 wrap_u=Texture.WM_repeat, wrap_v=Texture.WM_repeat, wrap_w=Texture.WM_repeat,
                  anisotropic_degree=0,
-                 minfilter=Texture.FT_linear, magfilter=Texture.FT_linear,
-                 format=None):
+                 minfilter=Texture.FT_default, magfilter=Texture.FT_default,
+                 border_color=LColor(0, 0, 0, 1),
+                 format=None,
+                 convert_to_srgb=False):
         self.wrap_u = wrap_u
         self.wrap_v = wrap_v
         self.wrap_w = wrap_w
         self.anisotropic_degree = anisotropic_degree
         self.minfilter = minfilter
         self.magfilter = magfilter
+        self.border_color = border_color
         self.format = format
+        self.convert_to_srgb = convert_to_srgb
 
     def apply(self, texture):
         if self.format is not None:
@@ -59,6 +63,17 @@ class TextureConfiguration:
         texture.set_anisotropic_degree(self.anisotropic_degree)
         texture.set_minfilter(self.minfilter)
         texture.set_magfilter(self.magfilter)
+        texture.set_border_color(self.border_color)
+        if self.convert_to_srgb:
+            texture_format = texture.get_format()
+            if texture_format == Texture.F_luminance:
+                texture.set_format(Texture.F_sluminance)
+            elif texture_format == Texture.F_luminance_alpha:
+                texture.set_format(Texture.F_sluminance_alpha)
+            elif texture_format == Texture.F_rgb:
+                texture.set_format(Texture.F_srgb)
+            elif texture_format == Texture.F_rgba:
+                texture.set_format(Texture.F_srgb_alpha)
 
 
 class TextureBase(object):
@@ -121,26 +136,6 @@ class TextureBase(object):
             self.default_texture = self.create_default_texture()
         return self.default_texture
 
-    def clamp(self, texture):
-        texture.setWrapU(Texture.WM_clamp)
-        texture.setWrapV(Texture.WM_clamp)
-
-    def vanish(self, texture):
-        texture.setWrapU(Texture.WM_border_color)
-        texture.setBorderColor(LColor(0, 0, 0, 0))
-
-    def mipmap(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
-        texture.setMagfilter(Texture.FT_linear_mipmap_linear)
-
-    def mipmap_min(self, texture):
-        texture.setMinfilter(Texture.FT_linear_mipmap_linear)
-        texture.setMagfilter(Texture.FT_linear)
-
-    def linear(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
-
     def debug_borders(self, texture):
         texture.setWrapU(Texture.WM_border_color)
         texture.setWrapV(Texture.WM_border_color)
@@ -170,7 +165,7 @@ class TextureSource(object):
     def texture_filename(self, patch):
         return None
 
-    async def load(self, tasks_tree, patch, color_space=None):
+    async def load(self, tasks_tree, patch, texture_config=None):
         pass
 
     def clear_patch(self, patch):
@@ -189,7 +184,7 @@ class TextureSource(object):
         return None
 
 class InvalidTextureSource(TextureSource):
-    async def load(self, tasks_tree, patch, color_space=None):
+    async def load(self, tasks_tree, patch, texture_config=None):
         return (None, 0, 0)
 
 class AutoTextureSource(TextureSource):
@@ -249,10 +244,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         self.source.set_offset(offset)
 
-    def load(self, tasks_tree, patch, color_space=None):
+    def load(self, tasks_tree, patch, texture_config=None):
         if self.source is None:
             self.create_source()
-        return self.source.load(tasks_tree, patch, color_space)
+        return self.source.load(tasks_tree, patch, texture_config)
 
     def clear_patch(self, patch):
         if self.source is None:
@@ -297,7 +292,7 @@ class TextureFileSource(TextureSource):
     def texture_filename(self, patch):
         return self.context.find_texture(self.filename)
 
-    async def load(self, tasks_tree, patch, color_space=None):
+    async def load(self, tasks_tree, patch, texture_config=None):
         if not self.loaded:
             filename=self.context.find_texture(self.filename)
             if filename is not None:
@@ -306,6 +301,8 @@ class TextureFileSource(TextureSource):
                 else:
                     texture = await workers.asyncTextureLoader.load_texture(filename, None)
                 if texture is not None:
+                    if texture_config is not None:
+                        texture_config.apply(texture)
                     self.texture = texture
                     self.loaded = True
             else:
@@ -377,37 +374,41 @@ class SimpleTexture(TextureBase):
     def configure_instance(self, instance):
         pass
 
-    def convert_texture(self, texture):
-        pass
+    def create_texture_config(self, shape):
+        texture_config = TextureConfiguration()
+        texture_config.convert_to_srgb = self.srgb
+        if self.source.is_patched():
+            texture_config.wrap_u = Texture.WM_clamp
+            texture_config.wrap_v = Texture.WM_clamp
+        if not self.source.is_patched():
+            texture_config.minfilter = Texture.FT_linear_mipmap_linear
+            texture_config.magfilter = Texture.FT_linear_mipmap_linear
+        else:
+            if shape.lod == 0:
+                texture_config.minfilter = Texture.FT_linear_mipmap_linear
+                texture_config.magfilter = Texture.FT_linear
+            else:
+                texture_config.minfilter = Texture.FT_linear
+                texture_config.magfilter = Texture.FT_linear
+        if shape.vanish_borders:
+            texture_config.wrap_u = Texture.WM_border_color
+            texture_config.border_color = LColor(0, 0, 0, 0)
+        return texture_config
 
     async def load(self, tasks_tree, patch):
         if not self.source.loaded or not self.source.cached:
-            if self.srgb:
-                color_space=CS_sRGB
-            else:
-                color_space=CS_linear
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            (texture, texture_size, texture_lod) = await self.source.load(tasks_tree, patch, color_space=color_space)
-            if texture is not None:
-                self.convert_texture(texture)
+            texture_config = self.create_texture_config(patch)
+            (texture, texture_size, texture_lod) = await self.source.load(tasks_tree, patch, texture_config=texture_config)
 
     def apply(self, shape, instance):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
+        #TODO: not really apply but we need a place to detected the alpha channel
+        self.has_alpha_channel = texture.get_format() in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
         if texture is None:
             #print("USE DEFAULT", shape.str_id())
             (texture, texture_size, texture_lod) = self.get_default_texture()
-        if self.source.is_patched():
-            self.clamp(texture)
-        if not self.source.is_patched():
-            self.mipmap(texture)
-        else:
-            if shape.lod == 0:
-                self.mipmap_min(texture)
-            else:
-                self.linear(texture)
-        if shape.vanish_borders:
-            self.vanish(texture)
         if self.panda:
             self.apply_panda(shape, instance, texture, texture_lod)
         else:
@@ -437,17 +438,23 @@ class DataTexture(TextureBase):
             source = AutoTextureSource(source, attribution=None)
         self.source = source
 
+    def create_texture_config(self, shape):
+        texture_config = TextureConfiguration()
+        if self.source.is_patched():
+            texture_config.wrap_u = Texture.WM_clamp
+            texture_config.wrap_v = Texture.WM_clamp
+        return texture_config
+
     async def load(self, tasks_tree, patch):
         if not self.source.loaded or not self.source.cached:
-            await self.source.load(tasks_tree, patch)
+            texture_config = self.create_texture_config(patch)
+            await self.source.load(tasks_tree, patch, texture_config=texture_config)
 
     def apply(self, shape, instance, input_name):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             (texture, texture_size, texture_lod) = self.get_default_texture()
         if texture is not None:
-            if self.source.is_patched():
-                self.clamp(texture)
             instance.set_shader_input(input_name, texture)
 
     def clear_patch(self, patch):
@@ -482,15 +489,6 @@ class VisibleTexture(SimpleTexture):
         if self.source.is_patched() and settings.debug_vt:
             self.debug_borders()
 
-    def convert_texture(self, texture):
-        texture_format = texture.getFormat()
-        if self.srgb:
-            if texture_format == Texture.F_rgb:
-                texture.set_format(Texture.F_srgb)
-            elif texture_format == Texture.F_rgba:
-                texture.set_format(Texture.F_srgb_alpha)
-        #TODO: not really convert but we need a place to detected the alpha channel
-        self.has_alpha_channel = texture_format in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
 
 class SurfaceTexture(VisibleTexture):
     category = 'albedo'
@@ -581,24 +579,22 @@ class TextureArray(TextureBase):
         self.panda = panda
         self.input_name = input_name
 
-    def convert_texture(self, texture):
-        if self.srgb:
-            tex_format = texture.getFormat()
-            if tex_format == Texture.F_rgb:
-                texture.set_format(Texture.F_srgb)
-            elif tex_format == Texture.F_rgba:
-                texture.set_format(Texture.F_srgb_alpha)
+    def create_texture_config(self, shape):
+        texture_config = TextureConfiguration(minfilter = Texture.FT_linear_mipmap_linear,
+                                              magfilter = Texture.FT_linear_mipmap_linear,
+                                              convert_to_srgb = self.srgb)
+        return texture_config
 
     async def load(self, tasks_tree, patch):
         if self.texture is None:
+            texture_config = self.create_texture_config(patch)
             if settings.sync_texture_load:
                 texture = workers.syncTextureLoader.load_texture_array(self.textures)
             else:
                 texture = await workers.asyncTextureLoader.load_texture_array(self.textures)
             if texture is not None:
                 self.texture = texture
-                self.convert_texture(texture)
-                self.mipmap(texture)
+                texture_config.apply(texture)
 
     def apply(self, shape, instance):
         self.apply_shader(instance, self.input_name, self.texture, None)
@@ -656,7 +652,7 @@ class VirtualTextureSource(TextureSource):
         if parent_patch is not None:
             return self.map_patch[parent_patch.str_id()]
 
-    async def load(self, tasks_tree, patch, color_space=None):
+    async def load(self, tasks_tree, patch, texture_config=None):
         texture_info = None
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)
@@ -669,6 +665,8 @@ class VirtualTextureSource(TextureSource):
                 else:
                     texture = await workers.asyncTextureLoader.load_texture(filename, alpha_filename)
                 if texture is not None:
+                    if texture_config is not None:
+                        texture_config.apply(texture)
                     texture_info = (texture, self.texture_size, patch.lod)
                     self.map_patch[patch.str_id()] = texture_info
             else:

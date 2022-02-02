@@ -63,7 +63,7 @@ class TexFilter(object):
     def get_value(self, peeker, x, y):
         return None
 
-    def configure_texture(self, texture):
+    def update_texture_config(self, texture_config):
         pass
 
     def get_data_source_filtering(self):
@@ -73,9 +73,9 @@ class NearestFilter(TexFilter):
     def get_value(self, peeker, x, y):
         return self.get_single_value(peeker, x, y)
 
-    def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_nearest)
-        texture.setMagfilter(Texture.FT_nearest)
+    def update_texture_config(self, texture_config):
+        texture_config.minfilter = Texture.FT_nearest
+        texture_config.magfilter = Texture.FT_nearest
 
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_nearest
@@ -84,9 +84,9 @@ class BilinearFilter(TexFilter):
     def get_value(self, peeker, x, y):
         return self.get_bilinear_value(peeker, x, y)
 
-    def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
+    def update_texture_config(self, texture_config):
+        texture_config.minfilter = Texture.FT_linear
+        texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_bilinear
@@ -106,9 +106,9 @@ class SmoothstepFilter(TexFilter):
 
         return self.get_bilinear_value(peeker, i_x + f_x - 0.5, i_y + f_y - 0.5)
 
-    def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
+    def update_texture_config(self, texture_config):
+        texture_config.minfilter = Texture.FT_linear
+        texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_smoothstep
@@ -128,17 +128,17 @@ class QuinticFilter(TexFilter):
 
         return self.get_bilinear_value(peeker, i_x + f_x - 0.5, i_y + f_y - 0.5)
 
-    def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
+    def update_texture_config(self, texture_config):
+        texture_config.minfilter = Texture.FT_linear
+        texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_quintic
 
 class BSplineFilter(TexFilter):
-    def configure_texture(self, texture):
-        texture.setMinfilter(Texture.FT_linear)
-        texture.setMagfilter(Texture.FT_linear)
+    def update_texture_config(self, texture_config):
+        texture_config.minfilter = Texture.FT_linear
+        texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
         return HeightmapDataSource.F_bspline

@@ -66,7 +66,7 @@ class TextureShapeDataBase(ShapeData):
     def get_texture_scale(self):
         return self.texture_scale
 
-    def configure_texture(self, texture):
+    def retrieve_texture_data(self, texture):
         pass
 
     def make_default_data(self):
@@ -75,7 +75,7 @@ class TextureShapeDataBase(ShapeData):
     def configure_data(self, texture):
         if texture is not None:
             self.texture = texture
-            self.configure_texture(texture)
+            self.retrieve_texture_data(texture)
             self.data_ready = True
         else:
             print("Make default data")

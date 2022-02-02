@@ -57,7 +57,7 @@ class TextureGenerationStage(ProcessStage):
             colors = (8, 8, 8, 8)
         else:
             colors = (8, 8, 8, 0)
-        target.add_color_target(colors, srgb_colors=self.srgb, to_ram=False, config=TextureConfiguration(minfilter=Texture.FT_linear_mipmap_linear))
+        target.add_color_target(colors, srgb_colors=self.srgb, to_ram=False, config=None)
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
@@ -95,7 +95,7 @@ class DetailTextureGenerationStage(ProcessStage):
         target.set_one_shot(True)
         self.add_target(target)
         target.set_fixed_size(self.size)
-        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, config=TextureConfiguration(minfilter=Texture.FT_linear_mipmap_linear))
+        target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, config=None)
         target.create(pipeline)
         #TODO: Link is missing
         self.texture_control.create_shader_configuration(self.texture_source)
@@ -132,11 +132,11 @@ class NoiseTextureGenerator():
             self.tex_generator.remove()
             self.tex_generator = None
 
-    async def generate(self, tasks_tree, shape, patch):
+    async def generate(self, tasks_tree, shape, patch, texture_config):
         if self.tex_generator is None:
             #TODO: This condition is needed for unpatched procedural ring, to be corrected
             self.create(patch.coord if patch else shape.coord)
-        data = {'prepare': {}, 'shader': {}}
+        data = {'prepare': {'texture': {'color': texture_config}}, 'shader': {}}
         self.texture_stage.configure_data(data, shape, patch)
         #print("GEN", patch.str_id())
         result = await self.tex_generator.generate(tasks_tree, data)
@@ -169,12 +169,12 @@ class DetailMapTextureGenerator():
             self.tex_generator.remove()
             self.tex_generator = None
 
-    async def generate(self, tasks_tree, shape, patch):
+    async def generate(self, tasks_tree, shape, patch, texture_config):
         if self.tex_generator is None:
             self.create()
         if not self.texture_source.loaded:
             await self.texture_source.task
-        data = {'prepare': {}, 'shader': {}}
+        data = {'prepare': {'texture': {'color': texture_config}}, 'shader': {}}
         for source_name in self.texture_control.get_sources_names():
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
@@ -194,9 +194,9 @@ class ProceduralVirtualTextureSource(TextureSource):
         self.texture_size = size
         self.tex_generator = tex_generator
 
-    async def load(self, tasks_tree, shape, color_space):
+    async def load(self, tasks_tree, shape, texture_config):
         if self.texture is None:
-            self.texture = await self.tex_generator.generate(tasks_tree, shape, None)
+            self.texture = await self.tex_generator.generate(tasks_tree, shape, None, texture_config)
         return (self.texture, self.texture_size, 0)
 
     def get_texture(self, shape, strict=False):
@@ -230,11 +230,11 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
     def can_split(self, patch):
         return True
 
-    async def load(self, tasks_tree, patch, color_space):
+    async def load(self, tasks_tree, patch, texture_config):
         #print("LOAD TEX", patch.str_id())
         texture_info = None
         if not patch.str_id() in self.map_patch:
-            texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch)
+            texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch, texture_config)
             #print("READY TEX", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info

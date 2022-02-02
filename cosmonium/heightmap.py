@@ -24,6 +24,7 @@ from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
 from .shaders.data_source.heightmap import HeightmapDataSource
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
+from .textures import TextureConfiguration
 from .interpolators import HardwareInterpolator
 from .filters import BilinearFilter
 from .dircontext import defaultDirContext
@@ -96,10 +97,13 @@ class HeightmapPatch(PatchData):
                  self.texture_offset[0],
                  self.texture_scale[1]]
 
-    def configure_texture(self):
-        self.texture.set_wrap_u(Texture.WMClamp)
-        self.texture.set_wrap_v(Texture.WMClamp)
-        self.parent.filter.configure_texture(self.texture)
+    def create_texture_config(self):
+        texture_config = TextureConfiguration(wrap_u=Texture.WMClamp,
+                                              wrap_v=Texture.WMClamp)
+        self.parent.filter.update_texture_config(texture_config)
+        return texture_config
+
+    def retrieve_texture_data(self):
         self.texture_peeker = self.texture.peek()
 #       if self.texture_peeker is None:
 #           print("NOT READY !!!")
@@ -150,7 +154,8 @@ class TextureHeightmapPatch(HeightmapPatch):
         HeightmapPatch.apply(self, instance)
 
     async def load(self, tasks_tree, patch):
-        await self.data_source.load(tasks_tree, patch)
+        texture_config = self.create_texture_config()
+        await self.data_source.load(tasks_tree, patch, texture_config)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
         self.configure_data(texture_data)
 

@@ -22,6 +22,7 @@ from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
 from .components.elements.atmosphere import Atmosphere
 from .datasource import DataSource
+from .textures import TextureConfiguration
 from .shaders.base import StructuredShader, ShaderProgram
 from .shaders.rendering import RenderingShader
 from .shaders.lighting.base import LightingModel
@@ -702,7 +703,9 @@ class ONeilLookupTableRenderStage(ProcessStage):
         target.set_one_shot(True)
         self.add_target(target)
         target.set_fixed_size(self.size)
-        target.add_color_target((32, 32, 32, 0), srgb_colors=False, to_ram=False)
+        texture_config = TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
+                                              minfilter=Texture.FT_linear, magfilter=Texture.FT_linear)
+        target.add_color_target((32, 32, 32, 0), srgb_colors=False, to_ram=False, config=texture_config)
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
