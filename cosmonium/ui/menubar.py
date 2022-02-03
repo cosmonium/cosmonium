@@ -231,6 +231,7 @@ class Menubar:
                 self.menu_text(_('Normals'), settings.shader_debug_fragment_shader == 'normal', 'debug-shader-fragment-mode', args=['normal']),
                 self.menu_text(_('Normal map'), settings.shader_debug_fragment_shader == 'normalmap', 'debug-shader-fragment-mode', args=['normalmap']),
                 self.menu_text(_('Shadows'), settings.shader_debug_fragment_shader == 'shadows', 'debug-shader-fragment-mode', args=['shadows']),
+                self.menu_text(_('Heightmap'), settings.shader_debug_fragment_shader == 'heightmap', 'debug-shader-fragment-mode', args=['heightmap']),
                 self.menu_text(_('Color picking'), settings.shader_debug_fragment_shader == 'picking', 'debug-shader-fragment-mode', args=['picking']),
                 self.menu_text(_('Ray hit'), settings.shader_debug_raymarching_canvas, 'debug-toggle-shader-raymarching-canvas'),
                 self.menu_text(_('Show slice'), settings.shader_debug_raymarching_slice, 'debug-toggle-shader-debug-raymarching_slice'),

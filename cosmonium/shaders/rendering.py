@@ -425,6 +425,12 @@ class FragmentShader(ShaderProgram):
                 for shadow in self.shadows:
                     shadow.fragment_shader(code)
                 code.append("vec4 total_color = vec4(1.0, shadow, shadow, 1.0);")
+            elif settings.shader_debug_fragment_shader == 'heightmap':
+                if self.data_source.has_source_for("height"):
+                    code.append("vec4 total_color = vec4(vec3(%s) * %s + 0.5, 1.0);" % (self.data_source.get_source_for("height_heightmap", "texcoord0.xy"),
+                                                                                        self.data_source.get_source_for("range_heightmap")))
+                else:
+                    code.append("vec4 total_color = vec4(0.0, 0.0, 0.0, 1.0);")
         if settings.shader_debug_coord:
             code.append("float line_width = %g;" % settings.shader_debug_coord_line_width)
             code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((line_width - texcoord0.x) / line_width, 0.0, 1.0));")

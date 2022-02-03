@@ -310,7 +310,12 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
 ''' % (self.name, self.name, self.name, self.name, self.name)]
 
     def has_source_for(self, source):
-        return self.has_normal and source == 'normal'
+        if source == 'height':
+            return True
+        elif source == 'normal':
+            return self.has_normal
+        else:
+            return False
 
     def get_source_for(self, source, param, error=True):
         if source == 'height_%s' % self.name:
@@ -318,6 +323,8 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
         if source == 'normal_%s' % self.name or (self.has_normal and source == 'normal'):
             return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_params)" \
                     % (self.name, self.name, "texcoord0.xy", self.name)
+        if source == 'range_%s' % self.name:
+            return str(1.0 / (self.heightmap.max_height - self.heightmap.min_height))
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
