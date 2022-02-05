@@ -279,9 +279,11 @@ class StructuredShader(ShaderBase):
             fragment = self.fragment_shader.generate_shader(dump, shader_id)
         else:
             fragment = ''
-        return Shader.make(Shader.SL_GLSL,
-                           vertex=vertex,
-                           tess_control=tess_control,
-                           tess_evaluation=tess_evaluation,
-                           geometry=geometry,
-                           fragment=fragment)
+        shader = Shader.make(Shader.SL_GLSL,
+                             vertex=vertex,
+                             tess_control=tess_control,
+                             tess_evaluation=tess_evaluation,
+                             geometry=geometry,
+                             fragment=fragment)
+        shader.set_filename(Shader.SL_GLSL, shader_id)
+        return shader
