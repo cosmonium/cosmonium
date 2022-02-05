@@ -28,8 +28,8 @@ class ShaderComponent(object):
     world_normal = False
     use_tangent = False
 
-    def __init__(self, shader=None):
-        self.shader = shader
+    def __init__(self):
+        self.shader = None
 
     def set_shader(self, shader):
         self.shader = shader

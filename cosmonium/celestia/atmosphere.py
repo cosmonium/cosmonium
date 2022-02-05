@@ -69,8 +69,8 @@ class CelestiaScattering(AtmosphericScattering):
     world_vertex = True
     AtmosphereExtinctionThreshold = 0.05
 
-    def __init__(self, parameters, atmosphere=False, extinction_only=False, shader=None):
-        AtmosphericScattering.__init__(self, shader)
+    def __init__(self, parameters, atmosphere=False, extinction_only=False):
+        AtmosphericScattering.__init__(self)
         self.parameters = parameters
         self.atmosphere = atmosphere
         self.extinction_only = extinction_only

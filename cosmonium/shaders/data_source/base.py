@@ -30,8 +30,8 @@ class ShaderDataSource(ShaderComponent):
         return ''
 
 class CompositeShaderDataSource(ShaderDataSource):
-    def __init__(self, sources=None, shader=None):
-        ShaderDataSource.__init__(self, shader)
+    def __init__(self, sources=None):
+        ShaderDataSource.__init__(self)
         if sources is None:
             self.sources = []
         elif isinstance(sources, list):

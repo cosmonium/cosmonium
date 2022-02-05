@@ -24,8 +24,8 @@ from .vertex_control import VertexControl
 class DisplacementVertexControl(VertexControl):
     use_normal = True
 
-    def __init__(self, heightmap, create_normals=False, shader=None):
-        VertexControl.__init__(self, shader)
+    def __init__(self, heightmap, create_normals=False):
+        VertexControl.__init__(self)
         self.heightmap = heightmap
         self.has_normal = create_normals
         if create_normals:

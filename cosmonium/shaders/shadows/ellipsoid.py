@@ -28,7 +28,7 @@ class ShaderSphereShadow(ShaderShadow):
     model_vertex = True
 
     def __init__(self, max_occluders, far_sun, oblate_occluder):
-        ShaderShadow.__init__(self, None)
+        ShaderShadow.__init__(self)
         self.max_occluders = max_occluders
         self.far_sun = far_sun
         self.oblate_occluder = oblate_occluder

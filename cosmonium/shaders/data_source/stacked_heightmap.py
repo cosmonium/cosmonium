@@ -24,8 +24,8 @@ from ... import settings
 
 
 class StackedHeightmapDataSource(ShaderDataSource):
-    def __init__(self, heightmap, texture_class, shader=None):
-        ShaderDataSource.__init__(self, shader)
+    def __init__(self, heightmap, texture_class):
+        ShaderDataSource.__init__(self)
         self.heightmap = heightmap
         self.texture_sources = []
         for heightmap in self.heightmap.heightmaps:

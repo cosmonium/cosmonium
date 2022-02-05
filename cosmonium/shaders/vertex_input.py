@@ -22,9 +22,13 @@ from .component import ShaderComponent
 
 
 class VertexInput(ShaderComponent):
-    def __init__(self, config):
+    def __init__(self):
         ShaderComponent.__init__(self)
-        self.config = config
+        self.config = None
+
+    def set_shader(self, shader):
+        ShaderComponent.set_shader(self, shader)
+        self.config = shader
 
 class DirectVertexInput(VertexInput):
     def vertex_inputs(self, code):

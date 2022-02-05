@@ -23,8 +23,8 @@ from .component import ShaderComponent
 
 
 class QuadTessellationVertexInput(VertexInput):
-    def __init__(self, invert_v=False, shader=None):
-        VertexInput.__init__(self, shader)
+    def __init__(self, invert_v=False):
+        VertexInput.__init__(self)
         self.invert_v = invert_v
 
     def vertex_layout(self, code):
@@ -71,8 +71,8 @@ class TessellationControl(ShaderComponent):
 
 
 class ConstantTessellationControl(TessellationControl):
-    def __init__(self, invert_v=False, shader=None):
-        TessellationControl.__init__(self, shader)
+    def __init__(self, invert_v=False):
+        TessellationControl.__init__(self)
         #invert_v is not used in TessellationControl but in QuadTessellationVertexInput
         #It is configured here as this is the user class
         self.invert_v = invert_v

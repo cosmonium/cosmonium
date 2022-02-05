@@ -31,6 +31,7 @@ from .vertex_control.vertex_control import DefaultVertexControl
 from .vertex_input import DirectVertexInput
 from .. import settings
 
+
 class TessellationVertexShader(ShaderProgram):
     def __init__(self):
         ShaderProgram.__init__(self, 'vertex')
@@ -475,30 +476,31 @@ class RenderingShader(StructuredShader):
         if instance_control is None:
             instance_control = NoInstanceControl()
         if tessellation_control is not None:
-            vertex_source = QuadTessellationVertexInput(tessellation_control.invert_v, self)
+            vertex_source = QuadTessellationVertexInput(tessellation_control.invert_v)
         else:
-            vertex_source = DirectVertexInput(self)
+            vertex_source = DirectVertexInput()
+        vertex_source.set_shader(self)
         if data_source is None:
-            data_source = PandaDataSource(self)
+            data_source = PandaDataSource()
         data_source = CompositeShaderDataSource(data_source)
         if after_effects is None:
             after_effects = []
         self.appearance = appearance
-        self.appearance.shader = self
+        self.appearance.set_shader(self)
         self.shadows = shadows
         for shadow in self.shadows:
-            shadow.shader = self
+            shadow.set_shader(self)
             shadow.appearance  = appearance
         self.lighting_model = lighting_model
-        self.lighting_model.shader = self
+        self.lighting_model.set_shader(self)
         self.scattering = scattering
-        self.scattering.shader = self
+        self.scattering.set_shader(self)
         self.vertex_control = vertex_control
-        self.vertex_control.shader = self
+        self.vertex_control.set_shader(self)
         self.point_control = point_control
-        self.point_control.shader = self
+        self.point_control.set_shader(self)
         self.instance_control = instance_control
-        self.instance_control.shader = self
+        self.instance_control.set_shader(self)
         self.data_source = data_source
         self.data_source.set_shader(self)
         self.after_effects = after_effects
@@ -507,7 +509,7 @@ class RenderingShader(StructuredShader):
         self.vertex_oids = vertex_oids
         if tessellation_control is not None:
             self.tessellation_control = tessellation_control
-            self.tessellation_control.shader = self
+            self.tessellation_control.set_shader(self)
             self.vertex_shader = TessellationVertexShader()
             self.tessellation_control_shader = TessellationShader(self, tessellation_control)
             self.tessellation_eval_shader = VertexShader(self,

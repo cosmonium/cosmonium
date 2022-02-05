@@ -23,8 +23,8 @@ from ..utils import TransparencyBlend
 
 
 class ShaderAppearance(ShaderComponent):
-    def __init__(self, shader=None):
-        ShaderComponent.__init__(self, shader)
+    def __init__(self):
+        ShaderComponent.__init__(self)
         self.data = None
         self.has_surface = False
         self.has_emission = False

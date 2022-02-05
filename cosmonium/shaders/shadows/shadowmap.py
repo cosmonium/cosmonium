@@ -27,8 +27,8 @@ class ShaderShadowMap(ShaderShadow):
     use_normal = True
     world_normal = True
 
-    def __init__(self, name, use_bias, shader=None):
-        ShaderShadow.__init__(self, shader)
+    def __init__(self, name, use_bias):
+        ShaderShadow.__init__(self)
         self.name = name
         self.use_bias = use_bias
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias

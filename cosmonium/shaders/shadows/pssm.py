@@ -25,8 +25,8 @@ class ShaderPSSMShadowMap(ShaderShadow):
     use_vertex_frag = True
     world_vertex = True
 
-    def __init__(self, name, shader=None):
-        ShaderShadow.__init__(self, shader)
+    def __init__(self, name):
+        ShaderShadow.__init__(self)
         self.name = name
         self.num_splits = 5
 

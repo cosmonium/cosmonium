@@ -104,8 +104,8 @@ class RayMarchingShader(ShaderAppearance):
     use_vertex = True
     world_vertex = True
 
-    def __init__(self, shader=None):
-        ShaderAppearance.__init__(self, shader)
+    def __init__(self):
+        ShaderAppearance.__init__(self)
         self.hdr = False
         self.exposure = 4.0
         self.max_steps = 64
@@ -198,8 +198,8 @@ class SDFRayMarchingAppearance(RayMarchingAppearanceBase):
         return SDFRayMarchingShader(self.shape)
 
 class SDFRayMarchingShader(RayMarchingShader):
-    def __init__(self, shape, shader=None):
-        RayMarchingShader.__init__(self, shader)
+    def __init__(self, shape):
+        RayMarchingShader.__init__(self)
         self.shape = shape
 
     def get_id(self):
@@ -254,8 +254,8 @@ class BulgeRayMarchingAppearance(RayMarchingAppearanceBase):
 
 
 class BulgeRayMarchingShader(RayMarchingShader):
-    def __init__(self, shader=None):
-        RayMarchingShader.__init__(self, shader)
+    def __init__(self):
+        RayMarchingShader.__init__(self)
 
     def get_id(self):
         name = RayMarchingShader.get_id(self)
@@ -350,8 +350,8 @@ class VolumetricDensityRayMarchingAppearanceBase(RayMarchingAppearanceBase):
 
 
 class VolumetricDensityRayMarchingShaderBase(RayMarchingShader):
-    def __init__(self, density, shader=None):
-        RayMarchingShader.__init__(self, shader)
+    def __init__(self, density):
+        RayMarchingShader.__init__(self)
         self.density = density
 
     def get_id(self):

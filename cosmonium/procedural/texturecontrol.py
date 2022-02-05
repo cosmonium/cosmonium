@@ -23,8 +23,8 @@ from ..shaders.component import ShaderComponent
 from math import cos, pi
 
 class TextureControl(ShaderComponent):
-    def __init__(self, name, shader=None):
-        ShaderComponent.__init__(self, shader)
+    def __init__(self, name):
+        ShaderComponent.__init__(self)
         self.name = name
 
     def get_sources_names(self):

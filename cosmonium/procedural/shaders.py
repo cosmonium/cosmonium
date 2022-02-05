@@ -144,8 +144,8 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
         return 'hash_texture_array_tiling({}, vec3({}, {}))'.format(texture, coord, page)
 
 class TextureDictionaryDataSource(ShaderDataSource):
-    def __init__(self, dictionary, shader=None):
-        ShaderDataSource.__init__(self, shader)
+    def __init__(self, dictionary):
+        ShaderDataSource.__init__(self)
         self.dictionary = dictionary
         self.tiling = dictionary.tiling
 
@@ -209,8 +209,8 @@ class ProceduralMap(ShaderAppearance):
     world_vertex = True
     model_vertex = True
 
-    def __init__(self, textures_control, heightmap, create_normals=False, shader=None):
-        ShaderAppearance.__init__(self, shader)
+    def __init__(self, textures_control, heightmap, create_normals=False):
+        ShaderAppearance.__init__(self)
         self.textures_control = textures_control
         self.heightmap = heightmap
         self.has_surface_texture = True
@@ -246,8 +246,8 @@ class DetailMap(ShaderAppearance):
     world_vertex = True
     model_vertex = True
 
-    def __init__(self, textures_control, heightmap, create_normals=True, shader=None):
-        ShaderAppearance.__init__(self, shader)
+    def __init__(self, textures_control, heightmap, create_normals=True):
+        ShaderAppearance.__init__(self)
         self.textures_control = textures_control
         self.heightmap = heightmap
         self.create_normals = create_normals
