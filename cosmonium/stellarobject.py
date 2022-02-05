@@ -165,9 +165,9 @@ class StellarObject(NamedObject):
 
     def get_fullname(self, separator='/'):
         if hasattr(self, "primary") and self.primary is not None:
-            name = self.primary.get_friendly_name()
+            name = self.primary.get_c_name()
         else:
-            name = self.get_friendly_name()
+            name = self.get_c_name()
         if not hasattr(self.parent, "primary") or self.parent.primary is not self:
             fullname = self.parent.get_fullname(separator)
         else:

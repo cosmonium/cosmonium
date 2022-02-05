@@ -43,8 +43,11 @@ class NamedObject:
     def get_name(self):
         return self.names[0]
 
+    def get_c_name(self):
+        return self.source_names[0] if self.source_names else self.names[0]
+
     def get_ascii_name(self):
-        return self.names[0].encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
+        return self.get_c_name().encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
 
     def get_exact_name(self, text):
         text = text.upper()
@@ -61,7 +64,7 @@ class NamedObject:
         return result
 
     def get_fullname(self, separator='/'):
-        return self.get_friendly_name()
+        return self.get_c_name()
 
     def get_description(self):
         return self.description
