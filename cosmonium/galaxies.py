@@ -87,6 +87,8 @@ class GalaxyAppearance(AppearanceBase):
         self.color_scale = color_scale
         self.has_vertex_color = True
         self.nb_textures = 1
+        #TODO: Texture should be an actual VisibleTexture object
+        self.texture = True
         self.texture_index = 0
         self.transparency = True
         self.transparency_blend = TransparencyBlend.TB_Additive
@@ -111,7 +113,8 @@ class GalaxyAppearance(AppearanceBase):
         tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
-        if self.texture is None:
+        #TODO: This stupid test is needed until the texture field contains an actual texture object
+        if self.texture is None or self.texture is True:
             if self.image is None:
                 self.image = self.sprite.generate()
             texture = Texture()
