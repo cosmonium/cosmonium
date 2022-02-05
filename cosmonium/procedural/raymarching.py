@@ -68,7 +68,7 @@ class RayMarchingShape(Shape):
     def get_scale(self):
         return Shape.get_scale(self) * self.scale_factor
 
-    def update_instance(self, camera_pos, orientation):
+    def update_instance(self, scene_manager, camera_pos, orientation):
         alpha = asin(self.radius / self.owner.anchor.distance_to_obs)
         self.scale_factor = 1.0 / cos(alpha)
 
@@ -84,7 +84,7 @@ class RayMarchingAppearanceBase(AppearanceBase):
         instance.setShaderInput("max_steps", int(self.max_steps))
         instance.setShaderInput("exposure", self.exposure)
 
-    def update(self, shape, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         pos = shape.owner.anchor.rel_position
         instance.setShaderInput("radius", shape.owner.get_apparent_radius())
         instance.setShaderInput("center", pos)
