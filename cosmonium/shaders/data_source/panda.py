@@ -216,9 +216,16 @@ class PandaShaderDataSource(ShaderDataSource):
             return data
         if source == 'alpha':
             if self.has_transparency:
-                return "tex%i.a" % self.texture_index
-            else:
-                return "1.0"
+                if self.has_surface_texture:
+                    data = "tex%i.a" % self.texture_index
+                else:
+                    data = "1.0"
+            if self.has_vertex_color:
+                data = data + " * vertex_color.a"
+            if self.has_material:
+                data = data + " * p3d_Material.baseColor.a"
+            data += " * p3d_ColorScale.a"
+            return data
         if source == 'normal':
             if self.has_normal_texture:
                 return "(vec3(tex%i) * 2.0) - 1.0" % self.normal_map_index
