@@ -244,7 +244,8 @@ class ShapeObject(VisibleObject):
             patch.instance_ready = True
             if self.shader is not None:
                 if self.first_patch:
-                    self.shader.apply(self.shape, self.appearance, self.shape.instance)
+                    self.shader.create(self.shape, self.appearance)
+                    self.shader.apply(self.shape.instance)
                     self.first_patch = False
             patch.patch_done()
             self.shape.patch_done(patch)
@@ -258,7 +259,8 @@ class ShapeObject(VisibleObject):
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
-                self.shader.apply(shape, self.appearance, self.shape.instance)
+                self.shader.create(self.shape, self.appearance)
+                self.shader.apply(self.shape.instance)
             shape.shape_done()
         #print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
@@ -287,7 +289,8 @@ class ShapeObject(VisibleObject):
 
     def update_shader(self):
         if self.instance is not None and self.shader is not None and self.instance_ready:
-            self.shader.apply(self.shape, self.appearance, self.shape.instance)
+            self.shader.create(self.shape, self.appearance)
+            self.shader.apply(self.shape.instance)
             self.sources.apply_shape_data(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):

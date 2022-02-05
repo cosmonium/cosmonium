@@ -61,6 +61,7 @@ class Grid(VisibleObject):
         cls.appearance.has_material = False
         cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = False
+        cls.shader.create(None, cls.appearance)
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
@@ -119,7 +120,7 @@ class Grid(VisibleObject):
         if self.shader is None:
             self.create_shader()
         self.appearance.apply(self, self.instance)
-        self.shader.apply(self, self.appearance, self.instance)
+        self.shader.apply(self.instance)
         self.instance.setRenderModeThickness(settings.grid_thickness)
         self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.setQuat(LQuaternion(*self.orientation))

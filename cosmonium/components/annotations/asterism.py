@@ -60,6 +60,7 @@ class Asterism(VisibleObject):
         cls.appearance.has_material = False
         cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = False
+        cls.shader.create(None, cls.appearance)
 
     def set_segments_list(self, segments):
         self.segments = segments
@@ -114,7 +115,7 @@ class Asterism(VisibleObject):
         if self.shader is None:
             self.create_shader()
         self.appearance.apply(self, self.instance)
-        self.shader.apply(self, self.appearance, self.instance)
+        self.shader.apply(self.instance)
         self.instance.setRenderModeThickness(settings.asterism_thickness)
         self.instance.reparentTo(self.scene_anchor.unshifted_instance)
         self.instance.setBin('background', settings.asterisms_depth)

@@ -58,11 +58,15 @@ class ShaderBase(object):
             shader_id = self.get_shader_id()
             self.shaders_cache[shader_id] = self.shader
 
-    def apply(self, shape, appearance, instance):
+    def create(self, shape, appearance, force=True):
+        self.create_and_register_shader(shape, appearance, force)
+
+    def apply(self, instance):
         if instance is None: return
-        self.create_and_register_shader(shape, appearance, force=True)
         if self.shader is not None:
-            instance.setShader(self.shader)
+            instance.set_shader(self.shader)
+        else:
+            print("ERROR: Applying a non created shader")
 
 class AutoShader(ShaderBase):
     def set_instance_control(self, instance_control):

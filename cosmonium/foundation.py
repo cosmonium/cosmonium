@@ -306,6 +306,7 @@ class ObjectLabel(VisibleObject):
         cls.appearance.alpha_mask = True
         cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = settings.color_picking and cls.color_picking
+        cls.shader.create(None, cls.appearance)
 
     def check_settings(self):
         if self.label_source.body_class is None:
@@ -359,7 +360,7 @@ class ObjectLabel(VisibleObject):
         if self.shader is None:
             self.create_shader()
         self.appearance.apply(self, self.instance)
-        self.shader.apply(self, self.appearance, self.instance)
+        self.shader.apply(self.instance)
         TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
 
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())

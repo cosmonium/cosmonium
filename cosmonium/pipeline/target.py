@@ -274,7 +274,7 @@ class TargetShaderMixin():
 
     def set_shader(self, shader):
         self.shader = shader
-        shader.apply(None, None, self.root)
+        shader.apply(self.root)
 
     def update_shader_data(self, shader_data):
         self.shader.update(self.root, **shader_data)

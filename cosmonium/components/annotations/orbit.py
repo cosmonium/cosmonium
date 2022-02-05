@@ -67,6 +67,7 @@ class Orbit(VisibleObject):
         else:
             vertex_control = None
         cls.shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
+        cls.shader.create(None, cls.appearance)
 
     def check_settings(self):
         if self.body.body_class is None:
@@ -130,7 +131,7 @@ class Orbit(VisibleObject):
         self.instance_ready = True
         if self.shader is None:
             self.create_shader()
-        self.shader.apply(self, self.appearance, self.instance)
+        self.shader.apply(self.instance)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.instance.hide(self.AllCamerasMask)
