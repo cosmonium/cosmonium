@@ -26,7 +26,7 @@ from ..astro import units
 from ..dircontext import defaultDirContext
 from .. import settings
 
-from .shaders import TextureDictionaryDataSource, DetailMap
+from .shaders import TextureDictionaryShaderDataSource, DetailMap
 
 from math import pi
 
@@ -163,7 +163,7 @@ class ProceduralAppearance(AppearanceBase):
         AppearanceBase.__init__(self)
         self.texture_control = texture_control
         self.texture_source = texture_source
-        self.appearance_source = TextureDictionaryDataSource(texture_source)
+        self.appearance_source = TextureDictionaryShaderDataSource(texture_source)
         self.shader_appearance = DetailMap(texture_control, heightmap, create_normals=True)
 
     def get_data_source(self):

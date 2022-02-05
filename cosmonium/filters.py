@@ -20,7 +20,7 @@
 
 from panda3d.core import LColor, Texture
 
-from .shaders.data_source.heightmap import HeightmapDataSource
+from .shaders.data_source.heightmap import HeightmapShaderDataSource
 from . import settings
 
 from math import floor
@@ -78,7 +78,7 @@ class NearestFilter(TexFilter):
         texture_config.magfilter = Texture.FT_nearest
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_nearest
+        return HeightmapShaderDataSource.F_nearest
 
 class BilinearFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -89,7 +89,7 @@ class BilinearFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_bilinear
+        return HeightmapShaderDataSource.F_bilinear
 
 class SmoothstepFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -111,7 +111,7 @@ class SmoothstepFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_smoothstep
+        return HeightmapShaderDataSource.F_smoothstep
 
 class QuinticFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -133,7 +133,7 @@ class QuinticFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_quintic
+        return HeightmapShaderDataSource.F_quintic
 
 class BSplineFilter(TexFilter):
     def update_texture_config(self, texture_config):
@@ -141,7 +141,7 @@ class BSplineFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapDataSource.F_bspline
+        return HeightmapShaderDataSource.F_bspline
 
     def cubic(self, alpha):
         alpha2 = alpha * alpha

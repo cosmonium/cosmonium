@@ -21,10 +21,10 @@
 from .base import ShaderDataSource, CompositeShaderDataSource
 
 
-class DataStoreManagerDataSource(CompositeShaderDataSource):
+class DataStoreManagerShaderDataSource(CompositeShaderDataSource):
     pass
 
-class ParametersDataStoreDataSource(ShaderDataSource):
+class ParametersDataStoreShaderDataSource(ShaderDataSource):
     def get_id(self):
         return "ds"
 

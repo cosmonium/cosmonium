@@ -21,7 +21,7 @@
 from .base import ShaderProgram, StructuredShader
 from .appearance import TextureAppearance
 from .data_source.base import CompositeShaderDataSource
-from .data_source.panda import PandaDataSource
+from .data_source.panda import PandaShaderDataSource
 from .instancing import NoInstanceControl
 from .lighting.lambert import LambertPhongLightingModel
 from .point_control import NoPointControl
@@ -481,7 +481,7 @@ class RenderingShader(StructuredShader):
             vertex_source = DirectVertexInput()
         vertex_source.set_shader(self)
         if data_source is None:
-            data_source = PandaDataSource()
+            data_source = PandaShaderDataSource()
         data_source = CompositeShaderDataSource(data_source)
         if after_effects is None:
             after_effects = []

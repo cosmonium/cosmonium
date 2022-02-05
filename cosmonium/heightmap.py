@@ -22,7 +22,7 @@ from panda3d.core import Texture, LColor
 
 from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
-from .shaders.data_source.heightmap import HeightmapDataSource
+from .shaders.data_source.heightmap import HeightmapShaderDataSource
 from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
 from .textures import TextureConfiguration
 from .interpolators import HardwareInterpolator
@@ -287,7 +287,7 @@ class PatchedHeightmapBase(HeightmapBase, PatchedData):
             return self.v_scale
 
     def get_data_source(self, data_store):
-        return HeightmapDataSource(self, data_store)
+        return HeightmapShaderDataSource(self, data_store)
 
     def get_nb_shader_data(self):
         return 8

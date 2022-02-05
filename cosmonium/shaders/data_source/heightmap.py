@@ -22,7 +22,7 @@ from .base import ShaderDataSource
 from ... import settings
 
 
-class HeightmapDataSource(ShaderDataSource):
+class HeightmapShaderDataSource(ShaderDataSource):
     I_Hardware = 0
     I_Software = 1
 

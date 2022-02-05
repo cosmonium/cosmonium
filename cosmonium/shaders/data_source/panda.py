@@ -21,7 +21,7 @@
 from .base import ShaderDataSource
 
 
-class PandaDataSource(ShaderDataSource):
+class PandaShaderDataSource(ShaderDataSource):
     def __init__(self):
         ShaderDataSource.__init__(self)
         self.tex_transform = False

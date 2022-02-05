@@ -23,7 +23,7 @@ from ...textures import DataTexture
 from ... import settings
 
 
-class StackedHeightmapDataSource(ShaderDataSource):
+class StackedHeightmapShaderDataSource(ShaderDataSource):
     def __init__(self, heightmap, texture_class):
         ShaderDataSource.__init__(self)
         self.heightmap = heightmap

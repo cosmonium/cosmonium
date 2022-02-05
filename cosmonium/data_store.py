@@ -19,7 +19,7 @@
 
 
 from panda3d.core import Texture
-from .shaders.data_source.data_store import DataStoreManagerDataSource, ParametersDataStoreDataSource
+from .shaders.data_source.data_store import DataStoreManagerShaderDataSource, ParametersDataStoreShaderDataSource
 
 from collections import deque
 import struct
@@ -43,7 +43,7 @@ class PatchDataStoreManager:
             data_store.init()
 
     def get_shader_data_source(self):
-        shader_data_source = DataStoreManagerDataSource()
+        shader_data_source = DataStoreManagerShaderDataSource()
         for data_store in self.data_stores:
             shader_data_source.add_source(data_store.get_shader_data_source())
         return shader_data_source
@@ -89,7 +89,7 @@ class PatchParametersDataStore:
         self.pack_format = ''
 
     def get_shader_data_source(self):
-        return ParametersDataStoreDataSource()
+        return ParametersDataStoreShaderDataSource()
 
     def add_data_source(self, data_source):
         if self.texture_data is not None:

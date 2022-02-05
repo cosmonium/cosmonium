@@ -20,7 +20,7 @@
 
 from panda3d.core import Texture
 
-from .shaders import DeferredDetailMapShader, TextureDictionaryDataSource
+from .shaders import DeferredDetailMapShader, TextureDictionaryShaderDataSource
 from .shadernoise import NoiseShader
 
 from ..pipeline.target import ProcessTarget
@@ -85,7 +85,7 @@ class DetailTextureGenerationStage(ProcessStage):
 
     def create_shader(self):
         shader = DeferredDetailMapShader(self.heightmap, self.texture_control, self.texture_source)
-        shader.data_source.add_source(TextureDictionaryDataSource(self.texture_source))
+        shader.data_source.add_source(TextureDictionaryShaderDataSource(self.texture_source))
         shader.data_source.add_source(self.heightmap.get_data_source(False))
         shader.create_and_register_shader(None, None)
         return shader

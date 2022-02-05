@@ -28,7 +28,7 @@ from .datasource import DataSource
 from .utils import TransparencyBlend
 from .dircontext import defaultDirContext
 from .parameters import ParametersGroup, AutoUserParameter
-from .shaders.data_source.panda import PandaDataSource
+from .shaders.data_source.panda import PandaShaderDataSource
 
 from . import settings
 
@@ -152,7 +152,7 @@ class AppearanceBase(DataSource):
         return None
 
     def get_data_source(self):
-        return PandaDataSource()
+        return PandaShaderDataSource()
 
     def get_shader_appearance(self):
         return None

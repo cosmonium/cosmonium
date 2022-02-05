@@ -143,7 +143,7 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
     def tile_texture_array(self, texture, coord, page):
         return 'hash_texture_array_tiling({}, vec3({}, {}))'.format(texture, coord, page)
 
-class TextureDictionaryDataSource(ShaderDataSource):
+class TextureDictionaryShaderDataSource(ShaderDataSource):
     def __init__(self, dictionary):
         ShaderDataSource.__init__(self)
         self.dictionary = dictionary
@@ -382,7 +382,7 @@ class DeferredDetailMapFragmentShader(ShaderProgram):
             code.append('gl_FragColor = frag_output;')
 
 class FakeAppearance:
-    # Workaround class to have a shader appearance for the TextureDictionaryDataSource
+    # Workaround class to have a shader appearance for the TextureDictionaryShaderDataSource
     def __init__(self):
         self.resolved = True
 
