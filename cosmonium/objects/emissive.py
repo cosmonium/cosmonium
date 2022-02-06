@@ -17,16 +17,27 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .editors import ObjectEditors
 
-from .objecteditor import StellarObjectEditor
-from .orbiteditor import EllipticalOrbitEditor
-from .rotationeditor import UniformRotationEditor
+from .stellarbody import StellarBody
 
-from ...objects.stellarobject import StellarObject
-from ...astro.orbits import EllipticalOrbit
-from ...astro.rotations import UniformRotation
+from ..anchors import StellarAnchor
+from ..astro.astro import abs_mag_to_lum
 
-ObjectEditors.register(StellarObject, StellarObjectEditor)
-ObjectEditors.register(EllipticalOrbit, EllipticalOrbitEditor)
-ObjectEditors.register(UniformRotation, UniformRotationEditor)
+class EmissiveBody(StellarBody):
+    anchor_class = StellarAnchor.Emissive
+    has_halo = True
+    has_resolved_halo = True
+    def __init__(self, *args, **kwargs):
+        abs_magnitude = kwargs.pop('abs_magnitude', None)
+        StellarBody.__init__(self, *args, **kwargs)
+        #TODO: This should be done in create_anchor
+        self.anchor._abs_magnitude = abs_magnitude
+
+    def is_emissive(self):
+        return True
+
+    def get_luminosity(self):
+        return abs_mag_to_lum(self.get_abs_magnitude())
+    
+    def get_phase(self):
+        return 1

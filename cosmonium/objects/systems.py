@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@
 
 
 from .stellarobject import StellarObject
-from .catalogs import ObjectsDB, objectsDB
-from .astro.astro import lum_to_abs_mag, abs_mag_to_lum
-from .foundation import CompositeObject
-from .anchors import SystemAnchor, OctreeAnchor
-from .pstats import pstat
+
+from ..catalogs import ObjectsDB, objectsDB
+from ..anchors import SystemAnchor, OctreeAnchor
+
+
+class ReferencePoint(StellarObject):
+    virtual_object = True
+
 
 class StellarSystem(StellarObject):
     anchor_class = SystemAnchor.System
@@ -127,11 +130,11 @@ class StellarSystem(StellarObject):
         self.children.append(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
+        #TODO: This is a quick workaround until stars of a system are properly managed
+        if child.is_emissive():
+            self.has_halo = True
 
-    #TODO: This is a quick workaround until stars of a system are properly managed
-    def add_child_star_fast(self, child):
-        self.add_child_fast(child)
-        self.has_halo = True
+    add_child_star_fast = add_child_fast
 
     def add_child(self, child):
         self.add_child_fast(child)

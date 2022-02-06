@@ -20,22 +20,22 @@
 
 from panda3d.core import LPoint3d, LColor
 
-from .foundation import CompositeObject
-from .namedobject import NamedObject
-from .components.annotations.body_label import StellarBodyLabel, FixedOrbitLabel
-from .components.annotations.reference_axes import ReferenceAxes
-from .components.annotations.rotation_axis import RotationAxis
-from .components.annotations.orbit import Orbit
-from .components.elements.halo import Halo
-from .anchors import DynamicStellarAnchor
-from .sceneanchor import SceneAnchor
-from .astro.frame import SynchroneReferenceFrame
-from .astro.orbits import FixedPosition
-from .bodyclass import bodyClasses
-from .catalogs import objectsDB
-from .parameters import ParametersGroup
-from . import settings
-from .utils import srgb_to_linear
+from ..foundation import CompositeObject
+from ..namedobject import NamedObject
+from ..components.annotations.body_label import StellarBodyLabel, FixedOrbitLabel
+from ..components.annotations.reference_axes import ReferenceAxes
+from ..components.annotations.rotation_axis import RotationAxis
+from ..components.annotations.orbit import Orbit
+from ..components.elements.halo import Halo
+from ..anchors import DynamicStellarAnchor
+from ..sceneanchor import SceneAnchor
+from ..astro.frame import SynchroneReferenceFrame
+from ..astro.orbits import FixedPosition
+from ..bodyclass import bodyClasses
+from ..catalogs import objectsDB
+from ..parameters import ParametersGroup
+from .. import settings
+from ..utils import srgb_to_linear
 
 from math import pi, asin, atan2, sin, cos
 

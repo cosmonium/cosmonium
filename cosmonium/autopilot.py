@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFr
 from .astro.frame import SynchroneReferenceFrame
 from .astro import units
 from .utils import isclose
-from .systems import SimpleSystem
+from .objects.systems import SimpleSystem
 from . import settings
 
 from math import acos, pi, exp, log

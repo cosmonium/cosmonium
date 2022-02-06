@@ -25,26 +25,27 @@ from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
 from panda3d.core import ShaderAttrib
 
-from .appearances import AppearanceBase
-from .shapes.base import Shape
-from .components.elements.surfaces import EllipsoidFlatSurface
-from .sprites import ExpPointSprite
-from .textures import TransparentTexture, DirectTextureSource
-from .shaders.point_control import PointControl
-from .shaders.rendering import RenderingShader
-from .shaders.lighting.flat import FlatLightingModel
-from .utils import TransparencyBlend
-from .parameters import AutoUserParameter, UserParameter
+from .dso import DeepSpaceObject
 
-from .bodies import DeepSpaceObject
-from .utils import mag_to_scale_nolimit
-from .astro import units
-from . import settings
+from ..appearances import AppearanceBase
+from ..datasource import DataSource
+from ..shapes.base import Shape
+from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..sprites import ExpPointSprite
+from ..textures import TransparentTexture, DirectTextureSource
+from ..shaders.point_control import PointControl
+from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.flat import FlatLightingModel
+from ..utils import TransparencyBlend
+from ..utils import mag_to_scale_nolimit, srgb_to_linear
+from ..parameters import AutoUserParameter, UserParameter
+
+from ..astro import units
+from .. import settings
 
 from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from random import random, gauss, choice, seed
-from cosmonium.utils import srgb_to_linear
-from cosmonium.datasource import DataSource
+
 
 class Galaxy(DeepSpaceObject):
     has_rotation_axis = False

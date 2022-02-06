@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -37,13 +37,14 @@ from .scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneMa
 from .dircontext import defaultDirContext
 from .opengl import OpenGLConfig
 from .pipeline.scenepipeline import ScenePipeline
-from .stellarobject import StellarObject
-from .systems import StellarSystem, SimpleSystem
-from .bodies import StellarBody, ReflectiveBody
+from .objects.universe import Universe
+from .objects.stellarobject import StellarObject
+from .objects.systems import StellarSystem, SimpleSystem
+from .objects.stellarbody import StellarBody
+from .objects.reflective import ReflectiveBody
 from .anchors import StellarAnchor, CartesianAnchor
 from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
-from .universe import Universe
 from .components.annotations.grid import Grid
 from .astro.frame import BodyReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame

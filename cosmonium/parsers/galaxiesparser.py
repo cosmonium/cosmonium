@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 #
 
 
-from ..galaxies import LenticularGalaxyShape, EllipticalGalaxyShape, IrregularGalaxyShape, SpiralGalaxyShape, FullSpiralGalaxyShape, FullRingGalaxyShape
+from ..objects.galaxies import LenticularGalaxyShape, EllipticalGalaxyShape, IrregularGalaxyShape, SpiralGalaxyShape, FullSpiralGalaxyShape, FullRingGalaxyShape
 from ..sprites import GaussianPointSprite, ExpPointSprite, RoundDiskPointSprite
-from ..galaxies import Galaxy, GalaxyAppearance
+from ..objects.galaxies import Galaxy, GalaxyAppearance
 
 from .utilsparser import DistanceUnitsYamlParser
 from .orbitsparser import OrbitYamlParser

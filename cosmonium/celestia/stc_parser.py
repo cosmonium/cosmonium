@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 #
 
 
-from ..universe import Universe
-from ..systems import Barycenter
+from ..objects.universe import Universe
+from ..objects.systems import Barycenter
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import UnknownRotation
@@ -27,7 +27,8 @@ from ..astro.frame import J2000BarycentricEquatorialReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
-from ..bodies import Star, StarTexSurfaceFactory
+from ..objects.star import Star
+from ..objects.surface_factory import StarTexSurfaceFactory
 from ..dircontext import defaultDirContext
 
 from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit, \
@@ -133,7 +134,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
                 radius=radius,
                 orbit=orbit,
                 rotation=rotation)
-    parent.add_child_star_fast(star)
+    parent.add_child_fast(star)
     return star
 
 def instanciate_barycenter(universe, item_name, item_alias, item_data):
@@ -176,7 +177,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
     orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
     barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
-    parent.add_child_star_fast(barycenter)
+    parent.add_child_fast(barycenter)
     return barycenter
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):

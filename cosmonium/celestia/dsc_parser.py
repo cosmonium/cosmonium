@@ -20,8 +20,8 @@
 
 from panda3d.core import LVector3d
 
-from ..universe import Universe
-from ..galaxies import Galaxy
+from ..objects.universe import Universe
+from ..objects.galaxies import Galaxy
 from ..celestia import config_parser
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation

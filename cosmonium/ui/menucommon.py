@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..systems import StellarSystem, SimpleSystem
-from ..bodies import StellarBody
-from ..universe import Universe
+from ..objects.systems import StellarSystem, SimpleSystem
+from ..objects.stellarbody import StellarBody
+from ..objects.universe import Universe
 
 def create_orbiting_bodies_menu_items(engine, body):
     subitems = []

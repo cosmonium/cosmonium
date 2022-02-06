@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from ..bodies import Star
+from ..objects.star import Star
 from ..catalogs import objectsDB
 from ..procedural.stars import proceduralStarSurfaceFactoryDB
 from ..procedural.stars import ProceduralStarSurfaceFactory
@@ -75,7 +75,7 @@ class StarYamlParser(YamlModuleParser):
             surfaces = []
         for surface in surfaces:
             star.add_surface(surface)
-        parent.add_child_star_fast(star)
+        parent.add_child_fast(star)
         return star
     
 class StarSurfaceFactoryYamlParser(YamlModuleParser):

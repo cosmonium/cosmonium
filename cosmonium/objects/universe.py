@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@
 
 from panda3d.core import LPoint3d, LQuaterniond
 
-from .astro.orbits import AbsoluteFixedPosition
-from .astro.rotations import FixedRotation
-from .astro.frame import AbsoluteReferenceFrame
+from ..astro.orbits import AbsoluteFixedPosition
+from ..astro.rotations import FixedRotation
+from ..astro.frame import AbsoluteReferenceFrame
+from ..anchors import UniverseAnchor
 
 from .systems import OctreeSystem
-from .anchors import UniverseAnchor
 
 class Universe(OctreeSystem):
     def __init__(self, context):

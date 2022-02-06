@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from panda3d.core import LColor
 
-from ..bodies import ReflectiveBody
+from ..objects.reflective import ReflectiveBody
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser

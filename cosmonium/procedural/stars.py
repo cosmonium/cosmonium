@@ -24,7 +24,7 @@ from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.flat import FlatLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
-from ..bodies import SurfaceFactory
+from ..objects.surface_factory import SurfaceFactory
 from .. import settings
 
 from .textures import NoiseTextureGenerator, PatchedProceduralVirtualTextureSource

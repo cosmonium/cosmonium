@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 
 from panda3d.core import LVector3d
 
-from ..universe import Universe
-from ..bodies import Star
+from ..objects.universe import Universe
+from ..objects.star import Star
 from ..astro.spectraltype import spectralTypeStringDecoder, spectralTypeIntDecoder
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import UnknownRotation
@@ -112,7 +112,7 @@ def do_load_bin(filepath, names, universe):
                     abs_magnitude=abs_magnitude / 256.0,
                     orbit=orbit,
                     rotation=UnknownRotation())
-        universe.add_child_star_fast(star)
+        universe.add_child_fast(star)
     end = time()
     print("Load time:", end - start)
 

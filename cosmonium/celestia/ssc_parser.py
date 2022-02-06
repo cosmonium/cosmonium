@@ -28,7 +28,8 @@ from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orb
 from .shaders import LunarLambertLightingModel
 
 from ..celestia.atmosphere import CelestiaAtmosphere
-from ..bodies import ReflectiveBody, ReferencePoint
+from ..objects.reflective import ReflectiveBody
+from ..objects.systems import ReferencePoint
 from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
