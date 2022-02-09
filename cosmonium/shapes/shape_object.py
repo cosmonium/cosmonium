@@ -35,6 +35,7 @@ class ShapeObject(VisibleObject):
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.sources = DataSourcesHandler()
+        self.patch_sources = DataSourcesHandler()
         self.shape = None
         self.owner = None
         self.set_shape(shape)
@@ -43,8 +44,12 @@ class ShapeObject(VisibleObject):
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
-        #Notusing add source as some dependencies of the appearance can also be sources
-        self.appearance.add_as_source(self)
+        #Not using add source as some dependencies of the appearance can also be sources
+        if shape is not None:
+            if shape.patchable:
+                self.appearance.add_as_source(self.patch_sources)
+            else:
+                self.appearance.add_as_source(self.sources)
         self.instance_ready = False
         self.owner = None
         self.oid_color = None
@@ -86,9 +91,9 @@ class ShapeObject(VisibleObject):
         if shape is not None:
             self.shape.parent = self
             self.shape.set_owner(self.owner)
-            data_source = self.shape.get_data_source()
-            if data_source is not None:
-                self.sources.add_source(data_source)
+            self.sources.add_source(self.shape.get_data_source())
+            if shape.patchable:
+                self.patch_sources.add_source(self.shape.get_patch_data_source())
 
     def set_owner(self, owner):
         self.owner = owner
@@ -238,9 +243,9 @@ class ShapeObject(VisibleObject):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
         if self.shape.task is not None:
             await self.shape.task
-        await self.sources.load_patch_data(patch)
+        await self.patch_sources.load(patch)
         if patch.instance is not None:
-            self.sources.apply_patch_data(patch)
+            self.patch_sources.apply(patch)
             patch.instance_ready = True
             if self.shader is not None:
                 if self.first_patch:
@@ -253,9 +258,9 @@ class ShapeObject(VisibleObject):
 
     async def shape_task(self, shape):
         #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
-        await self.sources.load_shape_data(shape)
+        await self.sources.load(shape)
         if shape.instance is not None:
-            self.sources.apply_shape_data(shape)
+            self.sources.apply(shape)
             shape.instance_ready = True
             self.instance_ready = True
             if self.shader is not None:
@@ -279,7 +284,7 @@ class ShapeObject(VisibleObject):
         if patch.lod > 0:
             #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready, id(patch.instance))
             patch.instance_ready = True
-            self.sources.early_apply_patch_data(patch)
+            self.patch_sources.early_apply(patch)
             patch.patch_done()
             self.shape.patch_done(patch)
 
@@ -291,7 +296,7 @@ class ShapeObject(VisibleObject):
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.create(self.shape, self.appearance)
             self.shader.apply(self.shape.instance)
-            self.sources.apply_shape_data(self.shape)
+            self.sources.apply(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
         if self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
@@ -301,7 +306,7 @@ class ShapeObject(VisibleObject):
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.shape.instance is not None:
-            self.sources.update_shape_data(self.shape, camera_pos, camera_rot)
+            self.sources.update(self.shape, camera_pos, camera_rot)
         if not self.instance_ready: return
         self.shape.update_instance(scene_manager, camera_pos, camera_rot)
         self.update_lod(camera_pos, camera_rot)
@@ -318,9 +323,9 @@ class ShapeObject(VisibleObject):
     def remove_instance(self):
         # This method could be called even if the instance does not exist
         if self.instance is None: return
-        self.sources.clear_shape_data(self.shape, self.shape.instance)
+        self.sources.clear(self.shape, self.shape.instance)
+        self.patch_sources.clear_all()
         self.shadows.clear_shadows()
-        self.appearance.clear_all()
         self.shape.remove_instance()
         if self.instance is not None:
             self.instance.remove_node()
@@ -332,4 +337,4 @@ class ShapeObject(VisibleObject):
 
     def remove_patch(self, patch):
         #TODO: This should be reworked and moved into a dedicated class
-        self.appearance.clear_patch(patch)
+        self.patch_sources.clear(patch, patch.instance)

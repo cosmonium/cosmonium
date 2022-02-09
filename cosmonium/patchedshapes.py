@@ -627,6 +627,9 @@ class PatchedShapeBase(Shape):
     def get_data_source(self):
         return PatchedShapeDataSource(self)
 
+    def get_patch_data_source(self):
+        return PatchedShapePatchDataSource(self)
+
     def set_heightmap(self, heightmap):
         self.factory.set_heightmap(heightmap)
         if self.data_store is not None and settings.patch_parameters_data_store:
@@ -1198,13 +1201,18 @@ class PatchedShapeDataSource(DataSource):
         DataSource.__init__(self, 'shape')
         self.shape = shape
 
-    def apply_patch_data(self, patch, instance):
+    def apply(self, shape, instance):
+        if self.shape.data_store is not None:
+            self.shape.data_store.apply(instance)
+    
+class PatchedShapePatchDataSource(DataSource):
+    def __init__(self, shape):
+        DataSource.__init__(self, 'patch')
+        self.shape = shape
+
+    def apply(self, patch, instance):
         if self.shape.data_store is not None:
             self.shape.data_store.apply_patch_data(patch, instance)
         instance.set_shader_input("flat_coord", patch.flat_coord)
         instance.set_shader_input('TessLevelInner', patch.tessellation_inner_level)
         instance.set_shader_input('TessLevelOuter', *patch.tessellation_outer_level)
-
-    def apply(self, shape, instance):
-        if self.shape.data_store is not None:
-            self.shape.data_store.apply(instance)

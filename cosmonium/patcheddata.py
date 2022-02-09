@@ -86,7 +86,7 @@ class PatchData:
     def apply(self, instance):
         pass
 
-    def clear(self):
+    def clear(self, instance):
         self.texture = None
         self.data_ready = False
         self.loaded = False
@@ -143,7 +143,7 @@ class PatchedData(DataSource):
     def do_create_patch_data(self, patch):
         pass
 
-    def create_patch_data(self, patch):
+    def create(self, patch):
         if patch.str_id() in self.map_patch_data: return
         patch_data = self.do_create_patch_data(patch)
         self.map_patch_data[patch.str_id()] = patch_data
@@ -158,10 +158,10 @@ class PatchedData(DataSource):
         if patch_data.parent_data is None and patch.lod > 0:
             print("NO PARENT DATA FOR", patch.str_id())
 
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        tasks_tree.add_task_for(self, self.load_patch_data(tasks_tree, patch, owner))
+    def create_load_task(self, tasks_tree, patch, owner):
+        tasks_tree.add_task_for(self, self.load(tasks_tree, patch, owner))
 
-    async def load_patch_data(self, tasks_tree, patch, owner):
+    async def load(self, tasks_tree, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             if not patch_data.loaded:
@@ -174,7 +174,7 @@ class PatchedData(DataSource):
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
-    def apply_patch_data(self, patch, instance):
+    def apply(self, patch, instance):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             patch_data.apply(instance)
@@ -191,16 +191,13 @@ class PatchedData(DataSource):
         else:
             print("PATCH NOT CREATED?", patch.str_id())
 
-    def clear_patch(self, patch):
+    def clear(self, patch, instance):
         try:
             patch_data = self.map_patch_data[patch.str_id()]
-            patch_data.clear()
+            patch_data.clear(instance)
             del self.map_patch_data[patch.str_id()]
         except KeyError:
             pass
 
     def clear_all(self):
         self.map_patch_data = {}
-
-    def create_load_task(self, tasks_tree, shape, owner):
-        tasks_tree.add_task_for(self, self.load(shape, owner))

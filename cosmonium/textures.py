@@ -102,7 +102,7 @@ class TextureBase(object):
     def apply_shader(self, instance, input_name, texture, texture_lod):
         instance.set_shader_input(input_name, texture)
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         pass
 
     def clear_all(self):
@@ -168,7 +168,7 @@ class TextureSource(object):
     async def load(self, tasks_tree, patch, texture_config=None):
         pass
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         pass
 
     def clear_all(self):
@@ -249,10 +249,10 @@ class AutoTextureSource(TextureSource):
             self.create_source()
         return self.source.load(tasks_tree, patch, texture_config)
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         if self.source is None:
             self.create_source()
-        self.source.clear_patch(patch)
+        self.source.clear(patch)
 
     def clear_all(self):
         if self.source is None:
@@ -309,7 +309,7 @@ class TextureFileSource(TextureSource):
                 print("File", self.filename, "not found")
         return (self.texture, 0, 0)
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         # A non-patched texture can not be cleared per patch
         pass
 
@@ -422,8 +422,8 @@ class SimpleTexture(TextureBase):
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
         instance.set_texture(texture_stage, texture, 1)
 
-    def clear_patch(self, patch):
-        self.source.clear_patch(patch)
+    def clear(self, patch):
+        self.source.clear(patch)
 
     def clear_all(self):
         self.source.clear_all()
@@ -457,8 +457,8 @@ class DataTexture(TextureBase):
         if texture is not None:
             instance.set_shader_input(input_name, texture)
 
-    def clear_patch(self, patch):
-        self.source.clear_patch(patch)
+    def clear(self, patch, instance):
+        self.source.clear(patch)
 
     def clear_all(self):
         self.source.clear_all()
@@ -599,7 +599,7 @@ class TextureArray(TextureBase):
     def apply(self, shape, instance):
         self.apply_shader(instance, self.input_name, self.texture, None)
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         # A non-patched texture can not be cleared per patch
         pass
 
@@ -677,7 +677,7 @@ class VirtualTextureSource(TextureSource):
             texture_info = self.map_patch[patch.str_id()]
         return texture_info
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         try:
             del self.map_patch[patch.str_id()]
         except KeyError:

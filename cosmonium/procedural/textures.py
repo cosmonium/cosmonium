@@ -242,7 +242,7 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
             texture_info = self.map_patch[patch.str_id()]
         return texture_info
 
-    def clear_patch(self, patch):
+    def clear(self, patch):
         try:
             del self.map_patch[patch.str_id()]
         except KeyError:

@@ -82,8 +82,8 @@ class HeightmapPatch(PatchData):
         instance.set_shader_input("heightmap_%s_offset" % name, self.texture_offset)
         instance.set_shader_input("heightmap_%s_scale" % name, self.texture_scale)
 
-    def clear(self):
-        PatchData.clear(self)
+    def clear(self, instance):
+        PatchData.clear(self, instance)
         self.texture_peeker = None
 
     def collect_shader_data(self, data):
@@ -159,9 +159,9 @@ class TextureHeightmapPatch(HeightmapPatch):
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
         self.configure_data(texture_data)
 
-    def clear(self):
-        HeightmapPatch.clear(self)
-        self.data_source.clear(self.patch)
+    def clear(self, instance):
+        HeightmapPatch.clear(self, instance)
+        self.data_source.clear(self.patch, instance)
 
 
 class HeightmapBase():
@@ -300,9 +300,9 @@ class TexturePatchedHeightmap(PatchedHeightmapBase):
     def do_create_patch_data(self, patch):
         return TextureHeightmapPatch(self.data_source, self, patch, self.size, self.size, self.overlap)
 
-    def clear_patch(self, patch):
-        PatchedHeightmapBase.clear_patch(self, patch)
-        self.data_source.clear_patch(patch)
+    def clear(self, patch, instance):
+        PatchedHeightmapBase.clear(self, patch, instance)
+        self.data_source.clear(patch, instance)
 
     def clear_all(self):
         PatchedHeightmapBase.clear_all(self)

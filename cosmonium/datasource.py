@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -32,10 +32,6 @@ class DataSourceTasksTree:
         self.named_tasks[source.name] = task
         self.tasks.append(task)
 
-    def collect_patch_tasks(self, patch, owner):
-        for source in self.sources:
-            source.create_load_patch_data_task(self, patch, owner)
-
     def collect_tasks(self, shape, owner):
         for source in self.sources:
             source.create_load_task(self, shape, owner)
@@ -50,22 +46,7 @@ class DataSource:
     def __init__(self, name):
         self.name = name
 
-    def create_patch_data(self, patch):
-        pass
-
-    def create_load_patch_data_task(self, tasks_tree, patch, owner):
-        pass
-
-    async def load_patch_data(self, patch, owner):
-        pass
-
-    def apply_patch_data(self, patch, instance):
-        pass
-
-    def clear_patch(self, patch):
-        pass
-
-    def clear_all(self):
+    def create(self, shape):
         pass
 
     def create_load_task(self, tasks_tree, shape, owner):
@@ -80,7 +61,10 @@ class DataSource:
     def update(self, shape, instance, camera_pos, camera_rot):
         pass
 
-    def clear_shape_data(self, shape, instance):
+    def clear(self, shape, instance):
+        pass
+
+    def clear_all(self):
         pass
 
     def get_user_parameters(self):
@@ -103,10 +87,12 @@ class DataSourcesHandler:
         return source
 
     def add_source(self, source):
-        self.sources.append(source)
+        if source is not None:
+            self.sources.append(source)
 
     def remove_source(self, source):
-        self.sources.remove(source)
+        if source is not None:
+            self.sources.remove(source)
 
     def remove_source_by_name(self, name):
         source = None
@@ -115,35 +101,30 @@ class DataSourcesHandler:
                 self.sources.remove(source)
                 break
 
-    async def load_patch_data(self, patch):
+    def early_apply(self, shape):
         for source in self.sources:
-            source.create_patch_data(patch)
-        tasks_tree = DataSourceTasksTree(self.sources)
-        tasks_tree.collect_patch_tasks(patch, self)
-        await tasks_tree.run_tasks()
+            source.create(shape)
+            source.apply(shape, shape.instance)
 
-    def apply_patch_data(self, patch):
+    async def load(self, shape):
         for source in self.sources:
-            source.apply_patch_data(patch, patch.instance)
-
-    def early_apply_patch_data(self, patch):
-        for source in self.sources:
-            source.create_patch_data(patch)
-            source.apply_patch_data(patch, patch.instance)
-
-    async def load_shape_data(self, shape):
+            source.create(shape)
         tasks_tree = DataSourceTasksTree(self.sources)
         tasks_tree.collect_tasks(shape, self)
         await tasks_tree.run_tasks()
 
-    def apply_shape_data(self, shape):
+    def apply(self, shape):
         for source in self.sources:
             source.apply(shape, shape.instance)
 
-    def update_shape_data(self, shape, camera_pos, camera_rot):
+    def update(self, shape, camera_pos, camera_rot):
         for source in self.sources:
             source.update(shape, shape.instance, camera_pos, camera_rot)
 
-    def clear_shape_data(self, shape, instance):
+    def clear(self, shape, instance):
         for source in self.sources:
-            source.clear_shape_data(shape, shape.instance)
+            source.clear(shape, shape.instance)
+
+    def clear_all(self):
+        for source in self.sources:
+            source.clear_all()

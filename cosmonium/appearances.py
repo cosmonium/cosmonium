@@ -391,21 +391,21 @@ class Appearance(AppearanceBase):
 #         if self.has_bump_texture:
 #             instance.setShaderInput("bump_height", appearance.bump_height / settings.scale)
 
-    def clear_patch(self, patch):
-        if patch.instance is not None:
-            patch.instance.clear_texture()
+    def clear(self, patch, instance):
+        if instance is not None:
+            instance.clear_texture()
         if self.texture is not None:
-            self.texture.clear_patch(patch)
+            self.texture.clear(patch)
         if self.normal_map is not None:
-            self.normal_map.clear_patch(patch)
+            self.normal_map.clear(patch)
         if self.bump_map is not None:
-            self.bump_map.clear_patch(patch)
+            self.bump_map.clear(patch)
         if self.specular_map is not None:
-            self.specular_map.clear_patch(patch)
+            self.specular_map.clear(patch)
         if self.emission_texture is not None:
-            self.emission_texture.clear_patch(patch)
+            self.emission_texture.clear(patch)
         if self.occlusion_map is not None:
-            self.occlusion_map.clear_patch(patch)
+            self.occlusion_map.clear(patch)
 
     def clear_all(self):
         if self.texture is not None:
@@ -420,6 +420,31 @@ class Appearance(AppearanceBase):
             self.emission_texture.clear_all()
         if self.occlusion_map is not None:
             self.occlusion_map.clear_all()
+
+class AppearanceDataSource(DataSource):
+    def __init__(self, appearance):
+        DataSource.__init__(self, 'appearance')
+        self.appearance = appearance
+
+    def create_load_task(self, tasks_tree, shape, owner):
+        if self.appearance.nb_textures > 0:
+            tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
+
+    async def load(self, shape, owner):
+        await self.appearance.load_textures(tasks_tree, shape, owner)
+
+    def apply(self, shape, instance):
+        pass
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        pass
+
+    def clear(self, shape, instance):
+        pass
+
+    def clear_all(self):
+        pass
+
 
 class ModelAppearance(AppearanceBase):
     def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):

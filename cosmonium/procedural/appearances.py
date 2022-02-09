@@ -181,8 +181,8 @@ class ProceduralAppearance(AppearanceBase):
     def apply(self, shape, instance):
         self.texture_source.apply(shape, instance)
 
-    def clear_patch(self, patch):
-        self.texture_source.clear_patch(patch)
+    def clear(self, patch, instance):
+        self.texture_source.clear(patch, instance)
 
     def clear_all(self):
         self.texture_source.clear_all()

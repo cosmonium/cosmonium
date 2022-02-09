@@ -404,7 +404,7 @@ class DeferredDetailMapShader(StructuredShader):
 
     def update(self, instance, shape, patch, appearance, lod):
         shape.get_data_source().apply(shape, instance)
-        shape.get_data_source().apply_patch_data(patch, instance)
+        shape.get_patch_data_source().apply(patch, instance)
         #instance.set_shader_input("flat_coord", patch.flat_coord)
         self.texture_source.apply(shape, instance)
-        self.heightmap.apply_patch_data(patch, instance)
+        self.heightmap.apply(patch, instance)
