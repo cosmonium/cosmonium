@@ -438,16 +438,8 @@ class DataTexture(TextureBase):
             source = AutoTextureSource(source, attribution=None)
         self.source = source
 
-    def create_texture_config(self, shape):
-        texture_config = TextureConfiguration()
-        if self.source.is_patched():
-            texture_config.wrap_u = Texture.WM_clamp
-            texture_config.wrap_v = Texture.WM_clamp
-        return texture_config
-
-    async def load(self, tasks_tree, patch):
+    async def load(self, tasks_tree, patch, texture_config):
         if not self.source.loaded or not self.source.cached:
-            texture_config = self.create_texture_config(patch)
             await self.source.load(tasks_tree, patch, texture_config=texture_config)
 
     def apply(self, shape, instance, input_name):
