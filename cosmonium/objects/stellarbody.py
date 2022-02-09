@@ -101,13 +101,15 @@ class StellarBody(StellarObject):
         if self.auto_surface: return
         if self.init_components:
             self.unconfigure_shape()
-            self.remove_component(self.surface)
+            self.components.remove_component(self.surface)
             if self.atmosphere is not None:
                 self.atmosphere.remove_shape_object(surface)
         self.surface = surface
         if self.init_components:
-            self.add_component(self.surface)
-            self.atmosphere.add_shape_object(self.surface)
+            self.surface.set_oid_color(self.oid_color)
+            self.components.add_component(self.surface)
+            if self.atmosphere is not None:
+                self.atmosphere.add_shape_object(self.surface)
             self.configure_shape()
 
     def find_surface(self, surface_name):
