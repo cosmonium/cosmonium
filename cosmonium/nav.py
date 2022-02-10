@@ -571,7 +571,7 @@ class WalkNav(InteractiveNavigationController):
         arc_to_angle = 1.0 / (self.body.get_apparent_radius())
         object_position = self.controller.get_local_position()
         (lon, lat, vert) = self.body.get_lonlatvert_under(object_position)
-        direction = self.controller.get_local_orientation().xform(LVector3d(0, distance, 0))
+        direction = self.controller.get_absolute_orientation().xform(LVector3d(0, distance, 0))
         projected = direction - vert * direction.dot(vert)
         position = self.body.cartesian_to_spherical(self.controller.get_local_position())
         delta_x = lon.dot(projected) * arc_to_angle

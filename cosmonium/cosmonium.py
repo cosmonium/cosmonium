@@ -671,16 +671,18 @@ class Cosmonium(CosmoniumBase):
             return
         if nav.require_controller() and controller is None:
             return
+        if controller is None and self.ship is not None:
+            controller = ShipMover(self.ship.anchor)
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
         if self.nav is not None:
-            self.nav.init(self, self.observer, self.camera_controller, self.ship)
+            self.nav.init(self, self.observer, self.camera_controller, controller)
             self.nav.register_events(self)
             if nav.require_target():
                 self.nav.set_target(target)
             if nav.require_controller():
-                self.nav.set_controller(controller)
+                nav.set_controller(controller)
             self.gui.set_nav(nav)
             print("Switching navigation controller to", self.nav.get_name())
 
