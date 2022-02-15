@@ -768,7 +768,8 @@ TilePatchGenerator::TilePatchGenerator()
 
 void
 TilePatchGenerator::make_point(double size,
-    double u, double v, double x, double y,
+    double u, double v,
+    double x, double y, double z,
     bool inv_u, bool inv_v, bool swap_uv,
     GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
     GeomVertexWriter &gtanw, GeomVertexWriter &gbiw)
@@ -783,7 +784,7 @@ TilePatchGenerator::make_point(double size,
     std::swap(u, v);
   }
   gtw.add_data2(u, v);
-  gvw.add_data3(x * size, y * size, 0);
+  gvw.add_data3(x * size, y * size, z * size);
 
   gnw.add_data3(0, 0, 1.0);
   LVector3d tan(1, 0, 0);
@@ -847,7 +848,8 @@ TilePatchGenerator::make(double size, TesselationInfo tesselation,
       for (unsigned int j = 0; j < nb_vertices; ++j) {
           double v = float(j) / tesselation.inner;
           make_point(size,
-            u, v, u, v,
+            u, v,
+            u, v, 0,
             inv_u, inv_v, swap_uv,
             gvw, gtw, gnw, gtanw, gbiw);
       }
@@ -880,7 +882,8 @@ TilePatchGenerator::make(double size, TesselationInfo tesselation,
                   v = 1.0 + skirt_uv;
               }
               make_point(size,
-                  u, v, x, y,
+                  u, v,
+                  x, y, -skirt_size,
                   inv_u, inv_v, swap_uv,
                   gvw, gtw, gnw, gtanw, gbiw);
             }

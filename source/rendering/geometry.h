@@ -130,7 +130,8 @@ PUBLISHED:
 private:
   inline void
   make_point(double size,
-      double u, double v, double x, double y,
+      double u, double v,
+      double x, double y, double z,
       bool inv_u, bool inv_v, bool swap_uv,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
       GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
