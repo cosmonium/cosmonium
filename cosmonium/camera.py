@@ -721,11 +721,9 @@ class SurfaceFollowCameraController(CameraController):
         vector_to_reference.normalize()
         new_distance = max(self.reference_min_distance, distance * (1.0 + step))
         new_position = self.reference_anchor.get_local_position() - vector_to_reference * new_distance
-        self.distance = new_distance / self.reference_anchor.get_apparent_radius()
-        surface_height = self.body.get_height_under(new_position)
-        self.height = new_position[2] - surface_height
         self.camera.set_local_position(new_position)
         self.camera.update()
+        self.update_limits()
 
     def update_limits(self):
         camera_position = self.camera.get_local_position()
