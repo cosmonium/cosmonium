@@ -132,5 +132,5 @@ class WaterNode():
             cls.watercamNP.removeNode()
             cls.watercamNP = None
         if cls.task:
-            taskMgr.remove(cls)
+            taskMgr.remove(cls.task)
             cls.task = None
