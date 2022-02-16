@@ -858,6 +858,8 @@ class PatchedShapeBase(Shape):
             if patch.quadtree_node.visible:
                 self.create_patch_instance(patch)
                 apply_appearance = True
+                for linked_object in self.linked_objects:
+                    linked_object.create_patch_instance(patch)
             for linked_object in self.linked_objects:
                 linked_object.merge_patch(patch)
             for child in patch.children:
