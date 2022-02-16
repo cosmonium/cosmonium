@@ -103,10 +103,17 @@ class QuadTreeNode:
                 for child in self.children:
                     child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
         else:
-            if self.visible and lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
-                if self.are_children_visibles(culling_frustum):
-                    lod_result.add_to_split(self)
-            if self.shown and lod_control.should_remove(self, self.apparent_size, self.distance):
-                lod_result.add_to_remove(self)
-            if not self.shown and lod_control.should_instanciate(self, self.apparent_size, self.distance):
-                lod_result.add_to_show(self)
+            if self.visible:
+                if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
+                    if self.are_children_visibles(culling_frustum):
+                        lod_result.add_to_split(self)
+                else:
+                    if self.shown:
+                        if lod_control.should_remove(self, self.apparent_size, self.distance):
+                            lod_result.add_to_remove(self)
+                    else:
+                        if lod_control.should_instanciate(self, self.apparent_size, self.distance):
+                            lod_result.add_to_show(self)
+            else:
+                if self.shown:
+                    lod_result.add_to_remove(self)

@@ -146,16 +146,26 @@ QuadTreeNode::check_lod(LodResult *lod_result, CullingFrustumBase *culling_frust
           }
       }
   } else {
-      if (lod_control->should_split(this, apparent_size, distance) && (lod > 0 || instance_ready)) {
-          if (are_children_visibles(culling_frustum)) {
-              lod_result->add_to_split(this);
+      if (visible) {
+          if (lod_control->should_split(this, apparent_size, distance) && (lod > 0 || instance_ready)) {
+              if (are_children_visibles(culling_frustum)) {
+                  lod_result->add_to_split(this);
+              }
+          } else {
+              if (shown) {
+                  if (lod_control->should_remove(this, apparent_size, distance)) {
+                      lod_result->add_to_remove(this);
+                  }
+              } else {
+                  if (lod_control->should_instanciate(this, apparent_size, distance)) {
+                      lod_result->add_to_show(this);
+                  }
+              }
           }
-      }
-      if (shown && lod_control->should_remove(this, apparent_size, distance)) {
-          lod_result->add_to_remove(this);
-      }
-      if (!shown && lod_control->should_instanciate(this, apparent_size, distance)) {
-          lod_result->add_to_show(this);
+      } else {
+          if (shown) {
+              lod_result->add_to_remove(this);
+          }
       }
   }
 }
