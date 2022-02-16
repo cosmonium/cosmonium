@@ -775,7 +775,7 @@ class PatchedShapeBase(Shape):
             node.add_geom(geom)
             self.frustum_node.attach_new_node(node)
             self.frustum_rel_position = -self.owner.anchor.rel_position
-            self.frustum_node.set_quat(self.owner.context.observer.get_absolute_orientation())
+            self.frustum_node.set_quat(LQuaternion(*self.owner.context.observer.get_absolute_orientation()))
             self.frustum_node.set_color(LColor(1, 0, 0, 1))
             self.frustum_node.set_light_off(True)
             #The frustum position is updated in place_patches()
