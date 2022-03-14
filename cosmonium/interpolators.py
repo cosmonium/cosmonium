@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2020 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,16 +18,19 @@
 #
 
 
-from .shaders.data_source.heightmap import HeightmapShaderDataSource
+from .shaders.interpolator import TextureHardwareInterpolator, TextureSoftwareInterpolator
+
 
 class Interpolator:
     def get_data_source_interpolator(self):
         raise NotImplementedError()
 
+
 class HardwareInterpolator(Interpolator):
     def get_data_source_interpolator(self):
-        return HeightmapShaderDataSource.I_Hardware
+        return TextureHardwareInterpolator()
+
 
 class SoftwareInterpolator(Interpolator):
     def get_data_source_interpolator(self):
-        return HeightmapShaderDataSource.I_Software
+        return TextureSoftwareInterpolator()

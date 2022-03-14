@@ -178,7 +178,7 @@ class HeightmapBase():
             interpolator = HardwareInterpolator()
         self.interpolator = interpolator
         if filter is None:
-            filter = BilinearFilter()
+            filter = BilinearFilter(self.interpolator)
         self.filter = filter
 
     def set_size(self, width, height):

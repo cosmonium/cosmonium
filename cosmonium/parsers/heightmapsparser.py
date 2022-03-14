@@ -48,19 +48,19 @@ class InterpolatorYamlParser(YamlModuleParser):
 
 class FilterYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(self, data, interpolator):
         filter = None
         (object_type, parameters) = self.get_type_and_data(data, 'bilinear')
         if object_type == 'nearest':
-            filter = NearestFilter()
+            filter = NearestFilter(interpolator)
         elif object_type == 'bilinear':
-            filter = BilinearFilter()
+            filter = BilinearFilter(interpolator)
         elif object_type == 'smoothstep':
-            filter = SmoothstepFilter()
+            filter = SmoothstepFilter(interpolator)
         elif object_type == 'quintic':
-            filter = QuinticFilter()
+            filter = QuinticFilter(interpolator)
         elif object_type == 'bspline':
-            filter = BSplineFilter()
+            filter = BSplineFilter(interpolator)
         else:
             print("Unknown filter", object_type)
         return filter
@@ -112,7 +112,7 @@ class HeightmapYamlParser(YamlModuleParser):
             height_scale /= scale
             height_offset /= scale
         interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
-        filter = FilterYamlParser.decode(data.get('filter'))
+        filter = FilterYamlParser.decode(data.get('filter'), interpolator)
         if heightmap_type == 'procedural':
             size = data.get('size', 256)
             overlap = data.get('overlap', 1)

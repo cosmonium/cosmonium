@@ -19,7 +19,7 @@
 
 
 from ..procedural.appearances import TexturesDictionary
-from ..procedural.shaders import SimpleTextureTiling, HashTextureTiling
+from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
 
 from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
 from ..appearances import TexturesBlock
@@ -32,12 +32,12 @@ class TextureTilingYamlParser(YamlModuleParser):
     def decode(cls, data):
         (object_type, object_data) = cls.get_type_and_data(data, 'default')
         if object_type == 'default':
-            return SimpleTextureTiling()
+            return DefaultSampler()
         elif object_type == 'hash':
-            return HashTextureTiling()
+            return HashTextureTilingSampler()
         else:
             print("Unknown tiling type '%s'" % object_type)
-            return SimpleTextureTiling()
+            return DefaultSampler()
 
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod

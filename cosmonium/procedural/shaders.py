@@ -23,125 +23,6 @@ from ..shaders.appearance import ShaderAppearance
 from ..shaders.data_source.base import ShaderDataSource, CompositeShaderDataSource
 from ..pipeline.shaders import GeneratorVertexShader
 
-class TextureTiling:
-    def __init__(self):
-        self.shader = None
-
-    def set_shader(self, shader):
-        self.shader = shader
-
-    def uniforms(self, code):
-        pass
-
-    def extra(self, code):
-        pass
-
-    def tile_texture(self, texture, coord):
-        pass
-
-    def tile_texture_array(self, texture, coord, page):
-        pass
-
-class SimpleTextureTiling(TextureTiling):
-    def tile_texture(self, texture, coord):
-        return 'texture2D({}, {})'.format(texture, coord)
-
-    def tile_texture_array(self, texture, coord, page):
-        return 'texture2D({}, vec3({}, {}))'.format(texture, coord, page)
-
-class HashTextureTiling(TextureTiling):
-    def hash4(self, code):
-        code.append('''
-vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
-                                              2.0+dot(p,vec2(11.0,47.0)),
-                                              3.0+dot(p,vec2(41.0,29.0)),
-                                              4.0+dot(p,vec2(23.0,31.0))))*103.0); }
-''')
-
-    def hash_texture_tiling(self, code):
-        code.append(
-'''vec4 hash_texture_tiling(sampler2D samp, in vec2 uv)
-{
-    vec2 iuv = floor(uv.xy);
-    vec2 fuv = fract(uv.xy);
-
-    // generate per-tile transform
-    vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
-    vec4 ofb = hash4(iuv + vec2(1.0, 0.0));
-    vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
-    vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
-
-    vec2 ddx = dFdx(uv.xy);
-    vec2 ddy = dFdy(uv.xy);
-
-    // transform per-tile uvs
-    ofa.zw = sign(ofa.zw - 0.5);
-    ofb.zw = sign(ofb.zw - 0.5);
-    ofc.zw = sign(ofc.zw - 0.5);
-    ofd.zw = sign(ofd.zw - 0.5);
-
-    // uv's, and derivarives (for correct mipmapping)
-    vec2 uva = uv.xy*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
-    vec2 uvb = uv.xy*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
-    vec2 uvc = uv.xy*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
-    vec2 uvd = uv.xy*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
-
-    // fetch and blend
-    vec2 b = smoothstep(0.25, 0.75, fuv);
-    return mix( mix(textureGrad(samp, uva, ddxa, ddya),
-                    textureGrad(samp, uvb, ddxb, ddyb), b.x),
-                mix(textureGrad(samp, uvc, ddxc, ddyc),
-                    textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
-}
-''')
-
-    def hash_texture_array_tiling(self, code):
-        code.append(
-'''vec4 hash_texture_array_tiling(sampler2DArray samp, in vec3 uv)
-{
-    vec2 iuv = floor(uv.xy);
-    vec2 fuv = fract(uv.xy);
-
-    // generate per-tile transform
-    vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
-    vec4 ofb = hash4(iuv + vec2(1.0, 0.0));
-    vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
-    vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
-
-    vec2 ddx = dFdx(uv.xy);
-    vec2 ddy = dFdy(uv.xy);
-
-    // transform per-tile uvs
-    ofa.zw = sign(ofa.zw - 0.5);
-    ofb.zw = sign(ofb.zw - 0.5);
-    ofc.zw = sign(ofc.zw - 0.5);
-    ofd.zw = sign(ofd.zw - 0.5);
-
-    // uv's, and derivarives (for correct mipmapping)
-    vec2 uva = uv.xy*ofa.zw + ofa.xy; vec2 ddxa = ddx*ofa.zw; vec2 ddya = ddy*ofa.zw;
-    vec2 uvb = uv.xy*ofb.zw + ofb.xy; vec2 ddxb = ddx*ofb.zw; vec2 ddyb = ddy*ofb.zw;
-    vec2 uvc = uv.xy*ofc.zw + ofc.xy; vec2 ddxc = ddx*ofc.zw; vec2 ddyc = ddy*ofc.zw;
-    vec2 uvd = uv.xy*ofd.zw + ofd.xy; vec2 ddxd = ddx*ofd.zw; vec2 ddyd = ddy*ofd.zw;
-
-    // fetch and blend
-    vec2 b = smoothstep(0.25, 0.75, fuv);
-    return mix( mix(textureGrad(samp, vec3(uva, uv.z), ddxa, ddya),
-                    textureGrad(samp, vec3(uvb, uv.z), ddxb, ddyb), b.x),
-                mix(textureGrad(samp, vec3(uvc, uv.z), ddxc, ddyc),
-                    textureGrad(samp, vec3(uvd, uv.z), ddxd, ddyd), b.x), b.y);
-}
-''')
-
-    def extra(self, code):
-        self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
-        self.shader.fragment_shader.add_function(code, 'hash_texture_tiling', self.hash_texture_tiling)
-        self.shader.fragment_shader.add_function(code, 'hash_texture_array_tiling', self.hash_texture_array_tiling)
-
-    def tile_texture(self, texture, coord):
-        return 'hash_texture_tiling({}, {})'.format(texture, coord)
-
-    def tile_texture_array(self, texture, coord, page):
-        return 'hash_texture_array_tiling({}, vec3({}, {}))'.format(texture, coord, page)
 
 class TextureDictionaryShaderDataSource(ShaderDataSource):
     def __init__(self, dictionary):
@@ -150,7 +31,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
         self.tiling = dictionary.tiling
 
     def get_id(self):
-        return 'dict' + str(id(self))
+        return 'dict' + str(id(self)) + self.tiling.get_id()
 
     def set_shader(self, shader):
         ShaderDataSource.set_shader(self, shader)
@@ -180,7 +61,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
                     if self.dictionary.texture_array:
                         tex_id = self.dictionary.get_tex_id_for(block_id, texture.category)
                         dict_name = 'array_%s' % texture.category
-                        texture_sample = self.tiling.tile_texture_array('tex_{}'.format(dict_name), position, tex_id)
+                        texture_sample = self.tiling.sample_array('tex_{}'.format(dict_name), position, tex_id)
                         #TODO: There should not be a link like that
                         if self.shader.appearance.resolved:
                             if texture.category == 'normal':
@@ -193,7 +74,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
                             else:
                                 return "textureLod(tex_%s, vec3(%s, %d), 1000).xyz" % (dict_name, position, tex_id)
                     else:
-                        texture_sample = self.tiling.tile_texture('tex_{}_{}'.format(dict_name, texture.category), position)
+                        texture_sample = self.tiling.sample('tex_{}_{}'.format(dict_name, texture.category), position)
                         if texture.category == 'normal':
                             return "(%s.xyz * 2 - 1)" % (texture_sample)
                         else:

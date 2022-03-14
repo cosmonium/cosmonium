@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2020 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 
 from panda3d.core import LColor, Texture
 
-from .shaders.data_source.heightmap import HeightmapShaderDataSource
+from .shaders.filters import TextureNearestFilter, TextureBilinearFilter, TextureSmoothstepFilter, TextureQuinticFilter, TextureBSplineFilter
 from . import settings
 
 from math import floor
 
+
 class TexFilter(object):
-    def __init__(self):
-        pass
+    def __init__(self, interpolator):
+        self.interpolator = interpolator
 
     def get_single_value(self, peeker, x, y, clamp=True):
         x /= peeker.get_x_size()
@@ -61,13 +62,14 @@ class TexFilter(object):
         return value
 
     def get_value(self, peeker, x, y):
-        return None
+        raise NotImplementedError()
 
     def update_texture_config(self, texture_config):
-        pass
+        raise NotImplementedError()
 
     def get_data_source_filtering(self):
-        return None
+        raise NotImplementedError()
+
 
 class NearestFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -78,7 +80,8 @@ class NearestFilter(TexFilter):
         texture_config.magfilter = Texture.FT_nearest
 
     def get_data_source_filtering(self):
-        return HeightmapShaderDataSource.F_nearest
+        return TextureNearestFilter(self.interpolator)
+
 
 class BilinearFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -89,7 +92,8 @@ class BilinearFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapShaderDataSource.F_bilinear
+        return TextureBilinearFilter(self.interpolator)
+
 
 class SmoothstepFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -111,7 +115,8 @@ class SmoothstepFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapShaderDataSource.F_smoothstep
+        return TextureSmoothstepFilter(self.interpolator)
+
 
 class QuinticFilter(TexFilter):
     def get_value(self, peeker, x, y):
@@ -133,7 +138,8 @@ class QuinticFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapShaderDataSource.F_quintic
+        return TextureQuinticFilter(self.interpolator)
+
 
 class BSplineFilter(TexFilter):
     def update_texture_config(self, texture_config):
@@ -141,7 +147,7 @@ class BSplineFilter(TexFilter):
         texture_config.magfilter = Texture.FT_linear
 
     def get_data_source_filtering(self):
-        return HeightmapShaderDataSource.F_bspline
+        return TextureBSplineFilter(self.interpolator)
 
     def cubic(self, alpha):
         alpha2 = alpha * alpha
