@@ -21,7 +21,7 @@
 from panda3d.core import GeomNode
 from panda3d.core import NodePath
 
-from .. import geometry
+from ..geometry import geometry
 
 from .base import Shape
 

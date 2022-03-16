@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, Colo
 from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3, LVector4i
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
-from .pstats import named_pstat
-from . import settings
+from ...pstats import named_pstat
+from ... import settings
 
 from math import sin, cos, pi, atan2, sqrt, asin
 
@@ -287,7 +287,7 @@ def UVPatchNormal(x0, y0, x1, y1):
     return LVector3d(x, y, z)
 
 @named_pstat("geom")
-def PyUVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
+def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
@@ -538,7 +538,7 @@ def IcoSphere(radius=1, subdivisions=1):
 
     return path
 
-class PyTesselationInfo():
+class TesselationInfo():
     def __init__(self, inner, outer):
         self.inner = inner
         self.outer = outer
@@ -719,7 +719,7 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 prim.addVertices(skirt, v + 1, skirt + 1)
 
 @named_pstat("geom")
-def PyTile(size, tesselation,
+def Tile(size, tesselation,
         inv_u=False, inv_v=False, swap_uv=False,
          use_patch_adaptation = True,
          use_patch_skirts = True,
@@ -926,7 +926,7 @@ def SquarePatch(height, inner, outer,
     return path
 
 @named_pstat("geom")
-def PySquaredDistanceSquarePatch(height, tesselation,
+def SquaredDistanceSquarePatch(height, tesselation,
                 x0, y0, x1, y1,
                 inv_u=False, inv_v=False, swap_uv=False,
                 x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -1115,7 +1115,7 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
     return box
 
 @named_pstat("geom")
-def PyNormalizedSquarePatch(height, tesselation,
+def NormalizedSquarePatch(height, tesselation,
                           x0, y0, x1, y1,
                           inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -1343,25 +1343,3 @@ def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
     geom = Geom(vdata)
     geom.addPrimitive(triangles)
     return geom
-
-UVPatch = PyUVPatch
-SquaredDistanceSquarePatch = PySquaredDistanceSquarePatch
-NormalizedSquarePatch = PyNormalizedSquarePatch
-Tile = PyTile
-TesselationInfo = PyTesselationInfo
-
-try:
-    from cosmonium_engine import TesselationInfo as CTesselationInfo
-    from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator, TilePatchGenerator
-    TesselationInfo = CTesselationInfo
-    uv_patch_generator = UVPatchGenerator()
-    UVPatch = uv_patch_generator.make
-    qcs_patch_generator = QCSPatchGenerator()
-    NormalizedSquarePatch = qcs_patch_generator.make
-    improved_qcs_patch_generator = ImprovedQCSPatchGenerator()
-    SquaredDistanceSquarePatch = improved_qcs_patch_generator.make
-    tile_patch_generator = TilePatchGenerator()
-    Tile = tile_patch_generator.make
-except ImportError as e:
-    print("WARNING: Could not load geometry C implementation, fallback on python implementation")
-    print("\t", e)

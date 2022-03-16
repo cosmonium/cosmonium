@@ -29,7 +29,7 @@ from .data_store import PatchDataStoreManager
 from .datasource import DataSource
 from .textures import TexCoord
 from .pstats import pstat
-from . import geometry
+from .geometry import geometry
 from . import settings
 
 from math import cos, sin, pi, sqrt, copysign, log
