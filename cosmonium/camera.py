@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ from panda3d.core import PerspectiveLens, NodePath, LPoint4, LPoint3d, LVector3d
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
-from .anchors import CameraAnchor
+from .engine.anchors import CameraAnchor
 from .astro.frame import AbsoluteReferenceFrame
-from .octree import InfiniteFrustum #TODO: should not be in octree
+from .engine.frustum import InfiniteFrustum
 from . import settings
 from . import utils
 

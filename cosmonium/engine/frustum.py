@@ -1,4 +1,3 @@
-#
 #This file is part of Cosmonium.
 #
 #Copyright (C) 2018-2022 Laurent Deru.
@@ -19,9 +18,8 @@
 
 
 try:
-    from cosmonium_engine import OrbitBase, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit, FunctionOrbit
-    Orbit = OrbitBase
+    from cosmonium_engine import InfiniteFrustum
 except ImportError as e:
-    print("WARNING: Could not load Orbits C implementation, fallback on python implementation")
+    print("WARNING: Could not load Frustum C implementation, fallback on python implementation")
     print("\t", e)
-    from ..pyastro.orbits import Orbit, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit, FunctionOrbit
+    from .pyengine.frustum import InfiniteFrustum

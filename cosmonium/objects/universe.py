@@ -23,7 +23,7 @@ from panda3d.core import LPoint3d, LQuaterniond
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
 from ..astro.frame import AbsoluteReferenceFrame
-from ..anchors import UniverseAnchor
+from ..engine.anchors import UniverseAnchor
 
 from .systems import OctreeSystem
 

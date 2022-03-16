@@ -43,8 +43,9 @@ from .objects.stellarobject import StellarObject
 from .objects.systems import StellarSystem, SimpleSystem
 from .objects.stellarbody import StellarBody
 from .objects.reflective import ReflectiveBody
-from .anchors import StellarAnchor, CartesianAnchor
-from .anchors import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
+from .engine.c_settings import c_settings
+from .engine.anchors import StellarAnchor, CartesianAnchor
+from .engine.traversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, LightSources
 from .components.annotations.grid import Grid
 from .astro.frame import BodyReferenceFrame
@@ -88,7 +89,6 @@ import platform
 import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
-from cosmonium.octree import c_settings
 
 # Patch gettext classes
 if sys.version_info < (3, 8):

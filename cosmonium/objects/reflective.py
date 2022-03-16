@@ -19,7 +19,7 @@
 
 
 from .stellarbody import StellarBody
-from ..anchors import StellarAnchor
+from ..engine.anchors import StellarAnchor
 
 
 class ReflectiveBody(StellarBody):

@@ -21,7 +21,7 @@
 from .stellarobject import StellarObject
 
 from ..catalogs import ObjectsDB, objectsDB
-from ..anchors import SystemAnchor, OctreeAnchor
+from ..engine.anchors import SystemAnchor, OctreeAnchor
 
 
 class ReferencePoint(StellarObject):

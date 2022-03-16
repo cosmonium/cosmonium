@@ -20,7 +20,7 @@
 
 from .stellarbody import StellarBody
 
-from ..anchors import StellarAnchor
+from ..engine.anchors import StellarAnchor
 from ..astro.astro import abs_mag_to_lum
 
 class EmissiveBody(StellarBody):

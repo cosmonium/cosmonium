@@ -18,7 +18,7 @@
 #
 
 
-from ..anchors import StellarAnchor
+from ..engine.anchors import StellarAnchor
 from .stellarobject import StellarObject
 
 

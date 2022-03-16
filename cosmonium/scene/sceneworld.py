@@ -19,7 +19,7 @@
 
 
 from ..foundation import CompositeObject
-from ..anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
 from ..astro.frame import AbsoluteReferenceFrame
 from ..namedobject import NamedObject

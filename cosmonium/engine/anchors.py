@@ -1,6 +1,6 @@
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
 try:
     from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor
     from cosmonium_engine import CartesianAnchor, CameraAnchor
-    from cosmonium_engine import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.pyanchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
-    from .pyengine.pyanchors import CartesianAnchor, CameraAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
-    from .pyengine.pytraversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
+    from .pyengine.anchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
+    from .pyengine.anchors import CartesianAnchor, CameraAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 
-from .pyengine.pyanchors import FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from .pyengine.anchors import FlatSurfaceAnchor, OriginAnchor, ObserverAnchor

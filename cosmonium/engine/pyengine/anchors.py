@@ -21,12 +21,12 @@
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LColor
 
 from ..octree import OctreeNode
-from ..astro import units
-from ..astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
-from ..astro.frame import AbsoluteReferenceFrame
-from .. import utils
+from ...astro import units
+from ...astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
+from ...astro.frame import AbsoluteReferenceFrame
+from ... import utils
 
-from .. import settings
+from ... import settings
 
 from math import sqrt, asin, pi
 from time import time

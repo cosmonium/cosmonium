@@ -1,6 +1,6 @@
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,4 +22,4 @@ try:
 except ImportError as e:
     print("WARNING: Could not load Kepler C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyastro.pykepler import kepler_pos
+    from .pyastro.kepler import kepler_pos
