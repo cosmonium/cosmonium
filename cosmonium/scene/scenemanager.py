@@ -23,12 +23,12 @@ from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
 from panda3d.core import GeomNode
 
-from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
-from .pointsset import PointsSet
-from .foundation import BaseObject
-from .utils import mag_to_scale
-from .pstats import pstat
-from . import settings
+from ..sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
+from ..pointsset import PointsSet
+from ..foundation import BaseObject
+from ..utils import mag_to_scale
+from ..pstats import pstat
+from .. import settings
 
 class SceneManagerBase:
 

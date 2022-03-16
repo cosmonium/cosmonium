@@ -20,7 +20,7 @@
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
-from .sceneworld import CartesianWorld
+from .scene.sceneworld import CartesianWorld
 from .camera import CameraController
 from .parameters import ParametersGroup
 

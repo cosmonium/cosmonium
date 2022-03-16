@@ -44,8 +44,8 @@ from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternio
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
-from cosmonium.scenemanager import StaticSceneManager
-from cosmonium.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
+from cosmonium.scene.scenemanager import StaticSceneManager
+from cosmonium.scene.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
 from cosmonium.lights import LightSources, SurrogateLight
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance

@@ -24,7 +24,7 @@ from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
 from ...foundation import VisibleObject, LabelledObject
-from ...sceneanchor import SceneAnchor
+from ...scene.sceneanchor import SceneAnchor
 from ...astro.projection import InfinitePosition
 from ...astro.astro import position_to_equatorial
 from ...astro import units

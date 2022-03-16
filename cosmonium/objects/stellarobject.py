@@ -28,7 +28,7 @@ from ..components.annotations.rotation_axis import RotationAxis
 from ..components.annotations.orbit import Orbit
 from ..components.elements.halo import Halo
 from ..anchors import DynamicStellarAnchor
-from ..sceneanchor import SceneAnchor
+from ..scene.sceneanchor import SceneAnchor
 from ..astro.frame import SynchroneReferenceFrame
 from ..astro.orbits import FixedPosition
 from ..bodyclass import bodyClasses

@@ -33,7 +33,8 @@ import gettext
 
 from .parsers.configparser import configParser
 from .foundation import BaseObject
-from .scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .dircontext import defaultDirContext
 from .opengl import OpenGLConfig
 from .pipeline.scenepipeline import ScenePipeline
@@ -88,7 +89,6 @@ import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
 from cosmonium.octree import c_settings
-from cosmonium.sceneworld import ObserverCenteredWorld, Worlds
 
 # Patch gettext classes
 if sys.version_info < (3, 8):
