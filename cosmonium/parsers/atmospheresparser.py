@@ -21,8 +21,8 @@
 from panda3d.core import LVector3d
 
 from ..appearances import Appearance
-from ..oneil import ONeilSimpleAtmosphere
-from ..oneil import ONeilAtmosphere
+from ..scattering.oneil.oneil import ONeilSimpleAtmosphere
+from ..scattering.oneil.oneil import ONeilAtmosphere
 from ..celestia.atmosphere import CelestiaAtmosphere
 
 from .yamlparser import YamlModuleParser

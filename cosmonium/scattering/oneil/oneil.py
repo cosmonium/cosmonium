@@ -20,19 +20,19 @@
 
 from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
-from .components.elements.atmosphere import Atmosphere
-from .datasource import DataSource
-from .textures import TextureConfiguration
-from .shaders.base import StructuredShader, ShaderProgram
-from .shaders.rendering import RenderingShader
-from .shaders.lighting.base import LightingModel
-from .shaders.scattering import AtmosphericScattering
-from .utils import TransparencyBlend
-from .parameters import AutoUserParameter, UserParameter
-from .pipeline.shaders import GeneratorVertexShader
-from .pipeline.target import ProcessTarget
-from .pipeline.stage import ProcessStage
-from .pipeline.factory import PipelineFactory
+from ...components.elements.atmosphere import Atmosphere
+from ...datasource import DataSource
+from ...textures import TextureConfiguration
+from ...shaders.base import StructuredShader, ShaderProgram
+from ...shaders.rendering import RenderingShader
+from ...shaders.lighting.base import LightingModel
+from ...shaders.scattering import AtmosphericScattering
+from ...utils import TransparencyBlend
+from ...parameters import AutoUserParameter, UserParameter
+from ...pipeline.shaders import GeneratorVertexShader
+from ...pipeline.target import ProcessTarget
+from ...pipeline.stage import ProcessStage
+from ...pipeline.factory import PipelineFactory
 
 from math import pow, pi
 
