@@ -38,9 +38,10 @@ class Menubar:
             full_text = text + '>' + shortcut.title()
         else:
             full_text = text
-        if condition is not None:
-            event = event if condition else 0
-        return (full_text, state, self.messenger.send, event, args)
+        action = self.messenger.send
+        if event == 0 or (condition is not None and not condition):
+            action = 0
+        return (full_text, state, action, event, args)
 
     def create_main_menu_items(self):
         return (
