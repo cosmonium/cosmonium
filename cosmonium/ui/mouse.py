@@ -121,6 +121,7 @@ class Mouse(DirectObject):
             over = self.over
         else:
             over = self.find_over()
+            self.over = over
         return over
 
     def mouse_task(self, task):

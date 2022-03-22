@@ -1,0 +1,22 @@
+popup:
+- title: '@over-name'
+  event: 'center-selected'
+-
+- title: '_Info'
+  event: 'gui-show-info'
+- title: '_Goto'
+  event: 'goto-selected'
+- title: '_Follow'
+  event: 'follow-selected'
+- title: 'S_ync'
+  event: 'sync-selected'
+- title: "Surfaces"
+  menu: over-surfaces
+- title: "Orbiting bodies"
+  menu: over-orbiting-bodies
+- title: "Orbits"
+  menu: over-orbits
+- title: '_Edit'
+  event: 'gui-show-editor'
+- title: "More info"
+  menu: over-extra-info

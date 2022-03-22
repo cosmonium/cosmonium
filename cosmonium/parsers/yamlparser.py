@@ -47,9 +47,9 @@ class YamlParser(object):
         pass
 
     def decode(self, data):
-        return None
+        return data
 
-    def encode(self, data):
+    def encode(self):
         return None
 
     def parse(self, stream, stream_name=None):

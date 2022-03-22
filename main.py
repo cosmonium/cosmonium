@@ -61,6 +61,7 @@ class CosmoniumConfig(object):
     def __init__(self):
         self.common = 'data/defaults.yaml'
         self.main = 'data/cosmonium.yaml'
+        self.ui = 'config/ui/default/ui.yaml'
         self.default_home = None
         self.default_target = None
         self.script = None
@@ -91,6 +92,8 @@ class CosmoniumConfig(object):
             self.common = args.common
         if args.main is not None:
             self.main = args.main
+        if args.ui is not None:
+            self.ui = args.ui
         if args.script is not None:
             self.script = args.script
         if args.home is not None:
@@ -271,6 +274,9 @@ parser.add_argument("--common",
                     default=None)
 parser.add_argument("--main",
                     help="Path to the file with the universe configuration",
+                    default=None)
+parser.add_argument("--ui",
+                    help="Path to the file with the UI configuration",
                     default=None)
 parser.add_argument("--home",
                     help="Default home system of body",

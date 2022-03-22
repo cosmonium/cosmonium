@@ -63,6 +63,7 @@ from .controllers import ShipMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
+from .states import StatesProvider
 from .debug import Debug
 from .appstate import AppState
 from .ui.gui import Gui
@@ -490,8 +491,12 @@ class Cosmonium(CosmoniumBase):
         #Force frame update to render the last status of the splash screen
         base.graphicsEngine.renderFrame()
         self.splash.close()
+
+        #TODO: Temporarily until state registration is split up between each class
+        self.states_provider = StatesProvider(self, self.time, self.observer, self.autopilot, self.gui, self.debug)
+
         if self.gui is None:
-            self.gui = Gui(self, self.time, self.observer, self.mouse, self.autopilot)
+            self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)
             self.mouse.set_ui(self.gui)
 
         #TODO: Temporarily until event registration is split up between each class

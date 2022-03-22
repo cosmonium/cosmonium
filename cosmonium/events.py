@@ -67,6 +67,8 @@ class EventsDispatcher(DirectObject):
         self.accept('debug-scene-analyze', self.debug.analyse_scene)
         self.accept('debug-print-tasks', self.debug.print_tasks)
         self.accept('debug-shader-fragment-mode', self.debug.set_shader_fragment_debug)
+        for shader_debug_mode in ['default', 'diffuse', 'heightmap', 'normal', 'normalmap', 'picking', 'shadows']:
+            self.accept('debug-shader-fragment-mode-' + shader_debug_mode, self.debug.set_shader_fragment_debug, [shader_debug_mode])
         self.accept('debug-toggle-shader-raymarching-canvas', self.debug.toggle_shader_debug_raymarching_canvas)
         self.accept('debug-toggle-shader-debug-raymarching_slice', self.debug.toggle_shader_debug_raymarching_slice)
 
@@ -168,7 +170,6 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-side-by_side-stereo', self.engine.toggle_side_by_side_stereo)
         self.accept('toggle-swap-eyes', self.engine.toggle_swap_eyes)
 
-        self.accept('set-render-fps', self.gui.set_render_fps)
-        self.accept('set-render-ms', self.gui.set_render_ms)
-        self.accept('set-render-none', self.gui.set_render_none)
+        for display_render_info in ['fps', 'ms', 'none']:
+            self.accept('set-display-render-info-' + display_render_info, self.gui.set_display_render_info, [display_render_info])
 

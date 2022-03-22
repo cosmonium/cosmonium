@@ -33,6 +33,7 @@ from .. import version
 #TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
+from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .hud import HUD
 from .query import Query
@@ -44,6 +45,7 @@ from .preferences import Preferences
 from .clipboard import create_clipboard
 from .browser import Browser
 from .time import TimeEditor
+from .menubuilder import MenuBuilder
 from .menubar import Menubar
 from .popup import Popup
 
@@ -52,7 +54,7 @@ import os
 about_text = """# Cosmonium
 
 **Version**: V%s
-Copyright 2018-2020 Laurent Deru
+Copyright 2018-2022 Laurent Deru
 
 
 **Website**: http://github.com/cosmonium/cosmonium
@@ -69,7 +71,7 @@ licenses, see Third-Party.md for the complete list.
 """ % version.version_str
 
 class Gui(object):
-    def __init__(self, cosmonium, time, camera, mouse, autopilot):
+    def __init__(self, config_file, cosmonium, time, camera, mouse, autopilot):
         self.cosmonium = cosmonium
         self.time = time
         self.camera = camera
@@ -91,6 +93,14 @@ class Gui(object):
             self.font = None
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(base, base.messenger, self)
+        self.browser = Browser(self.scale, owner=self)
+        self.menu_builder = MenuBuilder(self.messenger, self.shortcuts, self.cosmonium.states_provider, self.cosmonium, self.mouse, self.browser)
+        ui_config = self.load(config_file)
+
+        self.shortcuts.set_shortcuts(ui_config.shortcuts)
+        self.menubar = Menubar(ui_config.menubar)
+        self.popup_menu = Popup(self, self.cosmonium, ui_config.popup)
+        self.popup_menu_shown = False
         self.hud = HUD(self.scale, self.font)
         self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
         self.last_fps = globalClock.getRealTime()
@@ -109,11 +119,7 @@ class Gui(object):
         self.about = TextWindow('About', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.about.set_text(about_text)
         self.filewindow = FileWindow('Select', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.browser = Browser(self.scale, owner=self)
-        self.menubar = Menubar(self.messenger, self.shortcuts, self.cosmonium)
         self.menubar.create(self.font, self.scale)
-        self.popup_menu = Popup(self, self.messenger, self.cosmonium, self.browser)
-        self.popup_menu_shown = False
         if settings.show_hud:
             self.show_hud()
         else:
@@ -122,6 +128,10 @@ class Gui(object):
             self.show_menu()
         else:
             self.hide_menu()
+
+    def load(self, ui_config_file):
+        loader = UIConfigLoader(self.menu_builder)
+        return loader.load(ui_config_file)
 
     def set_nav(self, nav):
         self.nav = nav
@@ -163,19 +173,8 @@ class Gui(object):
     def popup_done(self):
         self.popup_menu_shown = False
 
-    def set_render_fps(self):
-        settings.display_fps = True
-        settings.display_ms = False
-        configParser.save()
-
-    def set_render_ms(self):
-        settings.display_fps = False
-        settings.display_ms = True
-        configParser.save()
-
-    def set_render_none(self):
-        settings.display_fps = False
-        settings.display_ms = False
+    def set_display_render_info(self, mode):
+        settings.display_render_info = mode
         configParser.save()
 
     def load_cel_script(self, path):
@@ -257,10 +256,10 @@ class Gui(object):
             self.hud.bottomLeft.set(1, "")
         current_time = globalClock.getRealTime()
         if current_time - self.last_fps >= 1.0:
-            if settings.display_fps:
+            if settings.display_render_info == 'fps':
                 fps = globalClock.getAverageFrameRate()
                 self.hud.topRight.set(0, "%.1f fps" % fps)
-            elif settings.display_ms:
+            elif settings.display_render_info == 'ms':
                 fps = globalClock.getDt() * 1000
                 self.hud.topRight.set(0, "%.1f ms" % fps)
             else:

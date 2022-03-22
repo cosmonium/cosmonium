@@ -20,8 +20,10 @@
 from ..objects.systems import StellarSystem, SimpleSystem
 from ..objects.stellarbody import StellarBody
 from ..objects.universe import Universe
+from ..extrainfo import extra_info
 
-def create_orbiting_bodies_menu_items(engine, body):
+
+def create_orbiting_bodies_menu(engine, body):
     subitems = []
     if isinstance(body, StellarSystem):
         system = body
@@ -44,7 +46,8 @@ def create_orbiting_bodies_menu_items(engine, body):
                     subitems.append([child.get_friendly_name(), 0, engine.select_body, child])
     return subitems
 
-def create_orbits_menu_items(engine, body):
+
+def create_orbits_menu(engine, body):
     subitems = []
     if body is not None:
         parent = body.parent
@@ -57,7 +60,26 @@ def create_orbits_menu_items(engine, body):
             parent = parent.parent
     return subitems
 
-def create_surfaces_menu_items(body):
+
+def create_select_camera_controller_menu(engine):
+    subitems = []
+    for controller in engine.camera_controllers:
+        activable = engine.ship.supports_camera_mode(controller.camera_mode) and (not controller.require_target() or engine.selected is not None)
+        subitems.append((controller.get_name(),
+                         engine.camera_controller is controller,
+                         engine.set_camera_controller if activable else 0,
+                         controller))
+    return subitems
+
+
+def create_select_ship_menu(engine):
+    subitems = []
+    for ship in engine.ships:
+        subitems.append((ship.get_name(), engine.ship is ship, engine.set_ship, ship))
+    return subitems
+
+
+def create_surfaces_menu(body):
     subitems = []
     if isinstance(body, StellarBody) and len(body.surfaces) > 1:
         for surface in body.surfaces:
@@ -76,4 +98,14 @@ def create_surfaces_menu_items(body):
                 subitems.append([name, 0, None, None])
             else:
                 subitems.append([name, 0, body.set_surface, surface])
+    return subitems
+
+
+def create_extra_info_menu(browser, body):
+    subitems = []
+    for info in extra_info:
+        name = info.get_name()
+        url = info.get_url_for(body)
+        if url is not None:
+            subitems.append([name, 0, browser.load, url])
     return subitems
