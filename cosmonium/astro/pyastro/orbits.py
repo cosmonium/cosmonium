@@ -20,8 +20,8 @@
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
-from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
-from ..astro.kepler import kepler_pos
+from ...parameters import ParametersGroup, UserParameter, AutoUserParameter
+from ..kepler import kepler_pos
 
 from math import pi
 

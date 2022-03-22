@@ -19,8 +19,8 @@
 
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
-from ..astro.astro import calc_orientation
-from ..astro import units
+from ..astro import calc_orientation
+from .. import units
 from math import pi
 from copy import copy
 

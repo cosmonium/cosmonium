@@ -24,4 +24,4 @@ try:
 except ImportError as e:
     print("WARNING: Could not load Rotations C implementation, fallback on python implementation")
     print("\t", e)
-    from ..pyastro.rotations import Rotation, FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
+    from .pyastro.rotations import Rotation, FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation

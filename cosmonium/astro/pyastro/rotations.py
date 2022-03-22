@@ -20,9 +20,9 @@
 
 from panda3d.core import LQuaterniond, LVector3d
 
-from ..parameters import ParametersGroup, UserParameter, AutoUserParameter
+from ...parameters import ParametersGroup, UserParameter, AutoUserParameter
 
-from ..astro.frame import J2000BarycentricEclipticReferenceFrame
+from ..frame import J2000BarycentricEclipticReferenceFrame
 
 from math import asin, atan2, pi
 

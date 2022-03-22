@@ -24,4 +24,4 @@ try:
 except ImportError as e:
     print("WARNING: Could not load Orbits C implementation, fallback on python implementation")
     print("\t", e)
-    from ..pyastro.orbits import Orbit, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit, FunctionOrbit
+    from .pyastro.orbits import Orbit, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit, FunctionOrbit
