@@ -44,7 +44,8 @@ from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternio
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
-from cosmonium.scene.scenemanager import StaticSceneManager
+from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
+from cosmonium.scene.sceneanchor import SceneAnchorCollection
 from cosmonium.scene.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
 from cosmonium.lights import LightSources, SurrogateLight
 from cosmonium.procedural.water import WaterNode
@@ -634,9 +635,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.cam.node().set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.NearCameraFlag)
         self.observer = CameraHolder()
         self.observer.init()
-        self.scene_manager = StaticSceneManager()
-        self.scene_manager.init_camera(self.observer, self.cam)
-        self.scene_manager.remove_main_region(self.cam)
+        if C_CameraHolder is not None:
+            self.c_camera_holder = C_CameraHolder(self.observer.anchor, self.observer.camera_np, self.observer.lens)
+        else:
+            self.c_camera_holder = self.observer
+        self.scene_manager = StaticSceneManager(base.render)
+        self.scene_manager.init_camera(self.c_camera_holder, self.cam)
+        remove_main_region(self.cam)
         self.scene_manager.scale = 1.0
         self.pipeline.create()
         self.pipeline.set_scene_manager(self.scene_manager)
@@ -816,11 +821,11 @@ class RoamingRalphDemo(CosmoniumBase):
             world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
             world.scene_anchor.update(self.scene_manager)
 
-        self.scene_manager.update_scene_and_camera(0, self.observer)
+        self.scene_manager.update_scene_and_camera(0, self.c_camera_holder)
 
         self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
 
-        self.scene_manager.build_scene(self.common_state, self.observer, [], [])
+        self.scene_manager.build_scene(self.common_state, self.c_camera_holder, SceneAnchorCollection(), SceneAnchorCollection())
 
         return task.cont
 

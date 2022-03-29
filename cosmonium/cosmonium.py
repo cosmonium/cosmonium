@@ -33,7 +33,8 @@ import gettext
 
 from .parsers.configparser import configParser
 from .foundation import BaseObject
-from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager, C_CameraHolder, remove_main_region
+from .scene.sceneanchor import SceneAnchor, SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .dircontext import defaultDirContext
 from .opengl import OpenGLConfig
@@ -455,6 +456,10 @@ class Cosmonium(CosmoniumBase):
         self.add_camera_controller(LookAroundCameraController())
         self.add_camera_controller(FollowCameraController())
         self.observer.init()
+        if C_CameraHolder is not None:
+            self.c_camera_holder = C_CameraHolder(self.observer.anchor, self.observer.camera_np, self.observer.lens)
+        else:
+            self.c_camera_holder = self.observer
 
         self.add_nav_controller(FreeNav())
         self.add_nav_controller(WalkNav())
@@ -514,15 +519,16 @@ class Cosmonium(CosmoniumBase):
         print("Using scene manager '{}'".format(settings.scene_manager))
         if not self.app_config.test_start:
             if settings.scene_manager == 'static':
-                self.scene_manager = StaticSceneManager()
+                self.scene_manager = StaticSceneManager(self.render)
             elif settings.scene_manager == 'dynamic':
-                self.scene_manager = DynamicSceneManager()
+                self.scene_manager = DynamicSceneManager(self.render)
             elif settings.scene_manager == 'region':
                 self.scene_manager = RegionSceneManager()
             else:
                 print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
-            self.scene_manager.remove_main_region(self.cam)
-            self.scene_manager.init_camera(self.observer, self.cam)
+            remove_main_region(self.cam)
+            self.scene_manager.scale = settings.scale
+            self.scene_manager.init_camera(self.c_camera_holder, self.cam)
             self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
             self.pipeline.create()
             self.pipeline.set_scene_manager(self.scene_manager)
@@ -1049,8 +1055,10 @@ class Cosmonium(CosmoniumBase):
                 print("ERROR: surface '{}' not found".format(surface_name))
 
     def update_c_settings(self):
-        if c_settings is None: return
-        c_settings.min_body_size = settings.min_body_size
+        if c_settings is not None:
+            c_settings.min_body_size = settings.min_body_size
+        if self.c_camera_holder is not None:
+            self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 
     def update_worlds(self, time, dt):
         self.worlds.update_anchor(time, self.update_id)
@@ -1231,6 +1239,10 @@ class Cosmonium(CosmoniumBase):
     def update_instances(self):
         observer = self.observer
         scene_manager = self.scene_manager
+
+        self.visible_scene_anchors = SceneAnchorCollection()
+        self.resolved_scene_anchors = SceneAnchorCollection()
+
         camera_pos = self.observer.get_local_position()
         camera_rot = self.observer.get_absolute_orientation()
         frustum = self.observer.anchor.rel_frustum
@@ -1258,12 +1270,16 @@ class Cosmonium(CosmoniumBase):
                 old_visible.body.on_point(self.scene_manager)
             old_visible.body.on_hidden(scene_manager)
         for visible in self.visibles:
+            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
             body = visible.body
             #TODO: this will update the body's components
             body.update_visible_obs(observer)
             body.check_visible_visibility(frustum, pixel_size)
             body.check_and_update_visible_instance(scene_manager, camera_pos, camera_rot)
         for resolved in self.resolved:
+            if not isinstance(resolved.body.scene_anchor, SceneAnchor):
+                continue
+            self.resolved_scene_anchors.add_scene_anchor(resolved.body.scene_anchor)
             body = resolved.body
             #TODO: this will update the body's components
             body.update_obs(self.observer)
@@ -1363,7 +1379,7 @@ class Cosmonium(CosmoniumBase):
         nearest_system, nearest_visible_system = self.find_nearest_system()
         #TODO: anchors should be distance sorted
         distance = self.update_nearest_system(nearest_system, nearest_visible_system)
-        self.scene_manager.update_scene_and_camera(distance, self.observer)
+        self.scene_manager.update_scene_and_camera(distance, self.c_camera_holder)
 
         self.find_global_light_sources()
         self.update_magnitudes()
@@ -1383,7 +1399,7 @@ class Cosmonium(CosmoniumBase):
 
         self.find_shadows()
         self.update_instances()
-        self.scene_manager.build_scene(self.common_state, self.observer, self.visibles, self.resolved)
+        self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)

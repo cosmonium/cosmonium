@@ -68,7 +68,7 @@ class StellarObject(NamedObject):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         #else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
-        self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center)
+        self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center, background=self.background, virtual_object=self.virtual_object)
         self.oid = None
         self.oid_color = None
         #Flags
