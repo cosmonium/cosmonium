@@ -134,7 +134,7 @@ DynamicSceneManager::update_scene_and_camera(double distance_to_nearest, CameraH
           if (scale < 1.0) {
               near_plane = scale;
           } else {
-              near_plane = near_plane;
+              near_plane = default_near_plane;
           }
       }
   }

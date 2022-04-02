@@ -227,7 +227,7 @@ class DynamicSceneManager(SceneManagerBase):
                 if self.scale < 1.0:
                     self.near_plane = self.scale
                 else:
-                    self.near_plane = self.near_plane
+                    self.near_plane = settings.near_plane
         self.update_planes()
         if self.auto_infinite_plane:
             self.infinity = self.near_plane / self.lens_far_limit / 1000

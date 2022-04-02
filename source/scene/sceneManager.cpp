@@ -63,7 +63,7 @@ SceneManager::get_mid_plane(void)
 }
 
 void
-SceneManager::set_mid_plane(double scale)
+SceneManager::set_mid_plane(double mid_plane)
 {
   this->mid_plane = mid_plane;
 }
