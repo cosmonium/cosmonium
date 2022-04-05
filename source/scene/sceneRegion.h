@@ -45,7 +45,7 @@ PUBLISHED:
 
   void add_body(SceneAnchor *body);
 
-  void add_point(AnchorBase *anchor);
+  void add_point(SceneAnchor *point);
 
   bool overlap(SceneRegion *other);
 
@@ -64,13 +64,21 @@ PUBLISHED:
 
   void ls(void);
 
+  int get_num_points(void) const;
+  SceneAnchor *get_point(int index) const;
+  MAKE_SEQ(points, get_num_points, get_point);
+
   double get_near(void) const;
   double get_far(void) const;
   NodePath get_root(void) const;
 
+public:
+  std::vector<PT(SceneAnchor)> const & get_points(void) const;
+
 protected:
   PT(SceneManager) scene_manager;
   std::vector<PT(SceneAnchor)> bodies;
+  std::vector<PT(SceneAnchor)> points;
   double near;
   double far;
   PT(GraphicsOutput) target;
@@ -78,9 +86,6 @@ protected:
   NodePath root;
   PT(Camera) cam;
   NodePath cam_np;
-  bool has_points;
-  void *pointset;
-  void *haloset;
 
 public:
   MAKE_TYPE_2("SceneRegion", TypedObject, ReferenceCount);

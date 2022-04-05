@@ -25,9 +25,10 @@ from ... import settings
 from math import log
 
 class SceneAnchor:
-    def __init__(self, anchor, support_offset_body_center, apply_orientation=False, background=False, virtual_object=False):
+    def __init__(self, anchor, support_offset_body_center, oid_color, apply_orientation=False, background=False, virtual_object=False):
         self.anchor = anchor
         self.support_offset_body_center = support_offset_body_center
+        self.oid_color = oid_color
         self.apply_orientation = apply_orientation
         self.background = background
         self.virtual_object = virtual_object

@@ -36,7 +36,6 @@ TypeHandle RegionSceneManager::_type_handle;
 double RegionSceneManager::min_near = 1e-6;
 double RegionSceneManager::max_near_reagion = 1e5;
 double RegionSceneManager::infinity = 1e9;
-bool RegionSceneManager::render_sprite_points = true;
 
 
 RegionSceneManager::RegionSceneManager(void)
@@ -198,19 +197,17 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   }
   auto current_region_it = regions.begin();
   SceneRegion * current_region= *current_region_it;
-  if (render_sprite_points) {
-      for (unsigned int i = 0; i < visibles.get_num_scene_anchors(); ++i) {
-          SceneAnchor *visible = visibles[i];
-          AnchorBase *anchor = visible->get_anchor();
-          if (anchor->resolved) {
-              continue;
-          }
-          while (visible->get_anchor()->z_distance  / scale > current_region->get_far()) {
-              ++current_region_it;
-              current_region = *current_region_it;
-          }
-          current_region->add_point(visible->get_anchor());
+  for (unsigned int i = 0; i < visibles.get_num_scene_anchors(); ++i) {
+      SceneAnchor *visible = visibles[i];
+      AnchorBase *anchor = visible->get_anchor();
+      if (anchor->resolved) {
+          continue;
       }
+      while (anchor->z_distance  / scale > current_region->get_far()) {
+          ++current_region_it;
+          current_region = *current_region_it;
+      }
+      current_region->add_point(visible);
   }
   if (regions.size() > 0) {
       double region_size = 1.0 / regions.size();

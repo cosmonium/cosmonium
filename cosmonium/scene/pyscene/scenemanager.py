@@ -18,15 +18,11 @@
 #
 
 
-from panda3d.core import Camera, NodePath, DepthOffsetAttrib, LPoint3
+from panda3d.core import Camera, NodePath
 from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
 from panda3d.core import GeomNode
 
-from ...sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
-from ...pointsset import PointsSet
-from ...foundation import BaseObject
-from ...utils import mag_to_scale
 from ...pstats import pstat
 from ... import settings
 
@@ -35,8 +31,9 @@ class SceneManagerBase:
     def __init__(self):
         self.midPlane = None
         self.scale = 1.0
-        self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
-        self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
+
+    def has_regions(self):
+        return False
 
     def set_target(self, target):
         raise NotImplementedError()
@@ -154,12 +151,6 @@ class DynamicSceneManager(SceneManagerBase):
         self.mid_plane_ratio = settings.mid_plane_ratio
         self.infinity = self.infinite_plane
         self.root = render.attach_new_node('root')
-        self.pointset = PointsSet(use_sprites=True, sprite=self.point_sprite)
-        if settings.render_sprite_points:
-            self.pointset.instance.reparent_to(self.root)
-        self.haloset = PointsSet(use_sprites=True, sprite=self.halos_sprite, background=settings.halo_depth)
-        if settings.render_sprite_points:
-            self.haloset.instance.reparent_to(self.root)
 
     def pick_scene(self, mpos):
         picker = CollisionTraverser()
@@ -241,31 +232,6 @@ class DynamicSceneManager(SceneManagerBase):
     def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.setShaderInput("midPlane", self.midPlane)
-        self.pointset.reset()
-        self.haloset.reset()
-        for object_to_render in visibles:
-            anchor = object_to_render.anchor
-            if anchor.visible:
-                body = anchor.body
-                if anchor.visible_size < settings.min_body_size * 2:
-                    self.add_point(anchor.point_color, object_to_render.scene_position, anchor.visible_size, anchor._app_magnitude, body.oid_color)
-                    if settings.show_halo and anchor._app_magnitude < settings.smallest_glare_mag:
-                        self.add_halo(anchor.point_color, object_to_render.scene_position, anchor.visible_size, anchor._app_magnitude, body.oid_color)
-        self.pointset.update()
-        self.haloset.update()
-
-    def add_point(self, point_color, scene_position, visible_size, app_magnitude, oid_color):
-            scale = mag_to_scale(app_magnitude)
-            if scale > 0:
-                color = point_color * scale
-                size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
-                self.pointset.add_point(scene_position, color, size, oid_color)
-
-    def add_halo(self, point_color, scene_position, visible_size, app_magnitude, oid_color):
-            coef = settings.smallest_glare_mag - app_magnitude + 6.0
-            radius = max(1.0, visible_size)
-            size = radius * coef * 2.0
-            self.haloset.add_point(LPoint3(*scene_position), point_color, size * 2, oid_color)
 
     def ls(self):
         self.root.ls()
@@ -295,6 +261,9 @@ class RegionSceneManager(SceneManagerBase):
         self.camera_mask = None
         self.infinity = 1e9
         self.inverse_z = settings.use_inverse_z
+
+    def has_regions(self):
+        return True
 
     def set_target(self, target):
         print("Set Scene Manager target", target)
@@ -407,15 +376,14 @@ class RegionSceneManager(SceneManagerBase):
             background_region.add_body(body)
         current_region_index = 0
         current_region = self.regions[0]
-        if settings.render_sprite_points:
-            for visible in visibles:
-                anchor = visible.anchor
-                if anchor.resolved: continue
-                while anchor.z_distance  / self.scale > current_region.far and current_region_index + 1 < len(self.regions):
-                    current_region_index += 1
-                    current_region = self.regions[current_region_index]
-                #print("ADD", visible.body.get_name(), visible.z_distance, "TO", current_region_index, current_region.near, current_region.far)
-                current_region.add_point(anchor)
+        for visible in visibles:
+            anchor = visible.anchor
+            if anchor.resolved: continue
+            while anchor.z_distance  / self.scale > current_region.far and current_region_index + 1 < len(self.regions):
+                current_region_index += 1
+                current_region = self.regions[current_region_index]
+            #print("ADD", visible.body.get_name(), visible.z_distance, "TO", current_region_index, current_region.near, current_region.far)
+            current_region.add_point(visible)
         if len(self.regions) > 0:
             region_size = 1.0 / len(self.regions)
             if not self.inverse_z:
@@ -447,9 +415,7 @@ class SceneRegion:
         self.root = NodePath('root')
         self.cam = None
         self.cam_np = None
-        self.has_points = False
-        self.pointset = None
-        self.haloset = None
+        self.points = []
 
     def set_camera_mask(self, flags):
         self.cam.set_camera_mask(flags)
@@ -457,28 +423,10 @@ class SceneRegion:
     def add_body(self, body):
         self.bodies.append(body)
 
-    def add_point(self, anchor):
-        if not self.has_points:
-            self.pointset = PointsSet(use_sprites=True, sprite=self.scene_manager.point_sprite)
-            self.pointset.instance.reparent_to(self.root)
-            self.haloset = PointsSet(use_sprites=True, sprite=self.scene_manager.halos_sprite, background=settings.halo_depth)
-            self.haloset.instance.reparent_to(self.root)
-            self.has_points = True
-        if anchor.visible_size < settings.min_body_size * 2 and anchor.body.scene_anchor.instance is not None:
-            app_magnitude = anchor._app_magnitude
-            point_color = anchor.point_color
-            body = anchor.body
-            body.scene_anchor.instance.reparent_to(self.root)
-            scale = mag_to_scale(app_magnitude)
-            if scale > 0:
-                color = point_color * scale
-                size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
-                self.pointset.add_point(body.scene_anchor.scene_position, color, size, body.oid_color)
-                if settings.show_halo and app_magnitude < settings.smallest_glare_mag:
-                    coef = settings.smallest_glare_mag - app_magnitude + 6.0
-                    radius = max(1.0, anchor.visible_size)
-                    size = radius * coef * 2.0
-                    self.haloset.add_point(LPoint3(*body.scene_anchor.scene_position), point_color, size * 2, body.oid_color)
+    def add_point(self, scene_anchor):
+        if scene_anchor.instance is not None:
+            self.points.append(scene_anchor)
+            scene_anchor.instance.reparent_to(self.root)
 
     def overlap(self, other):
         return self.near <= other.near < self.far or other.near <= self.near < other.far or \
@@ -515,9 +463,6 @@ class SceneRegion:
             self.region.set_depth_range(section_far, section_near)
         else:
             self.region.set_depth_range(section_near, section_far)
-        if self.has_points:
-            self.pointset.update()
-            self.haloset.update()
 
     def remove(self):
         self.target.remove_display_region(self.region)

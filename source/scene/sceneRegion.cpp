@@ -60,8 +60,9 @@ SceneRegion::add_body(SceneAnchor *body)
 
 
 void
-SceneRegion::add_point(AnchorBase *anchor)
+SceneRegion::add_point(SceneAnchor *point)
 {
+    points.push_back(point);
 }
 
 
@@ -121,10 +122,6 @@ SceneRegion::create(GraphicsOutput *target,
     } else {
         region->set_depth_range(section_near, section_far);
     }
-    if (has_points) {
-        // pointset.update();
-        // haloset.update();
-    }
 }
 
 
@@ -141,6 +138,26 @@ SceneRegion::ls(void)
     std::cout << "Near " << near << " Far " << far << "\n";
     //print("Bodies:", list(map(lambda b: b.get_name(), self.bodies)))
     root.ls();
+}
+
+
+int
+SceneRegion::get_num_points() const
+{
+  return points.size();
+}
+
+
+SceneAnchor *
+SceneRegion::get_point(int index) const
+{
+  return points[index];
+}
+
+std::vector<PT(SceneAnchor)> const &
+SceneRegion::get_points(void) const
+{
+  return points;
 }
 
 

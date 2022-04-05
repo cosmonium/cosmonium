@@ -57,7 +57,6 @@ RegionSceneManager(void);
   static double min_near;
   static double max_near_reagion;
   static double infinity;
-  static bool render_sprite_points;
 
 protected:
   PT(GraphicsOutput) target;
