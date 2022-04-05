@@ -436,8 +436,7 @@ class Cosmonium(CosmoniumBase):
 
         self.worlds = Worlds()
         self.universe = Universe(self)
-        self.background = ObserverCenteredWorld("background")
-        self.background.background = True
+        self.background = ObserverCenteredWorld("background", background=True)
         self.worlds.add_world(self.background)
 
         if settings.color_picking:
