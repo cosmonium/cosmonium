@@ -90,7 +90,7 @@ SceneAnchor::update(SceneManager *scene_manager)
       calc_scene_params(scene_manager, scene_rel_position, anchor->_position, distance_to_obs, anchor->vector_to_obs,
           scene_position, scene_distance, scene_scale_factor);
       if (has_instance) {
-          unshifted_instance.set_pos(scene_body_center_offset);
+          unshifted_instance.set_pos(LCAST(PN_stdfloat, scene_body_center_offset));
       }
   } else {
       scene_rel_position = anchor->rel_position;
@@ -102,9 +102,9 @@ SceneAnchor::update(SceneManager *scene_manager)
       }
   }
   if (has_instance) {
-      instance.set_pos(scene_position);
+      instance.set_pos(LCAST(PN_stdfloat, scene_position));
       if (apply_orientation) {
-          scene_orientation = LQuaternion(anchor->_orientation);
+          scene_orientation = LQuaternion(LCAST(PN_stdfloat, anchor->_orientation));
           instance.set_quat(scene_orientation);
       }
       instance.set_scale(scene_scale_factor);
