@@ -1267,14 +1267,14 @@ class Cosmonium(CosmoniumBase):
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
             occluder.body.scene_anchor.update(scene_manager)
-        for visible in self.visibles:
-            #visible.update_scene(self.c_observer)
-            visible.body.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
             #print("NEW VISIBLE", newly_visible.body.get_name())
             newly_visible.body.on_visible(scene_manager)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
+        for visible in self.visibles:
+            #visible.update_scene(self.c_observer)
+            visible.body.scene_anchor.update(scene_manager)
         for newly_resolved in self.becoming_resolved:
             #print("NEW RESOLVED", newly_resolved.body.get_name())
             newly_resolved.body.on_resolved(scene_manager)
