@@ -37,6 +37,7 @@ class SceneAnchor:
         self.unshifted_instance = None
         self.scene_position = LPoint3d()
         self.scene_orientation = LQuaternion()
+        self.scene_distance = 0.0
         self.scene_scale_factor = 0.0
         self.scene_rel_position = LPoint3d()
         self.world_body_center_offset = LVector3d()
@@ -109,16 +110,9 @@ class SceneAnchor:
             scale_factor = ratio / scene_manager.scale
         return position, distance, scale_factor
 
-class AbsoluteSceneAnchor:
+class AbsoluteSceneAnchor(SceneAnchor):
     def __init__(self, anchor):
-        self.anchor = anchor
-        self.instance = None
-        self.shifted_instance = None
-        self.unshifted_instance = None
-        self.scene_position = LPoint3d()
-        self.scene_distance = 0.0
-        self.scene_scale_factor = 0.0
-        self.scene_rel_position = LPoint3d()
+        SceneAnchor.__init__(self, anchor, False, None)
 
     def create_instance(self, scene_manager):
         if self.instance is None:
@@ -141,16 +135,9 @@ class AbsoluteSceneAnchor:
         self.scene_scale_factor = 1.0 / scene_manager.scale
         self.instance.set_scale(self.scene_scale_factor)
 
-class ObserverSceneAnchor:
-    def __init__(self, anchor):
-        self.anchor = anchor
-        self.instance = None
-        self.shifted_instance = None
-        self.unshifted_instance = None
-        self.scene_position = LPoint3d()
-        self.scene_distance = 0.0
-        self.scene_scale_factor = 0.0
-        self.scene_rel_position = LPoint3d()
+class ObserverSceneAnchor(SceneAnchor):
+    def __init__(self, anchor, background=False):
+        SceneAnchor.__init__(self, anchor, False, None, background=background)
 
     def create_instance(self, scene_manager):
         if self.instance is None:

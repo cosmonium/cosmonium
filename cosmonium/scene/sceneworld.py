@@ -220,7 +220,8 @@ class FlatTerrainWorld(OriginCenteredWorld):
             return 0
 
 class ObserverCenteredWorld(SimpleWorld):
-    def __init__(self, name):
+    def __init__(self, name, background=False):
+        self.background = background
         SimpleWorld.__init__(self, name)
         self.components.visible = True
 
@@ -228,4 +229,4 @@ class ObserverCenteredWorld(SimpleWorld):
         return ObserverAnchor(0, self)
 
     def create_scene_anchor(self):
-        return ObserverSceneAnchor(self.anchor)
+        return ObserverSceneAnchor(self.anchor, background=self.background)

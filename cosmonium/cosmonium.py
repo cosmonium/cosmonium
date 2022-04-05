@@ -1295,8 +1295,6 @@ class Cosmonium(CosmoniumBase):
             body.check_visible_visibility(frustum, pixel_size)
             body.check_and_update_visible_instance(scene_manager, camera_pos, camera_rot)
         for resolved in self.resolved:
-            if not isinstance(resolved.body.scene_anchor, SceneAnchor):
-                continue
             self.resolved_scene_anchors.add_scene_anchor(resolved.body.scene_anchor)
             body = resolved.body
             #TODO: this will update the body's components
