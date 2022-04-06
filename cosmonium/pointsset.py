@@ -139,7 +139,7 @@ class RegionsPointsSetShape:
 
     def add_objects(self, scene_manager, scene_anchors):
         if not settings.render_sprite_points: return
-        for region in scene_manager.regions:
+        for region in scene_manager.get_regions():
             current_shape = self.shape_class(self.has_size, self.has_oid)
             current_shape.reset()
             self.shapes[region] = current_shape

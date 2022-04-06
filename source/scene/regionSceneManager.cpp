@@ -242,3 +242,19 @@ RegionSceneManager::ls(void)
       ++i;
   }
 }
+
+
+int
+RegionSceneManager::get_num_regions(void) const
+{
+  return regions.size();
+}
+
+
+SceneRegion *
+RegionSceneManager::get_region(int index) const
+{
+  auto it = regions.begin();
+  std::advance(it, index);
+  return *it;
+}

@@ -54,6 +54,10 @@ RegionSceneManager(void);
 
   virtual void ls(void);
 
+  int get_num_regions(void) const;
+  SceneRegion *get_region(int index) const;
+  MAKE_SEQ(get_regions, get_num_regions, get_region);
+
   static double min_near;
   static double max_near_reagion;
   static double infinity;

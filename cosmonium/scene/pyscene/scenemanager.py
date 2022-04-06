@@ -265,6 +265,9 @@ class RegionSceneManager(SceneManagerBase):
     def has_regions(self):
         return True
 
+    def get_regions(self):
+        return self.regions
+
     def set_target(self, target):
         print("Set Scene Manager target", target)
         self.target = target
