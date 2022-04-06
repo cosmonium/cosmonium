@@ -231,3 +231,45 @@ SceneAnchor::set_virtual_object(bool virtual_object)
 {
     this->virtual_object = virtual_object;
 }
+
+
+TypeHandle AbsoluteSceneAnchor::_type_handle;
+
+
+AbsoluteSceneAnchor::AbsoluteSceneAnchor(AnchorBase *anchor) :
+    SceneAnchor(anchor, false, LColor())
+{
+}
+
+
+void
+AbsoluteSceneAnchor::update(SceneManager *scene_manager)
+{
+  if (camera_at_origin) {
+      scene_position = anchor->rel_position / scene_manager->get_scale();
+      instance.set_pos(LCAST(PN_stdfloat, scene_position));
+      scene_scale_factor = 1.0 / scene_manager->get_scale();
+      instance.set_scale(scene_scale_factor);
+  }
+}
+
+
+TypeHandle ObserverSceneAnchor::_type_handle;
+
+
+ObserverSceneAnchor::ObserverSceneAnchor(AnchorBase *anchor, bool background) :
+    SceneAnchor(anchor, false, LColor(), false, background)
+{
+}
+
+
+void
+ObserverSceneAnchor::update(SceneManager *scene_manager)
+{
+  if (!camera_at_origin) {
+      scene_position = anchor->rel_position / scene_manager->get_scale();
+      instance.set_pos(LCAST(PN_stdfloat, scene_position));
+      scene_scale_factor = 1.0 / scene_manager->get_scale();
+      instance.set_scale(scene_scale_factor);
+  }
+}

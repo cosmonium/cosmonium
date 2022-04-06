@@ -25,6 +25,7 @@ from ... import settings
 from math import log
 
 class SceneAnchor:
+    anchor_name = 'scene-anchor'
     def __init__(self, anchor, support_offset_body_center, oid_color, apply_orientation=False, background=False, virtual_object=False):
         self.anchor = anchor
         self.support_offset_body_center = support_offset_body_center
@@ -45,7 +46,7 @@ class SceneAnchor:
 
     def create_instance(self, scene_manager):
         if self.instance is None:
-            self.instance = NodePath('scene-anchor')
+            self.instance = NodePath(self.anchor_name)
             scene_manager.attach_new_anchor(self.instance)
             self.shifted_instance = self.instance.attach_new_node('shifted-anchor')
             self.unshifted_instance = self.instance.attach_new_node('unshifted-anchor')
@@ -111,22 +112,9 @@ class SceneAnchor:
         return position, distance, scale_factor
 
 class AbsoluteSceneAnchor(SceneAnchor):
+    anchor_name = 'static-anchor'
     def __init__(self, anchor):
         SceneAnchor.__init__(self, anchor, False, None)
-
-    def create_instance(self, scene_manager):
-        if self.instance is None:
-            self.instance = NodePath('static-anchor')
-            scene_manager.attach_new_anchor(self.instance)
-            self.shifted_instance = self.instance.attach_new_node('shifted-anchor')
-            self.unshifted_instance = self.instance.attach_new_node('unshifted-anchor')
-
-    def remove_instance(self):
-        if self.instance is not None:
-            self.instance.remove_node()
-            self.instance = None
-            self.shifted_instance = None
-            self.unshifted_instance = None
 
     def update(self, scene_manager):
         if settings.camera_at_origin:
@@ -136,22 +124,9 @@ class AbsoluteSceneAnchor(SceneAnchor):
         self.instance.set_scale(self.scene_scale_factor)
 
 class ObserverSceneAnchor(SceneAnchor):
+    anchor_name = 'observer-anchor'
     def __init__(self, anchor, background=False):
         SceneAnchor.__init__(self, anchor, False, None, background=background)
-
-    def create_instance(self, scene_manager):
-        if self.instance is None:
-            self.instance = NodePath('observer-anchor')
-            scene_manager.attach_new_anchor(self.instance)
-            self.shifted_instance = self.instance.attach_new_node('shifted-anchor')
-            self.unshifted_instance = self.instance.attach_new_node('unshifted-anchor')
-
-    def remove_instance(self):
-        if self.instance is not None:
-            self.instance.remove_node()
-            self.instance = None
-            self.shifted_instance = None
-            self.unshifted_instance = None
 
     def update(self, scene_manager):
         if not settings.camera_at_origin:

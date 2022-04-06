@@ -43,7 +43,7 @@ PUBLISHED:
 
   void create_instance(SceneManager *scene_manager);
   void remove_instance(void);
-  void update(SceneManager *scene_manager);
+  virtual void update(SceneManager *scene_manager);
 
   void calc_scene_params(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs,
       LPoint3d &position, double &distance, double &scale_factor);
@@ -100,6 +100,31 @@ PUBLISHED:
 
 public:
   MAKE_TYPE_2("SceneAnchor", TypedObject, ReferenceCount);
+};
+
+
+class AbsoluteSceneAnchor : public SceneAnchor
+{
+PUBLISHED:
+  AbsoluteSceneAnchor(AnchorBase *anchor);
+
+  virtual void update(SceneManager *scene_manager);
+
+public:
+  MAKE_TYPE("AbsoluteSceneAnchor", SceneAnchor);
+};
+
+
+
+class ObserverSceneAnchor : public SceneAnchor
+{
+PUBLISHED:
+  ObserverSceneAnchor(AnchorBase *anchor, bool background=false);
+
+  virtual void update(SceneManager *scene_manager);
+
+public:
+  MAKE_TYPE("ObserverSceneAnchor", SceneAnchor);
 };
 
 #endif

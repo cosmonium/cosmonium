@@ -22,13 +22,10 @@ from .. import settings
 
 if settings.c_scene_manager:
     try:
-        from cosmonium_engine import SceneAnchor, SceneAnchorCollection
+        from cosmonium_engine import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchorCollection
     except ImportError as e:
         print("WARNING: Could not load Scene Anchor C implementation, fallback on python implementation")
         print("\t", e)
-        from .pyscene.sceneanchor import SceneAnchor, SceneAnchorCollection
+        from .pyscene.sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchorCollection
 else:
-    from .pyscene.sceneanchor import SceneAnchor, SceneAnchorCollection
-
-
-from .pyscene.sceneanchor import AbsoluteSceneAnchor, ObserverSceneAnchor
+    from .pyscene.sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchorCollection
