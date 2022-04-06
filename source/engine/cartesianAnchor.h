@@ -90,5 +90,30 @@ protected:
   MAKE_TYPE("CartesianAnchor", AnchorBase);
 };
 
+
+class OriginAnchor : public CartesianAnchor
+{
+PUBLISHED:
+  OriginAnchor(unsigned int anchor_class, PyObject *ref_object);
+
+protected:
+  MAKE_TYPE("OriginAnchor", AnchorBase);
+};
+
+
+class ObserverAnchor : public CartesianAnchor
+{
+PUBLISHED:
+  ObserverAnchor(unsigned int anchor_class, PyObject *ref_object);
+
+  virtual void update(double time, unsigned long int update_id);
+
+  virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
+
+protected:
+  MAKE_TYPE("ObserverAnchor", AnchorBase);
+};
+
+
 #endif //CARTESIANANCHORS_H
 

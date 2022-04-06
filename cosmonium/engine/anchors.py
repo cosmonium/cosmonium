@@ -19,7 +19,7 @@
 
 try:
     from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor
-    from cosmonium_engine import CartesianAnchor, CameraAnchor
+    from cosmonium_engine import CartesianAnchor, CameraAnchor, OriginAnchor, ObserverAnchor
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
@@ -28,4 +28,4 @@ except ImportError as e:
     from .pyengine.anchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
     from .pyengine.anchors import CartesianAnchor, CameraAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 
-from .pyengine.anchors import FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from .pyengine.anchors import FlatSurfaceAnchor

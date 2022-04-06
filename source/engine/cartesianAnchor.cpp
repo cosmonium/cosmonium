@@ -18,6 +18,7 @@
  */
 
 
+#include "frames.h"
 #include "cartesianAnchor.h"
 #include "cameraAnchor.h"
 #include "frames.h"
@@ -231,4 +232,45 @@ CartesianAnchor::update_observer(CameraAnchor &observer, unsigned long int updat
       resolved = true;
       visible = true;
   }
+}
+
+
+TypeHandle OriginAnchor::_type_handle;
+
+OriginAnchor::OriginAnchor(unsigned int anchor_class, PyObject *ref_object) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame())
+{
+}
+
+
+TypeHandle ObserverAnchor::_type_handle;
+
+ObserverAnchor::ObserverAnchor(unsigned int anchor_class, PyObject *ref_object) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame())
+{
+}
+
+
+void
+ObserverAnchor::update(double time, unsigned long int update_id)
+{
+  // Do nothing
+}
+
+
+void
+ObserverAnchor::update_observer(CameraAnchor &observer, unsigned long int update_id)
+{
+  //TODO !
+//  if self.update_id == update_id: return
+//  self.copy(observer)
+//  self.was_visible = self.visible
+//  self.was_resolved = self.resolved
+//  self.rel_position = LPoint3d()
+//  self.distance_to_obs = 0
+//  self.vector_to_obs = LVector3d()
+//  self.visible_size = 0.0
+//  self.z_distance = 0.0
+//  self.visible = True
+//  self.resolved = True
 }

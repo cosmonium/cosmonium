@@ -27,6 +27,9 @@
 
 class StellarAnchor;
 
+// TODO: This should be an actual class and J2000BarycentricEclipticReferenceFrame derives from it
+#define AbsoluteReferenceFrame J2000BarycentricEclipticReferenceFrame
+
 class ReferenceFrame : public TypedObject, public ReferenceCount
 {
 PUBLISHED:
