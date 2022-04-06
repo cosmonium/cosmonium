@@ -171,6 +171,13 @@ DynamicSceneManager::get_camera(void)
 }
 
 
+double
+DynamicSceneManager::get_infinity(void) const
+{
+  return infinity;
+}
+
+
 NodePath
 DynamicSceneManager::get_root(void)
 {

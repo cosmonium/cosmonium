@@ -65,6 +65,9 @@ PUBLISHED:
   void set_mid_plane(double mid_plane);
   MAKE_PROPERTY(midPlane, get_mid_plane, set_mid_plane);
 
+  virtual double get_infinity(void) const = 0;
+  MAKE_PROPERTY(infinity, get_infinity);
+
   static bool inverse_z;
   static double default_near_plane;
   static bool infinite_far_plane;

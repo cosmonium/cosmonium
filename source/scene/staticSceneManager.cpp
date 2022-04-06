@@ -125,6 +125,12 @@ StaticSceneManager::get_camera(void)
   return camera;
 }
 
+double
+StaticSceneManager::get_infinity(void) const
+{
+  return 0.0;
+}
+
 NodePath
 StaticSceneManager::get_root(void)
 {

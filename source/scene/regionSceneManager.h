@@ -29,7 +29,7 @@ class SceneRegion;
 class RegionSceneManager : public SceneManager
 {
 PUBLISHED:
-RegionSceneManager(void);
+  RegionSceneManager(void);
   virtual ~RegionSceneManager(void);
 
   virtual void set_target(GraphicsOutput *target);
@@ -57,6 +57,8 @@ RegionSceneManager(void);
   int get_num_regions(void) const;
   SceneRegion *get_region(int index) const;
   MAKE_SEQ(get_regions, get_num_regions, get_region);
+
+  virtual double get_infinity(void) const;
 
   static double min_near;
   static double max_near_reagion;

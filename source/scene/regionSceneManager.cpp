@@ -244,6 +244,13 @@ RegionSceneManager::ls(void)
 }
 
 
+double
+RegionSceneManager::get_infinity(void) const
+{
+  return infinity;
+}
+
+
 int
 RegionSceneManager::get_num_regions(void) const
 {

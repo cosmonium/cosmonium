@@ -49,6 +49,8 @@ PUBLISHED:
 
   virtual void ls(void);
 
+  virtual double get_infinity(void) const;
+
   NodePath get_camera(void);
   MAKE_PROPERTY(camera, get_camera);
 
