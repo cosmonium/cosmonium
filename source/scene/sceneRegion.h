@@ -70,7 +70,9 @@ PUBLISHED:
 
   double get_near(void) const;
   double get_far(void) const;
+
   NodePath get_root(void) const;
+  MAKE_PROPERTY(root, get_root);
 
 public:
   std::vector<PT(SceneAnchor)> const & get_points(void) const;
