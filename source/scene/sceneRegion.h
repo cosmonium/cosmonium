@@ -66,7 +66,7 @@ PUBLISHED:
 
   int get_num_points(void) const;
   SceneAnchor *get_point(int index) const;
-  MAKE_SEQ(points, get_num_points, get_point);
+  MAKE_SEQ(get_points, get_num_points, get_point);
 
   double get_near(void) const;
   double get_far(void) const;

@@ -143,7 +143,7 @@ class RegionsPointsSetShape:
             current_shape = self.shape_class(self.has_size, self.has_oid)
             current_shape.reset()
             self.shapes[region] = current_shape
-            current_shape.add_objects(scene_manager, region.points)
+            current_shape.add_objects(scene_manager, region.get_points())
 
 
 class PointsSetShapeObject(VisibleObject):
