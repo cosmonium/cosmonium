@@ -32,6 +32,7 @@ bool SceneAnchor::use_log_scaling = false;
 
 SceneAnchor::SceneAnchor(AnchorBase *anchor,
     bool support_offset_body_center,
+    LColor oid_color,
     bool apply_orientation,
     bool background,
     bool virtual_object) :
@@ -46,7 +47,8 @@ SceneAnchor::SceneAnchor(AnchorBase *anchor,
     scene_scale_factor(0),
     scene_rel_position(0),
     world_body_center_offset(0),
-    scene_body_center_offset(0)
+    scene_body_center_offset(0),
+    oid_color(oid_color)
 {
 }
 
@@ -200,6 +202,20 @@ SceneAnchor::get_shifted_instance(void)
   } else {
     return nullptr;
   }
+}
+
+
+LColor
+SceneAnchor::get_oid_color(void)
+{
+    return background;
+}
+
+
+void
+SceneAnchor::set_oid_color(LColor oid_color)
+{
+    this->oid_color = oid_color;
 }
 
 

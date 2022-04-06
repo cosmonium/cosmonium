@@ -29,11 +29,13 @@
 class AnchorBase;
 class SceneManager;
 
+
 class SceneAnchor : public TypedObject, public ReferenceCount
 {
 PUBLISHED:
   SceneAnchor(AnchorBase *anchor,
       bool support_offset_body_center,
+      LColor oid_color,
       bool apply_orientation=false,
       bool background=false,
       bool virtual_object=false);
@@ -62,6 +64,10 @@ PUBLISHED:
   NodePath *get_shifted_instance(void);
   MAKE_PROPERTY(shifted_instance, get_shifted_instance);
 
+  LColor get_oid_color(void);
+  void set_oid_color(LColor oid_color);
+  MAKE_PROPERTY(oid_color, get_oid_color, set_oid_color);
+
   bool get_virtual_object(void);
   void set_virtual_object(bool get_virtual_object);
   MAKE_PROPERTY(virtual_object, get_virtual_object, set_virtual_object);
@@ -82,6 +88,7 @@ protected:
   NodePath shifted_instance;
   NodePath unshifted_instance;
   bool virtual_object;
+  LColor oid_color;
 
 PUBLISHED:
   LPoint3d scene_position;
