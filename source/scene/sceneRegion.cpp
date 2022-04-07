@@ -63,6 +63,7 @@ void
 SceneRegion::add_point(SceneAnchor *point)
 {
     points.push_back(point);
+    point->get_instance()->reparent_to(root);
 }
 
 
