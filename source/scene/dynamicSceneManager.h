@@ -23,6 +23,7 @@
 #include"sceneManager.h"
 
 class DisplayRegion;
+class CollisionHandlerQueue;
 class PerspectiveLens;
 
 class DynamicSceneManager : public SceneManager
@@ -49,7 +50,7 @@ DynamicSceneManager(NodePath render);
 
   virtual void build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved);
 
-  virtual PT(CollisionHandlerQueue) pick_scene(LPoint2 mpos);
+  PT(CollisionHandlerQueue) pick_scene(LPoint2 mpos);
 
   virtual void ls(void);
 

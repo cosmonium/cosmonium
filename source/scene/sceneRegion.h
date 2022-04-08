@@ -29,6 +29,7 @@
 class AnchorBase;
 class Camera;
 class CameraHolder;
+class CollisionHandlerQueue;
 class DisplayRegion;
 class GrahicsOoutput;
 class RenderState;
@@ -61,6 +62,8 @@ PUBLISHED:
       int sort_index);
 
   void remove(void);
+
+  PT(CollisionHandlerQueue) pick_scene(LPoint2 mpos);
 
   void ls(void);
 

@@ -22,6 +22,8 @@
 #include "anchor.h"
 #include "cameraAnchor.h"
 #include "cameraHolder.h"
+#include "collisionEntriesCollection.h"
+#include "collisionHandlerQueue.h"
 #include "displayRegion.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
@@ -229,6 +231,18 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   }
   attach_spread_objects();
   spread_objects.clear();
+}
+
+
+PT(CollisionEntriesCollection)
+RegionSceneManager::pick_scene(LPoint2 mpos)
+{
+  CollisionEntriesCollection *entries = new CollisionEntriesCollection();
+  for (auto region : regions) {
+    PT(CollisionHandlerQueue) pq = region->pick_scene(mpos);
+    entries->add_entries(pq);
+  }
+  return entries;
 }
 
 

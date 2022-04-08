@@ -304,22 +304,10 @@ class RegionSceneManager(SceneManagerBase):
         pass
 
     def pick_scene(self, mpos):
-        picker = CollisionTraverser()
         result = CollisionEntriesCollection()
         for region in self.regions:
-            pq = CollisionHandlerQueue()
-            picker_ray = CollisionRay()
-            picker_node = CollisionNode('mouseRay')
-            picker_np = region.cam_np.attach_new_node(picker_node)
-            picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
-            picker_node.add_solid(picker_ray)
-            picker.add_collider(picker_np, pq)
-            picker_ray.set_from_lens(region.cam, mpos.get_x(), mpos.get_y())
-            #picker.show_collisions(region.root)
-            picker.traverse(region.root)
-            pq.sort_entries()
+            pq = region.pick_scene(mpos)
             result.add_queue(pq)
-            picker_np.remove_node()
         return result
 
     def clear_scene(self):
@@ -481,6 +469,22 @@ class SceneRegion:
         self.root = None
         self.cam = None
         self.cam_np = None
+
+    def pick_scene(self, mpos):
+        picker = CollisionTraverser()
+        pq = CollisionHandlerQueue()
+        picker_ray = CollisionRay()
+        picker_node = CollisionNode('mouseRay')
+        picker_np = self.cam_np.attach_new_node(picker_node)
+        picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
+        picker_node.add_solid(picker_ray)
+        picker.add_collider(picker_np, pq)
+        picker_ray.set_from_lens(self.cam, mpos.get_x(), mpos.get_y())
+        #picker.show_collisions(region.root)
+        picker.traverse(self.root)
+        picker_np.remove_node()
+        pq.sort_entries()
+        return pq
 
     def ls(self):
         print("Near", self.near, "Far", self.far)

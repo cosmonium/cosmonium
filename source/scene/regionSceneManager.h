@@ -22,9 +22,12 @@
 
 #include"sceneManager.h"
 
+
+class CollisionEntriesCollection;
 class DisplayRegion;
 class PerspectiveLens;
 class SceneRegion;
+
 
 class RegionSceneManager : public SceneManager
 {
@@ -51,6 +54,8 @@ PUBLISHED:
   void clear_scene(void);
 
   virtual void build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved);
+
+  PT(CollisionEntriesCollection) pick_scene(LPoint2 mpos);
 
   virtual void ls(void);
 
