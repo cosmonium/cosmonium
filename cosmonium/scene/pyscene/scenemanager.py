@@ -59,6 +59,9 @@ class SceneManagerBase:
     def build_scene(self, state, camera_holder, visibles, resolved):
         raise NotImplementedError()
 
+    def pick_scene(self, mpos):
+        raise NotImplementedError()
+
     def ls(self):
         raise NotImplementedError()
 
@@ -165,6 +168,7 @@ class DynamicSceneManager(SceneManagerBase):
         picker_ray.set_from_lens(self.camera.node(), mpos.get_x(), mpos.get_y())
         picker.traverse(self.root)
         pq.sort_entries()
+        picker_np.remove_node()
         return pq
 
     def set_target(self, target):
@@ -315,6 +319,7 @@ class RegionSceneManager(SceneManagerBase):
             picker.traverse(region.root)
             pq.sort_entries()
             result.add_queue(pq)
+            picker_np.remove_node()
         return result
 
     def clear_scene(self):
