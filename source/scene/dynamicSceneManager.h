@@ -49,6 +49,8 @@ DynamicSceneManager(NodePath render);
 
   virtual void build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved);
 
+  virtual PT(CollisionHandlerQueue) pick_scene(LPoint2 mpos);
+
   virtual void ls(void);
 
   NodePath get_camera(void);

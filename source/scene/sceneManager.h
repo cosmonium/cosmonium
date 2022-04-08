@@ -27,7 +27,7 @@
 #include"type_utils.h"
 #include "sceneAnchorCollection.h"
 
-
+class CollisionHandlerQueue;
 class SceneAnchor;
 class CameraHolder;
 
@@ -54,6 +54,8 @@ PUBLISHED:
   virtual void update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder) = 0;
 
   virtual void build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved) = 0;
+
+  virtual PT(CollisionHandlerQueue) pick_scene(LPoint2 mpos) = 0;
 
   virtual void ls(void) = 0;
 

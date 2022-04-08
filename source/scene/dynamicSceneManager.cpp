@@ -20,7 +20,12 @@
 
 #include "dynamicSceneManager.h"
 #include "cameraHolder.h"
+#include "collisionHandlerQueue.h"
+#include "collisionNode.h"
+#include "collisionRay.h"
+#include "collisionTraverser.h"
 #include "displayRegion.h"
+#include "geomNode.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
 #include "dcast.h"
@@ -154,6 +159,26 @@ DynamicSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, Sc
 {
   root.set_state(state.get_state());
   //root.set_shader_input("midPlane", mid_plane);
+}
+
+
+PT(CollisionHandlerQueue)
+DynamicSceneManager::pick_scene(LPoint2 mpos)
+{
+  CollisionTraverser picker;
+  CollisionHandlerQueue *pq = new CollisionHandlerQueue();
+  PT(CollisionNode) picker_node = new CollisionNode("mouseRay");
+  NodePath picker_np = camera.attach_new_node(picker_node);
+  picker_node->set_from_collide_mask(CollisionNode::get_default_collide_mask() | GeomNode::get_default_collide_mask());
+  PT(CollisionRay) picker_ray = new CollisionRay();
+  picker_ray->set_from_lens(DCAST(LensNode, camera.node()), mpos.get_x(), mpos.get_y());
+  picker_node->add_solid(picker_ray);
+  picker.add_collider(picker_np, pq);
+  //picker.show_collisions(self.root);
+  picker.traverse(root);
+  pq->sort_entries();
+  picker_np.remove_node();
+  return pq;
 }
 
 
