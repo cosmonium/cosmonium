@@ -122,7 +122,7 @@ screenshot_format = "png"
 last_script_path = None
 
 scene_manager = 'region'
-c_scene_manager = False
+c_scene_manager = True
 
 use_inv_scaling=True
 use_log_scaling=False
