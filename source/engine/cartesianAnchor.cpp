@@ -22,6 +22,7 @@
 #include "cartesianAnchor.h"
 #include "cameraAnchor.h"
 #include "frames.h"
+#include "py_panda.h"
 #include "settings.h"
 #include "infiniteFrustum.h"
 #include "anchorTraverser.h"
@@ -240,6 +241,59 @@ TypeHandle OriginAnchor::_type_handle;
 OriginAnchor::OriginAnchor(unsigned int anchor_class, PyObject *ref_object) :
     CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame())
 {
+}
+
+
+TypeHandle FlatSurfaceAnchor::_type_handle;
+
+
+FlatSurfaceAnchor::FlatSurfaceAnchor(unsigned int anchor_class, PyObject *ref_object, PyObject *ref_surface) :
+    OriginAnchor(anchor_class, ref_object),
+    ref_surface(ref_surface)
+{
+  if (ref_surface != nullptr) {
+    Py_INCREF(ref_surface);
+  }
+}
+
+
+FlatSurfaceAnchor::~FlatSurfaceAnchor(void)
+{
+  if (ref_surface != nullptr) {
+    Py_DECREF(ref_surface);
+  }
+}
+
+
+void
+FlatSurfaceAnchor::set_surface(PyObject *ref_surface)
+{
+  if (this->ref_surface != nullptr) {
+    Py_DECREF(this->ref_surface);
+  }
+  this->ref_surface = ref_surface;
+  if (this->ref_surface != nullptr) {
+    Py_INCREF(this->ref_surface);
+  }
+}
+
+
+void
+FlatSurfaceAnchor::update_observer(CameraAnchor &observer, unsigned long int update_id)
+{
+  if (update_id == this->update_id) return;
+  vector_to_obs = observer.get_local_position();
+  vector_to_obs.normalize();
+  LPoint3d observer_local_position = observer.get_local_position();
+  distance_to_obs = observer_local_position.get_z(); //# - self.get_height(self.observer._local_position)
+  //_height_under = ref_surface.get_height_at(observer_local_position[0], observer_local_position[1]);
+  rel_position = _local_position - observer_local_position;
+  was_visible = visible;
+  was_resolved = resolved;
+  visible_size = 0.0;
+  z_distance = 0.0;
+  visible = true;
+  resolved = true;
 }
 
 

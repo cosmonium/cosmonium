@@ -97,7 +97,25 @@ PUBLISHED:
   OriginAnchor(unsigned int anchor_class, PyObject *ref_object);
 
 protected:
-  MAKE_TYPE("OriginAnchor", AnchorBase);
+  MAKE_TYPE("OriginAnchor", CartesianAnchor);
+};
+
+
+class FlatSurfaceAnchor : public OriginAnchor
+{
+PUBLISHED:
+  FlatSurfaceAnchor(unsigned int anchor_class, PyObject *ref_object, PyObject *ref_surface);
+  virtual ~FlatSurfaceAnchor(void);
+
+  void set_surface(PyObject *ref_surface);
+
+  virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
+
+private:
+  PyObject *ref_surface;
+
+protected:
+  MAKE_TYPE("FlatSurfaceAnchor", OriginAnchor);
 };
 
 
@@ -111,7 +129,7 @@ PUBLISHED:
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
 
 protected:
-  MAKE_TYPE("ObserverAnchor", AnchorBase);
+  MAKE_TYPE("ObserverAnchor", CartesianAnchor);
 };
 
 

@@ -19,13 +19,11 @@
 
 try:
     from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor
-    from cosmonium_engine import CartesianAnchor, CameraAnchor, OriginAnchor, ObserverAnchor
+    from cosmonium_engine import CartesianAnchor, CameraAnchor, OriginAnchor, FlatSurfaceAnchor, ObserverAnchor
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
     from .pyengine.anchors import AnchorBase, UniverseAnchor, StellarAnchor, FixedStellarAnchor, DynamicStellarAnchor, SystemAnchor, OctreeAnchor
-    from .pyengine.anchors import CartesianAnchor, CameraAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
-
-from .pyengine.anchors import FlatSurfaceAnchor
+    from .pyengine.anchors import CartesianAnchor, CameraAnchor, OriginAnchor, FlatSurfaceAnchor, ObserverAnchor
