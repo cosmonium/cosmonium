@@ -315,16 +315,14 @@ ObserverAnchor::update(double time, unsigned long int update_id)
 void
 ObserverAnchor::update_observer(CameraAnchor &observer, unsigned long int update_id)
 {
-  //TODO !
-//  if self.update_id == update_id: return
-//  self.copy(observer)
-//  self.was_visible = self.visible
-//  self.was_resolved = self.resolved
-//  self.rel_position = LPoint3d()
-//  self.distance_to_obs = 0
-//  self.vector_to_obs = LVector3d()
-//  self.visible_size = 0.0
-//  self.z_distance = 0.0
-//  self.visible = True
-//  self.resolved = True
+  if (update_id == this->update_id) return;
+  copy(observer);
+  was_visible = visible;
+  was_resolved = resolved;
+  distance_to_obs = 0.0;
+  vector_to_obs = LVector3d();
+  visible_size = 0.0;
+  z_distance = 0.0;
+  visible = true;
+  resolved = true;
 }
