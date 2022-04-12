@@ -18,6 +18,8 @@
 #
 
 
+from panda3d.core import LColor
+
 from ..foundation import CompositeObject
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
@@ -188,7 +190,7 @@ class CartesianWorld(SimpleWorld):
         return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame())
 
     def create_scene_anchor(self):
-        return SceneAnchor(self.anchor, False, True)
+        return SceneAnchor(self.anchor, False, LColor(), True)
 
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):
