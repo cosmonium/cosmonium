@@ -1306,6 +1306,16 @@ class Cosmonium(CosmoniumBase):
         self.gui.update_status()
 
     @pstat
+    def update_points(self):
+        if settings.render_sprite_points:
+            self.pointset.reset()
+            self.haloset.reset()
+            self.pointset.add_objects(self.scene_manager, self.visible_scene_anchors)
+            self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
+            self.pointset.update()
+            self.haloset.update()
+
+    @pstat
     def find_nearest_system(self):
         #First iter over the visible object to have a first closest system
         distance = float('inf')
@@ -1415,14 +1425,7 @@ class Cosmonium(CosmoniumBase):
         self.find_shadows()
         self.update_instances()
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
-
-        if settings.render_sprite_points:
-            self.pointset.reset()
-            self.haloset.reset()
-            self.pointset.add_objects(self.scene_manager, self.visible_scene_anchors)
-            self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
-            self.pointset.update()
-            self.haloset.update()
+        self.update_points()
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
