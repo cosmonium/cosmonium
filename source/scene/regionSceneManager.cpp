@@ -40,6 +40,9 @@ double RegionSceneManager::max_near_reagion = 1e5;
 double RegionSceneManager::infinity = 1e9;
 
 
+static PStatCollector _build_scene_collector("Engine:build_scene");
+
+
 RegionSceneManager::RegionSceneManager(void)
 {
 }
@@ -125,6 +128,8 @@ RegionSceneManager::clear_scene(void)
 void
 RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolveds)
 {
+  _build_scene_collector.start();
+
   const RenderState *state = world.get_state();
   clear_scene();
   std::vector<PT(SceneAnchor)> background_resolved;
@@ -231,6 +236,8 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   }
   attach_spread_objects();
   spread_objects.clear();
+
+  _build_scene_collector.stop();
 }
 
 
