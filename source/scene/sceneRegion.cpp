@@ -66,7 +66,7 @@ SceneRegion::add_body(SceneAnchor *body)
 void
 SceneRegion::add_point(SceneAnchor *point)
 {
-    points.push_back(point);
+    points.add_scene_anchor(point);
     point->get_instance()->reparent_to(root);
 }
 
@@ -179,8 +179,9 @@ SceneRegion::get_point(int index) const
   return points[index];
 }
 
-std::vector<PT(SceneAnchor)> const &
-SceneRegion::get_points(void) const
+
+SceneAnchorCollection
+SceneRegion::get_points_collection(void)
 {
   return points;
 }

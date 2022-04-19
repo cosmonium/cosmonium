@@ -24,7 +24,8 @@
 #include "pandabase.h"
 #include "nodePath.h"
 #include "luse.h"
-#include"type_utils.h"
+#include "type_utils.h"
+#include "sceneAnchorCollection.h"
 
 class AnchorBase;
 class Camera;
@@ -71,19 +72,18 @@ PUBLISHED:
   SceneAnchor *get_point(int index) const;
   MAKE_SEQ(get_points, get_num_points, get_point);
 
+  SceneAnchorCollection get_points_collection(void);
+
   double get_near(void) const;
   double get_far(void) const;
 
   NodePath get_root(void) const;
   MAKE_PROPERTY(root, get_root);
 
-public:
-  std::vector<PT(SceneAnchor)> const & get_points(void) const;
-
 protected:
   PT(SceneManager) scene_manager;
   std::vector<PT(SceneAnchor)> bodies;
-  std::vector<PT(SceneAnchor)> points;
+  SceneAnchorCollection points;
   double near;
   double far;
   PT(GraphicsOutput) target;

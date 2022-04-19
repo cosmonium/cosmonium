@@ -37,7 +37,7 @@ from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionS
 from .scene.sceneanchor import SceneAnchor, SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
-from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, EmissivePointsSetShape, HaloPointsSetShape
+from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape, EmissivePointsSetShape, HaloPointsSetShape
 from .dircontext import defaultDirContext
 from .opengl import OpenGLConfig
 from .pipeline.scenepipeline import ScenePipeline
@@ -543,12 +543,12 @@ class Cosmonium(CosmoniumBase):
             if settings.scene_manager == 'region':
                 points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True)
             else:
-                points_shape = EmissivePointsSetShape(has_size=True, has_oid=True)
+                points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True))
             self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
             if settings.scene_manager == 'region':
                 points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True)
             else:
-                points_shape = HaloPointsSetShape(has_size=True, has_oid=True)
+                points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True))
             self.haloset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.halos_sprite, background=settings.halo_depth)
             self.pointset.configure(self.scene_manager)
             self.haloset.configure(self.scene_manager)
@@ -1074,6 +1074,12 @@ class Cosmonium(CosmoniumBase):
     def update_c_settings(self):
         if c_settings is not None:
             c_settings.min_body_size = settings.min_body_size
+            c_settings.min_point_size = settings.min_point_size
+            c_settings.min_mag_scale = settings.min_mag_scale
+            c_settings.mag_pixel_scale = settings.mag_pixel_scale
+            c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
+            c_settings.max_app_magnitude = settings.max_app_magnitude
+            c_settings.smallest_glare_mag = c_settings.smallest_glare_mag
         if self.c_camera_holder is not None:
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 

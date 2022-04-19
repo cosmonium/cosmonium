@@ -427,6 +427,9 @@ class SceneRegion:
     def get_points(self):
         return self.points
 
+    def get_points_collection(self):
+        return self.points
+
     def overlap(self, other):
         return self.near <= other.near < self.far or other.near <= self.near < other.far or \
                self.far >= other.far > self.near or other.far >= self.far > other.near

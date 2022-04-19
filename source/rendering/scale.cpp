@@ -17,32 +17,19 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
 
-#include "pandabase.h"
-#include "luse.h"
+#include "scale.h"
+#include "settings.h"
 
-class Settings
+double
+mag_to_scale(double magnitude)
 {
-public:
-  Settings(void) {}
-
-protected:
-  Settings(Settings const &other);
-
-PUBLISHED:
-  static Settings * get_global_ptr(void);
-
-  double min_body_size;
-  double min_point_size;
-  double min_mag_scale;
-  double mag_pixel_scale;
-  double lowest_app_magnitude;
-  double max_app_magnitude;
-  double smallest_glare_mag;
-};
-
-extern Settings settings;
-
-#endif
+  Settings *settings = Settings::get_global_ptr();
+  if (magnitude > settings->lowest_app_magnitude) {
+    return 0.0;
+  } else if (magnitude < settings->max_app_magnitude) {
+    return 1.0;
+  } else {
+    return settings->min_mag_scale + (1 - settings->min_mag_scale) * (settings->lowest_app_magnitude - magnitude) / (settings->lowest_app_magnitude - settings->max_app_magnitude);
+  }
+}

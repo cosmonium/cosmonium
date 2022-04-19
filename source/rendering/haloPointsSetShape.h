@@ -17,32 +17,22 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef HALOPOINTSSETSHAPE_H
+#define HALOPOINTSSETSHAPE_H
 
-#include "pandabase.h"
-#include "luse.h"
+#include "pointsSetShape.h"
 
-class Settings
+
+class HaloPointsSetShape : public PointsSetShape
 {
-public:
-  Settings(void) {}
-
-protected:
-  Settings(Settings const &other);
-
 PUBLISHED:
-  static Settings * get_global_ptr(void);
+  HaloPointsSetShape(bool has_size, bool has_oid);
+  virtual ~HaloPointsSetShape(void);
 
-  double min_body_size;
-  double min_point_size;
-  double min_mag_scale;
-  double mag_pixel_scale;
-  double lowest_app_magnitude;
-  double max_app_magnitude;
-  double smallest_glare_mag;
+  virtual void add_object(SceneAnchor *scene_anchor);
+
+public:
+  MAKE_TYPE("HaloPointsSetShape", PointsSetShape);
 };
-
-extern Settings settings;
 
 #endif

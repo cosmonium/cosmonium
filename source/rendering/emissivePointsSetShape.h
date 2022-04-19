@@ -17,32 +17,22 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef EMISSIVEPOINTSSETSHAPE_H
+#define EMISSIVEPOINTSSETSHAPE_H
 
-#include "pandabase.h"
-#include "luse.h"
+#include "pointsSetShape.h"
 
-class Settings
+
+class EmissivePointsSetShape : public PointsSetShape
 {
-public:
-  Settings(void) {}
-
-protected:
-  Settings(Settings const &other);
-
 PUBLISHED:
-  static Settings * get_global_ptr(void);
+  EmissivePointsSetShape(bool has_size, bool has_oid);
+  virtual ~EmissivePointsSetShape(void);
 
-  double min_body_size;
-  double min_point_size;
-  double min_mag_scale;
-  double mag_pixel_scale;
-  double lowest_app_magnitude;
-  double max_app_magnitude;
-  double smallest_glare_mag;
+  virtual void add_object(SceneAnchor *scene_anchor);
+
+public:
+  MAKE_TYPE("EmissivePointsSetShape", PointsSetShape);
 };
-
-extern Settings settings;
 
 #endif
