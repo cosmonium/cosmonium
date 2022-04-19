@@ -151,6 +151,37 @@ SceneAnchor::calc_scene_params(SceneManager *scene_manager, LVector3d rel_positi
 }
 
 
+LPoint3d
+SceneAnchor::calc_scene_position(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs)
+{
+  LPoint3d scene_position;
+  LPoint3d obj_position;
+
+  if (camera_at_origin) {
+      obj_position = rel_position;
+  } else {
+      obj_position = abs_position;
+  }
+  double midPlane = scene_manager->get_mid_plane();
+  double scale = scene_manager->get_scale();
+  distance_to_obs /= scale;
+  if (!use_depth_scaling || distance_to_obs <= midPlane) {
+      scene_position = obj_position / scale;
+  } else if (use_inv_scaling) {
+      LPoint3d not_scaled = -vector_to_obs * midPlane;
+      double scaled_distance = midPlane * (1 - midPlane / distance_to_obs);
+      LPoint3d scaled = -vector_to_obs * scaled_distance;
+      scene_position = not_scaled + scaled;
+  } else if (use_log_scaling) {
+      LPoint3d not_scaled = -vector_to_obs * midPlane;
+      double scaled_distance = midPlane * (1 - log2(midPlane / distance_to_obs + 1));
+      LPoint3d scaled = -vector_to_obs * scaled_distance;
+      scene_position = not_scaled + scaled;
+  }
+  return scene_position;
+}
+
+
 AnchorBase *
 SceneAnchor::get_anchor(void)
 {

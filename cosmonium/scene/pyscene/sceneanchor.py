@@ -111,6 +111,28 @@ class SceneAnchor:
             scale_factor = ratio / scene_manager.scale
         return position, distance, scale_factor
 
+    @classmethod
+    def calc_scene_position(cls, scene_manager, rel_position, abs_position, distance_to_obs, vector_to_obs):
+        if settings.camera_at_origin:
+            obj_position = rel_position
+        else:
+            obj_position = abs_position
+        midPlane = scene_manager.midPlane
+        distance_to_obs /= scene_manager.scale
+        if not settings.use_depth_scaling or distance_to_obs <= midPlane:
+            position = obj_position / scene_manager.scale
+        elif settings.use_inv_scaling:
+            not_scaled = -vector_to_obs * midPlane
+            scaled_distance = midPlane * (1 - midPlane / distance_to_obs)
+            scaled = -vector_to_obs * scaled_distance
+            position = not_scaled + scaled
+        elif settings.use_log_scaling:
+            not_scaled = -vector_to_obs * midPlane
+            scaled_distance = midPlane * (1 - log(midPlane / distance_to_obs + 1, 2))
+            scaled = -vector_to_obs * scaled_distance
+            position = not_scaled + scaled
+        return position
+
 class AbsoluteSceneAnchor(SceneAnchor):
     anchor_name = 'static-anchor'
     def __init__(self, anchor):

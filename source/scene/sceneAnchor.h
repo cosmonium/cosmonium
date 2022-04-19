@@ -45,8 +45,10 @@ PUBLISHED:
   void remove_instance(void);
   virtual void update(SceneManager *scene_manager);
 
-  void calc_scene_params(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs,
+  static void calc_scene_params(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs,
       LPoint3d &position, double &distance, double &scale_factor);
+
+  static LPoint3d calc_scene_position(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs);
 
   AnchorBase *get_anchor(void);
   MAKE_PROPERTY(anchor, get_anchor);
