@@ -111,9 +111,9 @@ PointsSetShape::reconfigure(SceneManager *scene_manager, PointConfigurator *conf
 
 
 void
-PointsSetShape::add_point(LPoint3 point, LColor color, double size, LColor oid)
+PointsSetShape::add_point(LPoint3d point, LColor color, double size, LColor oid)
 {
-  vwriter->add_data3(point);
+  vwriter->add_data3(LCAST(PN_stdfloat, point));
   colorwriter->add_data4(color);
   if (has_size) {
       sizewriter->add_data1(size);

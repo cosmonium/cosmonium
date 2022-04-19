@@ -51,7 +51,7 @@ PUBLISHED:
 
   void reconfigure(SceneManager *scene_manager, PointConfigurator *configurator);
 
-  void add_point(LPoint3 point, LColor color, double size, LColor oid);
+  void add_point(LPoint3d point, LColor color, double size, LColor oid);
 
   virtual void add_object(SceneAnchor *scene_anchor) = 0;
 
