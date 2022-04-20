@@ -81,7 +81,6 @@ class StellarObject(NamedObject):
         self.rotation_axis = None
         self.reference_axes = None
         self.resolved_halo = None
-        self.init_visible_components = False
         self.init_components = False
         objectsDB.add(self)
         #TODO: Should be done properly
@@ -362,17 +361,6 @@ class StellarObject(NamedObject):
 
     def check_visibility(self, frustum, pixel_size):
         self.components.check_visibility(frustum, pixel_size)
-
-    def on_visible(self, scene_manager):
-        if not self.init_visible_components:
-            self.scene_anchor.create_instance(scene_manager)
-            self.scene_anchor.update(scene_manager)
-            self.init_visible_components = True
-
-    def on_hidden(self, scene_manager):
-        if self.init_visible_components:
-            self.scene_anchor.remove_instance()
-            self.init_visible_components = False
 
     def on_resolved(self, scene_manager):
         if not self.init_components:

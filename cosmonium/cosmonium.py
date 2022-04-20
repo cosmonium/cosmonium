@@ -1277,7 +1277,8 @@ class Cosmonium(CosmoniumBase):
             occluder.body.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
             #print("NEW VISIBLE", newly_visible.body.get_name())
-            newly_visible.body.on_visible(scene_manager)
+            newly_visible.body.scene_anchor.create_instance(scene_manager)
+            newly_visible.body.scene_anchor.update(scene_manager)
             self.labels.add_label(newly_visible.body)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
@@ -1295,7 +1296,7 @@ class Cosmonium(CosmoniumBase):
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(self.scene_manager)
-            old_visible.body.on_hidden(scene_manager)
+            old_visible.body.scene_anchor.remove_instance()
         for visible in self.visibles:
             self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
         for resolved in self.resolved:
