@@ -36,6 +36,7 @@ from .foundation import BaseObject
 from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager, C_CameraHolder, remove_main_region
 from .scene.sceneanchor import SceneAnchor, SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
+from .labels import Labels
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
 from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape, EmissivePointsSetShape, HaloPointsSetShape
 from .dircontext import defaultDirContext
@@ -438,6 +439,7 @@ class Cosmonium(CosmoniumBase):
         self.universe = Universe(self)
         self.background = ObserverCenteredWorld("background", background=True)
         self.worlds.add_world(self.background)
+        self.labels = Labels()
 
         if settings.color_picking:
             self.oid_texture = Texture()
@@ -1276,6 +1278,7 @@ class Cosmonium(CosmoniumBase):
         for newly_visible in self.becoming_visibles:
             #print("NEW VISIBLE", newly_visible.body.get_name())
             newly_visible.body.on_visible(scene_manager)
+            self.labels.add_label(newly_visible.body)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
         for visible in self.visibles:
@@ -1289,16 +1292,12 @@ class Cosmonium(CosmoniumBase):
             old_resolved.body.on_point(scene_manager)
         for old_visible in self.no_longer_visibles:
             #print("OLD VISIBLE", old_visible.body.get_name())
+            self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(self.scene_manager)
             old_visible.body.on_hidden(scene_manager)
         for visible in self.visibles:
             self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
-            body = visible.body
-            #TODO: this will update the body's components
-            body.update_visible_obs(observer)
-            body.check_visible_visibility(frustum, pixel_size)
-            body.check_and_update_visible_instance(scene_manager, camera_pos, camera_rot)
         for resolved in self.resolved:
             self.resolved_scene_anchors.add_scene_anchor(resolved.body.scene_anchor)
             body = resolved.body
@@ -1320,6 +1319,16 @@ class Cosmonium(CosmoniumBase):
             self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
             self.pointset.update()
             self.haloset.update()
+
+    @pstat
+    def update_labels(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        self.labels.update_obs(self.observer)
+        self.labels.check_visibility(frustum, pixel_size)
+        self.labels.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
 
     @pstat
     def find_nearest_system(self):
@@ -1423,6 +1432,7 @@ class Cosmonium(CosmoniumBase):
             for visible in self.visibles:
                 visible.body.check_settings()
             self.worlds.check_settings()
+            self.labels.check_settings()
             #TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
@@ -1432,6 +1442,7 @@ class Cosmonium(CosmoniumBase):
         self.update_instances()
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
         self.update_points()
+        self.update_labels()
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)

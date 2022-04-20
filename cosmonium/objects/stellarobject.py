@@ -92,8 +92,6 @@ class StellarObject(NamedObject):
         self.parent = None
         self.lights = None
 
-        self.visible_components = CompositeObject(self.get_ascii_name())
-        self.visible_components.set_scene_anchor(self.scene_anchor)
         self.components = CompositeObject(self.get_ascii_name())
         self.components.set_scene_anchor(self.scene_anchor)
 
@@ -104,7 +102,6 @@ class StellarObject(NamedObject):
         if self.lights is not None:
             self.lights.remove_all()
         self.lights = lights
-        self.visible_components.set_lights(lights)
         self.components.set_lights(lights)
 
     def create_anchor(self, anchor_class, orbit, rotation, point_color):
@@ -114,10 +111,7 @@ class StellarObject(NamedObject):
         return False
 
     def check_settings(self):
-        self.visible_components.check_settings()
         self.components.check_settings()
-        if self.label is not None:
-            self.label.check_settings()
         if self.body_class is None:
             print("No class for", self.get_name())
             return
@@ -147,14 +141,13 @@ class StellarObject(NamedObject):
         general_group.add_parameter(orbit.get_user_parameters())
         general_group.add_parameter(self.rotation.get_user_parameters())
         group.add_parameter(general_group)
-        for component in self.visible_components + self.components:
+        for component in self.components:
             component_group = component.get_user_parameters()
             if component_group is not None:
                 group.add_parameter(component_group)
         return group
 
     def update_user_parameters(self):
-        self.visible_components.update_user_parameters()
         self.components.update_user_parameters()
         if isinstance(self.orbit, FixedPosition) and self.system is not None:
             self.system.orbit.update_user_parameters()
@@ -364,12 +357,6 @@ class StellarObject(NamedObject):
             #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 
-    def update_visible_obs(self, observer):
-        self.visible_components.update_obs(observer)
-
-    def check_visible_visibility(self, frustum, pixel_size):
-        self.visible_components.check_visibility(frustum, pixel_size)
-
     def update_obs(self, observer):
         self.components.update_obs(observer)
 
@@ -380,16 +367,10 @@ class StellarObject(NamedObject):
         if not self.init_visible_components:
             self.scene_anchor.create_instance(scene_manager)
             self.scene_anchor.update(scene_manager)
-            self.create_label()
-            self.label.check_settings()
-            self.visible_components.add_component(self.label)
-            self.visible_components.visible = True
             self.init_visible_components = True
 
     def on_hidden(self, scene_manager):
         if self.init_visible_components:
-            self.visible_components.remove_component(self.label)
-            self.label = None
             self.scene_anchor.remove_instance()
             self.init_visible_components = False
 
@@ -405,9 +386,6 @@ class StellarObject(NamedObject):
             self.components.remove_instance()
             self.remove_components()
             self.init_components = False
-
-    def check_and_update_visible_instance(self, scene_manager, camera_pos, camera_rot):
-        self.visible_components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         StellarObject.nb_instance += 1

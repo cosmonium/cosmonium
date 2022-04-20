@@ -75,6 +75,7 @@ class NamedObject:
     def create_label(self):
         if self.label is None:
             self.label = self.create_label_instance()
+        return self.label
 
     def remove_label(self):
         if self.label is not None:
