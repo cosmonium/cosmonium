@@ -1159,14 +1159,18 @@ class Cosmonium(CosmoniumBase):
     def update_states(self):
         visibles = []
         resolved = []
+        self.visible_scene_anchors = SceneAnchorCollection()
+        self.resolved_scene_anchors = SceneAnchorCollection()
         for anchor in self.visibles:
             visible = anchor.resolved or anchor._app_magnitude < settings.lowest_app_magnitude
             if visible:
                 visibles.append(anchor)
+                self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
                 if not anchor.was_visible:
                     self.becoming_visibles.append(anchor)
                 if anchor.resolved:
                     resolved.append(anchor)
+                    self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
             else:
                 if anchor.was_visible:
                     self.no_longer_visibles.append(anchor)
@@ -1179,6 +1183,7 @@ class Cosmonium(CosmoniumBase):
                 anchor.visible = False
         for world in self.worlds.worlds:
             resolved.append(world.anchor)
+            self.resolved_scene_anchors.add_scene_anchor(world.scene_anchor)
         for anchor in self.old_visibles:
             if not anchor in self.visibles:
                 self.no_longer_visibles.append(anchor)
@@ -1263,23 +1268,17 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def update_scene_anchors(self):
         scene_manager = self.scene_manager
-        self.visible_scene_anchors = SceneAnchorCollection()
         for newly_visible in self.becoming_visibles:
             newly_visible.body.scene_anchor.create_instance(scene_manager)
         for visible in self.visibles:
             visible.body.scene_anchor.update(scene_manager)
         for old_visible in self.no_longer_visibles:
             old_visible.body.scene_anchor.remove_instance()
-        for visible in self.visibles:
-            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
-        for visible in self.visibles:
-            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
 
     @pstat
     def update_instances(self):
         scene_manager = self.scene_manager
 
-        self.resolved_scene_anchors = SceneAnchorCollection()
         camera_pos = self.observer.get_local_position()
         camera_rot = self.observer.get_absolute_orientation()
         frustum = self.observer.anchor.rel_frustum
@@ -1304,7 +1303,6 @@ class Cosmonium(CosmoniumBase):
             if old_visible.resolved:
                 old_visible.body.on_point(self.scene_manager)
         for resolved in self.resolved:
-            self.resolved_scene_anchors.add_scene_anchor(resolved.body.scene_anchor)
             body = resolved.body
             #TODO: this will update the body's components
             body.update_obs(self.observer)
