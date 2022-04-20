@@ -1261,13 +1261,25 @@ class Cosmonium(CosmoniumBase):
             anchor._height_under = anchor.body.get_height_under(self.observer.get_local_position())
 
     @pstat
+    def update_scene_anchors(self):
+        scene_manager = self.scene_manager
+        self.visible_scene_anchors = SceneAnchorCollection()
+        for newly_visible in self.becoming_visibles:
+            newly_visible.body.scene_anchor.create_instance(scene_manager)
+        for visible in self.visibles:
+            visible.body.scene_anchor.update(scene_manager)
+        for old_visible in self.no_longer_visibles:
+            old_visible.body.scene_anchor.remove_instance()
+        for visible in self.visibles:
+            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
+        for visible in self.visibles:
+            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
+
+    @pstat
     def update_instances(self):
-        observer = self.observer
         scene_manager = self.scene_manager
 
-        self.visible_scene_anchors = SceneAnchorCollection()
         self.resolved_scene_anchors = SceneAnchorCollection()
-
         camera_pos = self.observer.get_local_position()
         camera_rot = self.observer.get_absolute_orientation()
         frustum = self.observer.anchor.rel_frustum
@@ -1277,14 +1289,9 @@ class Cosmonium(CosmoniumBase):
             occluder.body.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
             #print("NEW VISIBLE", newly_visible.body.get_name())
-            newly_visible.body.scene_anchor.create_instance(scene_manager)
-            newly_visible.body.scene_anchor.update(scene_manager)
             self.labels.add_label(newly_visible.body)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
-        for visible in self.visibles:
-            #visible.update_scene(self.c_observer)
-            visible.body.scene_anchor.update(scene_manager)
         for newly_resolved in self.becoming_resolved:
             #print("NEW RESOLVED", newly_resolved.body.get_name())
             newly_resolved.body.on_resolved(scene_manager)
@@ -1296,9 +1303,6 @@ class Cosmonium(CosmoniumBase):
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(self.scene_manager)
-            old_visible.body.scene_anchor.remove_instance()
-        for visible in self.visibles:
-            self.visible_scene_anchors.add_scene_anchor(visible.body.scene_anchor)
         for resolved in self.resolved:
             self.resolved_scene_anchors.add_scene_anchor(resolved.body.scene_anchor)
             body = resolved.body
@@ -1309,6 +1313,9 @@ class Cosmonium(CosmoniumBase):
         self.worlds.update_scene_anchor(scene_manager)
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(camera_pos, camera_rot)
+
+    @pstat
+    def update_gui(self):
         self.gui.update_status()
 
     @pstat
@@ -1425,6 +1432,7 @@ class Cosmonium(CosmoniumBase):
         self.find_global_light_sources()
         self.update_magnitudes()
         self.update_states()
+        self.update_scene_anchors()
         self.find_local_lights()
         self.check_scattering()
         self.update_height_under()
@@ -1444,6 +1452,7 @@ class Cosmonium(CosmoniumBase):
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
         self.update_points()
         self.update_labels()
+        self.update_gui()
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
