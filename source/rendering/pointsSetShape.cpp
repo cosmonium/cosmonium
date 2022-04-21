@@ -59,7 +59,6 @@ PointsSetShape::~PointsSetShape(void)
 void
 PointsSetShape::make_geom(void)
 {
-  PT(InternalName) oids_column_name;
   PT(GeomVertexArrayFormat) array = new GeomVertexArrayFormat();
   array->add_column(InternalName::get_vertex(), 3, Geom::NT_float32, Geom::C_point);
   array->add_column(InternalName::get_color(), 4, Geom::NT_float32, Geom::C_color);
@@ -67,21 +66,13 @@ PointsSetShape::make_geom(void)
     array->add_column(InternalName::get_size(), 1, Geom::NT_float32, Geom::C_other);
   }
   if (has_oid) {
-    oids_column_name = InternalName::make("oid");
+    PT(InternalName) oids_column_name = InternalName::make("oid");
     array->add_column(oids_column_name, 4, Geom::NT_float32, Geom::C_other);
   }
   PT(GeomVertexFormat) source_format = new GeomVertexFormat();
   source_format->add_array(array);
   CPT(GeomVertexFormat) vertex_format = GeomVertexFormat::register_format(source_format);
-  PT(GeomVertexData) vdata = new GeomVertexData("vdata", vertex_format, Geom::UH_static);
-  vwriter = new GeomVertexWriter(vdata, InternalName::get_vertex());
-  colorwriter = new GeomVertexWriter(vdata, InternalName::get_color());
-  if (has_size) {
-    sizewriter = new GeomVertexWriter(vdata, InternalName::get_size());
-  }
-  if (has_oid) {
-    oidwriter = new GeomVertexWriter(vdata, oids_column_name);
-  }
+  vdata = new GeomVertexData("vdata", vertex_format, Geom::UH_static);
   geom_points = new GeomPoints(Geom::UH_static);
   geom = new Geom(vdata);
   geom->add_primitive(geom_points);
@@ -97,6 +88,23 @@ PointsSetShape::reset(void)
   index = 0;
 }
 
+void
+PointsSetShape::create_writers(void)
+{
+  delete vwriter;
+  delete colorwriter;
+  delete sizewriter;
+  delete oidwriter;
+  vwriter = new GeomVertexWriter(vdata, InternalName::get_vertex());
+  colorwriter = new GeomVertexWriter(vdata, InternalName::get_color());
+  if (has_size) {
+    sizewriter = new GeomVertexWriter(vdata, InternalName::get_size());
+  }
+  if (has_oid) {
+    PT(InternalName) oids_column_name = InternalName::make("oid");
+    oidwriter = new GeomVertexWriter(vdata, oids_column_name);
+  }
+}
 
 void
 PointsSetShape::configure(SceneManager *scene_manager, PointConfigurator *configurator)
@@ -113,13 +121,13 @@ PointsSetShape::reconfigure(SceneManager *scene_manager, PointConfigurator *conf
 void
 PointsSetShape::add_point(LPoint3d point, LColor color, double size, LColor oid)
 {
-  vwriter->add_data3(LCAST(PN_stdfloat, point));
-  colorwriter->add_data4(color);
+  vwriter->set_data3(LCAST(PN_stdfloat, point));
+  colorwriter->set_data4(color);
   if (has_size) {
-      sizewriter->add_data1(size);
+      sizewriter->set_data1(size);
   }
   if (has_oid) {
-      oidwriter->add_data4(oid);
+      oidwriter->set_data4(oid);
   }
   geom_points->add_vertex(index);
   index += 1;
@@ -129,6 +137,9 @@ PointsSetShape::add_point(LPoint3d point, LColor color, double size, LColor oid)
 void
 PointsSetShape::add_objects(SceneManager *scene_manager, SceneAnchorCollection *scene_anchors)
 {
+  vdata->set_num_rows(scene_anchors->get_num_scene_anchors());
+  geom_points->reserve_num_vertices(scene_anchors->get_num_scene_anchors());
+  create_writers();
   for (unsigned int i = 0; i < scene_anchors->get_num_scene_anchors(); ++i) {
     add_object(scene_anchors->get_scene_anchor(i));
   }

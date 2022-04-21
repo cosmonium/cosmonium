@@ -61,12 +61,16 @@ PUBLISHED:
   MAKE_PROPERTY(instance, get_instance);
 
 protected:
+  void create_writers(void);
+
+protected:
   bool has_size;
   bool has_oid;
   PT(GeomNode) gnode;
   NodePath instance;
   PT(Geom) geom;
   PT(GeomPoints) geom_points;
+  PT(GeomVertexData) vdata;
   unsigned int index;
   GeomVertexWriter *vwriter;
   GeomVertexWriter *colorwriter;

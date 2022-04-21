@@ -33,6 +33,7 @@ class PointsSetShape:
         self.instance = NodePath(self.gnode)
         self.geom = None
         self.geom_points = None
+        self.vdata = None
         self.index = 0
 
     def make_geom(self):
@@ -47,15 +48,9 @@ class PointsSetShape:
         source_format = GeomVertexFormat()
         source_format.add_array(array)
         vertex_format = GeomVertexFormat.register_format(source_format)
-        vdata = GeomVertexData('vdata', vertex_format, Geom.UH_static)
-        self.vwriter = GeomVertexWriter(vdata, InternalName.get_vertex())
-        self.colorwriter = GeomVertexWriter(vdata, InternalName.get_color())
-        if self.has_size:
-            self.sizewriter = GeomVertexWriter(vdata, InternalName.get_size())
-        if self.has_oid:
-            self.oidwriter = GeomVertexWriter(vdata, oids_column_name)
+        self.vdata = GeomVertexData('vdata', vertex_format, Geom.UH_static)
         self.geom_points = GeomPoints(Geom.UH_static)
-        self.geom = Geom(vdata)
+        self.geom = Geom(self.vdata)
         self.geom.add_primitive(self.geom_points)
 
     def reset(self):
@@ -63,6 +58,15 @@ class PointsSetShape:
         self.make_geom()
         self.gnode.add_geom(self.geom)
         self.index = 0
+
+    def create_writers(self):
+        self.vwriter = GeomVertexWriter(self.vdata, InternalName.get_vertex())
+        self.colorwriter = GeomVertexWriter(self.vdata, InternalName.get_color())
+        if self.has_size:
+            self.sizewriter = GeomVertexWriter(self.vdata, InternalName.get_size())
+        if self.has_oid:
+            oids_column_name = InternalName.make('oid')
+            self.oidwriter = GeomVertexWriter(self.vdata, oids_column_name)
 
     def configure(self, scene_manager, configurator):
         configurator.configure_shape(self)
@@ -72,12 +76,12 @@ class PointsSetShape:
         pass
 
     def add_point(self, point, color, size, oid):
-        self.vwriter.add_data3(*point)
-        self.colorwriter.add_data4(color)
+        self.vwriter.set_data3(*point)
+        self.colorwriter.set_data4(color)
         if self.has_size:
-            self.sizewriter.add_data1(size)
+            self.sizewriter.set_data1(size)
         if self.has_oid:
-            self.oidwriter.add_data4(oid)
+            self.oidwriter.set_data4(oid)
         self.geom_points.add_vertex(self.index)
         self.index += 1
 
@@ -85,6 +89,9 @@ class PointsSetShape:
         raise NotImplementedError()
 
     def add_objects(self, scene_manager, scene_anchors):
+        self.vdata.set_num_rows(len(scene_anchors))
+        self.geom_points.reserve_num_vertices(len(scene_anchors))
+        self.create_writers()
         for scene_anchor in scene_anchors:
             self.add_object(scene_anchor)
 
