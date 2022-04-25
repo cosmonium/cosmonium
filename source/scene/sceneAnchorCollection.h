@@ -56,6 +56,11 @@ PUBLISHED:
   void append(SceneAnchor *scene_anchor);
   void extend(const SceneAnchorCollection &other);
 
+public:
+  typedef typename pvector<PT(SceneAnchor)>::iterator iterator;
+  iterator begin() const;
+  iterator end() const;
+
 private:
   typedef PTA(PT(SceneAnchor)) SceneAnchors;
   SceneAnchors _scene_anchors;

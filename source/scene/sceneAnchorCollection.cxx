@@ -215,3 +215,17 @@ void
 SceneAnchorCollection::extend(const SceneAnchorCollection &other) {
   operator +=(other);
 }
+
+
+SceneAnchorCollection::iterator
+SceneAnchorCollection::begin() const
+{
+  return _scene_anchors.begin();
+}
+
+
+SceneAnchorCollection::iterator
+SceneAnchorCollection::end() const
+{
+  return _scene_anchors.end();
+}
