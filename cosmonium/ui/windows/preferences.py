@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,11 +18,12 @@
 #
 
 
-from ..bodyclass import bodyClasses
-from ..parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
+from ...bodyclass import bodyClasses
+from ...parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
+from ... import settings
 
-from .editor import ParamEditor
-from cosmonium import settings
+from ..widgets.editor import ParamEditor
+
 
 class Preferences(ParamEditor):
     def __init__(self, cosmonium, font_family, font_size = 14, owner=None):

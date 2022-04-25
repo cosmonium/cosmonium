@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2020 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -29,10 +29,11 @@ from tabbedframe.TabbedFrame import TabbedFrame
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 
-from .. import settings
+from ... import settings
 
-from .widgets import DirectWidgetContainer
-from .window import Window
+from ..widgets.direct_widget_container import DirectWidgetContainer
+from ..widgets.window import Window
+
 
 class TimeEditor():
     def __init__(self, time, font_family, font_size = 14, owner=None):

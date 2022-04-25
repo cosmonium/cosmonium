@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,11 +20,12 @@
 
 from panda3d.core import TextNode
 
-from ..dircontext import defaultDirContext
+from ...dircontext import defaultDirContext
 
 from .window import Window
-from .markdown import create_markdown_renderer
-from .widgets import ScrollText
+from ..markdown import create_markdown_renderer
+from .scroll_text import ScrollText
+
 
 class TextWindow():
     def __init__(self, title, scale, font_family, font_size = 14, owner=None):

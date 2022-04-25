@@ -2,7 +2,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,11 +18,12 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .window import Window
-from .widgets import DirectWidgetContainer
-
 from direct.gui.DirectGui import DirectFrame, DGG
 from directfolderbrowser.DirectFolderBrowser import DirectFolderBrowser
+
+from .window import Window
+from .direct_widget_container import DirectWidgetContainer
+
 
 class FileWindow():
     icons = {

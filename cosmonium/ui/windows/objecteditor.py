@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@
 #
 
 
-from .editor import ParamEditor
-from .editors.editors import ObjectEditors
+from ..widgets.editor import ParamEditor
+from ..editors.editors import ObjectEditors
+
 
 class ObjectEditorWindow(ParamEditor):
     def __init__(self, font_family, font_size=14, owner=None):

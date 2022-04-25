@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,9 +18,10 @@
 #
 
 
-from .window import Window
-from .. import settings
+from ..widgets.window import Window
+from ... import settings
 import traceback
+
 
 cefpanda_valid = False
 try:
@@ -29,6 +30,7 @@ try:
 except Exception:
     print("ERROR: Could not load cefpanda")
     traceback.print_exc()
+
 
 class Browser(object):
     def __init__(self, scale, owner=None):

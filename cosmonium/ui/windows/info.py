@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -21,13 +21,14 @@
 from panda3d.core import TextNode
 from direct.gui.DirectLabel import DirectLabel
 
-from ..fonts import fontsManager, Font
+from ...fonts import fontsManager, Font
 
-from .info import ObjectInfo
-from .layout import Layout
-from .window import Window
+from ..object_info import ObjectInfo
+from ..widgets.layout import Layout
+from ..widgets.window import Window
 
-class InfoPanel():
+
+class InfoWindow():
     def __init__(self, scale, font_family, font_size = 14, owner=None):
         self.window = None
         self.layout = None

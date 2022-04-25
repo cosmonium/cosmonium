@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,15 +23,6 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 
-class DirectWidgetContainer():
-    def __init__(self, widget):
-        self.frame = widget
-
-    def destroy(self):
-        self.frame.destroy()
-
-    def reparent_to(self, parent):
-        self.frame.reparent_to(parent)
 
 class ScrollText():
     def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12,

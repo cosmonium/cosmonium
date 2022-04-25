@@ -37,14 +37,14 @@ from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .hud import HUD
 from .query import Query
-from .objecteditor import ObjectEditorWindow
-from .textwindow import TextWindow
-from .filewindow import FileWindow
-from .infopanel import InfoPanel
-from .preferences import Preferences
+from .widgets.textwindow import TextWindow
+from .widgets.filewindow import FileWindow
 from .clipboard import create_clipboard
-from .browser import Browser
-from .time import TimeEditor
+from .windows.browser import Browser
+from .windows.info import InfoWindow
+from .windows.objecteditor import ObjectEditorWindow
+from .windows.preferences import Preferences
+from .windows.time import TimeEditor
 from .menubuilder import MenuBuilder
 from .menubar import Menubar
 from .popup import Popup
@@ -110,7 +110,7 @@ class Gui(object):
         self.opened_windows = []
         self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.info = InfoPanel(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.info = InfoWindow(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.preferences = Preferences(self.cosmonium, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.help = TextWindow('Help', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.help.load('control.md')
