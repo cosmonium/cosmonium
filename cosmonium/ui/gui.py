@@ -35,7 +35,7 @@ from ..parsers.configparser import configParser
 
 from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
-from .hud import HUD
+from .hud.hud import HUD
 from .query import Query
 from .widgets.textwindow import TextWindow
 from .widgets.filewindow import FileWindow
