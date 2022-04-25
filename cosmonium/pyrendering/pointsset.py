@@ -48,8 +48,8 @@ class PointsSetShape:
         source_format = GeomVertexFormat()
         source_format.add_array(array)
         vertex_format = GeomVertexFormat.register_format(source_format)
-        self.vdata = GeomVertexData('vdata', vertex_format, Geom.UH_static)
-        self.geom_points = GeomPoints(Geom.UH_static)
+        self.vdata = GeomVertexData('vdata', vertex_format, Geom.UH_stream)
+        self.geom_points = GeomPoints(Geom.UH_stream)
         self.geom = Geom(self.vdata)
         self.geom.add_primitive(self.geom_points)
 

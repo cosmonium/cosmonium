@@ -72,8 +72,8 @@ PointsSetShape::make_geom(void)
   PT(GeomVertexFormat) source_format = new GeomVertexFormat();
   source_format->add_array(array);
   CPT(GeomVertexFormat) vertex_format = GeomVertexFormat::register_format(source_format);
-  vdata = new GeomVertexData("vdata", vertex_format, Geom::UH_static);
-  geom_points = new GeomPoints(Geom::UH_static);
+  vdata = new GeomVertexData("vdata", vertex_format, Geom::UH_stream);
+  geom_points = new GeomPoints(Geom::UH_stream);
   geom = new Geom(vdata);
   geom->add_primitive(geom_points);
 }
