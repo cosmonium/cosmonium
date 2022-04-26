@@ -21,13 +21,8 @@
 
 from panda3d.core import LVector2
 
-from ..objects.star import Star
-from ..astro import units
-from ..astro import bayer
-from ..astro.units import toUnit
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
-from .. import utils
 from .. import settings
 from .. import version
 #TODO: should only be used by Cosmonium main class
@@ -35,7 +30,7 @@ from ..parsers.configparser import configParser
 
 from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
-from .hud.hud import HUD
+from .huds import Huds
 from .query import Query
 from .widgets.textwindow import TextWindow
 from .widgets.filewindow import FileWindow
@@ -101,9 +96,8 @@ class Gui(object):
         self.menubar = Menubar(ui_config.menubar)
         self.popup_menu = Popup(self, self.cosmonium, ui_config.popup)
         self.popup_menu_shown = False
-        self.hud = HUD(self.scale, self.font)
+        self.hud = Huds(self.scale, self.font)
         self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
-        self.last_fps = globalClock.getRealTime()
         self.width = 0
         self.height = 0
         self.update_size(self.screen_width, self.screen_height)
@@ -198,94 +192,7 @@ class Gui(object):
         self.query.open_query(self)
 
     def update_status(self):
-        selected = self.cosmonium.selected
-        track = self.cosmonium.track
-        follow = self.cosmonium.follow
-        sync = self.cosmonium.sync
-        (years, months, days, hours, mins, secs) = self.time.time_to_values()
-        date="%02d:%02d:%02d %2d:%02d:%02d UTC" % (years, months, days, hours, mins, secs)
-        if selected is not None:
-            names = utils.join_names(bayer.decode_names(selected.get_names()))
-            self.hud.title.set_text(names)
-            radius = selected.get_apparent_radius()
-            if selected.virtual_object or selected.anchor.distance_to_obs > 10 * radius:
-                self.hud.topLeft.set(0, _("Distance: ")  + toUnit(selected.anchor.distance_to_obs, units.lengths_scale))
-            else:
-                if selected.surface is not None and not selected.surface.is_flat():
-                    distance = selected.anchor.distance_to_obs - selected.anchor._height_under
-                    altitude = selected.anchor.distance_to_obs - radius
-                    self.hud.topLeft.set(0, _("Altitude: ") + toUnit(altitude, units.lengths_scale) + " (" + _("Ground: ")  + toUnit(distance, units.lengths_scale) + ")")
-                else:
-                    altitude = selected.anchor.distance_to_obs - radius
-                    self.hud.topLeft.set(0, _("Altitude: ")  + toUnit(altitude, units.lengths_scale))
-            if not selected.virtual_object:
-                self.hud.topLeft.set(1, _("Radius: ") + "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))
-                self.hud.topLeft.set(2, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
-                if selected.is_emissive():
-                    self.hud.topLeft.set(3, _("Luminosity: ") + "%g" % (selected.get_luminosity()) + _("x Sun"))
-                    if isinstance(selected, Star):
-                        self.hud.topLeft.set(4, _("Spectral type: ") + selected.spectral_type.get_text())
-                        self.hud.topLeft.set(5, _("Temperature: ") + "%d" % selected.temperature + " K")
-                    else:
-                        self.hud.topLeft.set(4, "")
-                        self.hud.topLeft.set(5, "")
-                else:
-                    self.hud.topLeft.set(3, _("Phase: ") + "%g°" % ((1 - selected.get_phase()) * 180))
-                    self.hud.topLeft.set(4, "")
-                    self.hud.topLeft.set(5, "")
-            else:
-                self.hud.topLeft.set(1, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
-                self.hud.topLeft.set(2, "")
-                self.hud.topLeft.set(3, "")
-                self.hud.topLeft.set(4, "")
-                self.hud.topLeft.set(5, "")
-        else:
-            self.hud.title.set_text("")
-            self.hud.topLeft.set(0, "")
-            self.hud.topLeft.set(1, "")
-            self.hud.topLeft.set(2, "")
-            self.hud.topLeft.set(3, "")
-            self.hud.topLeft.set(4, "")
-            self.hud.topLeft.set(5, "")
-            self.hud.topLeft.set(6, "")
-        self.hud.bottomLeft.set(0, toUnit(self.nav.speed, units.speeds_scale))
-        if settings.mouse_over and self.mouse.over is not None:
-            names = utils.join_names(bayer.decode_names(self.mouse.over.names))
-            self.hud.bottomLeft.set(1, names)
-        else:
-            self.hud.bottomLeft.set(1, "")
-        current_time = globalClock.getRealTime()
-        if current_time - self.last_fps >= 1.0:
-            if settings.display_render_info == 'fps':
-                fps = globalClock.getAverageFrameRate()
-                self.hud.topRight.set(0, "%.1f fps" % fps)
-            elif settings.display_render_info == 'ms':
-                fps = globalClock.getDt() * 1000
-                self.hud.topRight.set(0, "%.1f ms" % fps)
-            else:
-                self.hud.topRight.set(0, "")
-            self.last_fps = current_time
-        if self.autopilot.current_interval is not None:
-            self.hud.bottomRight.set(4, _("Travelling (%d)") % (self.autopilot.current_interval.getDuration() - self.autopilot.current_interval.getT()))
-        else:
-            self.hud.bottomRight.set(4, "")
-        if track is not None:
-            self.hud.bottomRight.set(3, _("Track %s") % track.get_name())
-        else:
-            self.hud.bottomRight.set(3, "")
-        if self.cosmonium.fly:
-            self.hud.bottomRight.set(2, _("Fly over %s") % selected.get_name())
-        elif follow is not None:
-            self.hud.bottomRight.set(2, _("Follow %s") % follow.get_name())
-        elif sync is not None:
-            self.hud.bottomRight.set(2, _("Sync orbit %s") % sync.get_name())
-        else:
-            self.hud.bottomRight.set(2, "")
-        if self.time.running:
-            self.hud.bottomRight.set(0, "%s (%.0fx)" % (date, self.time.multiplier))
-        else:
-            self.hud.bottomRight.set(0, _("%s (Paused)") % (date))
-        self.hud.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(self.camera.lens.get_vfov()) + (self.camera.zoom_factor, )))
+        self.hud.update(self.cosmonium, self.camera, self.mouse, self.nav, self.autopilot, self.time)
 
     def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
