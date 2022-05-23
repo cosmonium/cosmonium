@@ -58,28 +58,23 @@ class StellarRings(StellarObject):
         for component in self.get_components():
             component.end_shadows_update()
 
-    def configure_shape(self):
-        self.rings_object.configure_shape()
+    def create_components(self):
+        StellarObject.create_components(self)
+        self.components.add_component(self.rings_object)
+        self.rings_object.set_oid_color(self.oid_color)
+        self.configure_shape()
 
-    def unconfigure_shape(self):
-        self.rings_object.unconfigure_shape()
+    def remove_components(self):
+        self.unconfigure_shape()
+        StellarObject.remove_components(self)
 
     def get_components(self):
         components = []
         components.append(self.rings_object)
         return components
 
-    def create_components(self):
-        StellarObject.create_components(self)
-        self.components.add_component(self.rings_object)
-        self.rings_object.set_oid_color(self.oid_color)
-        self.components.update_shader()
-        self.configure_shape()
+    def configure_shape(self):
+        self.rings_object.configure_shape()
 
-    def update_components(self, camera_pos):
-        pass
-
-    def remove_components(self):
-        self.components.update_shader()
-        self.unconfigure_shape()
-        StellarObject.remove_components(self)
+    def unconfigure_shape(self):
+        self.rings_object.unconfigure_shape()
