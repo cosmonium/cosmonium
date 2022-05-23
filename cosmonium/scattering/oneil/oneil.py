@@ -315,6 +315,10 @@ class ONeilScatteringBase(AtmosphericScattering):
         if self.calc_in_fragment:
             self.uniforms_scattering(code)
         self.uniforms_colors(code)
+        if self.atmosphere:
+            # TODO: This is a dirty workaround as atmosphere element has no lighting component
+            # And so the uniform is missing for shadows
+            code.append("uniform vec3 light_dir;")
 
     def fragment_inputs(self, code):
         if not self.calc_in_fragment:
