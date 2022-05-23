@@ -38,18 +38,12 @@ class ShapeObject(VisibleObject):
         self.patch_sources = DataSourcesHandler()
         self.shape = None
         self.owner = None
-        self.set_shape(shape)
         self.appearance = appearance
+        self.set_shape(shape)
         if shader is None:
             shader = AutoShader()
         self.shader = shader
         self.clickable = clickable
-        #Not using add source as some dependencies of the appearance can also be sources
-        if shape is not None:
-            if shape.patchable:
-                self.appearance.add_as_source(self.patch_sources)
-            else:
-                self.appearance.add_as_source(self.sources)
         self.instance_ready = False
         self.owner = None
         self.oid_color = None
@@ -94,6 +88,11 @@ class ShapeObject(VisibleObject):
             self.sources.add_source(self.shape.get_data_source())
             if shape.patchable:
                 self.patch_sources.add_source(self.shape.get_patch_data_source())
+            #Not using add source as some dependencies of the appearance can also be sources
+            if shape.patchable:
+                self.appearance.add_as_source(self.patch_sources)
+            else:
+                self.appearance.add_as_source(self.sources)
 
     def set_owner(self, owner):
         self.owner = owner
