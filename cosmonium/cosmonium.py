@@ -520,24 +520,21 @@ class Cosmonium(CosmoniumBase):
 
         self.scene_manager = None
         print("Using scene manager '{}'".format(settings.scene_manager))
+        if settings.scene_manager == 'static':
+            self.scene_manager = StaticSceneManager(self.render)
+        elif settings.scene_manager == 'dynamic':
+            self.scene_manager = DynamicSceneManager(self.render)
+        elif settings.scene_manager == 'region':
+            self.scene_manager = RegionSceneManager()
+        else:
+            print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
         if not self.app_config.test_start:
-            if settings.scene_manager == 'static':
-                self.scene_manager = StaticSceneManager(self.render)
-            elif settings.scene_manager == 'dynamic':
-                self.scene_manager = DynamicSceneManager(self.render)
-            elif settings.scene_manager == 'region':
-                self.scene_manager = RegionSceneManager()
-            else:
-                print("ERROR: Unknown scene manager {}".format(settings.scene_manager))
             remove_main_region(self.cam)
             self.scene_manager.scale = settings.scale
             self.scene_manager.init_camera(self.c_camera_holder, self.cam)
             self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
             self.pipeline.create()
             self.pipeline.set_scene_manager(self.scene_manager)
-        else:
-            self.scene_manager = DynamicSceneManager()
-            self.scene_manager.init_camera(self.observer, self.cam)
 
         if settings.render_sprite_points:
             self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
