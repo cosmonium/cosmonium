@@ -21,9 +21,9 @@ jobs:
         sudo apt-get install panda3d1.11
     - name: Build app
       run: |
+        cat requirements.txt > requirements-tmp.txt
         echo "-i https://archive.panda3d.org/simple
-        panda3d>=1.11.0.dev0" > requirements-tmp.txt
-        cat requirements.txt >> requirements-tmp.txt
+        panda3d>=1.11.0.dev0" >> requirements-tmp.txt
         make build SOURCE_OPTIONS="--optimize 3"
         python3 setup.py bdist_apps -p manylinux1_x86_64 -r requirements-tmp.txt
         python3 setup.py bdist_apps -p manylinux1_i686 -r requirements-tmp.txt
