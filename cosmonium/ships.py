@@ -60,6 +60,11 @@ class NoShip(ShipBase):
     def __init__(self):
         ShipBase.__init__(self, "No ship")
 
+    def create_scene_anchor(self):
+        anchor = ShipBase.create_scene_anchor(self)
+        anchor.virtual_object = True
+        return anchor
+
     def get_apparent_radius(self):
         return 0.0
 
