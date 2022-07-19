@@ -292,6 +292,11 @@ class Gui(object):
         if not self.about in self.opened_windows:
             self.opened_windows.append(self.about)
 
+    def show_time_editor(self):
+        self.time_editor.show()
+        if not self.time_editor in self.opened_windows:
+            self.opened_windows.append(self.time_editor)
+
     def show_info(self):
         if self.cosmonium.selected is not None:
             if self.info.shown():

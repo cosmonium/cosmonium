@@ -40,7 +40,7 @@ class EventsDispatcher(DirectObject):
         self.accept('gui-toggle-menubar', self.gui.toggle_menu)
         self.accept('gui-show-preferences', self.gui.show_preferences)
         self.accept('gui-show-editor', self.gui.show_editor)
-        self.accept('gui-show-time-editor', self.gui.show_editor)
+        self.accept('gui-show-time-editor', self.gui.show_time_editor)
 
         self.accept('gui-show-info', self.gui.show_info)
         self.accept('gui-show-help', self.gui.show_help)
