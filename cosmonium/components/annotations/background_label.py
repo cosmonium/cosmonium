@@ -21,6 +21,7 @@
 from panda3d.core import LVector3, LVector3d
 
 from ...foundation import ObjectLabel
+from ... import settings
 
 
 class BackgroundLabel(ObjectLabel):
@@ -49,7 +50,7 @@ class BackgroundLabel(ObjectLabel):
             vector = self.rel_position / distance
             z_coef = vector.dot(self.context.observer.anchor.camera_vector)
             z_distance = distance * z_coef
-            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * z_distance)
+            scale = abs(self.context.observer.pixel_size * self.label_source.get_label_size() * z_distance * settings.ui_scale)
         else:
             scale = 0.0
         if scale < 1e-7:

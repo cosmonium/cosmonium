@@ -52,14 +52,14 @@ class StellarBodyLabel(ObjectLabel):
         body = self.label_source
         if body.is_emissive() and (not body.anchor.resolved or body.background):
             self.instance.set_pos(LPoint3())
-            scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.z_distance)
+            scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.z_distance * settings.ui_scale)
         else:
             offset = body.get_bounding_radius()
             position = - camera_rot.xform(LPoint3d(0, offset, 0))
             z_coef = -body.anchor.vector_to_obs.dot(body.context.observer.anchor.camera_vector)
             z_distance = (body.anchor.distance_to_obs - offset) * z_coef
             self.instance.set_pos(*position)
-            scale = abs(self.context.observer.pixel_size * body.get_label_size() * z_distance)
+            scale = abs(self.context.observer.pixel_size * body.get_label_size() * z_distance * settings.ui_scale)
         self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
         self.instance.set_color_scale(LColor(self.fade, self.fade, self.fade, 1.0))
