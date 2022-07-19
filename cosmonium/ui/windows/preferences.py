@@ -139,15 +139,9 @@ class Preferences(ParamEditor):
                                  ]),
                 ]
 
-    def get_ui_scale(self):
-        return settings.ui_scale[0]
-
-    def set_ui_scale(self, scale):
-        settings.ui_scale = (scale, scale)
-
     def make_advanced(self):
         return [ParametersGroup(_('UI'),
-                                [UserParameter(_("UI Scale"), self.set_ui_scale, self.get_ui_scale, UserParameter.TYPE_FLOAT, [0.5, 2]),
+                                [SettingParameter(_("UI Scale"), 'ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                                  SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
                                  SettingParameter(_("UI text size"), 'ui_font_size', UserParameter.TYPE_INT, [4, 32]),
                                 ]),

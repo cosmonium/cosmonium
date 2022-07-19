@@ -45,8 +45,8 @@ class ParamEditor():
         self.last_pos = None
         self.font_size = font_size
         self.owner = owner
-        self.scale = LVector2(*settings.ui_scale)
-        self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
+        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
+        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         border = round(self.font_size / 4.0)
         self.borders = (round(self.font_size), 0, border, border)
         self.width = settings.default_window_width
@@ -202,8 +202,8 @@ class ParamEditor():
 
     def create_layout(self, group):
         scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
-        buttonSize = self.font_size * 2
-        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, self.width, -self.height, 0),
+        button_height = self.font_size * 2 * settings.ui_scale
+        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0),
                                                         tab_frameSize = (0, 7, 0, 2),
                                                         tab_scale=scale3,
                                                         tab_text_align = TextNode.ALeft,
@@ -212,7 +212,7 @@ class ParamEditor():
                                                         tabSelectedColor = settings.panel_background,
                                                         scroll_scrollBarWidth=self.font_size,
                                                         scroll_verticalScroll_pageSize=self.font_size))
-        self.layout.frame.setPos(0, 0, -buttonSize)
+        self.layout.frame.setPos(0, 0, -button_height)
         for section in group.parameters:
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)

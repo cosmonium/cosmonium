@@ -89,12 +89,15 @@ class ConfigParser(YamlParser):
 
     def decode_ui_general(self, data):
         settings.ui_scale = data.get('scale', settings.ui_scale)
+        # First version of ui_scale was a tuple
+        if isinstance(settings.ui_scale, list):
+            settings.ui_scale = settings.ui_scale[0]
         settings.last_script_path = data.get('last-script-path', settings.last_script_path)
         settings.ui_font_size = data.get('text-size', settings.ui_font_size)
 
     def encode_ui_general(self):
         data = {}
-        data['scale'] = list(settings.ui_scale)
+        data['scale'] = settings.ui_scale
         data['last-script-path'] = settings.last_script_path
         data['text-size'] = settings.ui_font_size
         return data

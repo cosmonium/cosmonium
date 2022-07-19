@@ -212,7 +212,7 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
-ui_scale = (1, 1)
+ui_scale = 1.0
 show_hud = True
 hud_text_size = 12
 hud_info_text_size = 18

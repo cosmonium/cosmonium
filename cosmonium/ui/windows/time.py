@@ -43,8 +43,8 @@ class TimeEditor():
         self.last_pos = None
         self.font_size = font_size
         self.owner = owner
-        self.scale = LVector2(*settings.ui_scale)
-        self.text_scale = (self.scale[0] * self.font_size, self.scale[1] * self.font_size)
+        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
+        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
