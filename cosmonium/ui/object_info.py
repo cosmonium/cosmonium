@@ -83,7 +83,7 @@ def elliptic_orbit_info(orbit):
     texts.append([_("Eccentricity"), "%g" % (orbit.eccentricity)])
     texts.append([_("Inclination"), "%g°" % (orbit.inclination * 180 / pi)])
     texts.append([_("Ascending Node"), "%g°" % (orbit.ascending_node * 180 / pi)])
-    texts.append([_("Argument of Periapsis"), "%g°" % (orbit.arg_of_periapsis * 180 / pi)])
+    texts.append([_("Argument of Periapsis"), "%g°" % (orbit.argument_of_periapsis * 180 / pi)])
     texts.append([_("Mean Anomaly"), "%g°" % (orbit.mean_anomaly * 180 / pi)])
     date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(orbit.epoch)
     texts.append([_("Epoch"), "%s" % date])
