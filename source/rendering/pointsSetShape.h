@@ -39,7 +39,7 @@ class SceneManager;
 class PointsSetShape : public TypedObject, public ReferenceCount
 {
 PUBLISHED:
-  PointsSetShape(bool has_size, bool has_oid);
+  PointsSetShape(bool has_size, bool has_oid, double screen_scale);
 
   virtual ~PointsSetShape(void);
 
@@ -66,6 +66,7 @@ protected:
 protected:
   bool has_size;
   bool has_oid;
+  double screen_scale;
   PT(GeomNode) gnode;
   NodePath instance;
   PT(Geom) geom;

@@ -28,8 +28,8 @@
 TypeHandle HaloPointsSetShape::_type_handle;
 
 
-HaloPointsSetShape::HaloPointsSetShape(bool has_size, bool has_oid) :
-    PointsSetShape(has_size, has_oid)
+HaloPointsSetShape::HaloPointsSetShape(bool has_size, bool has_oid, double screen_scale) :
+    PointsSetShape(has_size, has_oid, screen_scale)
 {
 }
 
@@ -49,7 +49,7 @@ HaloPointsSetShape::add_object(SceneAnchor *scene_anchor)
     LColor point_color = anchor->point_color;
     double coef = settings->smallest_glare_mag - app_magnitude + 6.0;
     double radius = std::max(1.0, anchor->visible_size);
-    double size = radius * coef * 2.0;
-    add_point(scene_anchor->scene_position, point_color, size* 2, scene_anchor->get_oid_color());
+    double size = radius * coef * 4.0;
+    add_point(scene_anchor->scene_position, point_color, size * screen_scale, scene_anchor->get_oid_color());
   }
 }

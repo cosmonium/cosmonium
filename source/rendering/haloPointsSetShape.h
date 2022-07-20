@@ -26,7 +26,7 @@
 class HaloPointsSetShape : public PointsSetShape
 {
 PUBLISHED:
-  HaloPointsSetShape(bool has_size, bool has_oid);
+  HaloPointsSetShape(bool has_size, bool has_oid, double screen_scale);
   virtual ~HaloPointsSetShape(void);
 
   virtual void add_object(SceneAnchor *scene_anchor);

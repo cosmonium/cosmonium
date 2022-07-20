@@ -28,8 +28,8 @@
 TypeHandle EmissivePointsSetShape::_type_handle;
 
 
-EmissivePointsSetShape::EmissivePointsSetShape(bool has_size, bool has_oid) :
-    PointsSetShape(has_size, has_oid)
+EmissivePointsSetShape::EmissivePointsSetShape(bool has_size, bool has_oid, double screen_scale) :
+    PointsSetShape(has_size, has_oid, screen_scale)
 {
 }
 
@@ -52,7 +52,7 @@ EmissivePointsSetShape::add_object(SceneAnchor *scene_anchor)
       LColor color = point_color * scale;
       double size = std::max(settings->min_point_size,
                              settings->min_point_size + scale * settings->mag_pixel_scale);
-      add_point(scene_anchor->scene_position, color, size, scene_anchor->get_oid_color());
+      add_point(scene_anchor->scene_position, color, size * screen_scale, scene_anchor->get_oid_color());
     }
   }
 }

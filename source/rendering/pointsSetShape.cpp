@@ -33,9 +33,10 @@
 TypeHandle PointsSetShape::_type_handle;
 
 
-PointsSetShape::PointsSetShape(bool has_size, bool has_oid) :
+PointsSetShape::PointsSetShape(bool has_size, bool has_oid, double screen_scale) :
   has_size(has_size),
   has_oid(has_oid),
+  screen_scale(screen_scale),
   gnode(new GeomNode("starfield")),
   instance(gnode),
   index(0),

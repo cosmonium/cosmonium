@@ -26,9 +26,10 @@ from .. import settings
 
 
 class PointsSetShape:
-    def __init__(self, has_size, has_oid):
+    def __init__(self, has_size, has_oid, screen_scale):
         self.has_size = has_size
         self.has_oid = has_oid
+        self.screen_scale = screen_scale
         self.gnode = GeomNode('starfield')
         self.instance = NodePath(self.gnode)
         self.geom = None
@@ -105,7 +106,7 @@ class EmissivePointsSetShape(PointsSetShape):
             scale = mag_to_scale(app_magnitude)
             if scale > 0:
                 color = point_color * scale
-                size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
+                size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale) * self.screen_scale
                 self.add_point(scene_anchor.scene_position, color, size, scene_anchor.oid_color)
 
 
@@ -117,8 +118,8 @@ class HaloPointsSetShape(PointsSetShape):
             point_color = anchor.point_color
             coef = settings.smallest_glare_mag - app_magnitude + 6.0
             radius = max(1.0, anchor.visible_size)
-            size = radius * coef * 2.0
-            self.add_point(LPoint3(*scene_anchor.scene_position), point_color, size * 2, scene_anchor.oid_color)
+            size = radius * coef * 4.0
+            self.add_point(LPoint3(*scene_anchor.scene_position), point_color, size * self.screen_scale, scene_anchor.oid_color)
 
 
 class PassthroughPointsSetShape:
@@ -141,10 +142,11 @@ class PassthroughPointsSetShape:
 
 
 class RegionsPointsSetShape:
-    def __init__(self, shape_class, has_size, has_oid):
+    def __init__(self, shape_class, has_size, has_oid, screen_scale):
         self.shape_class = shape_class
         self.has_size = has_size
         self.has_oid = has_oid
+        self.screen_scale = screen_scale
         self.shapes = {}
 
     def reset(self):
@@ -162,7 +164,7 @@ class RegionsPointsSetShape:
     def add_objects(self, scene_manager, scene_anchors):
         if not settings.render_sprite_points: return
         for region in scene_manager.get_regions():
-            current_shape = self.shape_class(self.has_size, self.has_oid)
+            current_shape = self.shape_class(self.has_size, self.has_oid, self.screen_scale)
             current_shape.reset()
             self.shapes[region] = current_shape
             current_shape.add_objects(scene_manager, region.get_points_collection())

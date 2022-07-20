@@ -26,7 +26,7 @@
 class EmissivePointsSetShape : public PointsSetShape
 {
 PUBLISHED:
-  EmissivePointsSetShape(bool has_size, bool has_oid);
+  EmissivePointsSetShape(bool has_size, bool has_oid, double screen_scale);
   virtual ~EmissivePointsSetShape(void);
 
   virtual void add_object(SceneAnchor *scene_anchor);
