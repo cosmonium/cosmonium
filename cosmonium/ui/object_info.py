@@ -200,7 +200,7 @@ def stellar_body(body):
         general.append([_("Ellipticity"), "%g" % body.oblateness])
     general.append([_("Atmosphere"), _("Yes") if body.atmosphere is not None else _("No")])
     general.append([_("Clouds"), _("Yes") if body.clouds is not None else _("No")])
-    general.append([_("Rings"), _("Yes") if body.ring is not None else _("No")])
+    general.append([_("Rings"), _("Yes") if body.has_rings() else _("No")])
     if body.description != '':
         general.append([_("Description"), body.description])
     if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):

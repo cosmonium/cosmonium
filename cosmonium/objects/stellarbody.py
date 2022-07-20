@@ -122,6 +122,10 @@ class StellarBody(StellarObject):
                 return surface
         return None
 
+    def has_rings(self):
+        # TODO: If this is the primary, we should seach in the children of the parent system if they are ring objects
+        return False
+
     def create_components(self):
         StellarObject.create_components(self)
         if self.surface is None:
