@@ -201,7 +201,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return ONeilScatteringDataSource(self)
 
     def generate_lookup_table(self):
-        self.lookuptable_generator.trigger({'parameters': self})
+        self.lookuptable_generator.trigger({'shader': {'lookuptable': {'parameters': self}}})
 
     def get_lookup_table(self):
         if self.pbOpticalDepth is None:
