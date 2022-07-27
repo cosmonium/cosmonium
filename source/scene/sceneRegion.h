@@ -40,7 +40,7 @@ class SceneManager;
 class SceneRegion : public TypedObject, public ReferenceCount
 {
 PUBLISHED:
-  SceneRegion(SceneManager *scene_manager, double near, double far);
+  SceneRegion(SceneManager *scene_manager, double near_distance, double far_distance);
   virtual ~SceneRegion(void);
 
   void set_camera_mask(DrawMask flags);
@@ -84,8 +84,8 @@ protected:
   PT(SceneManager) scene_manager;
   std::vector<PT(SceneAnchor)> bodies;
   SceneAnchorCollection points;
-  double near;
-  double far;
+  double near_distance;
+  double far_distance;
   PT(GraphicsOutput) target;
   PT(DisplayRegion) region;
   NodePath root;

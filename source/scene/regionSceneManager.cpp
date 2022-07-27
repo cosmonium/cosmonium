@@ -141,18 +141,18 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
       }
       if (!resolved->get_virtual_object() && resolved->get_instance() != nullptr) {
           if (!resolved->get_background()) {
-              double near;
-              double far;
+              double near_distance;
+              double far_distance;
               if (anchor->distance_to_obs > anchor->get_bounding_radius()) {
                   double coef = -anchor->vector_to_obs.dot(camera_holder->get_anchor()->camera_vector);
-                  near = (anchor->distance_to_obs  - anchor->get_bounding_radius()) * coef  * camera_holder->get_cos_fov2() / scale;
-                  far = (anchor->distance_to_obs + anchor->get_bounding_radius()) * coef / scale;
-                  near = std::max(near, min_near);
+                  near_distance = (anchor->distance_to_obs  - anchor->get_bounding_radius()) * coef  * camera_holder->get_cos_fov2() / scale;
+                  far_distance = (anchor->distance_to_obs + anchor->get_bounding_radius()) * coef / scale;
+                  near_distance = std::max(near_distance, min_near);
               } else {
-                  near = min_near;
-                  far = min_near + anchor->get_bounding_radius() * 2 / scale;
+                  near_distance = min_near;
+                  far_distance = min_near + anchor->get_bounding_radius() * 2 / scale;
               }
-              SceneRegion *region = new SceneRegion(this, near, far);
+              SceneRegion *region = new SceneRegion(this, near_distance, far_distance);
               region->add_body(resolved);
               while (regions.size() > 0 && region->overlap(regions.back())) {
                   region->merge(regions.back());

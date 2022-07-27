@@ -35,10 +35,10 @@
 TypeHandle SceneRegion::_type_handle;
 
 
-SceneRegion::SceneRegion(SceneManager *scene_manager, double near, double far) :
+SceneRegion::SceneRegion(SceneManager *scene_manager, double near_distance, double far_distance) :
     scene_manager(scene_manager),
-    near(near),
-    far(far),
+    near_distance(near_distance),
+    far_distance(far_distance),
     root(NodePath("root"))
 {
 }
@@ -74,8 +74,8 @@ SceneRegion::add_point(SceneAnchor *point)
 bool
 SceneRegion::overlap(SceneRegion *other)
 {
-    return ((near <= other->near) && (other->near < far)) || ((other->near <= near) && (near < other->far)) ||
-           ((far >= other->far) && (other->far > near)) || ((other->far >= far) && (far > other->near));
+    return ((near_distance <= other->near_distance) && (other->near_distance < far_distance)) || ((other->near_distance <= near_distance) && (near_distance < other->far_distance)) ||
+           ((far_distance >= other->far_distance) && (other->far_distance > near_distance)) || ((other->far_distance >= far_distance) && (far_distance > other->near_distance));
 }
 
 
@@ -84,8 +84,8 @@ SceneRegion::merge(SceneRegion *other)
 {
     // TODO: See if move iterator should be used here
     bodies.insert(bodies.end(), other->bodies.begin(), other->bodies.end());
-    near = std::min(near, other->near);
-    far = std::max(far, other->far);
+    near_distance = std::min(near_distance, other->near_distance);
+    far_distance = std::max(far_distance, other->far_distance);
 }
 
 
@@ -108,9 +108,9 @@ SceneRegion::create(GraphicsOutput *target,
     cam->set_camera_mask(camera_mask);
     PT(PerspectiveLens) lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
     if (inverse_z) {
-        lens->set_near_far(far * 1.01, near * 0.99);
+        lens->set_near_far(far_distance * 1.01, near_distance * 0.99);
     } else {
-        lens->set_near_far(near * 0.99, far * 1.01);
+        lens->set_near_far(near_distance * 0.99, far_distance * 1.01);
     }
     cam->set_lens(lens);
     cam_np = root.attach_new_node(cam);
@@ -160,7 +160,7 @@ SceneRegion::pick_scene(LPoint2 mpos)
 void
 SceneRegion::ls(void)
 {
-    std::cout << "Near " << near << " Far " << far << "\n";
+    std::cout << "Near " << near_distance << " Far " << far_distance << "\n";
     //print("Bodies:", list(map(lambda b: b.get_name(), self.bodies)))
     root.ls();
 }
@@ -190,14 +190,14 @@ SceneRegion::get_points_collection(void)
 double
 SceneRegion::get_near(void) const
 {
-  return near;
+  return near_distance;
 }
 
 
 double
 SceneRegion::get_far(void) const
 {
-  return far;
+  return far_distance;
 }
 
 
