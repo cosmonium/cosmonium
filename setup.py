@@ -64,6 +64,7 @@ config = {
             'requirements_path': requirements_path,
             'platforms': ['manylinux1_x86_64', 'manylinux1_i686', 'macosx_10_9_x86_64'],
             'include_patterns': [
+                'config/**',
                 'shaders/**',
                 'data/**',
                 'models/**',
