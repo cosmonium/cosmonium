@@ -33,6 +33,7 @@
 
 TypeHandle DynamicSceneManager::_type_handle;
 
+
 bool DynamicSceneManager::auto_scale = true;
 double DynamicSceneManager::min_scale = 0.02;
 double DynamicSceneManager::max_scale = 1000.0;
@@ -55,6 +56,12 @@ DynamicSceneManager::DynamicSceneManager(NodePath render) :
 
 DynamicSceneManager::~DynamicSceneManager(void)
 {
+}
+
+
+bool DynamicSceneManager::has_regions(void) const
+{
+  return false;
 }
 
 

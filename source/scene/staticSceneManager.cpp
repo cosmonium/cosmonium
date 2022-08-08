@@ -28,6 +28,7 @@
 
 TypeHandle StaticSceneManager::_type_handle;
 
+
 StaticSceneManager::StaticSceneManager(NodePath render) :
       near_plane(default_near_plane),
       infinity(0)
@@ -44,6 +45,13 @@ StaticSceneManager::~StaticSceneManager(void)
 {
 }
 
+
+bool StaticSceneManager::has_regions(void) const
+{
+  return false;
+}
+
+
 void
 StaticSceneManager::set_target(GraphicsOutput *target)
 {
@@ -54,11 +62,13 @@ StaticSceneManager::set_target(GraphicsOutput *target)
   dr->set_active(true);
 }
 
+
 void
 StaticSceneManager::attach_new_anchor(NodePath instance)
 {
   instance.reparent_to(root);
 }
+
 
 void
 StaticSceneManager::add_spread_object(NodePath instance)
@@ -66,11 +76,13 @@ StaticSceneManager::add_spread_object(NodePath instance)
   //Not supported by static scene manager
 }
 
+
 void
 StaticSceneManager::add_background_object(NodePath instance)
 {
   instance.reparent_to(root);
 }
+
 
 void
 StaticSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_camera)
@@ -87,11 +99,13 @@ StaticSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_ca
   camera.reparent_to(root);
 }
 
+
 void
 StaticSceneManager::set_camera_mask(DrawMask flags)
 {
   DCAST(Camera, camera.node())->set_camera_mask(flags);
 }
+
 
 void
 StaticSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder)
@@ -107,11 +121,13 @@ StaticSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHo
   camera.set_quat(camera_holder->get_camera().get_quat());
 }
 
+
 void
 StaticSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved)
 {
   root.set_state(state.get_state());
 }
+
 
 void
 StaticSceneManager::ls(void)
@@ -119,17 +135,20 @@ StaticSceneManager::ls(void)
   root.ls();
 }
 
+
 NodePath
 StaticSceneManager::get_camera(void)
 {
   return camera;
 }
 
+
 double
 StaticSceneManager::get_infinity(void) const
 {
   return 0.0;
 }
+
 
 NodePath
 StaticSceneManager::get_root(void)

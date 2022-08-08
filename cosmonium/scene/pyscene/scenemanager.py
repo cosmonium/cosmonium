@@ -35,6 +35,9 @@ class SceneManagerBase:
     def has_regions(self):
         return False
 
+    def get_regions(self):
+        raise NotImplementedError()
+
     def set_target(self, target):
         raise NotImplementedError()
 

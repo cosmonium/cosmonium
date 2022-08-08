@@ -35,6 +35,8 @@ PUBLISHED:
   RegionSceneManager(void);
   virtual ~RegionSceneManager(void);
 
+  virtual bool has_regions(void) const;
+
   virtual void set_target(GraphicsOutput *target);
 
   virtual void attach_new_anchor(NodePath instance);

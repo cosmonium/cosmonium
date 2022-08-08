@@ -38,6 +38,8 @@ PUBLISHED:
 
   virtual ~SceneManager(void);
 
+  virtual bool has_regions(void) const = 0;
+
   virtual void set_target(GraphicsOutput *target) = 0;
 
   virtual void attach_new_anchor(NodePath instance) = 0;

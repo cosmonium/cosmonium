@@ -539,12 +539,12 @@ class Cosmonium(CosmoniumBase):
         if settings.render_sprite_points:
             self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
             self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
-            if settings.scene_manager == 'region':
+            if self.scene_manager.has_regions():
                 points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=settings.ui_scale)
             else:
                 points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=settings.ui_scale))
             self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
-            if settings.scene_manager == 'region':
+            if self.scene_manager.has_regions():
                 points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=settings.ui_scale)
             else:
                 points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=settings.ui_scale))

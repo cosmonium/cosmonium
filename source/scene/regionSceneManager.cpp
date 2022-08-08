@@ -53,6 +53,12 @@ RegionSceneManager::~RegionSceneManager(void)
 }
 
 
+bool RegionSceneManager::has_regions(void) const
+{
+  return true;
+}
+
+
 void
 RegionSceneManager::set_target(GraphicsOutput *target)
 {

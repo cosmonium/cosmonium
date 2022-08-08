@@ -29,8 +29,10 @@ class PerspectiveLens;
 class DynamicSceneManager : public SceneManager
 {
 PUBLISHED:
-DynamicSceneManager(NodePath render);
+  DynamicSceneManager(NodePath render);
   virtual ~DynamicSceneManager(void);
+
+  virtual bool has_regions(void) const;
 
   virtual void set_target(GraphicsOutput *target);
 
