@@ -67,7 +67,7 @@ class CosmoniumConfig(object):
         self.script = None
         self.extra = ['data/extra', settings.data_dir]
         self.celestia = False
-        self.celestia_data_list = ["../Celestia"]
+        self.celestia_data_list = ["../Celestia", "../CelestiaContent"]
         if sys.platform == "darwin":
             self.celestia_data_list.append("/Applications/Celestia.app/Contents/Resources/CelestiaResources")
         elif sys.platform == "win32":
