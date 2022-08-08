@@ -78,7 +78,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: macos-logs
-        path: ~/Documents/cosmonium/output.log
+        path: ~/Library/Logs/cosmonium/output.log
     - name: 'Upload development build'
       if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
