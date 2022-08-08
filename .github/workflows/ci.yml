@@ -114,9 +114,9 @@ jobs:
     - name: Test binary
       run: |
         cd build/win_amd64
-        & ./cosmonium.exe --% --test-start
+        ./cosmonium.exe --test-start | Out-Null
         cd ../win32
-        & ./cosmonium.exe --% --test-start
+        ./cosmonium.exe --test-start | Out-Null
     - name: Upload logs
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
