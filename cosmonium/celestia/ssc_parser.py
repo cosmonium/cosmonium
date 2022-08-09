@@ -245,7 +245,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
             custom_orbit = True
         elif key == 'RotationPeriod':
             legacy_rotation = True
-            rotation_period = value
+            rotation_period = float(value) * rotation_period_units
         elif key == 'RotationOffset':
             legacy_rotation = True
             rotation_offset = value
@@ -291,7 +291,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
+        rotation = instanciate_legacy_rotation(rotation_period,
                                                rotation_obliquity, rotation_ascending_node,
                                                rotation_offset, rotation_epoch,
                                                parent, body_frame)
@@ -363,7 +363,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
             custom_orbit = True
         elif key == 'RotationPeriod':
             legacy_rotation = True
-            rotation_period = value
+            rotation_period = float(value) * rotation_period_units
         elif key == 'RotationOffset':
             legacy_rotation = True
             rotation_offset = value
@@ -404,7 +404,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
+        rotation = instanciate_legacy_rotation(rotation_period,
                                                rotation_obliquity, rotation_ascending_node,
                                                rotation_offset, rotation_epoch,
                                                parent, body_frame)
