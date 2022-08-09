@@ -312,6 +312,8 @@ def instanciate_body(universe, names, is_planet, data, parent):
         lighting_model = LambertPhongLightingModel()
     surface = EllipsoidFlatSurface(
                           shape=shape,
+                          radius=radius,
+                          oblateness=oblateness,
                           appearance=appearance,
                           shader=RenderingShader(lighting_model=lighting_model))
     body = ReflectiveBody(names=names, source_names=[],
