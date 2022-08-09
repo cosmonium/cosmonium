@@ -25,11 +25,10 @@ jobs:
         echo "panda3d>=1.11.0.dev0" >> requirements-tmp.txt
         cat requirements.txt >> requirements-tmp.txt
         make build SOURCE_OPTIONS="--optimize 3"
-        python3 setup.py bdist_apps -p manylinux1_x86_64 -r requirements-tmp.txt
-        python3 setup.py bdist_apps -p manylinux1_i686 -r requirements-tmp.txt
+        python3 setup.py bdist_apps -p manylinux2014_x86_64 -r requirements-tmp.txt
     - name: Test binary
       run: |
-        cd build/manylinux1_x86_64
+        cd build/manylinux2014_x86_64
         ./cosmonium --test-start
     - name: Upload logs
       if: ${{ always() }}
