@@ -36,7 +36,7 @@ class StarTexSurfaceFactory(SurfaceFactory):
 
     def create(self, body):
         shape = SphereShape()
-        appearance = Appearance(emissionColor=body.point_color, texture=self.texture)
+        appearance = Appearance(emissionColor=body.anchor.point_color, texture=self.texture)
         shader = RenderingShader(lighting_model=FlatLightingModel())
         return EllipsoidFlatSurface('surface',
                            radius=body.radius, oblateness=body.oblateness, scale=body.scale,
