@@ -184,7 +184,8 @@ def instanciate_custom_rotation(data, parent):
         rotation.frame.set_anchor(parent.anchor)
     return rotation
 
-def instanciate_uniform_rotation(data, global_coord):
+
+def instanciate_uniform_rotation(data, parent, global_coord):
     period = None
     sync = True
     if global_coord:
@@ -216,10 +217,13 @@ def instanciate_uniform_rotation(data, global_coord):
                                                 flipped)
     frame = J2000EquatorialReferenceFrame()
     if sync:
-        return SynchronousRotation(orientation, meridian_angle * units.Deg, epoch, frame)
+        rotation = SynchronousRotation(orientation, meridian_angle * units.Deg, epoch, frame)
+        rotation.set_parent_body(parent.anchor)
     else:
         mean_motion = 2 * pi / (period * period_units)
-        return UniformRotation(orientation, mean_motion, meridian_angle * units.Deg, epoch, frame)
+        rotation = UniformRotation(orientation, mean_motion, meridian_angle * units.Deg, epoch, frame)
+    return rotation
+
 
 def instanciate_precessing_rotation(data):
     return UnknownRotation()

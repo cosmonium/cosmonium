@@ -57,16 +57,20 @@ def get_color(value):
     print("Invalid color", value)
     return None
 
-def instanciate_legacy_rotation(period, obliquity, ascending_node, offset, epoch, frame):
+
+def instanciate_legacy_rotation(period, obliquity, ascending_node, offset, epoch, parent, frame):
     flipped = period is not None and period < 0
     orientation = calc_orientation_from_incl_an(obliquity * units.Deg,
                                                 ascending_node * units.Deg,
                                                 flipped)
     if period is None:
-        return SynchronousRotation(orientation, offset * units.Deg, epoch, frame)
+        rotation = SynchronousRotation(orientation, offset * units.Deg, epoch, frame)
+        rotation.set_parent_body(parent.anchor)
     else:
         mean_motion = 2 * pi / period
-        return UniformRotation(orientation, mean_motion, offset * units.Deg, epoch, frame)
+        rotation = UniformRotation(orientation, mean_motion, offset * units.Deg, epoch, frame)
+    return rotation
+
 
 def instanciate_atmosphere(data):
     atmosphere = None
@@ -259,7 +263,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
         elif key == 'BodyFrame':
             body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, parent, rotation_global_coord)
         elif key == 'UniformRotation':
-            rotation = instanciate_uniform_rotation(value, rotation_global_coord)
+            rotation = instanciate_uniform_rotation(value, parent, rotation_global_coord)
         elif key == 'PrecessingRotation':
             rotation = instanciate_precessing_rotation(value)
         elif key == 'CustomRotation':
@@ -289,7 +293,8 @@ def instanciate_body(universe, names, is_planet, data, parent):
     if legacy_rotation:
         rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
                                                rotation_obliquity, rotation_ascending_node,
-                                               rotation_offset, rotation_epoch, body_frame)
+                                               rotation_offset, rotation_epoch,
+                                               parent, body_frame)
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
@@ -376,7 +381,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
         elif key == 'BodyFrame':
             body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, rotation_global_coord, parent)
         elif key == 'UniformRotation':
-            rotation = instanciate_uniform_rotation(value, rotation_global_coord)
+            rotation = instanciate_uniform_rotation(value, parent, rotation_global_coord)
         elif key == 'PrecessingRotation':
             rotation = instanciate_precessing_rotation(value)
         elif key == 'CustomRotation':
@@ -401,7 +406,8 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
     if legacy_rotation:
         rotation = instanciate_legacy_rotation(rotation_period * rotation_period_units,
                                                rotation_obliquity, rotation_ascending_node,
-                                               rotation_offset, rotation_epoch, body_frame)
+                                               rotation_offset, rotation_epoch,
+                                               parent, body_frame)
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:

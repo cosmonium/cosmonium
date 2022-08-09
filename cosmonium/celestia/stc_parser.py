@@ -107,7 +107,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         elif key == 'CustomOrbit':
             orbit = instanciate_custom_orbit(value, parent)
         elif key == 'UniformRotation':
-            rotation = instanciate_uniform_rotation(value, True)
+            rotation = instanciate_uniform_rotation(value, parent, True)
         elif key == 'CustomRotation':
             rotation = instanciate_custom_rotation(value, parent)
         elif key == 'RotationPeriod':
