@@ -47,8 +47,8 @@ def instanciate_custom_orbit(data, parent):
         #TODO: An error should be raised instead !
         orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
     #TODO: this should not be done arbitrarily
-    if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.body is None:
-        orbit.frame.set_body(parent)
+    if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.anchor is None:
+        orbit.frame.set_anchor(parent.anchor)
     return orbit
 
 def instanciate_elliptical_orbit(data, global_coord):
@@ -133,7 +133,7 @@ def instanciate_elliptical_orbit(data, global_coord):
                            )
 
 def instanciate_frame(universe, data, parent, global_coord):
-    frame_center = parent
+    frame_center = parent.anchor
     if data is not None:
         for (key, value) in data.items():
             if key == 'Center':
@@ -144,13 +144,15 @@ def instanciate_frame(universe, data, parent, global_coord):
                     global_coord = True
                 path = body_path(value)
                 frame_center = universe.find_by_path(path)
-                if frame_center is None:
+                if frame_center is not None:
+                    frame_center = frame_center.anchor
+                else:
                     print("Frame center '", value, "'not found")
             else:
                 print("Frame", key, "not supported")
     return frame_center, global_coord
 
-def instanciate_reference_frame(universe, data, parent,global_coord):
+def instanciate_reference_frame(universe, data, parent, global_coord):
     frame_type = J2000EclipticReferenceFrame
     frame_center = None
     for (key, value) in data.items():
@@ -178,8 +180,8 @@ def instanciate_custom_rotation(data, parent):
     if rotation is None:
         rotation = UnknownRotation()
     #TODO: this should not be done arbitrarily
-    if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.body is None:
-        rotation.frame.set_body(parent)
+    if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.anchor is None:
+        rotation.frame.set_anchor(parent.anchor)
     return rotation
 
 def instanciate_uniform_rotation(data, global_coord):

@@ -273,14 +273,14 @@ def instanciate_body(universe, names, is_planet, data, parent):
             print("Key of body", key, "not supported")
     if orbit_frame is None and not custom_orbit:
         if is_planet:
-            orbit_frame = J2000EclipticReferenceFrame(parent)
+            orbit_frame = J2000EclipticReferenceFrame(parent.anchor)
         else:
-            orbit_frame = EquatorialReferenceFrame(parent)
+            orbit_frame = EquatorialReferenceFrame(parent.anchor)
     if body_frame is None and not custom_rotation:
         if is_planet:
-            body_frame = J2000EclipticReferenceFrame(parent)
+            body_frame = J2000EclipticReferenceFrame(parent.anchor)
         else:
-            body_frame = EquatorialReferenceFrame(parent)
+            body_frame = EquatorialReferenceFrame(parent.anchor)
     if orbit is None:
         #TODO: Raise an error instead !
         orbit=AbsoluteFixedPosition(frame=orbit_frame)
@@ -386,14 +386,14 @@ def instanciate_reference_point(universe, names, is_planet, data, parent):
             print("Key of ReferencePoint", key, "not supported")
     if orbit_frame is None and not custom_orbit:
         if is_planet:
-            orbit_frame = J2000EclipticReferenceFrame(parent)
+            orbit_frame = J2000EclipticReferenceFrame(parent.anchor)
         else:
-            orbit_frame = EquatorialReferenceFrame(parent)
+            orbit_frame = EquatorialReferenceFrame(parent.anchor)
     if body_frame is None and not custom_rotation:
         if is_planet:
-            body_frame = J2000EclipticReferenceFrame(parent)
+            body_frame = J2000EclipticReferenceFrame(parent.anchor)
         else:
-            body_frame = EquatorialReferenceFrame(parent)
+            body_frame = EquatorialReferenceFrame(parent.anchor)
     if orbit is None:
         orbit = AbsoluteFixedPosition(orbit_frame, LPoint3d())
     elif not custom_orbit:
