@@ -21,9 +21,10 @@
 from ..objects.universe import Universe
 from ..objects.systems import Barycenter
 from ..catalogs import objectsDB
-from ..astro.orbits import FixedPosition
+from ..astro.astro import calc_position
+from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
-from ..astro.frame import J2000BarycentricEquatorialReferenceFrame
+from ..astro.frame import J2000BarycentricEquatorialReferenceFrame, AbsoluteReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -78,11 +79,11 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         parent = universe
     for (key, value) in item_data.items():
         if key == 'RA':
-            ra = value
+            ra = float(value) * units.Deg
         elif key == 'Dec':
-            decl = value
+            decl = float(value) * units.Deg
         elif key == 'Distance':
-            distance = value
+            distance = float(value) * units.Ly
         elif key == 'SpectralType':
             spectral_type = value
         elif key == 'Radius':
@@ -114,8 +115,11 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         else:
             print("Key of Star", key, "not supported")
     if orbit is None:
-        orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
-    orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
+        position = calc_position(ra, decl, distance)
+        frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
+        orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
+    else:
+        orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
     if distance is not None:
         distance *= units.Ly
     elif parent is not None:
@@ -154,11 +158,11 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         parent = universe
     for (key, value) in item_data.items():
         if key == 'RA':
-            ra = value
+            ra = float(value) * units.Deg
         elif key == 'Dec':
-            decl = value
+            decl = float(value) * units.Deg
         elif key == 'Distance':
-            distance = value
+            distance = float(value) * units.Ly
         elif key == 'OrbitBarycenter':
             pass
         elif key == 'EllipticalOrbit':
@@ -174,8 +178,11 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         if existing_star.parent is not None:
             existing_star.parent.remove_child_fast(existing_star)
     if orbit is None:
-        orbit = FixedPosition(right_asc=ra, declination=decl, distance=distance, distance_unit=units.Ly)
-    orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
+        position = calc_position(ra, decl, distance)
+        frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
+        orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
+    else:
+        orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
     barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_fast(barycenter)
     return barycenter

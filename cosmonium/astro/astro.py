@@ -18,11 +18,12 @@
 #
 
 
-from panda3d.core import LVector3d, LQuaterniond
+from math import pow, log, log10, exp, sqrt, asin, pi, atan2
+
+from panda3d.core import LVector3d, LQuaterniond, LPoint3d
 
 from . import units
 
-from math import pow, log, log10, exp, sqrt, asin, pi, atan2
 
 # Brightness increase factor for one magnitude
 magnitude_brightness_ratio = pow(10.0, 0.4)
@@ -87,6 +88,14 @@ def calc_orientation(right_ascension, declination, flipped=False):
     inclination = pi / 2 - declination
     ascending_node = right_ascension + pi / 2
     return calc_orientation_from_incl_an(inclination, ascending_node, flipped)
+
+
+def calc_position(right_ascension, declination, distance):
+    orientation = calc_orientation(right_ascension, declination)
+    orientation *= units.J2000_Orientation
+    position = orientation.xform(LPoint3d(0, 0, distance))
+    return position
+
 
 def position_to_equatorial(position):
     distance = position.length()

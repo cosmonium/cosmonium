@@ -23,9 +23,10 @@ from panda3d.core import LVector3d
 from ..objects.universe import Universe
 from ..objects.galaxies import Galaxy
 from ..celestia import config_parser
-from ..astro.orbits import FixedPosition
+from ..astro.astro import calc_position
+from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
-from ..astro.frame import J2000EquatorialReferenceFrame
+from ..astro.frame import J2000EquatorialReferenceFrame, AbsoluteReferenceFrame
 from ..astro import units
 from ..dircontext import defaultDirContext
 from .. import utils
@@ -52,11 +53,11 @@ def instanciate_body(universe, item_type, item_name, item_data):
     names = names_list(item_name)
     for (key, value) in item_data.items():
         if key == 'RA':
-            ra = value
+            ra = float(value) * units.HourAngle
         elif key == 'Dec':
-            decl = value
+            decl = float(value) * units.Deg
         elif key == 'Distance':
-            distance = value
+            distance = float(value) * units.Ly
         elif key == 'Type':
             type = value
         elif key == 'Radius':
@@ -73,9 +74,11 @@ def instanciate_body(universe, item_type, item_name, item_data):
             pass # = value
         else:
             print("Key of", item_type, key, "not supported")
-    orbit = FixedPosition(right_asc=ra, right_asc_unit=units.HourAngle, declination=decl, distance=distance, distance_unit=units.Ly)
-    rot=utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
-    rotation=FixedRotation(rot, J2000EquatorialReferenceFrame())
+    position = calc_position(ra, decl, distance)
+    frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
+    orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
+    rot = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
+    rotation = FixedRotation(rot, J2000EquatorialReferenceFrame())
     if app_magnitude != None and distance != None:
         abs_magnitude = units.app_to_abs_mag(app_magnitude, distance)
     dso = Galaxy(names,
