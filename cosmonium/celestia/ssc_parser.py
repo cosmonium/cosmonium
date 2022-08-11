@@ -30,6 +30,7 @@ from .shaders import LunarLambertLightingModel
 from ..celestia.atmosphere import CelestiaAtmosphere
 from ..objects.reflective import ReflectiveBody
 from ..objects.systems import ReferencePoint
+from ..objects.rings import StellarRings
 from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
@@ -38,7 +39,7 @@ from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.lambert import LambertPhongLightingModel
-from ..astro.orbits import AbsoluteFixedPosition
+from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
 from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
 from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
@@ -130,7 +131,7 @@ def instanciate_atmosphere(data):
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
 
-def instanciate_rings(data):
+def instanciate_rings(name, data, parent):
     inner_radius = 0
     outer_radius = 0
     appearance = Appearance()
@@ -146,10 +147,23 @@ def instanciate_rings(data):
         else:
             print("Key of Ring", key, "not supported")
     appearance.bake()
-    return Rings(inner_radius,
-                 outer_radius,
-                 appearance=appearance,
-                 shader=RenderingShader())
+    rings_object = Rings(inner_radius,
+                         outer_radius,
+                         appearance=appearance,
+                         shader=RenderingShader())
+    actual_parent = parent.primary or parent
+    frame = EquatorialReferenceFrame(actual_parent.anchor)
+    orbit = LocalFixedPosition(frame_position=LPoint3d(), frame=frame)
+    rotation = FixedRotation(LQuaterniond(), frame)
+    name = actual_parent.names[0] + "'s rings"
+    body = StellarRings(names=[name],
+                          source_names=[],
+                          body_class="rings",
+                          rings_object=rings_object,
+                          orbit=orbit,
+                          rotation=rotation,
+                          point_color=appearance.diffuseColor)
+    return body
 
 def instanciate_body(universe, names, is_planet, data, parent):
     appearance=Appearance()
@@ -160,7 +174,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
     lunar_lambert = 0.0
     atmosphere = None
     clouds=None
-    rings=None
+    rings_data=None
     orbit=None
     legacy_rotation = False
     rotation_period = None
@@ -235,7 +249,7 @@ def instanciate_body(universe, names, is_planet, data, parent):
         elif key == 'HazeDensity':
             pass #= value
         elif key == 'Rings':
-            rings = instanciate_rings(value)
+            rings_data = value
         elif key == 'Atmosphere':
             (atmosphere, clouds) = instanciate_atmosphere(value)
         elif key == 'EllipticalOrbit':
@@ -322,16 +336,19 @@ def instanciate_body(universe, names, is_planet, data, parent):
                           oblateness=oblateness,
                           orbit=orbit,
                           rotation=rotation,
-                          ring=rings,
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
+    body.albedo = albedo
+    body.body_class = body_class
     if atmosphere is not None:
         atmosphere.add_shape_object(surface)
         if clouds is not None:
             atmosphere.add_shape_object(clouds)
-    body.albedo = albedo
-    body.body_class = body_class
+    if rings_data is not None:
+        body = body.get_or_create_system()
+        rings = instanciate_rings(names, rings_data, body)
+        body.add_child_fast(rings)
     return body
 
 def instanciate_reference_point(universe, names, is_planet, data, parent):
