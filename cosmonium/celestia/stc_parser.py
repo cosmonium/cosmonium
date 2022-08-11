@@ -24,7 +24,7 @@ from ..catalogs import objectsDB
 from ..astro.astro import calc_position
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
-from ..astro.frame import J2000BarycentricEquatorialReferenceFrame, AbsoluteReferenceFrame
+from ..astro.frame import J2000BarycentricEclipticReferenceFrame, AbsoluteReferenceFrame, J2000EclipticReferenceFrame
 from ..astro.astro import app_to_abs_mag
 from ..astro import bayer
 from ..astro import units
@@ -68,11 +68,13 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     orbit = None
     rotation = UnknownRotation()
     parent = None
+    has_barycenter = False
     surface_factory = None
     texture = None
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
         parent = objectsDB.get(bayer.canonize_name(parent_name))
+        has_barycenter = True
         if parent is None:
             print("Could not find parent", parent)
     if parent is None:
@@ -114,17 +116,22 @@ def instanciate_star(universe, item_name, item_alias, item_data):
             pass # = value
         else:
             print("Key of Star", key, "not supported")
+    if has_barycenter:
+        parent.anchor.update(0, 0)
+        frame = J2000EclipticReferenceFrame(parent.anchor)
+    else:
+        frame = J2000BarycentricEclipticReferenceFrame()
     if orbit is None:
         position = calc_position(ra, decl, distance)
-        frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
         orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
     else:
-        orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
-    if distance is not None:
-        distance *= units.Ly
-    elif parent is not None:
-        distance = parent.anchor.get_absolute_reference_point().length()
+        orbit.set_frame(frame)
+    if distance is None:
+        distance = orbit.get_absolute_reference_point_at(0).length()
     if app_magnitude != None and distance != None:
+        if distance <= 0:
+            print(names, distance, parent.anchor.body.names)
+            return None
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     if texture is not None:
         surface_factory=StarTexSurfaceFactory(texture)
@@ -149,9 +156,11 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     orbit = None
     rotation = UnknownRotation()
     parent = None
+    has_barycenter = False
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
         parent = objectsDB.get(bayer.canonize_name(parent_name))
+        has_barycenter = True
         if parent is None:
             print("Could not find parent", parent)
     if parent is None:
@@ -177,12 +186,16 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         objectsDB.remove(existing_star)
         if existing_star.parent is not None:
             existing_star.parent.remove_child_fast(existing_star)
+    if has_barycenter:
+        parent.anchor.update(0, 0)
+        frame = J2000EclipticReferenceFrame(parent.anchor)
+    else:
+        frame = J2000BarycentricEclipticReferenceFrame()
     if orbit is None:
         position = calc_position(ra, decl, distance)
-        frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
         orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
     else:
-        orbit.set_frame(J2000BarycentricEquatorialReferenceFrame())
+        orbit.set_frame(frame)
     barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_fast(barycenter)
     return barycenter
