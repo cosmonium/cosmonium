@@ -87,6 +87,9 @@ class AbsoluteFixedPosition(FixedPosition):
     def get_absolute_reference_point_at(self, time):
         return self.absolute_reference_point
 
+    def get_absolute_position_at(self, time):
+        return self.absolute_reference_point
+
     def get_frame_position_at(self, time):
         return LPoint3d()
 

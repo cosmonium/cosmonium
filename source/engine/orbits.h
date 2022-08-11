@@ -101,6 +101,8 @@ PUBLISHED:
 
   virtual LPoint3d get_absolute_reference_point_at(double time);
 
+  virtual LPoint3d get_absolute_position_at(double time);
+
   virtual LPoint3d get_frame_position_at(double time);
 
   virtual LQuaterniond get_frame_rotation_at(double time);

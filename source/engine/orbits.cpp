@@ -137,6 +137,12 @@ AbsoluteFixedPosition::get_absolute_reference_point_at(double time)
 }
 
 LPoint3d
+AbsoluteFixedPosition::get_absolute_position_at(double time)
+{
+  return absolute_reference_point;
+}
+
+LPoint3d
 AbsoluteFixedPosition::get_frame_position_at(double time)
 {
   return LPoint3d(0.0);
