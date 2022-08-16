@@ -79,6 +79,10 @@ def instanciate_star(universe, item_name, item_alias, item_data):
             print("Could not find parent", parent)
     if parent is None:
         parent = universe
+    if parent.is_system() and parent.primary is not None:
+        parent_anchor = parent.primary.anchor
+    else:
+        parent_anchor = parent.anchor
     for (key, value) in item_data.items():
         if key == 'RA':
             ra = float(value) * units.Deg
@@ -107,18 +111,18 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, True)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value, parent)
+            orbit = instanciate_custom_orbit(value, parent_anchor)
         elif key == 'UniformRotation':
-            rotation = instanciate_uniform_rotation(value, parent, True)
+            rotation = instanciate_uniform_rotation(value, parent_anchor, True)
         elif key == 'CustomRotation':
-            rotation = instanciate_custom_rotation(value, parent)
+            rotation = instanciate_custom_rotation(value, parent_anchor)
         elif key == 'RotationPeriod':
             pass # = value
         else:
             print("Key of Star", key, "not supported")
     if has_barycenter:
-        parent.anchor.update(0, 0)
-        frame = J2000EclipticReferenceFrame(parent.anchor)
+        parent_anchor.update(0, 0)
+        frame = J2000EclipticReferenceFrame(parent_anchor)
     else:
         frame = J2000BarycentricEclipticReferenceFrame()
     if orbit is None:
@@ -165,6 +169,10 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
             print("Could not find parent", parent)
     if parent is None:
         parent = universe
+    if parent.is_system() and parent.primary is not None:
+        parent_anchor = parent.primary.anchor
+    else:
+        parent_anchor = parent.anchor
     for (key, value) in item_data.items():
         if key == 'RA':
             ra = float(value) * units.Deg
@@ -177,7 +185,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, True)
         elif key == 'CustomOrbit':
-            orbit = instanciate_custom_orbit(value, parent)
+            orbit = instanciate_custom_orbit(value, parent_anchor)
         else:
             print("Key of Barycenter", key, "not supported")
     existing_star = objectsDB.get(names[-1])
@@ -187,8 +195,8 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         if existing_star.parent is not None:
             existing_star.parent.remove_child_fast(existing_star)
     if has_barycenter:
-        parent.anchor.update(0, 0)
-        frame = J2000EclipticReferenceFrame(parent.anchor)
+        parent_anchor.update(0, 0)
+        frame = J2000EclipticReferenceFrame(parent_anchor)
     else:
         frame = J2000BarycentricEclipticReferenceFrame()
     if orbit is None:

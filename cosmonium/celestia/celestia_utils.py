@@ -36,7 +36,7 @@ def body_path(parent):
     return path
 
 
-def instanciate_custom_orbit(data, parent):
+def instanciate_custom_orbit(data, parent_anchor):
     if '-' in data:
         (category, name) = data.split('-')
         element_name = category + ':' + name
@@ -48,7 +48,7 @@ def instanciate_custom_orbit(data, parent):
         orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
     #TODO: this should not be done arbitrarily
     if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.anchor is None:
-        orbit.frame.set_anchor(parent.anchor)
+        orbit.frame.set_anchor(parent_anchor)
     return orbit
 
 def instanciate_elliptical_orbit(data, global_coord):
@@ -132,8 +132,8 @@ def instanciate_elliptical_orbit(data, global_coord):
                            ascending_node * units.Deg
                            )
 
-def instanciate_frame(universe, data, parent, global_coord):
-    frame_center = parent.anchor
+def instanciate_frame(universe, data, parent_anchor, global_coord):
+    frame_center = parent_anchor
     if data is not None:
         for (key, value) in data.items():
             if key == 'Center':
@@ -152,23 +152,23 @@ def instanciate_frame(universe, data, parent, global_coord):
                 print("Frame", key, "not supported")
     return frame_center, global_coord
 
-def instanciate_reference_frame(universe, data, parent, global_coord):
+def instanciate_reference_frame(universe, data, parent_anchor, global_coord):
     frame_type = J2000EclipticReferenceFrame
     frame_center = None
     for (key, value) in data.items():
         if key == 'EquatorJ2000':
             frame_type = J2000EquatorialReferenceFrame
-            frame_center, global_coord = instanciate_frame(universe, value, parent, global_coord)
+            frame_center, global_coord = instanciate_frame(universe, value, parent_anchor, global_coord)
         elif key == 'EclipticJ2000':
             frame_type = J2000EclipticReferenceFrame
-            frame_center, global_coord = instanciate_frame(universe, value, parent, global_coord)
+            frame_center, global_coord = instanciate_frame(universe, value, parent_anchor, global_coord)
         else:
             print("Reference frame type", key, "not supported")
 #     if frame_center:
 #         print("Found center", frame_center.get_name())
     return frame_type(frame_center), global_coord
 
-def instanciate_custom_rotation(data, parent):
+def instanciate_custom_rotation(data, parent_anchor):
     if '-' in data:
         (category, name) = data.split('-')
         if name == 'p03lp':
@@ -181,11 +181,11 @@ def instanciate_custom_rotation(data, parent):
         rotation = UnknownRotation()
     #TODO: this should not be done arbitrarily
     if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.anchor is None:
-        rotation.frame.set_anchor(parent.anchor)
+        rotation.frame.set_anchor(parent_anchor)
     return rotation
 
 
-def instanciate_uniform_rotation(data, parent, global_coord):
+def instanciate_uniform_rotation(data, parent_anchor, global_coord):
     period = None
     sync = True
     if global_coord:
@@ -218,7 +218,7 @@ def instanciate_uniform_rotation(data, parent, global_coord):
     frame = J2000EquatorialReferenceFrame()
     if sync:
         rotation = SynchronousRotation(orientation, meridian_angle * units.Deg, epoch, frame)
-        rotation.set_parent_body(parent.anchor)
+        rotation.set_parent_body(parent_anchor)
     else:
         mean_motion = 2 * pi / (period * period_units)
         rotation = UniformRotation(orientation, mean_motion, meridian_angle * units.Deg, epoch, frame)
