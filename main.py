@@ -198,8 +198,8 @@ class CosmoniumApp(Cosmonium):
                 star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
         stc_parser.load(self.app_config.celestia_stc, self.universe)
         ssc_parser.load(self.app_config.celestia_ssc, self.universe)
-        asterisms_parser.load(self.app_config.celestia_asterisms, self.universe)
-        boundaries_parser.load(self.app_config.celestia_boundaries, self.universe)
+        asterisms_parser.load(self.app_config.celestia_asterisms, self.background)
+        boundaries_parser.load(self.app_config.celestia_boundaries, self.background)
         #dsc_parser.load(self.celestia_dsc, self.universe)
 
     def load_file(self, parser, path):
