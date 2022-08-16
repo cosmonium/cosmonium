@@ -194,6 +194,18 @@ PUBLISHED:
 
   virtual bool is_flipped(void) const;
 
+  INLINE LQuaterniond get_equatorial_orientation(void);
+  INLINE void set_equatorial_orientation(LQuaterniond equatorial_orientation);
+  MAKE_PROPERTY(equatorial_orientation, get_equatorial_orientation, set_equatorial_orientation);
+
+  INLINE double get_meridian_angle(void);
+  INLINE void set_meridian_angle(double meridian_angle);
+  MAKE_PROPERTY(meridian_angle, get_meridian_angle, set_meridian_angle);
+
+  INLINE double get_epoch(void);
+  INLINE void set_epoch(double epoch);
+  MAKE_PROPERTY(epoch, get_epoch, set_epoch);
+
 protected:
   LQuaterniond equatorial_orientation;
   PT(StellarAnchor)  parent_body;
