@@ -134,7 +134,7 @@ class NamedAsterism(LabelledObject):
         self.create_components()
 
     def create_label_instance(self):
-        return BackgroundLabel(self.get_ascii_name() + '-label')
+        return BackgroundLabel(self.get_ascii_name() + '-label', self)
 
     def create_components(self):
         self.create_label()

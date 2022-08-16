@@ -378,6 +378,9 @@ class LabelledObject(CompositeObject):
         CompositeObject.check_settings(self)
         if self.label is not None: self.label.check_settings()
 
+    def get_ascii_name(self):
+        return self.name.encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
+
     def create_label_instance(self):
         return ObjectLabel(self.get_ascii_name() + '-label', self)
 
