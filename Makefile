@@ -41,7 +41,7 @@ ifeq ($(PLATFORM),)
     else
         UNAME_S = $(shell uname -s)
         ifeq ($(UNAME_S),Linux)
-            PLATFORM_BASE=manylinux1
+            PLATFORM_BASE=manylinux2014
             UNAME_P = $(shell uname -p)
             ifeq ($(UNAME_P),x86_64)
                PLATFORM=$(PLATFORM_BASE)_x86_64
@@ -75,7 +75,7 @@ endif
 
 ifneq ($(findstring manylinux,$(PLATFORM)),)
     ifeq ($(RELEASE),1)
-        SOURCE_TARGET=build-manylinux1
+        SOURCE_TARGET=build-manylinux2014
     endif
 endif
 
