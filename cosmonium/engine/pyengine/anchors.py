@@ -43,7 +43,7 @@ class AnchorBase():
         self.visibility_override = False
         self.was_resolved = False
         self.resolved = False
-        self.update_id = 0
+        self.update_id = -1
         self.update_frozen = False
         self.force_update = False
         #Cached values
