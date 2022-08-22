@@ -102,7 +102,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         scattering.inside = self.inside
         return scattering
 
-    def create_data_source(self):
+    def create_data_source(self, atmosphere):
         return ONeilSimpleScatteringDataSource(self)
 
     def get_user_parameters(self):
@@ -197,7 +197,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         scattering.inside = self.inside
         return scattering
 
-    def create_data_source(self):
+    def create_data_source(self, atmosphere):
         return ONeilScatteringDataSource(self)
 
     def generate_lookup_table(self):
