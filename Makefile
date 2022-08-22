@@ -7,8 +7,9 @@ SOURCE_OPTIONS=
 OS_SDK=
 RELEASE=0
 REQUIREMENTS=
-PANDA3D_BASE_VERSION=1.10.9
-PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev4
+PANDA3D_BASE_VERSION=1.11.0
+PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev2716
+PANDA3D_VERSION_LONG=$(PANDA3D_VERSION)-ge376654356
 
 TAG_VERSION=0.3.0
 COUNT=$(shell git rev-list --count v$(TAG_VERSION)..HEAD)
@@ -96,7 +97,7 @@ ifeq ($(TARGET_PLATFORM),)
   TARGET_PLATFORM=$(PLATFORM)
 endif
 
-PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION)/panda3d-$(PANDA3D_VERSION)+fp64+opt-cp37-cp37m-$(TARGET_PLATFORM).whl
+PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-cp37-cp37m-$(TARGET_PLATFORM).whl
 
 build: build-source build-version update-mo update-data-mo
 
@@ -166,6 +167,9 @@ bapp:
 bdist:
 	@echo "bdist can only be invoked in RELEASE mode"
 endif
+
+bclean:
+	rm -rf build/
 
 DIST_FILES=$(patsubst dist/%, %, $(wildcard dist/*.zip dist/*.tar.gz dist/*.exe dist/*.toto))
 shasum:
