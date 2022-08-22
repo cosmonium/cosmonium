@@ -21,6 +21,7 @@
 from panda3d.core import LVector3d
 
 from ..components.elements.atmosphere import Atmosphere
+from ..datasource import DataSource
 from ..utils import TransparencyBlend
 from ..shaders.rendering import RenderingShader
 from ..shaders.scattering import AtmosphericScattering
@@ -28,8 +29,6 @@ from ..shaders.scattering import AtmosphericScattering
 from math import log
 
 class CelestiaAtmosphere(Atmosphere):
-    AtmosphereExtinctionThreshold = 0.05
-    mieScaleHeight = 12
     def __init__(self, height,
                  mie_coef=0.0, mie_scale_height=0.0, mie_phase_asymmetry=0.0,
                  rayleigh_coef=None, rayleigh_scale_height=0.0,
@@ -50,24 +49,24 @@ class CelestiaAtmosphere(Atmosphere):
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
         self.blend = TransparencyBlend.TB_AlphaAdditive
-        shader = RenderingShader(lighting_model=CelestiaScattering(self, atmosphere=True, extinction_only=False))
+        shader = RenderingShader(lighting_model=CelestiaScatteringShader(self, atmosphere=True, extinction_only=False))
         self.set_shader(shader)
 
-    def set_parent(self, parent):
-        Atmosphere.set_parent(self, parent)
-        if parent is not None:
-            self.planet = parent
-            self.planet_radius = parent.get_apparent_radius()
-            self.radius = self.planet_radius + self.height
-            self.ratio = self.radius / self.planet_radius
+    def set_body(self, body):
+        self.body = body
+        self.body_radius = body.get_apparent_radius()
+        self.radius = self.body_radius + self.height
+        self.ratio = self.radius / self.body_radius
+
+    def create_data_source(self, atmosphere):
+        return CelestiaScatteringDataSource(self, atmosphere)
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
-        return CelestiaScattering(self, atmosphere, extinction)
+        return CelestiaScatteringShader(self, atmosphere, extinction)
 
-class CelestiaScattering(AtmosphericScattering):
+class CelestiaScatteringShader(AtmosphericScattering):
     use_vertex = True
     world_vertex = True
-    AtmosphereExtinctionThreshold = 0.05
 
     def __init__(self, parameters, atmosphere=False, extinction_only=False):
         AtmosphericScattering.__init__(self)
@@ -221,9 +220,18 @@ uniform vec3 v3LightDir;
             self.calc_scattering(code)
         self.calc_colors(code)
 
-    def update_shader_shape_static(self, shape, appearance):
+class CelestiaScatteringDataSource(DataSource):
+    AtmosphereExtinctionThreshold = 0.05
+    mieScaleHeight = 12
+
+    def __init__(self, parameters, atmosphere):
+        DataSource.__init__(self, 'scattering')
+        self.parameters = parameters
+        self.atmosphere = atmosphere
+
+    def apply(self, shape, instance):
         parameters = self.parameters
-        planet_radius = parameters.planet_radius
+        body_radius = parameters.body_radius
 
         if self.atmosphere:
             #render.cpp 7193
@@ -233,7 +241,7 @@ uniform vec3 v3LightDir;
             atmPlanetRadius = radius
             objRadius = atmosphereRadius
         else:
-            radius = planet_radius
+            radius = body_radius
             #rendercontext.cpp 785
             atmPlanetRadius = radius
             objRadius = radius
@@ -263,29 +271,36 @@ uniform vec3 v3LightDir;
         invScatterCoeffSum = LVector3d(1.0 / scatterCoeffSum[0], 1.0 / scatterCoeffSum[1], 1.0 / scatterCoeffSum[2])
         extinctionCoeff = scatterCoeffSum + absorptionCoeff
 
-        shape.instance.setShaderInput("atmosphereRadius", *atmosphereRadius)
-        shape.instance.setShaderInput("mieCoeff", mieCoeff)
-        shape.instance.setShaderInput("mieH", mieScaleHeight)
-        shape.instance.setShaderInput("mieK", miePhaseAsymmetry)
-        shape.instance.setShaderInput("rayleighCoeff", *rayleighCoeff)
-        shape.instance.setShaderInput("rayleighH", rayleighScaleHeight)
+        instance.setShaderInput("atmosphereRadius", *atmosphereRadius)
+        instance.setShaderInput("mieCoeff", mieCoeff)
+        instance.setShaderInput("mieH", mieScaleHeight)
+        instance.setShaderInput("mieK", miePhaseAsymmetry)
+        instance.setShaderInput("rayleighCoeff", *rayleighCoeff)
+        instance.setShaderInput("rayleighH", rayleighScaleHeight)
         # Color of sun
-        shape.instance.setShaderInput("scatterCoeffSum", *scatterCoeffSum)
-        shape.instance.setShaderInput("invScatterCoeffSum", *invScatterCoeffSum)
-        shape.instance.setShaderInput("extinctionCoeff", *extinctionCoeff)
+        instance.setShaderInput("scatterCoeffSum", *scatterCoeffSum)
+        instance.setShaderInput("invScatterCoeffSum", *invScatterCoeffSum)
+        instance.setShaderInput("extinctionCoeff", *extinctionCoeff)
 
-    def update_shader_shape(self, shape, appearance):
-        planet_radius = self.parameters.planet_radius
+    def update(self, shape, instance, camera_pos, camera_rot):
+        body = self.parameters.body
+        if body.lights is None or len(body.lights.lights) == 0:
+            print("No light source for scattering")
+            return
+        light_source = body.lights.lights[0].source
+        body_radius = self.parameters.body_radius
         if self.atmosphere:
             #render.cpp 7193
             radius = self.parameters.radius
         else:
-            radius = planet_radius
-        factor = 1.0 / (shape.owner.scene_scale_factor * radius)
+            radius = body_radius
+        factor = 1.0 / (shape.owner.scene_anchor.scene_scale_factor * radius)
 
-        light_dir = self.parameters.planet.vector_to_star
-        shape.instance.setShaderInput("v3OriginPos", shape.owner.rel_position * shape.owner.scene_scale_factor)
-        shape.instance.setShaderInput("v3CameraPos", -shape.owner.rel_position / radius)
+        light_dir = light_source.anchor.get_local_position() - body.anchor.get_local_position()
+        light_dir.normalize()
 
-        shape.instance.setShaderInput("v3LightDir", *light_dir)
-        shape.instance.setShaderInput("model_scale", factor)
+        instance.setShaderInput("v3OriginPos", shape.owner.anchor.rel_position * shape.owner.scene_anchor.scene_scale_factor)
+        instance.setShaderInput("v3CameraPos", -shape.owner.anchor.rel_position / radius)
+
+        instance.setShaderInput("v3LightDir", *light_dir)
+        instance.setShaderInput("model_scale", factor)

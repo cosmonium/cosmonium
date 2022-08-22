@@ -252,7 +252,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'Rings':
             rings_data = value
         elif key == 'Atmosphere':
-            pass #(atmosphere, clouds) = instanciate_atmosphere(value)
+            (atmosphere, clouds) = instanciate_atmosphere(value)
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':
@@ -333,19 +333,16 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
                           shader=RenderingShader(lighting_model=lighting_model))
     body = ReflectiveBody(names=names, source_names=[],
                           radius=radius,
-                          surface=surface,
+                          #surface=surface,
                           oblateness=oblateness,
                           orbit=orbit,
                           rotation=rotation,
                           atmosphere=atmosphere,
                           clouds=clouds,
                           point_color=point_color)
+    body.add_surface(surface)
     body.albedo = albedo
     body.body_class = body_class
-    if atmosphere is not None:
-        atmosphere.add_shape_object(surface)
-        if clouds is not None:
-            atmosphere.add_shape_object(clouds)
     if rings_data is not None:
         body = body.get_or_create_system()
         rings = instanciate_rings(names, rings_data, body)
