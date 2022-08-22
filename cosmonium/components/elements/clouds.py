@@ -63,25 +63,25 @@ class Clouds(EllipsoidFlatSurface):
         self.set_shown(settings.show_clouds)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        if not self.instance_ready: return
-        self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
+        if self.instance_ready:
+            self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
-        inside = self.body.anchor.distance_to_obs < self.radius
-        if self.inside != inside:
-            if inside:
-                self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
-                self.instance.setAttrib(DepthOffsetAttrib.make(0))
-                if self.appearance.transparency:
-                    self.instance.set_depth_write(True)
-            else:
-                self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
-                if settings.use_inverse_z:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(-1))
+            inside = self.body.anchor.distance_to_obs < self.radius
+            if self.inside != inside:
+                if inside:
+                    self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
+                    self.instance.setAttrib(DepthOffsetAttrib.make(0))
+                    if self.appearance.transparency:
+                        self.instance.set_depth_write(True)
                 else:
-                    self.instance.setAttrib(DepthOffsetAttrib.make(1))
-                if self.appearance.transparency:
-                    self.instance.set_depth_write(False)
-            self.inside = inside
+                    self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullClockwise))
+                    if settings.use_inverse_z:
+                        self.instance.setAttrib(DepthOffsetAttrib.make(-1))
+                    else:
+                        self.instance.setAttrib(DepthOffsetAttrib.make(1))
+                    if self.appearance.transparency:
+                        self.instance.set_depth_write(False)
+                self.inside = inside
         return EllipsoidFlatSurface.update_instance(self, scene_manager, camera_pos, camera_rot)
 
     def remove_instance(self):
