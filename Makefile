@@ -1,6 +1,7 @@
 PLATFORM=
 TARGET_PLATFORM=
 PYTHON_VERSION=3
+PYTHON_ABI=cp38-cp38
 PYTHON=python$(PYTHON_VERSION)
 SOURCE_TARGET=build
 SOURCE_OPTIONS=
@@ -23,11 +24,6 @@ ifneq ($(COUNT),)
   endif
 endif
 
-ifeq ($(RELEASE),1)
-    PYTHON_VERSION=3.7
-	SOURCE_OPTIONS=--clean
-endif
-
 ifeq ($(PLATFORM),)
     ifeq ($(OS),Windows_NT)
         ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
@@ -43,7 +39,7 @@ ifeq ($(PLATFORM),)
     else
         UNAME_S = $(shell uname -s)
         ifeq ($(UNAME_S),Linux)
-            PLATFORM_BASE=manylinux2014
+            PLATFORM_BASE=linux
             UNAME_P = $(shell uname -p)
             ifeq ($(UNAME_P),x86_64)
                PLATFORM=$(PLATFORM_BASE)_x86_64
@@ -64,6 +60,7 @@ endif
 ifeq ($(PLATFORM),win_amd64)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)-x64/python/python.exe
     OS_SDK=7.1
+    PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
 endif
@@ -71,14 +68,14 @@ endif
 ifeq ($(PLATFORM),win32)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)/python/python.exe
     OS_SDK=7.1
+    PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
 endif
 
-ifneq ($(findstring manylinux,$(PLATFORM)),)
-    ifeq ($(RELEASE),1)
-        SOURCE_TARGET=build-manylinux2014
-    endif
+ifneq ($(findstring manylinux2014,$(PLATFORM)),)
+    SOURCE_TARGET=build-manylinux2014
+    PYTHON_VERSION=3.7
 endif
 
 ifeq ($(PLATFORM),macosx_10_9_x86_64)
@@ -98,9 +95,17 @@ ifeq ($(TARGET_PLATFORM),)
   TARGET_PLATFORM=$(PLATFORM)
 endif
 
-PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-cp37-cp37m-$(TARGET_PLATFORM).whl
+ifeq ($(PYTHON_VERSION),3.7)
+  PYTHON_ABI=cp37-cp37m
+endif
 
-build: build-source build-version update-mo update-data-mo
+ifeq ($(PYTHON_VERSION),3.8)
+  PYTHON_ABI=cp38-cp38
+endif
+
+PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
+
+build: build-version build-source update-mo update-data-mo
 
 build-source:
 	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON="$(PYTHON)" PYTHON_VERSION=${PYTHON_VERSION} OPTIONS="$(SOURCE_OPTIONS)"
@@ -130,6 +135,7 @@ update-data-mo:
 
 build-version:
 ifneq ($(VERSION),)
+	@echo 'Cosmonium version $(VERSION)'
 	@echo 'version=$(VERSION)' > cosmonium/buildversion.py
 else
 	@rm -f cosmonium/buildversion.py
@@ -138,7 +144,6 @@ endif
 clean:
 	@cd source && "$(MAKE)" clean
 
-ifeq ($(RELEASE),1)
 BUILD_REQ:=
 
 ifeq ($(REQUIREMENTS),)
@@ -162,12 +167,6 @@ bapp: build-version $(BUILD_REQ)
 bdist: build-version $(BUILD_REQ)
 	@echo "Building for $(TARGET_PLATFORM)"
 	$(PYTHON) setup.py bdist_apps -p $(TARGET_PLATFORM) -r $(REQUIREMENTS)
-else
-bapp:
-	@echo "bapp can only be invoked in RELEASE mode"
-bdist:
-	@echo "bdist can only be invoked in RELEASE mode"
-endif
 
 bclean:
 	rm -rf build/
