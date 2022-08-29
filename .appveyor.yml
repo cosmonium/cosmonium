@@ -1,0 +1,137 @@
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+
+# version format
+# version: 1.0.{build}
+
+# Do not build on tags (GitHub, Bitbucket, GitLab, Gitea)
+skip_tags: true
+
+# Start builds on tags only (GitHub, BitBucket, GitLab, Gitea)
+skip_non_tags: false
+
+# Maximum number of concurrent jobs for the project
+max_jobs: 1
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
+# Build worker image (VM template)
+image: Visual Studio 2015
+
+# scripts that are called at very beginning, before repo cloning
+init:
+- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %platform%
+
+# clone directory
+clone_folder: c:\projects\cosmonium
+
+# fetch repository as zip archive
+shallow_clone: false
+
+# scripts that run after cloning repository
+install:
+  - cmd: |
+         git submodule sync --recursive
+         git submodule update --init --force --recursive
+  - ps: |
+        $wc = New-Object System.Net.WebClient
+        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/Panda3D-1.11.0.dev2725-py3.7-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
+        c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe /S /D="C:\Panda3D" | Out-Null
+  - ps: |
+        $wc = New-Object System.Net.WebClient
+        $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.10/panda3d-1.10.10-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
+        Expand-Archive -Path c:\projects\cosmonium\thirdparty-tools.zip
+        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.10/thirdparty -Destination c:\Panda3D\thirdparty
+  - ps: |
+        $wc = New-Object System.Net.WebClient
+        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/panda3d-1.11.0.dev2725+fp64-cp37-cp37m-win_amd64.whl", "c:\projects\cosmonium\panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl")
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+# build platform, i.e. x86, x64, Any CPU. This setting is optional.
+platform: x64
+
+environment:
+  PATH: 'C:\Python37-x64;%PATH%'
+
+# scripts to run before build
+before_build:
+
+# to run your custom scripts instead of automatic MSBuild
+build_script:
+  - cmd: |
+         cd source
+         c:\panda3d\python\python.exe ../tools/p3d_module_builder/build.py --windows-sdk 8.1
+         mv *.pyd ../lib/
+         cd ..
+  - cmd: |
+         echo panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl > requirements-tmp.txt
+         cat requirements.txt >> requirements-tmp.txt
+         python setup.py bdist_apps -p win_amd64 -r requirements-tmp.txt
+
+# scripts to run after build (working directory and environment changes are persisted from the previous steps)
+after_build:
+
+#---------------------------------#
+#       tests configuration       #
+#---------------------------------#
+
+# to run your custom scripts instead of automatic tests
+test_script:
+  - ps: |
+        cd build/win_amd64
+        .\cosmonium.exe --test-start | Out-Null
+        cat c:/Users/appveyor/AppData/Local/cosmonium/output.log
+        cp c:/Users/appveyor/AppData/Local/cosmonium/output.log c:/projects/cosmonium/output.log
+
+# scripts to run after tests
+after_test:
+
+# to disable automatic tests
+#test: off
+
+
+#---------------------------------#
+#      artifacts configuration    #
+#---------------------------------#
+
+artifacts:
+  - path: output.log
+  - path: 'dist/*.exe'
+
+
+#---------------------------------#
+#     deployment configuration    #
+#---------------------------------#
+
+# providers: Local, FTP, WebDeploy, AzureCS, AzureBlob, S3, NuGet, Environment
+# provider names are case-sensitive!
+deploy:
+    # Deploy to GitHub Releases
+  - provider: GitHub
+    artifact: /build\/.*\.exe/
+    draft: false
+    prerelease: false
+    on:
+      branch: master                # release from master branch only
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+
+# scripts to run before deployment
+before_deploy:
+
+# scripts to run after deployment
+after_deploy:
+
+# to run your custom scripts instead of provider deployments
+deploy_script:
+
+
+#---------------------------------#
+#        global handlers          #
+#---------------------------------#
+
