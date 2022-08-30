@@ -59,7 +59,7 @@ endif
 
 ifeq ($(PLATFORM),win_amd64)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)-x64/python/python.exe
-    OS_SDK=7.1
+    OS_SDK=8.1
     PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
@@ -67,7 +67,7 @@ endif
 
 ifeq ($(PLATFORM),win32)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)/python/python.exe
-    OS_SDK=7.1
+    OS_SDK=8.1
     PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
     SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
