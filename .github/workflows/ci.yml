@@ -101,20 +101,23 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Install dependencies
+    - name: Install pip
       run: |
         python -m pip install --upgrade pip
-        pip install panda3d>=1.10.7
+    - name: Install Panda3D wheel
+      shell: powershell
+      run: |
+        $wc = New-Object System.Net.WebClient
+        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/panda3d-1.11.0.dev2725+fp64-cp37-cp37m-win_amd64.whl", "panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl")
+        python -m pip install panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl
     - name: Build binary
       run: |
-        echo "panda3d" > requirements-tmp.txt
+        echo "panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl" > requirements-tmp.txt
         cat requirements.txt >> requirements-tmp.txt
-        python setup.py bdist_apps -p win_amd64,win32 -r requirements-tmp.txt
+        python setup.py bdist_apps -p win_amd64 -r requirements-tmp.txt
     - name: Test binary
       run: |
         cd build/win_amd64
-        ./cosmonium.exe --test-start | Out-Null
-        cd ../win32
         ./cosmonium.exe --test-start | Out-Null
     - name: Upload logs
       if: ${{ always() }}
