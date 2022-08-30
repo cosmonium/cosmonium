@@ -25,7 +25,7 @@
 #include "quadTreeNodeCollection.h"
 #include "quadTreeNode.h"
 
-QuadTreeNode::QuadTreeNode(PyObject *patch, int lod, int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds) :
+QuadTreeNode::QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds) :
     patch(patch),
     lod(lod),
     density(density),

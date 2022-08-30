@@ -49,7 +49,7 @@ PUBLISHED:
     QuadTreeNodeCollection to_merge;
     QuadTreeNodeCollection to_show;
     QuadTreeNodeCollection to_remove;
-    int max_lod;
+    unsigned int max_lod;
 };
 
 #endif //LODRESULT_H

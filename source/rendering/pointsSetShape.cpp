@@ -141,7 +141,7 @@ PointsSetShape::add_objects(SceneManager *scene_manager, SceneAnchorCollection *
   vdata->set_num_rows(scene_anchors->get_num_scene_anchors());
   geom_points->reserve_num_vertices(scene_anchors->get_num_scene_anchors());
   create_writers();
-  for (unsigned int i = 0; i < scene_anchors->get_num_scene_anchors(); ++i) {
+  for (int i = 0; i < scene_anchors->get_num_scene_anchors(); ++i) {
     add_object(scene_anchors->get_scene_anchor(i));
   }
 }

@@ -34,7 +34,7 @@ class LodResult;
 class QuadTreeNode : public ReferenceCount
 {
 PUBLISHED:
-  QuadTreeNode(PyObject *patch, int lod, int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds);
+  QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds);
   virtual ~QuadTreeNode(void);
 
   void set_shown(bool shown);
@@ -63,8 +63,8 @@ PUBLISHED:
   MAKE_PROPERTY(bounds, get_bounds);
 
 PUBLISHED:
-  int lod;
-  int density;
+  unsigned int lod;
+  unsigned int density;
   LPoint3d centre;
   double length;
   LVector3d normal;
