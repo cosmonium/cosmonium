@@ -139,7 +139,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   const RenderState *state = world.get_state();
   clear_scene();
   std::vector<PT(SceneAnchor)> background_resolved;
-  for (unsigned int i = 0; i < resolveds.get_num_scene_anchors(); ++i) {
+  for (int i = 0; i < resolveds.get_num_scene_anchors(); ++i) {
       SceneAnchor *resolved = resolveds[i];
       AnchorBase *anchor = resolved->get_anchor();
       if (!anchor->visible) {
@@ -210,7 +210,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   }
   auto current_region_it = regions.begin();
   SceneRegion * current_region= *current_region_it;
-  for (unsigned int i = 0; i < visibles.get_num_scene_anchors(); ++i) {
+  for (int i = 0; i < visibles.get_num_scene_anchors(); ++i) {
       SceneAnchor *visible = visibles[i];
       AnchorBase *anchor = visible->get_anchor();
       if (anchor->resolved) {
