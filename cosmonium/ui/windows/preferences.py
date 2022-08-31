@@ -50,15 +50,14 @@ class Preferences(ParamEditor):
                                 ParametersGroup(_('Orbits'), self.make_orbits()),
                                 ParametersGroup(_('Labels'), self.make_labels()),
                                 ParametersGroup(_('Render'), self.make_render()),
+                                ParametersGroup(_('UI'), self.make_ui()),
                                 ParametersGroup(_('Advanced'), self.make_advanced()),
                                 ParametersGroup(_('Debug'), self.make_debug()),
                                 ])
 
 
     def make_general(self):
-        return [ParametersGroup(_('UI'),
-                                []),
-                ParametersGroup(_('Mouse'),
+        return [ParametersGroup(_('Mouse'),
                                 [SettingParameter(_('Invert mouse wheel'), 'invert_wheel', SettingParameter.TYPE_BOOL),
                                  ]),
                 ParametersGroup(_('Keyboard'),
@@ -139,7 +138,7 @@ class Preferences(ParamEditor):
                                  ]),
                 ]
 
-    def make_advanced(self):
+    def make_ui(self):
         return [ParametersGroup(_('UI'),
                                 [SettingParameter(_("UI Scale"), 'ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                                  SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
@@ -154,7 +153,10 @@ class Preferences(ParamEditor):
                                 [SettingParameter(_("Query size"), 'query_text_size', UserParameter.TYPE_INT, [4, 32]),
                                  SettingParameter(_("Suggestion size"), 'query_suggestion_text_size', UserParameter.TYPE_INT, [4, 32]),
                                 ]),
-                ParametersGroup(_('Render'),
+                ]
+
+    def make_advanced(self):
+        return [ParametersGroup(_('Render'),
                                 [SettingParameter(_("Use horizon culling"), 'use_horizon_culling', UserParameter.TYPE_BOOL),
                                  SettingParameter(_("Cull far patches"), 'cull_far_patches', UserParameter.TYPE_BOOL),
                                  SettingParameter(_("Cull far patches threshold"), 'cull_far_patches_threshold', UserParameter.TYPE_INT, [5, 25]),
