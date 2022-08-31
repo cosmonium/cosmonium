@@ -261,7 +261,8 @@ win_fs_width = 0
 win_fs_height = 0
 
 # Application paths and files
-appdirs = AppDirs(app_name)
+# We are setting appauthor to False, with None AppDirs uses appname for it
+appdirs = AppDirs(appname=app_name, appauthor=False)
 cache_dir = appdirs.user_cache_dir
 config_dir = appdirs.user_config_dir
 data_dir = appdirs.user_data_dir
