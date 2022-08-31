@@ -140,7 +140,8 @@ class Preferences(ParamEditor):
 
     def make_ui(self):
         return [ParametersGroup(_('UI'),
-                                [SettingParameter(_("UI Scale"), 'ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
+                                [SettingParameter(_("UI scale with DPI"), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
+                                 SettingParameter(_("Custom UI scale"), 'custom_ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                                  SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
                                  SettingParameter(_("UI text size"), 'ui_font_size', UserParameter.TYPE_INT, [4, 32]),
                                 ]),

@@ -80,6 +80,10 @@ class Gui(object):
         else:
             self.screen_width = 1
             self.screen_height = 1
+        if settings.ui_scale_dpi_aware and not self.cosmonium.app_config.test_start:
+            settings.ui_scale = cosmonium.pipe.display_zoom
+        else:
+            settings.ui_scale = settings.custom_ui_scale
         self.calc_scale()
         font = fontsManager.get_font(settings.hud_font, Font.STYLE_NORMAL)
         if font is not None:

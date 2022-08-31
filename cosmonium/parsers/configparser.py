@@ -88,16 +88,19 @@ class ConfigParser(YamlParser):
         return data
 
     def decode_ui_general(self, data):
-        settings.ui_scale = data.get('scale', settings.ui_scale)
+        settings.custom_ui_scale = data.get('scale', settings.custom_ui_scale)
         # First version of ui_scale was a tuple
-        if isinstance(settings.ui_scale, list):
-            settings.ui_scale = settings.ui_scale[0]
+        if isinstance(settings.custom_ui_scale, list):
+            settings.custom_ui_scale = settings.custom_ui_scale[0]
+        # Set default value DPI aware scaling to True if there is no custom scaling
+        settings.ui_scale_dpi_aware = data.get('dpi-aware', settings.custom_ui_scale == 1.0)
         settings.last_script_path = data.get('last-script-path', settings.last_script_path)
         settings.ui_font_size = data.get('text-size', settings.ui_font_size)
 
     def encode_ui_general(self):
         data = {}
-        data['scale'] = settings.ui_scale
+        data['dpi-aware'] = settings.ui_scale_dpi_aware
+        data['scale'] = settings.custom_ui_scale
         data['last-script-path'] = settings.last_script_path
         data['text-size'] = settings.ui_font_size
         return data

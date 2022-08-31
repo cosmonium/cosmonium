@@ -212,6 +212,8 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+ui_scale_dpi_aware = True
+custom_ui_scale = 1.0
 ui_scale = 1.0
 show_hud = True
 hud_text_size = 12
