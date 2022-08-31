@@ -86,8 +86,8 @@ test_script:
   - ps: |
         cd build/win_amd64
         .\cosmonium.exe --test-start | Out-Null
-        cat c:/Users/appveyor/AppData/Local/cosmonium/output.log
-        cp c:/Users/appveyor/AppData/Local/cosmonium/output.log c:/projects/cosmonium/output.log
+        cat c:/Users/appveyor/AppData/Local/Cosmonium/Logs/output.log
+        cp c:/Users/appveyor/AppData/Local/Cosmonium/Logs/output.log c:/projects/cosmonium/output.log
 
 # scripts to run after tests
 after_test:

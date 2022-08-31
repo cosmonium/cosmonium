@@ -42,6 +42,10 @@ for (index, arg) in enumerate(sys.argv):
         platform = sys.argv[index + 1]
         if platform.startswith('macos'):
             log_filename = '$HOME/Library/Logs/cosmonium/output.log'
+        elif platform.startswith('win'):
+            log_filename = '$USER_APPDATA/Cosmonium/Logs/output.log'
+        else:
+            log_filename = '$HOME/.cache/cosmonium/log/output.log'
         break
 
 for (index, arg) in enumerate(sys.argv):

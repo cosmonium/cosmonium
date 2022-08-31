@@ -35,7 +35,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: linux-logs
-        path: ~/.local/share/cosmonium/output.log
+        path: ~/.cache/cosmonium/log/output.log
     - name: 'Upload development build'
       if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
@@ -124,7 +124,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: windows-logs
-        path: ~/AppData/Local/cosmonium/output.log
+        path: ~/AppData/Local/Cosmonium/Logs/output.log
     - name: 'Upload development build'
       if: false && github.ref == 'refs/heads/develop'
       uses: "marvinpinto/action-automatic-releases@latest"
