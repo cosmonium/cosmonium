@@ -540,17 +540,21 @@ class Cosmonium(CosmoniumBase):
             self.scene_manager.init_camera(self.c_camera_holder, self.cam)
 
         if settings.render_sprite_points:
+            if settings.point_scale_dpi_aware and not self.app_config.test_start:
+                screen_point_scale = self.pipe.display_zoom
+            else:
+                screen_point_scale = settings.custom_point_scale
             self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
             self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
             if self.scene_manager.has_regions():
-                points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=settings.ui_scale)
+                points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
             else:
-                points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=settings.ui_scale))
+                points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
             self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
             if self.scene_manager.has_regions():
-                points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=settings.ui_scale)
+                points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
             else:
-                points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=settings.ui_scale))
+                points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
             self.haloset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.halos_sprite, background=settings.halo_depth)
             self.pointset.configure(self.scene_manager)
             self.haloset.configure(self.scene_manager)

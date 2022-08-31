@@ -71,6 +71,8 @@ class ConfigParser(YamlParser):
         settings.show_equatorial_grid = data.get('equatorial-grid', settings.show_equatorial_grid)
         settings.global_ambient = data.get('global-ambient', settings.global_ambient)
         settings.lowest_app_magnitude = data.get('limit-magnitude', settings.lowest_app_magnitude)
+        settings.point_scale_dpi_aware = data.get('point-scale-dpi-aware', settings.point_scale_dpi_aware)
+        settings.custom_point_scale = data.get('point-scale', settings.custom_point_scale)
 
     def encode_render(self):
         data = {}
@@ -85,6 +87,8 @@ class ConfigParser(YamlParser):
         data['reference-axis'] = settings.show_reference_axis
         data['global-ambient'] = settings.global_ambient
         data['limit-magnitude'] = settings.lowest_app_magnitude
+        data['point-scale-dpi-aware'] = settings.point_scale_dpi_aware
+        data['point-scale'] = settings.custom_point_scale
         return data
 
     def decode_ui_general(self, data):

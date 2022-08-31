@@ -178,6 +178,9 @@ max_app_magnitude = 0.0
 min_point_size = 4
 mag_pixel_scale = 2
 min_body_size = 2
+point_scale_dpi_aware = True
+custom_point_scale = 1.0
+screen_point_scale = 1.0
 
 smallest_glare_mag = 1.0
 largest_glare_mag = -2.0

@@ -136,6 +136,10 @@ class Preferences(ParamEditor):
                                 [SettingParameter(_('Rotation axis'), 'show_rotation_axis', SettingParameter.TYPE_BOOL),
                                  SettingParameter(_('Reference frame'), 'show_reference_axis', SettingParameter.TYPE_BOOL),
                                  ]),
+                ParametersGroup(_('Point-like objects'),
+                                [SettingParameter(_('scale with DPI'), 'point_scale_dpi_aware', SettingParameter.TYPE_BOOL),
+                                 SettingParameter(_("Custom point scale"), 'custom_point_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
+                                 ]),
                 ]
 
     def make_ui(self):
