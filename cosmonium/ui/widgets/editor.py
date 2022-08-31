@@ -217,7 +217,7 @@ class ParamEditor():
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
             self.add_parameters(frame, sizer, section.parameters)
-            sizer.update((self.width, self.height))
+            sizer.update((self.width * settings.ui_scale, self.height * settings.ui_scale))
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
             self.layout.frame.addPage(frame, section.name)
