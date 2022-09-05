@@ -18,14 +18,19 @@
 #
 
 
-from panda3d.core import TextNode
+from panda3d.core import TextNode, LVector2
+from direct.gui import DirectGuiGlobals as DGG
+from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 from direct.gui.DirectLabel import DirectLabel
+from directguilayout.gui import Sizer
+from directguilayout.gui import Widget as SizerWidget
 
+from ... import settings
 from ...fonts import fontsManager, Font
 
 from ..object_info import ObjectInfo
-from ..widgets.layout import Layout
 from ..widgets.window import Window
+from ..widgets.direct_widget_container import DirectWidgetContainer
 
 
 class InfoWindow():
@@ -33,8 +38,11 @@ class InfoWindow():
         self.window = None
         self.layout = None
         self.last_pos = None
-        self.scale = scale
         self.font_size = font_size
+        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
+        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
+        self.title_scale = (self.font_size * settings.ui_scale * 1.2, self.font_size * settings.ui_scale * 1.2)
+        self.borders = (self.font_size / 4.0, 0, self.font_size / 4.0, self.font_size / 4.0)
         self.owner = owner
         self.font_normal = fontsManager.get_font(font_family, Font.STYLE_NORMAL)
         if self.font_normal is not None:
@@ -44,19 +52,48 @@ class InfoWindow():
             self.font_bold = self.font_bold.load()
         if self.font_bold is None:
             self.font_bold = self.font_normal
+        self.width = settings.default_window_width / 2
+        self.height = settings.default_window_height
 
-    def create_layout(self, body, rows):
-        self.layout = Layout(2, rows,
-                             parent=None,
-                             frameColor=(0.33, 0.33, 0.33, .66))
+    def create_layout(self, body):
+        sizer = Sizer("vertical")
+        hsizer = Sizer("horizontal", prim_limit=2, gaps=(round(self.font_size * .5), round(self.font_size * .5)))
+        sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
+        self.layout = DirectWidgetContainer(DirectScrolledFrame(state=DGG.NORMAL,
+                                                                frameColor=(0.33, 0.33, 0.33, .66),
+                                                                scrollBarWidth=self.font_size,
+                                                                horizontalScroll_relief=DGG.FLAT,
+                                                                verticalScroll_relief=DGG.FLAT))
+        self.layout.frame.setPos(0, 0, 0)
+        self.make_entries(self.layout.frame.getCanvas(), hsizer, body)
+        sizer.update((self.width, self.height))
+        self.layout.frame['frameSize'] = (0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0)
+        size = sizer.min_size
+        self.layout.frame['canvasSize'] = (0, size[0], -size[1], 0)
         title = "Body information"
-        self.window = Window(title, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window.register_scroller(self.layout.frame)
 
-    def get_info_for(self, body):
-        titles = []
-        infos = []
-        if body is None:
-            return (titles, infos)
+    def make_title_entry(self, frame, title):
+        title_label = DirectLabel(parent=frame,
+                                  text=title,
+                                  text_align=TextNode.ALeft,
+                                  text_scale=self.title_scale,
+                                  text_font=self.font_bold,
+                                  frameColor=(0, 0, 0, 0))
+        return title_label
+
+    def make_text_entry(self, frame, text):
+        label = DirectLabel(parent=frame,
+                            text=text,
+                            text_align=TextNode.ALeft,
+                            text_scale=self.text_scale,
+                            text_font=self.font_normal,
+                            frameColor=(0, 0, 0, 0))
+        return label
+
+    def make_entries(self, frame, hsizer, body):
+        borders = (0, 0, 0, 0)
         info = ObjectInfo.get_info_for(body)
         for entry in info:
             if entry is None: continue
@@ -67,55 +104,42 @@ class InfoWindow():
             if title is None:
                 pass
             elif value is None:
-                titles.append(title)
-                infos.append(None)
+                title_label = self.make_title_entry(frame, title)
+                title_widget = SizerWidget(title_label)
+                hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
+                hsizer.add((0, 0))
             else:
                 if isinstance(value, str):
-                    titles.append(title)
-                    infos.append(value)
+                    title_label = self.make_text_entry(frame, title)
+                    title_widget = SizerWidget(title_label)
+                    value_label = self.make_text_entry(frame, value)
+                    value_widget = SizerWidget(value_label, borders)
+                    hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
+                    hsizer.add(value_widget, borders=borders, alignments=("min", "left"))
                 else:
-                    titles.append(title)
-                    infos.append(None)
+                    title_label = self.make_title_entry(frame, title)
+                    title_widget = SizerWidget(title_label)
+                    hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
+                    hsizer.add((0, 0))
                     for entry in value:
                         if len(entry) != 2:
                             print("Invalid entry for", title, entry)
                             continue
                         (title, value) = entry
-                        titles.append(title)
-                        infos.append(value)
-        return (titles, infos)
+                        title_label = self.make_text_entry(frame, title)
+                        title_widget = SizerWidget(title_label)
+                        value_label = self.make_text_entry(frame, value)
+                        value_widget = SizerWidget(value_label)
+                        hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
+                        hsizer.add(value_widget, borders=borders, alignments=("min", "left"))
 
     def show(self, body):
         if self.shown():
             print("Info panel already shown")
             return
-        (titles, infos) = self.get_info_for(body)
-        self.create_layout(body, len(infos))
-        for (i, (title, info)) in enumerate(zip(titles, infos)):
-            if title is not None:
-                if info is not None:
-                    title_widget = DirectLabel(text=title,
-                                               text_align=TextNode.ALeft,
-                                               text_scale=tuple(self.scale * self.font_size),
-                                               text_font=self.font_normal,
-                                               frameColor=(0, 0, 0, 0))
-                else:
-                    title_widget = DirectLabel(text=title,
-                                               text_align=TextNode.ALeft,
-                                               text_scale=tuple(self.scale * self.font_size * 1.2),
-                                               text_font=self.font_bold,
-                                               frameColor=(0, 0, 0, 0))
-                self.layout.set_child(0, i, title_widget)
-            if info is not None:
-                info_widget = DirectLabel(text=info,
-                                           text_align=TextNode.ALeft,
-                                           text_scale=tuple(self.scale * self.font_size),
-                                           text_font=self.font_normal,
-                                           frameColor=(0, 0, 0, 0))
-                self.layout.set_child(1, i, info_widget)
-        self.layout.recalc_positions()
+        self.create_layout(body)
         if self.last_pos is None:
-            self.last_pos = (-self.layout.frame['frameSize'][1] / 2, 0, -self.layout.frame['frameSize'][3] / 2)
+            self.last_pos = (0, 0, -100)
         self.window.setPos(self.last_pos)
         self.window.update()
 
