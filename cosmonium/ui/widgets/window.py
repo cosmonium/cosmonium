@@ -150,7 +150,7 @@ class Window():
 
     def do_mouse_scroll(self, obj, dir, data):
         if isinstance(obj, DirectSlider) or isinstance(obj, DirectScrollBar):
-            obj.setValue(obj.getValue() + dir * obj["pageSize"] * 0.1)
+            obj.setValue(obj.getValue() + dir * obj["pageSize"])
 
     def start_drag(self, event):
         if base.mouseWatcherNode.has_mouse():
