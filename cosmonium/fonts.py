@@ -82,11 +82,15 @@ class FontsManager(object):
         entry = self.families.get(family, None)
         if entry:
             for font in entry:
+                if font.style == style:
+                    return font
+            print(f"Requested style not found for '{family}', search similar style")
+            for font in entry:
                 if (font.style & style) == style:
                     return font
-            print("Requested style not found for '%s" % family)
+            print(f"Requested style not found for '{family}'")
         else:
-            print("Font family '%s' unknown" % family)
+            print(f"Font family '{family}' unknown")
         return None
 
 fontsManager = FontsManager()
