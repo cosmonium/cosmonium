@@ -145,7 +145,8 @@ class Window():
             if not found_scroller.verticalScroll.isHidden():
                 self.do_mouse_scroll(found_scroller.verticalScroll, dir, None)
             else:
-                self.do_mouse_scroll(found_scroller.horizontalScroll, dir, None)
+                if not found_scroller.verticalScroll.isHidden():
+                    self.do_mouse_scroll(found_scroller.horizontalScroll, dir, None)
 
     def do_mouse_scroll(self, obj, dir, data):
         if isinstance(obj, DirectSlider) or isinstance(obj, DirectScrollBar):
