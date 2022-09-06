@@ -377,7 +377,7 @@ class CosmoniumBase(ShowBase):
                 if self.gui is not None:
                     self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
         else:
-            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
+            self.gui.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.gui.show_select_screenshots()
 
     def set_screenshots_path(self, path):
@@ -759,7 +759,7 @@ class Cosmonium(CosmoniumBase):
             else:
                 print("Could not save filename")
         else:
-            self.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
+            self.gui.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.gui.show_select_screenshots()
 
     def select_body(self, body):
