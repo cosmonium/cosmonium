@@ -61,6 +61,8 @@ class OpenGLConfig:
             data.append("textures-power-2 none")
         if settings.use_hardware_sprites:
             data.append("hardware-point-sprites #t")
+        else:
+            data.append("hardware-point-sprites #f")
         if settings.red_blue_stereo:
             data.append("red-blue-stereo #t")
         elif settings.side_by_side_stereo:

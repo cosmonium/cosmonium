@@ -63,7 +63,11 @@ class Galaxy(DeepSpaceObject):
         self.shape_type = shape_type
         shader = None
         if shader is None:
-            shader = RenderingShader(lighting_model=FlatLightingModel(), point_control=GalaxyPointControl())
+            if settings.use_hardware_sprites:
+                point_control = GalaxyPointControl()
+            else:
+                point_control = None
+            shader = RenderingShader(lighting_model=FlatLightingModel(), point_control=point_control)
         #Disable color picking as it has huge impact on performance
         shader.color_picking = False
         if appearance is None:
@@ -172,9 +176,9 @@ class GalaxyShapeBase(Shape):
 
     def shape_done(self):
         # Indicates that the attached shader also contro the size of the rendered points
-        attrib = self.instance.getAttrib(ShaderAttrib)
-        attrib2 = attrib.setFlag(ShaderAttrib.F_shader_point_size, True)
-        self.instance.setAttrib(attrib2)
+        if settings.use_hardware_sprites:
+            attrib = self.instance.getAttrib(ShaderAttrib)
+            self.instance.setAttrib(attrib.setFlag(ShaderAttrib.F_shader_point_size, True))
 
     def apply(self):
         self.instance.node().setBounds(OmniBoundingVolume())

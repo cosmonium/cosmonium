@@ -20,12 +20,14 @@
 
 from panda3d.core import GeomNode
 from panda3d.core import OmniBoundingVolume, ShaderAttrib
+
 from .foundation import VisibleObject
 from .appearances import ModelAppearance
 from .shaders.rendering import RenderingShader
 from .shaders.lighting.flat import FlatLightingModel
 from .shaders.point_control import StaticSizePointControl
 from .sprites import SimplePoint, RoundDiskPointSprite
+from . import settings
 
 try:
     from cosmonium_engine import EmissivePointsSetShape, HaloPointsSetShape
@@ -35,6 +37,7 @@ except ImportError as e:
     from .pyrendering.pointsset import EmissivePointsSetShape, HaloPointsSetShape
 
 from .pyrendering.pointsset import PassthroughPointsSetShape, RegionsPointsSetShape
+
 
 class PointsSetShapeObject(VisibleObject):
     default_camera_mask = VisibleObject.DefaultCameraFlag
@@ -47,7 +50,11 @@ class PointsSetShapeObject(VisibleObject):
         self.use_oids = True
         self.background = background
         if shader is None:
-            shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=StaticSizePointControl())
+            if settings.use_hardware_sprites:
+                point_control = StaticSizePointControl()
+            else:
+                point_control = None
+            shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_oids=True, point_control=point_control)
         self.shader = shader
         self.shape = shape
         self.shape.reset()
@@ -82,7 +89,7 @@ class PointsSetShapeObject(VisibleObject):
         shape.instance.set_depth_write(False)
         shape.instance.hide(self.AllCamerasMask)
         shape.instance.show(self.default_camera_mask)
-        if self.use_sizes:
+        if settings.use_hardware_sprites and self.use_sizes:
             attrib = shape.instance.get_attrib(ShaderAttrib)
             shape.instance.setAttrib(attrib.set_flag(ShaderAttrib.F_shader_point_size, True))
 
