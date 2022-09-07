@@ -32,7 +32,7 @@ class ScenePipeline(Pipeline):
         Pipeline.__init__(self, win=None, engine=engine)
         self.screen = None
         self.force_basic_pipeline = False
-        self.basic_pipeline = False
+        self.basic_pipeline = True
         self.framebuffer_srgb = settings.use_srgb
         self.framebuffer_multisamples = 0
         self.render_buffer_multisamples = 0
