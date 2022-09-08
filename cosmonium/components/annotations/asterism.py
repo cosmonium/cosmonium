@@ -138,6 +138,7 @@ class NamedAsterism(LabelledObject):
 
     def create_components(self):
         self.create_label()
+        self.add_component(self.label)
         self.asterism = Asterism(self.get_name())
         self.add_component(self.asterism)
 
