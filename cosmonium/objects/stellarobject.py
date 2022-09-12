@@ -188,7 +188,7 @@ class StellarObject(NamedObject):
         if self.has_reference_axis:
             self.reference_axes = ReferenceAxes(self)
             self.components.add_component(self.reference_axes)
-        if self.has_resolved_halo:
+        if not settings.use_pbr and self.has_resolved_halo:
             self.resolved_halo = Halo(self)
             self.components.add_component(self.resolved_halo)
 

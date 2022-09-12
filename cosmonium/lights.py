@@ -18,9 +18,13 @@
 #
 
 
-from panda3d.core import LVector3
+from math import pi
+
+from panda3d.core import LVector3, LColor
 from panda3d.core import DirectionalLight
 
+from .astro.astro import abs_mag_to_lum
+from .astro import units
 from .datasource import DataSource
 from . import settings
 
@@ -61,8 +65,19 @@ class SurrogateLight:
     def apply(self, instance):
         pass
 
+    def get_illuminance(self):
+        light_color = LColor(self.source.light_color)
+        luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
+        illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+        light_color *= illuminance
+        return light_color
+
     def update(self, instance):
-        light_color = self.source.light_color
+        light_color = LColor(self.source.light_color)
+        if settings.use_pbr:
+            luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
+            illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+            light_color *= illuminance
         instance.setShaderInput("light_dir", *-self.light_direction)
         instance.setShaderInput("light_color", light_color)
         instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)

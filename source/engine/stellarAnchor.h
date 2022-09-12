@@ -71,6 +71,18 @@ PUBLISHED:
 
   virtual double get_apparent_magnitude(void);
 
+  virtual double get_radiant_flux(void);
+
+  virtual double get_radiant_intensity(void);
+
+  virtual double get_radiance(void);
+
+  virtual double get_irradiance(void);
+
+  virtual double get_point_radiance(void);
+
+  virtual double get_point_irradiance(void);
+
   virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
 
   virtual void update(double time, unsigned long int update_id);
@@ -92,6 +104,7 @@ public:
   LQuaterniond _equatorial;
   double _abs_magnitude;
   double _app_magnitude;
+  double reflected;
 
 PUBLISHED:
   double _albedo;

@@ -45,12 +45,14 @@ class Pipeline:
         stage.set_engine(self.graphics_engine)
         stage.update_win_size(self.win_size)
         for request in stage.requires():
-            for prev in reversed(self.ordered_stages[:-1]):
-                if request in stage.provides():
-                    stage.add_source(request, prev, stage.provides()[request])
+            for previous_stage in reversed(self.ordered_stages[:-1]):
+                if request in previous_stage.provides():
+                    print("Add source", request, "from", previous_stage.name, "for", stage.name)
+                    stage.add_source(request, previous_stage)
                     break
             else:
-                print('Missing required stage {request}')
+                print(f'Missing required stage {request}')
+        return stage
 
     def get_stage(self, stage_name):
         return self.stages[stage_name]

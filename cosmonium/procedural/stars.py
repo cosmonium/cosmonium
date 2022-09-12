@@ -44,8 +44,12 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = RenderingShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
+        if settings.use_pbr:
+            luminance = body.anchor.get_radiance()
+        else:
+            luminance = 1.0
         surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
-                              appearance=Appearance(colorScale=body.anchor.point_color,
+                              appearance=Appearance(colorScale=body.anchor.point_color * luminance,
                                                     texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
                                                                                                                  self.size),
                                                                            srgb=False)),

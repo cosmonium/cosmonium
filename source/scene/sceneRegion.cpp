@@ -28,6 +28,7 @@
 #include "dcast.h"
 #include "displayRegion.h"
 #include "graphicsOutput.h"
+#include "renderPass.h"
 #include "sceneAnchor.h"
 #include "sceneManager.h"
 
@@ -46,13 +47,6 @@ SceneRegion::SceneRegion(SceneManager *scene_manager, double near_distance, doub
 
 SceneRegion::~SceneRegion(void)
 {
-}
-
-
-void
-SceneRegion::set_camera_mask(DrawMask flags)
-{
-    cam->set_camera_mask(flags);
 }
 
 
@@ -90,42 +84,38 @@ SceneRegion::merge(SceneRegion *other)
 
 
 void
-SceneRegion::create(GraphicsOutput *target,
+SceneRegion::create(std::vector<PT(RenderPass)> parent_rendering_passes,
     const RenderState *state,
     CameraHolder *camera_holder,
-    DrawMask camera_mask,
     bool inverse_z,
     double section_near,
     double section_far,
     int sort_index)
 {
-    this->target = target;
     root.set_state(state);
     for (auto body : bodies) {
         body->get_instance()->reparent_to(root);
     }
-    cam = new Camera("region-cam");
-    cam->set_camera_mask(camera_mask);
     PT(PerspectiveLens) lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
     if (inverse_z) {
         lens->set_near_far(far_distance * 1.01, near_distance * 0.99);
     } else {
         lens->set_near_far(near_distance * 0.99, far_distance * 1.01);
     }
-    cam->set_lens(lens);
-    cam_np = root.attach_new_node(cam);
-    cam_np.set_quat(camera_holder->get_camera().get_quat());
-    region = target->make_display_region(0, 1, 0, 1);
-    region->disable_clears();
-    // region.setClearColorActive(1)
-    // region.setClearColor((1, 0, 0, 1))
-    region->set_camera(cam_np);
-    region->set_scissor_enabled(false);
-    region->set_sort(sort_index);
-    if (inverse_z) {
-        region->set_depth_range(section_far, section_near);
-    } else {
-        region->set_depth_range(section_near, section_far);
+    for (auto parent_rendering_pass : parent_rendering_passes) {
+      PT(RenderPass) rendering_pass = new RenderPass(*parent_rendering_pass);
+      rendering_pass->camera.reparent_to(root);
+      rendering_pass->create();
+      DCAST(Camera, rendering_pass->camera.node())->set_lens(lens);
+      rendering_pass->camera.set_pos(camera_holder->get_camera().get_pos());
+      rendering_pass->camera.set_quat(camera_holder->get_camera().get_quat());
+      rendering_pass->display_region->set_sort(sort_index);
+      if (inverse_z) {
+        rendering_pass->display_region->set_depth_range(section_far, section_near);
+      } else {
+        rendering_pass->display_region->set_depth_range(section_near, section_far);
+      }
+      rendering_passes.push_back(rendering_pass);
     }
 }
 
@@ -133,20 +123,24 @@ SceneRegion::create(GraphicsOutput *target,
 void
 SceneRegion::remove(void)
 {
-    target->remove_display_region(region);
+  for (auto rendering_pass : rendering_passes) {
+    rendering_pass->remove();
+  }
+  rendering_passes.clear();
 }
 
 
 PT(CollisionHandlerQueue)
 SceneRegion::pick_scene(LPoint2 mpos)
 {
+  NodePath cam_np = rendering_passes[0]->camera;
   CollisionTraverser picker;
   CollisionHandlerQueue *pq = new CollisionHandlerQueue();
   PT(CollisionNode) picker_node = new CollisionNode("mouseRay");
   NodePath picker_np = cam_np.attach_new_node(picker_node);
   picker_node->set_from_collide_mask(CollisionNode::get_default_collide_mask() | GeomNode::get_default_collide_mask());
   PT(CollisionRay) picker_ray = new CollisionRay();
-  picker_ray->set_from_lens(DCAST(LensNode, cam), mpos.get_x(), mpos.get_y());
+  picker_ray->set_from_lens(DCAST(LensNode, cam_np.node()), mpos.get_x(), mpos.get_y());
   picker_node->add_solid(picker_ray);
   picker.add_collider(picker_np, pq);
   //picker.show_collisions(self.root);

@@ -19,50 +19,39 @@
 
 
 from panda3d.core import DepthTestAttrib
-from panda3d.core import Texture, LColor
+from panda3d.core import LColor
 
 from ..stage import RenderSceneStage
 from ..target import SceneTarget, PasstroughTarget
-from cosmonium.textures import TextureConfiguration
 
-class RenderStage(RenderSceneStage):
-    def __init__(self, name, camera_mask, colors, srgb=True, multisamples=0, inverse_z=False, create_mimap=False):
+class AnnotationsRenderStage(RenderSceneStage):
+    def __init__(self, name, camera_mask, colors, srgb=True, inverse_z=False):
         RenderSceneStage.__init__(self, name, camera_mask)
         self.colors = colors
         self.srgb = srgb
-        self.multisamples = multisamples
         self.inverse_z = inverse_z
-        self.create_mipmap = create_mimap
+
+    def requires(self):
+        return ['scene', 'depth']
 
     def provides(self):
         return {'scene': 'color',
                 'depth': 'depth'}
 
     def can_render_to_screen(self):
-        return not self.inverse_z
+        return False
 
     def create(self, pipeline):
-        if self.screen_stage:
-            target = PasstroughTarget("scene")
+        target = SceneTarget("annotations")
+        scene = self.get_source('scene')
+        target.add_color_target(self.colors, srgb_colors=self.srgb, texture=scene)
+        depth = self.get_source('depth')
+        if self.inverse_z:
+            target.add_depth_target(32, float_depth=True, texture=depth)
         else:
-            target = SceneTarget("scene")
-            if self.create_mipmap:
-                config = TextureConfiguration(
-                    wrap_u=Texture.WM_border_color, wrap_v=Texture.WM_border_color,
-                    minfilter=Texture.FT_linear_mipmap_linear)
-            else:
-                config = TextureConfiguration()
-            target.add_color_target(self.colors, srgb_colors=self.srgb, config=config)
-            if self.inverse_z:
-                target.add_depth_target(32, float_depth=True)
-            else:
-                target.add_depth_target(24)
-            target.set_multisamples(self.multisamples)
+            target.add_depth_target(24, texture=depth)
         self.add_target(target)
         target.create(pipeline)
-        target.dr.set_clear_color_active(True)
-        target.dr.set_clear_color(LColor(0, 0, 0, 1))
-        target.dr.set_clear_depth_active(True)
         if self.inverse_z:
             target.dr.set_clear_depth(0.0)
             base.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))

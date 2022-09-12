@@ -41,6 +41,7 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     _equatorial(LQuaterniond::ident_quat()),
     _abs_magnitude(1000.0),
     _app_magnitude(1000.0),
+    reflected(0.0),
     _albedo(0.0)
 {
 }
@@ -156,6 +157,87 @@ StellarAnchor::get_apparent_magnitude(void)
   return _app_magnitude;
 }
 
+
+double
+StellarAnchor::get_radiant_flux(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  return luminosity * sun_luminous_flux;
+}
+
+
+double
+StellarAnchor::get_radiant_intensity(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  return luminosity * sun_luminous_intensity;
+}
+
+
+double
+StellarAnchor::get_radiance(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  // For a Lambertian emitter, the radiance is equal to
+  // flux / (pi . Area)
+  return luminosity * sun_luminous_intensity / (M_PI * bounding_radius * bounding_radius * 1000 * 1000);
+}
+
+
+double
+StellarAnchor::get_irradiance(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
+}
+
+
+double
+StellarAnchor::get_point_radiance(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
+}
+
+
+double
+StellarAnchor::get_point_irradiance(void)
+{
+  double luminosity;
+  if ((content & Emissive) != 0) {
+      luminosity = abs_mag_to_lum(_abs_magnitude);
+  } else {
+      luminosity = reflected;
+  }
+  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
+}
+
+
 LPoint3d
 StellarAnchor::calc_absolute_relative_position(AnchorBase *anchor)
 {
@@ -249,7 +331,7 @@ StellarAnchor::update_app_magnitude(StellarAnchor *star)
     _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
   } else if ((content & Reflective) != 0) {
       if (star != 0) {
-        double reflected = get_luminosity(star);
+        reflected = get_luminosity(star);
         if (reflected > 0.0) {
           _app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), distance_to_obs);
         } else {

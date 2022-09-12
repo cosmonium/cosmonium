@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
+from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, LColor
 from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import NodePath, LPoint3
 from ..utils import mag_to_scale
@@ -97,7 +97,7 @@ class PointsSetShape:
             self.add_object(scene_anchor)
 
 
-class EmissivePointsSetShape(PointsSetShape):
+class ScaledEmissivePointsSetShape(PointsSetShape):
     def add_object(self, scene_anchor):
         anchor = scene_anchor.anchor
         if anchor.visible_size < settings.min_body_size * 2 and scene_anchor.instance is not None:
@@ -108,6 +108,16 @@ class EmissivePointsSetShape(PointsSetShape):
                 color = point_color * scale
                 size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale) * self.screen_scale
                 self.add_point(scene_anchor.scene_position, color, size, scene_anchor.oid_color)
+
+
+class EmissivePointsSetShape(PointsSetShape):
+    def add_object(self, scene_anchor):
+        anchor = scene_anchor.anchor
+        if anchor.visible_size < settings.min_body_size * 2 and scene_anchor.instance is not None:
+            r = anchor.get_point_radiance()
+            color = LColor(anchor.point_color.x * r, anchor.point_color.y * r, anchor.point_color.z * r, anchor.point_color.w)
+            size = settings.min_point_size + settings.mag_pixel_scale
+            self.add_point(scene_anchor.scene_position, color, size * self.screen_scale, scene_anchor.oid_color)
 
 
 class HaloPointsSetShape(PointsSetShape):

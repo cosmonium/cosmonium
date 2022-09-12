@@ -152,7 +152,8 @@ def besselYearToJulian(byear):
     return (byear - 1900.0) * TropicalYear + B1900
 
 sun_abs_magnitude = 4.83
-sun_luminosity = 3.828e26
-sun_power = 3.8462e26
-sun_temperature=5780.0
-L0 = 3.0128e28
+sun_luminosity = 3.828e26 # Watt
+sun_luminous_flux = 3.75e28 # Lumen
+sun_luminous_intensity = sun_luminous_flux / 4 / pi # Candela
+sun_temperature = 5780.0 # Kelvin
+L0 = 3.0128e28 # Watt

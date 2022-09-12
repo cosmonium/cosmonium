@@ -18,13 +18,16 @@
 #
 
 
-from panda3d.core import Camera, NodePath
+from __future__ import annotations
+
+from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput
 from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
-from panda3d.core import GeomNode
+from panda3d.core import GeomNode, DrawMask
 
 from ...pstats import pstat
 from ... import settings
+
 
 class SceneManagerBase:
 
@@ -38,7 +41,7 @@ class SceneManagerBase:
     def get_regions(self):
         raise NotImplementedError()
 
-    def set_target(self, target):
+    def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
         raise NotImplementedError()
 
     def attach_new_anchor(self, instance):
@@ -67,6 +70,31 @@ class SceneManagerBase:
 
     def ls(self):
         raise NotImplementedError()
+
+
+class RenderingPass:
+    def __init__(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
+        self.name = name
+        self.target = target
+        self.camera_mask = camera_mask
+        self.display_region: DisplayRegion = None
+        node = Camera("camera-" + self.name)
+        node.set_camera_mask(camera_mask)
+        self.camera = NodePath(node)
+
+    def copy(self):
+        return RenderingPass(self.name, self.target, self.camera_mask)
+
+    def create(self):
+        self.display_region = self.target.make_display_region(0, 1, 0, 1)
+        self.display_region.disable_clears()
+        self.display_region.set_scissor_enabled(False)
+        self.display_region.set_camera(self.camera)
+        self.display_region.set_active(True)
+
+    def remove(self):
+        self.target.remove_display_region(self.display_region)
+
 
 class StaticSceneManager(SceneManagerBase):
     def __init__(self, render):
@@ -134,11 +162,11 @@ class StaticSceneManager(SceneManagerBase):
     def ls(self):
         self.root.ls()
 
+
 class DynamicSceneManager(SceneManagerBase):
     def __init__(self, render):
         SceneManagerBase.__init__(self)
-        self.dr = None
-        self.camera = None
+        self.rendering_passes: list[RenderingPass] = []
         self.lens = None
         self.near_plane = settings.near_plane
         self.infinite_far_plane = settings.infinite_far_plane
@@ -158,29 +186,31 @@ class DynamicSceneManager(SceneManagerBase):
         self.infinity = self.infinite_plane
         self.root = render.attach_new_node('root')
 
+
+    def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
+        print("Add pass", name)
+        rendering_pass = RenderingPass(name, target, camera_mask)
+        rendering_pass.camera.node().set_lens(self.lens)
+        rendering_pass.camera.reparent_to(self.root)
+        rendering_pass.create()
+        self.rendering_passes.append(rendering_pass)
+
     def pick_scene(self, mpos):
+        camera = self.rendering_passes[0].camera
         picker = CollisionTraverser()
         pq = CollisionHandlerQueue()
         picker_node = CollisionNode('mouseRay')
-        picker_np = self.camera.attach_new_node(picker_node)
+        picker_np = camera.attach_new_node(picker_node)
         picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
         picker_ray = CollisionRay()
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
         #picker.show_collisions(self.root)
-        picker_ray.set_from_lens(self.camera.node(), mpos.get_x(), mpos.get_y())
+        picker_ray.set_from_lens(camera.node(), mpos.get_x(), mpos.get_y())
         picker.traverse(self.root)
         pq.sort_entries()
         picker_np.remove_node()
         return pq
-
-    def set_target(self, target):
-        print("Set Scene Manager target", target)
-        self.dr = target.make_display_region(0, 1, 0, 1)
-        self.dr.disable_clears()
-        self.dr.set_scissor_enabled(False)
-        self.dr.set_camera(self.camera)
-        self.dr.set_active(True)
 
     def attach_new_anchor(self, instance):
         instance.reparent_to(self.root)
@@ -198,19 +228,12 @@ class DynamicSceneManager(SceneManagerBase):
             self.lens.set_near_far(self.near_plane, self.far_plane)
 
     def init_camera(self, camera_holder, default_camera):
-        self.camera = default_camera
         self.lens = camera_holder.lens.make_copy()
-        self.camera.node().set_lens(self.lens)
         print("Planes: ", self.near_plane, self.far_plane)
         self.update_planes()
-        self.camera.reparent_to(self.root)
-
-    def set_camera_mask(self, flags):
-        self.camera.node().set_camera_mask(flags)
 
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         self.lens = camera_holder.lens.make_copy()
-        self.camera.node().set_lens(self.lens)
         if self.auto_scale:
             if distance_to_nearest is None:
                 self.scale = self.max_scale
@@ -232,8 +255,10 @@ class DynamicSceneManager(SceneManagerBase):
         else:
             self.infinity = self.infinite_plane
         self.midPlane = self.infinity / self.mid_plane_ratio
-        self.camera.set_pos(camera_holder.camera_np.get_pos())
-        self.camera.set_quat(camera_holder.camera_np.get_quat())
+        for rendering_pass in self.rendering_passes:
+            rendering_pass.camera.node().set_lens(self.lens)
+            rendering_pass.camera.set_pos(camera_holder.camera_np.get_pos())
+            rendering_pass.camera.set_quat(camera_holder.camera_np.get_quat())
 
     @pstat
     def build_scene(self, state, camera_holder, visibles, resolved):
@@ -261,7 +286,7 @@ class RegionSceneManager(SceneManagerBase):
     max_near_reagion = 1e5
     def __init__(self):
         SceneManagerBase.__init__(self)
-        self.target = None
+        self.rendering_passes = []
         self.regions = []
         self.spread_objects = []
         self.background_region = None
@@ -275,9 +300,10 @@ class RegionSceneManager(SceneManagerBase):
     def get_regions(self):
         return self.regions
 
-    def set_target(self, target):
-        print("Set Scene Manager target", target)
-        self.target = target
+    def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
+        print("Add pass", name)
+        rendering_pass = RenderingPass(name, target, camera_mask)
+        self.rendering_passes.append(rendering_pass)
 
     def attach_new_anchor(self, instance):
         pass
@@ -297,11 +323,6 @@ class RegionSceneManager(SceneManagerBase):
 
     def init_camera(self, camera_holder, default_camera):
         pass
-
-    def set_camera_mask(self, flags):
-        self.camera_mask = flags
-        for region in self.regions:
-            region.set_camera_mask(flags)
 
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         pass
@@ -393,7 +414,7 @@ class RegionSceneManager(SceneManagerBase):
                 region_size = -region_size
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
-                region.create(self.target, state, camera_holder, self.camera_mask, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
+                region.create(self.rendering_passes, state, camera_holder, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
                 base += region_size
         self.attach_spread_objects()
         self.spread_objects = []
@@ -409,15 +430,9 @@ class SceneRegion:
         self.bodies = []
         self.near = near
         self.far = far
-        self.target = None
-        self.region = None
+        self.rendering_passes: list[RenderingPass] = []
         self.root = NodePath('root')
-        self.cam = None
-        self.cam_np = None
         self.points = []
-
-    def set_camera_mask(self, flags):
-        self.cam.set_camera_mask(flags)
 
     def add_body(self, body):
         self.bodies.append(body)
@@ -442,50 +457,43 @@ class SceneRegion:
         self.near = min(self.near, other.near)
         self.far = max(self.far, other.far)
 
-    def create(self, target, state, camera_holder, camera_mask, inverse_z, section_near, section_far, sort_index):
-        self.target = target
+    def create(self, rendering_passes, state, camera_holder, inverse_z, section_near, section_far, sort_index):
+        self.rendering_passes = [rendering_pass.copy() for rendering_pass in rendering_passes]
         self.root.set_state(state)
         for body in self.bodies:
             body.scene_anchor.instance.reparent_to(self.root)
-        self.cam = Camera("region-cam")
-        self.cam.set_camera_mask(camera_mask)
         lens = camera_holder.lens.make_copy()
         if inverse_z:
             lens.set_near_far(self.far * 1.01, self.near * 0.99)
         else:
             lens.set_near_far(self.near * 0.99, self.far * 1.01)
-        self.cam.set_lens(lens)
-        self.cam_np = self.root.attach_new_node(self.cam)
-        self.cam_np.set_quat(camera_holder.camera_np.get_quat())
-        self.region = self.target.make_display_region((0, 1, 0, 1))
-        self.region.disable_clears()
-        #self.region.setClearColorActive(1)
-        #self.region.setClearColor((1, 0, 0, 1))
-        self.region.set_camera(self.cam_np)
-        self.region.set_scissor_enabled(False)
-        self.region.set_sort(sort_index)
-        if inverse_z:
-            self.region.set_depth_range(section_far, section_near)
-        else:
-            self.region.set_depth_range(section_near, section_far)
+        for rendering_pass in self.rendering_passes:
+            rendering_pass.camera.node().set_lens(lens)
+            rendering_pass.camera.reparent_to(self.root)
+            rendering_pass.camera.set_quat(camera_holder.camera_np.get_quat())
+            rendering_pass.create()
+            rendering_pass.display_region.set_sort(sort_index)
+            if inverse_z:
+                rendering_pass.display_region.set_depth_range(section_far, section_near)
+            else:
+                rendering_pass.display_region.set_depth_range(section_near, section_far)
 
     def remove(self):
-        self.target.remove_display_region(self.region)
-        self.region = None
+        for rendering_pass in self.rendering_passes:
+            rendering_pass.remove()
+        self.rendering_passes = []
         self.root = None
-        self.cam = None
-        self.cam_np = None
 
     def pick_scene(self, mpos):
         picker = CollisionTraverser()
         pq = CollisionHandlerQueue()
         picker_ray = CollisionRay()
         picker_node = CollisionNode('mouseRay')
-        picker_np = self.cam_np.attach_new_node(picker_node)
+        picker_np = self.rendering_passes[0].camera.attach_new_node(picker_node)
         picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
-        picker_ray.set_from_lens(self.cam, mpos.get_x(), mpos.get_y())
+        picker_ray.set_from_lens(self.rendering_passes[0].camera.node(), mpos.get_x(), mpos.get_y())
         #picker.show_collisions(region.root)
         picker.traverse(self.root)
         picker_np.remove_node()

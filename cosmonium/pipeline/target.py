@@ -18,23 +18,24 @@
 #
 
 
-from panda3d.core import Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture, NodePath
+from panda3d.core import Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture, NodePath, DisplayRegion
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
 
 from ..textures import TextureConfiguration
 
 
 class TextureTarget:
-    def __init__(self, to_ram, render_target, config):
-        self.texture = None
+    def __init__(self, to_ram, render_target, config, texture):
+        self.texture = texture
         self.to_ram = to_ram
         self.render_target = render_target
         self.config = config
 
     def create(self):
-        self.texture = Texture()
-        if self.config is not None:
-            self.config.apply(self.texture)
+        if self.texture is None:
+            self.texture = Texture()
+            if self.config is not None:
+                self.config.apply(self.texture)
         return self.texture
 
     def clear(self):
@@ -58,7 +59,7 @@ class RenderTarget:
         self.sort = 0
         self.win = None
         self.graphics_engine = None
-        self.dr = None
+        self.dr: DisplayRegion = None
 
     def set_win(self, win):
         self.win = win
@@ -89,6 +90,7 @@ class BufferMixin:
         self.sort = 0
         self.active = True
         self.one_shot = False
+        self.target: GraphicsOutput = None
 
     def set_one_shot(self, one_shot):
         self.one_shot = one_shot
@@ -104,26 +106,35 @@ class BufferMixin:
         self.requested_size = size
         self.fixed_size = False
         if self.win is not None:
-            self.update_win_size((self.win.get_x_size(), self.win_get_y_size()))
+            self.update_win_size((self.win.get_x_size(), self.win.get_y_size()))
+
+    def calculate_size(self):
+        if self.fixed_size:
+            size = self.requested_size
+        else:
+            size = (max(1, int(self.win.get_x_size() * self.requested_size[0])),
+                    max(1, int(self.win.get_y_size() * self.requested_size[1])))
+        return size
 
     def update_win_size(self, size):
         if self.fixed_size: return
-        new_size = (size[0] * self.requested_size[0], size[1] * self.requested_size[1])
+        new_size = (max(1, int(size[0] * self.requested_size[0])),
+                    max(1, int(size[1] * self.requested_size[1])))
         if new_size != self.size:
             self.size = new_size
             if self.target is not None:
                 self.target.set_size(*self.size)
 
-    def get_attachment(self, name):
+    def get_attachment(self, name: str) -> Texture:
         return self.texture_targets[name].texture
 
-    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration()):
+    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration(), texture=None):
         self.color_bits = color_bits
         self.srgb_colors = srgb_colors
-        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config)
+        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config, texture)
         self.texture_targets[name] = texture_target
 
-    def add_depth_target(self, depth_bits, stencil_bits=0, float_depth=False, name='depth', to_ram=False, config=TextureConfiguration()):
+    def add_depth_target(self, depth_bits, stencil_bits=0, float_depth=False, name='depth', to_ram=False, config=TextureConfiguration(), texture=None):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
@@ -131,38 +142,42 @@ class BufferMixin:
             rtp = GraphicsOutput.RTP_depth_stencil
         else:
             rtp = GraphicsOutput.RTP_depth
-        texture_target = TextureTarget(to_ram, rtp, config)
+        texture_target = TextureTarget(to_ram, rtp, config, texture)
         self.texture_targets[name] = texture_target
 
-    def add_depth(self, depth_bits, stencil_bits=0, float_depth=False, config=TextureConfiguration()):
+    def add_depth(self, depth_bits, stencil_bits=0, float_depth=False):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
 
-    def add_aux_target(self, aux_bits, name=None, to_ram=False, config=TextureConfiguration()):
+    def add_aux_target(self, aux_bits, name=None, to_ram=False, config=TextureConfiguration(), texture=None):
         if self.aux_bits is None:
             self.aux_bits = aux_bits
         elif self.aux_bits != aux_bits:
             print("ERROR: aux bits must all the the same")
+        if name is None:
+            name = f"aux_{self.nb_aux}"
+        self.nb_aux += 1
         #TODO: Map to int, hfloat, float
-        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux, config)
+        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux_float_0, config, texture)
         self.texture_targets[name] = texture_target
 
     def set_multisamples(self, multisamples):
         self.multisamples = multisamples
 
     def create_textures(self):
-        for texture_target in self.texture_targets.values():
+        for texture_name, texture_target in self.texture_targets.items():
             texture = texture_target.create()
             mode = texture_target.get_mode()
             render_target = texture_target.get_render_target()
             self.target.add_render_texture(texture, mode, render_target)
+            # print("Attaching texture", texture_name, texture, mode, render_target)
 
     def make_fbprops(self):
         fbprops = FrameBufferProperties()
         if self.color_bits is not None:
             fbprops.set_rgba_bits(*self.color_bits)
-            if max(*self.color_bits)  > 8:
+            if max(*self.color_bits) > 8:
                 fbprops.set_float_color(True)
             fbprops.set_srgb_color(self.srgb_colors)
         if self.depth_bits is not None:
@@ -170,16 +185,17 @@ class BufferMixin:
             fbprops.set_float_depth(self.float_depth)
         if self.multisamples:
             fbprops.set_multisamples(self.multisamples)
+        fbprops.set_aux_float(self.nb_aux)
         return fbprops
 
     def make_winprops(self):
         winprops = WindowProperties()
-        winprops.set_size(*self.size)
+        winprops.set_size(*self.calculate_size())
         return winprops
 
     def make_buffer_options(self):
         buffer_options = GraphicsPipe.BF_refuse_window
-        if self.requested_size < (0, 0):
+        if not self.fixed_size:
             buffer_options |= GraphicsPipe.BF_resizeable
         return buffer_options
 
@@ -189,7 +205,7 @@ class BufferMixin:
         buffer_options = self.make_buffer_options()
         self.target = self.graphics_engine.make_output(self.win.get_pipe(), self.name, -1,
             fbprops, winprops,  buffer_options, self.win.get_gsg(), self.win)
-        print("New buffer", self.target.get_fb_properties())
+        print("New buffer", self.target.get_fb_properties(), winprops)
 
     def create_target(self, pipeline):
         if self.target is not None:
@@ -241,7 +257,7 @@ class BufferMixin:
 
 class TargetShaderMixin():
     def __init__(self):
-        self.root = None
+        self.root: NodePath = None
         self.camera = None
         self.shader = None
 
@@ -288,6 +304,8 @@ class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
 
     def create(self, pipeline):
         self.create_target(pipeline)
+        if not self.one_shot:
+            self.create_textures()
         self.create_display_region()
         self.create_infra()
 

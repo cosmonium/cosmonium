@@ -63,6 +63,8 @@ decrease-ambient: "{"
 increase-ambient: "}"
 decrease-limit-magnitude: "["
 increase-limit-magnitude: "]"
+decrease-exposure: "<"
+increase-exposure: ">"
 toggle-atmosphere: control-a
 toggle-rotation-axis: shift-a
 toggle-reference-axis: shift-control-r

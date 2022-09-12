@@ -337,6 +337,7 @@ class StellarAnchor(AnchorBase):
         self.rotation = rotation
         self._abs_magnitude = 1000.0
         self._app_magnitude = 1000.0
+        self.reflected = 0.0
         self._equatorial = LQuaterniond()
         self._albedo = 0.5
         #TODO: Should be done properly
@@ -370,6 +371,50 @@ class StellarAnchor(AnchorBase):
     def get_apparent_magnitude(self):
         return self._app_magnitude
 
+    def get_radiant_flux(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        return luminosity * units.sun_luminous_flux
+
+    def get_radiant_intensity(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        return luminosity * units.sun_luminous_intensity
+
+    def get_radiance(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        # For a Lambertian emitter, the radiance is equal to
+        # flux / (pi . Area)
+        return luminosity * units.sun_luminous_intensity / (pi * self.bounding_radius * self.bounding_radius * 1000 * 1000)
+
+    def get_irradiance(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
+
+    def get_point_radiance(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
+
+    def get_point_irradiance(self):
+        if self.content & self.Emissive != 0:
+            luminosity = abs_mag_to_lum(self._abs_magnitude)
+        else:
+            luminosity = self.reflected
+        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
+
     def update(self, time, update_id):
         if self.update_id == update_id: return
         self._orientation = self.rotation.get_absolute_rotation_at(time)
@@ -385,13 +430,13 @@ class StellarAnchor(AnchorBase):
         star_power = abs_mag_to_lum(star._abs_magnitude)
         area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
         if area > 0.0:
-            irradiance = star_power / area
+            radiance = star_power / area
             surface = pi * self.bounding_radius * self.bounding_radius * 1000 * 1000 # Units are in km
-            received_energy = irradiance * surface
-            reflected_energy = received_energy * self._albedo
+            received_power = radiance * surface
+            reflected_power = received_power * self._albedo
             phase_angle = self.vector_to_obs.dot(vector_to_star)
             fraction = (1.0 + phase_angle) / 2.0
-            return reflected_energy * fraction
+            return reflected_power * fraction
         else:
             print("No area", self.body.get_name())
             return 0.0
@@ -409,9 +454,9 @@ class StellarAnchor(AnchorBase):
             self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
         elif self.content & self.Reflective != 0:
             if star is not None:
-                reflected = self.get_luminosity(star)
-                if reflected > 0:
-                    self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), self.distance_to_obs)
+                self.reflected = self.get_luminosity(star)
+                if self.reflected > 0:
+                    self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(self.reflected), self.distance_to_obs)
                 else:
                     self._app_magnitude = 1000.0
             else:

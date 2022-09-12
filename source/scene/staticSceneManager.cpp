@@ -23,6 +23,7 @@
 #include "displayRegion.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
+#include "renderPass.h"
 #include "dcast.h"
 
 
@@ -41,6 +42,7 @@ StaticSceneManager::StaticSceneManager(NodePath render) :
   root = render.attach_new_node("root");
 }
 
+
 StaticSceneManager::~StaticSceneManager(void)
 {
 }
@@ -53,13 +55,13 @@ bool StaticSceneManager::has_regions(void) const
 
 
 void
-StaticSceneManager::set_target(GraphicsOutput *target)
+StaticSceneManager::add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask)
 {
-  dr = target->make_display_region(0, 1, 0, 1);
-  dr->disable_clears();
-  dr->set_scissor_enabled(false);
-  dr->set_camera(camera);
-  dr->set_active(true);
+  PT(RenderPass) rendering_pass = new RenderPass(name, target, camera_mask);
+  DCAST(Camera, rendering_pass->camera.node())->set_lens(lens);
+  rendering_pass->camera.reparent_to(root);
+  rendering_pass->create();
+  rendering_passes.push_back(rendering_pass);
 }
 
 
@@ -87,23 +89,13 @@ StaticSceneManager::add_background_object(NodePath instance)
 void
 StaticSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_camera)
 {
-  camera = default_camera;
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  DCAST(Camera, camera.node())->set_lens(lens);
   if (auto_infinite_plane) {
       infinity = near_plane / lens_far_limit / 1000;
   } else {
       infinity = infinite_plane;
   }
   std::cout << "Planes: " << near_plane << " "  << far_plane << "\n";
-  camera.reparent_to(root);
-}
-
-
-void
-StaticSceneManager::set_camera_mask(DrawMask flags)
-{
-  DCAST(Camera, camera.node())->set_camera_mask(flags);
 }
 
 
@@ -111,14 +103,16 @@ void
 StaticSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder)
 {
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  DCAST(Camera, camera.node())->set_lens(lens);
   if (inverse_z) {
       lens->set_near_far(far_plane, near_plane);
   } else {
       lens->set_near_far(near_plane, far_plane);
   }
-  camera.set_pos(camera_holder->get_camera().get_pos());
-  camera.set_quat(camera_holder->get_camera().get_quat());
+  for (auto rendering_pass : rendering_passes) {
+    DCAST(Camera, rendering_pass->camera.node())->set_lens(lens);
+    rendering_pass->camera.set_pos(camera_holder->get_camera().get_pos());
+    rendering_pass->camera.set_quat(camera_holder->get_camera().get_quat());
+  }
 }
 
 
@@ -139,7 +133,7 @@ StaticSceneManager::ls(void)
 NodePath
 StaticSceneManager::get_camera(void)
 {
-  return camera;
+  return rendering_passes[0]->camera;
 }
 
 

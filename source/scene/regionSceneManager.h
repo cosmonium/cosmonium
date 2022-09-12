@@ -26,6 +26,7 @@
 class CollisionEntriesCollection;
 class DisplayRegion;
 class PerspectiveLens;
+class RenderPass;
 class SceneRegion;
 
 
@@ -37,7 +38,7 @@ PUBLISHED:
 
   virtual bool has_regions(void) const;
 
-  virtual void set_target(GraphicsOutput *target);
+  virtual void add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask);
 
   virtual void attach_new_anchor(NodePath instance);
 
@@ -48,8 +49,6 @@ PUBLISHED:
   virtual void add_background_object(NodePath instance);
 
   virtual void init_camera(CameraHolder *camera_holder, NodePath default_camera);
-
-  virtual void set_camera_mask(DrawMask flags);
 
   virtual void update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder);
 
@@ -72,11 +71,10 @@ PUBLISHED:
   static double infinity;
 
 protected:
-  PT(GraphicsOutput) target;
+  std::vector<PT(RenderPass)> rendering_passes;
   std::list<PT(SceneRegion)> regions;
   std::vector<NodePath> spread_objects;
   PT(SceneRegion) background_region;
-  DrawMask camera_mask;
 
 public:
   MAKE_TYPE("RegionSceneManager", SceneManager);

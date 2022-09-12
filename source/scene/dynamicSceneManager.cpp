@@ -28,6 +28,7 @@
 #include "geomNode.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
+#include "renderPass.h"
 #include "dcast.h"
 
 
@@ -66,13 +67,13 @@ bool DynamicSceneManager::has_regions(void) const
 
 
 void
-DynamicSceneManager::set_target(GraphicsOutput *target)
+DynamicSceneManager::add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask)
 {
-  dr = target->make_display_region(0, 1, 0, 1);
-  dr->disable_clears();
-  dr->set_scissor_enabled(false);
-  dr->set_camera(camera);
-  dr->set_active(true);
+  PT(RenderPass) rendering_pass = new RenderPass(name, target, camera_mask);
+  DCAST(Camera, rendering_pass->camera.node())->set_lens(lens);
+  rendering_pass->camera.reparent_to(root);
+  rendering_pass->create();
+  rendering_passes.push_back(rendering_pass);
 }
 
 
@@ -111,18 +112,8 @@ DynamicSceneManager::update_planes(void)
 void
 DynamicSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_camera)
 {
-  camera = default_camera;
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  DCAST(Camera, camera.node())->set_lens(lens);
   std::cout << "Planes: " << near_plane << " "  << far_plane << "\n";
-  camera.reparent_to(root);
-}
-
-
-void
-DynamicSceneManager::set_camera_mask(DrawMask flags)
-{
-  DCAST(Camera, camera.node())->set_camera_mask(flags);
 }
 
 
@@ -130,7 +121,6 @@ void
 DynamicSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder)
 {
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  DCAST(Camera, camera.node())->set_lens(lens);
   if (auto_scale) {
       if (false) {//distance_to_nearest)
           scale = max_scale;
@@ -156,8 +146,12 @@ DynamicSceneManager::update_scene_and_camera(double distance_to_nearest, CameraH
   } else {
       infinity = infinite_plane;
   }
-  camera.set_pos(camera_holder->get_camera().get_pos());
-  camera.set_quat(camera_holder->get_camera().get_quat());
+  mid_plane = infinity / mid_plane_ratio;
+  for (auto rendering_pass : rendering_passes) {
+    DCAST(Camera, rendering_pass->camera.node())->set_lens(lens);
+    rendering_pass->camera.set_pos(camera_holder->get_camera().get_pos());
+    rendering_pass->camera.set_quat(camera_holder->get_camera().get_quat());
+  }
 }
 
 
@@ -165,7 +159,8 @@ void
 DynamicSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved)
 {
   root.set_state(state.get_state());
-  //root.set_shader_input("midPlane", mid_plane);
+  CPT(InternalName) name = InternalName::make("midPlane");
+  root.set_shader_input(name, LVecBase4(mid_plane));
 }
 
 
@@ -175,10 +170,10 @@ DynamicSceneManager::pick_scene(LPoint2 mpos)
   CollisionTraverser picker;
   CollisionHandlerQueue *pq = new CollisionHandlerQueue();
   PT(CollisionNode) picker_node = new CollisionNode("mouseRay");
-  NodePath picker_np = camera.attach_new_node(picker_node);
+  NodePath picker_np = rendering_passes[0]->camera.attach_new_node(picker_node);
   picker_node->set_from_collide_mask(CollisionNode::get_default_collide_mask() | GeomNode::get_default_collide_mask());
   PT(CollisionRay) picker_ray = new CollisionRay();
-  picker_ray->set_from_lens(DCAST(LensNode, camera.node()), mpos.get_x(), mpos.get_y());
+  picker_ray->set_from_lens(DCAST(LensNode, rendering_passes[0]->camera.node()), mpos.get_x(), mpos.get_y());
   picker_node->add_solid(picker_ray);
   picker.add_collider(picker_np, pq);
   //picker.show_collisions(self.root);
@@ -199,7 +194,7 @@ DynamicSceneManager::ls(void)
 NodePath
 DynamicSceneManager::get_camera(void)
 {
-  return camera;
+  return rendering_passes[0]->camera;
 }
 
 

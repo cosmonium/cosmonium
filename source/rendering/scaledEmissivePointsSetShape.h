@@ -17,18 +17,22 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#version 330
+#ifndef SCALEDEMISSIVEPOINTSSETSHAPE_H
+#define SCALEDEMISSIVEPOINTSSETSHAPE_H
 
-uniform ivec2 screen_size;
-uniform sampler2D scene;
+#include "pointsSetShape.h"
 
-out vec4 result;
 
-#pragma include "shaders/includes/colorspaces.glsl"
-
-void main()
+class ScaledEmissivePointsSetShape : public PointsSetShape
 {
-  vec2 texcoord = gl_FragCoord.xy / screen_size;
-  vec3 pixel_color = textureLod(scene, texcoord, 0).xyz;
-  result = vec4(linear_to_srgb(pixel_color), 1);
-}
+PUBLISHED:
+  ScaledEmissivePointsSetShape(bool has_size, bool has_oid, double screen_scale);
+  virtual ~ScaledEmissivePointsSetShape(void);
+
+  virtual void add_object(SceneAnchor *scene_anchor);
+
+public:
+  MAKE_TYPE("ScaledEmissivePointsSetShape", PointsSetShape);
+};
+
+#endif

@@ -18,11 +18,25 @@
 #
 
 
-from ...shaders.base import FileShader
+from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
+from ...shaders.component import ShaderComponent
+
 from ..stage import SceneStage
 from ..target import ScreenTarget, ProcessTarget
 
+
+class PassthroughFragmentShader(ShaderComponent):
+    def get_id(self):
+        return 'passthrough'
+
+    def fragment_shader(self, code):
+        code.append('    result = pixel_color;')
+
+
 class PassthroughStage(SceneStage):
+    def __init__(self, name, colors):
+        SceneStage.__init__(self, name)
+        self.colors = colors
 
     def provides(self):
         return {'scene': 'color'}
@@ -35,14 +49,10 @@ class PassthroughStage(SceneStage):
             target = ScreenTarget("passthrough")
         else:
             target = ProcessTarget("passthrough")
-            target.add_color_target((pipeline.color_bits, pipeline.color_bits, pipeline.color_bits, 0))
+            target.add_color_target(self.colors)
         self.add_target(target)
         target.create(pipeline)
-        shader = FileShader(vertex="shaders/stages/default_vertex.glsl",
-                            fragment="shaders/stages/passthrough.glsl")
+        shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(PassthroughFragmentShader()))
+        shader.create(None, None)
         target.set_shader(shader)
-        width = self.win.get_x_size()
-        height = self.win.get_y_size()
-        target.root.set_shader_input("screen_size", (width, height))
-        source = self.sources['scene']
-        target.root.set_shader_input('scene', source[0].targets[-1].get_attachment(source[1]))
+        target.root.set_shader_input('scene', self.get_source('scene'))

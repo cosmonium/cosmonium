@@ -17,25 +17,26 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.component import ShaderComponent
 
 from ..stage import SceneStage
-from ..target import ScreenTarget, ProcessTarget
+from ..target import ProcessTarget
 
-class ColorCorrectionFragmentShader(ShaderComponent):
+
+class BloomApplyFragmentShader(ShaderComponent):
     def get_id(self):
-        return 'color-correction-srgb'
+        return 'bloom-apply'
 
-    def fragment_extra(self, code):
-        code.append('#pragma include "shaders/includes/colorspaces.glsl"')
+    def fragment_uniforms(self, code):
+        code.append("uniform sampler2D bloom;")
 
     def fragment_shader(self, code):
-        code.append('  result = vec4(linear_to_srgb(pixel_color), 1);')
+            code.append('  vec3 bloom_intensity = textureLod(bloom, texcoord, 0).xyz;')
+            code.append('  result = pixel_color + bloom_intensity;')
 
 
-class ColorCorrectionStage(SceneStage):
+class BloomApplyStage(SceneStage):
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors
@@ -44,17 +45,17 @@ class ColorCorrectionStage(SceneStage):
         return {'scene': 'color'}
 
     def requires(self):
-        return ['scene']
+        return ['scene', 'bloom']
 
     def create(self, pipeline):
-        if self.screen_stage:
-            target = ScreenTarget("srgb")
-        else:
-            target = ProcessTarget("srgb")
-            target.add_color_target(self.colors)
+        target = ProcessTarget("bloom")
+        target.add_color_target(self.colors, srgb_colors=False)
         self.add_target(target)
         target.create(pipeline)
-        shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(ColorCorrectionFragmentShader()))
+        shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(BloomApplyFragmentShader()))
         shader.create(None, None)
         target.set_shader(shader)
-        target.root.set_shader_input('scene', self.get_source('scene'))
+        source = self.sources['scene']
+        target.root.set_shader_input('scene', source.get_output('scene'))
+        source = self.sources['bloom']
+        target.root.set_shader_input('bloom', source.get_output('bloom'))

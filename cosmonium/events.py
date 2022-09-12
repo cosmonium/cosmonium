@@ -113,6 +113,8 @@ class EventsDispatcher(DirectObject):
 
         self.accept('decrease-limit-magnitude', self.engine.incr_limit_magnitude, [-0.1])
         self.accept('increase-limit-magnitude', self.engine.incr_limit_magnitude, [+0.1])
+        self.accept('decrease-exposure', self.engine.incr_exposure, [-0.1])
+        self.accept('increase-exposure', self.engine.incr_exposure, [+0.1])
 
         #Render
         self.accept('toggle-atmosphere', self.engine.toggle_atmosphere)

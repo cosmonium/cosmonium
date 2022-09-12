@@ -27,6 +27,7 @@
 #include "displayRegion.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
+#include "renderPass.h"
 #include "sceneAnchor.h"
 #include "sceneAnchorCollection.h"
 #include "sceneRegion.h"
@@ -60,9 +61,10 @@ bool RegionSceneManager::has_regions(void) const
 
 
 void
-RegionSceneManager::set_target(GraphicsOutput *target)
+RegionSceneManager::add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask)
 {
-  this->target = target;
+  PT(RenderPass) rendering_pass = new RenderPass(name, target, camera_mask);
+  rendering_passes.push_back(rendering_pass);
 }
 
 
@@ -102,16 +104,6 @@ RegionSceneManager::add_background_object(NodePath instance)
 void
 RegionSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_camera)
 {
-}
-
-
-void
-RegionSceneManager::set_camera_mask(DrawMask flags)
-{
-  camera_mask = flags;
-  for (auto region : regions) {
-      region->set_camera_mask(flags);
-  }
 }
 
 
@@ -235,7 +227,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
       unsigned int i = 0;
       for (auto region : regions) {
           int sort_index = regions.size() - i;
-          region->create(target, state, camera_holder, camera_mask, inverse_z, base, std::min(base + region_size, 1 - 1e-6), sort_index);
+          region->create(rendering_passes, state, camera_holder, inverse_z, base, std::min(base + region_size, 1 - 1e-6), sort_index);
           base += region_size;
           ++i;
       }

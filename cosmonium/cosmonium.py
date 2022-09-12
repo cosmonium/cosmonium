@@ -38,10 +38,10 @@ from .scene.sceneanchor import SceneAnchor, SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .labels import Labels
 from .sprites import RoundDiskPointSprite, GaussianPointSprite, ExpPointSprite, MergeSprite
-from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape, EmissivePointsSetShape, HaloPointsSetShape
+from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape, EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .dircontext import defaultDirContext
 from .opengl import OpenGLConfig
-from .pipeline.scenepipeline import ScenePipeline
+from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .objects.universe import Universe
 from .objects.stellarobject import StellarObject
 from .objects.systems import StellarSystem, SimpleSystem
@@ -130,7 +130,11 @@ class CosmoniumBase(ShowBase):
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
         if not self.app_config.test_start:
-            self.pipeline = ScenePipeline(engine=self.graphics_engine)
+            # TODO: Scene window should be opened after the splash window
+            if settings.use_pbr:
+                self.pipeline = ScenePipeline(engine=self.graphics_engine)
+            else:
+                self.pipeline = BasicScenePipeline(engine=self.graphics_engine)
             self.pipeline.init()
             OpenGLConfig.check_opengl_config(self)
             #self.create_additional_display_regions()
@@ -532,7 +536,6 @@ class Cosmonium(CosmoniumBase):
             remove_main_region(self.cam)
             self.scene_manager.scale = settings.scale
             self.scene_manager.init_camera(self.c_camera_holder, self.cam)
-            self.scene_manager.set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
             self.pipeline.create()
             self.pipeline.set_scene_manager(self.scene_manager)
         else:
@@ -544,20 +547,30 @@ class Cosmonium(CosmoniumBase):
                 screen_point_scale = self.pipe.display_zoom
             else:
                 screen_point_scale = settings.custom_point_scale
-            self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
-            self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
-            if self.scene_manager.has_regions():
-                points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
+            if settings.use_pbr:
+                self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
+                if self.scene_manager.has_regions():
+                    points_shape = RegionsPointsSetShape(EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
+                else:
+                    points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
+                self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
+                self.haloset = None
             else:
-                points_shape = PassthroughPointsSetShape(EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
-            self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
-            if self.scene_manager.has_regions():
-                points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
-            else:
-                points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
-            self.haloset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.halos_sprite, background=settings.halo_depth)
+                self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
+                self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
+                if self.scene_manager.has_regions():
+                    points_shape = RegionsPointsSetShape(ScaledEmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
+                else:
+                    points_shape = PassthroughPointsSetShape(ScaledEmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
+                self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
+                if self.scene_manager.has_regions():
+                    points_shape = RegionsPointsSetShape(HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale)
+                else:
+                    points_shape = PassthroughPointsSetShape(HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale))
+                self.haloset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.halos_sprite, background=settings.halo_depth)
             self.pointset.configure(self.scene_manager)
-            self.haloset.configure(self.scene_manager)
+            if self.haloset is not None:
+                self.haloset.configure(self.scene_manager)
 
         self.common_state.setAntialias(AntialiasAttrib.MMultisample)
         self.setFrameRateMeter(False)
@@ -872,6 +885,9 @@ class Cosmonium(CosmoniumBase):
 
     def incr_limit_magnitude(self, incr):
         self.set_limit_magnitude(settings.lowest_app_magnitude + incr)
+
+    def incr_exposure(self, incr):
+        self.pipeline.incr_exposure(incr)
 
     def toggle_orbits(self):
         settings.show_orbits = not settings.show_orbits
@@ -1318,11 +1334,12 @@ class Cosmonium(CosmoniumBase):
     def update_points(self):
         if settings.render_sprite_points:
             self.pointset.reset()
-            self.haloset.reset()
             self.pointset.add_objects(self.scene_manager, self.visible_scene_anchors)
-            self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
             self.pointset.update()
-            self.haloset.update()
+            if self.haloset is not None:
+                self.haloset.reset()
+                self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
+                self.haloset.update()
 
     @pstat
     def update_labels(self):
@@ -1395,9 +1412,9 @@ class Cosmonium(CosmoniumBase):
         self.no_longer_resolved = []
         self.update_c_settings()
 
-        #Update time and camera
         if task is not None:
             dt = globalClock.getDt()
+            self.pipeline.process_last_frame(dt)
         else:
             dt = 0
 
@@ -1446,9 +1463,10 @@ class Cosmonium(CosmoniumBase):
         self.find_shadows()
         self.update_instances()
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
-        self.update_points()
-        self.update_labels()
-        self.update_gui()
+        if task is not None:
+            self.update_points()
+            self.update_labels()
+            self.update_gui()
 
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)

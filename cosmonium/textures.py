@@ -54,9 +54,21 @@ class TextureConfiguration:
         self.format = format
         self.convert_to_srgb = convert_to_srgb
 
+    def create_2d(self, name, width, height):
+        if self.format in (Texture.F_rgba32, Texture.F_rgb32, Texture.F_rg32, Texture.F_r32):
+            c_type = Texture.T_float
+        elif self.format in (Texture.F_rgba16, Texture.F_rgb16, Texture.F_rg16, Texture.F_r16):
+            c_type = Texture.T_half_float
+        else:
+            c_type = Texture.T_byte
+        texture = Texture(name)
+        texture.setup_2d_texture(width, height, c_type, self.format)
+        self.apply(texture)
+        return texture
+
     def apply(self, texture):
         if self.format is not None:
-            texture.set_format(format)
+            texture.set_format(self.format)
         texture.set_wrap_u(self.wrap_u)
         texture.set_wrap_v(self.wrap_v)
         texture.set_wrap_w(self.wrap_w)

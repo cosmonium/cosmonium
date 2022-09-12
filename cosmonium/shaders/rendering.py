@@ -438,7 +438,10 @@ class FragmentShader(ShaderProgram):
             code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((texcoord0.x - 1.0 + line_width) / line_width, 0.0, 1.0));")
             code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((line_width - texcoord0.y) / line_width, 0.0, 1.0));")
             code.append("total_color = mix(total_color, vec4(1, 0, 0, 1), clamp((texcoord0.y - 1.0 + line_width) / line_width, 0.0, 1.0));")
-        code.append("frag_color[0] = clamp(total_color, 0.0, 1.0);")
+        if settings.use_pbr:
+            code.append("frag_color[0] = total_color;")
+        else:
+            code.append("frag_color[0] = clamp(total_color, 0.0, 1.0);")
         if self.version < 130:
             code.append("gl_FragColor = frag_color[0];")
         if self.config.color_picking:

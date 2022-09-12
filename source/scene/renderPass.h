@@ -17,10 +17,36 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#version 330
+#ifndef RENDER_PASS_H
+#define RENDER_PASS_H
 
-in vec4 p3d_Vertex;
+#include "pandabase.h"
+#include "referenceCount.h"
+#include "nodePath.h"
 
-void main() {
-    gl_Position = vec4(p3d_Vertex.xz, 0, 1);
-}
+class GraphicsOutput;
+
+
+class RenderPass : public ReferenceCount
+{
+public:
+  RenderPass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask);
+  RenderPass(RenderPass& other);
+
+  virtual ~RenderPass(void);
+
+  void create(void);
+
+  void remove(void);
+
+public:
+  PT(DisplayRegion) display_region;
+  NodePath camera;
+
+protected:
+  const std::string &name;
+  PT(GraphicsOutput) target;
+  DrawMask camera_mask;
+};
+
+#endif

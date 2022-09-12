@@ -18,36 +18,41 @@
  */
 
 
-#include "emissivePointsSetShape.h"
+#include "scaledEmissivePointsSetShape.h"
+#include "scale.h"
 #include "sceneAnchor.h"
 #include "settings.h"
 #include "stellarAnchor.h"
 
 
-TypeHandle EmissivePointsSetShape::_type_handle;
+TypeHandle ScaledEmissivePointsSetShape::_type_handle;
 
 
-EmissivePointsSetShape::EmissivePointsSetShape(bool has_size, bool has_oid, double screen_scale) :
+ScaledEmissivePointsSetShape::ScaledEmissivePointsSetShape(bool has_size, bool has_oid, double screen_scale) :
     PointsSetShape(has_size, has_oid, screen_scale)
 {
 }
 
 
-EmissivePointsSetShape::~EmissivePointsSetShape(void)
+ScaledEmissivePointsSetShape::~ScaledEmissivePointsSetShape(void)
 {
 }
 
 
 void
-EmissivePointsSetShape::add_object(SceneAnchor *scene_anchor)
+ScaledEmissivePointsSetShape::add_object(SceneAnchor *scene_anchor)
 {
   Settings *settings = Settings::get_global_ptr();
   StellarAnchor *anchor = DCAST(StellarAnchor, scene_anchor->get_anchor());
   if (anchor->visible_size < settings->min_body_size * 2 && scene_anchor->get_instance() != nullptr) {
-    double r = anchor->get_point_radiance();
+    double app_magnitude = anchor->_app_magnitude;
     LColor point_color = anchor->point_color;
-    LColor color = LColor(point_color[0] * r, point_color[1] * r, point_color[2] * r, point_color[3]);
-    double size = settings->min_point_size + settings->mag_pixel_scale;
-    add_point(scene_anchor->scene_position, color, size * screen_scale, scene_anchor->get_oid_color());
+    double scale = mag_to_scale(app_magnitude);
+    if (scale > 0) {
+      LColor color = point_color * scale;
+      double size = std::max(settings->min_point_size,
+                             settings->min_point_size + scale * settings->mag_pixel_scale);
+      add_point(scene_anchor->scene_position, color, size * screen_scale, scene_anchor->get_oid_color());
+    }
   }
 }

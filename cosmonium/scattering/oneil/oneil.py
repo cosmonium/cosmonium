@@ -33,8 +33,10 @@ from ...pipeline.shaders import GeneratorVertexShader
 from ...pipeline.target import ProcessTarget
 from ...pipeline.stage import ProcessStage
 from ...pipeline.factory import PipelineFactory
+from ... import settings
 
 from math import pow, pi
+
 
 class ONeilAtmosphereBase(Atmosphere):
     def __init__(self, shape, appearance, shader):
@@ -158,8 +160,12 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.atm_calc_in_fragment = atm_calc_in_fragment
         self.normalize = normalize
         self.atm_normalize = atm_normalize
-        self.hdr = hdr
-        self.atm_hdr = atm_hdr
+        if settings.use_pbr:
+            self.hdr = False
+            self.atm_hdr = False
+        else:
+            self.hdr = hdr
+            self.atm_hdr = atm_hdr
         self.height = height
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples

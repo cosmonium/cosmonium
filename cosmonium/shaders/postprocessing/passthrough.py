@@ -21,6 +21,18 @@
 from ..base import ShaderProgram
 
 
+class DefaultPassThroughVertexShader(ShaderProgram):
+    def __init__(self, config):
+        ShaderProgram.__init__(self, 'vertex')
+        self.config = config
+
+    def create_inputs(self, code):
+        code.append("in vec4 p3d_Vertex;")
+
+    def create_body(self, code):
+        code.append("gl_Position = vec4(p3d_Vertex.xz, 0, 1);")
+
+
 class TexturePassThroughVertexShader(ShaderProgram):
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
@@ -39,6 +51,7 @@ class TexturePassThroughVertexShader(ShaderProgram):
         code.append("gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;")
         code.append("uv = gl_Position * 0.5 + 0.5;")
 
+
 class GeomPassThroughVertexShader(ShaderProgram):
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
@@ -54,6 +67,7 @@ class GeomPassThroughVertexShader(ShaderProgram):
     def create_body(self, code):
         code.append("gl_Position = p3d_Vertex;")
         code.append("normal = p3d_Normal;")
+
 
 class ColorPassThroughFragmentShader(ShaderProgram):
     def __init__(self, config):
@@ -76,6 +90,7 @@ class ColorPassThroughFragmentShader(ShaderProgram):
             code.append("color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);")
         else:
             code.append("color = final_color;")
+
 
 class TexturePassThroughFragmentShader(ShaderProgram):
     def __init__(self, config):

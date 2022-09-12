@@ -25,6 +25,8 @@
 class DisplayRegion;
 class CollisionHandlerQueue;
 class PerspectiveLens;
+class RenderPass;
+
 
 class DynamicSceneManager : public SceneManager
 {
@@ -34,7 +36,7 @@ PUBLISHED:
 
   virtual bool has_regions(void) const;
 
-  virtual void set_target(GraphicsOutput *target);
+  virtual void add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask);
 
   virtual void attach_new_anchor(NodePath instance);
 
@@ -45,8 +47,6 @@ PUBLISHED:
   void update_planes(void);
 
   virtual void init_camera(CameraHolder *camera_holder, NodePath default_camera);
-
-  virtual void set_camera_mask(DrawMask flags);
 
   virtual void update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder);
 
@@ -72,9 +72,8 @@ PUBLISHED:
   static double mid_plane_ratio;
 
 protected:
-  NodePath camera;
+  std::vector<PT(RenderPass)> rendering_passes;
   PT(PerspectiveLens) lens;
-  PT(DisplayRegion) dr;
   double near_plane;
   double far_plane;
   double infinity;

@@ -18,21 +18,19 @@
 #
 
 
-from panda3d.core import Texture
-from panda3d.core import FrameBufferProperties, GraphicsOutput
-from direct.filter.FilterManager import FilterManager
+from panda3d.core import FrameBufferProperties
 
 from . import settings
 
 import sys
 import os
 
+
 class OpenGLConfig:
     glsl_version = None
     core_profile = False
     floating_point_buffer = False
     srgb_framebuffer = False
-    multisampling_framebuffer = False
     buffer_texture = False
     srgb_texture = False
     non_power_of_two_textures = False
@@ -157,7 +155,6 @@ class OpenGLConfig:
         print("Driver Renderer: %s (%s)" % (gsg.driver_renderer, gsg.driver_version))
         print("Shader version: %d" % cls.glsl_version)
         print("sRGB framebuffer:", cls.srgb_framebuffer)
-        print("Multisampling framebuffer:", cls.multisampling_framebuffer)
         print("sRGB textures:", cls.srgb_texture)
         print("Hardware instancing:", cls.hardware_instancing)
         print("Hardware tessellation:", cls.hardware_tessellation)
@@ -165,53 +162,3 @@ class OpenGLConfig:
         print("Render to buffer:", cls.buffer_texture)
         print("Floating point buffer:", cls.floating_point_buffer)
         print("Texture array:", cls.texture_array)
-
-    @classmethod
-    def check_and_create_rendering_buffers(showbase):
-        if not settings.render_scene_to_buffer:
-            return
-
-        if not settings.buffer_texture:
-            print("Render to buffer not supported")
-            return
-
-        return
-        buffer_multisamples = 0
-        if settings.render_scene_to_buffer and not settings.disable_multisampling and settings.use_multisampling and settings.multisamples > 0:
-            buffer_multisamples = settings.multisamples
-
-        manager = FilterManager(showbase.win, showbase.cam)
-        color_buffer = Texture()
-        depth_buffer = None
-        aux_buffer = None
-        if settings.render_scene_to_float:
-            if settings.floating_point_buffer:
-                rgba_bits = (32, 32, 32, 32)
-                float_colors = True
-            else:
-                print("Floating point buffer not available, sRBG conversion will show artifacts")
-                rgba_bits = (1, 1, 1, 1)
-                float_colors = False
-        else:
-            rgba_bits = (1, 1, 1, 1)
-            float_colors = False
-        if settings.aux_buffer:
-            aux_buffer = Texture()
-        textures = {'color': color_buffer, 'depth': depth_buffer, 'aux0': aux_buffer}
-        fbprops = FrameBufferProperties()
-        fbprops.setFloatColor(float_colors)
-        fbprops.setRgbaBits(*rgba_bits)
-        fbprops.setSrgbColor(settings.srgb_buffer)
-        fbprops.setDepthBits(1)
-        fbprops.setFloatDepth(False)
-        if not settings.framebuffer_multisampling:
-            fbprops.setMultisamples(buffer_multisamples)
-        final_quad = manager.render_scene_into(textures=textures, fbprops=fbprops)
-        final_quad.clear_color()
-        if aux_buffer is not None:
-            manager.buffers[-1].setClearValue(GraphicsOutput.RTPAuxRgba0, (0.0, 0.0, 0.0, 0.0))
-        final_quad_shader = PostProcessShader(gamma_correction=settings.software_srgb, hdr=settings.use_hdr).create_shader()
-        final_quad.set_shader(final_quad_shader)
-        final_quad.set_shader_input("color_buffer", color_buffer)
-        final_quad.set_shader_input("exposure", 2)
-        return manager.buffers[0], textures

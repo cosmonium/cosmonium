@@ -17,16 +17,22 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#version 330
 
-uniform ivec2 screen_size;
-uniform sampler2D scene;
+float tonemap_exp(float x) {
+    return 1.0 - exp(-x);
+}
 
-out vec4 result;
 
-void main()
-{
-  vec2 texcoord = gl_FragCoord.xy / screen_size;
-  vec3 pixel_color = textureLod(scene, texcoord, 0).xyz;
-  result = vec4(pixel_color, 1);
+float tonemap_reinhard(float x) {
+    return x / (1.0 + x);
+}
+
+
+float tonemap_aces(float x) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return (x * (a * x + b)) / (x * (c * x + d) + e);
 }

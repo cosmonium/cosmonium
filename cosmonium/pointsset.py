@@ -30,11 +30,11 @@ from .sprites import SimplePoint, RoundDiskPointSprite
 from . import settings
 
 try:
-    from cosmonium_engine import EmissivePointsSetShape, HaloPointsSetShape
+    from cosmonium_engine import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 except ImportError as e:
     print("WARNING: Could not load PointsSet C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyrendering.pointsset import EmissivePointsSetShape, HaloPointsSetShape
+    from .pyrendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 
 from .pyrendering.pointsset import PassthroughPointsSetShape, RegionsPointsSetShape
 

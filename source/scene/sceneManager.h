@@ -40,7 +40,7 @@ PUBLISHED:
 
   virtual bool has_regions(void) const = 0;
 
-  virtual void set_target(GraphicsOutput *target) = 0;
+  virtual void add_pass(const std::string &name, GraphicsOutput *target, DrawMask camera_mask) = 0;
 
   virtual void attach_new_anchor(NodePath instance) = 0;
 
@@ -49,8 +49,6 @@ PUBLISHED:
   virtual void add_background_object(NodePath instance) = 0;
 
   virtual void init_camera(CameraHolder *camera_holder, NodePath default_camera) = 0;
-
-  virtual void set_camera_mask(DrawMask flags) = 0;
 
   virtual void update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder) = 0;
 

@@ -117,6 +117,9 @@ class ShaderProgram(object):
         self.version = settings.shader_version
         self.functions = {}
 
+    def get_shader_id(self):
+        return ''
+
     def clear_functions(self):
         self.functions = {}
 

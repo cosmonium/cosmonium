@@ -28,8 +28,9 @@ if settings.c_scene_manager:
         print("\t", e)
         from .pyscene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
         C_CameraHolder = None
+    from .pyscene.scenemanager import SceneManagerBase
 else:
-    from .pyscene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+    from .pyscene.scenemanager import SceneManagerBase, StaticSceneManager, DynamicSceneManager, RegionSceneManager
     C_CameraHolder = None
 
 def remove_main_region(camera):

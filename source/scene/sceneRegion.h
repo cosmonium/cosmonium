@@ -33,6 +33,7 @@ class CameraHolder;
 class CollisionHandlerQueue;
 class DisplayRegion;
 class GrahicsOoutput;
+class RenderPass;
 class RenderState;
 class SceneAnchor;
 class SceneManager;
@@ -43,8 +44,6 @@ PUBLISHED:
   SceneRegion(SceneManager *scene_manager, double near_distance, double far_distance);
   virtual ~SceneRegion(void);
 
-  void set_camera_mask(DrawMask flags);
-
   void add_body(SceneAnchor *body);
 
   void add_point(SceneAnchor *point);
@@ -53,10 +52,9 @@ PUBLISHED:
 
   void merge(SceneRegion *other);
 
-  void create(GraphicsOutput *target,
+  void create(std::vector<PT(RenderPass)> rendering_passes,
       const RenderState *state,
       CameraHolder *camera_holder,
-      DrawMask camera_mask,
       bool inverse_z,
       double section_near,
       double section_far,
@@ -82,15 +80,12 @@ PUBLISHED:
 
 protected:
   PT(SceneManager) scene_manager;
+  std::vector<PT(RenderPass)> rendering_passes;
   std::vector<PT(SceneAnchor)> bodies;
   SceneAnchorCollection points;
   double near_distance;
   double far_distance;
-  PT(GraphicsOutput) target;
-  PT(DisplayRegion) region;
   NodePath root;
-  PT(Camera) cam;
-  NodePath cam_np;
 
 public:
   MAKE_TYPE_2("SceneRegion", TypedObject, ReferenceCount);

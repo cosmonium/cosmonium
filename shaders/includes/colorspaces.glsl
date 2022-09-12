@@ -72,3 +72,54 @@ linear_to_srgb(vec4 color)
         linear_to_srgb(color.b),
         color.a);
 }
+
+vec3
+linear_to_xyz(vec3 linear)
+{
+  const mat3 RGB2XYZ = mat3(0.4124, 0.2126, 0.0193,
+                            0.3576, 0.7152, 0.1192,
+                            0.1805, 0.0722, 0.9505);
+  return RGB2XYZ * linear;
+}
+
+vec3
+xyz_to_linear(vec3 xyz)
+{
+  const mat3 XYZ2RGB = mat3( 3.2405, -0.9693,  0.0556,
+                            -1.5371,  1.8760, -0.2040,
+                            -0.4985,  0.0416,  1.0572);
+  return XYZ2RGB * xyz;
+}
+
+vec3
+xyz_to_xyy(vec3 xyz)
+{
+  vec3 xyy;
+  xyy.z = xyz.y;
+  float temp = dot(vec3(1.0), xyz);
+  xyy.xy = xyz.xy / temp;
+  return xyy;
+}
+
+vec3
+xyy_to_xyz(vec3 xyy)
+{
+  vec3 xyz;
+  xyz.x = xyy.z * xyy.x / xyy.y;
+  xyz.y = xyy.z;
+  xyz.z = xyy.z * (1.0 - xyy.x - xyy.y) / xyy.y;
+  return xyz;
+}
+
+vec3
+linear_to_xyy(vec3 linear)
+{
+  return xyz_to_xyy(linear_to_xyz(linear));
+}
+
+
+vec3
+xyy_to_linear(vec3 xyy)
+{
+  return xyz_to_linear(xyy_to_xyz(xyy));
+}

@@ -48,6 +48,9 @@ const double luminosity_magnitude_factor = log(10.0) / 2.5;
 
 const double sun_abs_magnitude = 4.83;
 
+const double sun_luminous_flux = 3.75e28;
+const double sun_luminous_intensity = sun_luminous_flux / 4 / M_PI; // Candela
+
 inline double
 to_rad(double deg)
 {
