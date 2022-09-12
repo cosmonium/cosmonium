@@ -148,29 +148,6 @@ float to_srgb(float value) {
     }
 }''')
 
-    def encode_rgba(self, code):
-        code.append('''
-vec4 EncodeFloatRGBA( float v ) {
-  //vec4 enc = vec4(1.0, 255.0, 65025.0, 16581375.0) * v;
-  vec4 enc = vec4(1.0, 255.0, 65535.0, 16777215.0) * v;
-  enc = fract(enc);
-  enc -= enc.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0);
-  return enc;
-}''')
-
-    def add_encode_rgba(self, code):
-        self.add_function(code, 'EncodeFloatRGBA', self.encode_rgba)
-
-    def decode_rgba(self, code):
-        code.append('''
-float DecodeFloatRGBA( vec4 rgba ) {
-  //return dot( rgba, vec4(1.0, 1/255.0, 1/65025.0, 1/16581375.0) );
-  return dot( rgba, vec4(1.0, 1/255.0, 1/65535.0, 1/16777215.0) );
-}''')
-
-    def add_decode_rgba(self, code):
-        self.add_function(code, 'DecodeFloatRGBA', self.decode_rgba)
-
     def create_shader_version(self, code):
         if self.version is not None:
             code.append("#version %d" % self.version)

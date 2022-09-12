@@ -121,9 +121,6 @@ class OpenGLConfig:
         else:
             cls.floating_point_buffer = False
 
-        if not settings.encode_float and not cls.floating_point_buffer:
-            settings.encode_float = True
-
     @classmethod
     def check_aux_buffer(cls, base):
         if settings.use_aux_buffer:

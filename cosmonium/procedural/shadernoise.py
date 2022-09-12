@@ -1056,8 +1056,6 @@ class NoiseFragmentShader(ShaderProgram):
 
     def create_extra(self, code):
         self.pi(code)
-        if settings.encode_float:
-            self.add_encode_rgba(code)
         self.noise_source.noise_extra(self, code)
         self.noise_source.noise_func(code)
         self.noise_target.fragment_extra(code)
@@ -1186,20 +1184,10 @@ class NoiseTarget(ShaderComponent):
 
 class FloatTarget(NoiseTarget):
     def get_id(self):
-        if settings.encode_float:
-            return 'enc'
-        else:
-            return ''
-
-    def fragment_extra(self, code):
-        if settings.encode_float:
-            self.add_encode_rgba(code)
+        return ''
 
     def apply_noise(self, code):
-        if settings.encode_float:
-            code.append('frag_output = EncodeFloatRGBA(value);')
-        else:
-            code.append('frag_output = vec4(value, 0, 0, 0);')
+        code.append('frag_output = vec4(value, 0, 0, 0);')
 
 class GrayTarget(NoiseTarget):
     def get_id(self):

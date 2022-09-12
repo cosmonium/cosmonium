@@ -55,18 +55,12 @@ class HeightmapShaderDataSource(ShaderDataSource):
             code.append("uniform vec2 heightmap_%s_scale;" % self.name)
 
     def decode_height(self, code):
-        if settings.encode_float:
-            code += ['''
-float decode_height(vec4 encoded) {
-    return DecodeFloatRGBA(encoded);
-}
-''']
-        else:
-            code += ['''
+        code += ['''
 float decode_height(vec4 encoded) {
     return encoded.x;
 }
 ''']
+
     def get_terrain_height(self, code):
         code += ['''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
@@ -124,8 +118,6 @@ struct HeightmapParameters {
 """)
 
     def vertex_extra(self, code):
-        if settings.encode_float:
-            self.shader.vertex_shader.add_decode_rgba(code)
         self.shader.vertex_shader.add_function(code, 'heightmap_struct', self.heightmap_struct)
         self.shader.vertex_shader.add_function(code, 'decode_height', self.decode_height)
         self.interpolator.extra(self.shader.vertex_shader, code)
@@ -133,8 +125,6 @@ struct HeightmapParameters {
         self.shader.vertex_shader.add_function(code, 'get_terrain_height_%s' % self.name, self.get_terrain_height)
 
     def fragment_extra(self, code):
-        if settings.encode_float:
-            self.shader.fragment_shader.add_decode_rgba(code)
         self.shader.fragment_shader.add_function(code, 'heightmap_struct', self.heightmap_struct)
         self.shader.fragment_shader.add_function(code, 'decode_height', self.decode_height)
         self.interpolator.extra(self.shader.fragment_shader, code)

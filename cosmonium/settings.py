@@ -63,7 +63,6 @@ stereo_swap_eyes = False
 use_pbr = False
 use_srgb = True
 use_assimp = True
-encode_float = False
 
 deferred=False
 deferred_split=False

@@ -56,14 +56,7 @@ class StackedHeightmapShaderDataSource(ShaderDataSource):
         return ''
 
     def decode_height(self, code):
-        if settings.encode_float:
-            code += ['''
-float decode_height(vec4 encoded) {
-    return DecodeFloatRGBA(encoded);
-}
-''']
-        else:
-            code += ['''
+        code += ['''
 float decode_height(vec4 encoded) {
     return encoded[0];
 }
@@ -112,15 +105,11 @@ vec4 textureGood( sampler2D sam, vec2 uv )
         code.append('}')
 
     def vertex_extra(self, code):
-        if settings.encode_float:
-            self.shader.vertex_shader.add_decode_rgba(code)
         self.textureGood(code)
         self.decode_height(code)
         self.get_terrain_height_named(code)
 
     def fragment_extra(self, code):
-        if settings.encode_float:
-            self.shader.fragment_shader.add_decode_rgba(code)
         self.textureGood(code)
         self.decode_height(code)
         self.get_terrain_height_named(code)

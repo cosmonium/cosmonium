@@ -38,11 +38,7 @@ class TexFilter(object):
             y = min(max(y, 0.0), 1.0)
         value = LColor()
         peeker.lookup(value, x, y)
-        if settings.encode_float:
-            value = value[0] + value[1] / 255.0 + value[2] / 65025.0 + value[3] / 16581375.0
-        else:
-            value = value[0]
-        return value
+        return value[0]
 
     def get_bilinear_value(self, peeker, x, y, clamp=True):
         x /= peeker.get_x_size()
@@ -55,11 +51,7 @@ class TexFilter(object):
         if not result:
             print("Invalid offsets", x, y)
             return 0.0
-        if settings.encode_float:
-            value = value[0] + value[1] / 255.0 + value[2] / 65025.0 + value[3] / 16581375.0
-        else:
-            value = value[0]
-        return value
+        return value[0]
 
     def get_value(self, peeker, x, y):
         raise NotImplementedError()
