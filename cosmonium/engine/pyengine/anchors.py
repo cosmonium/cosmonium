@@ -101,39 +101,37 @@ class AnchorBase():
         if self.update_id == update_id: return
         global_delta = self._global_position - observer._global_position
         local_delta = self._local_position - observer._local_position
-        rel_position = global_delta + local_delta
-        distance_to_obs = rel_position.length()
-        vector_to_obs = -rel_position / distance_to_obs
+        self.rel_position = global_delta + local_delta
+        distance_to_obs = self.rel_position.length()
         if distance_to_obs > 0.0:
-            vector_to_obs = -rel_position / distance_to_obs
-            visible_size = self.bounding_radius / (distance_to_obs * observer.pixel_size)
-            coef = -vector_to_obs.dot(observer.camera_vector)
+            self.vector_to_obs = -self.rel_position / distance_to_obs
+            self.visible_size = self.bounding_radius / (distance_to_obs * observer.pixel_size)
+            coef = -self.vector_to_obs.dot(observer.camera_vector)
             self.z_distance = distance_to_obs * coef
         else:
-            vector_to_obs = LVector3d()
-            visible_size = 0.0
+            self.vector_to_obs = LVector3d()
+            self.visible_size = 0.0
             self.z_distance = 0.0
-        radius = self.bounding_radius
-        if distance_to_obs > radius:
-            in_view = observer.rel_frustum.is_sphere_in(rel_position, radius)
-            resolved = visible_size > settings.min_body_size
+        self.distance_to_obs = distance_to_obs
+
+    def update_state(self, observer, update_id):
+        if self.distance_to_obs > self.bounding_radius:
+            in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
+            resolved = self.visible_size > settings.min_body_size
             visible = in_view# and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
             #We are in the object
             resolved = True
             visible = True
-        self.rel_position = rel_position
-        self.vector_to_obs = vector_to_obs
-        self.distance_to_obs = distance_to_obs
         self.was_visible = self.visible
         self.was_resolved = self.resolved
         self.visible = visible
         self.resolved = resolved
-        self.visible_size = visible_size
 
-    def update_and_update_observer(self, time, observer, update_id):
+    def update_all(self, time, observer, update_id):
         self.update(time, update_id)
         self.update_observer(observer, update_id)
+        self.update_state(observer, update_id)
 
     def update_app_magnitude(self, star):
         pass
@@ -286,12 +284,15 @@ class FlatSurfaceAnchor(OriginAnchor):
         self.distance_to_obs = observer_local_position.get_z()# - self.get_height(self.observer._local_position)
         self._height_under = self.surface.get_height_at(observer_local_position[0], observer_local_position[1])
         self.rel_position = self._local_position - observer_local_position
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
         self.visible_size = 0.0
         self.z_distance = 0.0
+
+    def update_state(self, observer, update_id):
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
         self.visible = True
         self.resolved = True
+
 
 class ObserverAnchor(CartesianAnchor):
     def __init__(self, anchor_class, body):
@@ -304,13 +305,15 @@ class ObserverAnchor(CartesianAnchor):
     def update_observer(self, observer, update_id):
         if self.update_id == update_id: return
         self.copy(observer)
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
         self.z_distance = 0.0
+
+    def update_state(self, observer, update_id):
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
         self.visible = True
         self.resolved = True
 

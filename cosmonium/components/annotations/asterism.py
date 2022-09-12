@@ -91,7 +91,8 @@ class Asterism(VisibleObject):
             if len(segment) < 2: continue
             for star in segment:
                 #TODO: Temporary workaround to have star pos
-                star.anchor.update_and_update_observer(0, self.context.observer.anchor, self.context.update_id)
+                star.anchor.update(0, self.context.update_id)
+                star.anchor.update_observer(self.context.observer.anchor, self.context.update_id)
                 position = SceneAnchor.calc_scene_position(self.context.scene_manager, star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))

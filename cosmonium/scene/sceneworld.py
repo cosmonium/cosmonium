@@ -43,6 +43,7 @@ class Worlds:
     def update_anchor_obs(self, observer, update_id):
         for world in self.worlds:
             world.anchor.update_observer(observer, update_id)
+            world.anchor.update_state(observer, update_id)
 
     def update_scene_anchor(self, scene_manager):
         for world in self.worlds:

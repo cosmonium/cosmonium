@@ -52,7 +52,7 @@ class UpdateTraverser(AnchorTraverser):
 
     def traverse_anchor(self, anchor):
         #if anchor.update_id == self.update_id: return
-        anchor.update_and_update_observer(self.time, self.observer, self.update_id)
+        anchor.update_all(self.time, self.observer, self.update_id)
         anchor.update_id = self.update_id
         if anchor.visible or anchor.visibility_override:
             self.visibles.append(anchor)

@@ -1179,12 +1179,6 @@ class Cosmonium(CosmoniumBase):
                 if anchor.was_visible:
                     self.no_longer_visibles.append(anchor)
             anchor.visible = visible
-        for anchor in self.extra:
-            if anchor in self.visibles: continue
-            if not (anchor._app_magnitude < settings.lowest_app_magnitude):
-                if anchor.was_visible:
-                    self.no_longer_visibles.append(anchor)
-                anchor.visible = False
         for world in self.worlds.worlds:
             resolved.append(world.anchor)
             self.resolved_scene_anchors.add_scene_anchor(world.scene_anchor)

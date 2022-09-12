@@ -221,6 +221,12 @@ CartesianAnchor::update_observer(CameraAnchor &observer, unsigned long int updat
       visible_size = 0.0;
       z_distance = 0.0;
   }
+}
+
+
+void
+CartesianAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
+{
   was_visible = visible;
   was_resolved = resolved;
   double radius = bounding_radius;
@@ -288,10 +294,16 @@ FlatSurfaceAnchor::update_observer(CameraAnchor &observer, unsigned long int upd
   distance_to_obs = observer_local_position.get_z(); //# - self.get_height(self.observer._local_position)
   //_height_under = ref_surface.get_height_at(observer_local_position[0], observer_local_position[1]);
   rel_position = _local_position - observer_local_position;
-  was_visible = visible;
-  was_resolved = resolved;
   visible_size = 0.0;
   z_distance = 0.0;
+}
+
+
+void
+FlatSurfaceAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
+{
+  was_visible = visible;
+  was_resolved = resolved;
   visible = true;
   resolved = true;
 }
@@ -317,12 +329,18 @@ ObserverAnchor::update_observer(CameraAnchor &observer, unsigned long int update
 {
   if (update_id == this->update_id) return;
   copy(observer);
-  was_visible = visible;
-  was_resolved = resolved;
   distance_to_obs = 0.0;
   vector_to_obs = LVector3d();
   visible_size = 0.0;
   z_distance = 0.0;
+}
+
+
+void
+ObserverAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
+{
+  was_visible = visible;
+  was_resolved = resolved;
   visible = true;
   resolved = true;
 }

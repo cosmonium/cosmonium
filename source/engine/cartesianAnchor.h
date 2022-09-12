@@ -82,6 +82,8 @@ PUBLISHED:
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
 
+  virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
+
 protected:
   PT(ReferenceFrame) frame;
   LPoint3d _frame_position;
@@ -110,6 +112,7 @@ PUBLISHED:
   void set_surface(PyObject *ref_surface);
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
+  virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
 
 private:
   PyObject *ref_surface;
@@ -127,6 +130,7 @@ PUBLISHED:
   virtual void update(double time, unsigned long int update_id);
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
+  virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
 
 protected:
   MAKE_TYPE("ObserverAnchor", CartesianAnchor);

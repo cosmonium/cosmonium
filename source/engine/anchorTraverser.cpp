@@ -87,7 +87,7 @@ UpdateTraverser::UpdateTraverser(double time, CameraAnchor &observer, double lim
 void
 UpdateTraverser::traverse_anchor(StellarAnchor *anchor)
 {
-    anchor->update_and_update_observer(time, observer, update_id);
+    anchor->update_all(time, observer, update_id);
     anchor->update_id = update_id;
     if (anchor->visible || anchor->visibility_override) {
         collected.push_back(anchor);

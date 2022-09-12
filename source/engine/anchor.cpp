@@ -133,8 +133,9 @@ AnchorBase::calc_absolute_relative_position_to(LPoint3d position)
 }
 
 void
-AnchorBase::update_and_update_observer(double time, CameraAnchor &observer, unsigned long int update_id)
+AnchorBase::update_all(double time, CameraAnchor &observer, unsigned long int update_id)
 {
   update(time, update_id);
   update_observer(observer, update_id);
+  update_state(observer, update_id);
 }

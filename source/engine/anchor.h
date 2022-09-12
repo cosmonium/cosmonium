@@ -93,7 +93,9 @@ PUBLISHED:
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id) = 0;
 
-  virtual void update_and_update_observer(double time, CameraAnchor &observer, unsigned long int update_id);
+  virtual void update_state(CameraAnchor &observer, unsigned long int update_id) = 0;
+
+  virtual void update_all(double time, CameraAnchor &observer, unsigned long int update_id);
 
   INLINE double get_apparent_radius(void) { return get_bounding_radius(); }
 

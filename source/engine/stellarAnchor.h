@@ -77,6 +77,8 @@ PUBLISHED:
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);
 
+  virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
+
   virtual void update_app_magnitude(StellarAnchor *star = 0);
 
   //TODO: Temporary until Python code is aligned

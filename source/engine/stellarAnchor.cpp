@@ -194,6 +194,12 @@ StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_
       visible_size = 0.0;
       z_distance = 0.0;
   }
+}
+
+
+void
+StellarAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
+{
   was_visible = visible;
   was_resolved = resolved;
   double radius = bounding_radius;
@@ -207,6 +213,7 @@ StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_
       visible = true;
   }
 }
+
 
 double
 StellarAnchor::get_luminosity(StellarAnchor *star)
