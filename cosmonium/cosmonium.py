@@ -1395,7 +1395,7 @@ class Cosmonium(CosmoniumBase):
                 self.nearest_body = nearest_body
                 print("New nearest visible object:", nearest_body.get_name())
         else:
-            distance = None
+            distance = float('inf')
         return distance
 
     def time_task(self, task):
