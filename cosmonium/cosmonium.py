@@ -547,6 +547,8 @@ class Cosmonium(CosmoniumBase):
                 screen_point_scale = self.pipe.display_zoom
             else:
                 screen_point_scale = settings.custom_point_scale
+            if settings.use_multisampling and settings.multisamples > 0:
+                screen_point_scale *= 2
             if settings.use_pbr:
                 self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
                 if self.scene_manager.has_regions():
