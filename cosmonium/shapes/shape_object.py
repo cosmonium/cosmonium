@@ -142,7 +142,7 @@ class ShapeObject(VisibleObject):
         self.shader.set_scattering(scattering_shader)
         self.update_shader()
         self.sources.add_source(scattering_source)
-        if self.instance is not None:
+        if self.instance is not None and self.instance_ready:
             scattering_source.apply(self.shape, self.instance)
 
     def remove_scattering(self):
@@ -304,6 +304,8 @@ class ShapeObject(VisibleObject):
             self.appearance.update_lod(self.shape, self.owner.get_apparent_radius(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.context.observer.apply_scattering > 0:
+            self.context.observer.scattering.add_attenuated_object(self)
         if self.shape.instance is not None:
             self.sources.update(self.shape, camera_pos, camera_rot)
         if not self.instance_ready: return
@@ -316,8 +318,6 @@ class ShapeObject(VisibleObject):
         if self.shadows.rebuild_needed:
             self.update_shader()
             self.shadows.rebuild_needed = False
-        if self.context.observer.apply_scattering > 0:
-            self.context.observer.scattering.add_attenuated_object(self)
 
     def remove_instance(self):
         # This method could be called even if the instance does not exist
