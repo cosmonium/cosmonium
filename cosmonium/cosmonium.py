@@ -1254,7 +1254,7 @@ class Cosmonium(CosmoniumBase):
                 #print("TEST", reflective.body.get_name())
                 traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source.get_bounding_radius())
                 self.nearest_system.anchor.traverse(traverser)
-                #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.anchors)))
+                #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
                 for occluder in traverser.get_collected():
                     if not occluder in self.shadow_casters:
                         self.shadow_casters.append(occluder)

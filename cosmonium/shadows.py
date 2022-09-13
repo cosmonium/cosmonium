@@ -302,9 +302,10 @@ class ShadowCasterBase(object):
         pass
 
 class ShadowMapShadowCaster(ShadowCasterBase):
-    def __init__(self, light, occluder):
+    def __init__(self, light, occluder, shape_object):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
+        self.shape_object = shape_object
         self.name = self.occluder.get_ascii_name()
         self.shadow_map = None
         self.shadow_camera = None
@@ -317,8 +318,10 @@ class ShadowMapShadowCaster(ShadowCasterBase):
 
     def create(self):
         if self.shadow_map is not None: return
+        if not self.shape_object.instance_ready: return
         self.create_camera()
         self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraFlag)
+        self.check_settings()
 
     def remove_camera(self):
         pass
@@ -327,6 +330,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         self.remove_camera()
 
     def check_settings(self):
+        if self.shadow_map is None: return
         if settings.debug_shadow_frustum:
             self.shadow_camera.show_frustum()
         else:
@@ -336,6 +340,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         return self.shadow_map is not None
 
     def update(self, scene_manager):
+        if self.shadow_map is None: return
         radius = self.occluder.get_bounding_radius()
         self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
         #The shadow frustum origin is at the light center which is one radius away from the object
@@ -407,8 +412,8 @@ class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
         self.shadow_camera = None
 
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
-    def __init__(self, light, occluder):
-        ShadowMapShadowCaster.__init__(self, light, occluder)
+    def __init__(self, light, occluder, shape_object):
+        ShadowMapShadowCaster.__init__(self, light, occluder, shape_object)
         self.targets = {}
 
     def create_camera(self):
@@ -427,7 +432,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def update(self, scene_manager):
         ShadowMapShadowCaster.update(self, scene_manager)
-        self.shadow_map.set_pos(self.light.light_instance.get_pos())
+        if self.shadow_map is not None:
+            self.shadow_map.set_pos(self.light.light_instance.get_pos())
 
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)

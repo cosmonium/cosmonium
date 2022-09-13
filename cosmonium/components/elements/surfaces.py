@@ -179,7 +179,7 @@ class MeshSurface(Surface):
         return False
 
     def do_create_shadow_caster_for(self, light_source):
-        shadow_caster = CustomShadowMapShadowCaster(light_source, self.body)
+        shadow_caster = CustomShadowMapShadowCaster(light_source, self.body, self)
         shadow_caster.add_target(self, self_shadow=True)
         return shadow_caster
 
