@@ -47,6 +47,9 @@ class StellarSystem(StellarObject):
     def is_system(self):
         return True
 
+    def get_or_create_system(self):
+        return self
+
     def check_settings(self):
         StellarObject.check_settings(self)
         for child in self.children:
