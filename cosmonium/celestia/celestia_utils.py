@@ -137,19 +137,20 @@ def instanciate_frame(universe, data, parent_anchor, global_coord):
     if data is not None:
         for (key, value) in data.items():
             if key == 'Center':
+                name = str(value)
                 #print("Looking for center", value)
-                if '/' in value:
+                if '/' in name:
                     global_coord = False
                 else:
                     global_coord = True
-                path = body_path(value)
+                path = body_path(name)
                 frame_center = universe.find_by_path(path)
                 if frame_center is not None:
                     frame_center = frame_center.anchor
                 else:
-                    print("Frame center '", value, "'not found")
+                    print(f"Frame center '{name}'not found")
             else:
-                print("Frame", key, "not supported")
+                print(f"Frame parameter '{key}' not supported")
     return frame_center, global_coord
 
 def instanciate_reference_frame(universe, data, parent_anchor, global_coord):

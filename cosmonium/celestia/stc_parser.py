@@ -73,6 +73,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     texture = None
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
+        parent_name = str(parent_name)
         parent = objectsDB.get(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:
@@ -163,6 +164,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     has_barycenter = False
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
+        parent_name = str(parent_name)
         parent = objectsDB.get(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:

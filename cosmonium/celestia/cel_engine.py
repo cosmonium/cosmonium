@@ -425,13 +425,13 @@ Set the selection to the specified object.
 Names can be in 'path' form, e.g. "Sol/Earth/Moon" Otherwise, the object selected may depend on the location of the camera.
 Just using "Moon" works fine within our solar system, but the full path form is favored.
 """
-    path = parameters.get('object', '')
-    path = body_path(path)
+    path_name = str(parameters.get('object', ''))
+    path = body_path(path_name)
     body = base.universe.find_by_path(path)
     if body:
         sequence.append(Func(base.select_body, body))
     else:
-        print("Path", path, "not found")
+        print(f"Path '{path_name}' not found")
 
 def set_cmd(command_name, sequence, base, parameters):
     """Parameters:
