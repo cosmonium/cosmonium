@@ -131,6 +131,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   const RenderState *state = world.get_state();
   clear_scene();
   std::vector<PT(SceneAnchor)> background_resolved;
+  std::vector<PT(SceneAnchor)> spread_bodies;
   for (int i = 0; i < resolveds.get_num_scene_anchors(); ++i) {
       SceneAnchor *resolved = resolveds[i];
       AnchorBase *anchor = resolved->get_anchor();
@@ -138,7 +139,11 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
         continue;
       }
       if (!resolved->get_virtual_object() && resolved->get_instance() != nullptr) {
-          if (!resolved->get_background()) {
+          if (resolved->get_background()) {
+            background_resolved.push_back(resolved);
+          } else if (resolved->get_spread_object()) {
+            spread_bodies.push_back(resolved);
+          } else {
               double near_distance;
               double far_distance;
               if (anchor->distance_to_obs > anchor->get_bounding_radius()) {
@@ -157,8 +162,6 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
                   regions.pop_back();
               }
               regions.push_back(region);
-          } else {
-              background_resolved.push_back(resolved);
           }
       }
   }
@@ -195,6 +198,17 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
       SceneRegion *region = new SceneRegion(this, min_near, std::numeric_limits<double>::infinity());
       regions.push_back(region);
       background_region = region;
+  }
+  for (auto body : spread_bodies) {
+      AnchorBase *anchor = body->get_anchor();
+      double coef = 1; // -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
+      double near_distance = (anchor->distance_to_obs  - anchor->get_bounding_radius()) * coef / scale;
+      double far_distance = (anchor->distance_to_obs + anchor->get_bounding_radius()) * coef / scale;
+      for (auto region : regions) {
+          if (region->overlap(near_distance, far_distance)) {
+              region->add_body(body);
+          }
+      }
   }
   background_region = regions.back();
   for (auto body : background_resolved) {

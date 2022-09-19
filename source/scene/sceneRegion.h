@@ -49,6 +49,7 @@ PUBLISHED:
   void add_point(SceneAnchor *point);
 
   bool overlap(SceneRegion *other);
+  bool overlap(double near_distance, double far_distance);
 
   void merge(SceneRegion *other);
 

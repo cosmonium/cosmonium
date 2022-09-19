@@ -35,13 +35,15 @@ SceneAnchor::SceneAnchor(AnchorBase *anchor,
     LColor oid_color,
     bool apply_orientation,
     bool background,
-    bool virtual_object) :
+    bool virtual_object,
+    bool spread_object) :
     anchor(anchor),
     background(background),
     support_offset_body_center(support_offset_body_center),
     apply_orientation(apply_orientation),
     has_instance(false),
     virtual_object(virtual_object),
+    spread_object(spread_object),
     scene_position(0),
     scene_orientation(0),
     scene_scale_factor(0),
@@ -261,6 +263,20 @@ void
 SceneAnchor::set_virtual_object(bool virtual_object)
 {
     this->virtual_object = virtual_object;
+}
+
+
+bool
+SceneAnchor::get_spread_object(void)
+{
+    return spread_object;
+}
+
+
+void
+SceneAnchor::set_spread_object(bool spread_object)
+{
+    this->spread_object = spread_object;
 }
 
 

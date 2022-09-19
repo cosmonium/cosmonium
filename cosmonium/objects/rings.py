@@ -24,6 +24,7 @@ from .stellarobject import StellarObject
 
 class StellarRings(StellarObject):
     anchor_class = StellarAnchor.Reflective
+    spread_object = True
     def __init__(self, names, source_names, rings_object, orbit, rotation, body_class, point_color,
                  description=''):
         StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)

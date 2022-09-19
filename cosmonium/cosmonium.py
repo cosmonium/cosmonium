@@ -1420,6 +1420,7 @@ class Cosmonium(CosmoniumBase):
         else:
             dt = 0
 
+        # print("FRAME", globalClock.get_frame_count())
         self.gui.update()
         self.time.update_time(dt)
         self.update_extra(self.selected, self.follow, self.sync, self.track)

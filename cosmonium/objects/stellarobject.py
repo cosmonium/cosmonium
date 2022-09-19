@@ -49,6 +49,7 @@ class StellarObject(NamedObject):
     has_halo = False
     has_resolved_halo = False
     virtual_object = False
+    spread_object = False
     support_offset_body_center = True
     allow_scattering = False
     background = False
@@ -69,7 +70,8 @@ class StellarObject(NamedObject):
         #else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
         self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center, LColor(),
-                                        background=self.background, virtual_object=self.virtual_object)
+                                        background=self.background, virtual_object=self.virtual_object,
+                                        spread_object=self.spread_object)
         self.oid = None
         self.oid_color = None
         #Flags

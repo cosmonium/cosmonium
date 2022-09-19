@@ -344,11 +344,16 @@ class RegionSceneManager(SceneManagerBase):
         state = world.get_state()
         self.clear_scene()
         background_resolved = []
+        spread_bodies = []
         for scene_anchor in resolveds:
             anchor = scene_anchor.anchor
             if not anchor.visible: continue
             if not scene_anchor.virtual_object and scene_anchor.instance is not None:
-                if not scene_anchor.background:
+                if scene_anchor.background:
+                    background_resolved.append(scene_anchor)
+                elif scene_anchor.spread_object:
+                    spread_bodies.append(scene_anchor)
+                else:
                     if anchor.distance_to_obs > anchor.get_bounding_radius():
                         coef = -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
                         near = (anchor.distance_to_obs  - anchor.get_bounding_radius()) * coef  * camera_holder.cos_fov2 / self.scale
@@ -358,13 +363,11 @@ class RegionSceneManager(SceneManagerBase):
                         near = self.min_near
                         far = self.min_near + anchor.get_bounding_radius() * 2 / self.scale
                     region = SceneRegion(self, near, far)
-                    region.add_body(anchor.body)
+                    region.add_body(scene_anchor)
                     while len(self.regions) > 0 and region.overlap(self.regions[-1]):
                         region.merge(self.regions[-1])
                         self.regions.pop()
                     self.regions.append(region)
-                else:
-                    background_resolved.append(anchor.body)
         if len(self.regions) > 0:
             # Sort the region from nearest to farthest
             self.regions.sort(key=lambda r: r.near)
@@ -391,9 +394,17 @@ class RegionSceneManager(SceneManagerBase):
             region = SceneRegion(self, self.min_near, float('inf'))
             self.regions.append(region)
             self.background_region = region
+        for scene_anchor in spread_bodies:
+            anchor = scene_anchor.anchor
+            coef = 1 # -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
+            near_distance = (anchor.distance_to_obs  - anchor.get_bounding_radius()) * coef / self.scale
+            far_distance = (anchor.distance_to_obs + anchor.get_bounding_radius()) * coef / self.scale
+            for region in self.regions:
+                if region.overlap_range(near_distance, far_distance):
+                    region.add_body(scene_anchor)
         background_region = self.regions[-1]
-        for body in background_resolved:
-            background_region.add_body(body)
+        for scene_anchor in background_resolved:
+            background_region.add_body(scene_anchor)
         current_region_index = 0
         current_region = self.regions[0]
         for visible in visibles:
@@ -452,6 +463,10 @@ class SceneRegion:
         return self.near <= other.near < self.far or other.near <= self.near < other.far or \
                self.far >= other.far > self.near or other.far >= self.far > other.near
 
+    def overlap_range(self, near_distance, far_distance):
+        return self.near <= near_distance < self.far or near_distance <= self.near < far_distance or \
+               self.far >= far_distance > self.near or far_distance >= self.far > near_distance
+
     def merge(self, other):
         self.bodies += other.bodies
         self.near = min(self.near, other.near)
@@ -460,8 +475,12 @@ class SceneRegion:
     def create(self, rendering_passes, state, camera_holder, inverse_z, section_near, section_far, sort_index):
         self.rendering_passes = [rendering_pass.copy() for rendering_pass in rendering_passes]
         self.root.set_state(state)
-        for body in self.bodies:
-            body.scene_anchor.instance.reparent_to(self.root)
+        for scene_anchor in self.bodies:
+            if scene_anchor.instance.has_parent():
+                clone = self.root.attach_new_node("region-anchor")
+                scene_anchor.instance.instance_to(clone)
+            else:
+                scene_anchor.instance.reparent_to(self.root)
         lens = camera_holder.lens.make_copy()
         if inverse_z:
             lens.set_near_far(self.far * 1.01, self.near * 0.99)
@@ -482,6 +501,8 @@ class SceneRegion:
         for rendering_pass in self.rendering_passes:
             rendering_pass.remove()
         self.rendering_passes = []
+        # Note: This assume that all the instances attached to the root will be detached
+        # If it's no longer the case, we have to manually detach them before destroying the root
         self.root = None
 
     def pick_scene(self, mpos):
@@ -502,5 +523,5 @@ class SceneRegion:
 
     def ls(self):
         print("Near", self.near, "Far", self.far)
-        print("Bodies:", list(map(lambda b: b.get_name(), self.bodies)))
+        print("Bodies:", list(map(lambda b: b.anchor.body.get_name(), self.bodies)))
         self.root.ls()

@@ -38,7 +38,8 @@ PUBLISHED:
       LColor oid_color,
       bool apply_orientation=false,
       bool background=false,
-      bool virtual_object=false);
+      bool virtual_object=false,
+      bool spread_object=false);
   virtual ~SceneAnchor(void);
 
   void create_instance(SceneManager *scene_manager);
@@ -71,8 +72,12 @@ PUBLISHED:
   MAKE_PROPERTY(oid_color, get_oid_color, set_oid_color);
 
   bool get_virtual_object(void);
-  void set_virtual_object(bool get_virtual_object);
+  void set_virtual_object(bool virtual_object);
   MAKE_PROPERTY(virtual_object, get_virtual_object, set_virtual_object);
+
+  bool get_spread_object(void);
+  void set_spread_object(bool spread_object);
+  MAKE_PROPERTY(spread_object, get_spread_object, set_spread_object);
 
   static bool offset_body_center;
   static bool camera_at_origin;
@@ -90,6 +95,7 @@ protected:
   NodePath shifted_instance;
   NodePath unshifted_instance;
   bool virtual_object;
+  bool spread_object;
   LColor oid_color;
 
 PUBLISHED:

@@ -26,13 +26,15 @@ from math import log
 
 class SceneAnchor:
     anchor_name = 'scene-anchor'
-    def __init__(self, anchor, support_offset_body_center, oid_color, apply_orientation=False, background=False, virtual_object=False):
+    def __init__(self, anchor, support_offset_body_center, oid_color,
+                 apply_orientation=False, background=False, virtual_object=False, spread_object=False):
         self.anchor = anchor
         self.support_offset_body_center = support_offset_body_center
         self.oid_color = oid_color
         self.apply_orientation = apply_orientation
         self.background = background
         self.virtual_object = virtual_object
+        self.spread_object = spread_object
         self.instance = None
         self.shifted_instance = None
         self.unshifted_instance = None

@@ -73,6 +73,14 @@ SceneRegion::overlap(SceneRegion *other)
 }
 
 
+bool
+SceneRegion::overlap(double near_distance, double far_distance)
+{
+    return ((near_distance <= near_distance) && (near_distance < far_distance)) || ((near_distance <= near_distance) && (near_distance < far_distance)) ||
+           ((far_distance >= far_distance) && (far_distance > near_distance)) || ((far_distance >= far_distance) && (far_distance > near_distance));
+}
+
+
 void
 SceneRegion::merge(SceneRegion *other)
 {
@@ -94,7 +102,13 @@ SceneRegion::create(std::vector<PT(RenderPass)> parent_rendering_passes,
 {
     root.set_state(state);
     for (auto body : bodies) {
-        body->get_instance()->reparent_to(root);
+        NodePath * instance = body->get_instance();
+        if (instance->has_parent()) {
+          NodePath clone = root.attach_new_node("region-anchor");
+          instance->instance_to(clone);
+        } else {
+          instance->reparent_to(root);
+        }
     }
     PT(PerspectiveLens) lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
     if (inverse_z) {
