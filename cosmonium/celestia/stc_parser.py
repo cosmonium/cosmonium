@@ -119,6 +119,8 @@ def instanciate_star(universe, item_name, item_alias, item_data):
             rotation = instanciate_custom_rotation(value, parent_anchor)
         elif key == 'RotationPeriod':
             pass # = value
+        elif key == 'InfoURL':
+            pass #= value
         else:
             print("Key of Star", key, "not supported")
     if has_barycenter:
@@ -188,6 +190,8 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
             orbit = instanciate_elliptical_orbit(value, True)
         elif key == 'CustomOrbit':
             orbit = instanciate_custom_orbit(value, parent_anchor)
+        elif key == 'InfoURL':
+            pass #= value
         else:
             print("Key of Barycenter", key, "not supported")
     existing_star = objectsDB.get(names[-1])
