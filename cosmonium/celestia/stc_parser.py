@@ -78,6 +78,8 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         has_barycenter = True
         if parent is None:
             print("Could not find parent", parent)
+            return
+        parent = parent.get_or_create_system()
     if parent is None:
         parent = universe
     if parent.is_system() and parent.primary is not None:
@@ -171,6 +173,8 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         has_barycenter = True
         if parent is None:
             print("Could not find parent", parent)
+            return
+        parent = parent.get_or_create_system()
     if parent is None:
         parent = universe
     if parent.is_system() and parent.primary is not None:
