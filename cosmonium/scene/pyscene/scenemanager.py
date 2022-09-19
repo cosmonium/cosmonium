@@ -358,6 +358,9 @@ class RegionSceneManager(SceneManagerBase):
                         coef = -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
                         near = (anchor.distance_to_obs  - anchor.get_bounding_radius()) * coef  * camera_holder.cos_fov2 / self.scale
                         far = (anchor.distance_to_obs + anchor.get_bounding_radius()) * coef / self.scale
+                        # TODO: Some object that are not visible are in this list due to visibility_override, we should better filter the list
+                        if near < 0 and far < 0:
+                            continue
                         near = max(near, self.min_near)
                     else:
                         near = self.min_near

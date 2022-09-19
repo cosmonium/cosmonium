@@ -150,6 +150,10 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
                   double coef = -anchor->vector_to_obs.dot(camera_holder->get_anchor()->camera_vector);
                   near_distance = (anchor->distance_to_obs  - anchor->get_bounding_radius()) * coef  * camera_holder->get_cos_fov2() / scale;
                   far_distance = (anchor->distance_to_obs + anchor->get_bounding_radius()) * coef / scale;
+                  // TODO: Some object that are not visible are in this list due to visibility_override, we should better filter the list
+                  if (near_distance < 0 && far_distance < 0) {
+                    continue;
+                  }
                   near_distance = std::max(near_distance, min_near);
               } else {
                   near_distance = min_near;
