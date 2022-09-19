@@ -187,7 +187,7 @@ class MeshSurface(Surface):
         #Add self-shadowing for non-spherical objects
         if self.instance_ready:
             self.create_shadow_caster_for(light_source)
-            self.shadow_casters[light_source].add_target(self, self_shadow=True)
+            self.shadow_casters[light_source.source].add_target(self, self_shadow=True)
 
     def get_height_at(self, x, y, strict=False):
         coord = self.shape.global_to_shape_coord(x, y)

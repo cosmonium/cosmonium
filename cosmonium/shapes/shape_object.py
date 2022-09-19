@@ -211,12 +211,12 @@ class ShapeObject(VisibleObject):
         pass
 
     def create_shadow_caster_for(self, light_source):
-        if not light_source in self.shadow_casters:
+        if not light_source.source in self.shadow_casters:
             shadow_caster = self.do_create_shadow_caster_for(light_source)
-            self.shadow_casters[light_source] = shadow_caster
+            self.shadow_casters[light_source.source] = shadow_caster
             if not shadow_caster.is_analytic():
                 self.owner.set_visibility_override(True)
-        self.shadow_casters[light_source].create()
+        self.shadow_casters[light_source.source].create()
 
     def remove_all_shadows(self):
         for shadow_caster in self.shadow_casters.values():
@@ -232,7 +232,7 @@ class ShapeObject(VisibleObject):
 
     def add_shadow_target(self, light_source, target):
         self.create_shadow_caster_for(light_source)
-        self.shadow_casters[light_source].add_target(target)
+        self.shadow_casters[light_source.source].add_target(target)
 
     def add_self_shadow(self, light_source):
         pass
