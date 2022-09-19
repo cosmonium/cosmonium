@@ -56,18 +56,23 @@ greek_word_match = re.compile("^([A-Za-z]+)(\d*) ")
 superscripts= [u'⁰', u'¹', u'²', u'³', u'⁴', u'⁵', u'⁶', u'⁷', u'⁸', u'⁹']
 
 def canonize_name(name):
-    if not settings.convert_utf8: return name
-    match = greek_abv_match.match(name)
-    if match:
-        (greek, number, const) = match.groups()
-        if const.lower() in constellations_map:
-            greek = greek.upper()
-            if greek in greek_canonize:
-                name = name.replace(greek, greek_canonize[greek], 1)
+    if not settings.convert_utf8:
+        return name
+    try:
+        match = greek_abv_match.match(name)
+        if match:
+            (greek, number, const) = match.groups()
+            if const.lower() in constellations_map:
+                greek = greek.upper()
+                if greek in greek_canonize:
+                    name = name.replace(greek, greek_canonize[greek], 1)
+    except (TypeError, ValueError):
+        print(f"Invalid name '{name}'")
     return name
 
 def decode_name(name):
-    if not settings.convert_utf8: return name
+    if not settings.convert_utf8:
+        return name
     match = greek_abv_match.match(name)
     if match:
         (greek, number, const) = match.groups()
