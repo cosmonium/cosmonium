@@ -112,9 +112,9 @@ SceneRegion::create(std::vector<PT(RenderPass)> parent_rendering_passes,
     }
     PT(PerspectiveLens) lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
     if (inverse_z) {
-        lens->set_near_far(far_distance * 1.01, near_distance * 0.99);
+        lens->set_near_far(far_distance, near_distance);
     } else {
-        lens->set_near_far(near_distance * 0.99, far_distance * 1.01);
+        lens->set_near_far(near_distance, far_distance);
     }
     for (auto parent_rendering_pass : parent_rendering_passes) {
       PT(RenderPass) rendering_pass = new RenderPass(*parent_rendering_pass);

@@ -486,9 +486,9 @@ class SceneRegion:
                 scene_anchor.instance.reparent_to(self.root)
         lens = camera_holder.lens.make_copy()
         if inverse_z:
-            lens.set_near_far(self.far * 1.01, self.near * 0.99)
+            lens.set_near_far(self.far, self.near)
         else:
-            lens.set_near_far(self.near * 0.99, self.far * 1.01)
+            lens.set_near_far(self.near, self.far)
         for rendering_pass in self.rendering_passes:
             rendering_pass.camera.node().set_lens(lens)
             rendering_pass.camera.reparent_to(self.root)
