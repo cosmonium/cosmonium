@@ -45,14 +45,17 @@ class MeshShape(Shape):
             rotation = LQuaterniond()
         if scale is None:
             scale = LVector3d(1, 1, 1)
+        self.source_scale_factor = scale
         self.scale_factor = scale
         self.rotation = rotation
         self.auto_scale_mesh = auto_scale_mesh
+        if not self.auto_scale_mesh:
+            self.scale_factor *= units.m
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
-        if auto_scale_mesh and self.scale_factor is not None:
-            self.radius = max(*self.scale_factor)
+        if auto_scale_mesh and self.source_scale_factor is not None:
+            self.radius = max(*self.source_scale_factor)
         else:
             self.radius = 0.0
 
@@ -95,9 +98,8 @@ class MeshShape(Shape):
             (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             scale_factor = 1.0 / major
-            self.scale_factor *= scale_factor
+            self.scale_factor = self.source_scale_factor * scale_factor
         else:
-            self.scale_factor *= units.m
             self.radius = max(*self.scale_factor)
         if self.flatten:
             self.mesh.flattenStrong()
