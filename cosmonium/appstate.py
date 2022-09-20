@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d
+from panda3d.core import LPoint3d, LQuaterniond
 
 from .bodyclass import bodyClasses
 from . import settings
@@ -58,6 +58,8 @@ class AppState(object):
         self.time_full = cosmonium.time.time_full
         self.running = cosmonium.time.running
 
+        # TODO: This work only for FixedCameraController
+        cosmonium.camera_controller.prepare_movement()
         self.global_position = cosmonium.ship.anchor.get_absolute_reference_point()
         self.position = cosmonium.ship.anchor.get_frame_position()
         self.orientation = cosmonium.ship.anchor.get_frame_orientation()
@@ -113,6 +115,7 @@ class AppState(object):
         else:
             cosmonium.ship.anchor.set_frame_position(self.position)
             cosmonium.ship.anchor.set_frame_orientation(self.orientation)
+        cosmonium.observer.anchor.set_frame_orientation(LQuaterniond())
 
         cosmonium.observer.set_fov(self.fov)
 
