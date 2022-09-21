@@ -24,7 +24,7 @@ jobs:
       run: |
         echo "panda3d-1.11.0-cp38-cp38-linux_x86_64.whl" > requirements-tmp.txt
         cat requirements.txt >> requirements-tmp.txt
-        make build SOURCE_OPTIONS="--optimize 3"
+        make build
         python3 setup.py bdist_apps -p linux_x86_64 -r requirements-tmp.txt
     - name: Test binary
       run: |

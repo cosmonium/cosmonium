@@ -62,7 +62,6 @@ ifeq ($(PLATFORM),win_amd64)
     OS_SDK=8.1
     PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
-    SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
 endif
 
 ifeq ($(PLATFORM),win32)
@@ -70,7 +69,6 @@ ifeq ($(PLATFORM),win32)
     OS_SDK=8.1
     PYTHON_VERSION=3.7
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
-    SOURCE_OPTIONS+=--cmake 'C:\Program Files\CMake\bin\cmake.exe'
 endif
 
 ifneq ($(findstring manylinux2014,$(PLATFORM)),)

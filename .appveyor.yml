@@ -24,6 +24,7 @@ image: Visual Studio 2015
 # scripts that are called at very beginning, before repo cloning
 init:
 - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %platform%
+- choco install make
 
 # clone directory
 clone_folder: c:\projects\cosmonium
@@ -39,15 +40,12 @@ install:
   - ps: |
         $wc = New-Object System.Net.WebClient
         $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/Panda3D-1.11.0.dev2725-py3.7-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
-        c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe /S /D="C:\Panda3D" | Out-Null
+        c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe /S /D="C:\Panda3D-1.11.0-x64" | Out-Null
   - ps: |
         $wc = New-Object System.Net.WebClient
         $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.10/panda3d-1.10.10-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
         Expand-Archive -Path c:\projects\cosmonium\thirdparty-tools.zip
-        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.10/thirdparty -Destination c:\Panda3D\thirdparty
-  - ps: |
-        $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/panda3d-1.11.0.dev2725+fp64-cp37-cp37m-win_amd64.whl", "c:\projects\cosmonium\panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl")
+        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.10/thirdparty -Destination c:\Panda3D-1.11.0-x64\thirdparty
 
 #---------------------------------#
 #       build configuration       #
@@ -65,14 +63,8 @@ before_build:
 # to run your custom scripts instead of automatic MSBuild
 build_script:
   - cmd: |
-         cd source
-         c:\panda3d\python\python.exe ../tools/p3d_module_builder/build.py --windows-sdk 8.1
-         mv *.pyd ../lib/
-         cd ..
-  - cmd: |
-         echo panda3d-1.11.0+fp64-cp37-cp37m-win_amd64.whl > requirements-tmp.txt
-         cat requirements.txt >> requirements-tmp.txt
-         python setup.py bdist_apps -p win_amd64 -r requirements-tmp.txt
+         make build
+         make bdist
 
 # scripts to run after build (working directory and environment changes are persisted from the previous steps)
 after_build:
