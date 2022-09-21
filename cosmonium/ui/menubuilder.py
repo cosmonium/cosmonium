@@ -133,9 +133,9 @@ class MenuBuilder:
                 state = self.states_provider.get_state(entry.state)
             else:
                 state = 0
-            return self.menu_event(entry.text, state, entry.event, condition=enabled)
+            return self.menu_event(_(entry.text), state, entry.event, condition=enabled)
         else:
-            return self.menu_submenu(entry.text, entry.entries, condition=enabled)
+            return self.menu_submenu(_(entry.text), entry.entries, condition=enabled)
 
     def create_submenu(self, entries):
         submenu = []
@@ -152,5 +152,5 @@ class MenuBuilder:
     def create_menubar(self, menubar_config):
         menu = []
         for item in menubar_config.entries:
-            menu.append((item.text, partial(self.create_submenu, item.entries)))
+            menu.append((_(item.text), partial(self.create_submenu, item.entries)))
         return menu
