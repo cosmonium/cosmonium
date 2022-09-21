@@ -80,6 +80,7 @@ from .astro import units
 from .parsers.yamlparser import YamlModuleParser
 from .fonts import fontsManager
 from .pstats import pstat
+from .pgettext import patch_gettext
 from . import utils
 from . import workers
 from . import cache
@@ -95,25 +96,6 @@ import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
 
-# Patch gettext classes
-if sys.version_info < (3, 8):
-    def pgettext(self, context, message):
-        if self._fallback:
-            return self._fallback.pgettext(context, message)
-        return message
-    gettext.NullTranslations.pgettext = pgettext
-    gettext.GNUTranslations.CONTEXT = "%s\x04%s"
-    def pgettext(self, context, message):
-        ctxt_msg_id = self.CONTEXT % (context, message)
-        missing = object()
-        tmsg = self._catalog.get(ctxt_msg_id, missing)
-        if tmsg is missing:
-            if self._fallback:
-                return self._fallback.pgettext(context, message)
-            return message
-        return tmsg
-    gettext.GNUTranslations.pgettext = pgettext
-
 class CosmoniumBase(ShowBase):
     def __init__(self):
         self.observer = None #TODO: For window_event below
@@ -123,6 +105,8 @@ class CosmoniumBase(ShowBase):
         self.trigger_check_settings = True
         self.request_fullscreen = False
         self.common_state = NodePath("<state>")
+
+        patch_gettext()
 
         configParser.load()
         self.init_lang()
