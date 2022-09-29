@@ -17,32 +17,44 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCTREEANCHOR_H
-#define OCTREEANCHOR_H
 
-#include "systemAnchor.h"
-
-class OctreeNode;
-
-class OctreeAnchor : public SystemAnchor
+double
+StellarAnchor::get_albedo(void) const
 {
-PUBLISHED:
-  OctreeAnchor(PyObject *ref_object,
-      OrbitBase *orbit,
-      RotationBase *rotation,
-      LColor point_color);
+  return _albedo;
+}
 
-  virtual void traverse(AnchorTraverser &visitor);
-  virtual void rebuild(void);
 
-protected:
-  void create_octree(void);
+void
+StellarAnchor::set_albedo(double albedo)
+{
+  _albedo = albedo;
+}
 
-public:
-  PT(OctreeNode) octree;
-  bool recreate_octree;
 
-  MAKE_TYPE("OctreeAnchor", SystemAnchor);
-};
+double
+StellarAnchor::get_intrinsic_luminosity(void) const
+{
+  return _intrinsic_luminosity;
+}
 
-#endif
+
+void
+StellarAnchor::set_intrinsic_luminosity(double intrinsic_luminosity)
+{
+  _intrinsic_luminosity = intrinsic_luminosity;
+}
+
+
+double
+StellarAnchor::get_reflected_luminosity(void) const
+{
+  return _reflected_luminosity;
+}
+
+
+double
+StellarAnchor::get_point_radiance(void) const
+{
+  return _point_radiance;
+}

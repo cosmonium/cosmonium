@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,14 +70,15 @@ SystemAnchor::traverse(AnchorTraverser &visitor)
 }
 
 void
-SystemAnchor::update_app_magnitude(StellarAnchor *star)
+SystemAnchor::update_luminosity(StellarAnchor *star)
 {
   if (primary != nullptr) {
-    primary->update_app_magnitude(star);
-    _abs_magnitude = primary->_abs_magnitude;
-    _app_magnitude = primary->_app_magnitude;
+    primary->update_luminosity(star);
+    _intrinsic_luminosity = primary->_intrinsic_luminosity;
+    _reflected_luminosity = primary->_reflected_luminosity;
+    _point_radiance = primary->_point_radiance;
   } else {
-    StellarAnchor::update_app_magnitude(star);
+    StellarAnchor::update_luminosity(star);
   }
 }
 
@@ -101,16 +102,12 @@ SystemAnchor:: rebuild(void)
       for (auto child : children) {
           //TODO: We need to handle the reflective case
           if ((child->content & Emissive) != 0) {
-              luminosity += abs_mag_to_lum(child->_abs_magnitude);
+              luminosity += child->_intrinsic_luminosity;
           }
       }
-      if (luminosity > 0.0) {
-          _abs_magnitude = lum_to_abs_mag(luminosity);
-      } else {
-          _abs_magnitude = 1000.0;
-      }
+      _intrinsic_luminosity = luminosity;
     } else {
-      _abs_magnitude = primary->_abs_magnitude;
+      _intrinsic_luminosity = primary->_intrinsic_luminosity;
     }
     rebuild_needed = false;
 }

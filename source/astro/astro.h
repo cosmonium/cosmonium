@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2019 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,13 +26,17 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+const double m = 1.0 / 1000;
 const double Km = 1.0;
 const double AU = 149597870.700 * Km;
 const double KmPerLy = 9460730472580.800;
 const double Ly = KmPerLy * Km;
 const double LyPerParsec = 3.26167;
+const double Parsec = LyPerParsec * Ly;
 
 const double KmPerParsec = LyPerParsec * KmPerLy;
+
+const double abs_mag_distance = 10 * Parsec;
 
 const double Day = 1.0;
 const double Hour = Day / 24.0;
@@ -49,7 +53,11 @@ const double luminosity_magnitude_factor = log(10.0) / 2.5;
 const double sun_abs_magnitude = 4.83;
 
 const double sun_luminous_flux = 3.75e28;
-const double sun_luminous_intensity = sun_luminous_flux / 4 / M_PI; // Candela
+const double sun_luminous_intensity = sun_luminous_flux / 4 / M_PI;
+
+const double L0 = 3.0128e28;
+
+const double radiance_coef =  L0 / (4 * M_PI * abs_mag_distance * abs_mag_distance / m / m);
 
 inline double
 to_rad(double deg)
@@ -83,4 +91,15 @@ abs_mag_to_lum(double abs_magnitude)
   // L* = L0 * 10^((M0 - M*) / 2.5)
   return exp((sun_abs_magnitude - abs_magnitude) * luminosity_magnitude_factor);
 }
+
+inline double
+radiance_to_mag(double radiance)
+{
+    if (radiance > 0) {
+        return lum_to_abs_mag(radiance / radiance_coef);
+    } else {
+        return 1000.0;
+    }
+}
+
 #endif

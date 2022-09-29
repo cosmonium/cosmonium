@@ -52,6 +52,14 @@ def abs_mag_to_lum(abs_magnitude):
 def lum_to_abs_mag(luminosity):
     return units.sun_abs_magnitude - log(luminosity) / luminosity_magnitude_factor
 
+radiance_coef =  units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
+
+def radiance_to_mag(radiance):
+    if radiance > 0:
+        return lum_to_abs_mag(radiance / radiance_coef)
+    else:
+        return 1000.0
+
 def mag_to_surface_brightness(mag, distance, radius):
     if radius < distance:
         arc_radius = asin(radius / distance) * ang_diameter_to_arcsec

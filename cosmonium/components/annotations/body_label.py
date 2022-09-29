@@ -20,6 +20,7 @@
 
 from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
 
+from ...astro.astro import radiance_to_mag
 from ...foundation import ObjectLabel
 from ... import settings
 
@@ -75,6 +76,7 @@ class FixedOrbitLabel(StellarBodyLabel):
         if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved and (self.label_source.primary is None or (self.label_source.primary.label is not None and self.label_source.primary.label.visible)):
             self.visible = False
             return
-        self.visible = self.label_source.anchor._app_magnitude < settings.label_lowest_app_magnitude
-        self.fade = 0.2 + (settings.label_lowest_app_magnitude - self.label_source.anchor._app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
+        app_magnitude = radiance_to_mag(self.label_source.anchor._point_radiance)
+        self.visible = app_magnitude < settings.label_lowest_app_magnitude
+        self.fade = 0.2 + (settings.label_lowest_app_magnitude - app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
         self.fade = clamp(self.fade, 0.0, 1.0)

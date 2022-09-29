@@ -37,6 +37,7 @@ MParsec = 1000 * KParsec
 GParsec = 1000 * MParsec
 KmPerParsec=LyPerParsec * KmPerLy
 c=299792.458
+abs_mag_distance = 10 * Parsec
 
 milky_way_radius = 100000 * Ly
 earth_radius = 6378.140 * Km

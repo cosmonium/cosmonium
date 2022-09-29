@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,10 +76,10 @@ AnchorTraverser::traverse_octree_node(OctreeNode *anchor, std::vector<PT(Stellar
 {
 }
 
-UpdateTraverser::UpdateTraverser(double time, CameraAnchor &observer, double limit, unsigned long int update_id):
+UpdateTraverser::UpdateTraverser(double time, CameraAnchor &observer, double lowest_radiance, unsigned long int update_id):
     time(time),
     observer(observer),
-    limit(limit),
+    lowest_radiance(lowest_radiance),
     update_id(update_id)
 {
 }
@@ -117,7 +117,8 @@ UpdateTraverser::enter_octree_node(OctreeNode *octree_node)
     if (distance <= 0.0) {
         return true;
     }
-    if (abs_to_app_mag(octree_node->max_magnitude, distance) > limit) {
+    double point_radiance = octree_node->max_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+    if (point_radiance < lowest_radiance) {
         return false;
     }
     return observer.frustum->is_sphere_in(octree_node->center, octree_node->radius);
@@ -128,21 +129,20 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(St
 {
     LPoint3d frustum_position = observer.frustum->get_position();
     double distance = (octree_node->center - frustum_position).length() - octree_node->radius;
-    double faintest;
+    double lowest_luminosity;
     if (distance > 0.0) {
-        faintest = app_to_abs_mag(limit, distance);
+        lowest_luminosity = 4 * M_PI * distance * 1000 * 1000 * lowest_radiance;
     } else {
-        faintest = 1000.0;
+        lowest_luminosity = 0.0;
     }
     for (auto leaf : leaves) {
-        double abs_magnitude = leaf->get_absolute_magnitude();
         bool traverse = false;
-        if (abs_magnitude < faintest) {
+        if (leaf->_intrinsic_luminosity > lowest_luminosity) {
             LVector3d direction = leaf->get_absolute_position() - frustum_position;
             distance = direction.length();
             if (distance > 0.0) {
-                double app_magnitude = abs_to_app_mag(abs_magnitude, distance);
-                if (app_magnitude < limit) {
+                double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+                if (point_radiance > lowest_radiance) {
                     traverse = observer.frustum->is_sphere_in(leaf->get_absolute_position(), leaf->get_bounding_radius());
                 }
             } else {
@@ -205,8 +205,8 @@ FindClosestSystemTraverser::traverse_octree_node(OctreeNode *octree_node, std::v
     }
   }
 }
-FindLightSourceTraverser::FindLightSourceTraverser(double limit, LPoint3d position) :
-    limit(limit),
+FindLightSourceTraverser::FindLightSourceTraverser(double lowest_radiance, LPoint3d position) :
+    lowest_radiance(lowest_radiance),
     position(position)
 {
 }
@@ -222,8 +222,19 @@ FindLightSourceTraverser::enter_system(SystemAnchor *anchor)
 {
   //TODO: Is absolute reference point delta accurate enough ?
   LPoint3d global_delta = anchor->get_absolute_reference_point() - position;
-  double distance = (global_delta).length();
-  return (anchor->content & AnchorBase::Emissive) != 0 && (distance == 0 || abs_to_app_mag(anchor->_abs_magnitude, distance) < limit);
+  if ((anchor->content & AnchorBase::Emissive) != 0) {
+      double distance = (global_delta).length();
+      if (distance > 0) {
+          double point_radiance = anchor->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+          if (point_radiance > lowest_radiance) {
+              return true;
+          }
+      } else {
+          return true;
+      }
+  } else {
+      return false;
+  }
 }
 
 void
@@ -236,7 +247,12 @@ FindLightSourceTraverser::traverse_system(SystemAnchor *anchor)
     //TODO: Is global position accurate enough ?
     LPoint3d global_delta = child->get_absolute_reference_point() - position;
     double distance = (global_delta).length();
-    if (distance == 0 || abs_to_app_mag(child->_abs_magnitude, distance) < limit) {
+    if (distance > 0) {
+        double point_radiance = child->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+        if (point_radiance > lowest_radiance) {
+          child->traverse(*this);
+        }
+    } else {
         child->traverse(*this);
     }
   }
@@ -250,7 +266,8 @@ FindLightSourceTraverser::enter_octree_node(OctreeNode *octree_node)
   if (distance <= 0.0) {
     return true;
   }
-  if (abs_to_app_mag(octree_node->max_magnitude, distance) > limit) {
+  double point_radiance = octree_node->max_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+  if (point_radiance < lowest_radiance) {
       return false;
   }
   return true;
@@ -260,19 +277,18 @@ void
 FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves)
 {
   double distance = (octree_node->center - position).length() - octree_node->radius;
-  double faintest;
+  double lowest_luminosity;
   if (distance > 0.0) {
-    faintest = app_to_abs_mag(limit, distance);
+      lowest_luminosity = 4 * M_PI * distance * 1000 * 1000 * lowest_radiance;
   } else {
-    faintest = 1000.0;
+      lowest_luminosity = 0.0;
   }
   for (auto leaf : leaves) {
-    double abs_magnitude = leaf->_abs_magnitude;
-    if (abs_magnitude < faintest) {
+    if (leaf->_intrinsic_luminosity > lowest_luminosity) {
       distance = (leaf->get_absolute_reference_point() - position).length();
       if (distance > 0.0) {
-        double app_magnitude = abs_to_app_mag(abs_magnitude, distance);
-        if (app_magnitude < limit) {
+        double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
+        if (point_radiance > lowest_radiance) {
           leaf->traverse(*this);
         }
       } else {

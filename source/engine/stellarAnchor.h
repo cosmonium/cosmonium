@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,21 +67,11 @@ PUBLISHED:
 
   virtual double get_absolute_magnitude(void);
 
-  virtual void set_absolute_magnitude(double magnitude);
-
   virtual double get_apparent_magnitude(void);
 
   virtual double get_radiant_flux(void);
 
-  virtual double get_radiant_intensity(void);
-
-  virtual double get_radiance(void);
-
-  virtual double get_irradiance(void);
-
-  virtual double get_point_radiance(void);
-
-  virtual double get_point_irradiance(void);
+  virtual double get_point_radiance(double distance);
 
   virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
 
@@ -91,23 +81,31 @@ PUBLISHED:
 
   virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
 
-  virtual void update_app_magnitude(StellarAnchor *star = 0);
+  virtual void update_luminosity(StellarAnchor *star = 0);
 
-  //TODO: Temporary until Python code is aligned
-  MAKE_PROPERTY(_abs_magnitude, get_absolute_magnitude, set_absolute_magnitude);
-  MAKE_PROPERTY(_app_magnitude, get_apparent_magnitude);
+  INLINE double get_albedo(void) const;
+  INLINE void set_albedo(double albedo);
+  MAKE_PROPERTY(_albedo, get_albedo, set_albedo);
+
+  INLINE double get_intrinsic_luminosity(void) const;
+  INLINE void set_intrinsic_luminosity(double intrinsic_luminosity);
+  MAKE_PROPERTY(_intrinsic_luminosity, get_intrinsic_luminosity, set_intrinsic_luminosity);
+
+  INLINE double get_reflected_luminosity(void) const;
+  MAKE_PROPERTY(_reflected_luminosity, get_reflected_luminosity);
+
+  INLINE double get_point_radiance(void) const;
+  MAKE_PROPERTY(_point_radiance, get_point_radiance);
 
 public:
-  double get_luminosity(StellarAnchor *star);
+  double get_reflected_luminosity(StellarAnchor *star);
 
 public:
   LQuaterniond _equatorial;
-  double _abs_magnitude;
-  double _app_magnitude;
-  double reflected;
-
-PUBLISHED:
   double _albedo;
+  double _intrinsic_luminosity;
+  double _reflected_luminosity;
+  double _point_radiance;
 
 public:
   LColor point_color;
@@ -118,5 +116,7 @@ protected:
 
   MAKE_TYPE("StellarAnchor", AnchorBase);
 };
+
+#include "stellarAnchor.I"
 
 #endif

@@ -18,6 +18,8 @@
 #
 
 
+from math import pi
+
 from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
 from ..shaders.rendering import RenderingShader
@@ -45,11 +47,11 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         shader = RenderingShader(lighting_model=FlatLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
         if settings.use_pbr:
-            luminance = body.anchor.get_radiance()
+            radiance = body.anchor.get_radiant_flux() / (4 * pi *pi * body.radius * body.radius)
         else:
-            luminance = 1.0
+            radiance = 1.0
         surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
-                              appearance=Appearance(colorScale=body.anchor.point_color * luminance,
+                              appearance=Appearance(colorScale=body.anchor.point_color * radiance,
                                                     texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
                                                                                                                  self.size),
                                                                            srgb=False)),

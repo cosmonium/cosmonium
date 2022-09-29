@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     rotation(rotation),
     point_color(point_color),
     _equatorial(LQuaterniond::ident_quat()),
-    _abs_magnitude(1000.0),
-    _app_magnitude(1000.0),
-    reflected(0.0),
+    _intrinsic_luminosity(0.0),
+    _reflected_luminosity(0.0),
+    _point_radiance(0.0),
     _albedo(0.0)
 {
 }
@@ -139,102 +139,32 @@ StellarAnchor::get_sync_rotation(void)
   return _orientation;
 }
 
+
 double
 StellarAnchor::get_absolute_magnitude(void)
 {
-  return _abs_magnitude;
+  return lum_to_abs_mag(get_radiant_flux() / L0);
 }
 
-void
-StellarAnchor::set_absolute_magnitude(double magnitude)
-{
-  _abs_magnitude = magnitude;
-}
 
 double
 StellarAnchor::get_apparent_magnitude(void)
 {
-  return _app_magnitude;
+  return abs_to_app_mag(get_absolute_magnitude(), distance_to_obs);
 }
 
 
 double
 StellarAnchor::get_radiant_flux(void)
 {
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  return luminosity * sun_luminous_flux;
+  return _intrinsic_luminosity + _reflected_luminosity;
 }
 
 
 double
-StellarAnchor::get_radiant_intensity(void)
+StellarAnchor::get_point_radiance(double distance)
 {
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  return luminosity * sun_luminous_intensity;
-}
-
-
-double
-StellarAnchor::get_radiance(void)
-{
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  // For a Lambertian emitter, the radiance is equal to
-  // flux / (pi . Area)
-  return luminosity * sun_luminous_intensity / (M_PI * bounding_radius * bounding_radius * 1000 * 1000);
-}
-
-
-double
-StellarAnchor::get_irradiance(void)
-{
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
-}
-
-
-double
-StellarAnchor::get_point_radiance(void)
-{
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
-}
-
-
-double
-StellarAnchor::get_point_irradiance(void)
-{
-  double luminosity;
-  if ((content & Emissive) != 0) {
-      luminosity = abs_mag_to_lum(_abs_magnitude);
-  } else {
-      luminosity = reflected;
-  }
-  return luminosity * sun_luminous_intensity / (distance_to_obs * distance_to_obs * 1000000);
+  return (_intrinsic_luminosity + _reflected_luminosity) / (4 * M_PI * distance * distance * 1000 * 1000);
 }
 
 
@@ -298,49 +228,39 @@ StellarAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
 
 
 double
-StellarAnchor::get_luminosity(StellarAnchor *star)
+StellarAnchor::get_reflected_luminosity(StellarAnchor *star)
 {
     LVector3d vector_to_star = calc_absolute_relative_position(star);
     double distance_to_star = vector_to_star.length();
     vector_to_star /= distance_to_star;
-    double star_power = abs_mag_to_lum(star->get_absolute_magnitude());
-    double area = 4 * M_PI * distance_to_star * distance_to_star * 1000 * 1000; // Units are in km
-    if (area > 0.0) {
-        double irradiance = star_power / area;
+    if (distance_to_star > 0.0) {
+        double irradiance = star->get_point_radiance(distance_to_star);
         double surface = M_PI * bounding_radius * bounding_radius * 1000 * 1000; // # Units are in km
-        double received_energy = irradiance * surface;
-        double reflected_energy = received_energy * _albedo;
+        double received_power = irradiance * surface;
+        double reflected_power = received_power * _albedo;
         double phase_angle = vector_to_obs.dot(vector_to_star);
         double fraction = (1.0 + phase_angle) / 2.0;
-        return reflected_energy * fraction;
+        return reflected_power * fraction;
     } else {
-        std::cout << "No area\n";
         return 0.0;
     }
 }
 
 void
-StellarAnchor::update_app_magnitude(StellarAnchor *star)
+StellarAnchor::update_luminosity(StellarAnchor *star)
 {
-  // TODO: Should be done by inheritance ?
-  if (distance_to_obs == 0) {
-    _app_magnitude = 1000.0;
-    return;
-  }
-  if ((content & Emissive) != 0) {
-    _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
-  } else if ((content & Reflective) != 0) {
+  if ((content & Reflective) != 0) {
       if (star != 0) {
-        reflected = get_luminosity(star);
-        if (reflected > 0.0) {
-          _app_magnitude = abs_to_app_mag(lum_to_abs_mag(reflected), distance_to_obs);
-        } else {
-          _app_magnitude = 1000.0;
-        }
+        _reflected_luminosity = get_reflected_luminosity(star);
       } else {
-        _app_magnitude = 1000.0;
+        _reflected_luminosity = 0.0;
       }
   } else {
-    _app_magnitude = abs_to_app_mag(_abs_magnitude, distance_to_obs);
+    _reflected_luminosity = 0.0;
+  }
+  if (distance_to_obs > 0) {
+    _point_radiance = get_point_radiance(distance_to_obs);
+  } else {
+
   }
 }

@@ -18,6 +18,7 @@
  */
 
 
+#include "astro.h"
 #include "scaledEmissivePointsSetShape.h"
 #include "scale.h"
 #include "sceneAnchor.h"
@@ -45,7 +46,7 @@ ScaledEmissivePointsSetShape::add_object(SceneAnchor *scene_anchor)
   Settings *settings = Settings::get_global_ptr();
   StellarAnchor *anchor = DCAST(StellarAnchor, scene_anchor->get_anchor());
   if (anchor->visible_size < settings->min_body_size * 2 && scene_anchor->get_instance() != nullptr) {
-    double app_magnitude = anchor->_app_magnitude;
+    double app_magnitude = radiance_to_mag(anchor->_point_radiance);
     LColor point_color = anchor->point_color;
     double scale = mag_to_scale(app_magnitude);
     if (scale > 0) {

@@ -21,6 +21,8 @@
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, LColor
 from panda3d.core import GeomPoints, Geom, GeomNode
 from panda3d.core import NodePath, LPoint3
+
+from ..astro.astro import radiance_to_mag
 from ..utils import mag_to_scale
 from .. import settings
 
@@ -101,7 +103,7 @@ class ScaledEmissivePointsSetShape(PointsSetShape):
     def add_object(self, scene_anchor):
         anchor = scene_anchor.anchor
         if anchor.visible_size < settings.min_body_size * 2 and scene_anchor.instance is not None:
-            app_magnitude = anchor._app_magnitude
+            app_magnitude = radiance_to_mag(anchor._point_radiance)
             point_color = anchor.point_color
             scale = mag_to_scale(app_magnitude)
             if scale > 0:
@@ -114,7 +116,7 @@ class EmissivePointsSetShape(PointsSetShape):
     def add_object(self, scene_anchor):
         anchor = scene_anchor.anchor
         if anchor.visible_size < settings.min_body_size * 2 and scene_anchor.instance is not None:
-            r = anchor.get_point_radiance()
+            r = anchor.get_point_radiance(anchor.distance_to_obs)
             color = LColor(anchor.point_color.x * r, anchor.point_color.y * r, anchor.point_color.z * r, anchor.point_color.w)
             size = settings.min_point_size + settings.mag_pixel_scale
             self.add_point(scene_anchor.scene_position, color, size * self.screen_scale, scene_anchor.oid_color)
@@ -123,7 +125,7 @@ class EmissivePointsSetShape(PointsSetShape):
 class HaloPointsSetShape(PointsSetShape):
     def add_object(self, scene_anchor):
         anchor = scene_anchor.anchor
-        app_magnitude = anchor._app_magnitude
+        app_magnitude = radiance_to_mag(anchor._point_radiance)
         if settings.show_halo and anchor.visible_size < settings.min_body_size * 2 and app_magnitude < settings.smallest_glare_mag:
             point_color = anchor.point_color
             coef = settings.smallest_glare_mag - app_magnitude + 6.0

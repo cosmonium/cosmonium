@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ private:
 
 PUBLISHED:
   virtual void traverse(AnchorTraverser &visitor);
-  virtual void update_app_magnitude(StellarAnchor *star = 0);
+  virtual void update_luminosity(StellarAnchor *star = 0);
   virtual void rebuild(void);
 
   void add_child(StellarAnchor *child);

@@ -20,8 +20,10 @@
 
 from .stellarbody import StellarBody
 
-from ..engine.anchors import StellarAnchor
 from ..astro.astro import abs_mag_to_lum
+from ..astro import units
+from ..engine.anchors import StellarAnchor
+
 
 class EmissiveBody(StellarBody):
     anchor_class = StellarAnchor.Emissive
@@ -31,13 +33,10 @@ class EmissiveBody(StellarBody):
         abs_magnitude = kwargs.pop('abs_magnitude', None)
         StellarBody.__init__(self, *args, **kwargs)
         #TODO: This should be done in create_anchor
-        self.anchor._abs_magnitude = abs_magnitude
+        self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
 
     def is_emissive(self):
         return True
 
-    def get_luminosity(self):
-        return abs_mag_to_lum(self.get_abs_magnitude())
-    
     def get_phase(self):
         return 1

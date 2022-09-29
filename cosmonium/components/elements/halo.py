@@ -20,6 +20,7 @@
 
 from panda3d.core import NodePath, CardMaker, OmniBoundingVolume
 
+from ...astro.astro import radiance_to_mag
 from ...foundation import VisibleObject
 from ...sprites import ExpPointSprite
 
@@ -63,5 +64,5 @@ class Halo(VisibleObject):
             self.instance.set_scale(*self.get_scale())
 
     def get_scale(self):
-        coef = settings.smallest_glare_mag - self.body.anchor._app_magnitude + 6.0
+        coef = settings.smallest_glare_mag - radiance_to_mag(self.body.anchor._point_radiance) + 6.0
         return self.body.surface.get_scale() * coef

@@ -18,6 +18,7 @@
  */
 
 
+#include "astro.h"
 #include "haloPointsSetShape.h"
 #include "scale.h"
 #include "sceneAnchor.h"
@@ -44,7 +45,7 @@ HaloPointsSetShape::add_object(SceneAnchor *scene_anchor)
 {
   Settings *settings = Settings::get_global_ptr();
   StellarAnchor *anchor = DCAST(StellarAnchor, scene_anchor->get_anchor());
-  double app_magnitude = anchor->_app_magnitude;
+  double app_magnitude = radiance_to_mag(anchor->_point_radiance);
   if (anchor->visible_size < settings->min_body_size * 2 && app_magnitude < settings->smallest_glare_mag && scene_anchor->get_instance() != nullptr) {
     LColor point_color = anchor->point_color;
     double coef = settings->smallest_glare_mag - app_magnitude + 6.0;

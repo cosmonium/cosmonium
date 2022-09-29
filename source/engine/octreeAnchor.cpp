@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,14 +35,15 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
   bounding_radius = 100000.0 * KmPerLy;
   //TODO: Should be configurable
   double top_level_absolute_magnitude = app_to_abs_mag(6.0, bounding_radius * sqrt(3));
+  double luminosity = abs_mag_to_lum(top_level_absolute_magnitude) * L0;
   //TODO: position should be extracted from orbit
   octree = new OctreeNode(0, /*this,*/ 0,
       LPoint3d(10 * KmPerLy, 10 * KmPerLy, 10 * KmPerLy),
       bounding_radius,
-      top_level_absolute_magnitude);
+      luminosity);
   octree->parent = this;
   //TODO: Should be done during rebuild
-  _abs_magnitude = top_level_absolute_magnitude;
+  _intrinsic_luminosity = luminosity;
   //TODO: Right now an octree contains anything
   content = ~0;
   recreate_octree = true;

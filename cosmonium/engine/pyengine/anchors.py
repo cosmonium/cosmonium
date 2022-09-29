@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -335,9 +335,9 @@ class StellarAnchor(AnchorBase):
         self.point_color = point_color
         self.orbit = orbit
         self.rotation = rotation
-        self._abs_magnitude = 1000.0
-        self._app_magnitude = 1000.0
-        self.reflected = 0.0
+        self._intrinsic_luminosity = 0.0
+        self._reflected_luminosity = 0.0
+        self._point_radiance = 0.0
         self._equatorial = LQuaterniond()
         self._albedo = 0.5
         #TODO: Should be done properly
@@ -366,54 +366,22 @@ class StellarAnchor(AnchorBase):
         return self._orientation
 
     def get_absolute_magnitude(self):
-        return self._abs_magnitude
+        return lum_to_abs_mag(self.get_radiant_flux() / units.L0)
 
     def get_apparent_magnitude(self):
-        return self._app_magnitude
+        return abs_to_app_mag(self.get_absolute_magnitude(), self.distance_to_obs)
 
     def get_radiant_flux(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        return luminosity * units.sun_luminous_flux
+        """
+        Returns the radiant flux, expressed in W.
+        """
+        return self._intrinsic_luminosity + self._reflected_luminosity
 
-    def get_radiant_intensity(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        return luminosity * units.sun_luminous_intensity
-
-    def get_radiance(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        # For a Lambertian emitter, the radiance is equal to
-        # flux / (pi . Area)
-        return luminosity * units.sun_luminous_intensity / (pi * self.bounding_radius * self.bounding_radius * 1000 * 1000)
-
-    def get_irradiance(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
-
-    def get_point_radiance(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
-
-    def get_point_irradiance(self):
-        if self.content & self.Emissive != 0:
-            luminosity = abs_mag_to_lum(self._abs_magnitude)
-        else:
-            luminosity = self.reflected
-        return luminosity * units.sun_luminous_intensity / (self.distance_to_obs * self.distance_to_obs * 1000000)
+    def get_point_radiance(self, distance):
+        """
+        Returns the anchor radiance. This method assume the source is a point-like light source aligned with the normal of the receiver.
+        """
+        return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
 
     def update(self, time, update_id):
         if self.update_id == update_id: return
@@ -423,46 +391,33 @@ class StellarAnchor(AnchorBase):
         self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
 
-    def get_luminosity(self, star):
+    def get_reflected_luminosity(self, star):
         vector_to_star = self.calc_absolute_relative_position(star)
         distance_to_star = vector_to_star.length()
         vector_to_star /= distance_to_star
-        star_power = abs_mag_to_lum(star._abs_magnitude)
-        area = 4 * pi * distance_to_star * distance_to_star * 1000 * 1000 # Units are in km
-        if area > 0.0:
-            radiance = star_power / area
+        if distance_to_star > 0.0:
+            irradiance = star.get_point_radiance(distance_to_star)
             surface = pi * self.bounding_radius * self.bounding_radius * 1000 * 1000 # Units are in km
-            received_power = radiance * surface
+            received_power = irradiance * surface
             reflected_power = received_power * self._albedo
             phase_angle = self.vector_to_obs.dot(vector_to_star)
             fraction = (1.0 + phase_angle) / 2.0
             return reflected_power * fraction
         else:
-            print("No area", self.body.get_name())
             return 0.0
 
-    def update_app_magnitude(self, star):
-        #TODO: Should be done by inheritance !
-        if self.distance_to_obs == 0:
-            self._app_magnitude = 1000.0
-            return
-        if hasattr(self, 'primary') and self.primary is not None:
-            self.primary.update_app_magnitude(star)
-            self._app_magnitude = self.primary._app_magnitude
-            self._abs_magnitude = self.primary._abs_magnitude
-        elif self.content & self.Emissive != 0:
-            self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
-        elif self.content & self.Reflective != 0:
+    def update_luminosity(self, star):
+        if self.content & self.Reflective != 0:
             if star is not None:
-                self.reflected = self.get_luminosity(star)
-                if self.reflected > 0:
-                    self._app_magnitude = abs_to_app_mag(lum_to_abs_mag(self.reflected), self.distance_to_obs)
-                else:
-                    self._app_magnitude = 1000.0
+                self._reflected_luminosity = self.get_reflected_luminosity(star)
             else:
-                self._app_magnitude = 1000.0
+                self._reflected_luminosity = 0.0
         else:
-            self._app_magnitude = abs_to_app_mag(self._abs_magnitude, self.distance_to_obs)
+            self._reflected_luminosity = 0.0
+        if self.distance_to_obs > 0:
+            self._point_radiance = self.get_point_radiance(self.distance_to_obs)
+        else:
+            self._point_radiance = 0.0
 
 class FixedStellarAnchor(StellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):
@@ -513,20 +468,24 @@ class SystemAnchor(DynamicStellarAnchor):
         luminosity = 0.0
         if self.primary is None:
             for child in self.children:
-                #TODO: We should instead check if the child is emissive or not
-                if child._abs_magnitude is not None:
-                    luminosity += abs_mag_to_lum(child._abs_magnitude)
-            if luminosity > 0.0:
-                self._abs_magnitude = lum_to_abs_mag(luminosity)
-            else:
-                self._abs_magnitude = 1000.0
+                luminosity += child._intrinsic_luminosity
+            self._intrinsic_luminosity = luminosity
         else:
-            self._abs_magnitude = self.primary._abs_magnitude
+            self._intrinsic_luminosity = self.primary._intrinsic_luminosity
         self.rebuild_needed = False
 
     def traverse(self, visitor):
         if visitor.enter_system(self):
             visitor.traverse_system(self)
+
+    def update_luminosity(self, star):
+        if self.primary is not None:
+            self.primary.update_luminosity(star)
+            self._intrinsic_luminosity = self.primary._intrinsic_luminosity
+            self._reflected_luminosity = self.primary._reflected_luminosity
+            self._point_radiance = self.primary._point_radiance
+        else:
+            StellarAnchor.update_luminosity(self, star)
 
 class OctreeAnchor(SystemAnchor):
     def __init__(self, body, orbit, rotation, point_color):
@@ -534,12 +493,15 @@ class OctreeAnchor(SystemAnchor):
         #TODO: Turn this into a parameter or infer it from the children
         self.bounding_radius = 100000.0 * units.Ly
         #TODO: Should be configurable
-        abs_mag = app_to_abs_mag(6.0, self.bounding_radius * sqrt(3))
+        abs_magnitude = app_to_abs_mag(6.0, self.bounding_radius * sqrt(3))
+        luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         #TODO: position should be extracted from orbit
         self.octree = OctreeNode(0, self,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
                              self.bounding_radius,
-                             abs_mag)
+                             luminosity)
+        # TODO: Should be done during rebuild
+        _intrinsic_luminosity = luminosity
         #TODO: Right now an octree contains anything
         self.content = ~0
         self.recreate_octree = True

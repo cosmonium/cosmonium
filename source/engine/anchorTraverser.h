@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ protected:
 class UpdateTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:
-  UpdateTraverser(double time, CameraAnchor &observer, double limit, unsigned long int update_id);
+  UpdateTraverser(double time, CameraAnchor &observer, double lowest_radiance, unsigned long int update_id);
 
   virtual void traverse_anchor(StellarAnchor *anchor);
 
@@ -80,7 +80,7 @@ PUBLISHED:
 protected:
   double time;
   CameraAnchor &observer;
-  double limit;
+  double lowest_radiance;
   unsigned long int update_id;
 };
 
@@ -111,7 +111,7 @@ protected:
 class FindLightSourceTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:
-  FindLightSourceTraverser(double limit, LPoint3d position);
+  FindLightSourceTraverser(double lowest_radiance, LPoint3d position);
 
   virtual void traverse_anchor(StellarAnchor *anchor);
 
@@ -124,7 +124,7 @@ PUBLISHED:
   virtual void traverse_octree_node(OctreeNode *octree_node, std::vector<PT(StellarAnchor)> &leaves);
 
 protected:
-  double limit;
+  double lowest_radiance;
   LPoint3d position;
 };
 

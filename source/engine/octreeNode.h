@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2022 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ protected:
 PUBLISHED:
     static int max_level;
     static int max_leaves;
-    static double child_threshold;
+    static double child_factor;
 
 PUBLISHED:
     int level;
@@ -69,7 +69,7 @@ PUBLISHED:
     double threshold;
     int index;
     bool has_children;
-    double max_magnitude;
+    double max_luminosity;
 
 protected:
     PT(OctreeNode) children[8];

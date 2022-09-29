@@ -95,6 +95,7 @@ import platform
 import sys
 import os
 from cosmonium.astro.units import J2000_Orientation, J200_EclipticOrientation
+from cosmonium.astro.astro import abs_mag_to_lum, app_to_abs_mag
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
@@ -1098,7 +1099,8 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def update_universe(self, time, dt):
-        traverser = UpdateTraverser(time, self.observer.anchor, settings.lowest_app_magnitude, self.update_id)
+        lowest_radiance = abs_mag_to_lum(settings.lowest_app_magnitude) * units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
+        traverser = UpdateTraverser(time, self.observer.anchor, lowest_radiance, self.update_id)
         self.universe.anchor.traverse(traverser)
         self.visibles = list(traverser.get_collected())
         self.visibles.sort(key=lambda v: v.z_distance)
@@ -1117,11 +1119,11 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def find_global_light_sources(self):
-        position = self.observer.get_local_position()
-        traverser = FindLightSourceTraverser(-10, self.observer.get_absolute_position())
+        lowest_radiance = abs_mag_to_lum(-10) * units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
+        traverser = FindLightSourceTraverser(lowest_radiance, self.observer.get_absolute_position())
         self.universe.anchor.traverse(traverser)
         self.global_light_sources = traverser.get_collected()
-        #print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
+        # print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
 
     def _add_extra(self, to_add):
         if to_add is None: return
@@ -1150,25 +1152,26 @@ class Cosmonium(CosmoniumBase):
             anchor.update_id = self.update_id
 
     @pstat
-    def update_magnitudes(self):
+    def update_luminosity(self):
         if len(self.global_light_sources) > 0:
             star = self.global_light_sources[0]
         else:
             star = None
         for visible_object in self.visibles:
-            visible_object.update_app_magnitude(star)
+            visible_object.update_luminosity(star)
         for anchor in self.extra:
             #TODO: This will not work for objects in an another system
-            anchor.update_app_magnitude(star)
+            anchor.update_luminosity(star)
 
     @pstat
     def update_states(self):
+        lowest_radiance = abs_mag_to_lum(settings.lowest_app_magnitude) * units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
         visibles = []
         resolved = []
         self.visible_scene_anchors = SceneAnchorCollection()
         self.resolved_scene_anchors = SceneAnchorCollection()
         for anchor in self.visibles:
-            visible = anchor.resolved or anchor._app_magnitude < settings.lowest_app_magnitude
+            visible = anchor.resolved or anchor._point_radiance > lowest_radiance
             if visible:
                 visibles.append(anchor)
                 self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
@@ -1235,7 +1238,7 @@ class Cosmonium(CosmoniumBase):
                 surrogate_light = reflective.body.lights.get_light_for(light_source.body)
                 if surrogate_light is None: continue
                 reflective.body.self_shadows_update(surrogate_light)
-                #print("TEST", reflective.body.get_name())
+                # print("TEST", reflective.body.get_name())
                 traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source.get_bounding_radius())
                 self.nearest_system.anchor.traverse(traverser)
                 #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
@@ -1430,7 +1433,7 @@ class Cosmonium(CosmoniumBase):
         self.scene_manager.update_scene_and_camera(distance, self.c_camera_holder)
 
         self.find_global_light_sources()
-        self.update_magnitudes()
+        self.update_luminosity()
         self.update_states()
         self.update_scene_anchors()
         self.find_local_lights()

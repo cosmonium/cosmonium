@@ -18,10 +18,10 @@
 #
 
 
-from ...astro.astro import abs_to_app_mag, app_to_abs_mag
+from math import asin, pi
+
 from ..anchors import StellarAnchor
 
-from math import asin, pi
 
 class AnchorTraverser:
     def traverse_anchor(self, anchor):
@@ -39,11 +39,12 @@ class AnchorTraverser:
     def traverse_octree_node(self, anchor):
         pass
 
+
 class UpdateTraverser(AnchorTraverser):
-    def __init__(self, time, observer, limit, update_id):
+    def __init__(self, time, observer, lowest_radiance, update_id):
         self.time = time
         self.observer = observer
-        self.limit = limit
+        self.lowest_radiance = lowest_radiance
         self.update_id = update_id
         self.visibles = []
 
@@ -71,7 +72,8 @@ class UpdateTraverser(AnchorTraverser):
         distance = (octree_node.center - frustum.get_position()).length() - octree_node.radius
         if distance <= 0.0:
             return True
-        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
+        point_radiance = octree_node.max_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+        if point_radiance < self.lowest_radiance:
             return False
         return frustum.is_sphere_in(octree_node.center, octree_node.radius)
 
@@ -80,23 +82,22 @@ class UpdateTraverser(AnchorTraverser):
         frustum_position = frustum.get_position()
         distance = (octree_node.center - frustum_position).length() - octree_node.radius
         if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
+            lowest_luminosity = 4 * pi * distance * 1000 * 1000 * self.lowest_radiance
         else:
-            faintest = 1000.0
+            lowest_luminosity = 0.0
         for leaf in octree_node.leaves:
-            abs_magnitude = leaf._abs_magnitude
             traverse = False
-            if abs_magnitude < faintest:
-                direction = leaf._global_position - frustum_position
-                distance = direction.length()
+            if leaf._intrinsic_luminosity > lowest_luminosity:
+                distance = (leaf._global_position - frustum_position).length()
                 if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
+                    point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+                    if point_radiance > self.lowest_radiance:
                         traverse = frustum.is_sphere_in(leaf._global_position, leaf.bounding_radius)
                 else:
                     traverse = True
             if traverse:
                 leaf.traverse(self)
+
 
 class FindClosestSystemTraverser(AnchorTraverser):
     def __init__(self, observer, system, distance):
@@ -117,13 +118,14 @@ class FindClosestSystemTraverser(AnchorTraverser):
             global_delta = leaf._global_position - global_position
             local_delta = leaf._local_position - local_position
             distance = (global_delta + local_delta).length()
-            if distance <self.distance:
+            if distance < self.distance:
                 self.distance = distance
                 self.closest_system = leaf
 
+
 class FindLightSourceTraverser(AnchorTraverser):
-    def __init__(self, limit, position):
-        self.limit = limit
+    def __init__(self, lowest_radiance, position):
+        self.lowest_radiance = lowest_radiance
         self.position = position
         self.anchors = []
 
@@ -136,8 +138,17 @@ class FindLightSourceTraverser(AnchorTraverser):
     def enter_system(self, anchor):
         #TODO: Is global position accurate enough ?
         global_delta = anchor._global_position - self.position
-        distance = (global_delta).length()
-        return anchor.content & StellarAnchor.Emissive != 0 and (distance == 0 or abs_to_app_mag(anchor._abs_magnitude, distance) < self.limit)
+        if anchor.content & StellarAnchor.Emissive != 0:
+            distance = (global_delta).length()
+            if distance > 0:
+                point_radiance = anchor._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+                if point_radiance > self.lowest_radiance:
+                    return True
+            else:
+                return True
+        else:
+            return False
+
 
     def traverse_system(self, anchor):
         for child in anchor.children:
@@ -145,34 +156,41 @@ class FindLightSourceTraverser(AnchorTraverser):
             #TODO: Is global position accurate enough ?
             global_delta = child._global_position - self.position
             distance = (global_delta).length()
-            if distance == 0 or abs_to_app_mag(child._abs_magnitude, distance) < self.limit:
+            if distance > 0:
+                point_radiance = child._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+                if point_radiance > self.lowest_radiance:
+                    child.traverse(self)
+            else:
                 child.traverse(self)
+
 
     def enter_octree_node(self, octree_node):
         #TODO: Check node content ?
         distance = (octree_node.center - self.position).length() - octree_node.radius
         if distance <= 0.0:
             return True
-        if abs_to_app_mag(octree_node.max_magnitude, distance) > self.limit:
+        point_radiance = octree_node.max_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+        if point_radiance < self.lowest_radiance:
             return False
         return True
+
 
     def traverse_octree_node(self, octree_node):
         distance = (octree_node.center - self.position).length() - octree_node.radius
         if distance > 0.0:
-            faintest = app_to_abs_mag(self.limit, distance)
+            lowest_luminosity = 4 * pi * distance * 1000 * 1000 * self.lowest_radiance
         else:
-            faintest = 1000.0
+            lowest_luminosity = 0.0
         for leaf in octree_node.leaves:
-            abs_magnitude = leaf._abs_magnitude
-            if abs_magnitude < faintest:
+            if leaf._intrinsic_luminosity > lowest_luminosity:
                 distance = (leaf._global_position - self.position).length()
                 if distance > 0.0:
-                    app_magnitude = abs_to_app_mag(abs_magnitude, distance)
-                    if app_magnitude < self.limit:
+                    point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
+                    if point_radiance > self.lowest_radiance:
                         leaf.traverse(self)
                 else:
                     leaf.traverse(self)
+
 
 class FindShadowCastersTraverser(AnchorTraverser):
     def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
@@ -191,6 +209,7 @@ class FindShadowCastersTraverser(AnchorTraverser):
 
     def get_collected(self):
         return self.anchors
+
 
     def check_cast_shadow(self, occluder):
         cast_shadow = False

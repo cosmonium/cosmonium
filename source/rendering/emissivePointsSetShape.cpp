@@ -44,7 +44,7 @@ EmissivePointsSetShape::add_object(SceneAnchor *scene_anchor)
   Settings *settings = Settings::get_global_ptr();
   StellarAnchor *anchor = DCAST(StellarAnchor, scene_anchor->get_anchor());
   if (anchor->visible_size < settings->min_body_size * 2 && scene_anchor->get_instance() != nullptr) {
-    double r = anchor->get_point_radiance();
+    double r = anchor->get_point_radiance(anchor->distance_to_obs);
     LColor point_color = anchor->point_color;
     LColor color = LColor(point_color[0] * r, point_color[1] * r, point_color[2] * r, point_color[3]);
     double size = settings->min_point_size + settings->mag_pixel_scale;

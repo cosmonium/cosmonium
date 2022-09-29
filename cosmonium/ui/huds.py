@@ -103,7 +103,7 @@ class Huds():
                 self.topLeft.set(1, _("Radius: ") + "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))
                 self.topLeft.set(2, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
                 if selected.is_emissive():
-                    self.topLeft.set(3, _("Luminosity: ") + "%g" % (selected.get_luminosity()) + _("x Sun"))
+                    self.topLeft.set(3, _("Luminosity: ") + "%g" % (selected.anchor._intrinsic_luminosity / units.L0) + _("x Sun"))
                     if isinstance(selected, Star):
                         self.topLeft.set(4, _("Spectral type: ") + selected.spectral_type.get_text())
                         self.topLeft.set(5, _("Temperature: ") + "%d" % selected.temperature + " K")
