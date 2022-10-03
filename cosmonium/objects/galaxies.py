@@ -100,7 +100,7 @@ class GalaxyAppearance(AppearanceBase):
         self.background = True
         self.min_coef = 0.2
 
-    def set_magnitude(self, owner, shape, shader, abs_magnitude, app_magnitude, visible_size):
+    def set_magnitude(self, owner, shape):
         if shape.instance is not None:
             if shape.is_flat():
                 axis = owner.anchor.get_absolute_orientation().xform(LVector3d.up())
@@ -108,7 +108,7 @@ class GalaxyAppearance(AppearanceBase):
                 coef = max(self.min_coef, sqrt(cosa))
             else:
                 coef = 1.0
-            scale = self.color_scale / 255.0 * coef * mag_to_scale_nolimit(app_magnitude)
+            scale = self.color_scale / 255.0 * coef
             size = owner.get_apparent_radius() / owner.anchor.distance_to_obs
             if size > 1.0:
                 scale = max(1.0/255, scale / size)
