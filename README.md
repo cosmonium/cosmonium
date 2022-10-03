@@ -1,7 +1,8 @@
 ![Cosmonium](textures/cosmonium-name.png)
 
 [![Build Status](https://github.com/cosmonium/cosmonium/workflows/build/badge.svg)](https://github.com/cosmonium/cosmonium/actions)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/wiki/Download)
+[![Latest release](https://img.shields.io/github/v/release/cosmonium/cosmonium?label=Lastest%20release)](https://github.com/cosmonium/cosmonium/wiki/Download)
+[![Latest build](https://img.shields.io/github/v/release/cosmonium/cosmonium?include_prereleases&label=Lastest%20build)](https://github.com/cosmonium/cosmonium/wiki/Download)
 [![GitHub](https://img.shields.io/github/license/cosmonium/cosmonium)](https://github.com/cosmonium/cosmonium/blob/master/COPYING.md)
 
 Cosmonium is a 3D astronomy and space exploration program. With Cosmonium you can navigate in our solar system and discover all the planets and their moons. You can also visit the neighboring stars and discover the true size of our galaxy and the Universe.
@@ -54,7 +55,7 @@ If you encounter any problem to install or run Cosmonium, please don't hesitate 
 
 ## License 
 
-Cosmonium is (C) 2018-2020 Laurent Deru.
+Cosmonium is (C) 2018-2022 Laurent Deru.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
