@@ -121,7 +121,7 @@ class EllipsoidSurface(Surface):
         return shadow_caster
 
     def add_self_shadow(self, light_source):
-        if self.body.atmosphere is None and not light_source in self.shadow_casters:
+        if self.body.atmosphere is None and not light_source.source in self.shadow_casters:
             self.create_shadow_caster_for(light_source)
             #TODO: A proper shadow caster should be added
             self.shader.add_shadows(ShaderSphereSelfShadow())
