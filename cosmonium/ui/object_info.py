@@ -66,8 +66,10 @@ def orbit_info(orbit):
 
 def fixed_orbit_info(orbit):
     texts = []
-    texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(orbit.get_right_asc() * 180 / pi)])
-    texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(orbit.get_declination() * 180 / pi)])
+    orientation = orbit.get_absolute_rotation_at(0)
+    (ra, de) = orientation_to_equatorial(orientation)
+    texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
+    texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
     return [_("Position"), texts]
 
 def func_orbit_info(orbit):
