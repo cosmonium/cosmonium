@@ -128,6 +128,8 @@ PUBLISHED:
 
   virtual LQuaterniond get_frame_rotation_at(double time);
 
+  virtual double get_bounding_radius(void);
+
   MAKE_TYPE("LocalFixedPosition", FixedPosition);
 
 protected:

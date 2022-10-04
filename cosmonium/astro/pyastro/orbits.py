@@ -114,6 +114,9 @@ class LocalFixedPosition(FixedPosition):
     def get_frame_rotation_at(self, time):
         return self.frame_rotation
 
+    def get_bounding_radius(self):
+        return self.frame_position.length()
+
 class EllipticalOrbit(Orbit):
     def __init__(self,
              frame,

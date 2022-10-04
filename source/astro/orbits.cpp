@@ -186,6 +186,12 @@ LocalFixedPosition::get_frame_rotation_at(double time)
   return LQuaterniond::ident_quat();
 }
 
+double
+LocalFixedPosition::get_bounding_radius(void)
+{
+  return frame_position.length();
+}
+
 TypeHandle EllipticalOrbit::_type_handle;
 
 EllipticalOrbit::EllipticalOrbit(ReferenceFrame *frame,
