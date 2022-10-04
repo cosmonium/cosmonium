@@ -33,7 +33,7 @@ class FrameYamlParser(YamlModuleParser):
     @classmethod
     def decode_j2000_ecliptic(cls, data, parent):
         body = data.get('center', parent)
-        if body is not None and body.is_system() and body.primary is not None:
+        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
             body = body.primary
         anchor = body.anchor if body is not None else None
         return J2000EclipticReferenceFrame(anchor)
@@ -41,7 +41,7 @@ class FrameYamlParser(YamlModuleParser):
     @classmethod
     def decode_j2000_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        if body is not None and body.is_system() and body.primary is not None:
+        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
             body = body.primary
         anchor = body.anchor if body is not None else None
         return J2000EquatorialReferenceFrame(anchor)
@@ -52,7 +52,7 @@ class FrameYamlParser(YamlModuleParser):
         ra = data.get("ra", 0.0)
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
-        if body is not None and body.is_system() and body.primary is not None:
+        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
             body = body.primary
         anchor = body.anchor if body is not None else None
         return CelestialReferenceFrame(anchor, right_ascension=ra, declination=de, longitude_at_node=node)
@@ -60,7 +60,7 @@ class FrameYamlParser(YamlModuleParser):
     @classmethod
     def decode_mean_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        if body is not None and body.is_system() and body.primary is not None:
+        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
             body = body.primary
         anchor = body.anchor if body is not None else None
         return EquatorialReferenceFrame(anchor)

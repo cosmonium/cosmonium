@@ -214,9 +214,6 @@ class SimpleSystem(StellarSystem):
             self.anchor.set_primary(primary.anchor)
             primary.set_system(self)
             self.body_class = primary.body_class
-            #TODO: What to do ?
-            #if not self.star_system:
-            #    self.abs_magnitude = self.primary.get_abs_magnitude()
             self.anchor.point_color = primary.anchor.point_color
 
     def add_child(self, child):
@@ -249,13 +246,6 @@ class SimpleSystem(StellarSystem):
 
     def get_label_text(self):
         return self.primary.get_label_text()
-
-#TODO: What to do ?
-#     def get_abs_magnitude(self):
-#         if self.star_system:
-#             return StellarSystem.get_abs_magnitude(self)
-#         else:
-#             return self.primary.get_abs_magnitude()
 
     def get_components(self):
         return self.primary.get_components()
