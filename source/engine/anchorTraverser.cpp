@@ -226,9 +226,7 @@ FindLightSourceTraverser::enter_system(SystemAnchor *anchor)
       double distance = (global_delta).length();
       if (distance > 0) {
           double point_radiance = anchor->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
-          if (point_radiance > lowest_radiance) {
-              return true;
-          }
+          return point_radiance > lowest_radiance;
       } else {
           return true;
       }

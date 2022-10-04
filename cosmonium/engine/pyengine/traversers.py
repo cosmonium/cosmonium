@@ -142,8 +142,7 @@ class FindLightSourceTraverser(AnchorTraverser):
             distance = (global_delta).length()
             if distance > 0:
                 point_radiance = anchor._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
-                if point_radiance > self.lowest_radiance:
-                    return True
+                return point_radiance > self.lowest_radiance
             else:
                 return True
         else:
