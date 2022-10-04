@@ -24,13 +24,14 @@ class InfiniteFrustum(object):
     def __init__(self, frustum, view_mat, view_position, zero_near=True):
         self.planes = []
         self.position = view_position
-        # Panda3D frustem has side planes stored from 0 to 3, near plane is 4 and far plane is 5
+        # Panda3D frustum has side planes stored from 1 to 4, far plane is 0 and near plane is 5
         # To make an infinite frustum, we drop the far plane
         for i in range(5):
-            plane = frustum.get_plane(i + 1) * view_mat
+            plane = frustum.get_plane(i + 1)
             if zero_near and i == 4:
                 # Set the distance of the near plane to 0
                 plane[3] = 0.0
+            plane *= view_mat
             new_plane = LPlaned()
             new_plane[0] = plane[0]
             new_plane[1] = plane[1]

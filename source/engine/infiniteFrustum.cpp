@@ -26,14 +26,15 @@ InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatr
     const LPoint3d &view_position, bool zero_near):
   position(view_position)
 {
-  // Panda3D frustem has side planes stored from 0 to 3, near plane is 4 and far plane is 5
+  // Panda3D frustum has side planes stored from 1 to 4, far plane is 0 and near plane is 5
   // To make an infinite frustum, we drop the far plane
   for (int i = 0; i < 5; ++i) {
-    LPlane plane = frustum.get_plane(i + 1) * view_mat;
+    LPlane plane = frustum.get_plane(i + 1);
     if (zero_near && i == 4) {
       // Set the distance of the near plane to 0
       plane[3] = 0.0;
     }
+    plane *= view_mat;
     planes[i][0] = plane[0];
     planes[i][1] = plane[1];
     planes[i][2] = plane[2];
