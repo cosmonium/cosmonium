@@ -38,7 +38,7 @@ InfiniteFrustum::InfiniteFrustum(BoundingHexahedron const & frustum, const LMatr
     planes[i][0] = plane[0];
     planes[i][1] = plane[1];
     planes[i][2] = plane[2];
-    planes[i][3] = plane[3] - planes[i].get_normal().dot(position);
+    planes[i][3] = plane[3] - view_position.length();
   }
 }
 

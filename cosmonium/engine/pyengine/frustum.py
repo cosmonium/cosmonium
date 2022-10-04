@@ -36,13 +36,14 @@ class InfiniteFrustum(object):
             new_plane[0] = plane[0]
             new_plane[1] = plane[1]
             new_plane[2] = plane[2]
-            new_plane[3] = plane[3] - new_plane.get_normal().dot(view_position)
+            new_plane[3] = plane[3] - view_position.length()
             self.planes.append(new_plane)
 
     def is_sphere_in(self, center, radius):
         for plane in self.planes:
             dist = plane.dist_to_plane(center)
-            if dist > radius: return False
+            if dist > radius:
+                return False
         return True
 
     def get_position(self):
