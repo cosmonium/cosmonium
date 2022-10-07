@@ -164,7 +164,7 @@ class EventsDispatcher(DirectObject):
         for i in range(0, 10):
             self.accept("select-object-{}".format(i), self.engine.select_planet, [i])
 
-        self.accept('debug-print-info', self.engine.print_debug)
+        self.accept('debug-print-info', self.debug.print_info)
         self.accept('toggle-fly-mode', self.engine.toggle_fly_mode)
 
         self.accept('toggle-stereoscopic-framebuffer', self.engine.toggle_stereoscopic_framebuffer)
