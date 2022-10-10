@@ -55,7 +55,8 @@ class SubMenuEntry(NamedTuple):
 
 
 class MenuBuilder:
-    def __init__(self, messenger, shortcuts, states_provider, engine, mouse, browser):
+    def __init__(self, translation, messenger, shortcuts, states_provider, engine, mouse, browser):
+        self.translation = translation
         self.messenger = messenger
         self.shortcuts = shortcuts
         self.states_provider = states_provider
@@ -82,6 +83,10 @@ class MenuBuilder:
 
     def add_named_menu(self, name, entries):
         self.menu_generators[name] = lambda: self.create_submenu(entries)
+
+    def add_named_menus(self, menus):
+        for name, entries in menus.items():
+            self.add_named_menu(name, entries)
 
     def get_auto_menu(self, menu_name):
         generator = self.menu_generators.get(menu_name)
@@ -133,9 +138,9 @@ class MenuBuilder:
                 state = self.states_provider.get_state(entry.state)
             else:
                 state = 0
-            return self.menu_event(_(entry.text), state, entry.event, condition=enabled)
+            return self.menu_event(self.translation.gettext(entry.text), state, entry.event, condition=enabled)
         else:
-            return self.menu_submenu(_(entry.text), entry.entries, condition=enabled)
+            return self.menu_submenu(self.translation.gettext(entry.text), entry.entries, condition=enabled)
 
     def create_submenu(self, entries):
         submenu = []
@@ -152,5 +157,5 @@ class MenuBuilder:
     def create_menubar(self, menubar_config):
         menu = []
         for item in menubar_config.entries:
-            menu.append((_(item.text), partial(self.create_submenu, item.entries)))
+            menu.append((self.translation.gettext(item.text), partial(self.create_submenu, item.entries)))
         return menu

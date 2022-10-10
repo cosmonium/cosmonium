@@ -106,6 +106,7 @@ class CosmoniumBase(ShowBase):
         self.common_state = NodePath("<state>")
 
         patch_gettext()
+        self.languages = None
 
         configParser.load()
         self.init_lang()
@@ -148,7 +149,7 @@ class CosmoniumBase(ShowBase):
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
 
-    def load_lang(self, domain, locale_path):
+    def find_lang(self):
         languages = None
         for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
             val = os.environ.get(envar)
@@ -175,10 +176,17 @@ class CosmoniumBase(ShowBase):
                 else:
                     print("Could not retrieve default locale")
 
-        print("Found languages", ', '.join(languages))
-        return gettext.translation(domain, locale_path, languages=languages, fallback=True)
+        print("Found languages:", ', '.join(languages))
+        self.languages = languages
+
+    def load_lang(self, domain, locale_path):
+        if locale_path is not None:
+            return gettext.translation(domain, locale_path, languages=self.languages, fallback=True)
+        else:
+            return gettext.NullTranslations()
 
     def init_lang(self):
+        self.find_lang()
         self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
         self.translation.install()
 

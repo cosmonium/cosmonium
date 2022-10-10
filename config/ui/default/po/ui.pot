@@ -1,0 +1,391 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+msgid "_Boundaries"
+msgstr ""
+
+msgid "_Asterisms"
+msgstr ""
+
+msgid "_Equatorial"
+msgstr ""
+
+msgid "E_cliptic"
+msgstr ""
+
+msgid "Hardware support"
+msgstr ""
+
+msgid "Red-Blue"
+msgstr ""
+
+msgid "Side by side"
+msgstr ""
+
+msgid "Swap eyes"
+msgstr ""
+
+msgid "_Cosmonium"
+msgstr ""
+
+msgid "_Find object"
+msgstr ""
+
+msgid "_Save URL"
+msgstr ""
+
+msgid "_Load URL"
+msgstr ""
+
+msgid "Load _CEL script"
+msgstr ""
+
+msgid "Go to _home"
+msgstr ""
+
+msgid "_Preferences"
+msgstr ""
+
+msgid "_Quit"
+msgstr ""
+
+msgid "_Select"
+msgstr ""
+
+msgid "_Info"
+msgstr ""
+
+msgid "_Edit"
+msgstr ""
+
+msgid "_Go to"
+msgstr ""
+
+msgid "Go to f_ront"
+msgstr ""
+
+msgid "Go to _surface"
+msgstr ""
+
+msgid "_Follow"
+msgstr ""
+
+msgid "S_ync"
+msgstr ""
+
+msgid "_Reset navigation"
+msgstr ""
+
+msgid "Orbiting bodies"
+msgstr ""
+
+msgid "Orbits"
+msgstr ""
+
+msgid "_Time"
+msgstr ""
+
+msgid "_Increase rate 10x"
+msgstr ""
+
+msgid "I_ncrease rate 2x"
+msgstr ""
+
+msgid "_Decrease rate 10x"
+msgstr ""
+
+msgid "D_ecrease rate 2x"
+msgstr ""
+
+msgid "_Reverse time"
+msgstr ""
+
+msgid "_Freeze time"
+msgstr ""
+
+msgid "_Set real time"
+msgstr ""
+
+msgid "Set _time..."
+msgstr ""
+
+msgid "Set _current time"
+msgstr ""
+
+msgid "Set _J2000 epoch"
+msgstr ""
+
+msgid "Camera"
+msgstr ""
+
+msgid "_Mode"
+msgstr ""
+
+msgid "_Center on"
+msgstr ""
+
+msgid "_Track"
+msgstr ""
+
+msgid "Zoom _in"
+msgstr ""
+
+msgid "Zoom _out"
+msgstr ""
+
+msgid "_Reset Zoom"
+msgstr ""
+
+msgid "_Select ship"
+msgstr ""
+
+msgid "_Edit ship"
+msgstr ""
+
+msgid "_Render"
+msgstr ""
+
+msgid "_Labels"
+msgstr ""
+
+msgid "_Galaxies"
+msgstr ""
+
+msgid "_Stars"
+msgstr ""
+
+msgid "_Planets"
+msgstr ""
+
+msgid "_Dwarf planets"
+msgstr ""
+
+msgid "_Moons"
+msgstr ""
+
+msgid "M_inor Moons"
+msgstr ""
+
+msgid "L_ost Moons"
+msgstr ""
+
+msgid "C_omets"
+msgstr ""
+
+msgid "_Asteroids"
+msgstr ""
+
+msgid "I_nterstellars"
+msgstr ""
+
+msgid "S_pacecrafts"
+msgstr ""
+
+msgid "_Constellations"
+msgstr ""
+
+msgid "_Orbits"
+msgstr ""
+
+msgid "All _orbits"
+msgstr ""
+
+msgid "M_inor moons"
+msgstr ""
+
+msgid "L_ost moons"
+msgstr ""
+
+msgid "_Comets"
+msgstr ""
+
+msgid "_Bodies"
+msgstr ""
+
+msgid "O_ptions"
+msgstr ""
+
+msgid "_Atmospheres"
+msgstr ""
+
+msgid "_Clouds"
+msgstr ""
+
+msgid "_Grids"
+msgstr ""
+
+msgid "G_uides"
+msgstr ""
+
+msgid "_3D"
+msgstr ""
+
+msgid "_Advanced"
+msgstr ""
+
+msgid "_Decrease ambient"
+msgstr ""
+
+msgid "_Increase ambient"
+msgstr ""
+
+msgid "Fewer _Stars Visible"
+msgstr ""
+
+msgid "_More Stars Visible"
+msgstr ""
+
+msgid "_Rotation axis"
+msgstr ""
+
+msgid "Reference _frame"
+msgstr ""
+
+msgid "_Window"
+msgstr ""
+
+msgid "Toggle _fullscreen"
+msgstr ""
+
+msgid "Toggle _menubar"
+msgstr ""
+
+msgid "Toggle _HUD"
+msgstr ""
+
+msgid "Save _screenshot"
+msgstr ""
+
+msgid "Save screenshot _without UI"
+msgstr ""
+
+msgid "Set screenshots directory..."
+msgstr ""
+
+msgid "_Debug"
+msgstr ""
+
+msgid "Toggle filled wireframe"
+msgstr ""
+
+msgid "Toggle wireframe"
+msgstr ""
+
+msgid "Show render buffers"
+msgstr ""
+
+msgid "Show shadow frustum"
+msgstr ""
+
+msgid "Shaders"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Diffuse"
+msgstr ""
+
+msgid "Normals"
+msgstr ""
+
+msgid "Normal map"
+msgstr ""
+
+msgid "Shadows"
+msgstr ""
+
+msgid "Heightmap"
+msgstr ""
+
+msgid "Color picking"
+msgstr ""
+
+msgid "Ray hit"
+msgstr ""
+
+msgid "Show slice"
+msgstr ""
+
+msgid "Instant movement"
+msgstr ""
+
+msgid "Connect pstats"
+msgstr ""
+
+msgid "Render info"
+msgstr ""
+
+msgid "Frame per second"
+msgstr ""
+
+msgid "Render time"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Freeze LOD"
+msgstr ""
+
+msgid "Dump LOD stats"
+msgstr ""
+
+msgid "Dump LOD tree"
+msgstr ""
+
+msgid "Log LOD events"
+msgstr ""
+
+msgid "Show boundaries"
+msgstr ""
+
+msgid "Show LOD bounding boxes"
+msgstr ""
+
+msgid "Show LOD culling frustum"
+msgstr ""
+
+msgid "Show octree stats"
+msgstr ""
+
+msgid "Dump octree"
+msgstr ""
+
+msgid "_Help"
+msgstr ""
+
+msgid "User _guide"
+msgstr ""
+
+msgid "_Credits"
+msgstr ""
+
+msgid "_License"
+msgstr ""
+
+msgid "_About"
+msgstr ""
+
+msgid "_Goto"
+msgstr ""
+
+msgid "Surfaces"
+msgstr ""
+
+msgid "More info"
+msgstr ""
+

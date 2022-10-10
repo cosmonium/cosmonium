@@ -26,19 +26,23 @@ from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEnt
 
 
 class UIConfig(NamedTuple):
-    shortcuts:list
-    menubar:list
-    popup:list
+    locale: str
+    shortcuts: list
+    named_menus: dict
+    menubar: list
+    popup: list
 
 
 class UIConfigLoader:
-    def __init__(self, menu_builder):
-        self.menu_builder = menu_builder
+
+    def __init__(self):
+        self.named_menus = {}
 
     def load(self, ui_config_file):
         parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
         data = parser.load_and_parse(ui_config_file)
+        localedir = data.get('locale', os.path.join(basedir, 'locale'))
         shortcuts_file = data.get('shortcuts')
         if shortcuts_file is not None:
             if not os.path.isabs(shortcuts_file):
@@ -60,7 +64,9 @@ class UIConfigLoader:
             popup = self.load_popup(popup_file)
         else:
             popup = None
-        return UIConfig(shortcuts=shortcuts,
+        return UIConfig(locale=localedir,
+                        shortcuts=shortcuts,
+                        named_menus=self.named_menus,
                         menubar=menubar,
                         popup=popup)
 
@@ -105,7 +111,7 @@ class UIConfigLoader:
         data = parser.load_and_parse(menubar_file)
         for name, entries in data.get('menus', {}).items():
             submenu = self.load_submenu(entries)
-            self.menu_builder.add_named_menu(name, submenu)
+            self.named_menus[name] = submenu
         entries = []
         for menu_entry in data.get('menubar', []):
             title = menu_entry.get('title')
@@ -114,11 +120,11 @@ class UIConfigLoader:
             entry = MenubarEntry(title, submenu)
             entries.append(entry)
             menubar = MenubarConfig(entries)
-        return self.menu_builder.create_menubar(menubar)
+        return menubar
 
     def load_popup(self, popup_file):
         parser = YamlParser()
         data = parser.load_and_parse(popup_file)
         entries = self.load_submenu(data.get('popup'))
         menuconfig = MenuConfig(entries)
-        return self.menu_builder.create_menu(menuconfig)
+        return menuconfig

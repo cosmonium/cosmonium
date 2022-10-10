@@ -16,6 +16,9 @@ BASE_VERSION=0.2.1.1
 TAG_VERSION=0.3.0
 COUNT=$(shell git rev-list --count v$(BASE_VERSION)..HEAD)
 
+UI_LIST=default
+
+
 ifneq ($(COUNT),)
   ifeq ($(COUNT),0)
     VERSION="$(TAG_VERSION)"
@@ -103,7 +106,7 @@ endif
 
 PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
 
-build: build-version build-source update-mo update-data-mo
+build: build-version build-source update-mo update-ui-mo update-data-mo
 
 build-source:
 	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON="$(PYTHON)" PYTHON_VERSION=${PYTHON_VERSION} OPTIONS="$(SOURCE_OPTIONS)"
@@ -130,6 +133,15 @@ update-data-po:
 
 update-data-mo:
 	@cd data/po && "$(MAKE)" update-mo
+
+update-ui-pot:
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-pot; cd ../../..; done
+
+update-ui-po:
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-po; cd ../../..; done
+
+update-ui-mo:
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-mo; cd ../../..; done
 
 build-version:
 ifneq ($(VERSION),)

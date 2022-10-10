@@ -1,0 +1,392 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2020-12-19 21:49+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+msgid "_Boundaries"
+msgstr "_Limites"
+
+msgid "_Asterisms"
+msgstr "_Astérismes"
+
+msgid "_Equatorial"
+msgstr "_Equatorielle"
+
+msgid "E_cliptic"
+msgstr "_Ecliptique"
+
+msgid "Hardware support"
+msgstr "Support matériel"
+
+msgid "Red-Blue"
+msgstr "Rouge-Bleu"
+
+msgid "Side by side"
+msgstr "Côte-à-côte"
+
+msgid "Swap eyes"
+msgstr "Echanger les yeux"
+
+msgid "_Cosmonium"
+msgstr "_Cosmonium"
+
+msgid "_Find object"
+msgstr "_Trouver l'objet"
+
+msgid "_Save URL"
+msgstr "_Sauver l'URL"
+
+msgid "_Load URL"
+msgstr "_Charger l'URL"
+
+msgid "Load _CEL script"
+msgstr "Charger le script _CEL"
+
+msgid "Go to _home"
+msgstr "Retour"
+
+msgid "_Preferences"
+msgstr "_Préférences"
+
+msgid "_Quit"
+msgstr "_Quitter"
+
+msgid "_Select"
+msgstr "_Sélection"
+
+msgid "_Info"
+msgstr "_Info"
+
+msgid "_Edit"
+msgstr "_Editer"
+
+msgid "_Go to"
+msgstr "_Aller à"
+
+msgid "Go to f_ront"
+msgstr "Aller en face"
+
+msgid "Go to _surface"
+msgstr "Aller à la surface"
+
+msgid "_Follow"
+msgstr "_Suivre"
+
+msgid "S_ync"
+msgstr "S_ynchro"
+
+msgid "_Reset navigation"
+msgstr "_Réinitialiser la navigation"
+
+msgid "Orbiting bodies"
+msgstr "Corps orbitants"
+
+msgid "Orbits"
+msgstr "Orbite"
+
+msgid "_Time"
+msgstr "_Temps"
+
+msgid "_Increase rate 10x"
+msgstr "Augmenter 10x le défilement"
+
+msgid "I_ncrease rate 2x"
+msgstr "Augmenter 2x le défilement"
+
+msgid "_Decrease rate 10x"
+msgstr "Diminuer 10x le défilement"
+
+msgid "D_ecrease rate 2x"
+msgstr "_Diminuer 2x le défilement"
+
+msgid "_Reverse time"
+msgstr "Inverser défilement"
+
+msgid "_Freeze time"
+msgstr "Geler le défilement"
+
+msgid "_Set real time"
+msgstr "Défilement temps réel"
+
+msgid "Set _time..."
+msgstr "Règler l'heure..."
+
+msgid "Set _current time"
+msgstr "Règler l'heure actuelle"
+
+msgid "Set _J2000 epoch"
+msgstr "Règler époque _J2000"
+
+msgid "Camera"
+msgstr "Caméra"
+
+msgid "_Mode"
+msgstr "_Mode"
+
+msgid "_Center on"
+msgstr "_Centrer sur"
+
+msgid "_Track"
+msgstr "_Pister"
+
+msgid "Zoom _in"
+msgstr "Zoomer"
+
+msgid "Zoom _out"
+msgstr "Dézoomer"
+
+msgid "_Reset Zoom"
+msgstr "Réinitialiser zoom"
+
+msgid "_Select ship"
+msgstr "_Sélectioner vaisseau"
+
+msgid "_Edit ship"
+msgstr "_Editer vaisseau"
+
+msgid "_Render"
+msgstr "Rendu"
+
+msgid "_Labels"
+msgstr "_Labels"
+
+msgid "_Galaxies"
+msgstr "_Galaxies"
+
+msgid "_Stars"
+msgstr "_Etoiles"
+
+msgid "_Planets"
+msgstr "_Planètes"
+
+msgid "_Dwarf planets"
+msgstr "Planètes _naines"
+
+msgid "_Moons"
+msgstr "_Lunes"
+
+msgid "M_inor Moons"
+msgstr "Lunes m_ineures"
+
+msgid "L_ost Moons"
+msgstr "Lunes perdues"
+
+msgid "C_omets"
+msgstr "C_omètes"
+
+msgid "_Asteroids"
+msgstr "_Astéroïdes"
+
+msgid "I_nterstellars"
+msgstr "I_nterstellaires"
+
+msgid "S_pacecrafts"
+msgstr "Vaisseaux"
+
+msgid "_Constellations"
+msgstr "_Constellations"
+
+msgid "_Orbits"
+msgstr "_Orbites"
+
+msgid "All _orbits"
+msgstr "Toutes les _orbites"
+
+msgid "M_inor moons"
+msgstr "Lunes m_ineures"
+
+msgid "L_ost moons"
+msgstr "Lunes perdues"
+
+msgid "_Comets"
+msgstr "_Comètes"
+
+msgid "_Bodies"
+msgstr "_Corps"
+
+msgid "O_ptions"
+msgstr "O_ptions"
+
+msgid "_Atmospheres"
+msgstr "_Atmosphères"
+
+msgid "_Clouds"
+msgstr "_Nuages"
+
+msgid "_Grids"
+msgstr "_Grilles"
+
+msgid "G_uides"
+msgstr "G_uides"
+
+msgid "_3D"
+msgstr "_3D"
+
+msgid "_Advanced"
+msgstr "_Avancé"
+
+msgid "_Decrease ambient"
+msgstr "_Diminuer lum. ambiante"
+
+msgid "_Increase ambient"
+msgstr "Augmenter lum. ambiante"
+
+msgid "Fewer _Stars Visible"
+msgstr "Moins d'étoiles visibles"
+
+msgid "_More Stars Visible"
+msgstr "Plus d'étoiles visibles"
+
+msgid "_Rotation axis"
+msgstr "_Axe de rotation"
+
+msgid "Reference _frame"
+msgstr "Cadre de référence"
+
+msgid "_Window"
+msgstr "_Fenêtre"
+
+msgid "Toggle _fullscreen"
+msgstr "Basculer plein-écran"
+
+msgid "Toggle _menubar"
+msgstr "Basculer barre de menu"
+
+msgid "Toggle _HUD"
+msgstr "Basculer _HUD"
+
+msgid "Save _screenshot"
+msgstr "Capture d'écran"
+
+msgid "Save screenshot _without UI"
+msgstr "Capture d'écran sans interface"
+
+msgid "Set screenshots directory..."
+msgstr "Configurer le répertoire pour les captures..."
+
+msgid "_Debug"
+msgstr "_Débug"
+
+msgid "Toggle filled wireframe"
+msgstr "Basculer mode fil de fer rempli"
+
+msgid "Toggle wireframe"
+msgstr "Basculer mode fil de fer"
+
+msgid "Show render buffers"
+msgstr "Montrer buffets rendu"
+
+msgid "Show shadow frustum"
+msgstr "Montrer le frustum des ombres"
+
+msgid "Shaders"
+msgstr "Shaders"
+
+msgid "Default"
+msgstr "Défaut"
+
+msgid "Diffuse"
+msgstr "Diffus"
+
+msgid "Normals"
+msgstr "Normales"
+
+msgid "Normal map"
+msgstr "Normal map"
+
+msgid "Shadows"
+msgstr "Ombres"
+
+msgid "Heightmap"
+msgstr ""
+
+msgid "Color picking"
+msgstr "Sélection par couleur"
+
+msgid "Ray hit"
+msgstr "Intersection rayon"
+
+msgid "Show slice"
+msgstr "Tranche"
+
+msgid "Instant movement"
+msgstr "Déplacement instantané"
+
+msgid "Connect pstats"
+msgstr "Connecter pstats"
+
+msgid "Render info"
+msgstr "Info rendu"
+
+msgid "Frame per second"
+msgstr "Trame par secondes"
+
+msgid "Render time"
+msgstr "Temps de rendu"
+
+msgid "None"
+msgstr "Aucun"
+
+msgid "Freeze LOD"
+msgstr "Gel LOD"
+
+msgid "Dump LOD stats"
+msgstr "Imprimer les statistiques LOD"
+
+msgid "Dump LOD tree"
+msgstr "Imprimer l'arbre LOD"
+
+msgid "Log LOD events"
+msgstr "Logguer les évènements LOD"
+
+msgid "Show boundaries"
+msgstr "Montrer les limites"
+
+msgid "Show LOD bounding boxes"
+msgstr "Montrer les boîtes englobantes"
+
+msgid "Show LOD culling frustum"
+msgstr "Montrer le frustum de test"
+
+msgid "Show octree stats"
+msgstr "Montrer les statistiques"
+
+msgid "Dump octree"
+msgstr "Imprimer l'arbre"
+
+msgid "_Help"
+msgstr "_Aide"
+
+msgid "User _guide"
+msgstr "_Guide utilisateur"
+
+msgid "_Credits"
+msgstr "_Crédits"
+
+msgid "_License"
+msgstr "_Licence"
+
+msgid "_About"
+msgstr "_A propos"
+
+msgid "_Goto"
+msgstr "_Aller à"
+
+msgid "Surfaces"
+msgstr "Surfaces"
+
+msgid "More info"
+msgstr "Plus d'info"

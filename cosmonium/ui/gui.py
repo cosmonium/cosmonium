@@ -93,13 +93,18 @@ class Gui(object):
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(base, base.messenger, self)
         self.browser = Browser(self.scale, owner=self)
-        self.menu_builder = MenuBuilder(self.messenger, self.shortcuts, self.cosmonium.states_provider, self.cosmonium, self.mouse, self.browser)
+
         ui_config = self.load(config_file)
+        self.translation = self.cosmonium.load_lang("ui", ui_config.locale)
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
-        self.menubar = Menubar(ui_config.menubar)
-        self.popup_menu = Popup(self, self.cosmonium, ui_config.popup)
+
+        self.menu_builder = MenuBuilder(self.translation, self.messenger, self.shortcuts, self.cosmonium.states_provider, self.cosmonium, self.mouse, self.browser)
+        self.menu_builder.add_named_menus(ui_config.named_menus)
+        self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar))
+        self.popup_menu = Popup(self, self.cosmonium, self.menu_builder.create_menu(ui_config.popup))
         self.popup_menu_shown = False
+
         self.hud = Huds(self.scale, self.font)
         self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
         self.width = 0
@@ -128,7 +133,7 @@ class Gui(object):
             self.hide_menu()
 
     def load(self, ui_config_file):
-        loader = UIConfigLoader(self.menu_builder)
+        loader = UIConfigLoader()
         return loader.load(ui_config_file)
 
     def set_nav(self, nav):

@@ -1,9 +1,7 @@
 import sys
 import os
-from builtins import list
 
 filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-print(filepath)
 sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 

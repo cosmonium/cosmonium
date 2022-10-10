@@ -1,0 +1,392 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2020-12-19 21:49+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+msgid "_Boundaries"
+msgstr "_Confini"
+
+msgid "_Asterisms"
+msgstr "_Asterismi"
+
+msgid "_Equatorial"
+msgstr "_Equatoriale"
+
+msgid "E_cliptic"
+msgstr "_Ellittica"
+
+msgid "Hardware support"
+msgstr "Supporto hardware"
+
+msgid "Red-Blue"
+msgstr "Rosso-Blu"
+
+msgid "Side by side"
+msgstr "Fianco a fianco"
+
+msgid "Swap eyes"
+msgstr "Inverti occhi"
+
+msgid "_Cosmonium"
+msgstr "_Cosmonium"
+
+msgid "_Find object"
+msgstr "_Trova l'oggetto"
+
+msgid "_Save URL"
+msgstr "_Salva la URL"
+
+msgid "_Load URL"
+msgstr "_Carica la URL"
+
+msgid "Load _CEL script"
+msgstr "C_arica lo script _CEL"
+
+msgid "Go to _home"
+msgstr "_Home"
+
+msgid "_Preferences"
+msgstr "_Preferenze"
+
+msgid "_Quit"
+msgstr "_Esci"
+
+msgid "_Select"
+msgstr "_Selezione"
+
+msgid "_Info"
+msgstr "_Info"
+
+msgid "_Edit"
+msgstr "_Modifica"
+
+msgid "_Go to"
+msgstr "_Vai a"
+
+msgid "Go to f_ront"
+msgstr "V_ai avanti"
+
+msgid "Go to _surface"
+msgstr "Va_i alla superficie"
+
+msgid "_Follow"
+msgstr "_Segui"
+
+msgid "S_ync"
+msgstr "S_incro"
+
+msgid "_Reset navigation"
+msgstr "_Resetta navigazione"
+
+msgid "Orbiting bodies"
+msgstr "Corpi orbitanti"
+
+msgid "Orbits"
+msgstr "Orbita"
+
+msgid "_Time"
+msgstr "_Tempo"
+
+msgid "_Increase rate 10x"
+msgstr "_Aumenta tempo 10x"
+
+msgid "I_ncrease rate 2x"
+msgstr "A_umenta tempo 2x"
+
+msgid "_Decrease rate 10x"
+msgstr "_Diminuisci tempo 10x"
+
+msgid "D_ecrease rate 2x"
+msgstr "D_iminuisci tempo 2x"
+
+msgid "_Reverse time"
+msgstr "Inve_rti tempo"
+
+msgid "_Freeze time"
+msgstr "_Blocca tempo"
+
+msgid "_Set real time"
+msgstr "_Tempo reale"
+
+msgid "Set _time..."
+msgstr "I_mposta l'ora..."
+
+msgid "Set _current time"
+msgstr "Im_posta l'ora attuale"
+
+msgid "Set _J2000 epoch"
+msgstr "Imposta epoca _J2000"
+
+msgid "Camera"
+msgstr "Camera"
+
+msgid "_Mode"
+msgstr "_Modo"
+
+msgid "_Center on"
+msgstr "_Centra su"
+
+msgid "_Track"
+msgstr "_Pista"
+
+msgid "Zoom _in"
+msgstr "Zoom _in"
+
+msgid "Zoom _out"
+msgstr "Zoom _out"
+
+msgid "_Reset Zoom"
+msgstr "_Reset zoom"
+
+msgid "_Select ship"
+msgstr "_Seleziona nave"
+
+msgid "_Edit ship"
+msgstr "_Modifica nave"
+
+msgid "_Render"
+msgstr "Render"
+
+msgid "_Labels"
+msgstr "_Etichette"
+
+msgid "_Galaxies"
+msgstr "_Galassie"
+
+msgid "_Stars"
+msgstr "_Stelle"
+
+msgid "_Planets"
+msgstr "_Pianeti"
+
+msgid "_Dwarf planets"
+msgstr "Pianeti _nani"
+
+msgid "_Moons"
+msgstr "_Lune"
+
+msgid "M_inor Moons"
+msgstr "Lune m_inori"
+
+msgid "L_ost Moons"
+msgstr "Lune perdute"
+
+msgid "C_omets"
+msgstr "C_omete"
+
+msgid "_Asteroids"
+msgstr "_Asteroidi"
+
+msgid "I_nterstellars"
+msgstr "I_nterstellari"
+
+msgid "S_pacecrafts"
+msgstr "Navi spaziali"
+
+msgid "_Constellations"
+msgstr "_Costellazioni"
+
+msgid "_Orbits"
+msgstr "_Orbite"
+
+msgid "All _orbits"
+msgstr "Tutte le _orbite"
+
+msgid "M_inor moons"
+msgstr "Lune m_inori"
+
+msgid "L_ost moons"
+msgstr "Lune perdute"
+
+msgid "_Comets"
+msgstr "_Comete"
+
+msgid "_Bodies"
+msgstr "_Corpi"
+
+msgid "O_ptions"
+msgstr "O_pzioni"
+
+msgid "_Atmospheres"
+msgstr "_Atmosfere"
+
+msgid "_Clouds"
+msgstr "_Nuvole"
+
+msgid "_Grids"
+msgstr "_Griglie"
+
+msgid "G_uides"
+msgstr "G_uide"
+
+msgid "_3D"
+msgstr "_3D"
+
+msgid "_Advanced"
+msgstr "_Avanzato"
+
+msgid "_Decrease ambient"
+msgstr "_Diminuisci luce ambientale"
+
+msgid "_Increase ambient"
+msgstr "_Aumentea luce ambientale"
+
+msgid "Fewer _Stars Visible"
+msgstr "Meno _stelle visibili"
+
+msgid "_More Stars Visible"
+msgstr "_Più stelle visibili"
+
+msgid "_Rotation axis"
+msgstr "A_sse di rotazione"
+
+msgid "Reference _frame"
+msgstr "_Frame di riferimento"
+
+msgid "_Window"
+msgstr "_Finestra"
+
+msgid "Toggle _fullscreen"
+msgstr "_Inverti fullscreen"
+
+msgid "Toggle _menubar"
+msgstr "Inverti _menubar"
+
+msgid "Toggle _HUD"
+msgstr "Inverti _HUD"
+
+msgid "Save _screenshot"
+msgstr "_Cattura schermata"
+
+msgid "Save screenshot _without UI"
+msgstr "C_attura schermata senza interfaccia"
+
+msgid "Set screenshots directory..."
+msgstr "Imposta directory schermate..."
+
+msgid "_Debug"
+msgstr "_Debug"
+
+msgid "Toggle filled wireframe"
+msgstr "Inverti wireframe pieno"
+
+msgid "Toggle wireframe"
+msgstr "Inverti wireframe"
+
+msgid "Show render buffers"
+msgstr "Mostra render buffer"
+
+msgid "Show shadow frustum"
+msgstr "Mostra frustum ombra"
+
+msgid "Shaders"
+msgstr "Shader"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "Diffuse"
+msgstr "Diffuso"
+
+msgid "Normals"
+msgstr "Normale"
+
+msgid "Normal map"
+msgstr "Normal map"
+
+msgid "Shadows"
+msgstr "Ombre"
+
+msgid "Heightmap"
+msgstr ""
+
+msgid "Color picking"
+msgstr "Selectione colore"
+
+msgid "Ray hit"
+msgstr "Intersezione raggio"
+
+msgid "Show slice"
+msgstr "Mostra slice"
+
+msgid "Instant movement"
+msgstr "Movimento istantaneo"
+
+msgid "Connect pstats"
+msgstr "Connetti pstats"
+
+msgid "Render info"
+msgstr "Info render"
+
+msgid "Frame per second"
+msgstr "Frame al secondo"
+
+msgid "Render time"
+msgstr "Tempo di rendering"
+
+msgid "None"
+msgstr "Nulla"
+
+msgid "Freeze LOD"
+msgstr ""
+
+msgid "Dump LOD stats"
+msgstr "Dump statistiche LOD"
+
+msgid "Dump LOD tree"
+msgstr "Dump albero LOD"
+
+msgid "Log LOD events"
+msgstr "Log eventi LOD"
+
+msgid "Show boundaries"
+msgstr "Mostra confini"
+
+msgid "Show LOD bounding boxes"
+msgstr "Mostra bounding box LOD"
+
+msgid "Show LOD culling frustum"
+msgstr "Mostra culling frustum LOD"
+
+msgid "Show octree stats"
+msgstr "Mostra statistiche octree"
+
+msgid "Dump octree"
+msgstr "Dump octree"
+
+msgid "_Help"
+msgstr "_Aiuto"
+
+msgid "User _guide"
+msgstr "_Guida utente"
+
+msgid "_Credits"
+msgstr "_Crediti"
+
+msgid "_License"
+msgstr "_Licenza"
+
+msgid "_About"
+msgstr "_About"
+
+msgid "_Goto"
+msgstr "_Vai a"
+
+msgid "Surfaces"
+msgstr "Superfici"
+
+msgid "More info"
+msgstr "Più info"
