@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,19 +19,19 @@
 
 
 from panda3d.core import Texture, Filename
+from direct.stdpy import threading
 from direct.task.Task import Task, AsyncFuture
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue
+from queue import Queue, Empty
 import traceback
 
 from . import settings
 
+
 # These will be initialized in cosmonium base class
 asyncTextureLoader = None
 syncTextureLoader = None
+
 
 class AsyncMethod():
     def __init__(self, name, base, method, callback):
@@ -67,27 +67,15 @@ class AsyncMethod():
             self.callback()
             return task.done
 
+
 class AsyncLoader():
     def __init__(self, base, name):
         self.base = base
-        self.in_queue = queue.Queue()
-        self.cb_queue = queue.Queue()
-        self.base.taskMgr.setupTaskChain(name,
-                                         numThreads = 1,
-                                         tickClock = False,
-                                         threadPriority = None,
-                                         frameBudget = -1,
-                                         frameSync = False,
-                                         timeslicePriority = True)
-
-        self.process_task = self.base.taskMgr.add(self.processTask, name + 'ProcessTask', taskChain=name)
+        self.in_queue = Queue()
+        self.cb_queue = Queue()
+        self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead', daemon=True)
         self.callback_task = self.base.taskMgr.add(self.callbackTask, name + 'CallbackTask')
-
-    def remove(self):
-        self.base.taskMgr.remove(self.process_task)
-        self.process_task = None
-        self.base.taskMgr.remove(self.callback_task)
-        self.callback_task = None
+        self.process_thread.start()
 
     def add_job(self, func, fargs):
         future = AsyncFuture()
@@ -95,20 +83,19 @@ class AsyncLoader():
         self.in_queue.put(job)
         return future
 
-    def processTask(self, task):
-        try:
-            #A small but not null timeout is required to avoid draining CPU resources
-            job = self.in_queue.get(timeout=0.001)
-            (func, fargs, future) = job
-            if not settings.panda11 or not future.cancelled():
-                result = func(*fargs)
-                self.cb_queue.put([future, result])
-            else:
-                #print("job cancelled")
+    def processTask(self):
+        while True:
+            try:
+                job = self.in_queue.get()
+                (func, fargs, future) = job
+                if not settings.panda11 or not future.cancelled():
+                    result = func(*fargs)
+                    self.cb_queue.put([future, result])
+                else:
+                    #print("job cancelled")
+                    pass
+            except Empty:
                 pass
-        except queue.Empty:
-            pass
-        return Task.cont
 
     def callbackTask(self, task):
         try:
@@ -120,9 +107,10 @@ class AsyncLoader():
                 else:
                     #print("Result cancelled")
                     pass
-        except queue.Empty:
+        except Empty:
             pass
         return Task.cont
+
 
 class AsyncTextureLoader(AsyncLoader):
     def __init__(self, base):
@@ -158,6 +146,7 @@ class AsyncTextureLoader(AsyncLoader):
                 image = texture.create_default_image()
                 tex.load(image, z=page, n=0)
         return tex
+
 
 class SyncTextureLoader():
     def load_texture(self, filename, alpha_filename=None):
