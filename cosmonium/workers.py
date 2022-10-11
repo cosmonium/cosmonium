@@ -23,7 +23,6 @@ from direct.stdpy import threading
 from direct.task.Task import Task, AsyncFuture
 
 from queue import Queue, Empty
-import traceback
 
 from . import settings
 
@@ -39,31 +38,24 @@ class AsyncMethod():
         self.method = method
         self.callback = callback
         self.done = False
-        self.base.taskMgr.setupTaskChain(name,
-                                         numThreads = 1,
-                                         tickClock = False,
-                                         threadPriority = None,
-                                         frameBudget = -1,
-                                         frameSync = False,
-                                         timeslicePriority = True)
-
-        self.process_task = self.base.taskMgr.add(self.processTask, name + 'ProcessTask', taskChain=name)
+        self.error = None
+        self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead')
         self.callback_task = self.base.taskMgr.add(self.callbackTask, name + 'CallbackTask')
+        self.process_thread.start()
 
-    def processTask(self, task):
-        #TODO: Investigate why a task aborted by exception is restarted...
+    def processTask(self):
         try:
             self.method()
-        except Exception:
-            traceback.print_exc()
-            raise SystemExit
+        except Exception as e:
+            self.error = e
         self.done = True
-        return task.done
 
     def callbackTask(self, task):
         if not self.done:
             return task.cont
         else:
+            if self.error:
+                raise self.error
             self.callback()
             return task.done
 
