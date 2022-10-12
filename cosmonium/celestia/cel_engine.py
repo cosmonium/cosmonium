@@ -511,7 +511,7 @@ Description:
     coordsys = parameters.get('coordsys', "universal")
     frame = create_frame(coordsys, ref)
     if frame is not None:
-        sequence.append(Func(base.ship.set_frame, frame))
+        sequence.append(Func(base.ship.anchor.set_frame, frame))
 
 def setorientation(command_name, sequence, base, parameters):
     """Parameters:
@@ -532,7 +532,7 @@ Description:
         oz = parameters.get('oz', 0.0)
         ow = parameters.get('ow', 0.0)
         orientation = LQuaterniond(-ow, ox, -oz, oy)
-    sequence.append(Func(base.ship.set_frame_pos, orientation))
+    sequence.append(Func(base.ship.anchor.set_frame_position, orientation))
 
 def setposition(command_name, sequence, base, parameters):
     """Parameters:
@@ -557,7 +557,7 @@ Description:
         y = Bigfix.bigfix_to_float(y)
         z = Bigfix.bigfix_to_float(z)
         position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
-    sequence.append(Func(base.ship.set_frame_pos, position))
+    sequence.append(Func(base.ship.anchor.set_frame_position, position))
 
 def setsurface(command_name, sequence, base, parameters):
     """Parameters:
