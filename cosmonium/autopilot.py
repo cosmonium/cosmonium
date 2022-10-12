@@ -325,7 +325,7 @@ class AutoPilot(object):
             angle = 2 * pi - angle
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
-        self.controller.step_turn(rot, absolute=False)
+        self.controller.step_turn_local(rot)
         #self.move_and_rotate_to(position, orientation, duration=duration)
 
     def align_on_equatorial(self, duration=None):
@@ -338,7 +338,7 @@ class AutoPilot(object):
             angle = 2 * pi - angle
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
-        self.controller.step_turn(rot, absolute=False)
+        self.controller.step_turn_local(rot)
 
     def do_change_distance(self, delta, rate):
         target = self.ui.selected
@@ -375,7 +375,7 @@ class AutoPilot(object):
         relative_pos.normalize()
         new_pos = rot2.xform(relative_pos) * distance
         self.controller.set_frame_position(new_pos + center)
-        self.controller.turn(self.controller.get_frame_orientation() * rot2, absolute=False)
+        self.controller.turn_local(self.controller.get_frame_orientation() * rot2)
 
     def orbit(self, axis, rate, duration=None):
         print("Orbit")
@@ -386,7 +386,7 @@ class AutoPilot(object):
     def do_rotate(self, delta, axis, rate):
         rot=LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
-        self.controller.step_turn(rot, absolute=False)
+        self.controller.step_turn_local(rot)
 
     def rotate(self, axis, rate, duration=None):
         print("Rotate")
