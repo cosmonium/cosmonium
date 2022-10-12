@@ -373,6 +373,9 @@ class CameraController(EventsControllerBase):
         self.register_events()
 
     def deactivate(self):
+        if self.current_interval is not None:
+            self.current_interval.pause()
+            self.current_interval = None
         self.remove_events()
         self.camera = None
         self.reference_anchor = None
