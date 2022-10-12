@@ -417,10 +417,10 @@ class SimpleTexture(TextureBase):
     def apply(self, shape, instance):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         #TODO: not really apply but we need a place to detected the alpha channel
-        self.has_alpha_channel = texture.get_format() in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
         if texture is None:
             #print("USE DEFAULT", shape.str_id())
             (texture, texture_size, texture_lod) = self.get_default_texture()
+        self.has_alpha_channel = texture.get_format() in (Texture.F_rgba, Texture.F_srgb_alpha, Texture.F_luminance_alpha, Texture.F_sluminance_alpha)
         if self.panda:
             self.apply_panda(shape, instance, texture, texture_lod)
         else:
