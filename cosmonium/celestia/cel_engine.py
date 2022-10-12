@@ -33,7 +33,13 @@ from .. import settings
 from math import pi
 import re
 
-def create_frame(coordsys, ref):
+def create_frame(coordsys, ref_name):
+    ref = None
+    if ref_name is not None and ref_name != "":
+        path = body_path(ref_name)
+        body = base.universe.find_by_path(path)
+        if body is not None:
+            ref = body.anchor
     coordsys = coordsys.lower()
     if coordsys == "observer":
         return None
