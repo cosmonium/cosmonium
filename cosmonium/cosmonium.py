@@ -638,6 +638,7 @@ class Cosmonium(CosmoniumBase):
             position = None
             rotation = None
         self.camera_controller = camera_controller
+        print("Switching camera to", self.camera_controller.get_name())
         if camera_controller.require_target():
             self.camera_controller.set_target(self.track)
         self.camera_controller.activate(self.observer, self.ship.anchor)
@@ -648,7 +649,6 @@ class Cosmonium(CosmoniumBase):
             self.camera_controller.set_camera_hints(**self.ship.get_camera_hints())
         self.nav.set_camera_controller(camera_controller)
         self.autopilot.set_camera_controller(self.camera_controller)
-        print("Switching camera to", self.camera_controller.get_name())
 
     def set_default_camera_controller(self):
         for camera_controller in self.camera_controllers:
@@ -676,6 +676,7 @@ class Cosmonium(CosmoniumBase):
             self.camera_controller.set_reference_anchor(None)
         old_ship = self.ship
         self.ship = ship
+        print("Switching ship to", self.ship.get_name())
         if self.ship is not None:
             self.worlds.add_world(self.ship)
             self.autopilot.set_controller(ShipMover(self.ship.anchor))
