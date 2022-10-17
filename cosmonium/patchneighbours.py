@@ -236,10 +236,10 @@ class PatchNeighbours(PatchNeighboursBase):
 
     def split_neighbours(self, update):
         (bl, br, tr, tl) = self.patch.children
-        tl.set_all_neighbours(self.get_neighbours(self.NORTH), [tr], [bl], self.get_neighbours(self.WEST))
-        tr.set_all_neighbours(self.get_neighbours(self.NORTH), self.get_neighbours(self.EAST), [br], [tl])
-        br.set_all_neighbours([tr], self.get_neighbours(self.EAST), self.get_neighbours(self.SOUTH), [bl])
-        bl.set_all_neighbours([tl], [br], self.get_neighbours(self.SOUTH), self.get_neighbours(self.WEST))
+        tl.set_all_neighbours(self.get_neighbours(self.NORTH), set([tr]), set([bl]), self.get_neighbours(self.WEST))
+        tr.set_all_neighbours(self.get_neighbours(self.NORTH), self.get_neighbours(self.EAST), set([br]), set([tl]))
+        br.set_all_neighbours(set([tr]), self.get_neighbours(self.EAST), self.get_neighbours(self.SOUTH), set([bl]))
+        bl.set_all_neighbours(set([tl]), set([br]), self.get_neighbours(self.SOUTH), self.get_neighbours(self.WEST))
         neighbours = self.get_all_neighbours()
         self.split_opposite_neighbours(self.NORTH, [tl, tr])
         self.split_opposite_neighbours(self.EAST, [tr, br])
