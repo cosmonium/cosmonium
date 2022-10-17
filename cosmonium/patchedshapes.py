@@ -181,8 +181,8 @@ class PatchBase(Shape):
     def get_neighbours(self, face):
         return self.neighbours.get_all_neighbours()
 
-    def collect_side_neighbours(self, side):
-        return self.neighbours.collect_side_neighbours(side)
+    def collect_side_patches(self, side):
+        return self.neighbours.collect_side_patches(side)
 
     def remove_detached_neighbours(self):
         return self.neighbours.remove_detached_neighbours()

@@ -45,7 +45,7 @@ class PatchNoNeighbours(PatchNeighboursBase):
     def get_neighbours(self, face):
         return []
 
-    def collect_side_neighbours(self, side):
+    def collect_side_patches(self, side):
         return []
 
     def set_all_neighbours(self, north, east, south, west):
@@ -90,8 +90,8 @@ class PatchNeighbours(PatchNeighboursBase):
     def get_neighbours(self, face):
         return set(self.neighbours[face])
 
-    #TODO: This should be moved to QuadTreeNode, and name is wrong
-    def _collect_side_neighbours(self, result, side):
+    #TODO: This should be moved to QuadTreeNode
+    def _collect_side_patches(self, result, side):
         if len(self.patch.children) != 0:
             (bl, br, tr, tl) = self.patch.children
             if side == self.NORTH:
@@ -109,9 +109,9 @@ class PatchNeighbours(PatchNeighboursBase):
         else:
             result.add(self.patch)
 
-    def collect_side_neighbours(self, side):
+    def collect_side_patches(self, side):
         result = set()
-        self._collect_side_neighbours(result, side)
+        self._collect_side_patches(result, side)
         return result
 
     def _collect_neighbours(self, result, side):

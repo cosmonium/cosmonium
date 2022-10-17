@@ -149,30 +149,30 @@ class TiledShape(PatchedShapeBase):
             self.root_patches.append(patch)
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
-                north = self.find_root_patch(patch.x, patch.y + 1)
-                if north is not None:
-                    neighbours = north.collect_side_neighbours(PatchNeighboursBase.SOUTH)
-                    for neighbour in neighbours:
-                        patch.add_neighbour(PatchNeighboursBase.NORTH, neighbour)
-                        neighbour.add_neighbour(PatchNeighboursBase.SOUTH, patch)
-                east = self.find_root_patch(patch.x + 1, patch.y)
-                if east is not None:
-                    neighbours = east.collect_side_neighbours(PatchNeighboursBase.WEST)
-                    for neighbour in neighbours:
-                        patch.add_neighbour(PatchNeighboursBase.EAST, neighbour)
-                        neighbour.add_neighbour(PatchNeighboursBase.WEST, patch)
-                south = self.find_root_patch(patch.x, patch.y - 1)
-                if south is not None:
-                    neighbours = south.collect_side_neighbours(PatchNeighboursBase.NORTH)
-                    for neighbour in neighbours:
-                        patch.add_neighbour(PatchNeighboursBase.SOUTH, neighbour)
-                        neighbour.add_neighbour(PatchNeighboursBase.NORTH, patch)
-                west = self.find_root_patch(patch.x - 1, patch.y)
-                if west is not None:
-                    neighbours = west.collect_side_neighbours(PatchNeighboursBase.EAST)
-                    for neighbour in neighbours:
-                        patch.add_neighbour(PatchNeighboursBase.WEST, neighbour)
-                        neighbour.add_neighbour(PatchNeighboursBase.EAST, patch)
+            north = self.find_root_patch(patch.x, patch.y + 1)
+            if north is not None:
+                neighbours = north.collect_side_patches(PatchNeighboursBase.SOUTH)
+                for neighbour in neighbours:
+                    patch.add_neighbour(PatchNeighboursBase.NORTH, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursBase.SOUTH, patch)
+            east = self.find_root_patch(patch.x + 1, patch.y)
+            if east is not None:
+                neighbours = east.collect_side_patches(PatchNeighboursBase.WEST)
+                for neighbour in neighbours:
+                    patch.add_neighbour(PatchNeighboursBase.EAST, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursBase.WEST, patch)
+            south = self.find_root_patch(patch.x, patch.y - 1)
+            if south is not None:
+                neighbours = south.collect_side_patches(PatchNeighboursBase.NORTH)
+                for neighbour in neighbours:
+                    patch.add_neighbour(PatchNeighboursBase.SOUTH, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursBase.NORTH, patch)
+            west = self.find_root_patch(patch.x - 1, patch.y)
+            if west is not None:
+                neighbours = west.collect_side_patches(PatchNeighboursBase.EAST)
+                for neighbour in neighbours:
+                    patch.add_neighbour(PatchNeighboursBase.WEST, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursBase.EAST, patch)
         return patch
 
     def split_patch(self, parent):
