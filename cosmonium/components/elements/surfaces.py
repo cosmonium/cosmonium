@@ -237,6 +237,11 @@ class HeightmapSurface(EllipsoidSurface):
             self.biome.clear_all()
         EllipsoidSurface.remove_instance(self)
 
+    def get_patch_at(self, x, y):
+        coord = self.shape.global_to_shape_coord(x, y)
+        patch = self.shape.find_patch_at(coord)
+        return patch
+
     def get_height_at(self, x, y, strict=False):
         #print("get_height_at", x, y)
         coord = self.shape.global_to_shape_coord(x, y)
@@ -319,6 +324,11 @@ class HeightmapFlatSurface(FlatSurface):
         if self.biome is not None:
             self.biome.clear_all()
         FlatSurface.remove_instance(self)
+
+    def get_patch_at(self, x, y):
+        coord = self.shape.global_to_shape_coord(x, y)
+        patch = self.shape.find_patch_at(coord)
+        return patch
 
     def get_height_at(self, x, y, strict=False):
         #print("get_height_at", x, y)
