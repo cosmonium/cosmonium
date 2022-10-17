@@ -114,7 +114,7 @@ class Shape:
             self.instance.setPythonTag('owner', self.owner)
 
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
-        return False
+        return [], []
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         pass

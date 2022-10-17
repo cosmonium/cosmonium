@@ -202,7 +202,7 @@ class ShapeObject(VisibleObject):
         self.configure_render_order()
         if settings.color_picking and self.get_oid_color() is not None:
             self.instance.set_shader_input("color_picking", self.get_oid_color())
-        self.schedule_jobs()
+        self.schedule_jobs([])
 
     def configure_render_order(self):
         pass
@@ -267,9 +267,9 @@ class ShapeObject(VisibleObject):
             shape.shape_done()
         #print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
-    def schedule_jobs(self):
+    def schedule_jobs(self, patches):
         if self.shape.patchable:
-            for patch in self.shape.patches:
+            for patch in patches:
                 if not patch.instance_ready and patch.task is None:
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
@@ -297,8 +297,11 @@ class ShapeObject(VisibleObject):
             self.sources.apply(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
-        if self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance):
-            self.schedule_jobs()
+        to_show, to_update = self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance)
+        self.schedule_jobs(to_show)
+        for patch in to_update:
+            if patch.instance is not None:
+                self.patch_sources.apply(patch)
         if self.appearance is not None:
             self.appearance.update_lod(self.shape, self.owner.get_apparent_radius(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size)
 

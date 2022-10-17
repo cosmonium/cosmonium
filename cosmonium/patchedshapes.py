@@ -783,13 +783,13 @@ class PatchedShapeBase(Shape):
     @pstat
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         if settings.debug_lod_freeze:
-            return
+            return [], []
         if self.instance is None:
-            return False
+            return  [], []
         min_radius = self.parent.body.surface.get_min_radius()
         if distance_to_obs < min_radius:
             print("Too low !")
-            return False
+            return  [], []
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
         self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
@@ -809,7 +809,7 @@ class PatchedShapeBase(Shape):
         for patch in self.root_patches:
             patch.quadtree_node.check_lod(lod_result, self.culling_frustum, LPoint2d(*coord), LPoint3d(model_camera_pos), LVector3d(model_camera_vector), altitude_to_ground, pixel_size, self.lod_control)
         lod_result.sort_by_distance()
-        apply_appearance = False
+        to_show = []
         update = []
         for node in lod_result.to_split:
             patch = node.patch
@@ -824,22 +824,22 @@ class PatchedShapeBase(Shape):
                 child.quadtree_node.check_visibility(self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
                 #print(child.str_id(), child.visible)
                 if self.lod_control.should_instanciate(child.quadtree_node, 0, 0):
+                    to_show.append(child)
                     self.create_patch_instance(child)
                     if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
                     for linked_object in self.linked_objects:
                         linked_object.create_patch_instance(child)
             self.remove_patch_instance(patch)
-            apply_appearance = True
             patch.last_split = frame
             if process_nb > 2:
                 break
         for node in lod_result.to_show:
             patch = node.patch
+            to_show.append(patch)
             if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
             self.create_patch_instance(patch)
-            apply_appearance = True
             for linked_object in self.linked_objects:
                 linked_object.create_patch_instance(patch)
         for node in lod_result.to_remove:
@@ -856,8 +856,8 @@ class PatchedShapeBase(Shape):
             self.merge_patch(patch)
             patch.merge_neighbours(update)
             if patch.quadtree_node.visible:
+                to_show.append(patch)
                 self.create_patch_instance(patch)
-                apply_appearance = True
                 for linked_object in self.linked_objects:
                     linked_object.create_patch_instance(patch)
             for linked_object in self.linked_objects:
@@ -870,7 +870,7 @@ class PatchedShapeBase(Shape):
         self.max_lod = self.new_max_lod
         self.update_patch_instances(update)
         #Return True when new instances have been created
-        return apply_appearance or len(update) > 0
+        return to_show, update
 
     def _find_patch_at(self, patch, x, y):
         if x >= patch.x0 and x <= patch.x1 and y >= patch.y0 and y <= patch.y1:
