@@ -99,9 +99,8 @@ class RenderingPass:
 class StaticSceneManager(SceneManagerBase):
     def __init__(self, render):
         SceneManagerBase.__init__(self)
-        self.camera = None
+        self.rendering_passes: list[RenderingPass] = []
         self.lens = None
-        self.dr = None
         self.inverse_z = settings.use_inverse_z
         self.near_plane = settings.near_plane
         self.infinite_far_plane = settings.infinite_far_plane
@@ -115,13 +114,17 @@ class StaticSceneManager(SceneManagerBase):
         self.lens_far_limit = settings.lens_far_limit
         self.root = render.attach_new_node('root')
 
-    def set_target(self, target):
-        print("Set Scene Manager target", target)
-        self.dr = target.make_display_region(0, 1, 0, 1)
-        self.dr.disable_clears()
-        self.dr.set_scissor_enabled(False)
-        self.dr.set_camera(self.camera)
-        self.dr.set_active(True)
+    @property
+    def camera(self):
+        return self.rendering_passes[0].camera
+
+    def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
+        print("Add pass", name)
+        rendering_pass = RenderingPass(name, target, camera_mask)
+        rendering_pass.camera.node().set_lens(self.lens)
+        rendering_pass.camera.reparent_to(self.root)
+        rendering_pass.create()
+        self.rendering_passes.append(rendering_pass)
 
     def attach_new_anchor(self, instance):
         instance.reparent_to(self.root)
@@ -133,28 +136,23 @@ class StaticSceneManager(SceneManagerBase):
         instance.reparent_to(self.root)
 
     def init_camera(self, camera_holder, default_camera):
-        self.camera = default_camera
         self.lens = camera_holder.lens.make_copy()
-        self.camera.node().set_lens(self.lens)
         if self.auto_infinite_plane:
             self.infinity = self.near_plane / self.lens_far_limit / 1000
         else:
             self.infinity = self.infinite_plane
         print("Planes: ", self.near_plane, self.far_plane)
-        self.camera.reparent_to(self.root)
-
-    def set_camera_mask(self, flags):
-        self.camera.node().set_camera_mask(flags)
 
     def update_scene_and_camera(self, distance_to_nearest, camera_holder):
         self.lens = camera_holder.lens.make_copy()
-        self.camera.node().set_lens(self.lens)
         if self.inverse_z:
             self.lens.set_near_far(self.far_plane, self.near_plane)
         else:
             self.lens.set_near_far(self.near_plane, self.far_plane)
-        self.camera.set_pos(camera_holder.camera_np.get_pos())
-        self.camera.set_quat(camera_holder.camera_np.get_quat())
+        for rendering_pass in self.rendering_passes:
+            rendering_pass.camera.node().set_lens(self.lens)
+            rendering_pass.camera.set_pos(camera_holder.camera_np.get_pos())
+            rendering_pass.camera.set_quat(camera_holder.camera_np.get_quat())
 
     def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
@@ -186,6 +184,9 @@ class DynamicSceneManager(SceneManagerBase):
         self.infinity = self.infinite_plane
         self.root = render.attach_new_node('root')
 
+    @property
+    def camera(self):
+        return self.rendering_passes[0].camera
 
     def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
         print("Add pass", name)
@@ -299,6 +300,10 @@ class RegionSceneManager(SceneManagerBase):
 
     def get_regions(self):
         return self.regions
+
+    @property
+    def camera(self):
+        return self.rendering_passes[0].camera
 
     def add_pass(self, name: str, target: GraphicsOutput, camera_mask: DrawMask):
         print("Add pass", name)
