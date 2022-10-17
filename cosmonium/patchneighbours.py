@@ -218,20 +218,27 @@ class PatchNeighbours(PatchNeighboursBase):
             if side == self.NORTH:
                 result.add(tl)
                 result.add(tr)
+                tl.neighbours._do_collect_children(result, side)
+                tr.neighbours._do_collect_children(result, side)
             elif side == self.EAST:
                 result.add(tr)
                 result.add(br)
+                tr.neighbours._do_collect_children(result, side)
+                br.neighbours._do_collect_children(result, side)
             elif side == self.SOUTH:
                 result.add(bl)
                 result.add(br)
+                bl.neighbours._do_collect_children(result, side)
+                br.neighbours._do_collect_children(result, side)
             elif side == self.WEST:
                 result.add(tl)
                 result.add(bl)
-            for child in self.patch.children:
-                child.neighbours._do_collect_children(result, side)
+                tl.neighbours._do_collect_children(result, side)
+                bl.neighbours._do_collect_children(result, side)
 
     def collect_children(self, side):
         result = set()
+        self._do_collect_children(result, side)
         return result
 
     def split_neighbours(self, update):
@@ -257,27 +264,13 @@ class PatchNeighbours(PatchNeighboursBase):
         self.clear_all_neighbours()
 
     def merge_neighbours(self, update):
-        children = self.patch.children
-        (bl, br, tr, tl) = children
-        north = set()
-        for neighbour in chain(tl.neighbours.collect_neighbours(self.NORTH),tr.neighbours.collect_neighbours(self.NORTH)):
-            if neighbour not in children:
-                north.add(neighbour)
+        north = self.collect_neighbours(self.NORTH)
         north_children = self.collect_children(self.NORTH)
-        east = set()
-        for neighbour in chain(tr.neighbours.collect_neighbours(self.EAST), br.neighbours.collect_neighbours(self.EAST)):
-            if neighbour not in children:
-                east.add(neighbour)
+        east =  self.collect_neighbours(self.EAST)
         east_children = self.collect_children(self.EAST)
-        south = set()
-        for neighbour in chain(bl.neighbours.collect_neighbours(self.SOUTH), br.neighbours.collect_neighbours(self.SOUTH)):
-            if neighbour not in children:
-                south.add(neighbour)
+        south = self.collect_neighbours(self.SOUTH)
         south_children = self.collect_children(self.SOUTH)
-        west = set()
-        for neighbour in chain(tl.neighbours.collect_neighbours(self.WEST), bl.neighbours.collect_neighbours(self.WEST)):
-            if neighbour not in children:
-                west.add(neighbour)
+        west = self.collect_neighbours(self.WEST)
         west_children = self.collect_children(self.WEST)
         self.set_all_neighbours(north, east, south, west)
         self.merge_opposite_neighbours(self.NORTH, north_children)
