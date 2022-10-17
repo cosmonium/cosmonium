@@ -834,6 +834,14 @@ class RoamingRalphDemo(CosmoniumBase):
               self.terrain_surface.get_height_at(self.ralph_world.anchor.get_local_position()[0], self.ralph_world.anchor.get_local_position()[1]))
         print("Ralph:", self.ralph_world.anchor.get_local_position(), self.ralph_world.anchor.get_frame_position(), self.ralph_world.anchor.get_frame_orientation().get_hpr(), self.ralph_world.anchor.get_absolute_orientation().get_hpr())
         print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
+        position = self.ralph_world.anchor.get_local_position()
+        patch = self.terrain_surface.get_patch_at(position[0], position[1])
+        if patch is not None:
+            print("Ralph patch:", patch.str_id())
+        position = self.observer.anchor.get_local_position()
+        patch = self.terrain_surface.get_patch_at(position[0], position[1])
+        if patch is not None:
+            print("Camera patch:", patch.str_id())
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",
