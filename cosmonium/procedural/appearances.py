@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from direct.task.Task import gather
+from direct.task.Task import gather, shield
 
 from ..appearances import AppearanceBase, TexturesBlock
 from ..textures import TextureArray
@@ -107,9 +107,12 @@ class TexturesDictionary(AppearanceBase):
 
     def task_done(self, task):
         self.task = None
+        #TODO: loaded should be protected by a lock to avoid race condition with clear()
+        self.loaded = True
 
     def create_load_task(self, tasks_tree, shape, owner):
-        tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
+        if not self.loaded:
+            tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
         if not self.loaded:
@@ -119,9 +122,7 @@ class TexturesDictionary(AppearanceBase):
                 else:
                     self.task = self.load_textures(tasks_tree, shape, owner)
                 self.task.add_done_callback(self.task_done)
-            await self.task
-            #TODO: loaded should be protected by a lock to avoid race condition with clear()
-            self.loaded = True
+            await shield(self.task)
 
     def apply(self, shape, instance):
         if not self.loaded:

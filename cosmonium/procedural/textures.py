@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import Texture
+from direct.task.Task import shield
 
 from .shaders import DeferredDetailMapShader, TextureDictionaryShaderDataSource
 from .shadernoise import NoiseShader
@@ -27,8 +27,9 @@ from ..pipeline.target import ProcessTarget
 from ..pipeline.stage import ProcessStage
 from ..pipeline.factory import PipelineFactory
 from ..pipeline.generator import GeneratorPool
-from ..textures import TextureConfiguration, TextureSource
+from ..textures import TextureSource
 from .. import settings
+
 
 class TextureGenerationStage(ProcessStage):
     def __init__(self, coord, width, height, noise_source, noise_target, alpha, srgb):
@@ -173,7 +174,7 @@ class DetailMapTextureGenerator():
         if self.tex_generator is None:
             self.create()
         if not self.texture_source.loaded:
-            await self.texture_source.task
+            await shield(self.texture_source.task)
         data = {'prepare': {'texture': {'color': texture_config}}, 'shader': {}}
         for source_name in self.texture_control.get_sources_names():
             if source_name in tasks_tree.named_tasks:
