@@ -138,65 +138,68 @@ class Debug:
         self.engine.trigger_check_settings = True
 
     def print_info(self):
+        scene_manager = self.engine.scene_manager
+        observer = self.engine.observer
+        selected = self.engine.selected
         print("Global:")
-        print("\tscale", self.scene_manager.scale)
-        print("\tPlanes", self.observer.lens.get_near(), self.observer.lens.get_far())
-        print("\tFoV", self.observer.lens.get_fov())
+        print("\tscale", scene_manager.scale)
+        print("\tPlanes", observer.lens.get_near(), observer.lens.get_far())
+        print("\tFoV", observer.lens.get_fov())
         print("Camera:")
-        print("\tGlobal position", self.observer.get_absolute_reference_point())
-        print("\tLocal position", self.observer.get_local_position())
-        print("\tRotation", self.observer.get_absolute_orientation())
-        print("\tCamera vector", self.observer.anchor.camera_vector)
-        print("\tFrame position", self.observer.get_frame_position(), "rotation", self.observer.get_frame_orientation())
-        if self.selected:
-            print("Selected:", utils.join_names(self.selected.names))
-            print("\tType:", self.selected.__class__.__name__)
-            print("\tDistance:", self.selected.anchor.distance_to_obs / units.Km, 'Km')
-            print("\tRadius", self.selected.get_apparent_radius(), "Km", "Extend:", self.selected.get_bounding_radius(), "Km", "Visible:", self.selected.anchor.visible, self.selected.anchor.visible_size, "px")
-            print("\tApp magnitude:", self.selected.get_app_magnitude(), '(', self.selected.get_abs_magnitude(), ')')
-            if isinstance(self.selected, StellarBody):
-                print("\tPhase:", self.selected.get_phase())
-            print("\tGlobal position", self.selected.anchor.get_absolute_reference_point())
-            print("\tLocal position", self.selected.anchor.get_local_position(), '(Frame:', self.selected.anchor.orbit.get_frame_position_at(self.time.time_full), ')')
-            print("\tOrientation", self.selected.anchor.get_absolute_orientation())
-            print("\tVector to obs", self.selected.anchor.vector_to_obs)
-            print("\tVisible:", self.selected.anchor.visible, "Resolved:", self.selected.anchor.resolved, '(', self.selected.anchor.visible_size, ') Override:', self.selected.anchor.visibility_override)
-            print("\tUpdate frozen:", self.selected.anchor.update_frozen)
-            print("\tOrbit:", self.selected.anchor.orbit.__class__.__name__, self.selected.anchor.orbit.frame)
-            print("\tRotation:", self.selected.anchor.rotation.__class__.__name__, self.selected.anchor.rotation.frame)
-            if self.selected.label is not None:
-                print("\tLabel visible:", self.selected.label.visible)
-            if isinstance(self.selected, ReflectiveBody) and self.selected.surface is not None:
-                print("\tRing shadow:", self.selected.surface.shadows.ring_shadow is not None)
-                #print("\tSphere shadow:", [x.body.get_friendly_name() for x in self.selected.surface.shadows.sphere_shadows.occluders])
-            if isinstance(self.selected, StellarBody):
-                if self.selected.scene_anchor.scene_scale_factor is not None:
+        print("\tGlobal position", observer.get_absolute_reference_point())
+        print("\tLocal position", observer.get_local_position())
+        print("\tRotation", observer.get_absolute_orientation())
+        print("\tCamera vector", observer.anchor.camera_vector)
+        print("\tFrame position", observer.get_frame_position(), "rotation", observer.get_frame_orientation())
+        if selected:
+            print("Selected:", utils.join_names(selected.names))
+            print("\tType:", selected.__class__.__name__)
+            print("\tDistance:", selected.anchor.distance_to_obs / units.Km, 'Km')
+            print("\tRadius", selected.get_apparent_radius(), "Km", "Extend:", selected.get_bounding_radius(), "Km", "Visible:", selected.anchor.visible, selected.anchor.visible_size, "px")
+            print("\tApp magnitude:", selected.get_app_magnitude(), '(', selected.get_abs_magnitude(), ')')
+            if isinstance(selected, StellarBody):
+                print("\tPhase:", selected.get_phase())
+            print("\tGlobal position", selected.anchor.get_absolute_reference_point())
+            print("\tLocal position", selected.anchor.get_local_position(), '(Frame:', selected.anchor.orbit.get_frame_position_at(self.engine.time.time_full), ')')
+            print("\tOrientation", selected.anchor.get_absolute_orientation())
+            print("\tVector to obs", selected.anchor.vector_to_obs)
+            print("\tVisible:", selected.anchor.visible, "Resolved:", selected.anchor.resolved, '(', selected.anchor.visible_size, ') Override:', selected.anchor.visibility_override)
+            print("\tUpdate frozen:", selected.anchor.update_frozen)
+            print("\tOrbit:", selected.anchor.orbit.__class__.__name__, selected.anchor.orbit.frame)
+            print("\tRotation:", selected.anchor.rotation.__class__.__name__, selected.anchor.rotation.frame)
+            if selected.label is not None:
+                print("\tLabel visible:", selected.label.visible)
+            if isinstance(selected, ReflectiveBody) and selected.surface is not None:
+                print("\tRing shadow:", selected.surface.shadows.ring_shadow is not None)
+                #print("\tSphere shadow:", [x.body.get_friendly_name() for x in selected.surface.shadows.sphere_shadows.occluders])
+            if isinstance(selected, StellarBody):
+                if selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", self.selected.scene_anchor.scene_position, '(Offset:', self.selected.scene_anchor.world_body_center_offset, ')')
-                    print("\tScale", self.selected.scene_anchor.scene_scale_factor)
-                    print("\tZ distance", self.selected.anchor.z_distance)
-                if self.selected.surface is not None and self.selected.surface.instance is not None:
+                    print("\tPosition", selected.scene_anchor.scene_position, '(Offset:', selected.scene_anchor.world_body_center_offset, ')')
+                    print("\tScale", selected.scene_anchor.scene_scale_factor)
+                    print("\tZ distance", selected.anchor.z_distance)
+                if selected.surface is not None and selected.surface.instance is not None:
                     print("Instance")
-                    print("\tPosition", self.selected.surface.instance.get_pos())
-                    print("\tDistance", self.selected.surface.instance.get_pos().length())
-                    print("\tScale", self.selected.surface.get_scale() * self.selected.scene_anchor.scene_scale_factor)
-                    print("\tInstance Ready:", self.selected.surface.instance_ready)
-                    if self.selected.atmosphere is not None:
-                        pass#print("\tAtm size", self.selected.atmosphere.get_pixel_height())
-                    if self.selected.surface.shape.patchable:
-                        print("Patches:", len(self.selected.surface.shape.patches))
+                    print("\tPosition", selected.surface.instance.get_pos())
+                    print("\tDistance", selected.surface.instance.get_pos().length())
+                    print("\tScale", selected.surface.get_scale() * selected.scene_anchor.scene_scale_factor)
+                    print("\tInstance Ready:", selected.surface.instance_ready)
+                    if selected.atmosphere is not None:
+                        pass#print("\tAtm size", selected.atmosphere.get_pixel_height())
+                    if selected.surface.shape.patchable:
+                        print("Patches:", len(selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                projection = self.selected.cartesian_to_spherical(self.observer.get_local_position())
-                xy = self.selected.spherical_to_xy(projection)
+                projection = selected.cartesian_to_spherical(observer.get_local_position())
+                xy = selected.spherical_to_xy(projection)
                 print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
-                height = self.selected.anchor._height_under
-                print("\tHeight:", height, "Delta:", height - self.selected.get_apparent_radius(), "Alt:", (self.selected.anchor.distance_to_obs - height))
-                if self.selected.surface is not None and self.selected.surface.shape.patchable:
-                    x = projection[0] / pi / 2 + 0.5
-                    y = 1.0 - (projection[1] / pi + 0.5)
-                    coord = self.selected.surface .global_to_shape_coord(x, y)
-                    patch = self.selected.surface.shape.find_patch_at(coord)
+                height = selected.anchor._height_under
+                print("\tHeight:", height, "Delta:", height - selected.get_apparent_radius(), "Alt:", (selected.anchor.distance_to_obs - height))
+                if selected.surface is not None and selected.surface.shape.patchable:
+                    #x = projection[0] / pi / 2 + 0.5
+                    #y = 1.0 - (projection[1] / pi + 0.5)
+                    coord = selected.surface.global_to_shape_coord(xy[0], xy[1])
+                    patch = selected.surface.shape.find_patch_at(coord)
                     if patch is not None:
                         print("\tID:", patch.str_id())
                         print("\tLOD:", patch.lod)
@@ -209,10 +212,10 @@ class Debug:
                             print("\tDistance:", patch.instance.get_pos(self.engine.render).length())
                             print("\tScale:", patch.instance.get_scale())
                             if patch.quadtree_node.offset is not None:
-                                print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * self.selected.get_apparent_radius())
+                                print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * selected.get_apparent_radius())
             else:
-                if self.selected.scene_anchor.scene_scale_factor is not None:
+                if selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene:")
-                    print("\tPosition:", self.selected.scene_anchor.scene_position)
-                    print("\tOrientation:", self.selected.scene_anchor.scene_orientation)
-                    print("\tScale:", self.selected.scene_anchor.scene_scale_factor)
+                    print("\tPosition:", selected.scene_anchor.scene_position)
+                    print("\tOrientation:", selected.scene_anchor.scene_orientation)
+                    print("\tScale:", selected.scene_anchor.scene_scale_factor)
