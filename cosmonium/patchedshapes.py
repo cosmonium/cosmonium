@@ -966,17 +966,13 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         transform_mat = LMatrix4()
         transform_mat.invert_from(self.instance.get_net_transform().get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        # TODO: This does not work with oblate bodies
-        # We use z-distance and not the actual distance for the culling frustum near and far planes
-        coef = -self.owner.anchor.vector_to_obs.dot(camera.anchor.camera_vector)
-        # The near and far planes must be scaled with the scene_scale_factor as we are using the net transform matrix
-        near = max(1e-6, (self.parent.body.anchor.distance_to_obs - max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor)
-        far = (self.parent.body.anchor.distance_to_obs + max_radius) * coef * self.parent.body.scene_anchor.scene_scale_factor
+        near = 1.e-6
         if settings.use_horizon_culling:
             self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, min_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
                                                          self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
                                                          settings.cull_far_patches, settings.cull_far_patches_threshold)
         else:
+            far = (self.parent.body.anchor.distance_to_obs + max_radius) * self.parent.body.scene_anchor.scene_scale_factor
             self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin)
 
     def place_patches(self, owner):
