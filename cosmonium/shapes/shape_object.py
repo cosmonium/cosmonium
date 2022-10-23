@@ -18,6 +18,7 @@
 #
 
 
+from direct.task.Task import shield
 from panda3d.core import NodePath
 from panda3d.core import OmniBoundingVolume
 
@@ -240,7 +241,7 @@ class ShapeObject(VisibleObject):
     async def patch_task(self, patch):
         #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
         if self.shape.task is not None:
-            await self.shape.task
+            await shield(self.shape.task)
         await self.patch_sources.load(patch)
         if patch.instance is not None:
             self.patch_sources.apply(patch)
