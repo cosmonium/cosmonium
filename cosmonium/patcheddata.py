@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector2
+from panda3d.core import LVector2, AsyncFuture
 
 from .datasource import DataSource
 from .textures import TexCoord
@@ -44,6 +44,7 @@ class PatchData:
         self.loaded = False
         self.texture_offset = None
         self.texture_scale = None
+        self.awaitables = []
 
     def copy_from(self, parent_data):
         self.cloned = True
@@ -80,7 +81,27 @@ class PatchData:
     def is_ready(self):
         return self.data_ready
 
-    async def load(self, tasks_tree, patch):
+    def is_waiting(self):
+        for awaitable in self.awaitables:
+            if not awaitable.cancelled():
+                return True
+        return False
+
+    def load(self, tasks_tree, patch):
+        if len(self.awaitables) == 0:
+            task = taskMgr.add(self.load_wrapper(tasks_tree, patch))
+        future = AsyncFuture()
+        self.awaitables.append(future)
+        return future
+
+    async def load_wrapper(self, tasks_tree, patch):
+        result = await self.do_load(tasks_tree, patch)
+        for awaitable in self.awaitables:
+            if not awaitable.cancelled():
+                awaitable.set_result(result)
+        self.awaitables = []
+
+    async def do_load(self, tasks_tree, patch):
         pass
 
     def apply(self, instance):
@@ -167,7 +188,8 @@ class PatchedData(DataSource):
             if not patch_data.loaded:
                 if patch.lod > self.max_lod:
                     patch_data.calc_sub_patch()
-                    # Mark the patch data as loaded as it's beyond max lod
+                    if not patch_data.parent_data.loaded:
+                        await patch_data.parent_data.load(tasks_tree, patch_data.parent_data.patch)
                     patch_data.loaded = True
                 else:
                     await patch_data.load(tasks_tree, patch)

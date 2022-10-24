@@ -34,7 +34,7 @@ class GeneratorChain(ProcessPipeline):
 
     def check_generation(self, task):
         if len(self.queue) > 0:
-            (tid, shader_data, future) = self.queue.pop(0)
+            (tid, shader_data, future, controller) = self.queue.pop(0)
             if not settings.panda11 or not future.cancelled():
                 future.set_result(self.gather())
             else:
@@ -45,25 +45,26 @@ class GeneratorChain(ProcessPipeline):
 
     def schedule_next(self):
         while len(self.queue) > 0:
-            (tid, shader_data, future) = self.queue[0]
+            (tid, shader_data, future, controller) = self.queue[0]
             if not settings.panda11 or not future.cancelled():
                 #print("TRIGGER", tid)
-                self.trigger(shader_data)
-                break
+                if controller is None or controller.is_waiting():
+                    self.trigger(shader_data)
+                    break
             #print("Remove cancelled job", tid)
             self.queue.pop(0)
         else:
             self.busy = False
 
-    def schedule(self, tid, shader_data, future):
-        self.queue.append((tid, shader_data, future))
+    def schedule(self, tid, shader_data, future, controller):
+        self.queue.append((tid, shader_data, future, controller))
         if not self.busy:
             self.schedule_next()
             self.busy = True
 
-    def generate(self, tid, shader_data):
+    def generate(self, tid, shader_data, controller=None):
         future = AsyncFuture()
-        self.schedule(tid, shader_data, future)
+        self.schedule(tid, shader_data, future, controller)
         return future
 
 class GeneratorPool(object):
@@ -81,9 +82,9 @@ class GeneratorPool(object):
         for chain in self.chains:
             chain.remove()
 
-    def generate(self, tid, shader_data):
+    def generate(self, tid, shader_data, controller=None):
         lowest = self.chains[0]
         for chain in self.chains[1:]:
             if len(chain.queue) < len(lowest.queue):
                 lowest = chain
-        return lowest.generate(tid, shader_data)
+        return lowest.generate(tid, shader_data, controller)

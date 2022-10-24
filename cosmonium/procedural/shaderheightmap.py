@@ -138,7 +138,7 @@ class HeightmapPatchGenerator():
                                     }}
         data = {'prepare': {'heightmap': {'color': texture_config}}, 'shader': shader_data}
         #print(globalClock.get_frame_count(), "GEN HM", heightmap_patch.patch.str_id())
-        result = await self.generator.generate(tid, data)
+        result = await self.generator.generate(tid, data, controller=heightmap_patch)
         data = result['heightmap'].get('color')
         data.set_name("hm - " + heightmap_patch.patch.str_id())
         #print(globalClock.get_frame_count(), "DONE HM", heightmap_patch.patch.str_id())
@@ -163,7 +163,7 @@ class ShaderHeightmapPatch(HeightmapPatch):
             self.calc_sub_patch()
         HeightmapPatch.apply(self, instance)
 
-    async def load(self, tasks_tree, patch):
+    async def do_load(self, tasks_tree, patch):
         texture_config = self.create_texture_config()
         data = await self.parent.data_source.generate("hm - " + patch.str_id(), self, texture_config)
         self.configure_data(data)

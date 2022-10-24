@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -68,9 +68,6 @@ class HeightmapPatch(PatchData):
 
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
-
-    async def load(self, tasks_tree, patch):
-        pass
 
     def apply(self, instance):
         name = self.parent.name
@@ -153,7 +150,7 @@ class TextureHeightmapPatch(HeightmapPatch):
         self.data_source.apply(self.patch, instance, "heightmap_%s" % self.parent.name)
         HeightmapPatch.apply(self, instance)
 
-    async def load(self, tasks_tree, patch):
+    async def do_load(self, tasks_tree, patch):
         texture_config = self.create_texture_config()
         await self.data_source.load(tasks_tree, patch, texture_config)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
