@@ -36,28 +36,20 @@ class PatchData:
         self.r_x1 = patch.x1 + overlap / self.r_width * (patch.x1 - patch.x0)
         self.r_y0 = patch.y0 - overlap / self.r_height * (patch.y1 - patch.y0)
         self.r_y1 = patch.y1 + overlap / self.r_height * (patch.y1 - patch.y0)
-        self.lod = None
-        self.parent_data = None
         self.data_ready = False
         self.texture = None
-        self.cloned = False
         self.loaded = False
         self.texture_offset = None
         self.texture_scale = None
         self.awaitables = []
 
     def copy_from(self, parent_data):
-        self.cloned = True
-        self.lod = parent_data.lod
         self.texture = parent_data.texture
         self.data_ready = parent_data.data_ready
 
-    def calc_sub_patch(self):
-        if self.parent_data is None:
-            print("No parent data", self.patch.str_id())
-            return
-        self.copy_from(self.parent_data)
-        delta = self.patch.lod - self.lod
+    def calc_sub_patch(self, parent_data):
+        self.copy_from(parent_data)
+        delta = self.patch.lod - parent_data.patch.lod
         scale = 1 << delta
         #TODO: This should be moved into the patch
         if self.patch.coord == TexCoord.Cylindrical:
@@ -71,8 +63,8 @@ class PatchData:
             x_delta = (self.patch.x - x_tex) / scale
             y_delta = (self.patch.y - y_tex) / scale
         else:
-            x_delta = (self.patch.x - self.parent_data.patch.x) / self.parent_data.patch.size
-            y_delta = (self.patch.y - self.parent_data.patch.y) / self.parent_data.patch.size
+            x_delta = (self.patch.x - parent_data.patch.x) / parent_data.patch.size
+            y_delta = (self.patch.y - parent_data.patch.y) / parent_data.patch.size
         r_scale_x = (self.width - self.overlap * 2) / self.width
         r_scale_y = (self.height - self.overlap * 2) / self.height
         self.texture_offset = LVector2(self.overlap / self.width + x_delta * r_scale_x, self.overlap / self.height + y_delta * r_scale_y)
@@ -111,7 +103,6 @@ class PatchData:
         self.texture = None
         self.data_ready = False
         self.loaded = False
-        self.cloned = False
 
     def retrieve_texture_data(self):
         pass
@@ -120,22 +111,12 @@ class PatchData:
         return None
 
     def configure_data(self, texture):
-        if texture is not None:
-            self.texture = texture
-            self.retrieve_texture_data()
-            self.data_ready = True
-            self.lod = self.patch.lod
-            self.texture_offset = LVector2(self.overlap / self.width, self.overlap / self.height)
-            self.texture_scale = LVector2((self.width - self.overlap * 2) / self.width, (self.height - self.overlap * 2) / self.height)
-            self.cloned = False
-            self.loaded = True
-        else:
-            if self.parent_data is not None:
-                if not self.cloned:
-                    self.calc_sub_patch()
-            else:
-                print("Make default data")
-                self.configure_data(self.make_default_data())
+        self.texture = texture
+        self.retrieve_texture_data()
+        self.data_ready = True
+        self.texture_offset = LVector2(self.overlap / self.width, self.overlap / self.height)
+        self.texture_scale = LVector2((self.width - self.overlap * 2) / self.width, (self.height - self.overlap * 2) / self.height)
+        self.loaded = True
 
 class PatchedData(DataSource):
     def __init__(self, name, size, overlap, max_lod=100):
@@ -168,29 +149,58 @@ class PatchedData(DataSource):
         if patch.str_id() in self.map_patch_data: return
         patch_data = self.do_create_patch_data(patch)
         self.map_patch_data[patch.str_id()] = patch_data
-        parent = patch.parent
-        # The parent data is also used for early display of the patch
-        while parent is not None:
-            parent_data = self.map_patch_data.get(parent.str_id())
-            if parent_data is not None and not parent_data.cloned:
-                patch_data.parent_data = parent_data
-                break
-            parent = parent.parent
-        if patch_data.parent_data is None and patch.lod > 0:
-            print("NO PARENT DATA FOR", patch.str_id())
+
+    def get_or_create(self, patch):
+        try:
+            patch_data = self.map_patch_data[patch.str_id()]
+        except KeyError:
+            patch_data = self.do_create_patch_data(patch)
+            self.map_patch_data[patch.str_id()] = patch_data
+        return patch_data
+
+    def early_apply(self, patch, instance):
+        if patch.str_id() in self.map_patch_data:
+            patch_data = self.map_patch_data[patch.str_id()]
+            if not patch_data.loaded:
+                parent = patch.parent
+                parent_data = None
+                while parent is not None:
+                    parent_data = self.map_patch_data.get(parent.str_id())
+                    if parent_data is not None and parent_data.loaded:
+                        break
+                    parent = parent.parent
+                if parent_data is not None:
+                    patch_data.calc_sub_patch(parent_data)
+                    patch_data.apply(instance)
+                else:
+                    if patch.lod > 0:
+                        print("NO PARENT DATA FOR", patch.str_id())
+            else:
+                patch_data.apply(instance)
+        else:
+            print("PATCH NOT CREATED?", patch.str_id())
 
     def create_load_task(self, tasks_tree, patch, owner):
         tasks_tree.add_task_for(self, self.load(tasks_tree, patch, owner))
+
+    def find_max_lod_parent(self, patch_data):
+        parent = patch_data.patch.parent
+        while parent is not None and parent.lod != self.max_lod:
+            parent = parent.parent
+        if parent is not None:
+            return self.get_or_create(parent)
+        else:
+            print("MAX LOD PATCH NOT FOUND")
 
     async def load(self, tasks_tree, patch, owner):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             if not patch_data.loaded:
                 if patch.lod > self.max_lod:
-                    patch_data.calc_sub_patch()
-                    if not patch_data.parent_data.loaded:
-                        await patch_data.parent_data.load(tasks_tree, patch_data.parent_data.patch)
-                    patch_data.loaded = True
+                    max_lod_parent = self.find_max_lod_parent(patch_data)
+                    if not max_lod_parent.loaded:
+                        await max_lod_parent.load(tasks_tree, max_lod_parent.patch)
+                    patch_data.calc_sub_patch(max_lod_parent)
                 else:
                     await patch_data.load(tasks_tree, patch)
         else:

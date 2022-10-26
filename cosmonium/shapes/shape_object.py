@@ -272,6 +272,7 @@ class ShapeObject(VisibleObject):
         if self.shape.patchable:
             for patch in patches:
                 if not patch.instance_ready and patch.task is None:
+                    self.patch_sources.create(patch)
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
                     #print("SCHEDULE", patch.str_id())
@@ -281,7 +282,7 @@ class ShapeObject(VisibleObject):
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
-            #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready, id(patch.instance))
+            #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready)
             patch.instance_ready = True
             self.patch_sources.early_apply(patch)
             patch.patch_done()
@@ -339,4 +340,5 @@ class ShapeObject(VisibleObject):
 
     def remove_patch(self, patch):
         #TODO: This should be reworked and moved into a dedicated class
+        #print("CLEAR", patch.str_id())
         self.patch_sources.clear(patch, patch.instance)

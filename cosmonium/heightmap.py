@@ -144,9 +144,6 @@ class TextureHeightmapPatch(HeightmapPatch):
         self.data_source = data_source
 
     def apply(self, instance):
-        if self.texture is None:
-            # The heightmap is not available yet, use the parent heightmap instead
-            self.calc_sub_patch()
         self.data_source.apply(self.patch, instance, "heightmap_%s" % self.parent.name)
         HeightmapPatch.apply(self, instance)
 
@@ -154,7 +151,8 @@ class TextureHeightmapPatch(HeightmapPatch):
         texture_config = self.create_texture_config()
         await self.data_source.load(tasks_tree, patch, texture_config)
         (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
-        self.configure_data(texture_data)
+        if texture_data is not None:
+            self.configure_data(texture_data)
 
     def clear(self, instance):
         HeightmapPatch.clear(self, instance)

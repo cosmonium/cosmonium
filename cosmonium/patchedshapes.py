@@ -1208,6 +1208,9 @@ class PatchedShapePatchDataSource(DataSource):
         DataSource.__init__(self, 'patch')
         self.shape = shape
 
+    def early_apply(self, patch, instance):
+        self.apply(patch, instance)
+
     def apply(self, patch, instance):
         if self.shape.data_store is not None:
             self.shape.data_store.apply_patch_data(patch, instance)

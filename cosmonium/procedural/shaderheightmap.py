@@ -139,9 +139,13 @@ class HeightmapPatchGenerator():
         data = {'prepare': {'heightmap': {'color': texture_config}}, 'shader': shader_data}
         #print(globalClock.get_frame_count(), "GEN HM", heightmap_patch.patch.str_id())
         result = await self.generator.generate(tid, data, controller=heightmap_patch)
-        data = result['heightmap'].get('color')
-        data.set_name("hm - " + heightmap_patch.patch.str_id())
-        #print(globalClock.get_frame_count(), "DONE HM", heightmap_patch.patch.str_id())
+        if result is not None:
+            data = result['heightmap'].get('color')
+            data.set_name("hm - " + heightmap_patch.patch.str_id())
+            #print(globalClock.get_frame_count(), "DONE HM", heightmap_patch.patch.str_id())
+        else:
+            #print(globalClock.get_frame_count(), "CANCELLED HM", heightmap_patch.patch.str_id())
+            data = None
         return data
 
 class ShaderPatchedHeightmap(PatchedHeightmapBase):
@@ -157,13 +161,9 @@ class ShaderPatchedHeightmap(PatchedHeightmapBase):
         self.data_source.clear_all()
 
 class ShaderHeightmapPatch(HeightmapPatch):
-    def apply(self, instance):
-        if self.texture is None:
-            # The heightmap is not available yet, use the parent heightmap instead
-            self.calc_sub_patch()
-        HeightmapPatch.apply(self, instance)
-
     async def do_load(self, tasks_tree, patch):
         texture_config = self.create_texture_config()
         data = await self.parent.data_source.generate("hm - " + patch.str_id(), self, texture_config)
-        self.configure_data(data)
+        # Data can be None if the generation has been canceled
+        if data is not None:
+            self.configure_data(data)

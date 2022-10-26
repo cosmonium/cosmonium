@@ -55,6 +55,9 @@ class DataSource:
     async def load(self, shape, owner):
         pass
 
+    def early_apply(self, shape, instance):
+        self.apply(shape, instance)
+
     def apply(self, shape, instance):
         pass
 
@@ -101,10 +104,13 @@ class DataSourcesHandler:
                 self.sources.remove(source)
                 break
 
-    def early_apply(self, shape):
+    def create(self, shape):
         for source in self.sources:
             source.create(shape)
-            source.apply(shape, shape.instance)
+
+    def early_apply(self, shape):
+        for source in self.sources:
+            source.early_apply(shape, shape.instance)
 
     async def load(self, shape):
         for source in self.sources:

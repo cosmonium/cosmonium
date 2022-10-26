@@ -124,6 +124,9 @@ class TexturesDictionary(AppearanceBase):
                 self.task.add_done_callback(self.task_done)
             await shield(self.task)
 
+    def early_apply(self, shape, instance):
+        self.apply(shape, instance)
+
     def apply(self, shape, instance):
         if not self.loaded:
             print("ERROR: Applying not loaded texture")
@@ -178,6 +181,9 @@ class ProceduralAppearance(AppearanceBase):
 
     async def load(self, tasks_tree, shape, owner):
         await self.texture_source.load(tasks_tree, shape, owner)
+
+    def early_apply(self, shape, instance):
+        self.texture_source.apply(shape, instance)
 
     def apply(self, shape, instance):
         self.texture_source.apply(shape, instance)

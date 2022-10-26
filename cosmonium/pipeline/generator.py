@@ -48,7 +48,15 @@ class GeneratorChain(ProcessPipeline):
             (tid, shader_data, future, controller) = self.queue[0]
             if not settings.panda11 or not future.cancelled():
                 #print("TRIGGER", tid)
-                if controller is None or controller.is_waiting():
+                if controller is not None:
+                    if controller.is_waiting():
+                        self.trigger(shader_data)
+                        break
+                    else:
+                        # Even though no one is waiting for this data,
+                        # we have to set a result on the synchronization future
+                        future.set_result(None)
+                else:
                     self.trigger(shader_data)
                     break
             #print("Remove cancelled job", tid)
