@@ -23,7 +23,6 @@ from direct.task import Task
 
 from ..pipeline.pipeline import ProcessPipeline
 
-from .. import settings
 
 class GeneratorChain(ProcessPipeline):
     def __init__(self, win=None, engine=None):
@@ -35,7 +34,7 @@ class GeneratorChain(ProcessPipeline):
     def check_generation(self, task):
         if len(self.queue) > 0:
             (tid, shader_data, future, controller) = self.queue.pop(0)
-            if not settings.panda11 or not future.cancelled():
+            if not future.cancelled():
                 future.set_result(self.gather())
             else:
                 #print("Dropping result", tid)
@@ -46,7 +45,7 @@ class GeneratorChain(ProcessPipeline):
     def schedule_next(self):
         while len(self.queue) > 0:
             (tid, shader_data, future, controller) = self.queue[0]
-            if not settings.panda11 or not future.cancelled():
+            if not future.cancelled():
                 #print("TRIGGER", tid)
                 if controller is not None:
                     if controller.is_waiting():

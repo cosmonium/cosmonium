@@ -24,8 +24,6 @@ from direct.task.Task import Task, AsyncFuture
 
 from queue import Queue, Empty
 
-from . import settings
-
 
 # These will be initialized in cosmonium base class
 asyncTextureLoader = None
@@ -80,7 +78,7 @@ class AsyncLoader():
             try:
                 job = self.in_queue.get()
                 (func, fargs, future) = job
-                if not settings.panda11 or not future.cancelled():
+                if not future.cancelled():
                     result = func(*fargs)
                     self.cb_queue.put([future, result])
                 else:
@@ -94,7 +92,7 @@ class AsyncLoader():
             while True:
                 job = self.cb_queue.get_nowait()
                 (future, result) = job
-                if not settings.panda11 or not future.cancelled():
+                if not future.cancelled():
                     future.set_result(result)
                 else:
                     #print("Result cancelled")

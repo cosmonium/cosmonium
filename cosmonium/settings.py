@@ -34,8 +34,6 @@ use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
 
-panda11 = PandaSystem.getMajorVersion() >= 1 and PandaSystem.getMinorVersion() >= 11
-
 #OpenGL user configuration
 use_core_profile_mac = True
 use_gl_version = None

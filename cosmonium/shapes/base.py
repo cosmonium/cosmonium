@@ -81,9 +81,8 @@ class Shape:
             self.instance = None
         self.instance_ready = False
         if self.task is not None:
-            if settings.panda11:
-                #print("KILL TASK", self.str_id())
-                self.task.cancel()
+            #print("KILL TASK", self.str_id())
+            self.task.cancel()
             self.task = None
 
     def create_collision_solid(self, radius=1.0):
