@@ -1089,13 +1089,18 @@ class Cosmonium(CosmoniumBase):
 
     def update_c_settings(self):
         if c_settings is not None:
+            c_settings.offset_body_center = settings.offset_body_center
+            c_settings.camera_at_origin = settings.camera_at_origin
+            c_settings.use_depth_scaling = settings.use_depth_scaling
+            c_settings.use_inv_scaling = settings.use_inv_scaling
+            c_settings.use_log_scaling = settings.use_log_scaling
             c_settings.min_body_size = settings.min_body_size
             c_settings.min_point_size = settings.min_point_size
             c_settings.min_mag_scale = settings.min_mag_scale
             c_settings.mag_pixel_scale = settings.mag_pixel_scale
             c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
             c_settings.max_app_magnitude = settings.max_app_magnitude
-            c_settings.smallest_glare_mag = c_settings.smallest_glare_mag
+            c_settings.smallest_glare_mag = settings.smallest_glare_mag
         if self.c_camera_holder is not None:
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 

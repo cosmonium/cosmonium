@@ -34,6 +34,12 @@ protected:
 PUBLISHED:
   static Settings * get_global_ptr(void);
 
+  bool offset_body_center;
+  bool camera_at_origin;
+  bool use_depth_scaling;
+  bool use_inv_scaling;
+  bool use_log_scaling;
+
   double min_body_size;
   double min_point_size;
   double min_mag_scale;

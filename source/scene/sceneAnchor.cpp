@@ -21,14 +21,11 @@
 #include "anchor.h"
 #include "sceneAnchor.h"
 #include "sceneManager.h"
+#include "settings.h"
+
 
 TypeHandle SceneAnchor::_type_handle;
 
-bool SceneAnchor::offset_body_center = true;
-bool SceneAnchor::camera_at_origin = true;
-bool SceneAnchor::use_depth_scaling = false;
-bool SceneAnchor::use_inv_scaling = true;
-bool SceneAnchor::use_log_scaling = false;
 
 SceneAnchor::SceneAnchor(AnchorBase *anchor,
     bool support_offset_body_center,
@@ -54,9 +51,11 @@ SceneAnchor::SceneAnchor(AnchorBase *anchor,
 {
 }
 
+
 SceneAnchor::~SceneAnchor(void)
 {
 }
+
 
 void
 SceneAnchor::create_instance(SceneManager *scene_manager)
@@ -84,9 +83,10 @@ SceneAnchor::remove_instance(void)
 void
 SceneAnchor::update(SceneManager *scene_manager)
 {
+  Settings *settings = Settings::get_global_ptr();
   double distance_to_obs;
   double scene_distance;
-  if (support_offset_body_center && anchor->visible && anchor->resolved && offset_body_center) {
+  if (support_offset_body_center && anchor->visible && anchor->resolved && settings->offset_body_center) {
       world_body_center_offset = -anchor->vector_to_obs * anchor->_height_under * scene_scale_factor;
       scene_body_center_offset = -anchor->vector_to_obs * anchor->_height_under;
       scene_rel_position = anchor->rel_position - scene_body_center_offset;
@@ -119,9 +119,10 @@ void
 SceneAnchor::calc_scene_params(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs,
     LPoint3d &position, double &distance, double &scale_factor)
 {
+  Settings *settings = Settings::get_global_ptr();
   LPoint3d obj_position;
 
-  if (camera_at_origin) {
+  if (settings->camera_at_origin) {
       obj_position = rel_position;
   } else {
       obj_position = abs_position;
@@ -129,11 +130,11 @@ SceneAnchor::calc_scene_params(SceneManager *scene_manager, LVector3d rel_positi
   double midPlane = scene_manager->get_mid_plane();
   double scale = scene_manager->get_scale();
   distance_to_obs /= scale;
-  if (!use_depth_scaling || distance_to_obs <= midPlane) {
+  if (!settings->use_depth_scaling || distance_to_obs <= midPlane) {
       position = obj_position / scale;
       distance = distance_to_obs;
       scale_factor = 1.0 / scale;
-  } else if (use_inv_scaling) {
+  } else if (settings->use_inv_scaling) {
       LPoint3d not_scaled = -vector_to_obs * midPlane;
       double scaled_distance = midPlane * (1 - midPlane / distance_to_obs);
       LPoint3d scaled = -vector_to_obs * scaled_distance;
@@ -141,7 +142,7 @@ SceneAnchor::calc_scene_params(SceneManager *scene_manager, LVector3d rel_positi
       distance = midPlane + scaled_distance;
       double ratio = distance / distance_to_obs;
       scale_factor = ratio / scale;
-  } else if (use_log_scaling) {
+  } else if (settings->use_log_scaling) {
       LPoint3d not_scaled = -vector_to_obs * midPlane;
       double scaled_distance = midPlane * (1 - log2(midPlane / distance_to_obs + 1));
       LPoint3d scaled = -vector_to_obs * scaled_distance;
@@ -156,10 +157,11 @@ SceneAnchor::calc_scene_params(SceneManager *scene_manager, LVector3d rel_positi
 LPoint3d
 SceneAnchor::calc_scene_position(SceneManager *scene_manager, LVector3d rel_position, LPoint3d abs_position, double distance_to_obs, LVector3d vector_to_obs)
 {
+  Settings *settings = Settings::get_global_ptr();
   LPoint3d scene_position;
   LPoint3d obj_position;
 
-  if (camera_at_origin) {
+  if (settings->camera_at_origin) {
       obj_position = rel_position;
   } else {
       obj_position = abs_position;
@@ -167,14 +169,14 @@ SceneAnchor::calc_scene_position(SceneManager *scene_manager, LVector3d rel_posi
   double midPlane = scene_manager->get_mid_plane();
   double scale = scene_manager->get_scale();
   distance_to_obs /= scale;
-  if (!use_depth_scaling || distance_to_obs <= midPlane) {
+  if (!settings->use_depth_scaling || distance_to_obs <= midPlane) {
       scene_position = obj_position / scale;
-  } else if (use_inv_scaling) {
+  } else if (settings->use_inv_scaling) {
       LPoint3d not_scaled = -vector_to_obs * midPlane;
       double scaled_distance = midPlane * (1 - midPlane / distance_to_obs);
       LPoint3d scaled = -vector_to_obs * scaled_distance;
       scene_position = not_scaled + scaled;
-  } else if (use_log_scaling) {
+  } else if (settings->use_log_scaling) {
       LPoint3d not_scaled = -vector_to_obs * midPlane;
       double scaled_distance = midPlane * (1 - log2(midPlane / distance_to_obs + 1));
       LPoint3d scaled = -vector_to_obs * scaled_distance;
@@ -292,7 +294,8 @@ AbsoluteSceneAnchor::AbsoluteSceneAnchor(AnchorBase *anchor) :
 void
 AbsoluteSceneAnchor::update(SceneManager *scene_manager)
 {
-  if (camera_at_origin) {
+  Settings *settings = Settings::get_global_ptr();
+  if (settings->camera_at_origin) {
       scene_position = anchor->rel_position / scene_manager->get_scale();
       instance.set_pos(LCAST(PN_stdfloat, scene_position));
       scene_scale_factor = 1.0 / scene_manager->get_scale();
@@ -313,7 +316,8 @@ ObserverSceneAnchor::ObserverSceneAnchor(AnchorBase *anchor, bool background) :
 void
 ObserverSceneAnchor::update(SceneManager *scene_manager)
 {
-  if (!camera_at_origin) {
+  Settings *settings = Settings::get_global_ptr();
+  if (!settings->camera_at_origin) {
       scene_position = anchor->rel_position / scene_manager->get_scale();
       instance.set_pos(LCAST(PN_stdfloat, scene_position));
       scene_scale_factor = 1.0 / scene_manager->get_scale();

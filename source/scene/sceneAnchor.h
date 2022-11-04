@@ -79,12 +79,6 @@ PUBLISHED:
   void set_spread_object(bool spread_object);
   MAKE_PROPERTY(spread_object, get_spread_object, set_spread_object);
 
-  static bool offset_body_center;
-  static bool camera_at_origin;
-  static bool use_depth_scaling;
-  static bool use_inv_scaling;
-  static bool use_log_scaling;
-
 protected:
   AnchorBase *anchor;
   bool background;
