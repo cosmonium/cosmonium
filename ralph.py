@@ -103,7 +103,7 @@ class TileFactory(PatchFactory):
         max_height = self.heightmap.max_height# * height_scale + height_offset
         mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0# * height_scale + height_offset
         if patch is not None:
-            patch_data = self.heightmap.get_patch_data(patch, recurse=True)
+            patch_data = self.heightmap.get_patch_data(patch, strict=False)
             if patch_data is not None:
                 #TODO: This should be done inside the heightmap patch
                 min_height = patch_data.min_height * height_scale + height_offset
@@ -163,7 +163,7 @@ class PhysicsLayer(PatchLayer):
         self.instance = None
 
     def patch_done(self, patch):
-        heightmap_patch = patch.owner.heightmap.get_patch_data(patch)
+        heightmap_patch = patch.owner.heightmap.get_patch_data(patch, strict=True)
         shape = BulletHeightfieldShape(heightmap_patch.texture, patch.owner.heightmap.height_scale, ZUp)
         shape.setUseDiamondSubdivision(True)
         self.instance = NodePath(BulletRigidBodyNode('Heightfield'))

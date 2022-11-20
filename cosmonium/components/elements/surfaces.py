@@ -277,7 +277,7 @@ class HeightmapSurface(EllipsoidSurface):
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_patch(self, patch, u, v, strict=False):
-        patch_data = self.heightmap.get_patch_data(patch)
+        patch_data = self.heightmap.get_patch_data(patch, strict=strict)
         if patch_data is not None and patch_data.data_ready:
             h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
             height = h * self.height_scale + self.heightmap_base
@@ -365,7 +365,7 @@ class HeightmapFlatSurface(FlatSurface):
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_patch(self, patch, u, v, strict=False):
-        patch_data = self.heightmap.get_patch_data(patch)
+        patch_data = self.heightmap.get_patch_data(patch, strict=strict)
         if patch_data is not None and patch_data.data_ready:
             h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
             height = h * self.height_scale + self.heightmap_base

@@ -116,7 +116,7 @@ class PatchFactory:
         max_radius = 1.0
         mean_radius = 1.0
         if self.heightmap is not None and patch is not None:
-            patch_data = self.heightmap.get_patch_data(patch, recurse=True)
+            patch_data = self.heightmap.get_patch_data(patch, strict=False)
             if patch_data is not None:
                 #TODO: This should be done inside the heightmap patch
                 height_scale = self.heightmap.height_scale

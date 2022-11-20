@@ -132,8 +132,8 @@ class PatchedData(DataSource):
     def get_texture_scale(self, patch):
         return self.map_patch_data[patch.str_id()].texture_scale
 
-    def get_patch_data(self, patch, recurse=False):
-        if recurse:
+    def get_patch_data(self, patch, strict=False):
+        if not strict:
             while patch is not None:
                 patch_data = self.map_patch_data.get(patch.str_id(), None)
                 if patch_data is not None: break
