@@ -257,7 +257,8 @@ class HeightmapSurface(EllipsoidSurface):
         return height
 
     #TODO: Should be based on how the patch is tesselated !
-    def get_mesh_height_uv(self, heightmap, u, v, density):
+    def get_mesh_height_uv(self, heightmap, u, v, patch):
+        density = patch.density
         x = u * density
         y = v * density
         x0 = floor(x) / density * heightmap.width
@@ -270,16 +271,16 @@ class HeightmapSurface(EllipsoidSurface):
         dy = v * heightmap.height - y0
         if y1 != y0:
             dy /= y1 - y0
-        h_00 = heightmap.get_height(x0, y0)
-        h_01 = heightmap.get_height(x0, y1)
-        h_10 = heightmap.get_height(x1, y0)
-        h_11 = heightmap.get_height(x1, y1)
+        h_00 = heightmap.get_height(x0, y0, patch)
+        h_01 = heightmap.get_height(x0, y1, patch)
+        h_10 = heightmap.get_height(x1, y0, patch)
+        h_11 = heightmap.get_height(x1, y1, patch)
         return h_00 + (h_10 - h_00) * dx + (h_01 - h_00) * dy + (h_00 + h_11 - h_01 - h_10) * dx * dy
 
     def get_height_patch(self, patch, u, v, strict=False):
         patch_data = self.heightmap.get_patch_data(patch, strict=strict)
         if patch_data is not None and patch_data.data_ready:
-            h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
+            h = self.get_mesh_height_uv(patch_data, u, v, patch)
             height = h * self.height_scale + self.heightmap_base
         elif strict:
             height = None

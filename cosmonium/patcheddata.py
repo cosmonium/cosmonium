@@ -38,6 +38,8 @@ class PatchData:
         self.r_y1 = patch.y1 + overlap / self.r_height * (patch.y1 - patch.y0)
         self.data_ready = False
         self.texture = None
+        self.data_patch = patch
+        self.data_lod = None
         self.loaded = False
         self.texture_offset = None
         self.texture_scale = None
@@ -45,30 +47,36 @@ class PatchData:
 
     def copy_from(self, parent_data):
         self.texture = parent_data.texture
+        self.data_lod = parent_data.data_lod
         self.data_ready = parent_data.data_ready
+        self.data_patch = parent_data.patch
+
+    def calc_scale_and_offset(self, shape_patch):
+        delta = shape_patch.lod - self.data_lod
+        scale = 1 << delta
+        #TODO: This should be moved into the patch
+        if shape_patch.coord == TexCoord.Cylindrical:
+            x_tex = (shape_patch.x // scale) * scale
+            y_tex = (shape_patch.y // scale) * scale
+            x_delta = (shape_patch.x - x_tex) / scale
+            y_delta = (shape_patch.y - y_tex) / scale
+        elif shape_patch.coord != TexCoord.Flat:
+            x_tex = (shape_patch.x // scale) * scale
+            y_tex = (shape_patch.y // scale) * scale
+            x_delta = (shape_patch.x - x_tex) / scale
+            y_delta = (shape_patch.y - y_tex) / scale
+        else:
+            x_delta = (shape_patch.x - self.data_patch.x) / self.data_patch.size
+            y_delta = (shape_patch.y - self.data_patch.y) / self.data_patch.size
+        r_scale_x = (self.width - self.overlap * 2) / self.width
+        r_scale_y = (self.height - self.overlap * 2) / self.height
+        texture_offset = LVector2(self.overlap / self.width + x_delta * r_scale_x, self.overlap / self.height + y_delta * r_scale_y)
+        texture_scale = LVector2(r_scale_x / scale, r_scale_y / scale)
+        return texture_offset, texture_scale
 
     def calc_sub_patch(self, parent_data):
         self.copy_from(parent_data)
-        delta = self.patch.lod - parent_data.patch.lod
-        scale = 1 << delta
-        #TODO: This should be moved into the patch
-        if self.patch.coord == TexCoord.Cylindrical:
-            x_tex = (self.patch.x // scale) * scale
-            y_tex = (self.patch.y // scale) * scale
-            x_delta = (self.patch.x - x_tex) / scale
-            y_delta = (self.patch.y - y_tex) / scale
-        elif self.patch.coord != TexCoord.Flat:
-            x_tex = (self.patch.x // scale) * scale
-            y_tex = (self.patch.y // scale) * scale
-            x_delta = (self.patch.x - x_tex) / scale
-            y_delta = (self.patch.y - y_tex) / scale
-        else:
-            x_delta = (self.patch.x - parent_data.patch.x) / parent_data.patch.size
-            y_delta = (self.patch.y - parent_data.patch.y) / parent_data.patch.size
-        r_scale_x = (self.width - self.overlap * 2) / self.width
-        r_scale_y = (self.height - self.overlap * 2) / self.height
-        self.texture_offset = LVector2(self.overlap / self.width + x_delta * r_scale_x, self.overlap / self.height + y_delta * r_scale_y)
-        self.texture_scale = LVector2(r_scale_x / scale, r_scale_y / scale)
+        self.texture_offset, self.texture_scale = self.calc_scale_and_offset(self.patch)
 
     def is_ready(self):
         return self.data_ready
@@ -114,6 +122,7 @@ class PatchData:
         self.texture = texture
         self.retrieve_texture_data()
         self.data_ready = True
+        self.data_lod = self.patch.lod
         self.texture_offset = LVector2(self.overlap / self.width, self.overlap / self.height)
         self.texture_scale = LVector2((self.width - self.overlap * 2) / self.width, (self.height - self.overlap * 2) / self.height)
         self.loaded = True

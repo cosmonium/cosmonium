@@ -53,21 +53,26 @@ class HeightmapPatch(PatchData):
     def set_height(self, x, y, height):
         pass
 
-    def get_height(self, x, y):
+    def get_height(self, x, y, shape_patch=None):
         if self.texture_peeker is None:
             print("No peeker", self.patch.str_id(), self.patch.instance_ready)
             traceback.print_stack()
             return 0.0
-        new_x = x * self.texture_scale[0] + self.texture_offset[0] * self.width
-        new_y = y * self.texture_scale[1] + self.texture_offset[1] * self.height
+        if shape_patch is not None and self.patch is not shape_patch:
+            texture_offset, texture_scale = self.calc_scale_and_offset(shape_patch)
+        else:
+            texture_offset = self.texture_offset
+            texture_scale = self.texture_scale
+        new_x = x * texture_scale[0] + texture_offset[0] * self.width
+        new_y = y * texture_scale[1] + texture_offset[1] * self.height
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
         height = self.parent.filter.get_value(self.texture_peeker, new_x, new_y)
         #TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale + self.parent.height_offset
 
-    def get_height_uv(self, u, v):
-        return self.get_height(u * self.width, v * self.height)
+    def get_height_uv(self, u, v, shape_patch=None):
+        return self.get_height(u * self.width, v * self.height, shape_patch)
 
     def apply(self, instance):
         name = self.parent.name
