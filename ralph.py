@@ -47,6 +47,7 @@ from cosmonium.foundation import BaseObject
 from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
 from cosmonium.scene.sceneanchor import SceneAnchorCollection
 from cosmonium.scene.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
+from cosmonium.engine.c_settings import c_settings
 from cosmonium.lights import LightSources, SurrogateLight
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
@@ -639,6 +640,7 @@ class RoamingRalphDemo(CosmoniumBase):
             self.c_camera_holder = C_CameraHolder(self.observer.anchor, self.observer.camera_np, self.observer.lens)
         else:
             self.c_camera_holder = self.observer
+        self.update_c_settings()
         self.scene_manager = StaticSceneManager(base.render)
         self.scene_manager.init_camera(self.c_camera_holder, self.cam)
         remove_main_region(self.cam)
@@ -658,6 +660,16 @@ class RoamingRalphDemo(CosmoniumBase):
         base.setFrameRateMeter(True)
 
         taskMgr.add(self.init())
+
+    def update_c_settings(self):
+        if c_settings is not None:
+            c_settings.offset_body_center = settings.offset_body_center
+            c_settings.camera_at_origin = settings.camera_at_origin
+            c_settings.use_depth_scaling = settings.use_depth_scaling
+            c_settings.use_inv_scaling = settings.use_inv_scaling
+            c_settings.use_log_scaling = settings.use_log_scaling
+        if self.c_camera_holder is not None:
+            self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 
     async def init(self):
         self.lights = LightSources()
