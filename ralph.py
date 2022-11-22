@@ -632,6 +632,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.set_ambient(0.3)
         self.shadows = True
         self.pssm_shadows = True
+        self.init_c_settings()
 
         self.cam.node().set_camera_mask(BaseObject.DefaultCameraFlag | BaseObject.NearCameraFlag)
         self.observer = CameraHolder()
@@ -661,13 +662,22 @@ class RoamingRalphDemo(CosmoniumBase):
 
         taskMgr.add(self.init())
 
-    def update_c_settings(self):
+    def init_c_settings(self):
         if c_settings is not None:
             c_settings.offset_body_center = settings.offset_body_center
             c_settings.camera_at_origin = settings.camera_at_origin
             c_settings.use_depth_scaling = settings.use_depth_scaling
             c_settings.use_inv_scaling = settings.use_inv_scaling
             c_settings.use_log_scaling = settings.use_log_scaling
+            c_settings.inverse_z = settings.use_inverse_z
+            c_settings.default_near_plane = settings.near_plane
+            c_settings.infinite_far_plane = settings.infinite_far_plane
+            c_settings.default_far_plane = settings.far_plane
+            c_settings.infinite_plane = settings.infinite_plane
+            c_settings.auto_infinite_plane = settings.auto_infinite_plane
+            c_settings.lens_far_limit = settings.lens_far_limit
+
+    def update_c_settings(self):
         if self.c_camera_holder is not None:
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 

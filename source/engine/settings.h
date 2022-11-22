@@ -40,6 +40,14 @@ PUBLISHED:
   bool use_inv_scaling;
   bool use_log_scaling;
 
+  bool inverse_z;
+  double default_near_plane;
+  bool infinite_far_plane;
+  double default_far_plane;
+  double infinite_plane;
+  bool auto_infinite_plane;
+  double lens_far_limit;
+
   double min_body_size;
   double min_point_size;
   double min_mag_scale;

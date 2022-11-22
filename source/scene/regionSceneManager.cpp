@@ -31,13 +31,14 @@
 #include "sceneAnchor.h"
 #include "sceneAnchorCollection.h"
 #include "sceneRegion.h"
+#include "settings.h"
 #include "dcast.h"
 
 
 TypeHandle RegionSceneManager::_type_handle;
 
 double RegionSceneManager::min_near = 1e-6;
-double RegionSceneManager::max_near_reagion = 1e5;
+double RegionSceneManager::max_near_region = 1e5;
 double RegionSceneManager::infinity = 1e9;
 
 
@@ -128,6 +129,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
 {
   _build_scene_collector.start();
 
+  Settings *settings = Settings::get_global_ptr();
   const RenderState *state = world.get_state();
   clear_scene();
   std::vector<PT(SceneAnchor)> background_resolved;
@@ -187,10 +189,10 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
       SceneRegion *farthest_region = new SceneRegion(this, regions.back()->get_far(), std::numeric_limits<double>::infinity());
       regions.push_back(farthest_region);
       if (regions.front()->get_near() > min_near) {
-          if (regions.front()->get_near() / min_near > max_near_reagion) {
-              SceneRegion *nearest_region = new SceneRegion(this, min_near * max_near_reagion, regions.front()->get_near());
+          if (regions.front()->get_near() / min_near > max_near_region) {
+              SceneRegion *nearest_region = new SceneRegion(this, min_near * max_near_region, regions.front()->get_near());
               regions.push_front(nearest_region);
-              nearest_region = new SceneRegion(this, min_near, min_near * max_near_reagion);
+              nearest_region = new SceneRegion(this, min_near, min_near * max_near_region);
               regions.push_front(nearest_region);
           } else {
               SceneRegion *nearest_region = new SceneRegion(this, min_near, regions.front()->get_near());
@@ -235,7 +237,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
   if (regions.size() > 0) {
       double region_size = 1.0 / regions.size();
       double base;
-      if (!inverse_z) {
+      if (!settings->inverse_z) {
           // Start with the nearest region, which will start a depth 0 (i.e. near plane)
           base = 0.0;
       } else {
@@ -245,7 +247,7 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
       unsigned int i = 0;
       for (auto region : regions) {
           int sort_index = regions.size() - i;
-          region->create(rendering_passes, state, camera_holder, inverse_z, base, std::min(base + region_size, 1 - 1e-6), sort_index);
+          region->create(rendering_passes, state, camera_holder, settings->inverse_z, base, std::min(base + region_size, 1 - 1e-6), sort_index);
           base += region_size;
           ++i;
       }

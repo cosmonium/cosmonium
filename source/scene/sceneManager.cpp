@@ -24,15 +24,6 @@
 TypeHandle SceneManager::_type_handle;
 
 
-bool SceneManager::inverse_z = false;
-double SceneManager::default_near_plane = 1.0;
-bool SceneManager::infinite_far_plane = true;
-double SceneManager::default_far_plane = 30000.0;
-double SceneManager::infinite_plane = 100000.0;
-bool SceneManager::auto_infinite_plane = false;
-double SceneManager::lens_far_limit = 1e-12;
-
-
 SceneManager::SceneManager(void) :
     scale(1.0),
     mid_plane(0.0)

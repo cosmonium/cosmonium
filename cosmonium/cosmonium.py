@@ -430,6 +430,8 @@ class Cosmonium(CosmoniumBase):
         if self.app_config.test_start:
             self.near_cam = None
 
+        self.init_c_settings()
+
         self.worlds = Worlds()
         self.universe = Universe(self)
         self.background = ObserverCenteredWorld("background", background=True)
@@ -1087,20 +1089,30 @@ class Cosmonium(CosmoniumBase):
             else:
                 print("ERROR: surface '{}' not found".format(surface_name))
 
-    def update_c_settings(self):
+    def init_c_settings(self):
         if c_settings is not None:
             c_settings.offset_body_center = settings.offset_body_center
             c_settings.camera_at_origin = settings.camera_at_origin
             c_settings.use_depth_scaling = settings.use_depth_scaling
             c_settings.use_inv_scaling = settings.use_inv_scaling
             c_settings.use_log_scaling = settings.use_log_scaling
+            c_settings.inverse_z = settings.use_inverse_z
+            c_settings.default_near_plane = settings.near_plane
+            c_settings.infinite_far_plane = settings.infinite_far_plane
+            c_settings.default_far_plane = settings.far_plane
+            c_settings.infinite_plane = settings.infinite_plane
+            c_settings.auto_infinite_plane = settings.auto_infinite_plane
+            c_settings.lens_far_limit = settings.lens_far_limit
             c_settings.min_body_size = settings.min_body_size
             c_settings.min_point_size = settings.min_point_size
             c_settings.min_mag_scale = settings.min_mag_scale
             c_settings.mag_pixel_scale = settings.mag_pixel_scale
-            c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
             c_settings.max_app_magnitude = settings.max_app_magnitude
             c_settings.smallest_glare_mag = settings.smallest_glare_mag
+
+    def update_c_settings(self):
+        if c_settings is not None:
+            c_settings.lowest_app_magnitude = settings.lowest_app_magnitude
         if self.c_camera_holder is not None:
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 

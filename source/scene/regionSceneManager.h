@@ -67,7 +67,7 @@ PUBLISHED:
   virtual double get_infinity(void) const;
 
   static double min_near;
-  static double max_near_reagion;
+  static double max_near_region;
   static double infinity;
 
 protected:

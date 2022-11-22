@@ -67,14 +67,6 @@ PUBLISHED:
   virtual double get_infinity(void) const = 0;
   MAKE_PROPERTY(infinity, get_infinity);
 
-  static bool inverse_z;
-  static double default_near_plane;
-  static bool infinite_far_plane;
-  static double default_far_plane;
-  static double infinite_plane;
-  static bool auto_infinite_plane;
-  static double lens_far_limit;
-
 protected:
   double scale;
   double mid_plane;

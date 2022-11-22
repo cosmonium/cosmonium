@@ -24,6 +24,7 @@
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
 #include "renderPass.h"
+#include "settings.h"
 #include "dcast.h"
 
 
@@ -31,13 +32,14 @@ TypeHandle StaticSceneManager::_type_handle;
 
 
 StaticSceneManager::StaticSceneManager(NodePath render) :
-      near_plane(default_near_plane),
       infinity(0)
 {
-  if (infinite_far_plane && !inverse_z) {
+  Settings *settings = Settings::get_global_ptr();
+  near_plane = settings->default_near_plane;
+  if (settings->infinite_far_plane && !settings->inverse_z) {
       far_plane = std::numeric_limits<double>::infinity();
   } else {
-      far_plane = default_far_plane;
+      far_plane = settings->default_far_plane;
   }
   root = render.attach_new_node("root");
 }
@@ -89,11 +91,12 @@ StaticSceneManager::add_background_object(NodePath instance)
 void
 StaticSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_camera)
 {
+  Settings *settings = Settings::get_global_ptr();
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  if (auto_infinite_plane) {
-      infinity = near_plane / lens_far_limit / 1000;
+  if (settings->auto_infinite_plane) {
+      infinity = near_plane / settings->lens_far_limit / 1000;
   } else {
-      infinity = infinite_plane;
+      infinity = settings->infinite_plane;
   }
   std::cout << "Planes: " << near_plane << " "  << far_plane << "\n";
 }
@@ -102,8 +105,9 @@ StaticSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_ca
 void
 StaticSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder)
 {
+  Settings *settings = Settings::get_global_ptr();
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
-  if (inverse_z) {
+  if (settings->inverse_z) {
       lens->set_near_far(far_plane, near_plane);
   } else {
       lens->set_near_far(near_plane, far_plane);

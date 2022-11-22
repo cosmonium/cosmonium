@@ -29,6 +29,7 @@
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
 #include "renderPass.h"
+#include "settings.h"
 #include "dcast.h"
 
 
@@ -43,13 +44,14 @@ double DynamicSceneManager::mid_plane_ratio = 1.1;
 
 
 DynamicSceneManager::DynamicSceneManager(NodePath render) :
-      near_plane(default_near_plane),
       infinity(0)
 {
-  if (infinite_far_plane && !inverse_z) {
+  Settings *settings = Settings::get_global_ptr();
+  near_plane = settings->default_near_plane;
+  if (settings->infinite_far_plane && !settings->inverse_z) {
       far_plane = std::numeric_limits<double>::infinity();
   } else {
-      far_plane = default_far_plane;
+      far_plane = settings->default_far_plane;
   }
   root = render.attach_new_node("root");
 }
@@ -101,7 +103,8 @@ DynamicSceneManager::add_background_object(NodePath instance)
 void
 DynamicSceneManager::update_planes(void)
 {
-  if (inverse_z) {
+  Settings *settings = Settings::get_global_ptr();
+  if (settings->inverse_z) {
       lens->set_near_far(far_plane, near_plane);
   } else {
       lens->set_near_far(near_plane, far_plane);
@@ -120,6 +123,7 @@ DynamicSceneManager::init_camera(CameraHolder *camera_holder, NodePath default_c
 void
 DynamicSceneManager::update_scene_and_camera(double distance_to_nearest, CameraHolder *camera_holder)
 {
+  Settings *settings = Settings::get_global_ptr();
   lens = DCAST(PerspectiveLens, camera_holder->get_lens()->make_copy());
   if (auto_scale) {
       if (false) {//distance_to_nearest)
@@ -136,15 +140,15 @@ DynamicSceneManager::update_scene_and_camera(double distance_to_nearest, CameraH
           if (scale < 1.0) {
               near_plane = scale;
           } else {
-              near_plane = default_near_plane;
+              near_plane = settings->default_near_plane;
           }
       }
   }
   update_planes();
-  if (auto_infinite_plane) {
-      infinity = near_plane / lens_far_limit / 1000;
+  if (settings->auto_infinite_plane) {
+      infinity = near_plane / settings->lens_far_limit / 1000;
   } else {
-      infinity = infinite_plane;
+      infinity = settings->infinite_plane;
   }
   mid_plane = infinity / mid_plane_ratio;
   for (auto rendering_pass : rendering_passes) {
