@@ -1,5 +1,5 @@
 popup:
-- title: '@over-name'
+- title: '@select-name'
   visible: 'has-object-selected'
   event: 'center-selected'
 -
@@ -17,19 +17,19 @@ popup:
   event: 'sync-selected'
 - title: "Surfaces"
   visible: 'has-object-selected'
-  menu: over-surfaces
+  menu: surfaces
 - title: "Orbiting bodies"
   visible: 'has-object-selected'
-  menu: over-orbiting-bodies
+  menu: orbiting-bodies
 - title: "Orbits"
   visible: 'has-object-selected'
-  menu: over-orbits
+  menu: orbits
 - title: '_Edit'
   visible: 'has-object-selected'
   event: 'gui-show-editor'
 - title: "More info"
   visible: 'has-object-selected'
-  menu: over-extra-info
+  menu: extra-info
 - visible: 'gui-menubar-hidden'
 - title: "Show _menubar"
   event: 'gui-show-menubar'
