@@ -74,6 +74,7 @@ class Gui(object):
         self.nav = None
         self.autopilot = autopilot
         self.messenger = self.cosmonium.messenger
+        self.over = None
         if base.pipe is not None:
             self.screen_width = base.pipe.getDisplayWidth()
             self.screen_height = base.pipe.getDisplayHeight()
@@ -167,11 +168,12 @@ class Gui(object):
         self.cosmonium.select_body(body)
 
     def right_click(self):
-        over = self.mouse.get_over()
-        if over is None and self.menubar_shown:
+        self.over = self.mouse.get_over()
+        if self.over is None and self.menubar_shown:
             return False
-        self.popup_menu.create(self.font, self.scale, over, self.popup_done)
+        self.popup_menu.create(self.font, self.scale, self.over, self.popup_done)
         self.popup_menu_shown = True
+        self.over = None
 
     def popup_done(self):
         self.popup_menu_shown = False

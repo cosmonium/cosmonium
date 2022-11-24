@@ -23,7 +23,8 @@ from .bodyclass import bodyClasses
 
 
 class StatesProvider():
-    def __init__(self, engine, time, camera, autopilot, gui, debug):
+    def __init__(self, engine, time, camera, autopilot, debug):
+        self.gui = None
         self.states = {
             'debug-jump': lambda: settings.debug_jump,
             'debug-lod-freeze': lambda: settings.debug_lod_freeze,
@@ -32,6 +33,7 @@ class StatesProvider():
             'debug-lod-split-merge': lambda: settings.debug_lod_split_merge,
             'debug-shadow-frustum': lambda: settings.debug_shadow_frustum,
             'has-object-selected': lambda: engine.selected is not None,
+            'over-object': lambda: self.gui.over is not None,
             'shader-debug-coord': lambda: settings.shader_debug_coord,
             'shader-debug-raymarching-canvas': lambda: settings.shader_debug_raymarching_canvas,
             'shader-debug-raymarching-slice': lambda: settings.shader_debug_raymarching_slice,
@@ -49,6 +51,8 @@ class StatesProvider():
             'red-blue-stereo': lambda: settings.red_blue_stereo,
             'side-by-side-stereo': lambda: settings.side_by_side_stereo,
             'stereo-swap-eyes': lambda: settings.stereo_swap_eyes,
+            'gui-menubar-shown': lambda: self.gui.menubar_shown,
+            'gui-menubar-hidden': lambda: not self.gui.menubar_shown,
             }
         for display_render_info in ['fps', 'ms', 'none']:
             self.states['display-render-info-' + display_render_info] = lambda mode=display_render_info: settings.display_render_info == mode

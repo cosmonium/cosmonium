@@ -85,18 +85,21 @@ class UIConfigLoader:
         if data is not None:
             text = data.get("title")
             enabled = data.get('enabled')
+            visible = data.get('visible')
             if 'event' in data:
                 state = data.get('state')
                 event = data.get("event")
-                menu = EventMenuEntry(text=text, state=state, event=event, enabled=enabled)
+                menu = EventMenuEntry(text=text, state=state, event=event, enabled=enabled, visible=visible)
             elif 'menu' in data:
                 menu = data.get("menu")
-                menu = SubMenuEntry(text=text, entries=menu, enabled=enabled)
-            else:
+                menu = SubMenuEntry(text=text, entries=menu, enabled=enabled, visible=visible)
+            elif 'title' in data:
                 entries = self.load_submenu( data.get("entries", []))
-                menu = SubMenuEntry(text=text, entries=entries, enabled=enabled)
+                menu = SubMenuEntry(text=text, entries=entries, enabled=enabled, visible=visible)
+            else:
+                menu = MenuSeparator(visible=visible)
         else:
-            menu = MenuSeparator()
+            menu = MenuSeparator(visible=None)
         return menu
 
     def load_submenu(self, data):

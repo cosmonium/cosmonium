@@ -38,6 +38,7 @@ class EventsDispatcher(DirectObject):
         self.accept('zoom-out', self.camera.zoom, [1.0/1.05])
         self.accept('reset-zoom', self.camera.reset_zoom)
         self.accept('gui-toggle-menubar', self.gui.toggle_menu)
+        self.accept('gui-show-menubar', self.gui.show_menu)
         self.accept('gui-show-preferences', self.gui.show_preferences)
         self.accept('gui-show-editor', self.gui.show_editor)
         self.accept('gui-show-time-editor', self.gui.show_time_editor)

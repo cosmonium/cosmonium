@@ -25,33 +25,35 @@ from .menucommon import create_select_camera_controller_menu, create_select_ship
 
 
 class MenubarConfig(NamedTuple):
-    entries:list
+    entries: list
 
 
 class MenuConfig(NamedTuple):
-    entries:list
+    entries: list
 
 
 class MenubarEntry(NamedTuple):
-    text:str
-    entries:list
+    text: str
+    entries: list
 
 
 class MenuSeparator(NamedTuple):
-    pass
+    visible: str
 
 
 class EventMenuEntry(NamedTuple):
-    text:str
-    state:str
-    enabled:str
-    event:str
+    text: str
+    state: str
+    visible: str
+    enabled: str
+    event: str
 
 
 class SubMenuEntry(NamedTuple):
-    text:str
-    enabled:str
-    entries:list
+    text: str
+    visible: str
+    enabled: str
+    entries: list
 
 
 class MenuBuilder:
@@ -128,27 +130,49 @@ class MenuBuilder:
             entries = []
         return (text, 0, entries)
 
+    def create_separator_entry(self, entry):
+        if entry.visible is not None:
+            visible = self.states_provider.get_state(entry.visible)
+        else:
+            visible = True
+        if visible:
+            return 0
+        else:
+            return None
+
     def create_menu_entry(self, entry):
         if entry.enabled is not None:
             enabled = self.states_provider.get_state(entry.enabled)
         else:
             enabled = None
-        if isinstance(entry, EventMenuEntry):
-            if entry.state is not None:
-                state = self.states_provider.get_state(entry.state)
-            else:
-                state = 0
-            return self.menu_event(self.translation.gettext(entry.text), state, entry.event, condition=enabled)
+        if entry.visible is not None:
+            visible = self.states_provider.get_state(entry.visible)
         else:
-            return self.menu_submenu(self.translation.gettext(entry.text), entry.entries, condition=enabled)
+            visible = True
+        if visible:
+            if isinstance(entry, EventMenuEntry):
+                if entry.state is not None:
+                    state = self.states_provider.get_state(entry.state)
+                else:
+                    state = 0
+                return self.menu_event(self.translation.gettext(entry.text), state, entry.event, condition=enabled)
+            else:
+                return self.menu_submenu(self.translation.gettext(entry.text), entry.entries, condition=enabled)
+        else:
+            return None
 
     def create_submenu(self, entries):
         submenu = []
         for entry in entries:
             if not isinstance(entry, MenuSeparator):
-                submenu.append(self.create_menu_entry(entry))
+                item = self.create_menu_entry(entry)
             else:
-                submenu.append(0)
+                item = self.create_separator_entry(entry)
+            if item is not None:
+                if item != 0:
+                    submenu.append(item)
+                elif len(submenu) > 0 and submenu[-1] != 0:
+                    submenu.append(item)
         return submenu
 
     def create_menu(self, menu_config):

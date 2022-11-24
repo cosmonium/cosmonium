@@ -23,22 +23,18 @@ from pandamenu.menu import PopupMenu
 from .. import settings
 
 class Popup:
-    def __init__(self, gui, engine, menu_items):
+    def __init__(self, gui, engine, menu_builder):
         self.gui = gui
         self.engine = engine
-        self.menu_items = menu_items
+        self.menu_builder = menu_builder
         self.popup_done = None
 
     def create(self, font, scale, over, popup_done=None):
         self.popup_done = popup_done
-        items = self.menu_items()
         # TODO: This should not be done here !
         if over is not None:
             self.engine.select_body(over)
-        if not self.gui.menubar_shown:
-            if over is not None:
-                items.append(0)
-            items.append(self.menu_text(_('Show _menubar'), 0, self.gui.show_menu))
+        items = self.menu_builder()
         scale = LVector3(scale[0], 1.0, scale[1])
         scale[0] *= settings.menu_text_size
         scale[2] *= settings.menu_text_size

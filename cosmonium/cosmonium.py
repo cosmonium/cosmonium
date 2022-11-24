@@ -498,11 +498,12 @@ class Cosmonium(CosmoniumBase):
         self.splash.close()
 
         #TODO: Temporarily until state registration is split up between each class
-        self.states_provider = StatesProvider(self, self.time, self.observer, self.autopilot, self.gui, self.debug)
+        self.states_provider = StatesProvider(self, self.time, self.observer, self.autopilot, self.debug)
 
         if self.gui is None:
             self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)
             self.mouse.set_ui(self.gui)
+        self.states_provider.gui = self.gui
 
         #TODO: Temporarily until event registration is split up between each class
         self.events_dispatcher = EventsDispatcher(self, self.time, self.observer, self.autopilot, self.gui, self.debug)
