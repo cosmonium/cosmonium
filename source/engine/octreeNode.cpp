@@ -139,7 +139,7 @@ OctreeNode::add_in_child(StellarAnchor *leaf, LPoint3d const &position, double l
 void
 OctreeNode::_add(StellarAnchor *leaf, LPoint3d const &position, double luminosity)
 {
-    if (luminosity < max_luminosity) {
+    if (luminosity > max_luminosity) {
         max_luminosity = luminosity;
     }
     if (!has_children || luminosity > threshold) {
@@ -159,7 +159,7 @@ OctreeNode::split(void)
     std::vector<PT(StellarAnchor)> new_leaves;
     for (const auto leaf : leaves) {
         const auto position = leaf->get_absolute_reference_point();
-        if (leaf->_intrinsic_luminosity < threshold || (center - position).length() < leaf->get_bounding_radius()) {
+        if (leaf->_intrinsic_luminosity > threshold || (center - position).length() < leaf->get_bounding_radius()) {
             new_leaves.push_back(leaf);
         } else {
             add_in_child(leaf, position, leaf->_intrinsic_luminosity);
