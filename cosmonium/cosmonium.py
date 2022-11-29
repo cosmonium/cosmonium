@@ -1368,21 +1368,18 @@ class Cosmonium(CosmoniumBase):
     @pstat
     def find_nearest_system(self):
         #First iter over the visible object to have a first closest system
-        distance = float('inf')
-        closest_visible_system = None
-        for visible in self.visibles:
-            #TODO: The test to see if the object is a root system is a bit crude...
-            if visible.distance_to_obs < distance and visible.parent.content == ~0:
-                closest_visible_system = visible
-                distance = visible.distance_to_obs
-        #Use that system to boostrap the tree traversal
-        traverser = FindClosestSystemTraverser(self.observer.anchor, closest_visible_system, distance)
+        if self.nearest_system is not None:
+            nearest_system = self.nearest_system.anchor
+            distance = self.nearest_system.anchor.distance_to_obs
+        else:
+            nearest_system = None
+            distance = float('inf')
+        traverser = FindClosestSystemTraverser(self.observer.anchor, nearest_system, distance)
         self.universe.anchor.traverse(traverser)
-        closest_system = traverser.closest_system.body if traverser.closest_system is not None else None
-        closest_visible_system = closest_visible_system.body if closest_visible_system is not None else None
-        return (closest_system, closest_visible_system)
+        nearest_system = traverser.closest_system.body if traverser.closest_system is not None else None
+        return nearest_system
 
-    def update_nearest_system(self, nearest_system, nearest_visible_system):
+    def update_nearest_system(self, nearest_system):
         if nearest_system != self.nearest_system:
             if nearest_system is not None:
                 print("New nearest system:", nearest_system.get_name())
@@ -1435,7 +1432,7 @@ class Cosmonium(CosmoniumBase):
         # print("FRAME", globalClock.get_frame_count())
         self.gui.update()
         self.time.update_time(dt)
-        self.update_extra(self.selected, self.follow, self.sync, self.track)
+        self.update_extra(self.selected, self.follow, self.sync, self.track, self.nearest_system)
         self.nav.update(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
         self.update_extra_observer()
@@ -1452,9 +1449,9 @@ class Cosmonium(CosmoniumBase):
         self.update_universe(self.time.time_full, dt)
         self.update_worlds(self.time.time_full, dt)
 
-        nearest_system, nearest_visible_system = self.find_nearest_system()
+        nearest_system = self.find_nearest_system()
         #TODO: anchors should be distance sorted
-        distance = self.update_nearest_system(nearest_system, nearest_visible_system)
+        distance = self.update_nearest_system(nearest_system)
         self.scene_manager.update_scene_and_camera(distance, self.c_camera_holder)
 
         self.find_global_light_sources()
