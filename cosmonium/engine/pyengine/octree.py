@@ -141,8 +141,8 @@ class OctreeNode(object):
 
     def dump_octree(self):
         if len(self.leaves) > 0:
-            print(' ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children)
-            print(' ' * self.level, '->', self.max_luminosity, ":", ', '.join(map(lambda x: x.get_name(), self.leaves)))
+            print('  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children)
+            print('  ' * self.level, '->', self.max_luminosity, ":", ', '.join(map(lambda x: x.body.get_name(), self.leaves)))
         for i in range(8):
             if self.children[i] is not None:
                 self.children[i].dump_octree()

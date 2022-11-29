@@ -528,6 +528,10 @@ class OctreeAnchor(SystemAnchor):
         end = time()
         print("Creation time:", end - start)
 
+    def dump_octree(self):
+        self.octree.dump_octree()
+
+
 class UniverseAnchor(OctreeAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         OctreeAnchor.__init__(self, body, orbit, rotation, point_color)

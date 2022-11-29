@@ -35,6 +35,8 @@ PUBLISHED:
   virtual void traverse(AnchorTraverser &visitor);
   virtual void rebuild(void);
 
+  void dump_octree(void) const;
+
 protected:
   void create_octree(void);
 

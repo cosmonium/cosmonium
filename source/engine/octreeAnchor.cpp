@@ -79,3 +79,9 @@ OctreeAnchor::create_octree(void)
     octree->add(child);
   }
 }
+
+void
+OctreeAnchor::dump_octree(void) const
+{
+  std::cout << *octree;
+}

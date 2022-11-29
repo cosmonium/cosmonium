@@ -188,7 +188,7 @@ class OctreeSystem(StellarSystem):
         return OctreeAnchor(self, orbit, rotation, point_color)
 
     def dumpOctree(self):
-        self.octree.dump_octree()
+        self.anchor.dump_octree()
 
     def log_octree(self):
         self.dump_octree = True

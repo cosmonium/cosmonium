@@ -188,7 +188,15 @@ OctreeNode::get_leaf(int index) const
 void
 OctreeNode::output(std::ostream &out) const
 {
-    out << "octree, leaves: " << leaves.size();
+    if (leaves.size() > 0) {
+        indent(out, level* 2) << level << " " << index << " " << width << " " << threshold << " " << center << " " << (has_children ? "True" : "False") << "\n";
+        indent(out, level* 2) << max_luminosity <<  ":" << "\n";
+    }
+    for(auto child : children) {
+        if (child != 0) {
+            child->output(out);
+        }
+    }
 }
 
 void
