@@ -105,6 +105,7 @@ class StellarBody(StellarObject):
             if self.atmosphere is not None:
                 self.atmosphere.remove_shape_object(surface)
         self.surface = surface
+        self.anchor.set_bounding_radius(self.get_bounding_radius())
         if self.init_components:
             self.surface.set_oid_color(self.oid_color)
             self.components.add_component(self.surface)
