@@ -32,13 +32,13 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
     recreate_octree(true)
 {
   //TODO: Turn this into a parameter or infer it from the children
-  bounding_radius = 100000.0 * KmPerLy;
+  bounding_radius = 100000.0 * Ly;
   //TODO: Should be configurable
   double top_level_absolute_magnitude = app_to_abs_mag(6.0, bounding_radius * sqrt(3));
   double luminosity = abs_mag_to_lum(top_level_absolute_magnitude) * L0;
   //TODO: position should be extracted from orbit
   octree = new OctreeNode(0, /*this,*/ 0,
-      LPoint3d(10 * KmPerLy, 10 * KmPerLy, 10 * KmPerLy),
+      LPoint3d(10 * Ly, 10 * Ly, 10 * Ly),
       bounding_radius,
       luminosity);
   octree->parent = this;
