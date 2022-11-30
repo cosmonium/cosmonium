@@ -25,6 +25,8 @@
 #include "iostream"
 #include "math.h"
 
+TypeHandle OctreeNode::_type_handle;
+
 int OctreeNode::max_level = 200;
 int OctreeNode::max_leaves = 75;
 double OctreeNode::child_factor = 0.25;

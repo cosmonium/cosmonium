@@ -74,6 +74,8 @@ PUBLISHED:
 protected:
     PT(OctreeNode) children[8];
     std::vector<PT(StellarAnchor)> leaves;
+
+    MAKE_TYPE("OctreeNode", AnchorTreeBase);
 };
 
 inline std::ostream &operator << (std::ostream &out, const OctreeNode &octree)
