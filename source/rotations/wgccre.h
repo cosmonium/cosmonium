@@ -113,6 +113,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREMercuryRotation", WGCCREComplexRotation);
 };
 
 class WGCCREMarsRotation: public WGCCREComplexRotation
@@ -125,6 +127,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREMarsRotation", WGCCREComplexRotation);
 };
 
 class WGCCREJupiterRotation: public WGCCREComplexRotation
@@ -137,6 +141,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREJupiterRotation", WGCCREComplexRotation);
 };
 
 class WGCCRENeptuneRotation: public WGCCREComplexRotation
@@ -149,6 +155,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRENeptuneRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -165,6 +173,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRE9MoonRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -181,6 +191,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREPhobosRotation", WGCCREComplexRotation);
 };
 
 class WGCCREDeimosRotation: public WGCCREComplexRotation
@@ -193,6 +205,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREDeimosRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -209,6 +223,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREAmaltheaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREThebeRotation: public WGCCREComplexRotation
@@ -221,6 +237,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREThebeRotation", WGCCREComplexRotation);
 };
 
 class WGCCREIoRotation: public WGCCREComplexRotation
@@ -233,6 +251,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREIoRotation", WGCCREComplexRotation);
 };
 
 class WGCCREEuropaRotation: public WGCCREComplexRotation
@@ -245,6 +265,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREEuropaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREGanymedeRotation: public WGCCREComplexRotation
@@ -257,6 +279,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREGanymedeRotation", WGCCREComplexRotation);
 };
 
 class WGCCRECallistoRotation: public WGCCREComplexRotation
@@ -269,6 +293,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRECallistoRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -285,6 +311,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREEpimetheusRotation", WGCCREComplexRotation);
 };
 
 class WGCCREJanusRotation: public WGCCREComplexRotation
@@ -297,6 +325,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREJanusRotation", WGCCREComplexRotation);
 };
 
 class WGCCREMimasRotation: public WGCCREComplexRotation
@@ -309,6 +339,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREMimasRotation", WGCCREComplexRotation);
 };
 
 class WGCCRETethysRotation: public WGCCREComplexRotation
@@ -321,6 +353,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRETethysRotation", WGCCREComplexRotation);
 };
 
 class WGCCRERheaRotation: public WGCCREComplexRotation
@@ -333,6 +367,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRERheaRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -349,6 +385,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRECordeliaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREOpheliaRotation: public WGCCREComplexRotation
@@ -361,6 +399,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREOpheliaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREBiancaRotation: public WGCCREComplexRotation
@@ -373,6 +413,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREBiancaRotation", WGCCREComplexRotation);
 };
 
 class WGCCRECressidaRotation: public WGCCREComplexRotation
@@ -385,6 +427,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRECressidaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREDesdemonaRotation: public WGCCREComplexRotation
@@ -397,6 +441,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREDesdemonaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREJulietRotation: public WGCCREComplexRotation
@@ -409,6 +455,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREJulietRotation", WGCCREComplexRotation);
 };
 
 class WGCCREPortiaRotation: public WGCCREComplexRotation
@@ -421,6 +469,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREPortiaRotation", WGCCREComplexRotation);
 };
 
 class WGCCRERosalindRotation: public WGCCREComplexRotation
@@ -433,6 +483,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRERosalindRotation", WGCCREComplexRotation);
 };
 
 class WGCCREBelindaRotation: public WGCCREComplexRotation
@@ -445,6 +497,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREBelindaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREPuckRotation: public WGCCREComplexRotation
@@ -457,6 +511,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREPuckRotation", WGCCREComplexRotation);
 };
 
 class WGCCREMirandaRotation: public WGCCREComplexRotation
@@ -469,6 +525,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREMirandaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREArielRotation: public WGCCREComplexRotation
@@ -481,6 +539,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREArielRotation", WGCCREComplexRotation);
 };
 
 class WGCCREUmbrielRotation: public WGCCREComplexRotation
@@ -493,6 +553,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREUmbrielRotation", WGCCREComplexRotation);
 };
 
 class WGCCRETitaniaRotation: public WGCCREComplexRotation
@@ -505,6 +567,8 @@ virtual PT(RotationBase) make_copy(void) const;
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRETitaniaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREOberonRotation: public WGCCREComplexRotation
@@ -517,6 +581,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREOberonRotation", WGCCREComplexRotation);
 };
 
 // ############################################################################
@@ -533,6 +599,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRENaiadRotation", WGCCREComplexRotation);
 };
 
 class WGCCREThalassaRotation: public WGCCREComplexRotation
@@ -545,6 +613,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREThalassaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREDespinaRotation: public WGCCREComplexRotation
@@ -557,6 +627,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREDespinaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREGalateaRotation: public WGCCREComplexRotation
@@ -569,6 +641,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREGalateaRotation", WGCCREComplexRotation);
 };
 
 class WGCCRELarissaRotation: public WGCCREComplexRotation
@@ -581,6 +655,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRELarissaRotation", WGCCREComplexRotation);
 };
 
 class WGCCREProteusRotation: public WGCCREComplexRotation
@@ -593,6 +669,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCREProteusRotation", WGCCREComplexRotation);
 };
 
 class WGCCRETritonRotation: public WGCCREComplexRotation
@@ -605,6 +683,8 @@ PUBLISHED:
 public:
   virtual LQuaterniond calc_frame_equatorial_orientation_at(double time);
   virtual LQuaterniond calc_frame_rotation_at(double time);
+
+  MAKE_TYPE("WGCCRETritonRotation", WGCCREComplexRotation);
 };
 
 #endif //VSOP87_H
