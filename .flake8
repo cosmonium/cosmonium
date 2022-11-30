@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 119
+extend-ignore = E265
+builtins = _
+
+exclude = .git, build, dist, tools/p3d_module_builder, third-party, tests, *_parsetab.py
