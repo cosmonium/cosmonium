@@ -554,97 +554,86 @@ def make_config(inner, outer):
 def make_square_primitives(prim, inner, nb_vertices):
     for x in range(0, inner):
         for y in range(0, inner):
-            v = nb_vertices * y + x
+            v = nb_vertices * x + y
             prim.addVertices(v, v + nb_vertices, v + 1)
             prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
 def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
+    #                   0 1 2
+    #                  =================
+    # 0                ||/|/|/|
+    # nb_vertices      ||/|/|
+    # nb_vertices * 2  ||/|
+    #
     for x in range(0, inner):
         for y in range(0, inner):
-#     for x in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
-#         for y in (0, 1, 2, inner - 3, inner - 2, inner - 1): #range(0, inner):
-#    for x in (0, inner - 1): #range(0, inner):
-#        for y in (0, inner - 1): #range(0, inner):
+            v = nb_vertices * x + y
             if x == 0:
-                if y == 0:
-                    i = 0
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                    if (x % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
-                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
-                    i = 1
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
-                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
-                elif y == inner - 1:
-                    i = 1
-                    v = nb_vertices * y + x
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
-                    i = 2
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
-                else:
-                    i = 1
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * (y // ratio[i]) * ratio[i] + x
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
-                    prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
-            elif x == inner - 1:
-                if y == 0:
-                    i = 0
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                    if (x % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
-                    prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
-                    i = 3
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
-                    prim.addVertices(v, v + nb_vertices, vp + 1)
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
-                elif y == inner - 1:
-                    i = 2
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                    prim.addVertices(v, vp + nb_vertices, v + 1)
-                    if (x % ratio[i]) == 0:
-                        prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
-                    i = 3
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
-                    prim.addVertices(v, v + nb_vertices, vp + 1)
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
-                else:
-                    i = 3
-                    v = nb_vertices * y + x
-                    vp = nb_vertices * ((y // ratio[i]) * ratio[i]) + x
-                    prim.addVertices(v, v + nb_vertices, vp + 1)
-                    if (y % ratio[i]) == 0:
-                        prim.addVertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1)
-            elif y == 0:
+                # Right of Ralph
                 i = 0
-                v = nb_vertices * y + x
-                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                if (x % ratio[i]) == 0:
-                    prim.addVertices(v, v + nb_vertices + ratio[i], v + ratio[i])
-                prim.addVertices(vp, v + nb_vertices, v + nb_vertices + 1)
-            elif y == inner - 1:
+                if y == 0:
+                    # ====
+                    # ||/|
+                    j = 1
+                    if ratio[i] == 1 and ratio[j] == 1:
+                        prim.addVertices(v, v + nb_vertices, v + 1)
+                        prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+                    else:
+                        prim.addVertices(v, v + nb_vertices * ratio[j], v + nb_vertices + 1)
+                        prim.addVertices(v, v + nb_vertices + 1, v + ratio[i])
+                elif y == inner - 1:
+                    #
+                    #  ||/|
+                    #  ====
+                    j = 3
+                    if ratio[i] == 1:
+                        prim.addVertices(v, v + nb_vertices, v + 1)
+                    prim.addVertices(v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1)
+                else:
+                    vp = nb_vertices * x + (y // ratio[i]) * ratio[i]
+                    if (y % ratio[i]) == 0:
+                        prim.addVertices(v, v + nb_vertices, v + ratio[i])
+                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + 1)
+            elif x == inner - 1:
+                # Left of Ralph
                 i = 2
-                v = nb_vertices * y + x
-                vp = nb_vertices * y + (x // ratio[i]) * ratio[i]
-                prim.addVertices(v, vp + nb_vertices, v + 1)
+                if y == 0:
+                    # ====
+                    # |/||
+                    j = 1
+                    if ratio[j] == 1:
+                        prim.addVertices(v, v + nb_vertices, v + 1)
+                    prim.addVertices(v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                elif y == inner - 1:
+                    j = 3
+                    if ratio[i] == 1 and ratio[j] == 1:
+                        prim.addVertices(v, v + nb_vertices, v + 1)
+                        prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+                    else:
+                        vpx = nb_vertices * (x // ratio[j]) * ratio[j] + y
+                        prim.addVertices(vpx + 1, v, v + nb_vertices + 1)
+                        vpy = nb_vertices * x + ((y // ratio[i]) * ratio[i])
+                        prim.addVertices(v, vpy + nb_vertices, v + nb_vertices + 1)
+                else:
+                    vp = nb_vertices * x + ((y // ratio[i]) * ratio[i])
+                    prim.addVertices(v, vp + nb_vertices, v + 1)
+                    if ((y + 1) % ratio[i]) == 0:
+                        prim.addVertices(v + 1, vp + nb_vertices, v + nb_vertices + 1)
+            elif y == 0:
+                # Front of Ralph
+                i = 1
+                vp = nb_vertices * (x // ratio[i]) * ratio[i] + y
+                prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
                 if (x % ratio[i]) == 0:
-                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                    prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+            elif y == inner - 1:
+                # Back of Ralph
+                i = 3
+                vp = nb_vertices * (x // ratio[i]) * ratio[i] + y
+                prim.addVertices(v, v + nb_vertices, vp + 1)
+                if ((x + 1) % ratio[i]) == 0:
+                    prim.addVertices(vp + 1, v + nb_vertices, v + nb_vertices + 1)
             else:
-                v = nb_vertices * y + x
                 prim.addVertices(v, v + nb_vertices, v + 1)
                 prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
 
@@ -654,19 +643,19 @@ def make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio):
         for b in range(0, inner):
             skirt = start + b
             if a == 0:
-                i = 1
+                i = 0
                 x = 0
                 y = b
             elif a == 1:
-                i = 3
+                i = 2
                 x = inner - 1
                 y = b
             elif a == 2:
-                i = 0
+                i = 1
                 x = b
                 y = 0
             elif a == 3:
-                i = 2
+                i = 3
                 x = b
                 y = inner - 1
             v = nb_vertices * x + y

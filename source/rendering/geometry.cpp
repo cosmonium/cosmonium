@@ -168,7 +168,7 @@ CubePatchGeneratorBase::make_primitives(PT(GeomTriangles) prim, unsigned int inn
 {
     for (unsigned int x = 0; x < inner; ++x) {
         for (unsigned int y = 0; y < inner; ++y) {
-            unsigned int v = nb_vertices * y + x;
+            unsigned int v = nb_vertices * x + y;
             prim->add_vertices(v, v + nb_vertices, v + 1);
             prim->add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1);
         }
@@ -179,102 +179,74 @@ void
 CubePatchGeneratorBase::make_adapted_square_primitives(PT(GeomTriangles) prim,
     unsigned int inner, unsigned int nb_vertices, LVecBase4i ratio)
 {
-  unsigned int i, v, vp;
   for (unsigned int x = 0; x < inner; ++x) {
       for (unsigned int y = 0; y < inner; ++y) {
+          unsigned int v = nb_vertices * x + y;
           if (x == 0) {
+              unsigned int i = 0;
               if (y == 0) {
-                  i = 0;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
-                  if ((x % ratio[i]) == 0) {
-                      prim->add_vertices(v, v + nb_vertices + ratio[i], v + ratio[i]);
+                  unsigned int j = 1;
+                  if (ratio[i] == 1 && ratio[j] == 1) {
+                      prim->add_vertices(v, v + nb_vertices, v + 1);
+                      prim->add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1);
+                  } else {
+                      prim->add_vertices(v, v + nb_vertices * ratio[j], v + nb_vertices + 1);
+                      prim->add_vertices(v, v + nb_vertices + 1, v + ratio[i]);
                   }
-                  prim->add_vertices(vp, v + nb_vertices, v + nb_vertices + 1);
-                  i = 1;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * (y / ratio[i]) * ratio[i] + x;
-                  if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v, v + nb_vertices * ratio[i], v + 1);
-                  }
-                  prim->add_vertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1);
               } else if (y == inner - 1) {
-                  i = 1;
-                  v = nb_vertices * y + x;
-                  if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v, v + nb_vertices * ratio[i], v + 1);
+                  unsigned int j = 3;
+                  if (ratio[i] == 1) {
+                      prim->add_vertices(v, v + nb_vertices, v + 1);
                   }
-                  i = 2;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
-                  prim->add_vertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i]);
+                  prim->add_vertices(v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1);
               } else {
-                  i = 1;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * (y / ratio[i]) * ratio[i] + x;
+                  unsigned int vp = nb_vertices * x + int(y / ratio[i]) * ratio[i];
                   if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v, v + nb_vertices * ratio[i], v + 1);
+                      prim->add_vertices(v, v + nb_vertices, v + ratio[i]);
                   }
-                  prim->add_vertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1);
+                  prim->add_vertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + 1);
               }
           } else if (x == inner - 1) {
+              unsigned int i = 2;
               if (y == 0) {
-                  i = 0;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
-                  if ((x % ratio[i]) == 0) {
-                      prim->add_vertices(v, v + nb_vertices + ratio[i], v + ratio[i]);
+                  unsigned int j = 1;
+                  if (ratio[j] == 1) {
+                      prim->add_vertices(v, v + nb_vertices, v + 1);
                   }
-                  prim->add_vertices(vp, v + nb_vertices, v + nb_vertices + 1);
-                  i = 3;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * ((y / ratio[i]) * ratio[i]) + x;
-                  prim->add_vertices(v, v + nb_vertices, vp + 1);
-                  if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1);
-                  }
+                  prim->add_vertices(v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i]);
               } else if (y == inner - 1) {
-                  i = 2;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
-                  prim->add_vertices(v, vp + nb_vertices, v + 1);
-                  if ((x % ratio[i]) == 0) {
-                      prim->add_vertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i]);
-                  }
-                  i = 3;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * ((y / ratio[i]) * ratio[i]) + x;
-                  prim->add_vertices(v, v + nb_vertices, vp + 1);
-                  if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1);
+                  unsigned int j = 3;
+                  if (ratio[i] == 1 && ratio[j] == 1) {
+                      prim->add_vertices(v, v + nb_vertices, v + 1);
+                      prim->add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1);
+                  } else {
+                      unsigned int vpx = nb_vertices * (x / ratio[j]) * ratio[j] + y;
+                      prim->add_vertices(vpx + 1, v, v + nb_vertices + 1);
+                      unsigned int vpy = nb_vertices * x + ((y / ratio[i]) * ratio[i]);
+                      prim->add_vertices(v, vpy + nb_vertices, v + nb_vertices + 1);
                   }
               } else {
-                  i = 3;
-                  v = nb_vertices * y + x;
-                  vp = nb_vertices * ((y / ratio[i]) * ratio[i]) + x;
-                  prim->add_vertices(v, v + nb_vertices, vp + 1);
-                  if ((y % ratio[i]) == 0) {
-                      prim->add_vertices(v + 1, v + nb_vertices * ratio[i], v + nb_vertices * ratio[i] + 1);
+                  unsigned int vp = nb_vertices * x + ((y / ratio[i]) * ratio[i]);
+                  prim->add_vertices(v, vp + nb_vertices, v + 1);
+                  if (((y + 1) % ratio[i]) == 0) {
+                      prim->add_vertices(v + 1, vp + nb_vertices, v + nb_vertices + 1);
                   }
               }
           } else if (y == 0) {
-              i = 0;
-              v = nb_vertices * y + x;
-              vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
+              unsigned int i = 1;
+              unsigned int vp = nb_vertices * (x / ratio[i]) * ratio[i] + y;
+              prim->add_vertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1);
               if ((x % ratio[i]) == 0) {
-                  prim->add_vertices(v, v + nb_vertices + ratio[i], v + ratio[i]);
+                  prim->add_vertices(v, v + nb_vertices * ratio[i], v + 1);
               }
-              prim->add_vertices(vp, v + nb_vertices, v + nb_vertices + 1);
           } else if (y == inner - 1) {
-              i = 2;
-              v = nb_vertices * y + x;
-              vp = nb_vertices * y + (x / ratio[i]) * ratio[i];
-              prim->add_vertices(v, vp + nb_vertices, v + 1);
-              if ((x % ratio[i]) == 0) {
-                  prim->add_vertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i]);
+              unsigned int i = 3;
+              unsigned int vp = nb_vertices * (x / ratio[i]) * ratio[i] + y;
+              prim->add_vertices(v, v + nb_vertices, vp + 1);
+              if (((x + 1) % ratio[i]) == 0) {
+                  prim->add_vertices(vp + 1, v + nb_vertices, v + nb_vertices + 1);
               }
           } else {
-              v = nb_vertices * y + x;
               prim->add_vertices(v, v + nb_vertices, v + 1);
               prim->add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1);
           }
@@ -292,19 +264,19 @@ CubePatchGeneratorBase::make_adapted_square_primitives_skirt(PT(GeomTriangles) p
             unsigned int skirt = start + b;
             unsigned int i, x, y;
             if (a == 0) {
-                i = 1;
+                i = 0;
                 x = 0;
                 y = b;
             } else if (a == 1) {
-                i = 3;
+                i = 2;
                 x = inner - 1;
                 y = b;
             } else if (a == 2) {
-                i = 0;
+                i = 1;
                 x = b;
                 y = 0;
             } else if (a == 3) {
-                i = 2;
+                i = 3;
                 x = b;
                 y = inner - 1;
             }
