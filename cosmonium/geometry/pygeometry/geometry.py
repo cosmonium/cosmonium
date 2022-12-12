@@ -1,33 +1,32 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2022 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from math import sin, cos, pi, atan2, sqrt, asin
 
-from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName,\
-    LVector3d, GlobPattern, BoundingBox, LPoint3, BoundingSphere
+from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName
+from panda3d.core import LVector3d, GlobPattern, BoundingBox, LPoint3
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
-from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d, BitMask32, LVector3, LVector4i
+from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
 from ...pstats import named_pstat
-from ... import settings
 
-from math import sin, cos, pi, atan2, sqrt, asin
 
 def empty_node(prefix, color=False):
     path = NodePath(prefix + '_path')
@@ -37,18 +36,19 @@ def empty_node(prefix, color=False):
         path.setAttrib(ColorAttrib.makeVertex())
     return (path, node)
 
+
 def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=True, color=False, tanbin=False):
     array = GeomVertexArrayFormat()
-    array.addColumn(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
+    array.add_column(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
     if color:
-        array.addColumn(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
+        array.add_column(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
     if texture:
-        array.addColumn(InternalName.get_texcoord(), 2, Geom.NTFloat32, Geom.CTexcoord)
+        array.add_column(InternalName.get_texcoord(), 2, Geom.NTFloat32, Geom.CTexcoord)
     if normal:
-        array.addColumn(InternalName.get_normal(), 3, Geom.NTFloat32, Geom.CVector)
+        array.add_column(InternalName.get_normal(), 3, Geom.NTFloat32, Geom.CVector)
     if tanbin:
-        array.addColumn(InternalName.get_tangent(), 3, Geom.NTFloat32, Geom.CVector)
-        array.addColumn(InternalName.get_binormal(), 3, Geom.NTFloat32, Geom.CVector)
+        array.add_column(InternalName.get_tangent(), 3, Geom.NTFloat32, Geom.CVector)
+        array.add_column(InternalName.get_binormal(), 3, Geom.NTFloat32, Geom.CVector)
     format = GeomVertexFormat()
     format.addArray(array)
     format = GeomVertexFormat.registerFormat(format)
@@ -83,9 +83,11 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
         prim.reserve_num_vertices(nb_vertices)
     return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom)
 
+
 def BoundingBoxGeom(box):
     (path, node) = empty_node('bb')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'bb', 8, 12, normal=False, texture=False, tanbin=False)
     node.add_geom(geom)
     for i in range(8):
         gvw.set_data3(box.get_point(i))
@@ -106,9 +108,11 @@ def BoundingBoxGeom(box):
     geom.add_primitive(prim)
     return path
 
+
 def CubeGeom():
     (path, node) = empty_node('cube')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', 8, 12, normal=False, texture=False, tanbin=False)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'cube', 8, 12, normal=False, texture=False, tanbin=False)
     node.add_geom(geom)
     gvw.add_data3(-1, -1, -1)
     gvw.add_data3(-1, -1, 1)
@@ -135,13 +139,15 @@ def CubeGeom():
     geom.add_primitive(prim)
     return path
 
+
 def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
     node.add_geom(geom)
 
-    R = 1./(rings-1)
-    S = 1./(sectors-1)
+    R = 1. / (rings - 1)
+    S = 1. / (sectors - 1)
 
     u = 1.0
     v = 1.0
@@ -156,8 +162,8 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
     gbiw.add_data3(1, 0, 0)
     for r in range(0, rings):
         for s in range(0, sectors):
-            cos_s = cos(2*pi * s * S + pi)
-            sin_s = sin(2*pi * s * S + pi)
+            cos_s = cos(2 * pi * s * S + pi)
+            sin_s = sin(2 * pi * s * S + pi)
             sin_r = sin(pi * r * R)
             cos_r = cos(pi * r * R)
             x = cos_s * sin_r
@@ -172,9 +178,9 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
             gtw.add_data2(u, v)
             gvw.add_data3(x * radius, y * radius, z * radius)
             gnw.add_data3(x, y, z)
-            #Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3(-sin_s, cos_s, 0) #-y, x, 0
-            #Derivation wrt r
+            # Derivation wrt s and normalization (sin_r is dropped)
+            gtanw.add_data3(-sin_s, cos_s, 0)  # -y, x, 0
+            # Derivation wrt r
             binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3d(binormal)
@@ -193,28 +199,29 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
     for r in range(0, rings - 1):
         for s in range(0, sectors):
             if r == 0:
-                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
+                prim.add_vertices(r * sectors + (s + 1), (r + 1) * sectors + (s + 1), (r + 1) * sectors + s)
             elif r == rings - 1:
-                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
+                prim.add_vertices(r * sectors + (s + 1), (r + 1) * sectors + (s + 1), (r + 1) * sectors + s)
             else:
-                prim.addVertices(r * sectors + s, r * sectors + (s+1), (r+1) * sectors + s)
-                prim.addVertices(r * sectors + (s+1), (r+1) * sectors + (s+1), (r+1) * sectors + s)
+                prim.add_vertices(r * sectors + s, r * sectors + (s + 1), (r + 1) * sectors + s)
+                prim.add_vertices(r * sectors + (s + 1), (r + 1) * sectors + (s + 1), (r + 1) * sectors + s)
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
     return path
+
 
 def DisplacementUVSphere(radius, heightmap, scale, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=True):
     data = EggData()
     pool = EggVertexPool('pool')
     vertices = []
     data.addChild(pool)
-    R = 1./(rings)
-    S = 1./(sectors)
+    R = 1. / (rings)
+    S = 1. / (sectors)
     for r in range(0, rings + 1):
         for s in range(0, sectors + 1):
-            cos_s = cos(2*pi * s * S + pi)
-            sin_s = sin(2*pi * s * S + pi)
+            cos_s = cos(2 * pi * s * S + pi)
+            sin_s = sin(2 * pi * s * S + pi)
             sin_r = sin(pi * r * R)
             cos_r = cos(pi * r * R)
             x = cos_s * sin_r
@@ -256,6 +263,7 @@ def DisplacementUVSphere(radius, heightmap, scale, rings=5, sectors=5, inv_textu
     path.flattenStrong()
     return path
 
+
 def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     dx = x1 - x0
     dy = y1 - y0
@@ -263,8 +271,8 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
     if offset is not None:
         normal = UVPatchNormal(x0, y0, x1, y1)
 
-    cos_s = cos(2*pi * (x0 + s * dx) + pi)
-    sin_s = sin(2*pi * (x0 + s * dx) + pi)
+    cos_s = cos(2 * pi * (x0 + s * dx) + pi)
+    sin_s = sin(2 * pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
     x = cos_s * sin_r * radius
@@ -278,32 +286,36 @@ def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
 
     return LVector3d(x, y, z)
 
+
 def UVPatchNormal(x0, y0, x1, y1):
     dx = x1 - x0
     dy = y1 - y0
-    x = cos(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
-    y = sin(2*pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
+    x = cos(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
+    y = sin(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
     z = -cos(pi * (y0 + dy / 2))
     return LVector3d(x, y, z)
 
+
 @named_pstat("geom")
-def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
+def UVPatch(radius, rings, sectors, x0, y0, x1, y1,
+            global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', (r_rings * r_sectors), rings * sectors, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'uv', (r_rings * r_sectors), rings * sectors, tanbin=True)
 
     dx = x1 - x0
     dy = y1 - y0
 
     if offset is not None:
         normal = UVPatchNormal(x0, y0, x1, y1)
-    
+
     for r in range(0, r_rings):
         for s in range(0, r_sectors):
-            cos_s = cos(2*pi * (x0 + s * dx / sectors) + pi)
-            sin_s = sin(2*pi * (x0 + s * dx / sectors) + pi)
+            cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+            sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
             sin_r = sin(pi * (y0 + r * dy / rings))
             cos_r = cos(pi * (y0 + r * dy / rings))
             x = cos_s * sin_r
@@ -326,30 +338,31 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_te
             else:
                 gvw.add_data3(x * radius, y * radius, z * radius)
             gnw.add_data3f(x, y, z)
-            #Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3(-sin_s, cos_s, 0) #-y, x, 0
-            #Derivation wrt r
+            # Derivation wrt s and normalization (sin_r is dropped)
+            gtanw.add_data3(-sin_s, cos_s, 0)  # -y, x, 0
+            # Derivation wrt r
             binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             binormal.normalize()
             gbiw.add_data3d(binormal)
 
     for r in range(0, r_rings - 1):
         for s in range(0, r_sectors - 1):
-#             if y0 == 0 and r == 0:
-#                 #prim.addVertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
-#             elif y1 == rings and r == r_rings - 1:
-#                 #prim.addVertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
-#             else:
-#             if y0 >= 0.5:
-                prim.addVertices(r * r_sectors + s, r * r_sectors + (s+1), (r+1) * r_sectors + s)
-                prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + (s+1), (r+1) * r_sectors + s)
-#             else:
-#                 prim.addVertices((r + 1) * r_sectors + s, r * r_sectors + (s+1), r * r_sectors + s)
-#                 prim.addVertices(r * r_sectors + (s+1), (r+1) * r_sectors + s, (r + 1) * r_sectors + (s+1))
+            # if y0 == 0 and r == 0:
+            #     #prim.add_vertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
+            # elif y1 == rings and r == r_rings - 1:
+            #     #prim.add_vertices((r+1) * r_sectors + (s+1), (r+1) * r_sectors + s, r * r_sectors + (s+1))
+            # else:
+            # if y0 >= 0.5:
+            prim.add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s)
+            prim.add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s)
+            # else:
+            #     prim.add_vertices((r + 1) * r_sectors + s, r * r_sectors + (s+1), r * r_sectors + s)
+            #     prim.add_vertices(r * r_sectors + (s+1), (r+1) * r_sectors + s, (r + 1) * r_sectors + (s+1))
     prim.closePrimitive()
     geom.addPrimitive(prim)
     node.add_geom(geom)
     return path
+
 
 def halfSphereAABB(height, positive, offset):
     if positive:
@@ -359,6 +372,7 @@ def halfSphereAABB(height, positive, offset):
         min_points = LPoint3(-1, offset - 1, -1)
         max_points = LPoint3(1, offset, 1)
     return BoundingBox(min_points, max_points)
+
 
 def UVPatchAABB(min_radius, max_radius, x0, y0, x1, y1, offset):
     points = []
@@ -379,8 +393,9 @@ def UVPatchAABB(min_radius, max_radius, x0, y0, x1, y1, offset):
     box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
     return box
 
+
 def UVPatchedSphere(radius=1, rings=8, sectors=16, lod=2):
-    #LOD = 1 : Two half sphere
+    # LOD = 1 : Two half sphere
     path = NodePath('uv')
     r_div = 1 << lod
     s_div = 2 << lod
@@ -393,6 +408,7 @@ def UVPatchedSphere(radius=1, rings=8, sectors=16, lod=2):
             subpath = UVPatch(radius, rings, sectors, x0, y0, x1, y1)
             subpath.reparentTo(path)
     return path
+
 
 def IcoSphere(radius=1, subdivisions=1):
     (path, node) = empty_node('ico')
@@ -444,7 +460,7 @@ def IcoSphere(radius=1, subdivisions=1):
 
     # Step 2 : tessellate
     for subdivision in range(0, subdivisions):
-        size *= 4;
+        size *= 4
         newFaces = []
         for i in range(0, int(size / 12)):
             i1 = faces[i * 3]
@@ -488,7 +504,7 @@ def IcoSphere(radius=1, subdivisions=1):
         vert = verts[i]
         vertices.append(VBase3(vert * radius))
         norms.append(vert)
-        #Calculate texture coords
+        # Calculate texture coords
         u = -((atan2(vert.x, vert.y)) / pi) / 2.0 + 0.5
         v = asin(vert.z) / pi + 0.5
         texs.append([u, v])
@@ -501,23 +517,23 @@ def IcoSphere(radius=1, subdivisions=1):
         v1 = texs[i2][1] - texs[i1][1]
         u2 = texs[i3][0] - texs[i2][0]
         v2 = texs[i3][1] - texs[i2][1]
-        if (u1*v2 - u2*v1) < 0:
+        if (u1 * v2 - u2 * v1) < 0:
             if texs[i1][0] < 0.5:
                 vertices.append(vertices[i1])
                 norms.append(norms[i1])
-                texs.append([texs[i1][0]+1.0, texs[i1][1]])
+                texs.append([texs[i1][0] + 1.0, texs[i1][1]])
                 i1 = indices
                 indices += 1
             if texs[i2][0] < 0.5:
                 vertices.append(vertices[i2])
                 norms.append(norms[i2])
-                texs.append([texs[i2][0]+1.0, texs[i2][1]])
+                texs.append([texs[i2][0] + 1.0, texs[i2][1]])
                 i2 = indices
                 indices += 1
             if texs[i3][0] < 0.5:
                 vertices.append(vertices[i3])
                 norms.append(norms[i3])
-                texs.append([texs[i3][0]+1.0, texs[i3][1]])
+                texs.append([texs[i3][0] + 1.0, texs[i3][1]])
                 i3 = indices
                 indices += 1
         faces[i * 3] = i1
@@ -531,18 +547,21 @@ def IcoSphere(radius=1, subdivisions=1):
         i1 = faces[i * 3]
         i2 = faces[i * 3 + 1]
         i3 = faces[i * 3 + 2]
-        prim.addVertices(i1, i2, i3)
+        prim.add_vertices(i1, i2, i3)
 
     prim.closePrimitive()
     geom.addPrimitive(prim)
 
     return path
 
+
 class TesselationInfo():
+
     def __init__(self, inner, outer):
         self.inner = inner
         self.outer = outer
         self.ratio = [inner // x if inner >= x else 1 for x in outer]
+
 
 def make_config(inner, outer):
     nb_vertices = inner + 1
@@ -551,12 +570,14 @@ def make_config(inner, outer):
     ratio = [inner // x if inner >= x else 1 for x in outer]
     return (nb_vertices, inner, outer, ratio)
 
+
 def make_square_primitives(prim, inner, nb_vertices):
     for x in range(0, inner):
         for y in range(0, inner):
             v = nb_vertices * x + y
-            prim.addVertices(v, v + nb_vertices, v + 1)
-            prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+            prim.add_vertices(v, v + nb_vertices, v + 1)
+            prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+
 
 def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
     #                   0 1 2
@@ -576,24 +597,24 @@ def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
                     # ||/|
                     j = 1
                     if ratio[i] == 1 and ratio[j] == 1:
-                        prim.addVertices(v, v + nb_vertices, v + 1)
-                        prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+                        prim.add_vertices(v, v + nb_vertices, v + 1)
+                        prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
                     else:
-                        prim.addVertices(v, v + nb_vertices * ratio[j], v + nb_vertices + 1)
-                        prim.addVertices(v, v + nb_vertices + 1, v + ratio[i])
+                        prim.add_vertices(v, v + nb_vertices * ratio[j], v + nb_vertices + 1)
+                        prim.add_vertices(v, v + nb_vertices + 1, v + ratio[i])
                 elif y == inner - 1:
                     #
                     #  ||/|
                     #  ====
                     j = 3
                     if ratio[i] == 1:
-                        prim.addVertices(v, v + nb_vertices, v + 1)
-                    prim.addVertices(v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1)
+                        prim.add_vertices(v, v + nb_vertices, v + 1)
+                    prim.add_vertices(v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1)
                 else:
                     vp = nb_vertices * x + (y // ratio[i]) * ratio[i]
                     if (y % ratio[i]) == 0:
-                        prim.addVertices(v, v + nb_vertices, v + ratio[i])
-                    prim.addVertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + 1)
+                        prim.add_vertices(v, v + nb_vertices, v + ratio[i])
+                    prim.add_vertices(vp + ratio[i], v + nb_vertices, v + nb_vertices + 1)
             elif x == inner - 1:
                 # Left of Ralph
                 i = 2
@@ -602,40 +623,41 @@ def make_adapted_square_primitives(prim, inner, nb_vertices, ratio):
                     # |/||
                     j = 1
                     if ratio[j] == 1:
-                        prim.addVertices(v, v + nb_vertices, v + 1)
-                    prim.addVertices(v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                        prim.add_vertices(v, v + nb_vertices, v + 1)
+                    prim.add_vertices(v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
                 elif y == inner - 1:
                     j = 3
                     if ratio[i] == 1 and ratio[j] == 1:
-                        prim.addVertices(v, v + nb_vertices, v + 1)
-                        prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+                        prim.add_vertices(v, v + nb_vertices, v + 1)
+                        prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
                     else:
                         vpx = nb_vertices * (x // ratio[j]) * ratio[j] + y
-                        prim.addVertices(vpx + 1, v, v + nb_vertices + 1)
+                        prim.add_vertices(vpx + 1, v, v + nb_vertices + 1)
                         vpy = nb_vertices * x + ((y // ratio[i]) * ratio[i])
-                        prim.addVertices(v, vpy + nb_vertices, v + nb_vertices + 1)
+                        prim.add_vertices(v, vpy + nb_vertices, v + nb_vertices + 1)
                 else:
                     vp = nb_vertices * x + ((y // ratio[i]) * ratio[i])
-                    prim.addVertices(v, vp + nb_vertices, v + 1)
+                    prim.add_vertices(v, vp + nb_vertices, v + 1)
                     if ((y + 1) % ratio[i]) == 0:
-                        prim.addVertices(v + 1, vp + nb_vertices, v + nb_vertices + 1)
+                        prim.add_vertices(v + 1, vp + nb_vertices, v + nb_vertices + 1)
             elif y == 0:
                 # Front of Ralph
                 i = 1
                 vp = nb_vertices * (x // ratio[i]) * ratio[i] + y
-                prim.addVertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
+                prim.add_vertices(v + 1, vp + nb_vertices * ratio[i], v + nb_vertices + 1)
                 if (x % ratio[i]) == 0:
-                    prim.addVertices(v, v + nb_vertices * ratio[i], v + 1)
+                    prim.add_vertices(v, v + nb_vertices * ratio[i], v + 1)
             elif y == inner - 1:
                 # Back of Ralph
                 i = 3
                 vp = nb_vertices * (x // ratio[i]) * ratio[i] + y
-                prim.addVertices(v, v + nb_vertices, vp + 1)
+                prim.add_vertices(v, v + nb_vertices, vp + 1)
                 if ((x + 1) % ratio[i]) == 0:
-                    prim.addVertices(vp + 1, v + nb_vertices, v + nb_vertices + 1)
+                    prim.add_vertices(vp + 1, v + nb_vertices, v + nb_vertices + 1)
             else:
-                prim.addVertices(v, v + nb_vertices, v + 1)
-                prim.addVertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+                prim.add_vertices(v, v + nb_vertices, v + 1)
+                prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
+
 
 def make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio):
     for a in range(0, 4):
@@ -661,20 +683,21 @@ def make_adapted_square_primitives_skirt(prim, inner, nb_vertices, ratio):
             v = nb_vertices * x + y
             if a == 0:
                 if (y % ratio[i]) == 0:
-                    prim.addVertices(v, v + ratio[i], skirt)
-                    prim.addVertices(skirt, v + ratio[i], skirt + ratio[i])
+                    prim.add_vertices(v, v + ratio[i], skirt)
+                    prim.add_vertices(skirt, v + ratio[i], skirt + ratio[i])
             elif a == 1:
                 if (y % ratio[i]) == 0:
-                    prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + ratio[i])
-                    prim.addVertices(v + nb_vertices + ratio[i], skirt, skirt + ratio[i])
+                    prim.add_vertices(v + nb_vertices, skirt, v + nb_vertices + ratio[i])
+                    prim.add_vertices(v + nb_vertices + ratio[i], skirt, skirt + ratio[i])
             elif a == 2:
                 if (x % ratio[i]) == 0:
-                    prim.addVertices(v, skirt, v + nb_vertices * ratio[i])
-                    prim.addVertices(v + nb_vertices * ratio[i], skirt, skirt + ratio[i])
+                    prim.add_vertices(v, skirt, v + nb_vertices * ratio[i])
+                    prim.add_vertices(v + nb_vertices * ratio[i], skirt, skirt + ratio[i])
             elif a == 3:
                 if (x % ratio[i]) == 0:
-                    prim.addVertices(skirt + ratio[i], v + 1, v + nb_vertices * ratio[i] + 1)
-                    prim.addVertices(skirt, v + 1, skirt + ratio[i])
+                    prim.add_vertices(skirt + ratio[i], v + 1, v + nb_vertices * ratio[i] + 1)
+                    prim.add_vertices(skirt, v + 1, skirt + ratio[i])
+
 
 def make_primitives_skirt(prim, inner, nb_vertices):
     for a in range(0, 4):
@@ -695,23 +718,24 @@ def make_primitives_skirt(prim, inner, nb_vertices):
                 y = inner - 1
             v = nb_vertices * x + y
             if a == 0:
-                prim.addVertices(v, v + 1, skirt)
-                prim.addVertices(skirt, v + 1, skirt + 1)
+                prim.add_vertices(v, v + 1, skirt)
+                prim.add_vertices(skirt, v + 1, skirt + 1)
             elif a == 1:
-                prim.addVertices(v + nb_vertices, skirt, v + nb_vertices + 1)
-                prim.addVertices(v + nb_vertices + 1, skirt, skirt + 1)
+                prim.add_vertices(v + nb_vertices, skirt, v + nb_vertices + 1)
+                prim.add_vertices(v + nb_vertices + 1, skirt, skirt + 1)
             elif a == 2:
-                prim.addVertices(v, skirt, v + nb_vertices)
-                prim.addVertices(v + nb_vertices, skirt, skirt + 1)
+                prim.add_vertices(v, skirt, v + nb_vertices)
+                prim.add_vertices(v + nb_vertices, skirt, skirt + 1)
             elif a == 3:
-                prim.addVertices(skirt + 1, v + 1, v + nb_vertices + 1)
-                prim.addVertices(skirt, v + 1, skirt + 1)
+                prim.add_vertices(skirt + 1, v + 1, v + nb_vertices + 1)
+                prim.add_vertices(skirt, v + 1, skirt + 1)
+
 
 @named_pstat("geom")
 def Tile(size, tesselation,
-        inv_u=False, inv_v=False, swap_uv=False,
-         use_patch_adaptation = True,
-         use_patch_skirts = True,
+         inv_u=False, inv_v=False, swap_uv=False,
+         use_patch_adaptation=True,
+         use_patch_skirts=True,
          skirt_size=0.1, skirt_uv=0.1):
     inner = tesselation.inner
     nb_vertices = inner + 1
@@ -721,7 +745,8 @@ def Tile(size, tesselation,
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     for i in range(0, nb_vertices):
@@ -795,8 +820,10 @@ def Tile(size, tesselation,
 
     return path
 
+
 def TileAABB(size=1.0, height=1.0):
-    return BoundingBox(LPoint3(0, 0, -height ), LPoint3(size, size, height))
+    return BoundingBox(LPoint3(0, 0, -height), LPoint3(size, size, height))
+
 
 def Patch(size=1.0):
     (path, node) = empty_node('patch')
@@ -810,7 +837,7 @@ def Patch(size=1.0):
     vertexWriter.add_data3(0, size, 0)
     patches = GeomPatches(4, Geom.UHStatic)
 
-    patches.addConsecutiveVertices(0, 4) #South, west, north, east
+    patches.addConsecutiveVertices(0, 4)  # South, west, north, east
     patches.closePrimitive()
 
     gm = Geom(vdata)
@@ -819,8 +846,11 @@ def Patch(size=1.0):
     node.addGeom(gm)
     return path
 
-def PatchAABB(x=0.0, y=0.0, size=1.0, scale = 1.0, min_height=-1.0, max_height=1.0):
-    return BoundingBox(LPoint3(x * scale, y * scale, min_height), LPoint3((x + size) * scale, (y + size) * scale, max_height))
+
+def PatchAABB(x=0.0, y=0.0, size=1.0, scale=1.0, min_height=-1.0, max_height=1.0):
+    return BoundingBox(LPoint3(x * scale, y * scale, min_height),
+                       LPoint3((x + size) * scale, (y + size) * scale, max_height))
+
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     if x_inverted:
@@ -835,6 +865,7 @@ def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False
     dy = float(y1 - y0)
 
     return (x0, y0, x1, y1, dx, dy)
+
 
 def QuadPatch(x0, y0, x1, y1,
               x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
@@ -859,7 +890,7 @@ def QuadPatch(x0, y0, x1, y1,
     vertexWriter.add_data3(x0, y1, offset)
     patches = GeomPatches(4, Geom.UHStatic)
 
-    patches.addConsecutiveVertices(0, 4) #South, west, north, east
+    patches.addConsecutiveVertices(0, 4)  # South, west, north, east
     patches.closePrimitive()
 
     gm = Geom(vdata)
@@ -867,6 +898,7 @@ def QuadPatch(x0, y0, x1, y1,
 
     node.addGeom(gm)
     return path
+
 
 @named_pstat("geom")
 def SquarePatch(height, inner, outer,
@@ -876,7 +908,8 @@ def SquarePatch(height, inner, outer,
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
     node.add_geom(geom)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -914,13 +947,15 @@ def SquarePatch(height, inner, outer,
 
     return path
 
+
 @named_pstat("geom")
-def SquaredDistanceSquarePatch(height, tesselation,
-                x0, y0, x1, y1,
-                inv_u=False, inv_v=False, swap_uv=False,
-                x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
-                use_patch_adaptation = True,
-                use_patch_skirts = True):
+def SquaredDistanceSquarePatch(
+        height, tesselation,
+        x0, y0, x1, y1,
+        inv_u=False, inv_v=False, swap_uv=False,
+        x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
+        use_patch_adaptation=True,
+        use_patch_skirts=True):
     (path, node) = empty_node('uv')
     inner = tesselation.inner
     nb_vertices = inner + 1
@@ -929,7 +964,8 @@ def SquaredDistanceSquarePatch(height, tesselation,
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+        'cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
@@ -970,8 +1006,10 @@ def SquaredDistanceSquarePatch(height, tesselation,
             tan.normalize()
             bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
             bin.normalize()
-            if inv_u: tan = -tan
-            if inv_v: bin = -bin
+            if inv_u:
+                tan = -tan
+            if inv_v:
+                bin = -bin
             if swap_uv:
                 tan, bin = bin, tan
             gtanw.add_data3d(tan)
@@ -1026,8 +1064,10 @@ def SquaredDistanceSquarePatch(height, tesselation,
                 tan.normalize()
                 bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
                 bin.normalize()
-                if inv_u: tan = -tan
-                if inv_v: bin = -bin
+                if inv_u:
+                    tan = -tan
+                if inv_v:
+                    bin = -bin
                 if swap_uv:
                     tan, bin = bin, tan
                 gtanw.add_data3d(tan)
@@ -1046,10 +1086,11 @@ def SquaredDistanceSquarePatch(height, tesselation,
 
     return path
 
+
 def SquaredDistanceSquarePatchPoint(radius,
                                     u, v,
                                     x0, y0, x1, y1,
-                                    offset = None,
+                                    offset=None,
                                     x_inverted=False, y_inverted=False, xy_swap=False):
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -1077,10 +1118,12 @@ def SquaredDistanceSquarePatchPoint(radius,
 
     return vec
 
+
 def SquaredDistanceSquarePatchNormal(x0, y0, x1, y1,
                                      x_inverted=False, y_inverted=False, xy_swap=False):
 
     return SquaredDistanceSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+
 
 def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
                                    x0, y0, x1, y1, offset=None,
@@ -1093,7 +1136,8 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
     for radius in radii:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                points.append(SquaredDistanceSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+                points.append(SquaredDistanceSquarePatchPoint(
+                    radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
@@ -1103,13 +1147,14 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
     box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
     return box
 
+
 @named_pstat("geom")
 def NormalizedSquarePatch(height, tesselation,
                           x0, y0, x1, y1,
                           inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
-                          use_patch_adaptation = True,
-                          use_patch_skirts = True):
+                          use_patch_adaptation=True,
+                          use_patch_skirts=True):
     (path, node) = empty_node('uv')
     inner = tesselation.inner
     nb_vertices = inner + 1
@@ -1149,12 +1194,14 @@ def NormalizedSquarePatch(height, tesselation,
                 vec = vec - normal * offset
             gvw.add_data3d(vec)
             gnw.add_data3d(nvec)
-            tan = LVector3d(1.0 + y*y, -x*y, -x)
+            tan = LVector3d(1.0 + y * y, -x * y, -x)
             tan.normalize()
-            bin = LVector3d(x * y, 1.0 + x*x, -y)
+            bin = LVector3d(x * y, 1.0 + x * x, -y)
             bin.normalize()
-            if inv_u: tan = -tan
-            if inv_v: bin = -bin
+            if inv_u:
+                tan = -tan
+            if inv_v:
+                bin = -bin
             if swap_uv:
                 tan, bin = bin, tan
             gtanw.add_data3d(tan)
@@ -1199,12 +1246,14 @@ def NormalizedSquarePatch(height, tesselation,
                     vec = vec - normal * offset
                 gvw.add_data3d(vec)
                 gnw.add_data3d(nvec)
-                tan = LVector3d(1.0 + y*y, -x*y, -x)
+                tan = LVector3d(1.0 + y * y, -x * y, -x)
                 tan.normalize()
-                bin = LVector3d(x * y, 1.0 + x*x, -y)
+                bin = LVector3d(x * y, 1.0 + x * x, -y)
                 bin.normalize()
-                if inv_u: tan = -tan
-                if inv_v: bin = -bin
+                if inv_u:
+                    tan = -tan
+                if inv_v:
+                    bin = -bin
                 if swap_uv:
                     tan, bin = bin, tan
                 gtanw.add_data3d(tan)
@@ -1223,10 +1272,11 @@ def NormalizedSquarePatch(height, tesselation,
 
     return path
 
+
 def NormalizedSquarePatchPoint(radius,
                                u, v,
                                x0, y0, x1, y1,
-                               offset = None,
+                               offset=None,
                                x_inverted=False, y_inverted=False, xy_swap=False):
     if offset is not None:
         normal = NormalizedSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -1244,9 +1294,11 @@ def NormalizedSquarePatchPoint(radius,
 
     return vec
 
+
 def NormalizedSquarePatchNormal(x0, y0, x1, y1,
                                 x_inverted=False, y_inverted=False, xy_swap=False):
     return NormalizedSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+
 
 def NormalizedSquarePatchAABB(min_radius, max_radius,
                               x0, y0, x1, y1, offset=None,
@@ -1259,7 +1311,8 @@ def NormalizedSquarePatchAABB(min_radius, max_radius,
     for radius in radii:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                points.append(NormalizedSquarePatchPoint(radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+                points.append(NormalizedSquarePatchPoint(
+                    radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
@@ -1268,6 +1321,7 @@ def NormalizedSquarePatchAABB(min_radius, max_radius,
     z_max = max(p.get_z() for p in points)
     box = BoundingBox(LPoint3(x_min, y_min, z_min), LPoint3(x_max, y_max, z_max))
     return box
+
 
 @named_pstat("geom")
 def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
@@ -1292,41 +1346,41 @@ def RingFaceGeometry(up, inner_radius, outer_radius, nbOfPoints):
         texcoord.add_data2(0, 0)
     triangles = GeomTriangles(Geom.UHStatic)
     triangles.reserve_num_vertices(nbOfPoints - 1)
-    for i in range(nbOfPoints-1):
+    for i in range(nbOfPoints - 1):
         if up < 0:
-            triangles.addVertex(i*2+0)
-            triangles.addVertex(i*2+1)
-            triangles.addVertex(i*2+2)
+            triangles.addVertex(i * 2 + 0)
+            triangles.addVertex(i * 2 + 1)
+            triangles.addVertex(i * 2 + 2)
             triangles.closePrimitive()
-            triangles.addVertex(i*2+2)
-            triangles.addVertex(i*2+1)
-            triangles.addVertex(i*2+3)
+            triangles.addVertex(i * 2 + 2)
+            triangles.addVertex(i * 2 + 1)
+            triangles.addVertex(i * 2 + 3)
             triangles.closePrimitive()
         else:
-            triangles.addVertex(i*2+2)
-            triangles.addVertex(i*2+1)
-            triangles.addVertex(i*2+0)
+            triangles.addVertex(i * 2 + 2)
+            triangles.addVertex(i * 2 + 1)
+            triangles.addVertex(i * 2 + 0)
             triangles.closePrimitive()
-            triangles.addVertex(i*2+3)
-            triangles.addVertex(i*2+1)
-            triangles.addVertex(i*2+2)
+            triangles.addVertex(i * 2 + 3)
+            triangles.addVertex(i * 2 + 1)
+            triangles.addVertex(i * 2 + 2)
             triangles.closePrimitive()
     if up < 0:
-        triangles.addVertex((nbOfPoints-1)*2+0)
-        triangles.addVertex((nbOfPoints-1)*2+1)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 0)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 1)
         triangles.addVertex(0)
         triangles.closePrimitive()
         triangles.addVertex(0)
-        triangles.addVertex((nbOfPoints-1)*2+1)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 1)
         triangles.addVertex(1)
         triangles.closePrimitive()
     else:
         triangles.addVertex(0)
-        triangles.addVertex((nbOfPoints-1)*2+1)
-        triangles.addVertex((nbOfPoints-1)*2+0)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 1)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 0)
         triangles.closePrimitive()
         triangles.addVertex(1)
-        triangles.addVertex((nbOfPoints-1)*2+1)
+        triangles.addVertex((nbOfPoints - 1) * 2 + 1)
         triangles.addVertex(0)
         triangles.closePrimitive()
     geom = Geom(vdata)
