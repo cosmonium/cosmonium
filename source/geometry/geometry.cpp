@@ -482,11 +482,7 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     }
 
     if (use_patch_skirts) {
-        if (!has_offset) {
-            has_offset = true;
-            offset = 0;
-        }
-        offset = offset + sqrt(dx * dx + dy * dy) / tesselation.inner;
+        radius = radius - sqrt(dx * dx + dy * dy) / tesselation.inner;
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;
@@ -688,11 +684,7 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     }
 
     if (use_patch_skirts) {
-        if (!has_offset) {
-            has_offset = true;
-            offset = 0;
-        }
-        offset = offset + sqrt(dx * dx + dy * dy) / tesselation.inner;
+        radius = radius - sqrt(dx * dx + dy * dy) / tesselation.inner;
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;

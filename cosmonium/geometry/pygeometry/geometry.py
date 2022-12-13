@@ -1016,9 +1016,7 @@ def SquaredDistanceSquarePatch(
             gbiw.add_data3d(bin)
 
     if use_patch_skirts:
-        if offset is None:
-            offset = 0
-        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        height = height - sqrt(dx * dx + dy * dy) / inner
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -1208,9 +1206,7 @@ def NormalizedSquarePatch(height, tesselation,
             gbiw.add_data3d(bin)
 
     if use_patch_skirts:
-        if offset is None:
-            offset = 0
-        offset = offset + sqrt(dx * dx + dy * dy) / inner
+        height = height - sqrt(dx * dx + dy * dy) / inner
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -1242,7 +1238,7 @@ def NormalizedSquarePatch(height, tesselation,
                 gtw.add_data2(u, v)
                 nvec = vec
                 vec = vec * height
-                if has_offset:
+                if offset is not None:
                     vec = vec - normal * offset
                 gvw.add_data3d(vec)
                 gnw.add_data3d(nvec)
