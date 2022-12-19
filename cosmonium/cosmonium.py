@@ -115,7 +115,7 @@ class CosmoniumBase(ShowBase):
         ShowBase.__init__(self, windowType='none')
         if not self.app_config.test_start:
             # TODO: Scene window should be opened after the splash window
-            if settings.use_pbr:
+            if settings.use_pbr or settings.use_inverse_z:
                 self.pipeline = ScenePipeline(engine=self.graphics_engine)
             else:
                 self.pipeline = BasicScenePipeline(engine=self.graphics_engine)
