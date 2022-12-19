@@ -955,7 +955,8 @@ def SquaredDistanceSquarePatch(
         inv_u=False, inv_v=False, swap_uv=False,
         x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
         use_patch_adaptation=True,
-        use_patch_skirts=True):
+        use_patch_skirts=True,
+        skirt_size=0.001, skirt_uv=0.001):
     (path, node) = empty_node('uv')
     inner = tesselation.inner
     nb_vertices = inner + 1
@@ -1016,7 +1017,7 @@ def SquaredDistanceSquarePatch(
             gbiw.add_data3d(bin)
 
     if use_patch_skirts:
-        height = height - sqrt(dx * dx + dy * dy) / inner
+        height = height - max(dx, dy) * skirt_size
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -1152,7 +1153,8 @@ def NormalizedSquarePatch(height, tesselation,
                           inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
                           use_patch_adaptation=True,
-                          use_patch_skirts=True):
+                          use_patch_skirts=True,
+                          skirt_size=0.001, skirt_uv=0.001):
     (path, node) = empty_node('uv')
     inner = tesselation.inner
     nb_vertices = inner + 1
@@ -1206,7 +1208,7 @@ def NormalizedSquarePatch(height, tesselation,
             gbiw.add_data3d(bin)
 
     if use_patch_skirts:
-        height = height - sqrt(dx * dx + dy * dy) / inner
+        height = height - max(dx, dy) * skirt_size
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:

@@ -404,7 +404,8 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
-        bool use_patch_adaptation, bool use_patch_skirts)
+        bool use_patch_adaptation, bool use_patch_skirts,
+        double skirt_size, double skirt_uv)
 {
     _geom_collector.start();
 
@@ -482,7 +483,7 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     }
 
     if (use_patch_skirts) {
-        radius = radius - sqrt(dx * dx + dy * dy) / tesselation.inner;
+        radius = radius - std::max(dx, dy) * skirt_size;
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;
@@ -594,7 +595,8 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
-        bool use_patch_adaptation, bool use_patch_skirts)
+        bool use_patch_adaptation, bool use_patch_skirts,
+        double skirt_size, double skirt_uv)
 {
     _geom_collector.start();
 
@@ -684,7 +686,7 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     }
 
     if (use_patch_skirts) {
-        radius = radius - sqrt(dx * dx + dy * dy) / tesselation.inner;
+        radius = radius - std::max(dx, dy) * skirt_size;
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;

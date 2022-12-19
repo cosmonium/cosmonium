@@ -81,7 +81,8 @@ PUBLISHED:
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
-      bool use_patch_adaptation=true, bool use_patch_skirts=true);
+      bool use_patch_adaptation=true, bool use_patch_skirts=true,
+      double skirt_size=0.001, double skirt_uv=0.001);
 
 private:
   inline void
@@ -104,7 +105,8 @@ PUBLISHED:
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
-      bool use_patch_adaptation=true, bool use_patch_skirts=true);
+      bool use_patch_adaptation=true, bool use_patch_skirts=true,
+      double skirt_size=0.001, double skirt_uv=0.001);
 
 private:
   inline void
