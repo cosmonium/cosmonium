@@ -1037,6 +1037,7 @@ class NoiseFragmentShader(ShaderProgram):
         self.noise_target = noise_target
 
     def create_uniforms(self, code):
+        code.append("uniform vec2 reducedTextureSize;")
         code.append("uniform vec3 noiseOffset;")
         code.append("uniform vec3 noiseScale;")
         code.append("uniform float global_coord_scale;")
@@ -1103,7 +1104,8 @@ class NoiseFragmentShader(ShaderProgram):
     def create_body(self, code):
         if self.version < 130:
             code.append('vec4 frag_output;')
-        code.append('float value = calc_noise_value(texcoord.xy);')
+        code.append('vec2 coord = (gl_FragCoord.xy - vec2(0.5)) / reducedTextureSize;')
+        code.append('float value = calc_noise_value(coord);')
         self.noise_target.apply_noise(code)
         if self.version < 130:
             code.append('gl_FragColor = frag_output;')
@@ -1113,8 +1115,9 @@ class NoiseShader(StructuredShader):
                  TexCoord.Flat: 'flat',
                  TexCoord.NormalizedCube: 'cube',
                  TexCoord.SqrtCube: 'sqrtcube'}
-    def __init__(self, coord = TexCoord.Cylindrical, noise_source=None, noise_target=None):
+    def __init__(self, size, coord = TexCoord.Cylindrical, noise_source=None, noise_target=None):
         StructuredShader.__init__(self)
+        self.reduced_size = (size[0] - 1, size[1] - 1)
         self.coord = coord
         self.noise_source = noise_source
         self.noise_target = noise_target
@@ -1167,6 +1170,7 @@ class NoiseShader(StructuredShader):
                             0.0, 0.0, 1.0)
 
     def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_coord_scale=1.0, global_coord_offset=LVector3(0, 0, 0), global_scale=1.0, lod=None):
+        instance.set_shader_input('reducedTextureSize', self.reduced_size)
         instance.set_shader_input('noiseOffset', offset)
         instance.set_shader_input('noiseScale', scale)
         instance.set_shader_input('global_coord_scale', global_coord_scale)

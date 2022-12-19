@@ -37,7 +37,7 @@ class Tile(PatchBase):
         self.y = y
         self.face = -1
         self.size = 1.0 / (1 << lod)
-        self.half_size = self.size / 2.0
+        self.half_size = 1.0 / (1 << (lod + 1))
 
         self.x0 = x
         self.y0 = y
@@ -45,8 +45,8 @@ class Tile(PatchBase):
         self.y1 = y + self.size
         self.flat_coord = LVector4(self.x0 * surface_scale,
                                     self.y1 * surface_scale,
-                                    (self.x1 - self.x0) * surface_scale,
-                                    (self.y0 - self.y1) * surface_scale)
+                                    self.size * surface_scale,
+                                    -self.size * surface_scale)
         self.create_quadtree_node(min_height, max_height)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 

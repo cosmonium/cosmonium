@@ -39,7 +39,7 @@ class HeightmapGenerationStage(ProcessStage):
         return {'heightmap': 'color'}
 
     def create_shader(self):
-        shader = NoiseShader(coord=self.coord, noise_source=self.noise_source, noise_target=FloatTarget())
+        shader = NoiseShader(self.size, coord=self.coord, noise_source=self.noise_source, noise_target=FloatTarget())
         shader.create_and_register_shader(None, None)
         return shader
 
