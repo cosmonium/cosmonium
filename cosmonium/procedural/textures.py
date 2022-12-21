@@ -45,7 +45,7 @@ class TextureGenerationStage(ProcessStage):
         return {'texture': 'color'}
 
     def create_shader(self):
-        shader = NoiseShader(coord=self.coord, noise_source=self.noise_source, noise_target=self.noise_target)
+        shader = NoiseShader(self.size, coord=self.coord, noise_source=self.noise_source, noise_target=self.noise_target)
         shader.create_and_register_shader(None, None)
         return shader
 
