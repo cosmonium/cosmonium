@@ -19,9 +19,10 @@
 
 
 class HUDObject(object):
-    def __init__(self, anchor, scale):
+    def __init__(self, anchor, scale, offset):
         self.anchor = anchor
         self.scale = scale
+        self.offset = offset
         self.shown = True
         self.instance = None
 
@@ -36,3 +37,13 @@ class HUDObject(object):
     def set_scale(self, scale):
         self.scale = scale
         self.update_instance()
+
+    def set_offset(self, offset):
+        self.offset = offset
+        self.update_instance()
+
+    def create(self):
+        raise NotImplementedError()
+
+    def update_instance(self):
+        raise NotImplementedError()

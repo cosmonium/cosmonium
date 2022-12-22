@@ -28,8 +28,7 @@ from .hud_object import HUDObject
 
 class TextBlock(HUDObject):
     def __init__(self, anchor, scale, offset, align, down, count, font, size, color=None):
-        HUDObject.__init__(self, anchor, scale)
-        self.offset = offset
+        HUDObject.__init__(self, anchor, scale, offset)
         self.align = align
         self.down = down
         self.count = count
@@ -67,10 +66,6 @@ class TextBlock(HUDObject):
             pos = LVector3(x_offset, 0, pos_y * height_scale + y_offset)
             #self.instance.setScale(*self.scale)
             self.instances[i].set_pos(pos)
-
-    def set_offset(self, offset):
-        self.offset = offset
-        self.update_instance()
 
     def create_line(self, i):
         return OnscreenText(text="",

@@ -26,11 +26,9 @@ from .hud_object import HUDObject
 
 class TextLine(HUDObject):
     def __init__(self, anchor, scale, offset, align, pos, font, size, color=None):
-        HUDObject.__init__(self, anchor, scale)
-        self.offset = offset
+        HUDObject.__init__(self, anchor, scale, offset)
         self.align = align
         self.text = ""
-        self.instance = None
         self.font = font
         self.size = size
         self.pos = LVector2(pos[0], -pos[1])
@@ -56,10 +54,6 @@ class TextLine(HUDObject):
         pos = LVector3(self.pos[0] * self.get_em_width() + x_offset, 0, self.pos[1] * self.get_height() + y_offset)
         #self.instance.setScale(*self.scale)
         self.instance.set_pos(pos)
-
-    def set_offset(self, offset):
-        self.offset = offset
-        self.update_instance()
 
     def set_pos(self, pos):
         self.pos = (pos[0], -pos[1])
