@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2022 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ class FontsManager(object):
         basename = os.path.basename(filename)
         base, extension = os.path.splitext(basename)
         if '-' in base:
-            (family, stylename) = base.split('-')
+            (family, stylename, *extra) = base.split('-')
             style = 0
             if stylename.find("Regular") >= 0:
                 stylename = stylename.replace("Regular", "")
@@ -75,7 +75,7 @@ class FontsManager(object):
 
     def register_fonts(self, path):
         for entry in os.listdir(path):
-            if entry.endswith('.ttf'):
+            if entry.endswith('.ttf') or entry.endswith('.otf'):
                 self.register_font(os.path.join(path, entry))
 
     def get_font(self, family, style):
