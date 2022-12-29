@@ -1,32 +1,34 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2022 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from __future__ import annotations
 
-from panda3d.core import Filename
+from panda3d.core import Filename, DynamicTextFont
 
 import os
 
-class Font(object):
+
+class Font:
     STYLE_UNKNOWN = 0x01
-    STYLE_NORMAL =  0x02
-    STYLE_BOLD =    0x04
-    STYLE_ITALIC =  0x08
+    STYLE_NORMAL = 0x02
+    STYLE_BOLD = 0x04
+    STYLE_ITALIC = 0x08
 
     def __init__(self, family, style, filename):
         self.family = family
@@ -34,16 +36,18 @@ class Font(object):
         self.filename = filename
         self.font = None
 
-    def load(self):
+    def load(self) -> DynamicTextFont | None:
         if self.font is None:
             self.font = loader.loadFont(Filename.from_os_specific(self.filename).get_fullpath())
         return self.font
 
-class FontsManager(object):
+
+class FontsManager:
+
     def __init__(self):
         self.families = {}
 
-    def register_font(self, filename):
+    def register_font(self, filename: str) -> None:
         basename = os.path.basename(filename)
         base, extension = os.path.splitext(basename)
         if '-' in base:
@@ -70,15 +74,15 @@ class FontsManager(object):
             family = base
             style = Font.STYLE_NORMAL
         entry = self.families.setdefault(family, [])
-        #print("Adding font '%s' style %x" % (family, style))
+        # print("Adding font '%s' style %x" % (family, style))
         entry.append(Font(family, style, filename))
 
-    def register_fonts(self, path):
+    def register_fonts(self, path: str) -> None:
         for entry in os.listdir(path):
             if entry.endswith('.ttf') or entry.endswith('.otf'):
                 self.register_font(os.path.join(path, entry))
 
-    def get_font(self, family, style):
+    def get_font(self, family: str, style: str) -> Font | None:
         entry = self.families.get(family, None)
         if entry:
             for font in entry:
@@ -92,5 +96,6 @@ class FontsManager(object):
         else:
             print(f"Font family '{family}' unknown")
         return None
+
 
 fontsManager = FontsManager()
