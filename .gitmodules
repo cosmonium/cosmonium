@@ -20,7 +20,7 @@
 	branch = cosmonium
 [submodule "third-party/directguilayout"]
 	path = third-party/directguilayout
-	url = https://github.com/cosmonium/DirectGui-layout-system
+	url = ../DirectGui-layout-system
 	branch = cosmonium
 [submodule "third-party/directfolderbrowser"]
 	path = third-party/directfolderbrowser
