@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ class Font:
     STYLE_NORMAL = 0x02
     STYLE_BOLD = 0x04
     STYLE_ITALIC = 0x08
+    STYLE_SOLID = 0x10
 
     def __init__(self, family, style, filename):
         self.family = family
@@ -68,6 +69,9 @@ class FontsManager:
             if stylename.find("Oblique") >= 0:
                 stylename = stylename.replace("Oblique", "")
                 style |= Font.STYLE_ITALIC
+            if stylename.find("Solid") >= 0:
+                stylename = stylename.replace("Solid", "")
+                style |= Font.STYLE_SOLID
             if stylename != "":
                 style |= Font.STYLE_UNKNOWN
         else:
