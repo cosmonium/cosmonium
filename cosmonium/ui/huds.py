@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -168,3 +168,5 @@ class Huds():
             self.bottomRight.set(0, _("%s (Paused)") % (date))
         self.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(camera.lens.get_vfov()) + (camera.zoom_factor, )))
 
+    def update_size(self):
+        pass

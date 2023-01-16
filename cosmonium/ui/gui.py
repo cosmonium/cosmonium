@@ -75,6 +75,7 @@ class Gui(object):
         self.autopilot = autopilot
         self.messenger = self.cosmonium.messenger
         self.over = None
+        self.hud = None
         if base.pipe is not None:
             self.screen_width = base.pipe.getDisplayWidth()
             self.screen_height = base.pipe.getDisplayHeight()
@@ -86,6 +87,9 @@ class Gui(object):
         else:
             settings.ui_scale = settings.custom_ui_scale
         self.calc_scale()
+        self.width = 0
+        self.height = 0
+        self.update_size(self.screen_width, self.screen_height)
         font = fontsManager.get_font(settings.hud_font, Font.STYLE_NORMAL)
         if font is not None:
             self.font = font.load()
@@ -108,9 +112,6 @@ class Gui(object):
 
         self.hud = Huds(self.scale, self.font)
         self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
-        self.width = 0
-        self.height = 0
-        self.update_size(self.screen_width, self.screen_height)
         self.opened_windows = []
         self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
@@ -235,6 +236,8 @@ class Gui(object):
         self.cosmonium.a2dBottomLeft.setPos(self.cosmonium.a2dLeft, 0, self.cosmonium.a2dBottom)
         self.cosmonium.a2dBottomRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dBottom)
         self.cosmonium.pixel2d.setScale(2.0 / width, 1.0, 2.0 / height)
+        if self.hud is not None:
+            self.hud.update_size()
 
     def hide(self):
         self.hud.hide()
