@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -21,8 +21,14 @@
 import os
 from typing import NamedTuple
 
+from .. import settings
 from ..parsers.yamlparser import YamlParser
+from .skin import UISkinEntry, UISkin
 from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
+from .dock.button import ButtonDockWidget
+from .dock.layouts import LayoutDockWidget, SpaceDockWidget
+from .dock.text import TextDockWidget
+from panda3d.core import LColor, TextNode, LVector4
 
 
 class UIConfig(NamedTuple):
@@ -31,6 +37,8 @@ class UIConfig(NamedTuple):
     named_menus: dict
     menubar: list
     popup: list
+    dock: list
+    skin: UISkin
 
 
 class UIConfigLoader:
@@ -64,11 +72,27 @@ class UIConfigLoader:
             popup = self.load_popup(popup_file)
         else:
             popup = None
+        dock_file = data.get('dock')
+        if dock_file is not None:
+            if not os.path.isabs(dock_file):
+                dock_file = os.path.join(basedir, dock_file)
+            dock = self.load_dock_file(dock_file)
+        else:
+            dock = None
+        skin_file = data.get('skin')
+        if skin_file is not None:
+            if not os.path.isabs(skin_file):
+                skin_file = os.path.join(basedir, skin_file)
+            skin = self.load_skin_file(skin_file)
+        else:
+            skin = None
         return UIConfig(locale=localedir,
                         shortcuts=shortcuts,
                         named_menus=self.named_menus,
                         menubar=menubar,
-                        popup=popup)
+                        popup=popup,
+                        dock=dock,
+                        skin=skin)
 
     def load_shortcuts(self, shortcuts_file):
         shortcuts_items = []
@@ -131,3 +155,167 @@ class UIConfigLoader:
         entries = self.load_submenu(data.get('popup'))
         menuconfig = MenuConfig(entries)
         return menuconfig
+
+    def parse_alignments(self, value, default=('min', 'min')):
+        if isinstance(value, list) and len(value) == 2:
+            if value[0] == "left":
+                value[0] = "min"
+            elif value[0] == "right":
+                value[0] = "max"
+            if value[1] == "top":
+                value[1] = "min"
+            elif value[1] == "bottom":
+                value[1] = "max"
+            return value
+        elif value is None:
+            return default
+        else:
+            print(f"Invalid alignments {value}")
+            return default
+
+    def parse_borders(self, value):
+        if isinstance(value, list) and len(value) == 4:
+            return LVector4(*value)
+        elif isinstance(value, int):
+            return LVector4(value)
+        elif value is None:
+            return None
+        else:
+            print(f"Invalid borders {value}")
+            return None
+
+    def parse_gaps(self, value, default=(0, 0)):
+        if isinstance(value, list) and len(value) == 2:
+            return value
+        elif isinstance(value, int):
+            return (value, value)
+        elif value is None:
+            return default
+        else:
+            print(f"Invalid gaps {value}")
+            return default
+
+    def parse_text_align(self, value, default=TextNode.A_boxed_left):
+        if value == "left":
+            return TextNode.A_boxed_left
+        elif value == "center":
+            return TextNode.A_boxed_center
+        elif value == "right":
+            return TextNode.A_boxed_right
+        elif value is None:
+            return default
+        else:
+            print(f"Invalid text align {value}")
+            return default
+
+    def load_widget_button(self, data):
+        alignments = self.parse_alignments(data.get('align'))
+        borders = self.parse_borders(data.get('borders'))
+        if 'text' in data:
+            text = data.get('text')
+            rescale = False
+        elif 'code' in data:
+            code = int(data['code'], 16)
+            text = chr(code)
+            rescale = data.get('rescale', True)
+        else:
+            text = None
+        event = data.get('event')
+        size = data.get('size', None)
+        button = ButtonDockWidget(text, event, size, rescale=rescale, alignments=alignments, borders=borders)
+        return button
+
+    def load_widget_text(self, data):
+        alignments = self.parse_alignments(data.get('align'))
+        borders = self.parse_borders(data.get('borders'))
+        text = data.get('text')
+        data_id = data.get('data')
+        size = data.get('size', None)
+        align = self.parse_text_align(data.get('align'))
+        text = TextDockWidget(text, data_id, size=size, align=align, alignments=alignments, borders=borders)
+        return text
+
+    def load_widget_spacer(self, data):
+        alignments = self.parse_alignments(data.get('align'), ("min", "min"))
+        size = tuple(data.get('size', (0, 0)))
+        spacer = SpaceDockWidget(size=size, alignments=alignments, borders=None)
+        return spacer
+
+    def load_widget_layout(self, data):
+        alignments = self.parse_alignments(data.get('align'))
+        borders = self.parse_borders(data.get('borders'))
+        gaps = self.parse_gaps(data.get('gaps'))
+        size = data.get('size', 32)
+        decoration_size = data.get('decoration-size', (1, 1))
+        orientation = data.get('orientation', 'horizontal')
+        background_color = data.get('background-color', settings.panel_background)
+        border_color = data.get('border-color', [1, 0, 0, 1])
+        widgets = []
+        for widget_data in data.get('widgets', []):
+            widget = self.load_widget(widget_data)
+            if widget is not None:
+                widgets.append(widget)
+        return LayoutDockWidget(
+            size, orientation, widgets,
+            decoration_size=decoration_size,
+            background_color=background_color,
+            border_color=border_color,
+            alignments=alignments, borders=borders,
+            gaps=gaps)
+
+    def load_widget(self, data):
+        type = data.get('type')
+        if type == 'button':
+            return self.load_widget_button(data)
+        elif type == "layout":
+            return self.load_widget_layout(data)
+        elif type == 'spacer':
+            return self.load_widget_spacer(data)
+        elif type == 'text':
+            return self.load_widget_text(data)
+        else:
+            print(f"Unsupported type {type}")
+            return None
+
+    def load_dock(self, data):
+        orientation = data.get('orientation', 'horizontal')
+        location = data.get('location', 'bottom')
+        layout = self.load_widget_layout(data)
+        return layout, orientation, location
+
+    def load_dock_file(self, dock_file):
+        parser = YamlParser()
+        data = parser.load_and_parse(dock_file)
+        dock = self.load_dock(data.get('dock'))
+        return dock
+
+    @staticmethod
+    def parse_color(data):
+        if data is not None:
+            if len(data) == 7 and data.startswith('#'):
+                color = LColor(*tuple(int(data[i:i + 2], 16) / 255 for i in (1, 3, 5)), 1.0)
+            else:
+                print(f"Invalid color {data}")
+        else:
+            color = None
+        return color
+
+    def load_skin_entry(self, data):
+        background_color = self.parse_color(data.get('background-color'))
+        text_color = self.parse_color(data.get('text-color'))
+        entry = UISkinEntry(extends=None)
+        entry.background_color = background_color
+        entry.text_color = text_color
+        return entry
+
+    def load_skin(self, data):
+        skin = UISkin()
+        default = self.load_skin_entry(data.get('default', {}))
+        skin.add_entry('default', default)
+        return skin
+
+    def load_skin_file(self, skin_file):
+        parser = YamlParser()
+        data = parser.load_and_parse(skin_file)
+        skin = self.load_skin(data)
+        return skin

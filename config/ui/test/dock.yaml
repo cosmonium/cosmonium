@@ -1,0 +1,57 @@
+dock:
+   orientation: horizontal
+   location: bottom
+   gaps: [2, 2]
+   widgets:
+      - type: text
+        text: "A"
+      - type: layout
+        orientation: horizontal
+        widgets:
+          - type: button
+            code: F0F65
+            event: toggle-label-moon
+          - type: button
+            code: F09BA
+      - type: layout
+        orientation: vertical
+        size: 16
+        gaps: [2, 2]
+        widgets:
+          - type: text
+            data: current-time
+            borders: 2
+          - type: layout
+            orientation: horizontal
+            align: [min, min]
+            size: 16
+            widgets:
+               - type: button
+                 code: F040E
+                 tooltip: Toggle freeze time
+                 event: toggle-freeze-time
+               - type: button
+                 code: F0F86
+                 tooltip: Deccelerate time
+                 event: slow-time-2
+               - type: button
+                 code: F0F85
+                 tooltip: Real time
+                 event: set-real-time
+               - type: button
+                 code: F04C5
+                 tooltip: Accelerate time
+                 event: accelerate-time-2
+               - type: button
+                 code: F0150
+                 tooltip: Current time
+                 event: set-current-date
+      - type: button
+        text: "M"
+      - type: layout
+        orientation: vertical
+        widgets:
+           - type: button
+             text: "A"
+           - type: button
+             text: "B"

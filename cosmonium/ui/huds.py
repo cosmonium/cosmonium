@@ -27,13 +27,14 @@ from ..astro.units import toUnit
 from .. import utils
 from .. import settings
 
+from .dock.dock import Dock
 from .hud.fadetextline import FadeTextLine
 from .hud.textblock import TextBlock
 from .hud.textline import TextLine
 
 
 class Huds():
-    def __init__(self, scale, font):
+    def __init__(self, gui, scale, font, dock, skin):
         self.scale = scale
         self.font = font
         offset = LVector2()
@@ -45,6 +46,12 @@ class Huds():
         self.bottomRight = TextBlock(base.a2dBottomRight, self.scale, offset, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
         #TODO: Info should be moved out of HUD
         self.info = FadeTextLine(base.a2dBottomLeft, self.scale, offset, TextNode.ALeft, LVector2(0, -3), self.font, settings.hud_info_text_size)
+        # TODO: Temporary broken way to instanciate a dock
+        if dock is not None:
+            layout, orientation, location = dock
+            self.bottom_dock = Dock(gui, base.pixel2d, orientation, location, layout, LVector2(1, 1), offset, skin)
+        else:
+            self.bottom_dock = None
         self.shown = True
         self.last_fps = globalClock.getRealTime()
 
@@ -167,6 +174,9 @@ class Huds():
         else:
             self.bottomRight.set(0, _("%s (Paused)") % (date))
         self.bottomRight.set(1, "FoV: %d° %d' %g\" (%gx)" % (units.toDegMinSec(camera.lens.get_vfov()) + (camera.zoom_factor, )))
+        if self.bottom_dock is not None:
+            self.bottom_dock.update()
 
     def update_size(self):
-        pass
+        if self.bottom_dock is not None:
+            self.bottom_dock.update_size()

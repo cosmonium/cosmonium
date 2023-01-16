@@ -1,0 +1,5 @@
+skin: skin.yaml
+shortcuts: ../default/shortcuts.yaml
+menubar: ../default/menubar.yaml
+popup: ../default/popup.yaml
+dock: dock.yaml
