@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ from .controllers import ShipMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
-from .states import StatesProvider
+from .states import StatesProvider, DataProvider
 from .debug import Debug
 from .appstate import AppState
 from .ui.gui import Gui
@@ -500,6 +500,7 @@ class Cosmonium(CosmoniumBase):
 
         #TODO: Temporarily until state registration is split up between each class
         self.states_provider = StatesProvider(self, self.time, self.observer, self.autopilot, self.debug)
+        self.data_provider = DataProvider(self, self.time, self.observer, self.autopilot, self.debug)
 
         if self.gui is None:
             self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)

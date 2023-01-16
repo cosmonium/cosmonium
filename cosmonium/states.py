@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,6 +20,22 @@
 from functools import partial
 from . import settings
 from .bodyclass import bodyClasses
+
+
+class DataProvider():
+    def __init__(self, engine, time, camera, autopilot, debug):
+        self.data = {
+            'current-time': lambda: "%02d:%02d:%02d %2d:%02d:%02d UTC" % time.time_to_values(),
+            }
+
+    def get_data(self, data_name):
+        data_evaluator = self.data.get(data_name)
+        if data_evaluator:
+            data = data_evaluator()
+        else:
+            print(f"ERROR: Unknown state {data_name}")
+            data = None
+        return data
 
 
 class StatesProvider():
