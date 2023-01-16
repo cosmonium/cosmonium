@@ -390,6 +390,7 @@ class Cosmonium(CosmoniumBase):
         mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
         fontsManager.register_fonts(defaultDirContext.find_font('fontawesome'))
+        fontsManager.register_fonts(defaultDirContext.find_font('materialdesign'))
 
         self.update_id = 0
         self.patch = None
