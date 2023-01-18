@@ -28,9 +28,10 @@ from ...astro.orbits import FixedPosition
 from ...bodyclass import bodyClasses
 from ...shaders.rendering import RenderingShader
 from ...shaders.lighting.flat import FlatLightingModel
+from ...shaders.lighting.smoothline import SmoothLineLightingModel
 from ...shaders.vertex_control.spread_object import LargeObjectVertexControl
 from ...appearances import ModelAppearance
-from ...utils import srgb_to_linear
+from ...utils import TransparencyBlend, srgb_to_linear
 from ... import settings
 
 
@@ -62,11 +63,18 @@ class Orbit(VisibleObject):
     @classmethod
     def create_shader(cls):
         cls.appearance = ModelAppearance(attribute_color=True)
+        cls.appearance.transparency = True
+        cls.appearance.transparency_blend = TransparencyBlend.TB_Additive
+        cls.appearance.transparency_level = 0
         if settings.use_depth_scaling:
             vertex_control = LargeObjectVertexControl()
         else:
             vertex_control = None
-        cls.shader = RenderingShader(lighting_model=FlatLightingModel(), vertex_control=vertex_control)
+        if settings.use_smooth_lines:
+            lighting_model=SmoothLineLightingModel()
+        else:
+            lighting_model = FlatLightingModel()
+        cls.shader = RenderingShader(lighting_model=lighting_model, vertex_control=vertex_control)
         cls.shader.create(None, cls.appearance)
 
     def check_settings(self):
@@ -119,8 +127,14 @@ class Orbit(VisibleObject):
         self.node = GeomNode(self.body.get_ascii_name() + '-orbit')
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
-        self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
+        if settings.use_smooth_lines:
+            self.instance.setRenderModeThickness(settings.orbit_smooth_thickness)
+            self.instance.set_shader_input("line_parameters", (settings.orbit_smooth_width, settings.orbit_smooth_blend))
+            self.instance.set_depth_write(False)
+            self.instance.set_transparency(True)
+        else:
+            self.instance.setRenderModeThickness(settings.orbit_thickness)
         self.instance.node().setPythonTag('owner', self.body)
         if settings.color_picking and self.body.oid_color is not None:
             self.instance.set_shader_input("color_picking", self.body.oid_color)
@@ -132,6 +146,8 @@ class Orbit(VisibleObject):
         if self.shader is None:
             self.create_shader()
         self.shader.apply(self.instance)
+        self.appearance.apply(self, self.instance)
+        TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.instance.hide(self.AllCamerasMask)

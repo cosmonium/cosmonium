@@ -61,6 +61,7 @@ stereo_swap_eyes = False
 use_pbr = False
 use_srgb = True
 use_assimp = True
+use_smooth_lines = True
 
 deferred=False
 deferred_split=False
@@ -200,6 +201,9 @@ show_orbits = False
 orbit_fade = 20
 label_fade = 20
 orbit_thickness = 0.6
+orbit_smooth_thickness = 3
+orbit_smooth_width = 1.5
+orbit_smooth_blend = 1.5
 
 grid_thickness = 0.5
 
