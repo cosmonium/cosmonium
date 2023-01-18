@@ -55,17 +55,8 @@ class TextureTarget:
 class RenderTarget:
     def __init__(self, name):
         self.name = name
-        self.target = None
         self.sort = 0
-        self.win = None
-        self.graphics_engine = None
         self.dr: DisplayRegion = None
-
-    def set_win(self, win):
-        self.win = win
-
-    def set_engine(self, engine):
-        self.graphics_engine = engine
 
     def create_display_region(self):
         #Create the display region and attach the camera
@@ -74,8 +65,22 @@ class RenderTarget:
         self.dr.set_scissor_enabled(False)
 
 
-class BufferMixin:
+class TargetMixinBase:
     def __init__(self):
+        self.target: GraphicsOutput = None
+        self.win = None
+        self.graphics_engine = None
+
+    def set_engine(self, engine):
+        self.graphics_engine = engine
+
+    def set_win(self, win):
+        self.win = win
+
+
+class BufferMixin(TargetMixinBase):
+    def __init__(self):
+        TargetMixinBase.__init__(self)
         self.requested_size = (1, 1)
         self.size = (0, 0)
         self.fixed_size = False
@@ -90,7 +95,6 @@ class BufferMixin:
         self.sort = 0
         self.active = True
         self.one_shot = False
-        self.target: GraphicsOutput = None
 
     def set_one_shot(self, one_shot):
         self.one_shot = one_shot
@@ -255,6 +259,12 @@ class BufferMixin:
             self.target = None
 
 
+class ScreenMixin(TargetMixinBase):
+    def set_win(self, win):
+        TargetMixinBase.set_win(self, win)
+        self.target = win
+
+
 class TargetShaderMixin():
     def __init__(self):
         self.root: NodePath = None
@@ -324,14 +334,11 @@ class SceneTarget(RenderTarget, BufferMixin):
         scene_manager.set_target(self.target)
 
 
-class ScreenTarget(RenderTarget, TargetShaderMixin):
+class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         TargetShaderMixin.__init__(self)
-
-    def set_win(self, win):
-        RenderTarget.set_win(self, win)
-        self.target = win
+        ScreenMixin.__init__(self)
 
     def update_win_size(self, size):
         self.root.set_shader_input("screen_size", size)
@@ -341,13 +348,13 @@ class ScreenTarget(RenderTarget, TargetShaderMixin):
         self.create_infra()
 
 
-class PasstroughTarget(RenderTarget):
+class PasstroughTarget(RenderTarget, ScreenMixin):
     def __init__(self, name):
         RenderTarget.__init__(self, name)
+        ScreenMixin.__init__(self)
 
     def update_win_size(self, size):
         pass
 
     def create(self, pipeline):
-        self.target = self.win
         self.create_display_region()
