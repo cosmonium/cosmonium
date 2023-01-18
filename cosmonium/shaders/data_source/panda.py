@@ -60,6 +60,8 @@ class PandaShaderDataSource(ShaderDataSource):
             config += "l"
         if self.has_emission_texture:
             config += "e"
+        if self.has_transparency:
+            config += "t"
         if self.tex_transform:
             config += "r"
         if self.has_metalroughness_map_texture:
