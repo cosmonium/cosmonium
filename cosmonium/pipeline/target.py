@@ -70,12 +70,21 @@ class TargetMixinBase:
         self.target: GraphicsOutput = None
         self.win = None
         self.graphics_engine = None
+        self.win_size = None
+        self.size = (0, 0)
 
     def set_engine(self, engine):
         self.graphics_engine = engine
 
     def set_win(self, win):
         self.win = win
+        self.win_size = (self.win.get_x_size(), self.win.get_y_size())
+
+    def update_win_size(self, size):
+        raise NotImplementedError()
+
+    def size_updated(self):
+        raise NotImplementedError()
 
 
 class BufferMixin(TargetMixinBase):
@@ -105,29 +114,31 @@ class BufferMixin(TargetMixinBase):
         self.fixed_size = True
         if self.target is not None:
             self.target.set_size(*self.size)
+        self.size_updated()
 
     def set_relative_size(self, size):
         self.requested_size = size
         self.fixed_size = False
-        if self.win is not None:
-            self.update_win_size((self.win.get_x_size(), self.win.get_y_size()))
+        if self.win_size is not None:
+            self.update_win_size(self.win_size)
+        self.size_updated()
 
     def calculate_size(self):
         if self.fixed_size:
             size = self.requested_size
         else:
-            size = (max(1, int(self.win.get_x_size() * self.requested_size[0])),
-                    max(1, int(self.win.get_y_size() * self.requested_size[1])))
+            size = (max(1, int(self.win_size[0] * self.requested_size[0])),
+                    max(1, int(self.win_size[1] * self.requested_size[1])))
         return size
 
     def update_win_size(self, size):
-        if self.fixed_size: return
-        new_size = (max(1, int(size[0] * self.requested_size[0])),
-                    max(1, int(size[1] * self.requested_size[1])))
+        self.win_size = size
+        new_size = self.calculate_size()
         if new_size != self.size:
             self.size = new_size
             if self.target is not None:
                 self.target.set_size(*self.size)
+        self.size_updated()
 
     def get_attachment(self, name: str) -> Texture:
         return self.texture_targets[name].texture
@@ -264,6 +275,11 @@ class ScreenMixin(TargetMixinBase):
         TargetMixinBase.set_win(self, win)
         self.target = win
 
+    def update_win_size(self, size):
+        self.win_size = size
+        self.size = size
+        self.size_updated()
+
 
 class TargetShaderMixin():
     def __init__(self):
@@ -305,6 +321,11 @@ class TargetShaderMixin():
     def update_shader_data(self, shader_data):
         self.shader.update(self.root, **shader_data)
 
+    def update_shader_size(self, win_size, target_size):
+        if self.root is not None:
+            self.root.set_shader_input("win_size", win_size)
+            self.root.set_shader_input("target_size", target_size)
+
 
 class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
     def __init__(self, name):
@@ -318,6 +339,10 @@ class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
             self.create_textures()
         self.create_display_region()
         self.create_infra()
+        self.update_shader_size(self.win_size, self.size)
+
+    def size_updated(self):
+        self.update_shader_size(self.win_size, self.size)
 
 
 class SceneTarget(RenderTarget, BufferMixin):
@@ -333,6 +358,9 @@ class SceneTarget(RenderTarget, BufferMixin):
     def attach_scene_manager(self, scene_manager):
         scene_manager.set_target(self.target)
 
+    def size_updated(self):
+        pass
+
 
 class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
     def __init__(self, name):
@@ -340,12 +368,13 @@ class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
         TargetShaderMixin.__init__(self)
         ScreenMixin.__init__(self)
 
-    def update_win_size(self, size):
-        self.root.set_shader_input("screen_size", size)
-
     def create(self, pipeline):
         self.create_display_region()
         self.create_infra()
+        self.update_shader_size(self.win_size, self.size)
+
+    def size_updated(self):
+        self.update_shader_size(self.win_size, self.size)
 
 
 class PasstroughTarget(RenderTarget, ScreenMixin):
@@ -353,8 +382,8 @@ class PasstroughTarget(RenderTarget, ScreenMixin):
         RenderTarget.__init__(self, name)
         ScreenMixin.__init__(self)
 
-    def update_win_size(self, size):
-        pass
-
     def create(self, pipeline):
         self.create_display_region()
+
+    def size_updated(self):
+        pass
