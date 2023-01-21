@@ -2,7 +2,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -306,6 +306,8 @@ class TextureFileSource(TextureSource):
 
     async def load(self, tasks_tree, patch, texture_config=None):
         if not self.loaded:
+            if settings.debug_tex_loading:
+                print("LOAD", self.filename)
             filename=self.context.find_texture(self.filename)
             if filename is not None:
                 if settings.sync_texture_load:
@@ -660,6 +662,8 @@ class VirtualTextureSource(TextureSource):
         texture_info = None
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)
+            if settings.debug_tex_loading:
+                print("LOAD", tex_name)
             filename = self.context.find_texture(tex_name)
             alpha_tex_name = self.alpha_texture_name(patch)
             alpha_filename = self.context.find_texture(alpha_tex_name)

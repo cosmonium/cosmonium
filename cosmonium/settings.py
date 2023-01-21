@@ -163,6 +163,7 @@ dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False
 debug_shape_task = False
+debug_tex_loading = False
 
 sync_data_load = False
 sync_texture_load = False
