@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -856,6 +856,7 @@ class PatchedShapeBase(Shape):
             self.merge_patch(patch)
             patch.merge_neighbours(update)
             if patch.quadtree_node.visible:
+                if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
                 to_show.append(patch)
                 self.create_patch_instance(patch)
                 for linked_object in self.linked_objects:
