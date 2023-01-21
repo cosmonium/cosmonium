@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ from direct.task.Task import Task, AsyncFuture
 
 from queue import Queue, Empty
 
+from . import settings
 
 # These will be initialized in cosmonium base class
 asyncTextureLoader = None
@@ -38,7 +39,8 @@ class AsyncMethod():
         self.done = False
         self.error = None
         self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead')
-        self.callback_task = self.base.taskMgr.add(self.callbackTask, name + 'CallbackTask')
+        self.callback_task = self.base.taskMgr.add(
+            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort)
         self.process_thread.start()
 
     def processTask(self):
@@ -64,7 +66,8 @@ class AsyncLoader():
         self.in_queue = Queue()
         self.cb_queue = Queue()
         self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead', daemon=True)
-        self.callback_task = self.base.taskMgr.add(self.callbackTask, name + 'CallbackTask')
+        self.callback_task = self.base.taskMgr.add(
+            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort)
         self.process_thread.start()
 
     def add_job(self, func, fargs):

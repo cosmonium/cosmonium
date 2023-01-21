@@ -794,9 +794,10 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.terrain.update_instance(self.scene_manager, self.observer.get_local_position(), None)
 
-        taskMgr.add(self.move, "moveTask")
+        taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
+        taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
 
-    def move(self, task):
+    def main_update_task(self, task):
         dt = globalClock.getDt()
         self.update_id += 1
 
@@ -842,13 +843,14 @@ class RoamingRalphDemo(CosmoniumBase):
         for world  in self.worlds.worlds:
             world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
             world.scene_anchor.update(self.scene_manager)
-
         self.scene_manager.update_scene_and_camera(0, self.c_camera_holder)
 
+        self.worlds.update_lod(self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
+        return task.cont
+
+    def update_instances_task(self, task):
         self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
-
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, SceneAnchorCollection(), SceneAnchorCollection())
-
         return task.cont
 
     def print_debug(self):

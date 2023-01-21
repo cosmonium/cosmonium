@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ class AppState(object):
             cosmonium.track_body(self.track)
 
         #Update the universe with the new time reference and selection
-        cosmonium.time_task(None)
+        cosmonium.main_update_task(None)
 
         if self.global_position is not None:
             cosmonium.ship.anchor.set_absolute_reference_point(self.global_position)
@@ -139,7 +139,7 @@ class AppState(object):
 
         # Update again to detect the new nearest system
         cosmonium.nearest_system = None
-        cosmonium.time_task(None)
+        cosmonium.main_update_task(None)
         #We have to do it twice as the current code does not add the extra object to the
         #list of octree leaves to check
-        cosmonium.time_task(None)
+        cosmonium.main_update_task(None)

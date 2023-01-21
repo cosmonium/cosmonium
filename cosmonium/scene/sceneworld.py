@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -62,6 +62,10 @@ class Worlds:
     def check_visibility(self, frustum, pixel_size):
         for world in self.worlds:
             world.check_visibility(frustum, pixel_size)
+
+    def update_lod(self, camera_pos, camera_rot):
+        for world in self.worlds:
+            world.update_lod(camera_pos, camera_rot)
 
     def check_settings(self):
         for world in self.worlds:
@@ -172,6 +176,9 @@ class SimpleWorld(SceneWorld):
     def end_shadows_update(self):
         for component in self.components.components:
             component.end_shadows_update()
+
+    def update_lod(self, camera_pos, camera_rot):
+        self.components.update_lod(camera_pos, camera_rot)
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.lights is not None:

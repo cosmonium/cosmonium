@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -363,6 +363,9 @@ class StellarObject(NamedObject):
 
     def check_visibility(self, frustum, pixel_size):
         self.components.check_visibility(frustum, pixel_size)
+
+    def update_lod(self, frustum, pixel_size):
+        self.components.update_lod(frustum, pixel_size)
 
     def on_resolved(self, scene_manager):
         if not self.init_components:

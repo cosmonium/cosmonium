@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -112,6 +112,9 @@ class BaseObject(object):
         pass
 
     def check_visibility(self, frustum, pixel_size):
+        pass
+
+    def update_lod(self, camera_pos, camera_rot):
         pass
 
     def check_settings(self):
@@ -261,6 +264,10 @@ class CompositeObject(BaseObject):
             self.visible = self.parent.shown and self.parent.visible
         for component in self.components:
             component.check_visibility(frustum, pixel_size)
+
+    def update_lod(self, camera_pos, camera_rot):
+        for component in self.components:
+            component.update_lod(camera_pos, camera_rot)
 
     def check_settings(self):
         for component in self.components:

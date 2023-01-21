@@ -727,7 +727,7 @@ class PatchedShapeBase(Shape):
                     self.instance.node().setFinal(1)
         return self.instance
 
-    def update_instance(self, scene_manager, camera_pos, camera_rot):
+    def update_model_body_center_offset(self):
         if self.parent.body.support_offset_body_center and settings.offset_body_center:
             self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
             scale = self.parent.body.surface.get_scale()
@@ -790,6 +790,7 @@ class PatchedShapeBase(Shape):
         if distance_to_obs < min_radius:
             print("Too low !")
             return  [], []
+        self.update_model_body_center_offset()
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
         self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)

@@ -253,6 +253,11 @@ boundaries_depth = 20
 deep_space_depth = 50
 halo_depth = 100
 
+# Tasks order
+worker_callback_task_sort = -10
+main_update_task_sort = 0
+instances_update_task_sort = 10
+
 shader_version = None
 color_picking = False
 

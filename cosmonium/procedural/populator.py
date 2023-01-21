@@ -97,6 +97,9 @@ class TerrainPopulatorBase(object):
     async def create_instance(self, scene_anchor):
         await self.create_object_template(scene_anchor)
 
+    def update_lod(self, camera_pos, camera_rot):
+        pass
+
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
 

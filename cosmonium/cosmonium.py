@@ -145,6 +145,7 @@ class CosmoniumBase(ShowBase):
 
         workers.asyncTextureLoader = workers.AsyncTextureLoader(self)
         workers.syncTextureLoader = workers.SyncTextureLoader()
+        taskMgr.setupTaskChain("background", frameSync=False, timeslicePriority=True)
 
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
@@ -595,9 +596,10 @@ class Cosmonium(CosmoniumBase):
         #self.universe.first_update_obs(self.observer)
         self.window_event(None)
 
-        taskMgr.add(self.time_task, "time-task", sort=10)
+        self.taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
+        self.taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
 
-        self.time_task(None)
+        self.main_update_task(None)
         self.start_universe()
         if self.app_config.test_start:
             #TODO: this is where the tests should be inserted
@@ -1308,13 +1310,8 @@ class Cosmonium(CosmoniumBase):
             old_visible.body.scene_anchor.remove_instance()
 
     @pstat
-    def update_instances(self):
+    def update_instances_state(self):
         scene_manager = self.scene_manager
-
-        camera_pos = self.observer.get_local_position()
-        camera_rot = self.observer.get_absolute_orientation()
-        frustum = self.observer.anchor.rel_frustum
-        pixel_size = self.observer.anchor.pixel_size
         for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
             occluder.body.scene_anchor.update(scene_manager)
@@ -1334,11 +1331,28 @@ class Cosmonium(CosmoniumBase):
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(self.scene_manager)
+
+    @pstat
+    def update_lod(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
         for resolved in self.resolved:
             body = resolved.body
             #TODO: this will update the body's components
             body.update_obs(self.observer)
             body.check_visibility(frustum, pixel_size)
+            body.update_lod(camera_pos, camera_rot)
+
+    @pstat
+    def update_instances(self):
+        scene_manager = self.scene_manager
+
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        for resolved in self.resolved:
+            body = resolved.body
             body.check_and_update_instance(scene_manager, camera_pos, camera_rot)
         self.worlds.update_scene_anchor(scene_manager)
         for controller in self.controllers_to_update:
@@ -1413,7 +1427,7 @@ class Cosmonium(CosmoniumBase):
             distance = float('inf')
         return distance
 
-    def time_task(self, task):
+    def main_update_task(self, task):
         # Reset all states
         self.update_id += 1
         self.to_update_extra = []
@@ -1477,21 +1491,23 @@ class Cosmonium(CosmoniumBase):
             self.trigger_check_settings = False
 
         self.find_shadows()
+        self.update_instances_state()
+        self.update_lod()
+        update.set_level(StellarObject.nb_update)
+        obs.set_level(StellarObject.nb_obs)
+        visibility.set_level(StellarObject.nb_visibility)
+        instance.set_level(StellarObject.nb_instance)
+        if settings.color_picking:
+            self.oid_texture.clear_image()
+        return Task.cont
+
+    def update_instances_task(self, task):
         self.update_instances()
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.visible_scene_anchors, self.resolved_scene_anchors)
         if task is not None:
             self.update_points()
             self.update_labels()
             self.update_gui()
-
-        update.set_level(StellarObject.nb_update)
-        obs.set_level(StellarObject.nb_obs)
-        visibility.set_level(StellarObject.nb_visibility)
-        instance.set_level(StellarObject.nb_instance)
-
-        if settings.color_picking:
-            self.oid_texture.clear_image()
-
         return Task.cont
 
     def init_universe(self):
