@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -162,6 +162,7 @@ debug_lod_frustum = False
 dump_shaders = True
 dump_panda_shaders = False
 debug_shadow_frustum = False
+debug_shape_task = False
 
 sync_data_load = False
 sync_texture_load = False

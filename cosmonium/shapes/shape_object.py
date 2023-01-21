@@ -239,7 +239,8 @@ class ShapeObject(VisibleObject):
         pass
 
     async def patch_task(self, patch):
-        #print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
+        if settings.debug_shape_task:
+            print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
         if self.shape.task is not None:
             await shield(self.shape.task)
         await self.patch_sources.load(patch)
@@ -253,10 +254,12 @@ class ShapeObject(VisibleObject):
                     self.first_patch = False
             patch.patch_done()
             self.shape.patch_done(patch)
-        #print(globalClock.getFrameCount(), "DONE", patch.str_id())
+        if settings.debug_shape_task:
+            print(globalClock.getFrameCount(), "DONE", patch.str_id())
 
     async def shape_task(self, shape):
-        #print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
+        if settings.debug_shape_task:
+            print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
         await self.sources.load(shape)
         if shape.instance is not None:
             self.sources.apply(shape)
@@ -266,7 +269,8 @@ class ShapeObject(VisibleObject):
                 self.shader.create(self.shape, self.appearance)
                 self.shader.apply(self.shape.instance)
             shape.shape_done()
-        #print(globalClock.getFrameCount(), "DONE", shape.str_id())
+        if settings.debug_shape_task:
+            print(globalClock.getFrameCount(), "DONE", shape.str_id())
 
     def schedule_jobs(self, patches):
         if self.shape.patchable:
@@ -275,14 +279,14 @@ class ShapeObject(VisibleObject):
                     self.patch_sources.create(patch)
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
-                    #print("SCHEDULE", patch.str_id())
                     patch.task = taskMgr.add(self.patch_task(patch), uponDeath=patch.task_done)
         if not self.shape.instance_ready and self.shape.task is None:
             self.shape.task = taskMgr.add(self.shape_task(self.shape), uponDeath=self.shape.task_done)
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
-            #print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready)
+            if settings.debug_shape_task:
+                print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready)
             patch.instance_ready = True
             self.patch_sources.early_apply(patch)
             patch.patch_done()
