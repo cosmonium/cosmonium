@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,13 +18,14 @@
 #
 
 
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
-from .astro.orbits import FixedPosition
-from .astro.rotations import FixedRotation
-from .astro.frame import SurfaceReferenceFrame
-from . import utils
-
 from math import pi
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
+
+from ..astro.orbits import FixedPosition
+from ..astro.rotations import FixedRotation
+from ..astro.frame import SurfaceReferenceFrame
+from .. import utils
+
 
 class BodyController():
     """

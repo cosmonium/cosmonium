@@ -63,7 +63,7 @@ from .astro.units import J2000_Orientation, J200_EclipticOrientation
 from .astro.astro import abs_mag_to_lum
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
-from .controllers import ShipMover
+from .controllers.controllers import ShipMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
@@ -74,7 +74,7 @@ from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
-from .controllers import BodyController, SurfaceBodyMover
+from .controllers.controllers import BodyController, SurfaceBodyMover
 from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser

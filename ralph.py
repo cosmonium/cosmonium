@@ -67,7 +67,7 @@ from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster, 
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
 from cosmonium.parsers.heightmapsparser import HeightmapYamlParser
-from cosmonium.controllers import ShipSurfaceBodyMover
+from cosmonium.controllers.controllers import ShipSurfaceBodyMover
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.parsers.appearancesparser import AppearanceYamlParser
