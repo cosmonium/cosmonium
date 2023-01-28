@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -37,13 +37,11 @@
 try:
     from cosmonium_engine import AnchorReferenceFrame, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame, CelestialReferenceFrame, OrbitReferenceFrame, EquatorialReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
     from cosmonium_engine import J2000BarycentricEclipticReferenceFrame, J2000BarycentricEquatorialReferenceFrame
-    SurfaceReferenceFrame = AnchorReferenceFrame
 except ImportError as e:
     print("WARNING: Could not load frames C implementation, fallback on python implementation")
     print("\t", e)
     from .pyastro.frame import AnchorReferenceFrame, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame, CelestialReferenceFrame, OrbitReferenceFrame, EquatorialReferenceFrame, SynchroneReferenceFrame, RelativeReferenceFrame
     from .pyastro.frame import J2000BarycentricEclipticReferenceFrame, J2000BarycentricEquatorialReferenceFrame
-    from .pyastro.frame import SurfaceReferenceFrame
 
 BodyReferenceFrame = AnchorReferenceFrame
 AbsoluteReferenceFrame = J2000BarycentricEclipticReferenceFrame

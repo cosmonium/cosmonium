@@ -52,7 +52,6 @@ from .lights import SurrogateLight, LightSources
 from .components.annotations.grid import Grid
 from .astro.frame import BodyReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
-#TODO: from .astro.frame import SurfaceReferenceFrame
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 
@@ -1076,9 +1075,8 @@ class Cosmonium(CosmoniumBase):
 
     def control_selected(self):
         if self.selected is None: return
-        if not isinstance(self.selected.orbit.frame, SurfaceReferenceFrame) or not isinstance(self.selected.rotation.frame, SurfaceReferenceFrame):
-            print("Can not take control")
-            return
+        print("Can not take control")
+        return
         mover = SurfaceBodyMover(self.selected)
         print("Take control")
         self.fly = True

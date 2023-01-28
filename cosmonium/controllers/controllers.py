@@ -23,7 +23,6 @@ from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
 
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation
-from ..astro.frame import SurfaceReferenceFrame
 from .. import utils
 
 

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -90,8 +90,6 @@ class FrameYamlParser(YamlModuleParser):
             return J2000BarycentricEquatorialReferenceFrame()
         elif object_type == 'fixed':
             return SynchroneReferenceFrame()
-        elif object_type == 'surface':
-            return self.decode_surface_frame(parameters, parent)
         elif object_type == 'equatorial':
             return self.decode_equatorial(parameters, parent)
         elif object_type == 'mean-equatorial':

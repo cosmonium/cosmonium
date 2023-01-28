@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
 from ..astro import calc_orientation
 from .. import units
 from math import pi
-from copy import copy
 
 # Coordinate System
 # Panda3D Coordinate system : Z-Up Right-handed
@@ -206,55 +205,3 @@ class SynchroneReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.get_sync_rotation()
         return rot
-
-class SurfaceReferenceFrame(AnchorReferenceFrame):
-    def __init__(self, body, long, lat):
-        AnchorReferenceFrame.__init__(self, body)
-        self.long = long
-        self.lat = lat
-
-    def get_center(self):
-        return self.body.anchor.get_local_position() + self.body.anchor.get_sync_rotation().xform(self.get_center_parent_frame())
-
-    def get_orientation(self):
-        return self.get_orientation_parent_frame() * self.body.anchor.get_sync_rotation()
-
-    #TODO: workaround until proper hierarchical frames are implemented
-    def get_center_parent_frame(self):
-        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, self.body.get_apparent_radius()))
-        return position
-
-    def get_position_parent_frame(self, relative_pos):
-        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
-
-    def get_orientation_parent_frame(self):
-        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
-        (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
-        rotation = LQuaterniond()
-        look_at(rotation, binormal, normal)
-        return rotation
-
-class CartesianSurfaceReferenceFrame(AnchorReferenceFrame):
-    def __init__(self, body, position):
-        AnchorReferenceFrame.__init__(self, body)
-        self.position = position
-
-    def get_center(self):
-        return self.body.anchor.get_local_position() + self.body.anchor.get_sync_rotation().xform(self.get_center_parent_frame())
-
-    def get_orientation(self):
-        return self.get_orientation_parent_frame() * self.body.anchor.get_sync_rotation()
-
-    #TODO: workaround until proper hierarchical frames are implemented
-    def get_center_parent_frame(self):
-        position = LPoint3d(self.position[0], self.position[1], 0)
-        return position
-
-    def get_position_parent_frame(self, relative_pos):
-        return self.get_center_parent_frame() + self.get_orientation_parent_frame().xform(relative_pos)
-
-    def get_orientation_parent_frame(self):
-        (lon, lat, vert) = self.body.get_lonlatvert_under(self.position)
-        rotation = LQuaterniond()
-        look_at(rotation, lon, vert)
-        return rotation
