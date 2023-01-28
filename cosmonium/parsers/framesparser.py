@@ -21,29 +21,32 @@
 from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from ..astro.frame import J2000EquatorialReferenceFrame, J2000BarycentricEquatorialReferenceFrame
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
-from ..astro.frame import SurfaceReferenceFrame, CelestialReferenceFrame
+from ..astro.frame import CelestialReferenceFrame
 from ..astro.frame import BodyReferenceFrame
 from ..astro.framesdb import frames_db
 
 from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
-from .utilsparser import AngleUnitsYamlParser
+
 
 class FrameYamlParser(YamlModuleParser):
     @classmethod
-    def decode_j2000_ecliptic(cls, data, parent):
-        body = data.get('center', parent)
+    def find_center_anchor(cls, body):
         if body is not None and body.is_system() and body.primary is not None and not body.star_system:
             body = body.primary
         anchor = body.anchor if body is not None else None
+        return anchor
+
+    @classmethod
+    def decode_j2000_ecliptic(cls, data, parent):
+        body = data.get('center', parent)
+        anchor = cls.find_center_anchor(body)
         return J2000EclipticReferenceFrame(anchor)
 
     @classmethod
     def decode_j2000_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
-            body = body.primary
-        anchor = body.anchor if body is not None else None
+        anchor = cls.find_center_anchor(body)
         return J2000EquatorialReferenceFrame(anchor)
 
     @classmethod
@@ -52,27 +55,20 @@ class FrameYamlParser(YamlModuleParser):
         ra = data.get("ra", 0.0)
         de = data.get("de", 0.0)
         node = data.get("longitude", 0.0)
-        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
-            body = body.primary
-        anchor = body.anchor if body is not None else None
+        anchor = cls.find_center_anchor(body)
         return CelestialReferenceFrame(anchor, right_ascension=ra, declination=de, longitude_at_node=node)
 
     @classmethod
     def decode_mean_equatorial(cls, data, parent):
         body = data.get('center', parent)
-        if body is not None and body.is_system() and body.primary is not None and not body.star_system:
-            body = body.primary
-        anchor = body.anchor if body is not None else None
+        anchor = cls.find_center_anchor(body)
         return EquatorialReferenceFrame(anchor)
 
     @classmethod
-    def decode_surface_frame(self, data, parent):
-        long = data.get('long', 0.0)
-        long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
-        lat = data.get('lat', 0.0)
-        lat_units = AngleUnitsYamlParser.decode(data.get('lat-units', 'Deg'))
-        anchor = parent.anchor if parent is not None else None
-        return SurfaceReferenceFrame(anchor, long * long_units, lat * lat_units)
+    def decode_fixed(cls, data, parent):
+        body = data.get('center', parent)
+        anchor = cls.find_center_anchor(body)
+        return SynchroneReferenceFrame(anchor)
 
     @classmethod
     def decode(self, data, parent=None, default='j2000ecliptic'):
@@ -89,7 +85,7 @@ class FrameYamlParser(YamlModuleParser):
         elif object_type == 'j2000barycentricequatorial':
             return J2000BarycentricEquatorialReferenceFrame()
         elif object_type == 'fixed':
-            return SynchroneReferenceFrame()
+            return self.decode_fixed(parameters, parent)
         elif object_type == 'equatorial':
             return self.decode_equatorial(parameters, parent)
         elif object_type == 'mean-equatorial':
