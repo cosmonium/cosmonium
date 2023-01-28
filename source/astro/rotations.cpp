@@ -143,6 +143,12 @@ FixedRotation::get_frame_rotation_at(double time)
   return rotation;
 }
 
+void
+FixedRotation::set_frame_rotation(LQuaterniond rotation)
+{
+  this->rotation = rotation;
+}
+
 TypeHandle UnknownRotation::_type_handle;
 
 UnknownRotation::UnknownRotation(void) :

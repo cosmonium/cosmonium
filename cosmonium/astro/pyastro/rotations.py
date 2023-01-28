@@ -75,6 +75,9 @@ class FixedRotation(Rotation):
     def get_frame_rotation_at(self, time):
         return self.rotation
 
+    def set_frame_rotation(self, rotation):
+        self.rotation = rotation
+
 class UnknownRotation(FixedRotation):
     def __init__(self):
         FixedRotation.__init__(self, LQuaterniond(), J2000BarycentricEclipticReferenceFrame())

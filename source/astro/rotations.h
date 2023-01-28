@@ -95,6 +95,8 @@ PUBLISHED:
 
   virtual LQuaterniond get_frame_rotation_at(double time);
 
+  void set_frame_rotation(LQuaterniond rotation);
+
 protected:
   LQuaterniond rotation;
 

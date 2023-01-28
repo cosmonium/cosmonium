@@ -180,6 +180,12 @@ LocalFixedPosition::get_frame_position_at(double time)
   return frame_position;
 }
 
+void
+LocalFixedPosition::set_frame_position(LPoint3d position)
+{
+  frame_position = position;
+}
+
 LQuaterniond
 LocalFixedPosition::get_frame_rotation_at(double time)
 {

@@ -126,6 +126,8 @@ PUBLISHED:
 
   virtual LPoint3d get_frame_position_at(double time);
 
+  void set_frame_position(LPoint3d position);
+
   virtual LQuaterniond get_frame_rotation_at(double time);
 
   virtual double get_bounding_radius(void);
