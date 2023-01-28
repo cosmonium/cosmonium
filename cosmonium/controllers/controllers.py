@@ -50,7 +50,7 @@ class BodyController():
             print("Can not create a mover with dynamic rotation", self.anchor.rotation)
             return
         if isinstance(self.anchor.orbit.frame, SurfaceReferenceFrame) and isinstance(self.anchor.rotation.frame, SurfaceReferenceFrame):
-            self.mover = SurfaceBodyMover(self.anchor)
+            self.mover = FlatSurfaceBodyMover(self.anchor)
         else:
             self.mover = CartesianBodyMover(self.anchor)
 
@@ -299,7 +299,7 @@ class CartesianBodyMover(BodyMover):
         new_rotation = delta * rotation
         self.set_rot(new_rotation)
 
-class SurfaceBodyMover(CartesianBodyMover):
+class FlatSurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor):
         CartesianBodyMover.__init__(self, anchor)
         #TODO: Should create dynamicOrbit and DynamicRotation instead
@@ -348,7 +348,7 @@ class SurfaceBodyMover(CartesianBodyMover):
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)
 
-class ShipSurfaceBodyMover(ShipMover):
+class ShipFlatSurfaceBodyMover(ShipMover):
     def __init__(self, anchor, surface):
         ShipMover.__init__(self, anchor)
         self.surface = surface
@@ -388,7 +388,7 @@ class ShipSurfaceBodyMover(ShipMover):
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)
 
-class CartesianSurfaceBodyMover(CartesianBodyMover):
+class CartesianFlatSurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor):
         CartesianBodyMover.__init__(self, anchor)
         self.altitude = 0.0

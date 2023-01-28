@@ -73,7 +73,7 @@ from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
-from .controllers.controllers import BodyController, SurfaceBodyMover
+from .controllers.controllers import BodyController, FlatSurfaceBodyMover
 from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser
@@ -1077,7 +1077,7 @@ class Cosmonium(CosmoniumBase):
         if self.selected is None: return
         print("Can not take control")
         return
-        mover = SurfaceBodyMover(self.selected)
+        mover = FlatSurfaceBodyMover(self.selected)
         print("Take control")
         self.fly = True
         self.follow = None
