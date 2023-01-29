@@ -1268,12 +1268,17 @@ class Cosmonium(CosmoniumBase):
                 if surrogate_light is None: continue
                 reflective.body.self_shadows_update(surrogate_light)
                 # print("TEST", reflective.body.get_name())
-                traverser = FindShadowCastersTraverser(reflective, -surrogate_light.light_direction, surrogate_light.light_distance, light_source.get_bounding_radius())
+                traverser = FindShadowCastersTraverser(reflective, light_source.body.anchor.get_local_position(), light_source.get_bounding_radius())
                 self.nearest_system.anchor.traverse(traverser)
                 #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
                 for occluder in traverser.get_collected():
                     if not occluder in self.shadow_casters:
                         self.shadow_casters.append(occluder)
+                    if occluder.body.lights is None:
+                        lights = LightSources()
+                        occluder.body.set_lights(lights)
+                    surrogate_light = occluder.body.lights.get_light_for(light_source.body)
+                    if surrogate_light is None: continue
                     occluder.body.add_shadow_target(surrogate_light, reflective.body)
 
         for reflective in reflectives:

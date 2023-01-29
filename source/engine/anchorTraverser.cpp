@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -296,14 +296,16 @@ FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vec
   }
 }
 
-FindShadowCastersTraverser::FindShadowCastersTraverser(AnchorBase *target, LVector3d vector_to_light_source, double distance_to_light_source, double light_source_radius) :
+FindShadowCastersTraverser::FindShadowCastersTraverser(AnchorBase *target, LPoint3d light_source_position, double light_source_radius) :
   target(target),
-  vector_to_light_source(vector_to_light_source),
-  distance_to_light_source(distance_to_light_source),
+  light_source_position(light_source_position),
   parent_systems()
 {
   body_position = target->get_local_position();
   body_bounding_radius = target->get_bounding_radius();
+  vector_to_light_source = light_source_position - body_position;
+  distance_to_light_source = vector_to_light_source.length();
+  vector_to_light_source /= distance_to_light_source;
   light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - body_bounding_radius));
   AnchorTreeBase *parent = target->parent;
   while (parent != nullptr && parent->content != ~0) {

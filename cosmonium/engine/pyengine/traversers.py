@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -192,13 +192,14 @@ class FindLightSourceTraverser(AnchorTraverser):
 
 
 class FindShadowCastersTraverser(AnchorTraverser):
-    def __init__(self, target, vector_to_light_source, distance_to_light_source, light_source_radius):
+    def __init__(self, target, light_position, light_source_radius):
         self.target = target
         self.body_position = target._local_position
         self.body_bounding_radius = target.bounding_radius
-        self.vector_to_light_source = vector_to_light_source
-        self.distance_to_light_source = distance_to_light_source
-        self.light_source_angular_radius = asin(light_source_radius / (distance_to_light_source - self.body_bounding_radius))
+        self.vector_to_light_source = light_position - self.body_position
+        self.distance_to_light_source = self.vector_to_light_source.length()
+        self.vector_to_light_source /= self.distance_to_light_source
+        self.light_source_angular_radius = asin(light_source_radius / (self.distance_to_light_source - self.body_bounding_radius))
         self.anchors = []
         self.parent_systems = []
         parent = target.parent

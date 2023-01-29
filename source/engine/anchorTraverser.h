@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,7 +131,7 @@ protected:
 class FindShadowCastersTraverser : public AnchorTraverserCollector
 {
 PUBLISHED:
-  FindShadowCastersTraverser(AnchorBase *target, LVector3d vector_to_light_source, double distance_to_light_source, double light_source_radius);
+  FindShadowCastersTraverser(AnchorBase *target, LPoint3d light_source_position, double light_source_radius);
 
   bool check_cast_shadow(AnchorBase *anchor);
 
@@ -149,6 +149,7 @@ protected:
   AnchorBase *target;
   LPoint3d body_position;
   double body_bounding_radius;
+  LPoint3d light_source_position;
   LVector3d vector_to_light_source;
   double distance_to_light_source;
   double light_source_angular_radius;

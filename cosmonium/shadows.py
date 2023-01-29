@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -638,14 +638,14 @@ class SphereShadows(ShadowBase):
         self.nb_updates -= 1
         if self.nb_updates == 0:
             if self.empty() and self.had_sphere_occluder:
-                print("Remove sphere shadow component on", self.target.owner.get_name(), self.target.get_name() or '')
+                print("Remove sphere shadow component on", self.target.owner.get_friendly_name())
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.shader_component)
                 self.target.sources.remove_source(self.data_source)
                 self.rebuild_needed = True
             elif not self.had_sphere_occluder and not self.empty():
                 self.target.shader.add_shadows(self.shader_component)
                 self.target.sources.add_source(self.data_source)
-                print("Add sphere shadow component on", self.target.owner.get_name()), self.target.get_name() or ''
+                print("Add sphere shadow component on", self.target.owner.get_friendly_name())
                 self.rebuild_needed = True
         return self.rebuild_needed
 
@@ -663,7 +663,7 @@ class ShadowMapShadows(ShadowBase):
         if not caster.is_valid(): return
         self.casters.append(caster)
         if not caster in self.old_casters:
-            print("Add shadow caster", caster.name, "on", self.target.owner.get_name(), self.target.get_name() or '')
+            print("Add shadow caster", caster.name, "on", self.target.owner.get_friendly_name())
             shadow_shader =  ShaderShadowMap(caster.name, use_bias=self_shadow)
             self.shader_components[caster] = shadow_shader
             data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow, calculate_shadow_coef=True)
