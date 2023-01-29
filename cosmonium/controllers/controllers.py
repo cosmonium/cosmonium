@@ -268,10 +268,10 @@ class CartesianBodyMover(BodyMover):
         return self.anchor.orbit.get_frame_position_at(0)
 
     def set_rot(self, rotation):
-        self.anchor.rotation.reference_axes.set_rotation(rotation)
+        self.anchor.rotation.set_frame_rotation(rotation)
 
     def get_rot(self):
-        return self.anchor.rotation.reference_axes.get_rotation_at(0)
+        return self.anchor.rotation.get_frame_rotation_at(0)
 
     def delta(self, delta):
         self.set_pos(self.get_pos() + delta)
@@ -302,9 +302,6 @@ class CartesianBodyMover(BodyMover):
 class FlatSurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor):
         CartesianBodyMover.__init__(self, anchor)
-        #TODO: Should create dynamicOrbit and DynamicRotation instead
-        self.anchor.orbit.dynamic = True
-        self.anchor.rotation.dynamic = True
         #TODO: We assume the frame is shared between the orbit and the rotation
         #This will be simplified when the orbit and rotation will disappear for anchors
         self.frame = self.anchor.orbit.frame
@@ -317,14 +314,15 @@ class FlatSurfaceBodyMover(CartesianBodyMover):
     def set_pos(self, position):
         (x, y, altitude) = position
         new_orbit_pos = LPoint3d(x, y, 1.0)
-        self.anchor.orbit.position = new_orbit_pos
+        self.anchor.orbit.set_frame_position(new_orbit_pos)
         new_pos = self.anchor.orbit.get_local_position_at(0)
-        distance = self.frame.anchor.get_height_under(new_pos) - self.frame.anchor.get_apparent_radius()
+        distance = self.frame.anchor.body.get_height_under(new_pos) - self.frame.anchor.get_apparent_radius()
         new_orbit_pos[2] = distance + altitude
+        self.anchor.orbit.set_frame_position(new_orbit_pos)
         self.altitude = altitude
 
     def get_pos(self):
-        position = LPoint3d(self.anchor.orbit.position)
+        position = LPoint3d(self.anchor.orbit.get_frame_position())
         position[2] = self.altitude
         return position
 
