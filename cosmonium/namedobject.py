@@ -47,7 +47,7 @@ class NamedObject:
         return self.source_names[0] if self.source_names else self.names[0]
 
     def get_ascii_name(self):
-        return self.get_c_name().encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
+        return self.get_c_name().encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower().replace(' ', '')
 
     def get_exact_name(self, text):
         text = text.upper()
