@@ -287,7 +287,8 @@ class SpherePatch(PatchBase):
 
     def create_quadtree_node(self, min_radius, max_radius, mean_radius):
         nb_sectors = 2 << self.lod
-        length = mean_radius * 2 * pi / nb_sectors
+        theta = ((self.y1 + self.y0) / 2 - 0.5) * pi
+        length = mean_radius * 2 * pi / nb_sectors * cos(theta)
         normal = geometry.UVPatchNormal(self.x0, self.y0, self.x1, self.y1)
         if self.lod > 0:
             bounds = geometry.UVPatchAABB(min_radius, max_radius,
@@ -302,7 +303,7 @@ class SpherePatch(PatchBase):
         self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, normal, self.offset, bounds)
 
     def str_id(self):
-        return "%d - %d %d" % (self.lod, self.y, self.x)
+        return "%d - %d %d" % (self.lod, self.x, self.y)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
         if texture_lod == self.lod and patched:
