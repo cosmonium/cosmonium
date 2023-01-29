@@ -116,7 +116,7 @@ class StellarBody(StellarObject):
     def find_surface(self, surface_name):
         surface_name = surface_name.lower()
         for surface in self.surfaces:
-            if surface.get_name().lower() == surface_name:
+            if surface.name is not None and surface.get_name().lower() == surface_name:
                 return surface
         for surface in self.surfaces:
             if surface.category is not None and surface.category.lower() == surface_name:
