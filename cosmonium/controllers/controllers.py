@@ -102,6 +102,40 @@ class BodyController():
         """
         pass
 
+
+class SurfaceBodyController(BodyController):
+    def __init__(self, anchor, body, long, lat):
+        BodyController.__init__(self, anchor)
+        self.body = body
+        self.long = long
+        self.lat = lat
+
+    def create_mover(self):
+        """
+        """
+        self.mover = CartesianBodyMover(self.anchor)
+        self.update(0, 0)
+
+    def calc_surface_position(self):
+        (x, y, _d) = self.body.spherical_to_xy((self.long, self.lat, 0))
+        height = self.body.get_height_under_xy(x, y)
+        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, height))
+        return position
+
+    def calc_surface_orientation(self):
+        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
+        (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
+        rotation = LQuaterniond()
+        look_at(rotation, binormal, normal)
+        return rotation
+
+    def update(self, time, dt):
+        position = self.calc_surface_position()
+        self.mover.set_pos(position)
+        orientation = self.calc_surface_orientation()
+        self.mover.set_rot(orientation)
+
+
 class BodyMover():
     """
     Base class for the mover helper. A mover hides to the controller how to update the position and rotation of the anchor.

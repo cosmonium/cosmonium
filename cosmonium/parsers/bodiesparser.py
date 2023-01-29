@@ -77,8 +77,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         parent.add_child_fast(body)
         controller_data = data.get('controller')
         if controller_data is not None:
-            controller_class = ControllerYamlParser.decode(controller_data)
-            controller = controller_class(body)
+            controller = ControllerYamlParser.decode(controller_data, body.anchor)
             self.app.add_controller(controller)
         rings = data.get('rings')
         if rings is not None:
