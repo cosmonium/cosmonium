@@ -216,8 +216,8 @@ class PatchBase(Shape):
         self.instance.setPythonTag('patch', self)
         self.create_geometry_instance()
         if settings.debug_lod_show_bb:
-            self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
             self.bounds_shape.create_instance()
+            self.bounds_shape.instance.reparent_to(self.owner.instance)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(1)
         self.quadtree_node.set_shown(True)
