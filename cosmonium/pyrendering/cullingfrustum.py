@@ -53,13 +53,13 @@ class CullingFrustum(CullingFrustumBase):
         return (intersect & BoundingBox.IF_some) != 0
 
 class HorizonCullingFrustum(CullingFrustumBase):
-    def __init__(self, lens, transform_mat, near, min_radius, altitude_to_min_radius, scale, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
+    def __init__(self, lens, transform_mat, near, max_radius, altitude_to_min_radius, scale, max_lod, offset_body_center, model_body_center_offset, shift_patch_origin, cull_far_patches, cull_far_patches_threshold):
         self.lens = lens.make_copy()
         if cull_far_patches and max_lod > cull_far_patches_threshold:
             factor = 2.0 / (1 << ((max_lod - cull_far_patches_threshold) // 2))
         else:
             factor = 2.0
-        limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius))
+        limit = sqrt(max(0.001, (factor * max_radius + altitude_to_min_radius) * altitude_to_min_radius))
         far = limit * scale
         self.lens.set_near_far(near, far)
         self.lens_bounds = self.lens.make_bounds()

@@ -971,7 +971,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         transform_mat = cam_transform_mat * transform_mat
         near = 1.e-6
         if settings.use_horizon_culling:
-            self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, min_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
+            self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, max_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
                                                          self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
                                                          settings.cull_far_patches, settings.cull_far_patches_threshold)
         else:

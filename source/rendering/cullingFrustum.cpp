@@ -64,7 +64,7 @@ CullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double pa
 }
 
 HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
-    double near_distance, double min_radius, double altitude_to_min_radius, double scale, unsigned int max_lod,
+    double near_distance, double max_radius, double altitude_to_min_radius, double scale, unsigned int max_lod,
     bool offset_body_center, LVector3d model_body_center_offset, bool shift_patch_origin,
     bool cull_far_patches, unsigned int cull_far_patches_threshold) :
     offset_body_center(offset_body_center),
@@ -78,7 +78,7 @@ HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
   } else {
       factor = 2.0;
   }
-  double limit = sqrt(max(0.001, (factor * min_radius + altitude_to_min_radius) * altitude_to_min_radius));
+  double limit = sqrt(max(0.001, (factor * max_radius + altitude_to_min_radius) * altitude_to_min_radius));
   double far_distance = limit * scale;
   this->lens->set_near_far(near_distance, far_distance);
   lens_bounds = this->lens->make_bounds();
