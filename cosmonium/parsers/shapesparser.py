@@ -83,7 +83,7 @@ class ShapeYamlParser(YamlModuleParser):
             factory = NormalizedSquarePatchFactory()
             shape = NormalizedSquareShape(factory)
         elif shape_type == 'cube-sphere':
-            factory = SquaredDistanceSquarePatchFactory
+            factory = SquaredDistanceSquarePatchFactory()
             shape = SquaredDistanceSquareShape(factory)
         elif shape_type == 'se-sphere':
             shape = SpaceEnginePatchedSquareShape()
