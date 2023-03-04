@@ -88,8 +88,8 @@ class StellarBody(StellarObject):
         surface.set_body(self)
         surface.set_owner(self)
         if self.surface is None:
-            self.surface = surface
             self.auto_surface = False
+            self.set_surface(surface)
 
     def insert_surface(self, index, surface):
         self.surfaces.insert(index, surface)
