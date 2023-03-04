@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,15 +18,15 @@
 #
 
 
-from panda3d.core import LVector3, LMatrix3, LMatrix4
+from panda3d.core import LVector3, LMatrix4
 
 from ..shaders.base import StructuredShader, ShaderProgram
 from ..shaders.component import ShaderComponent
+from ..patchedshapes import SquarePatchBase
 from ..pipeline.shaders import GeneratorVertexShader
 from ..dircontext import defaultDirContext
 from ..textures import TexCoord
 from ..parameters import ParametersGroup, AutoUserParameter
-from .. import settings
 
 
 class NoiseSource(object):
@@ -1140,34 +1140,7 @@ class NoiseShader(StructuredShader):
         return name
 
     def get_rot_for_face(self, face):
-        if face == 0:
-            return LMatrix3(0.0, 0.0, 1.0,
-                            0.0, 1.0, 0.0,
-                            -1.0, 0.0, 0.0)
-        elif face == 1:
-            return LMatrix3(0.0, 0.0, -1.0,
-                            0.0, 1.0, 0.0,
-                            1.0, 0.0, 0.0)
-        elif face == 2:
-            return LMatrix3(1.0, 0.0, 0.0,
-                            0.0, 0.0, -1.0,
-                            0.0, 1.0, 0.0)
-        elif face == 3:
-            return LMatrix3(1.0, 0.0, 0.0,
-                            0.0, 0.0, 1.0,
-                            0.0, -1.0, 0.0)
-        elif face == 4:
-            return LMatrix3(-1.0, 0.0, 0.0,
-                            0.0, -1.0, 0.0,
-                            0.0, 0.0, 1.0)
-        elif face == 5:
-            return LMatrix3(-1.0, 0.0, 0.0,
-                            0.0, 1.0, 0.0,
-                            0.0, 0.0, -1.0)
-        else:
-            return LMatrix3(1.0, 0.0, 0.0,
-                            0.0, 1.0, 0.0,
-                            0.0, 0.0, 1.0)
+        return SquarePatchBase.rotations_mat[face]
 
     def update(self, instance, face=0, offset=LVector3(0, 0, 0), scale=LVector3(1, 1, 1), global_coord_scale=1.0, global_coord_offset=LVector3(0, 0, 0), global_scale=1.0, lod=None):
         instance.set_shader_input('reducedTextureSize', self.reduced_size)
@@ -1179,7 +1152,6 @@ class NoiseShader(StructuredShader):
         #instance.set_shader_input('permTexture', self.texture)
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             mat = self.get_rot_for_face(face)
-            mat.transpose_in_place()
             instance.set_shader_input('cube_rot', LMatrix4(mat))
         self.noise_source.update(instance)
 
