@@ -1066,7 +1066,7 @@ class NoiseFragmentShader(ShaderProgram):
         code.append('float calc_noise_value(vec2 coord) {')
         code.append('vec3 position;')
         if self.coord == TexCoord.Cylindrical:
-            code.append('float nx = 2 * pi * (noiseOffset.x + coord.x * noiseScale.x);')
+            code.append('float nx = 2 * pi * (noiseOffset.x + coord.x * noiseScale.x) + pi;')
             code.append('float ny = pi * (noiseOffset.y + coord.y * noiseScale.y);')
             code.append('float cnx = cos(nx);')
             code.append('float snx = sin(nx);')
@@ -1074,7 +1074,7 @@ class NoiseFragmentShader(ShaderProgram):
             code.append('float sny = sin(ny);')
             code.append('position.x = cnx * sny;')
             code.append('position.y = snx * sny;')
-            code.append('position.z = cny;')
+            code.append('position.z = -cny;')
         elif self.coord == TexCoord.NormalizedCube:
             code.append('vec3 p;')
             code.append('p.x = 2.0 * (noiseOffset.x + coord.x * noiseScale.x) - 1.0;')
