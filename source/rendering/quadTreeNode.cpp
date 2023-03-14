@@ -25,18 +25,18 @@
 #include "quadTreeNodeCollection.h"
 #include "quadTreeNode.h"
 
-QuadTreeNode::QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds) :
+QuadTreeNode::QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d offset_vector, double offset, BoundingBox *bounds) :
     patch(patch),
     lod(lod),
     density(density),
     centre(centre),
     length(length),
-    normal(normal),
+    offset_vector(offset_vector),
     offset(offset),
     bounds(bounds),
     children(),
     children_bb(),
-    children_normal(),
+    children_offset_vector(),
     children_offset(),
     shown(false),
     visible(false),
@@ -70,7 +70,7 @@ QuadTreeNode::add_child(QuadTreeNode *child)
 {
   children.push_back(child);
   children_bb.push_back(DCAST(BoundingBox, child->bounds->make_copy()));
-  children_normal.push_back(child->normal);
+  children_offset_vector.push_back(child->offset_vector);
   children_offset.push_back(child->offset);
 }
 
@@ -79,7 +79,7 @@ QuadTreeNode::remove_children(void)
 {
   children.clear();
   children_bb.clear();
-  children_normal.clear();
+  children_offset_vector.clear();
   children_offset.clear();
 }
 
@@ -124,7 +124,7 @@ QuadTreeNode::are_children_visibles(CullingFrustumBase *culling_frustum)
 {
   bool children_visible = children_bb.size() == 0;
   for (unsigned int i = 0; i < children_bb.size(); ++i) {
-      if (culling_frustum->is_bb_in_view(children_bb[i], children_normal[i], children_offset[i])) {
+      if (culling_frustum->is_bb_in_view(children_bb[i], children_offset_vector[i], children_offset[i])) {
           children_visible = true;
           break;
       }

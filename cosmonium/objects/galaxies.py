@@ -165,6 +165,9 @@ class GalaxyShapeBase(Shape):
     def get_apparent_radius(self):
         return self.radius
 
+    def set_axes(self, axes):
+        pass
+
     def get_scale(self):
         return self.scale / self.size
 

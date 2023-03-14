@@ -34,7 +34,7 @@ class LodResult;
 class QuadTreeNode : public ReferenceCount
 {
 PUBLISHED:
-  QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d normal, double offset, BoundingBox *bounds);
+  QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int density, LPoint3d centre, double length, LVector3d offset_vector, double offset, BoundingBox *bounds);
   virtual ~QuadTreeNode(void);
 
   void set_shown(bool shown);
@@ -67,7 +67,7 @@ PUBLISHED:
   unsigned int density;
   LPoint3d centre;
   double length;
-  LVector3d normal;
+  LVector3d offset_vector;
   double offset;
   bool shown;
   bool visible;
@@ -81,7 +81,7 @@ public:
   PT(BoundingBox) bounds;
   std::vector<PT(QuadTreeNode)> children;
   std::vector<PT(BoundingBox)> children_bb;
-  std::vector<LVector3d> children_normal;
+  std::vector<LVector3d> children_offset_vector;
   std::vector<double> children_offset;
 };
 

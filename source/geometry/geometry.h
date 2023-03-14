@@ -43,13 +43,16 @@ PUBLISHED:
   UVPatchGenerator();
 
   LVector3d
-  make_normal(double x0, double y0, double x1, double y1);
+  make_offset_vector(LVector3d axes, double x0, double y0, double x1, double y1);
+
+  LVector3d
+  make_normal(LVector3d axes, double r, double s, double x0, double y0, double x1, double y1);
 
   NodePath
-  make(double radius, unsigned int rings, unsigned int sectors,
+  make(LVector3d axes, unsigned int rings, unsigned int sectors,
       double x0, double y0, double x1, double y1,
       bool global_texture=false, bool inv_texture_u=false, bool inv_texture_v=false,
-      bool has_offset=false, double offset=0.0);
+      double offset=0.0);
 };
 
 class CubePatchGeneratorBase
@@ -75,8 +78,18 @@ class QCSPatchGenerator : public CubePatchGeneratorBase
 PUBLISHED:
   QCSPatchGenerator();
 
+  LVector3d
+  make_offset_vector(LVector3d axes,
+      double x0, double y0, double x1, double y1,
+      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+
+  LVector3d
+  make_normal(LVector3d axes,
+          double u, double v, double x0, double y0, double x1, double y1,
+          bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+
   NodePath
-  make(double radius, TesselationInfo tesselation,
+  make(LVector3d axes, TesselationInfo tesselation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -86,10 +99,11 @@ PUBLISHED:
 
 private:
   inline void
-  make_point(double radius, unsigned int inner, LVector3d patch_normal,
-      unsigned int i, unsigned int j, double x0, double y0, double x1, double y1,
+  make_point(LVector3d axes,
+      double u, double v, double x0, double y0, double x1, double y1,
+      LVector3d normal_coefs,
       bool inv_u, bool inv_v, bool swap_uv,
-      bool has_offset, double offset,
+      bool has_offset, LVector3d offset_vector,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
       GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
 };
@@ -99,8 +113,18 @@ class ImprovedQCSPatchGenerator : public CubePatchGeneratorBase
 PUBLISHED:
   ImprovedQCSPatchGenerator();
 
+  LVector3d
+  make_offset_vector(LVector3d axes,
+      double x0, double y0, double x1, double y1,
+      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+
+  LVector3d
+  make_normal(LVector3d axes,
+          double u, double v, double x0, double y0, double x1, double y1,
+          bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+
   NodePath
-  make(double radius, TesselationInfo tesselation,
+  make(LVector3d axes, TesselationInfo tesselation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -110,10 +134,11 @@ PUBLISHED:
 
 private:
   inline void
-  make_point(double radius, unsigned int inner, LVector3d patch_normal,
-      unsigned int i, unsigned int j, double x0, double y0, double x1, double y1,
+  make_point(LVector3d axes,
+      double u, double v, double x0, double y0, double x1, double y1,
+      LVector3d normal_coefs,
       bool inv_u, bool inv_v, bool swap_uv,
-      bool has_offset, double offset,
+      bool has_offset, LVector3d offset_vector,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
       GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
 };

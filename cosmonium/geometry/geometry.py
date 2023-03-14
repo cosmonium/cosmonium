@@ -42,7 +42,7 @@ except ImportError as e:
 from .pygeometry.geometry import BoundingBoxGeom
 from .pygeometry.geometry import UVSphere, IcoSphere
 from .pygeometry.geometry import RingFaceGeometry
-from .pygeometry.geometry import UVPatchNormal, UVPatchPoint, UVPatchAABB, halfSphereAABB
-from .pygeometry.geometry import NormalizedSquarePatchNormal, NormalizedSquarePatchPoint, NormalizedSquarePatchAABB
-from .pygeometry.geometry import SquaredDistanceSquarePatchNormal, SquaredDistanceSquarePatchPoint, SquaredDistanceSquarePatchAABB
+from .pygeometry.geometry import UVPatchOffsetVector, UVPatchPoint, UVPatchAABB, halfSphereAABB
+from .pygeometry.geometry import NormalizedSquarePatchOffsetVector, NormalizedSquarePatchPoint, NormalizedSquarePatchAABB
+from .pygeometry.geometry import SquaredDistanceSquarePatchOffsetVector, SquaredDistanceSquarePatchPoint, SquaredDistanceSquarePatchAABB
 from .pygeometry.geometry import Patch, PatchAABB

@@ -49,21 +49,41 @@ UVPatchGenerator::UVPatchGenerator()
 }
 
 LVector3d
-UVPatchGenerator::make_normal(double x0, double y0, double x1, double y1)
+UVPatchGenerator::make_offset_vector(LVector3d axes, double x0, double y0, double x1, double y1)
 {
     double dx = x1 - x0;
     double dy = y1 - y0;
     double x = cos(2 * M_PI * (x0 + dx / 2) + M_PI) * sin(M_PI * (y0 + dy / 2));
     double y = sin(2 * M_PI * (x0 + dx / 2) + M_PI) * sin(M_PI * (y0 + dy / 2));
     double z = -cos(M_PI * (y0 + dy / 2));
-    return LVector3d(x, y, z);
+    LVector3d vector = LVector3d(x, y, z);
+    vector.componentwise_mult(axes);
+    return vector;
+}
+
+
+LVector3d
+UVPatchGenerator::make_normal(LVector3d axes, double r, double s, double x0, double y0, double x1, double y1)
+{
+    double dx = x1 - x0;
+    double dy = y1 - y0;
+    double cos_s = cos(2 * M_PI * (x0 + s * dx) + M_PI);
+    double sin_s = sin(2 * M_PI * (x0 + s * dx) + M_PI);
+    double sin_r = sin(M_PI * (y0 + r * dy));
+    double cos_r = cos(M_PI * (y0 + r * dy));
+    LVector3d normal = LVector3d(
+            axes[1] * axes[2] * cos_s * sin_r,
+            axes[0] * axes[2] * sin_s * sin_r,
+            -axes[0] * axes[1] * cos_r);
+    normal.normalize();
+    return normal;
 }
 
 NodePath
-UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
+UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         double x0, double y0, double x1, double y1,
         bool global_texture, bool inv_texture_u, bool inv_texture_v,
-        bool has_offset, double offset)
+        double offset)
 {
     _geom_collector.start();
 
@@ -103,20 +123,24 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
     double dx = x1 - x0;
     double dy = y1 - y0;
 
-    LVector3d normal;
-    if (has_offset) {
-        normal = make_normal(x0, y0, x1, y1);
+    LVector3d offset_vector;
+    if (offset != 0.0) {
+      offset_vector = make_offset_vector(axes, x0, y0, x1, y1) * offset;
     }
 
+    LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
     for (unsigned int r = 0; r < r_rings; ++r) {
         for (unsigned s = 0; s < r_sectors; ++s) {
             double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
             double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
             double sin_r = sin(M_PI * (y0 + r * dy / rings));
             double cos_r = cos(M_PI * (y0 + r * dy / rings));
-            double x = cos_s * sin_r;
-            double y = sin_s * sin_r;
-            double z = -cos_r;
+            LPoint3d point = LPoint3d(
+                cos_s * sin_r,
+                sin_s * sin_r,
+                -cos_r);
+            LVector3d normal(point);
+            LVector3d tangent(-axes[0] * point[1], axes[1] * point[0], 0);
             if (global_texture) {
                 gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
             } else {
@@ -130,18 +154,17 @@ UVPatchGenerator::make(double radius, unsigned int rings, unsigned int sectors,
                 }
                 gtw.add_data2(u, v);
             }
-            if (has_offset) {
-                gvw.add_data3(x * radius - normal[0] * offset,
-                        y * radius - normal[1] * offset,
-                        z * radius - normal[2] * offset);
-            } else {
-                gvw.add_data3(x * radius, y * radius, z * radius);
+            point.componentwise_mult(axes);
+            if (offset != 0.0) {
+              point -= offset_vector;
             }
-            gnw.add_data3(x, y, z);
-            // Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3(-sin_s, cos_s, 0); // -y, x, 0
-            // Derivation wrt r
-            LVector3d binormal(cos_s * cos_r, sin_s * cos_r, sin_r);
+            gvw.add_data3d(point);
+            normal.componentwise_mult(normal_coefs);
+            normal.normalize();
+            gnw.add_data3d(normal);
+            tangent.normalize();
+            gtanw.add_data3d(tangent);
+            LVector3d binormal = normal.cross(tangent);
             binormal.normalize();
             gbiw.add_data3d(binormal);
         }
@@ -349,24 +372,93 @@ QCSPatchGenerator::QCSPatchGenerator()
 {
 }
 
+LVector3d
+QCSPatchGenerator::make_offset_vector(LVector3d axes,
+    double x0, double y0, double x1, double y1,
+    bool x_inverted, bool y_inverted, bool xy_swap)
+{
+  if (x_inverted) {
+      double tmp = 1 - x0;
+      x0 = 1 - x1;
+      x1 = tmp;
+  }
+  if (y_inverted) {
+      double tmp = 1 - y0;
+      y0 = 1 - y1;
+      y1 = tmp;
+  }
+  if (xy_swap) {
+      std::swap(x0, y0);
+      std::swap(x1, y1);
+  }
+
+  double dx = x1 - x0;
+  double dy = y1 - y0;
+
+  LVector3d offset_vector;
+  double x = x0 + 0.5 * dx;
+  double y = y0 + 0.5 * dy;
+  offset_vector = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0);
+  offset_vector.normalize();
+  offset_vector.componentwise_mult(axes);
+
+  return offset_vector;
+}
+
+LVector3d
+QCSPatchGenerator::make_normal(LVector3d axes,
+        double u, double v, double x0, double y0, double x1, double y1,
+        bool x_inverted, bool y_inverted, bool xy_swap)
+{
+  if (x_inverted) {
+      double tmp = 1 - x0;
+      x0 = 1 - x1;
+      x1 = tmp;
+  }
+  if (y_inverted) {
+      double tmp = 1 - y0;
+      y0 = 1 - y1;
+      y1 = tmp;
+  }
+  if (xy_swap) {
+      std::swap(x0, y0);
+      std::swap(x1, y1);
+  }
+
+  double dx = x1 - x0;
+  double dy = y1 - y0;
+
+  double x = x0 + u * dx;
+  double y = y0 + v * dy;
+  x = 2.0 * x - 1.0;
+  y = 2.0 * y - 1.0;
+  LVector3d normal(x, y, 1.0);
+  normal.normalize();
+  LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
+  normal.componentwise_mult(normal_coefs);
+  normal.normalize();
+
+  return normal;
+}
+
 void
-QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3d patch_normal,
-        unsigned int i, unsigned int j, double x0, double y0, double dx, double dy,
+QCSPatchGenerator::make_point(LVector3d axes,
+        double u, double v, double x0, double y0, double dx, double dy,
+        LVector3d normal_coefs,
         bool inv_u, bool inv_v, bool swap_uv,
-        bool has_offset, double offset,
+        bool has_offset, LVector3d offset_vector,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
         GeomVertexWriter &gbiw)
 {
-    double x = x0 + i * dx / inner;
-    double y = y0 + j * dy / inner;
+    double x = x0 + u * dx;
+    double y = y0 + v * dy;
     x = 2.0 * x - 1.0;
     y = 2.0 * y - 1.0;
-    LVector3d vec(x, y, 1.0);
-    vec.normalize();
-    LVector3d nvec = vec;
+    LVector3d point(x, y, 1.0);
+    point.normalize();
+    LVector3d normal = point;
+    LVector3d tangent(1.0 + y * y, -x * y, -x);
 
-    double u = double(i) / inner;
-    double v = double(j) / inner;
     if (inv_u) {
         u = 1.0 - u;
     }
@@ -377,29 +469,32 @@ QCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3d patch
         std::swap(u, v);
     }
     gtw.add_data2(u, v);
-    vec = vec * radius;
+
+    point.componentwise_mult(axes);
     if (has_offset) {
-        vec = vec - patch_normal * offset;
+        point -= offset_vector;
     }
-    gvw.add_data3d(vec);
-    gnw.add_data3d(nvec);
-    LVector3d tan(1.0 + y * y, -x * y, -x);
-    tan.normalize();
-    LVector3d bin(x * y, 1.0 + x * x, -y);
-    bin.normalize();
+    gvw.add_data3d(point);
+    normal.componentwise_mult(normal_coefs);
+    normal.normalize();
+    gnw.add_data3d(normal);
+    tangent.componentwise_mult(axes);
+    tangent.normalize();
+    LVector3d binormal = normal.cross(tangent);
+    binormal.normalize();
     if (inv_u)
-        tan = -tan;
+        tangent = -tangent;
     if (inv_v)
-        bin = -bin;
+        binormal = -binormal;
     if (swap_uv) {
-        std::swap(tan, bin);
+        std::swap(tangent, binormal);
     }
-    gtanw.add_data3d(tan);
-    gbiw.add_data3d(bin);
+    gtanw.add_data3d(tangent);
+    gbiw.add_data3d(binormal);
 }
 
 NodePath
-QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
+QCSPatchGenerator::make(LVector3d axes, TesselationInfo tesselation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -446,6 +541,11 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
         prim->reserve_num_vertices(nb_prims);
     }
 
+    LVector3d offset_vector;
+    if (has_offset) {
+        offset_vector = make_offset_vector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset;
+    }
+
     if (x_inverted) {
         double tmp = 1 - x0;
         x0 = 1 - x1;
@@ -464,26 +564,21 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     double dx = x1 - x0;
     double dy = y1 - y0;
 
-    LVector3d normal;
-    if (has_offset) {
-        double x = x0 + 0.5 * dx;
-        double y = y0 + 0.5 * dy;
-        normal = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0);
-        normal.normalize();
-    }
-
+    LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
     for (unsigned int i = 0; i < nb_vertices; ++i) {
         for (unsigned int j = 0; j < nb_vertices; ++j) {
-            make_point(radius, tesselation.inner, normal,
-                    i, j, x0, y0, dx, dy,
+            make_point(axes,
+                    double(i) / tesselation.inner, double(j) / tesselation.inner,
+                    x0, y0, dx, dy,
+                    normal_coefs,
                     inv_u, inv_v, swap_uv,
-                    has_offset, offset,
+                    has_offset, offset_vector,
                     gvw, gtw, gnw, gtanw, gbiw);
         }
     }
 
     if (use_patch_skirts) {
-        radius = radius - std::max(dx, dy) * skirt_size;
+      LVector3d reduced_axes = axes - LVector3d(std::max(dx, dy) * skirt_size);
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;
@@ -500,10 +595,12 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
                     i = b;
                     j = tesselation.inner;
                 }
-                make_point(radius, tesselation.inner, normal,
-                        i, j, x0, y0, dx, dy,
+                make_point(reduced_axes,
+                        double(i) / tesselation.inner, double(j) / tesselation.inner,
+                        x0, y0, dx, dy,
+                        normal_coefs,
                         inv_u, inv_v, swap_uv,
-                        has_offset, offset,
+                        has_offset, offset_vector,
                         gvw, gtw, gnw, gtanw, gbiw);
             }
         }
@@ -533,17 +630,73 @@ QCSPatchGenerator::make(double radius, TesselationInfo tesselation,
 ImprovedQCSPatchGenerator::ImprovedQCSPatchGenerator()
 {
 }
-
-void
-ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector3d patch_normal,
-        unsigned int i, unsigned int j, double x0, double y0, double dx, double dy,
-        bool inv_u, bool inv_v, bool swap_uv,
-        bool has_offset, double offset,
-        GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
-        GeomVertexWriter &gbiw)
+LVector3d
+ImprovedQCSPatchGenerator::make_offset_vector(LVector3d axes,
+    double x0, double y0, double x1, double y1,
+    bool x_inverted, bool y_inverted, bool xy_swap)
 {
-    double x = x0 + i * dx / inner;
-    double y = y0 + j * dy / inner;
+    if (x_inverted) {
+        double tmp = 1 - x0;
+        x0 = 1 - x1;
+        x1 = tmp;
+    }
+    if (y_inverted) {
+        double tmp = 1 - y0;
+        y0 = 1 - y1;
+        y1 = tmp;
+    }
+    if (xy_swap) {
+        std::swap(x0, y0);
+        std::swap(x1, y1);
+    }
+
+    double dx = x1 - x0;
+    double dy = y1 - y0;
+
+    double x = x0 + 0.5 * dx;
+    double y = y0 + 0.5 * dy;
+    double z = 1.0;
+
+    x = 2.0 * x - 1.0;
+    y = 2.0 * y - 1.0;
+
+    double x2 = x * x;
+    double y2 = y * y;
+    double z2 = z * z;
+
+    x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0);
+    y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0);
+    z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0);
+    LVector3d offset_vector = LVector3d(x, y, z);
+    offset_vector.componentwise_mult(axes);
+    return offset_vector;
+}
+
+LVector3d
+ImprovedQCSPatchGenerator::make_normal(LVector3d axes,
+        double u, double v, double x0, double y0, double x1, double y1,
+        bool x_inverted, bool y_inverted, bool xy_swap)
+{
+    if (x_inverted) {
+        double tmp = 1 - x0;
+        x0 = 1 - x1;
+        x1 = tmp;
+    }
+    if (y_inverted) {
+        double tmp = 1 - y0;
+        y0 = 1 - y1;
+        y1 = tmp;
+    }
+    if (xy_swap) {
+        std::swap(x0, y0);
+        std::swap(x1, y1);
+    }
+
+    double dx = x1 - x0;
+    double dy = y1 - y0;
+
+    double x = x0 + u * dx;
+    double y = y0 + v * dy;
     double z = 1.0;
     x = 2.0 * x - 1.0;
     y = 2.0 * y - 1.0;
@@ -554,8 +707,39 @@ ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector
     double yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0);
     double zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0);
 
-    double u = double(i) / inner;
-    double v = double(j) / inner;
+    LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
+    LPoint3d normal = LPoint3d(xp, yp, zp);
+    normal.componentwise_mult(normal_coefs);
+    normal.normalize();
+    return normal;
+}
+
+void
+ImprovedQCSPatchGenerator::make_point(LVector3d axes,
+        double u, double v,
+        double x0, double y0, double dx, double dy,
+        LVector3d normal_coefs,
+        bool inv_u, bool inv_v, bool swap_uv,
+        bool has_offset, LVector3d offset_vector,
+        GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
+        GeomVertexWriter &gbiw)
+{
+    double x = x0 + u * dx;
+    double y = y0 + v * dy;
+    double z = 1.0;
+    x = 2.0 * x - 1.0;
+    y = 2.0 * y - 1.0;
+    double x2 = x * x;
+    double y2 = y * y;
+    double z2 = z * z;
+    double xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0);
+    double yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0);
+    double zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0);
+
+    LPoint3d point = LPoint3d(xp, yp, zp);
+    LVector3d normal = point;
+    LVector3d tangent(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
+
     if (inv_u) {
         u = 1.0 - u;
     }
@@ -566,31 +750,31 @@ ImprovedQCSPatchGenerator::make_point(double radius, unsigned int inner, LVector
         std::swap(u, v);
     }
     gtw.add_data2(u, v);
+    point.componentwise_mult(axes);
     if (has_offset) {
-        gvw.add_data3(xp * radius - patch_normal[0] * offset,
-                yp * radius - patch_normal[1] * offset,
-                zp * radius - patch_normal[2] * offset);
-    } else {
-        gvw.add_data3(xp * radius, yp * radius, zp * radius);
+      point -= offset_vector;
     }
-    gnw.add_data3(xp, yp, zp);
-    LVector3d tan(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
-    tan.normalize();
-    LVector3d bin(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5));
-    bin.normalize();
+    gvw.add_data3(point);
+    normal.componentwise_mult(normal_coefs);
+    normal.normalize();
+    gnw.add_data3d(normal);
+    tangent.componentwise_mult(axes);
+    tangent.normalize();
+    LVector3d binormal = normal.cross(tangent);
+    binormal.normalize();
     if (inv_u)
-        tan = -tan;
+        tangent = -tangent;
     if (inv_v)
-        bin = -bin;
+        binormal = -binormal;
     if (swap_uv) {
-        std::swap(tan, bin);
+        std::swap(tangent, binormal);
     }
-    gtanw.add_data3d(tan);
-    gbiw.add_data3d(bin);
+    gtanw.add_data3d(tangent);
+    gbiw.add_data3d(binormal);
 }
 
 NodePath
-ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
+ImprovedQCSPatchGenerator::make(LVector3d axes, TesselationInfo tesselation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -637,6 +821,11 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
         prim->reserve_num_vertices(nb_prims);
     }
 
+    LVector3d offset_vector;
+    if (has_offset) {
+        offset_vector = make_offset_vector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset;
+    }
+
     if (x_inverted) {
         double tmp = 1 - x0;
         x0 = 1 - x1;
@@ -655,38 +844,25 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
     double dx = x1 - x0;
     double dy = y1 - y0;
 
-    LVector3d normal;
-    if (has_offset) {
-        double x = x0 + 0.5 * dx;
-        double y = y0 + 0.5 * dy;
-        double z = 1.0;
-
-        x = 2.0 * x - 1.0;
-        y = 2.0 * y - 1.0;
-
-        double x2 = x * x;
-        double y2 = y * y;
-        double z2 = z * z;
-
-        x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0);
-        y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0);
-        z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0);
-        normal = LVector3d(x, y, z);
-        normal.normalize();
-    }
-
+    LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
     for (unsigned int i = 0; i < nb_vertices; ++i) {
         for (unsigned int j = 0; j < nb_vertices; ++j) {
-            make_point(radius, tesselation.inner, normal,
-                    i, j, x0, y0, dx, dy,
+            make_point(axes,
+                    double(i) / tesselation.inner, double(j) / tesselation.inner,
+                    x0, y0, dx, dy,
+                    normal_coefs,
                     inv_u, inv_v, swap_uv,
-                    has_offset, offset,
+                    has_offset, offset_vector,
                     gvw, gtw, gnw, gtanw, gbiw);
         }
     }
 
     if (use_patch_skirts) {
-        radius = radius - std::max(dx, dy) * skirt_size;
+        LVector3d reduced_axes = axes - LVector3d(std::max(dx, dy) * skirt_size);
+        LVector3d reduced_normal_coefs = LVector3d(
+                reduced_axes[1] * reduced_axes[2],
+                reduced_axes[0] * reduced_axes[2],
+                reduced_axes[0] * reduced_axes[1]);
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;
@@ -703,10 +879,12 @@ ImprovedQCSPatchGenerator::make(double radius, TesselationInfo tesselation,
                     i = b;
                     j = tesselation.inner;
                 }
-                make_point(radius, tesselation.inner, normal,
-                        i, j, x0, y0, dx, dy,
+                make_point(reduced_axes,
+                        double(i) / tesselation.inner, double(j) / tesselation.inner,
+                        x0, y0, dx, dy,
+                        reduced_normal_coefs,
                         inv_u, inv_v, swap_uv,
-                        has_offset, offset,
+                        has_offset, offset_vector,
                         gvw, gtw, gnw, gtanw, gbiw);
             }
         }

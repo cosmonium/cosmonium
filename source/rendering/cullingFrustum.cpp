@@ -33,7 +33,7 @@ CullingFrustumBase::~CullingFrustumBase(void)
 bool
 CullingFrustumBase::is_patch_in_view(QuadTreeNode *patch)
 {
-  return is_bb_in_view(patch->bounds, patch->normal, patch->offset);
+  return is_bb_in_view(patch->bounds, patch->offset_vector, patch->offset);
 }
 
 CullingFrustum::CullingFrustum(Lens *lens, LMatrix4 transform_mat, double near_distance, double far_distance,
@@ -49,14 +49,14 @@ CullingFrustum::CullingFrustum(Lens *lens, LMatrix4 transform_mat, double near_d
 }
 
 bool
-CullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double patch_offset)
+CullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_offset_vector, double patch_offset)
 {
   LVector3d offset(0);
   if (offset_body_center) {
     offset += model_body_center_offset;
   }
   if (shift_patch_origin) {
-    offset = offset + patch_normal * patch_offset;
+    offset = offset + patch_offset_vector * patch_offset;
   }
   BoundingBox obj_bounds(bb->get_min() + LCAST(PN_stdfloat, offset), bb->get_max() + LCAST(PN_stdfloat, offset));
   int intersect = lens_bounds->contains(&obj_bounds);
@@ -86,14 +86,14 @@ HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
 }
 
 bool
-HorizonCullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_normal, double patch_offset)
+HorizonCullingFrustum::is_bb_in_view(BoundingBox *bb, LVector3d patch_offset_vector, double patch_offset)
 {
   LVector3d offset(0);
   if (offset_body_center) {
     offset += model_body_center_offset;
   }
   if (shift_patch_origin) {
-    offset = offset + patch_normal * patch_offset;
+    offset = offset + patch_offset_vector * patch_offset;
   }
   BoundingBox obj_bounds(bb->get_min() + LCAST(PN_stdfloat, offset), bb->get_max() + LCAST(PN_stdfloat, offset));
   int intersect = lens_bounds->contains(&obj_bounds);

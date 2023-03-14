@@ -69,14 +69,6 @@ class Tile(PatchBase):
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)
 
-    def get_normals_at(self, coord):
-        vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
-        return vectors
-
-    def get_lonlatvert_at(self, coord):
-        vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
-        return vectors
-
 class GpuPatchTerrainLayer(PatchLayer):
     template = None
 

@@ -117,14 +117,14 @@ class SurfaceBodyController(BodyController):
         self.update(0, 0)
 
     def calc_surface_position(self):
-        (x, y, _d) = self.body.spherical_to_xy((self.long, self.lat, 0))
-        height = self.body.get_height_under_xy(x, y)
-        position = self.body.spherical_to_frame_cartesian((self.long, self.lat, height))
+        p = self.body.surface.geodetic_to_cartesian(self.long, self.lat, 0)
+        height = self.body.surface.get_alt_under(p)
+        position = p + p.normalized() * height
         return position
 
     def calc_surface_orientation(self):
-        (x, y, _) = self.body.spherical_to_xy((self.long, self.lat, None))
-        (normal, tangent, binormal) = self.body.get_normals_under_xy(x, y)
+        p = self.body.surface.geodetic_to_cartesian(self.long, self.lat, 0)
+        (tangent, binormal, normal) = self.body.surface.get_tangent_plane_under(p)
         rotation = LQuaterniond()
         look_at(rotation, binormal, normal)
         return rotation

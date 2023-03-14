@@ -255,7 +255,7 @@ class AutoPilot(object):
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         new_position = (longitude, latitude, distance * distance_unit)
-        new_position = target.spherical_to_cartesian(new_position)
+        new_position = target.geodetic_to_cartesian(new_position)
         direction = center - new_position
         direction.normalize()
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)

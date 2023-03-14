@@ -32,6 +32,8 @@ from .pstats import pstat
 from .geometry import geometry
 from . import settings
 
+from .mathutil.ellipse import EllipseCircumRamanujan2ndApprox
+
 from math import cos, sin, pi, sqrt, copysign, log
 
 try:
@@ -112,21 +114,21 @@ class PatchFactory:
 
     #TODO: To move to proper class
     def get_patch_limits(self, patch):
-        min_radius = 1.0
-        max_radius = 1.0
-        mean_radius = 1.0
+        min_height = 0.0
+        max_height = 0.0
+        mean_height = 0.0
         if self.heightmap is not None and patch is not None:
             patch_data = self.heightmap.get_patch_data(patch, strict=False)
             if patch_data is not None:
                 #TODO: This should be done inside the heightmap patch
                 height_scale = self.heightmap.height_scale
                 height_offset = self.heightmap.height_offset
-                min_radius = 1.0 + patch_data.min_height * height_scale + height_offset
-                max_radius = 1.0 + patch_data.max_height * height_scale + height_offset
-                mean_radius = 1.0 + patch_data.mean_height * height_scale + height_offset
+                min_height = patch_data.min_height * height_scale + height_offset
+                max_height = patch_data.max_height * height_scale + height_offset
+                mean_height = patch_data.mean_height * height_scale + height_offset
             else:
                 print("NO PATCH DATA !!!", patch.str_id())
-        return (min_radius, max_radius, mean_radius)
+        return (min_height, max_height, mean_height)
 
     def create_patch(self, parent, lod, x, y):
         pass
@@ -152,6 +154,7 @@ class PatchBase(Shape):
         self.children = []
         self.shown = False
         self.last_split = 0
+        self.offset = None
 
     def check_settings(self):
         Shape.check_settings(self)
@@ -259,7 +262,7 @@ class PatchBase(Shape):
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
 
-    def __init__(self, parent, lod, density, x, y, surface_scale, min_radius, max_radius, mean_radius):
+    def __init__(self, parent, lod, density, x, y, surface_scale, min_height, max_height, mean_height, axes):
         PatchBase.__init__(self, parent, lod, density, surface_scale)
         self.face = -1
         self.x = x
@@ -267,7 +270,9 @@ class SpherePatch(PatchBase):
         r_div = 1 << self.lod
         s_div = 2 << self.lod
         if settings.shift_patch_origin:
-            self.offset = mean_radius
+            self.offset = 1.0 + mean_height
+        else:
+            self.offset = 0.0
         self.x0 = float(self.x) / s_div
         self.y0 = float(self.y) / r_div
         self.x1 = float(self.x + 1) / s_div
@@ -282,25 +287,34 @@ class SpherePatch(PatchBase):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        self.create_quadtree_node(min_radius, max_radius, mean_radius)
+        self.create_quadtree_node(min_height, max_height, mean_height, axes)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
-    def create_quadtree_node(self, min_radius, max_radius, mean_radius):
+    def create_quadtree_node(self, min_height, max_height, mean_height, axes):
+        nb_rings = 1 << self.lod
         nb_sectors = 2 << self.lod
         theta = ((self.y1 + self.y0) / 2 - 0.5) * pi
-        length = mean_radius * 2 * pi / nb_sectors * cos(theta)
-        normal = geometry.UVPatchNormal(self.x0, self.y0, self.x1, self.y1)
+        length = (1.0 + mean_height) * 2 * pi / nb_sectors * cos(theta)
+        scale = max(*axes)
+        offset_vector = geometry.UVPatchOffsetVector(axes / scale, self.x0, self.y0, self.x1, self.y1)
         if self.lod > 0:
-            bounds = geometry.UVPatchAABB(min_radius, max_radius,
+            bounds = geometry.UVPatchAABB(axes / scale,
+                                          min_height, max_height,
                                           self.x0, self.y0, self.x1, self.y1,
                                           offset=self.offset)
         else:
-            bounds = geometry.halfSphereAABB(mean_radius, self.x == 1, self.offset)
-        centre =  geometry.UVPatchPoint(mean_radius,
+            bounds = geometry.halfSphereAABB(mean_height, self.x == 1, self.offset)
+        centre =  geometry.UVPatchPoint(axes / scale,
                                         0.5, 0.5,
                                         self.x0, self.y0,
                                         self.x1, self.y1)
-        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, normal, self.offset, bounds)
+        centre += centre.normalized() * mean_height
+        v_perimeter = EllipseCircumRamanujan2ndApprox(sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale) / nb_rings / 2
+        h_perimeter = EllipseCircumRamanujan2ndApprox(axes[0] * cos(theta) / scale, axes[1] * cos(theta) / scale) / nb_sectors
+        #print("L", length, v_perimeter, h_perimeter)
+        #print("V", centre, sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale)
+        length = min(v_perimeter, h_perimeter)
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, offset_vector, self.offset, bounds)
 
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.x, self.y)
@@ -335,34 +349,11 @@ class SpherePatch(PatchBase):
         v = (y - self.y0) / dy
         return (u, v)
 
-    def get_normals_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.UVPatchPoint(1.0,
-                                       u, v,
-                                       self.x0, self.y0, self.x1, self.y1)
-        tangent = LVector3d(-normal[1], normal[0], 0)
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (normal, tangent, binormal)
-
-    def get_lonlatvert_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.UVPatchPoint(1.0,
-                                       u, v,
-                                       self.x0, self.y0, self.x1, self.y1)
-        tangent = LVector3d(-normal[1], normal[0], 0)
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (tangent, binormal, normal)
-
 class SpherePatchLayer(PatchLayer):
     def create_instance(self, patch):
-        self.instance = geometry.UVPatch(1.0,
+        self.instance = geometry.UVPatch(patch.owner.axes / patch.owner.radius,
                                          patch.density, patch.density,
                                          patch.x0, patch.y0, patch.x1, patch.y1,
-                                         has_offset=patch.offset is not None,
                                          offset=patch.offset)
         self.instance.reparent_to(patch.instance)
 
@@ -380,6 +371,10 @@ class SquarePatchBase(PatchBase):
     TOP = 4
     BOTTOM = 5
 
+    @staticmethod
+    def face_to_string(face):
+        return ['Right', 'Left', 'Back', 'Front', 'Top', 'Bottom'][face]
+
     rotations = [LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond()]
     rotations_mat = [LMatrix4(), LMatrix4(),LMatrix4(), LMatrix4(), LMatrix4(), LMatrix4()]
     rotations[0].setHpr(LVector3d(0, 0, 90)) #right
@@ -391,7 +386,7 @@ class SquarePatchBase(PatchBase):
     for i in range(6):
         LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
 
-    def __init__(self, face, x, y, parent, lod, density, surface_scale, min_radius, max_radius, mean_radius):
+    def __init__(self, face, x, y, parent, lod, density, surface_scale, min_height, max_height, mean_height, axes):
         PatchBase.__init__(self, parent, lod, density, surface_scale)
         self.face = face
         self.x = x
@@ -402,7 +397,7 @@ class SquarePatchBase(PatchBase):
         self.x1 = float(self.x + 1) / div
         self.y1 = float(self.y + 1) / div
         if settings.shift_patch_origin:
-            self.offset = mean_radius
+            self.offset = 1.0 + mean_height
         long_scale = 2 * pi * surface_scale * 1000.0
         lat_scale = pi * surface_scale * 1000.0
         long0 = self.x0 * long_scale / 4
@@ -413,27 +408,34 @@ class SquarePatchBase(PatchBase):
                                     (lat0 % 1000.0),
                                     (long1 - long0),
                                     (lat1 - lat0))
-        self.create_quadtree_node(min_radius, max_radius, mean_radius)
+        self.create_quadtree_node(min_height, max_height, mean_height, axes)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
-    def create_quadtree_node(self,min_radius, max_radius, mean_radius):
+    def create_quadtree_node(self, min_height, max_height, mean_height, axes):
         nb_sectors = 4 << self.lod
-        length = mean_radius * 2 * pi / nb_sectors
-        bounds = self.create_bounding_volume(min_radius, max_radius)
-        bounds.xform(self.rotations_mat[self.face])
-        centre = self.create_centre(mean_radius)
-        centre = self.rotations[self.face].xform(centre)
-        source_normal = self.face_normal()
-        normal = self.rotations[self.face].xform(source_normal)
-        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, normal, self.offset, bounds)
+        length = (1.0 + mean_height)  * 2 * pi / nb_sectors
+        scale = max(*axes)
+        orientation = self.rotations[self.face]
+        orientation_mat = self.rotations_mat[self.face]
+        rotated_axes = orientation.conjugate().xform(axes)
+        rotated_axes = LVector3d(abs(rotated_axes[0]),
+                                 abs(rotated_axes[1]),
+                                 abs(rotated_axes[2]))
+        bounds = self.create_bounding_volume(rotated_axes / scale, min_height, max_height)
+        bounds.xform(orientation_mat)
+        centre = self.create_centre(rotated_axes / scale)
+        centre = orientation.xform(centre)
+        face_offset_vector = self.face_offset_vector(rotated_axes / scale)
+        offset_vector = orientation.xform(face_offset_vector)
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, offset_vector, self.offset if self.offset is not None else 0.0, bounds)
 
-    def face_normal(self, x, y):
+    def face_offset_vector(self, x, y):
         return None
 
-    def create_bounding_volume(self, x, y, min_radius, max_radius):
+    def create_bounding_volume(self, x, y, min_height, max_height):
         return None
 
-    def create_centre(self, x, y):
+    def create_centre(self, axes):
         return None
 
     def create_patch_instance(self, x, y):
@@ -474,53 +476,34 @@ class SquarePatchBase(PatchBase):
 class NormalizedSquarePatch(SquarePatchBase):
     coord = TexCoord.NormalizedCube
 
-    def face_normal(self):
-        return geometry.NormalizedSquarePatchNormal(self.x0, self.y0, self.x1, self.y1)
+    def face_offset_vector(self, axes):
+        return geometry.NormalizedSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, min_radius, max_radius):
-        return geometry.NormalizedSquarePatchAABB(min_radius, max_radius,
+    def create_bounding_volume(self, axes, min_height, max_height):
+        return geometry.NormalizedSquarePatchAABB(axes, min_height, max_height,
                                                   self.x0, self.y0, self.x1, self.y1,
                                                   offset=self.offset)
 
-    def create_centre(self, radius):
-        return geometry.NormalizedSquarePatchPoint(radius,
+    def create_centre(self, axes):
+        return geometry.NormalizedSquarePatchPoint(axes,
                                                   0.5, 0.5,
                                                   self.x0, self.y0, self.x1, self.y1)
-    def get_normals_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.NormalizedSquarePatchPoint(1.0,
-                                                     u, v,
-                                                     self.x0, self.y0, self.x1, self.y1)
-        normal = self.rotations[self.face].xform(normal)
-        tangent = LVector3d(-normal[1], normal[0], normal[2])
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (normal, tangent, binormal)
-
-    def get_lonlatvert_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.NormalizedSquarePatchPoint(1.0,
-                                                     u, v,
-                                                     self.x0, self.y0, self.x1, self.y1)
-        normal = self.rotations[self.face].xform(normal)
-        tangent = LVector3d(-normal[1], normal[0], 0)
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (tangent, binormal, normal)
 
 class NormalizedSquarePatchLayer(PatchLayer):
     def create_instance(self, patch):
-        self.instance = geometry.NormalizedSquarePatch(1.0,
+        orientation = patch.rotations[patch.face]
+        rotated_axes = orientation.conjugate().xform(patch.owner.axes)
+        rotated_axes = LVector3d(abs(rotated_axes[0]),
+                                 abs(rotated_axes[1]),
+                                 abs(rotated_axes[2]))
+        self.instance = geometry.NormalizedSquarePatch(rotated_axes / patch.owner.radius,
                                                        geometry.TesselationInfo(patch.density, patch.tessellation_outer_level),
                                                        patch.x0, patch.y0, patch.x1, patch.y1,
                                                        has_offset=patch.offset is not None,
-                                                       offset=patch.offset,
+                                                       offset=patch.offset if patch.offset is not None else 0.0,
                                                        use_patch_adaptation=settings.use_patch_adaptation,
                                                        use_patch_skirts=settings.use_patch_skirts)
         self.instance.reparent_to(patch.instance)
-        orientation = patch.rotations[patch.face]
         self.instance.set_quat(LQuaternion(*orientation))
 
     def update_instance(self, patch):
@@ -531,46 +514,27 @@ class NormalizedSquarePatchLayer(PatchLayer):
 class SquaredDistanceSquarePatch(SquarePatchBase):
     coord = TexCoord.SqrtCube
 
-    def face_normal(self):
-        return geometry.SquaredDistanceSquarePatchNormal(self.x0, self.y0, self.x1, self.y1)
+    def face_offset_vector(self, axes):
+        return geometry.SquaredDistanceSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, min_radius, max_radius):
-        return geometry.SquaredDistanceSquarePatchAABB(min_radius, max_radius,
+    def create_bounding_volume(self, axes, min_height, max_height):
+        return geometry.SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
                                                        self.x0, self.y0, self.x1, self.y1,
                                                        offset=self.offset)
 
-    def create_centre(self, radius):
-        return geometry.SquaredDistanceSquarePatchPoint(radius,
+    def create_centre(self, axes):
+        return geometry.SquaredDistanceSquarePatchPoint(axes,
                                                        0.5, 0.5,
                                                        self.x0, self.y0, self.x1, self.y1)
 
-    def get_normals_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.SquaredDistanceSquarePatchPoint(1.0,
-                                                          u, v,
-                                                          self.x0, self.y0, self.x1, self.y1)
-        normal = self.rotations[self.face].xform(normal)
-        tangent = LVector3d(-normal[1], normal[0], normal[2])
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (normal, tangent, binormal)
-
-    def get_lonlatvert_at(self, coord):
-        (u, v) = self.coord_to_uv(coord)
-        normal = geometry.SquaredDistanceSquarePatchPoint(1.0,
-                                                          u, v,
-                                                          self.x0, self.y0, self.x1, self.y1)
-        normal = self.rotations[self.face].xform(normal)
-        tangent = LVector3d(-normal[1], normal[0], 0)
-        tangent.normalize()
-        binormal = normal.cross(tangent)
-        binormal.normalize()
-        return (tangent, binormal, normal)
-
 class SquaredDistanceSquarePatchLayer(PatchLayer):
     def create_instance(self, patch):
-        self.instance = geometry.SquaredDistanceSquarePatch(1.0,
+        orientation = patch.rotations[patch.face]
+        rotated_axes = orientation.conjugate().xform(patch.owner.axes)
+        rotated_axes = LVector3d(abs(rotated_axes[0]),
+                                 abs(rotated_axes[1]),
+                                 abs(rotated_axes[2]))
+        self.instance = geometry.SquaredDistanceSquarePatch(rotated_axes / patch.owner.radius,
                                                             geometry.TesselationInfo(patch.density, patch.tessellation_outer_level),
                                                             patch.x0, patch.y0, patch.x1, patch.y1,
                                                             has_offset=patch.offset is not None,
@@ -598,6 +562,7 @@ class PatchedShapeBase(Shape):
         self.factory.set_lod_control(lod_control)
         self.factory.set_heightmap(heightmap)
         self.factory.set_owner(self)
+        self.axes = LVector3d(1)
         self.data_store = None
         if settings.patch_data_store:
             self.data_store = PatchDataStoreManager(max_elem=settings.patch_data_store_max_elems)
@@ -617,6 +582,10 @@ class PatchedShapeBase(Shape):
     def set_owner(self, owner):
         Shape.set_owner(self, owner)
         self.factory.set_surface(self.parent)
+
+    def set_axes(self, axes):
+        self.axes = axes
+        self.radius = max(*axes)
 
     def check_settings(self):
         for patch in self.patches:
@@ -731,10 +700,7 @@ class PatchedShapeBase(Shape):
     def update_model_body_center_offset(self):
         if self.parent.body.support_offset_body_center and settings.offset_body_center:
             self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
-            scale = self.parent.body.surface.get_scale()
-            self.model_body_center_offset[0] /= scale[0]
-            self.model_body_center_offset[1] /= scale[1]
-            self.model_body_center_offset[2] /= scale[2]
+            self.model_body_center_offset /= self.parent.radius
         else:
             self.model_body_center_offset = LVector3d()
 
@@ -793,7 +759,12 @@ class PatchedShapeBase(Shape):
             return  [], []
         self.update_model_body_center_offset()
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
-        altitude_to_ground = (self.parent.body.anchor.distance_to_obs - self.parent.body.anchor._height_under) / self.parent.height_scale
+        (tangent, binormal, normal) = self.parent.body.get_tangent_plane_under(camera_pos)
+        surface_point = self.parent.body.get_point_under(camera_pos)
+        direction = camera_pos - surface_point
+        #print(direction.dot(normal), direction.length())
+        #print(direction.dot(normal), direction.dot(normal) / self.parent.height_scale)
+        altitude_to_ground = direction.dot(normal) / self.parent.height_scale
         self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
         self.create_frustum_node(self.owner.scene_anchor)
         self.to_split = []
@@ -889,22 +860,6 @@ class PatchedShapeBase(Shape):
     def find_patch_at(self, coord):
         return None
 
-    def get_normals_at(self, coord):
-        patch = self.find_patch_at(coord)
-        if patch is not None:
-            return patch.get_normals_at(coord)
-        else:
-            print("Patch not found", coord)
-            return (LVector3d.up(), LVector3d.forward(), LVector3d.left())
-
-    def get_lonlatvert_at(self, coord):
-        patch = self.find_patch_at(coord)
-        if patch is not None:
-            return patch.get_lonlatvert_at(coord)
-        else:
-            print("Patch not found", coord)
-            return (LVector3d.right(), LVector3d.forward(), LVector3d.up())
-
     def dump_patch(self, patch, padding=True):
         if padding:
             pad = ' ' * (patch.lod * 4)
@@ -984,7 +939,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             body_offset = self.model_body_center_offset
             for patch in self.patches:
                 if settings.shift_patch_origin:
-                    patch_offset = body_offset + patch.quadtree_node.normal * patch.offset
+                    patch_offset = body_offset + patch.quadtree_node.offset_vector * patch.offset
                 else:
                     patch_offset = body_offset
                 patch.instance.setPos(*patch_offset)
@@ -998,7 +953,8 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.parent.height_scale)
-        (x, y, distance) = self.parent.body.spherical_to_xy(self.parent.body.cartesian_to_spherical(camera_pos))
+        # TODO: Retrieve parametric coordinates here
+        (x, y, distance) = (0, 0, 0)
         return (model_camera_pos, model_camera_vector, (x, y))
 
     def local_to_model(self, point, position, orientation, scale):
@@ -1008,8 +964,8 @@ class EllipsoidPatchedShape(PatchedShapeBase):
 class PatchedSpherePatchFactory(PatchFactory):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = SpherePatch(parent, lod, density, x, y, self.surface.height_scale, min_radius, max_radius, mean_radius)
+        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        patch = SpherePatch(parent, lod, density, x, y, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
         patch.add_layer(SpherePatchLayer())
         #TODO: Temporary or make right
         patch.owner = self.owner
@@ -1094,31 +1050,38 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         ax = abs(x)
         ay = abs(y)
         az = abs(z)
+        p = LPoint3d(x, y, z)
         if ax >= ay and ax >= az:
             if x >= 0.0:
                 face = SquarePatchBase.RIGHT
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(-z, y, x)
                 (u, v) = (u, v)
             else:
                 face = SquarePatchBase.LEFT
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(z, y, -x)
                 (u, v) = (u, v)
         elif ay >= x and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, z, -y)
                 (u, v) = (u, 1.0 - v)
             else:
                 face = SquarePatchBase.BACK
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -z, y)
                 (u, v) = (u, 1.0 - v)
         elif az >= ax and az >= ay:
             if z >= 0.0:
                 face = SquarePatchBase.TOP
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, y, z)
                 (u, v) = (1.0 - u, 1.0 - v)
             else:
                 face = SquarePatchBase.BOTTOM
+                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -y, -z)
                 (u, v) = (1.0 - u, 1.0 - v)
         return (face, u, v)
@@ -1129,6 +1092,9 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         xp = cos(theta) * cos(phi)
         yp = cos(theta) * sin(phi)
         zp = sin(theta)
+        # xp = sin(theta) * cos(phi)
+        # yp = sin(theta) * sin(phi)
+        # zp = -cos(theta)
         (face, x, y) = self.xyz_to_face_xy(xp, yp, zp)
         #print(face, x, y)
         return (face, x, y)
@@ -1151,8 +1117,8 @@ class NormalizedSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_radius, max_radius, mean_radius)
+        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
         patch.add_layer(NormalizedSquarePatchLayer())
         #TODO: Temporary or make right
         patch.owner = self.owner
@@ -1173,8 +1139,8 @@ class SquaredDistanceSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_radius, max_radius, mean_radius)
+        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
         patch.add_layer(SquaredDistanceSquarePatchLayer())
         #TODO: Temporary or make right
         patch.owner = self.owner

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from panda3d.core import LVector3d, LQuaterniond, LPoint3d
 from .stellarobject import StellarObject
 from .systems import SimpleSystem
 
-from ..astro.frame import OrbitReferenceFrame, SynchroneReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from ..astro.frame import OrbitReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from ..astro.orbits import LocalFixedPosition
 from ..astro.rotations import FixedRotation
 
@@ -212,56 +212,51 @@ class StellarBody(StellarObject):
             extend = max(extend, self.atmosphere.radius)
         return extend
 
-    def get_height_under_xy(self, x, y):
+    def local_to_surface_position(self, position):
+        return self.anchor._orientation.conjugate().xform(position - self.anchor.get_local_position())
+
+    def surface_to_local_position(self, position):
+        return self.anchor.get_local_position() + self.anchor._orientation.xform(position)
+
+    def get_point_under(self, position):
+        surface_position = self.local_to_surface_position(position)
         if self.surface is not None:
-            return self.surface.get_height_at(x, y)
+            point = self.surface.get_point_under(surface_position)
+        else:
+            #print("No surface")
+            point = surface_position.normalized() * self.radius
+        return self.surface_to_local_position(point)
+
+    def get_radius_under(self, position):
+        if self.surface is not None:
+            return self.surface.get_radius_under(self.local_to_surface_position(position))
         else:
             #print("No surface")
             return self.radius
 
     def get_height_under(self, position):
         if self.surface is not None:
-            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
-            return self.surface.get_height_at(x, y)
+            return self.surface.get_height_under(self.local_to_surface_position(position))
         else:
             #print("No surface")
             return self.radius
 
-    def get_normals_under_xy(self, x, y):
+    def get_alt_under(self, position):
         if self.surface is not None:
-            vectors = self.surface.get_normals_at(x, y)
+            return self.surface.get_alt_under(self.local_to_surface_position(position))
         else:
-            vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
-        return vectors
+            #print("No surface")
+            return self.radius
 
-    def get_normals_under(self, position):
+    def get_tangent_plane_under(self, position):
         if self.surface is not None:
-            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
-            vectors = self.surface.get_normals_at(x, y)
-        else:
-            vectors = (LVector3d.up(), LVector3d.forward(), LVector3d.left())
-        sync_frame = SynchroneReferenceFrame(self.anchor)
-        return (sync_frame.get_orientation().xform(vectors[0]),
-                sync_frame.get_orientation().xform(vectors[1]),
-                sync_frame.get_orientation().xform(vectors[2]))
-
-    def get_lonlatvert_under_xy(self, x, y):
-        if self.surface is not None:
-            vectors = self.surface.get_lonlatvert_at(x, y)
+            vectors = self.surface.get_tangent_plane_under(self.local_to_surface_position(position))
         else:
             vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
-        return vectors
-
-    def get_lonlatvert_under(self, position):
-        if self.surface is not None:
-            (x, y, distance) = self.spherical_to_xy(self.cartesian_to_spherical(position))
-            vectors = self.surface.get_lonlatvert_at(x, y)
-        else:
-            vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
-        sync_frame = SynchroneReferenceFrame(self.anchor)
-        return (sync_frame.get_orientation().xform(vectors[0]),
-                sync_frame.get_orientation().xform(vectors[1]),
-                sync_frame.get_orientation().xform(vectors[2]))
+        orientation = self.anchor._orientation
+        return (orientation.xform(vectors[0]),
+                orientation.xform(vectors[1]),
+                orientation.xform(vectors[2]))
 
     def show_clouds(self):
         if self.clouds:

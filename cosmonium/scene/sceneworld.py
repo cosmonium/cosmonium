@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LColor
+from panda3d.core import LColor, LVector3d
 
 from ..foundation import CompositeObject
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
@@ -225,9 +225,19 @@ class FlatTerrainWorld(OriginCenteredWorld):
 
     def get_height_under(self, position):
         if self.terrain is not None:
-            return self.terrain.get_height_at(position[0], position[1])
+            return self.terrain.get_height_under(position)
         else:
             return 0
+
+    def get_point_under(self, position):
+        if self.terrain is not None:
+            return self.terrain.get_point_under(position)
+        else:
+            return position
+
+    def get_tangent_plane_under(self, position):
+        return (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+
 
 class ObserverCenteredWorld(SimpleWorld):
     def __init__(self, name, background=False):

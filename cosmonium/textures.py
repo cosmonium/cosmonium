@@ -678,7 +678,7 @@ class VirtualTextureSource(TextureSource):
                     texture_info = (texture, self.texture_size, patch.lod)
                     self.map_patch[patch.str_id()] = texture_info
             else:
-                print("File", tex_name, "not found")
+                pass #print("File", tex_name, "not found")
             if texture_info is None:
                 texture_info = self.find_parent_texture_for(patch)
         else:

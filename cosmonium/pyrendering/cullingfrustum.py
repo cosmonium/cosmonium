@@ -25,11 +25,11 @@ from math import sqrt
 
 
 class CullingFrustumBase:
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+    def is_bb_in_view(self, bb, patch_offset_vector, patch_offset):
         raise NotImplementedError()
 
     def is_patch_in_view(self, patch):
-        return self.is_bb_in_view(patch.bounds, patch.normal, patch.offset)
+        return self.is_bb_in_view(patch.bounds, patch.offset_vector, patch.offset)
 
 class CullingFrustum(CullingFrustumBase):
     def __init__(self, lens, transform_mat, near, far, offset_body_center, model_body_center_offset, shift_patch_origin):
@@ -41,12 +41,12 @@ class CullingFrustum(CullingFrustumBase):
         self. model_body_center_offset = model_body_center_offset
         self.shift_patch_origin = shift_patch_origin
 
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+    def is_bb_in_view(self, bb, patch_offset_vector, patch_offset):
         offset = LVector3d()
         if self.offset_body_center:
             offset += self.model_body_center_offset
         if self.shift_patch_origin:
-            offset = offset + patch_normal * patch_offset
+            offset = offset + patch_offset_vector * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
         intersect = self.lens_bounds.contains(obj_bounds)
@@ -68,12 +68,12 @@ class HorizonCullingFrustum(CullingFrustumBase):
         self.model_body_center_offset = model_body_center_offset
         self.shift_patch_origin = shift_patch_origin
 
-    def is_bb_in_view(self, bb, patch_normal, patch_offset):
+    def is_bb_in_view(self, bb, patch_offset_vector, patch_offset):
         offset = LVector3d()
         if self.offset_body_center:
             offset += self.model_body_center_offset
         if self.shift_patch_origin:
-            offset = offset + patch_normal * patch_offset
+            offset = offset + patch_offset_vector * patch_offset
         offset = LPoint3(*offset)
         obj_bounds = BoundingBox(bb.get_min() + offset, bb.get_max() + offset)
         intersect = self.lens_bounds.contains(obj_bounds)

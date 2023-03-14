@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,28 +18,15 @@
 #
 
 
+from math import floor, ceil
+from panda3d.core import LVector3, LQuaternion, LVector3d, LPoint3d
+
 from ...shapes.shape_object import ShapeObject
 from ...shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 
-from math import floor, ceil
-from panda3d.core import LVector3, LQuaternion
+from ...mathutil.surface_models import SphereModel, SpheroidModel, EllipsoidModel
 
-class SurfaceCategory(object):
-    def __init__(self, name):
-        self.name = name
-
-class SurfaceCategoryDB(object):
-    def __init__(self):
-        self.categories = {}
-
-    def add(self, category):
-        self.categories[category.name] = category
-
-    def get(self, name):
-        return self.categories.get(name)
-
-surfaceCategoryDB = SurfaceCategoryDB()
 
 class Surface(ShapeObject):
     def __init__(self, name=None, category=None, resolution=None, attribution=None,
@@ -59,42 +46,30 @@ class Surface(ShapeObject):
     def configure_render_order(self):
         self.instance.set_bin("front_to_back", 0)
 
-    def global_to_shape_coord(self, x, y):
-        return self.shape.global_to_shape_coord(x, y)
+    def get_alt_under(self, position, strict=False):
+        raise NotImplementedError()
 
-    def get_height_at(self, x, y, strict=False):
-        raise NotImplementedError
+    def get_height_under(self, position, strict=False):
+        raise NotImplementedError()
+
+    def get_point_under(self, position, strict=False):
+        raise NotImplementedError()
+
+    def get_tangent_plane_under(self, position):
+        raise NotImplementedError()
 
     def get_height_patch(self, patch, u, v):
         raise NotImplementedError
 
-    def get_normals_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        return self.shape.get_normals_at(coord)
-
-    def get_lonlatvert_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        return self.shape.get_lonlatvert_at(coord)
-
-    def local_position_to_shape(self, position):
-        object_position = self.body.anchor.get_local_position()
-        object_orientation = self.body.anchor.get_absolute_orientation()
-        shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
-        return shape_position
-
-    def local_vector_to_shape(self, vector):
-        object_orientation = self.body.anchor.get_absolute_orientation()
-        shape_vector = object_orientation.conjugate().xform(vector)
-        return shape_vector
-
-    def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
-        return (x, y)
+    def global_to_shape_coord(self, x, y):
+        return self.shape.global_to_shape_coord(x, y)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
-        if not self.instance_ready: return
+        if not self.instance_ready:
+            return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
+
 
 class EllipsoidSurface(Surface):
     def __init__(self, name=None, category=None, resolution=None, attribution=None,
@@ -104,75 +79,88 @@ class EllipsoidSurface(Surface):
         self.radius = radius
         self.oblateness = oblateness
         self.scale = scale
+        if self.scale is not None:
+            self.model = None
+        if scale is not None:
+            self.model = EllipsoidModel(scale)
+        elif self.oblateness is not None:
+            #self.model = EllipsoidModel(LVector3d(radius, radius, radius * (1 - oblateness)))
+            self.model = SpheroidModel(radius, oblateness)
+        elif self.radius is not None:
+            #self.model = EllipsoidModel(LVector3d(radius))
+            self.model = SphereModel(radius)
+        else:
+            self.model = None
         #TODO: This is a workaround for patchedshape scale, this should be fixed
         self.height_scale = self.radius
 
+    def set_radius(self, axes):
+        self.scale = axes
+        self.model = EllipsoidModel(axes)
+
     def configure_shape(self):
-        if self.scale is not None:
-            scale = self.scale
-        elif self.oblateness is not None:
-            scale = LVector3(1.0, 1.0, 1.0 - self.oblateness) * self.radius
-        else:
-            scale = LVector3(self.radius, self.radius, self.radius)
-        self.shape.set_scale(scale)
+        self.shape.set_axes(self.model.get_shape_axes())
+        self.shape.set_scale(LVector3(self.radius))
+
+    def get_shape_axes(self):
+        return self.model.get_shape_axes()
 
     def do_create_shadow_caster_for(self, light_source):
         shadow_caster = SphereShadowCaster(light_source, self.body)
         return shadow_caster
 
     def add_self_shadow(self, light_source):
-        if self.body.atmosphere is None and not light_source.source in self.shadow_casters:
+        if self.body.atmosphere is None and light_source.source not in self.shadow_casters:
             self.create_shadow_caster_for(light_source)
             #TODO: A proper shadow caster should be added
             self.shader.add_shadows(ShaderSphereSelfShadow())
 
     def get_average_radius(self):
-        return self.radius
+        return self.model.get_average_radius()
 
     def get_min_radius(self):
-        return self.radius
+        return self.model.get_min_radius()
 
     def get_max_radius(self):
-        return self.radius
+        return self.model.get_max_radius()
+
+    def geodetic_to_cartesian(self, long, lat, h):
+        return self.model.geodetic_to_cartesian(long, lat, h)
+
+    def cartesian_to_geodetic(self, position):
+        return self.model.cartesian_to_geodetic(position)
+
+    def parametric_to_cartesian(self, x, y, h):
+        return self.model.parametric_to_cartesian(x, y, h)
+
+    def cartesian_to_parametric(self, position):
+        return self.model.cartesian_to_parametric(position)
+
+    def get_radius_under(self, position):
+        radius_under = self.model.get_radius_under(position)
+        return radius_under
+
+    def get_tangent_plane_under(self, position):
+        return self.model.get_tangent_plane_under(position)
 
     def global_to_shape_coord(self, x, y):
         return self.shape.global_to_shape_coord(x, y)
 
-    def get_height_at(self, x, y, strict=False):
-        raise NotImplementedError
-
-    def get_height_patch(self, patch, u, v):
-        raise NotImplementedError
-
-    def get_normals_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        return self.shape.get_normals_at(coord)
-
-    def get_lonlatvert_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        return self.shape.get_lonlatvert_at(coord)
-
-    def local_position_to_shape(self, position):
-        object_position = self.body.anchor.get_local_position()
-        object_orientation = self.body.anchor.get_absolute_orientation()
-        shape_position = object_orientation.conjugate().xform(position - object_position) / self.height_scale
-        return shape_position
-
-    def local_vector_to_shape(self, vector):
-        object_orientation = self.body.anchor.get_absolute_orientation()
-        shape_vector = object_orientation.conjugate().xform(vector)
-        return shape_vector
-
-    def local_position_to_shape_coord(self, position):
-        (x, y, distance) = self.body.spherical_to_xy(self.body.cartesian_to_spherical(position))
-        return (x, y)
 
 class EllipsoidFlatSurface(EllipsoidSurface):
-    def get_height_at(self, x, y, strict=False):
-        return self.radius
+
+    def get_alt_under(self, position, strict=False):
+        return 0
+
+    def get_height_under(self, position, strict=False):
+        return self.model.get_radius_under(position)
+
+    def get_point_under(self, position, strict=False):
+        return self.model.get_point_under(position)
 
     def get_height_patch(self, patch, u, v):
         return self.radius
+
 
 class MeshSurface(Surface):
     def is_flat(self):
@@ -189,29 +177,45 @@ class MeshSurface(Surface):
             self.create_shadow_caster_for(light_source)
             self.shadow_casters[light_source.source].add_target(self, self_shadow=True)
 
-    def get_height_at(self, x, y, strict=False):
-        coord = self.shape.global_to_shape_coord(x, y)
-        return self.shape.get_height_at(coord)
+    def get_alt_under(self, position, strict=False):
+        return 0
+
+    def get_height_under(self, frame_position, strict=False):
+        # TODO: This should be properly implemented
+        return self.shape.radius
+
+    def get_point_under(self, position, strict=False):
+        return LPoint3d()
+
+    def get_tangent_plane_under(self, position):
+        normal = position.normalized()
+        if normal.dot(LVector3d.right()) != 0:
+            tangent = LVector3d.right() * normal.dot(LVector3d.right())
+            tangent.normalize()
+            binormal = tangent.cross(normal)
+        else:
+            tangent = LVector3d.forward() * normal.dot(LVector3d.forward())
+            tangent.normalize()
+            binormal = tangent.cross(normal)
+        return (tangent, binormal, normal)
 
     def get_height_patch(self, patch, u, v):
         return self.shape.get_height_patch(patch, u, v)
 
+
 class HeightmapSurface(EllipsoidSurface):
     def __init__(self, name,
                  radius, oblateness, scale,
-                 height_base, height_scale,
+                 height_scale,
                  shape, heightmap, biome, appearance, shader, clickable=True):
         EllipsoidSurface.__init__(self, name, radius=radius, oblateness=oblateness, scale=scale,
                                   shape=shape, appearance=appearance, shader=shader, clickable=clickable)
-        self.heightmap_base  = height_base
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
         self.patch_sources.add_source(self.heightmap)
         if biome is not None:
             self.patch_sources.add_source(biome)
-        self.min_radius = self.heightmap_base + self.height_scale * self.heightmap.min_height
-        self.max_radius = self.heightmap_base + self.height_scale * self.heightmap.max_height
         #TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
@@ -226,10 +230,10 @@ class HeightmapSurface(EllipsoidSurface):
         return self.radius
 
     def get_min_radius(self):
-        return self.min_radius
+        return self.model.get_min_radius() + self.height_scale * self.heightmap.min_height
 
     def get_max_radius(self):
-        return self.max_radius
+        return self.model.get_max_radius() + self.height_scale * self.heightmap.max_height
 
     def remove_instance(self):
         self.heightmap.clear_all()
@@ -237,13 +241,33 @@ class HeightmapSurface(EllipsoidSurface):
             self.biome.clear_all()
         EllipsoidSurface.remove_instance(self)
 
-    def get_patch_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        patch = self.shape.find_patch_at(coord)
-        return patch
+    def get_point_under(self, position, strict=False):
+        point_under = self.model.get_point_under(position)
+        height = self.get_alt_under(point_under, strict)
+        (tangent, binormal, normal) = self.get_tangent_plane_under(point_under)
+        if height is not None:
+            point_under += normal * height
+        elif strict:
+            point_under = None
+        else:
+            #print("Patch not found for", x, y)
+            pass
+        return point_under
 
-    def get_height_at(self, x, y, strict=False):
-        #print("get_height_at", x, y)
+    def get_height_under(self, position, strict=False):
+        height = self.get_alt_under(position, strict)
+        radius_under = self.model.get_radius_under(position)
+        if height is not None:
+            height = radius_under + height
+        elif strict:
+            height = None
+        else:
+            #print("Patch not found for", x, y)
+            height = radius_under
+        return height
+
+    def get_alt_under(self, position, strict=False):
+        (x, y, _h) = self.model.cartesian_to_parametric(position)
         coord = self.shape.global_to_shape_coord(x, y)
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
@@ -253,7 +277,7 @@ class HeightmapSurface(EllipsoidSurface):
             height = None
         else:
             #print("Patch not found for", x, y)
-            height = self.radius
+            height = 0
         return height
 
     #TODO: Should be based on how the patch is tesselated !
@@ -281,26 +305,39 @@ class HeightmapSurface(EllipsoidSurface):
         patch_data = self.heightmap.get_patch_data(patch, strict=strict)
         if patch_data is not None and patch_data.data_ready:
             h = self.get_mesh_height_uv(patch_data, u, v, patch)
-            height = h * self.height_scale + self.heightmap_base
+            height = h * self.height_scale
         elif strict:
             height = None
         else:
             #print("Patch data not found for", patch.str_id())
-            height = self.radius
+            height = 0
         return height
+
 
 class FlatSurface(Surface):
     @property
     def size(self):
         return self.shape.scale
 
+    def get_alt_under(self, position, strict=False):
+        return 0
+
+    def get_height_under(self, position):
+        return 0
+
+    def get_point_under(self, position):
+        return LPoint3d(position[0], position[1], 0)
+
+    def get_tangent_plane_under(self, position):
+        return (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+
+
 class HeightmapFlatSurface(FlatSurface):
     def __init__(self, name,
-                 height_base, height_scale,
+                 height_scale,
                  shape, heightmap, biome, appearance, shader, clickable=True):
         FlatSurface.__init__(self, name,
                              shape=shape, appearance=appearance, shader=shader, clickable=clickable)
-        self.heightmap_base  = height_base
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
@@ -318,32 +355,13 @@ class HeightmapFlatSurface(FlatSurface):
         return False
 
     def get_min_radius(self):
-        return self.heightmap_base + self.height_scale * self.heightmap.min_height
+        return self.height_scale * self.heightmap.min_height
 
     def remove_instance(self):
         self.heightmap.clear_all()
         if self.biome is not None:
             self.biome.clear_all()
         FlatSurface.remove_instance(self)
-
-    def get_patch_at(self, x, y):
-        coord = self.shape.global_to_shape_coord(x, y)
-        patch = self.shape.find_patch_at(coord)
-        return patch
-
-    def get_height_at(self, x, y, strict=False):
-        #print("get_height_at", x, y)
-        coord = self.shape.global_to_shape_coord(x, y)
-        patch = self.shape.find_patch_at(coord)
-        if patch is not None:
-            u, v = patch.coord_to_uv(coord)
-            height = self.get_height_patch(patch, u, v, strict)
-        elif strict:
-            height = None
-        else:
-            #print("Patch not found for", x, y)
-            height = self.heightmap_base
-        return height
 
     #TODO: Should be based on how the patch is tesselated !
     def get_mesh_height_uv(self, heightmap, u, v, density):
@@ -369,10 +387,27 @@ class HeightmapFlatSurface(FlatSurface):
         patch_data = self.heightmap.get_patch_data(patch, strict=strict)
         if patch_data is not None and patch_data.data_ready:
             h = self.get_mesh_height_uv(patch_data, u, v, patch.density)
-            height = h * self.height_scale + self.heightmap_base
+            height = h * self.height_scale
         elif strict:
             height = None
         else:
             #print("Patch data not found for", patch.str_id())
-            height = self.heightmap_base
+            height = 0
         return height
+
+    def get_alt_under(self, position, strict=False):
+        #print("get_height_at", x, y)
+        coord = self.shape.global_to_shape_coord(position[0], position[1])
+        patch = self.shape.find_patch_at(coord)
+        if patch is not None:
+            u, v = patch.coord_to_uv(coord)
+            height = self.get_height_patch(patch, u, v, strict)
+        elif strict:
+            height = None
+        else:
+            #print("Patch not found for", x, y)
+            height = 0
+        return height
+
+    def get_height_under(self, position, strict=False):
+        return self.get_alt_under(position, strict)

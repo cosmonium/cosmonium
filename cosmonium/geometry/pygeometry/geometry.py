@@ -264,41 +264,57 @@ def DisplacementUVSphere(radius, heightmap, scale, rings=5, sectors=5, inv_textu
     return path
 
 
-def UVPatchPoint(radius, r, s, x0, y0, x1, y1, offset=None):
+def UVPatchPoint(axes, r, s, x0, y0, x1, y1, offset=0.0):
     dx = x1 - x0
     dy = y1 - y0
-
-    if offset is not None:
-        normal = UVPatchNormal(x0, y0, x1, y1)
 
     cos_s = cos(2 * pi * (x0 + s * dx) + pi)
     sin_s = sin(2 * pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
-    x = cos_s * sin_r * radius
-    y = sin_s * sin_r * radius
-    z = -cos_r * radius
+    point = LPoint3d(
+        cos_s * sin_r,
+        sin_s * sin_r,
+        -cos_r)
+    point.componentwise_mult(axes)
 
-    if offset is not None:
-        x = x - normal[0] * offset
-        y = y - normal[1] * offset
-        z = z - normal[2] * offset
+    if offset != 0.0:
+        offset_vector = UVPatchOffsetVector(axes, x0, y0, x1, y1)
+        point -= offset_vector * offset
 
-    return LVector3d(x, y, z)
+    return point
 
 
-def UVPatchNormal(x0, y0, x1, y1):
+def UVPatchNormal(axes, r, s, x0, y0, x1, y1):
     dx = x1 - x0
     dy = y1 - y0
-    x = cos(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
-    y = sin(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2))
-    z = -cos(pi * (y0 + dy / 2))
-    return LVector3d(x, y, z)
+
+    cos_s = cos(2 * pi * (x0 + s * dx) + pi)
+    sin_s = sin(2 * pi * (x0 + s * dx) + pi)
+    sin_r = sin(pi * (y0 + r * dy))
+    cos_r = cos(pi * (y0 + r * dy))
+    normal = LPoint3d(
+        axes[1] * axes[2] * cos_s * sin_r,
+        axes[0] * axes[2] * sin_s * sin_r,
+        -axes[0] * axes[1] * cos_r)
+    normal.normalize()
+    return normal
+
+
+def UVPatchOffsetVector(axes, x0, y0, x1, y1):
+    dx = x1 - x0
+    dy = y1 - y0
+    v = LVector3d(
+        cos(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2)),
+        sin(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2)),
+        -cos(pi * (y0 + dy / 2)))
+    v.componentwise_mult(axes)
+    return v
 
 
 @named_pstat("geom")
-def UVPatch(radius, rings, sectors, x0, y0, x1, y1,
-            global_texture=False, inv_texture_u=False, inv_texture_v=False, has_offset=False, offset=None):
+def UVPatch(axes, rings, sectors, x0, y0, x1, y1,
+            global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=0.0):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
@@ -309,18 +325,19 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1,
     dx = x1 - x0
     dy = y1 - y0
 
-    if offset is not None:
-        normal = UVPatchNormal(x0, y0, x1, y1)
+    if offset != 0.0:
+        offset_vector = UVPatchOffsetVector(axes, x0, y0, x1, y1) * offset
 
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
     for r in range(0, r_rings):
         for s in range(0, r_sectors):
             cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
             sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
             sin_r = sin(pi * (y0 + r * dy / rings))
             cos_r = cos(pi * (y0 + r * dy / rings))
-            x = cos_s * sin_r
-            y = sin_s * sin_r
-            z = -cos_r
+            point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+            normal = LVector3d(point)
+            tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
             if global_texture:
                 gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:
@@ -331,17 +348,16 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1,
                 if inv_texture_u:
                     u = 1.0 - u
                 gtw.add_data2(u, v)
-            if offset is not None:
-                gvw.add_data3(x * radius - normal[0] * offset,
-                              y * radius - normal[1] * offset,
-                              z * radius - normal[2] * offset)
-            else:
-                gvw.add_data3(x * radius, y * radius, z * radius)
-            gnw.add_data3f(x, y, z)
-            # Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3(-sin_s, cos_s, 0)  # -y, x, 0
-            # Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+            point.componentwise_mult(axes)
+            if offset != 0.0:
+                point -= offset_vector
+            gvw.add_data3d(point)
+            normal.componentwise_mult(normal_coefs)
+            normal.normalize()
+            gnw.add_data3d(normal)
+            tangent.normalize()
+            gtanw.add_data3d(tangent)
+            binormal = normal.cross(tangent)
             binormal.normalize()
             gbiw.add_data3d(binormal)
 
@@ -364,7 +380,7 @@ def UVPatch(radius, rings, sectors, x0, y0, x1, y1,
     return path
 
 
-def halfSphereAABB(height, positive, offset):
+def halfSphereAABB(mean_height, positive, offset=0.0):
     if positive:
         min_points = LPoint3(-1, 0 - offset, -1)
         max_points = LPoint3(1, 1 - offset, 1)
@@ -374,16 +390,24 @@ def halfSphereAABB(height, positive, offset):
     return BoundingBox(min_points, max_points)
 
 
-def UVPatchAABB(min_radius, max_radius, x0, y0, x1, y1, offset):
+def UVPatchAABB(axes, min_height, max_height, x0, y0, x1, y1, offset=0.0):
     points = []
-    if min_radius != max_radius:
-        radii = (min_radius, max_radius)
+    if min_height != max_height:
+        heights = (min_height, max_height)
     else:
-        radii = (min_radius,)
-    for radius in radii:
+        heights = (min_height,)
+    if offset != 0.0:
+        offset_vector = UVPatchOffsetVector(axes, x0, y0, x1, y1) * offset
+    for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                points.append(UVPatchPoint(radius, i, j, x0, y0, x1, y1, offset))
+                point = UVPatchPoint(axes, i, j, x0, y0, x1, y1)
+                if height != 0:
+                    normal = UVPatchNormal(axes, i, j, x0, y0, x1, y1)
+                    point += normal * height
+                if offset != 0.0:
+                    point -= offset_vector
+                points.append(point)
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
@@ -950,7 +974,7 @@ def SquarePatch(height, inner, outer,
 
 @named_pstat("geom")
 def SquaredDistanceSquarePatch(
-        height, tesselation,
+        axes, tesselation,
         x0, y0, x1, y1,
         inv_u=False, inv_v=False, swap_uv=False,
         x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -970,16 +994,18 @@ def SquaredDistanceSquarePatch(
     node.add_geom(geom)
 
     if offset is not None:
-        normal = SquaredDistanceSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(
+            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
     for i in range(0, nb_vertices):
         for j in range(0, nb_vertices):
             u = float(i) / inner
             v = float(j) / inner
-            x = x0 + i * dx / inner
-            y = y0 + j * dy / inner
+            x = x0 + u * dx
+            y = y0 + v * dy
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
             z = 1.0
@@ -989,6 +1015,9 @@ def SquaredDistanceSquarePatch(
             xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
             yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
             zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+            point = LPoint3d(xp, yp, zp)
+            normal = LVector3d(point)
+            tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
             if inv_u:
                 u = 1.0 - u
             if inv_v:
@@ -996,28 +1025,28 @@ def SquaredDistanceSquarePatch(
             if swap_uv:
                 u, v = v, u
             gtw.add_data2(u, v)
+            point.componentwise_mult(axes)
             if offset is not None:
-                gvw.add_data3(xp * height - normal[0] * offset,
-                              yp * height - normal[1] * offset,
-                              zp * height - normal[2] * offset)
-            else:
-                gvw.add_data3(xp * height, yp * height, zp * height)
-            gnw.add_data3(xp, yp, zp)
-            tan = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
-            tan.normalize()
-            bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
-            bin.normalize()
+                point -= offset_vector
+            gvw.add_data3(point)
+            normal.componentwise_mult(normal_coefs)
+            normal.normalize()
+            gnw.add_data3(normal)
+            tangent.componentwise_mult(axes)
+            tangent.normalize()
+            binormal = normal.cross(tangent)
+            binormal.normalize()
             if inv_u:
-                tan = -tan
+                tangent = -tangent
             if inv_v:
-                bin = -bin
+                binormal = -binormal
             if swap_uv:
-                tan, bin = bin, tan
-            gtanw.add_data3d(tan)
-            gbiw.add_data3d(bin)
+                tangent, binormal = binormal, tangent
+            gtanw.add_data3d(tangent)
+            gbiw.add_data3d(binormal)
 
     if use_patch_skirts:
-        height = height - max(dx, dy) * skirt_size
+        reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -1034,8 +1063,8 @@ def SquaredDistanceSquarePatch(
                     j = inner
                 u = float(i) / inner
                 v = float(j) / inner
-                x = x0 + i * dx / inner
-                y = y0 + j * dy / inner
+                x = x0 + u * dx
+                y = y0 + v * dy
                 x = 2.0 * x - 1.0
                 y = 2.0 * y - 1.0
                 z = 1.0
@@ -1045,6 +1074,9 @@ def SquaredDistanceSquarePatch(
                 xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
                 yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
                 zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+                point = LPoint3d(xp, yp, zp)
+                normal = LVector3d(point)
+                tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
                 if inv_u:
                     u = 1.0 - u
                 if inv_v:
@@ -1052,25 +1084,25 @@ def SquaredDistanceSquarePatch(
                 if swap_uv:
                     u, v = v, u
                 gtw.add_data2(u, v)
+                point.componentwise_mult(reduced_axes)
                 if offset is not None:
-                    gvw.add_data3(xp * height - normal[0] * offset,
-                                  yp * height - normal[1] * offset,
-                                  zp * height - normal[2] * offset)
-                else:
-                    gvw.add_data3(xp * height, yp * height, zp * height)
-                gnw.add_data3(xp, yp, zp)
-                tan = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
-                tan.normalize()
-                bin = LVector3d(x * y * (z2 / 3.0 - 0.5), 1.0, y * z * (x2 / 3.0 - 0.5))
-                bin.normalize()
+                    point -= offset_vector
+                gvw.add_data3(point)
+                normal.componentwise_mult(normal_coefs)
+                normal.normalize()
+                gnw.add_data3(normal)
+                tangent.componentwise_mult(axes)
+                tangent.normalize()
+                binormal = normal.cross(tangent)
+                binormal.normalize()
                 if inv_u:
-                    tan = -tan
+                    tangent = -tangent
                 if inv_v:
-                    bin = -bin
+                    binormal = -binormal
                 if swap_uv:
-                    tan, bin = bin, tan
-                gtanw.add_data3d(tan)
-                gbiw.add_data3d(bin)
+                    tangent, binormal = binormal, tangent
+                gtanw.add_data3d(tangent)
+                gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
@@ -1086,11 +1118,14 @@ def SquaredDistanceSquarePatch(
     return path
 
 
-def SquaredDistanceSquarePatchPoint(radius,
+def SquaredDistanceSquarePatchPoint(axes,
                                     u, v,
                                     x0, y0, x1, y1,
                                     offset=None,
                                     x_inverted=False, y_inverted=False, xy_swap=False):
+
+    if offset is not None:
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
@@ -1108,35 +1143,73 @@ def SquaredDistanceSquarePatchPoint(radius,
     x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
     y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
     z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
-    vec = LVector3d(x, y, z)
-    vec *= radius
+    point = LVector3d(x, y, z)
+    point.componentwise_mult(axes)
 
     if offset is not None:
-        normal = SquaredDistanceSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-        vec = vec - normal * offset
+        point -= offset_vector * offset
 
-    return vec
+    return point
 
 
-def SquaredDistanceSquarePatchNormal(x0, y0, x1, y1,
+def SquaredDistanceSquarePatchNormal(axes,
+                                     u, v,
+                                     x0, y0, x1, y1,
                                      x_inverted=False, y_inverted=False, xy_swap=False):
 
-    return SquaredDistanceSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+
+    x = x0 + u * dx
+    y = y0 + v * dy
+
+    x = 2.0 * x - 1.0
+    y = 2.0 * y - 1.0
+    z = 1.0
+
+    x2 = x * x
+    y2 = y * y
+    z2 = z * z
+
+    x *= sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+    y *= sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+    z *= sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+    normal = LVector3d(x, y, z)
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
+    normal.componentwise_mult(normal_coefs)
+    normal.normalize()
+
+    return normal
 
 
-def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
+def SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1,
+                                           x_inverted=False, y_inverted=False, xy_swap=False):
+
+    return SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+
+
+def SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
                                    x0, y0, x1, y1, offset=None,
                                    x_inverted=False, y_inverted=False, xy_swap=False):
     points = []
-    if min_radius != max_radius:
-        radii = (min_radius, max_radius)
+    if min_height != max_height:
+        heights = (min_height, max_height)
     else:
-        radii = (min_radius,)
-    for radius in radii:
+        heights = (min_height,)
+    if offset is not None:
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(
+            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+    for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                points.append(SquaredDistanceSquarePatchPoint(
-                    radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+                point = SquaredDistanceSquarePatchPoint(
+                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+                if height != 0:
+                    normal = SquaredDistanceSquarePatchNormal(
+                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+                    point += normal * height
+                if offset is not None:
+                    point -= offset_vector
+                points.append(point)
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)
@@ -1148,7 +1221,7 @@ def SquaredDistanceSquarePatchAABB(min_radius, max_radius,
 
 
 @named_pstat("geom")
-def NormalizedSquarePatch(height, tesselation,
+def NormalizedSquarePatch(axes, tesselation,
                           x0, y0, x1, y1,
                           inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -1156,6 +1229,7 @@ def NormalizedSquarePatch(height, tesselation,
                           use_patch_skirts=True,
                           skirt_size=0.001, skirt_uv=0.001):
     (path, node) = empty_node('uv')
+    #use_patch_skirts = False
     inner = tesselation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
@@ -1167,18 +1241,22 @@ def NormalizedSquarePatch(height, tesselation,
     node.add_geom(geom)
 
     if has_offset:
-        normal = NormalizedSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+        offset_vector = NormalizedSquarePatchOffsetVector(
+            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
     for i in range(0, nb_vertices):
         for j in range(0, nb_vertices):
             x = x0 + i * dx / inner
             y = y0 + j * dy / inner
             x = 2.0 * x - 1.0
             y = 2.0 * y - 1.0
-            vec = LVector3d(x, y, 1.0)
-            vec.normalize()
+            point = LVector3d(x, y, 1.0)
+            point.normalize()
+            normal = LVector3d(point)
+            tangent = LVector3d(1.0 + y * y, -x * y, -x)
             u = float(i) / inner
             v = float(j) / inner
             if inv_u:
@@ -1188,27 +1266,28 @@ def NormalizedSquarePatch(height, tesselation,
             if swap_uv:
                 u, v = v, u
             gtw.add_data2(u, v)
-            nvec = vec
-            vec = vec * height
+            point.componentwise_mult(axes)
             if offset is not None:
-                vec = vec - normal * offset
-            gvw.add_data3d(vec)
-            gnw.add_data3d(nvec)
-            tan = LVector3d(1.0 + y * y, -x * y, -x)
-            tan.normalize()
-            bin = LVector3d(x * y, 1.0 + x * x, -y)
-            bin.normalize()
+                point -= offset_vector
+            gvw.add_data3d(point)
+            normal.componentwise_mult(normal_coefs)
+            normal.normalize()
+            gnw.add_data3d(normal)
+            tangent.componentwise_mult(axes)
+            tangent.normalize()
+            binormal = normal.cross(tangent)
+            binormal.normalize()
             if inv_u:
-                tan = -tan
+                tangent = -tangent
             if inv_v:
-                bin = -bin
+                binormal = -binormal
             if swap_uv:
-                tan, bin = bin, tan
-            gtanw.add_data3d(tan)
-            gbiw.add_data3d(bin)
+                tangent, binormal = binormal, tangent
+            gtanw.add_data3d(tangent)
+            gbiw.add_data3d(binormal)
 
     if use_patch_skirts:
-        height = height - max(dx, dy) * skirt_size
+        reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
@@ -1227,8 +1306,10 @@ def NormalizedSquarePatch(height, tesselation,
                 y = y0 + j * dy / inner
                 x = 2.0 * x - 1.0
                 y = 2.0 * y - 1.0
-                vec = LVector3d(x, y, 1.0)
-                vec.normalize()
+                point = LVector3d(x, y, 1.0)
+                point.normalize()
+                normal = LVector3d(point)
+                tangent = LVector3d(1.0 + y * y, -x * y, -x)
                 u = float(i) / inner
                 v = float(j) / inner
                 if inv_u:
@@ -1238,24 +1319,25 @@ def NormalizedSquarePatch(height, tesselation,
                 if swap_uv:
                     u, v = v, u
                 gtw.add_data2(u, v)
-                nvec = vec
-                vec = vec * height
+                point.componentwise_mult(reduced_axes)
                 if offset is not None:
-                    vec = vec - normal * offset
-                gvw.add_data3d(vec)
-                gnw.add_data3d(nvec)
-                tan = LVector3d(1.0 + y * y, -x * y, -x)
-                tan.normalize()
-                bin = LVector3d(x * y, 1.0 + x * x, -y)
-                bin.normalize()
+                    point -= offset_vector
+                gvw.add_data3d(point)
+                normal.componentwise_mult(normal_coefs)
+                normal.normalize()
+                gnw.add_data3d(normal)
+                tangent.componentwise_mult(axes)
+                tangent.normalize()
+                binormal = tangent.cross(normal)
+                binormal.normalize()
                 if inv_u:
-                    tan = -tan
+                    tangent = -tangent
                 if inv_v:
-                    bin = -bin
+                    binormal = -binormal
                 if swap_uv:
-                    tan, bin = bin, tan
-                gtanw.add_data3d(tan)
-                gbiw.add_data3d(bin)
+                    tangent, binormal = binormal, tangent
+                gtanw.add_data3d(tangent)
+                gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
@@ -1271,46 +1353,71 @@ def NormalizedSquarePatch(height, tesselation,
     return path
 
 
-def NormalizedSquarePatchPoint(radius,
+def NormalizedSquarePatchPoint(axes,
                                u, v,
                                x0, y0, x1, y1,
                                offset=None,
                                x_inverted=False, y_inverted=False, xy_swap=False):
-    if offset is not None:
-        normal = NormalizedSquarePatchNormal(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     x = x0 + u * dx
     y = y0 + v * dy
     vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
     vec.normalize()
-    vec *= radius
+    vec.componentwise_mult(axes)
 
     if offset is not None:
-        vec = vec - normal * offset
+        offset_vector = NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+        vec -= offset_vector * offset
 
     return vec
 
 
-def NormalizedSquarePatchNormal(x0, y0, x1, y1,
+def NormalizedSquarePatchNormal(axes,
+                                u, v,
+                                x0, y0, x1, y1,
                                 x_inverted=False, y_inverted=False, xy_swap=False):
-    return NormalizedSquarePatchPoint(1.0, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+
+    x = x0 + u * dx
+    y = y0 + v * dy
+    normal = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
+    normal.normalize()
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
+    normal.componentwise_mult(normal_coefs)
+    normal.normalize()
+
+    return normal
 
 
-def NormalizedSquarePatchAABB(min_radius, max_radius,
+def NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1,
+                                      x_inverted=False, y_inverted=False, xy_swap=False):
+    return NormalizedSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+
+
+def NormalizedSquarePatchAABB(axes, min_height, max_height,
                               x0, y0, x1, y1, offset=None,
                               x_inverted=False, y_inverted=False, xy_swap=False):
     points = []
-    if min_radius != max_radius:
-        radii = (min_radius, max_radius)
+    if min_height != max_height:
+        heights = (min_height, max_height)
     else:
-        radii = (min_radius,)
-    for radius in radii:
+        heights = (min_height,)
+    if offset is not None:
+        offset_vector = NormalizedSquarePatchOffsetVector(
+            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+    for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                points.append(NormalizedSquarePatchPoint(
-                    radius, i, j, x0, y0, x1, y1, offset, x_inverted, y_inverted, xy_swap))
+                point = NormalizedSquarePatchPoint(
+                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+                if height != 0:
+                    normal = NormalizedSquarePatchNormal(
+                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+                    point += normal * height
+                if offset is not None:
+                    point -= offset_vector
+                points.append(point)
     x_min = min(p.get_x() for p in points)
     x_max = max(p.get_x() for p in points)
     y_min = min(p.get_y() for p in points)

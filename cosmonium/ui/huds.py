@@ -100,8 +100,12 @@ class Huds():
                 self.topLeft.set(0, _("Distance: ")  + toUnit(selected.anchor.distance_to_obs, units.lengths_scale))
             else:
                 if selected.surface is not None and not selected.surface.is_flat():
-                    distance = selected.anchor.distance_to_obs - selected.anchor._height_under
-                    altitude = selected.anchor.distance_to_obs - radius
+                    alt_under = selected.get_alt_under(camera.get_local_position())
+                    surface_point = selected.get_point_under(camera.get_local_position())
+                    (tangent, binormal, normal) = selected.get_tangent_plane_under(camera.get_local_position())
+                    direction = camera.get_local_position() - surface_point
+                    distance = direction.dot(normal)
+                    altitude = distance + alt_under
                     self.topLeft.set(0, _("Altitude: ") + toUnit(altitude, units.lengths_scale) + " (" + _("Ground: ")  + toUnit(distance, units.lengths_scale) + ")")
                 else:
                     altitude = selected.anchor.distance_to_obs - radius

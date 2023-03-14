@@ -22,18 +22,18 @@ from ..pstats import pstat
 
 
 class QuadTreeNode:
-    def __init__(self, patch, lod, density, centre, length, normal, offset, bounds):
+    def __init__(self, patch, lod, density, centre, length, offset_vector, offset, bounds):
         self.patch = patch
         self.lod = lod
         self.density = density
         self.centre = centre
         self.length = length
-        self.normal = normal
+        self.offset_vector = offset_vector
         self.offset = offset
         self.bounds = bounds
         self.children = []
         self.children_bb = []
-        self.children_normal = []
+        self.children_offset_vector = []
         self.children_offset = []
         self.shown = False
         self.visible = False
@@ -51,13 +51,13 @@ class QuadTreeNode:
     def add_child(self, child):
         self.children.append(child)
         self.children_bb.append(child.bounds.make_copy())
-        self.children_normal.append(child.normal)
+        self.children_offset_vector.append(child.offset_vector)
         self.children_offset.append(child.offset)
 
     def remove_children(self):
         self.children = []
         self.children_bb = []
-        self.children_normal = []
+        self.children_offset_vector = []
         self.children_offset = []
 
     def can_merge_children(self):
@@ -87,7 +87,7 @@ class QuadTreeNode:
     def are_children_visibles(self, culling_frustum):
         children_visible = len(self.children_bb) == 0
         for (i, child_bb) in enumerate(self.children_bb):
-            if culling_frustum.is_bb_in_view(child_bb, self.children_normal[i], self.children_offset[i]):
+            if culling_frustum.is_bb_in_view(child_bb, self.children_offset_vector[i], self.children_offset[i]):
                 children_visible = True
                 break
         return children_visible

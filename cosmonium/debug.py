@@ -190,15 +190,16 @@ class Debug:
                         print("Patches:", len(selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                projection = selected.cartesian_to_spherical(observer.get_local_position())
-                xy = selected.spherical_to_xy(projection)
-                print("\tLongLat:", projection[0] * 180 / pi, projection[1] * 180 / pi, projection[2], "XY:", xy[0], xy[1])
-                height = selected.anchor._height_under
-                print("\tHeight:", height, "Delta:", height - selected.get_apparent_radius(), "Alt:", (selected.anchor.distance_to_obs - height))
+                if selected.surface is not None:
+                    lon, lat, h = selected.surface.cartesian_to_geodetic(selected.local_to_surface_position(observer.get_local_position()))
+                    print("\tLongLat:", lon * 180 / pi, lat * 180 / pi)
+                    height = selected.anchor._height_under
+                    radius_under = selected.anchor._height_under  # TODO
+                    print("\tHeight:", height, "Delta:", height - radius_under, "Alt:", h)
                 if selected.surface is not None and selected.surface.shape.patchable:
-                    #x = projection[0] / pi / 2 + 0.5
-                    #y = 1.0 - (projection[1] / pi + 0.5)
-                    coord = selected.surface.global_to_shape_coord(xy[0], xy[1])
+                    relative_position = selected.anchor._orientation.conjugate().xform(observer.get_local_position() - selected.anchor.get_local_position())
+                    (x, y, h) = selected.surface.cartesian_to_parametric(relative_position)
+                    coord = selected.surface.global_to_shape_coord(x, y)
                     patch = selected.surface.shape.find_patch_at(coord)
                     if patch is not None:
                         print("\tID:", patch.str_id())

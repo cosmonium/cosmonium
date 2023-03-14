@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d, LColor
+from panda3d.core import LColor
 
 from ..foundation import CompositeObject
 from ..namedobject import NamedObject
@@ -29,15 +29,12 @@ from ..components.annotations.orbit import Orbit
 from ..components.elements.halo import Halo
 from ..engine.anchors import DynamicStellarAnchor
 from ..scene.sceneanchor import SceneAnchor
-from ..astro.frame import SynchroneReferenceFrame
 from ..astro.orbits import FixedPosition
 from ..bodyclass import bodyClasses
 from ..catalogs import objectsDB
 from ..parameters import ParametersGroup
 from .. import settings
 from ..utils import srgb_to_linear
-
-from math import pi, asin, atan2, sin, cos
 
 
 class StellarObject(NamedObject):
@@ -285,52 +282,6 @@ class StellarObject(NamedObject):
 
     def get_app_magnitude(self):
         return self.anchor.get_apparent_magnitude()
-
-    def frame_cartesian_to_spherical(self, position):
-        distance = position.length()
-        if distance > 0:
-            theta = asin(position[2] / distance)
-            if position[0] != 0.0:
-                phi = atan2(position[1], position[0])
-                #Offset phi by 180 deg with proper wrap around
-                #phi = (phi + pi + pi) % (2 * pi) - pi
-            else:
-                phi = 0.0
-        else:
-            phi = 0.0
-            theta = 0.0
-        return (phi, theta, distance)
-
-    def cartesian_to_spherical(self, position):
-        sync_frame = SynchroneReferenceFrame(self.anchor)
-        rel_position = sync_frame.get_frame_position(position)
-        return self.frame_cartesian_to_spherical(rel_position)
-
-    def spherical_to_frame_cartesian(self, position):
-        (phi, theta, distance) = position
-        #Offset phi by 180 deg with proper wrap around
-        #phi = (phi + pi + pi) % (2 * pi) - pi
-        rel_position = LPoint3d(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta))
-        rel_position *= distance
-        return rel_position
-
-    def spherical_to_cartesian(self, position):
-        rel_position = self.spherical_to_frame_cartesian(position)
-        sync_frame = SynchroneReferenceFrame(self.anchor)
-        position = sync_frame.get_local_position(rel_position)
-        return position
-
-    def spherical_to_xy(self, position):
-        (phi, theta, distance) = position
-        x = phi / pi / 2 + 0.5
-        y = theta / pi + 0.5
-        return (x, y, distance)
-
-    def xy_to_spherical(self, position):
-        (x, y, distance) = position
-        phi = (x - 0.5) * pi / 2
-        tetha = (y - 0.5) * pi
-        return (phi, tetha, distance)
 
     def calc_global_distance_to(self, position):
         direction = self.get_position() - position

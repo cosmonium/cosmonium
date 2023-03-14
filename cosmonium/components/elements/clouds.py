@@ -57,7 +57,7 @@ class Clouds(EllipsoidFlatSurface):
         self.height_scale = self.radius
         scale = self.body.surface.get_scale()
         factor = 1.0 + self.height / self.body.surface.get_average_radius()
-        self.shape.set_scale(scale * factor)
+        self.set_radius(scale * factor)
 
     def check_settings(self):
         self.set_shown(settings.show_clouds)

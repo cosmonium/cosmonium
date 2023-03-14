@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
-from ..components.elements.surfaces import surfaceCategoryDB, SurfaceCategory
+from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceCategory
 from ..shaders.rendering import RenderingShader
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl
@@ -120,7 +120,7 @@ class SurfaceYamlParser(YamlModuleParser):
                 surface = HeightmapSurface(name,
                                            #category=category, resolution=resolution, source=source,
                                            radius=radius, oblateness=ellipticity, scale=scale,
-                                           height_scale=radius, height_base=radius,
+                                           height_scale=radius,
                                            shape=shape, heightmap=heightmap, biome=None, appearance=appearance, shader=shader)
         else:
                 shader = RenderingShader(lighting_model=lighting_model,

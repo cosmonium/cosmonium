@@ -28,7 +28,6 @@ from .. import settings
 #TODO: Should inherit from VisibleObject !
 class Shape:
     patchable = False
-    offset = False
     use_collision_solid = False
     deferred_instance = False
 
@@ -134,15 +133,6 @@ class Shape:
 
     def coord_to_uv(self, coord):
         return coord
-
-    def get_height_at(self, coord):
-        return self.radius
-
-    def get_normals_at(self, coord):
-        raise NotImplementedError
-
-    def get_lonlatvert_at(self, coord):
-        raise NotImplementedError
 
     def find_patch_at(self, coord):
         return self

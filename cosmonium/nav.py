@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond, LMatrix3d
 from . import settings
 from .astro import units
 from math import pi, exp
@@ -425,16 +425,16 @@ class FreeNav(InteractiveNavigationController):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        direction = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
-        height = target.get_height_under(self.controller.get_local_position())
-        altitude = direction.length() - height
-        #print(direction.length(), height, altitude)
-        direction.normalize()
+        #direction = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
+        (tangent, binormal, normal) = target.get_tangent_plane_under(self.controller.get_local_position())
+        surface_point = target.get_point_under(self.controller.get_local_position())
+        direction = self.controller.get_local_position() - surface_point
+        altitude = direction.dot(normal)
         if altitude > 0:
             if rate < 0 or altitude >= settings.min_altitude:
-                self.controller.delta_local(direction * altitude * rate)
+                self.controller.delta_local(-normal * altitude * rate)
         else:
-            self.controller.set_local_position(target.anchor.get_local_position() - direction * (height + settings.min_altitude))
+            self.controller.set_local_position(surface_point + settings.min_altitude * normal)
 
 class WalkNav(InteractiveNavigationController):
     rot_step_per_sec = pi/4
@@ -568,48 +568,29 @@ class WalkNav(InteractiveNavigationController):
             self.change_altitude(distance * self.distance_speed * dt)
 
     def step(self, distance):
-        arc_to_angle = 1.0 / (self.body.get_apparent_radius())
         object_position = self.controller.get_local_position()
-        (lon, lat, vert) = self.body.get_lonlatvert_under(object_position)
-        direction = self.controller.get_absolute_orientation().xform(LVector3d(0, distance, 0))
-        projected = direction - vert * direction.dot(vert)
-        position = self.body.cartesian_to_spherical(self.controller.get_local_position())
-        delta_x = lon.dot(projected) * arc_to_angle
-        delta_y = lat.dot(projected) * arc_to_angle
-        new_position = [position[0] + delta_x, position[1] + delta_y, position[2]]
-        altitude = position[2] - self.body.anchor._height_under
-        (x, y, distance) = self.body.spherical_to_xy(new_position)
-        new_height = self.body.surface.get_height_at(x, y, strict = True)
-        if new_height is not None:
-            new_position[2] = new_height + altitude
-        else:
-            print("Patch not found for", x, y, '->', new_position[2])
-        new_position = self.body.spherical_to_cartesian(new_position)
-        self.controller.set_local_position(new_position)
-#         target_pos = new_position + direction * 10 * units.m
-#         target_pos = self.body.cartesian_to_spherical(target_pos)
-#         (x, y, distance) = self.body.spherical_to_xy(target_pos)
-#         target_height = self.body.surface.get_height_at(x, y, strict = True)
-#         if target_height is not None:
-#             target_pos = (target_pos[0], target_pos[1], target_height + altitude)
-#         else:
-#             print("Patch not found for", x, y, '->', target_pos[2])
-#         target_pos = self.body.spherical_to_cartesian(target_pos)
-#         rot, angle = self.controller.calc_look_at(target_pos, rel=False)
-        #self.controller.set_rot(rot)
-        #print(angle)
+        (_lon, _lat, normal) = self.body.get_tangent_plane_under(object_position)
+        surface_point = self.body.get_point_under(self.controller.get_local_position())
+        direction = self.controller.get_local_position() - surface_point
+        altitude = direction.dot(normal)
+        direction = self.controller.get_absolute_orientation().xform(LVector3d.forward())
+        projected = direction - normal * direction.dot(normal)
+        projected.normalize()
+        new_position = self.body.get_point_under(object_position + projected * distance)
+        (_lon, _lat, normal) = self.body.get_tangent_plane_under(new_position)
+        self.controller.set_local_position(new_position + normal * altitude)
 
     def change_altitude(self, rate):
         if rate == 0.0: return
-        direction=(self.body.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position())
-        height = self.body.get_height_under(self.controller.get_local_position())
-        altitude = direction.length() - height
-        #print(direction.length(), height, altitude)
-        if altitude < settings.min_altitude:
-            altitude = altitude - settings.min_altitude
-            rate = 1.0
-        direction.normalize()
-        self.controller.delta_local(direction*altitude*rate)
+        (tangent, binormal, normal) = self.body.get_tangent_plane_under(self.controller.get_local_position())
+        surface_point = self.body.get_point_under(self.controller.get_local_position())
+        direction = self.controller.get_local_position() - surface_point
+        altitude = direction.dot(normal)
+        if altitude > 0:
+            if rate < 0 or altitude >= settings.min_altitude:
+                self.controller.delta_local(-normal * altitude * rate)
+        else:
+            self.controller.set_local_position(surface_point + settings.min_altitude * normal)
 
     def turn(self, axis, angle):
         rot=LQuaterniond()
