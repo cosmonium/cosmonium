@@ -291,9 +291,8 @@ FlatSurfaceAnchor::update_observer(CameraAnchor &observer, unsigned long int upd
   vector_to_obs = observer.get_local_position();
   vector_to_obs.normalize();
   LPoint3d observer_local_position = observer.get_local_position();
-  distance_to_obs = observer_local_position.get_z(); //# - self.get_height(self.observer._local_position)
-  //_height_under = ref_surface.get_height_at(observer_local_position[0], observer_local_position[1]);
   rel_position = _local_position - observer_local_position;
+  distance_to_obs = rel_position.length();
   visible_size = 0.0;
   z_distance = 0.0;
 }

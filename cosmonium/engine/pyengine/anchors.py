@@ -281,9 +281,8 @@ class FlatSurfaceAnchor(OriginAnchor):
         self.vector_to_obs = LPoint3d(observer.get_local_position())
         self.vector_to_obs.normalize()
         observer_local_position = observer.get_local_position()
-        self.distance_to_obs = observer_local_position.get_z()# - self.get_height(self.observer._local_position)
-        self._height_under = self.surface.get_height_under(observer_local_position)
         self.rel_position = self._local_position - observer_local_position
+        self.distance_to_obs = self.rel_position.length()
         self.visible_size = 0.0
         self.z_distance = 0.0
 
