@@ -297,6 +297,14 @@ class TexturePatchedHeightmap(PatchedHeightmapBase):
         PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator, filter, max_lod)
         self.data_source = data_source
 
+    def use(self, count=1):
+        PatchedHeightmapBase.use(self, count)
+        self.data_source.use(count)
+
+    def release(self, count=1):
+        PatchedHeightmapBase.use(self, count)
+        self.data_source.release(count)
+
     def do_create_patch_data(self, patch):
         return TextureHeightmapPatch(self.data_source, self, patch, self.size, self.size, self.overlap)
 
@@ -304,9 +312,6 @@ class TexturePatchedHeightmap(PatchedHeightmapBase):
         PatchedHeightmapBase.clear(self, patch, instance)
         self.data_source.clear(patch, instance)
 
-    def clear_all(self):
-        PatchedHeightmapBase.clear_all(self)
-        self.data_source.clear_all()
 
 class StackedHeightmapPatch(HeightmapPatch):
     def __init__(self, patches, parent, patch, width, height, overlap):

@@ -235,12 +235,6 @@ class HeightmapSurface(EllipsoidSurface):
     def get_max_radius(self):
         return self.model.get_max_radius() + self.height_scale * self.heightmap.max_height
 
-    def remove_instance(self):
-        self.heightmap.clear_all()
-        if self.biome is not None:
-            self.biome.clear_all()
-        EllipsoidSurface.remove_instance(self)
-
     def get_point_under(self, position, strict=False):
         point_under = self.model.get_point_under(position)
         height = self.get_alt_under(point_under, strict)
@@ -356,12 +350,6 @@ class HeightmapFlatSurface(FlatSurface):
 
     def get_min_radius(self):
         return self.height_scale * self.heightmap.min_height
-
-    def remove_instance(self):
-        self.heightmap.clear_all()
-        if self.biome is not None:
-            self.biome.clear_all()
-        FlatSurface.remove_instance(self)
 
     #TODO: Should be based on how the patch is tesselated !
     def get_mesh_height_uv(self, heightmap, u, v, density):

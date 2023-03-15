@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -45,6 +45,18 @@ class DataSourceTasksTree:
 class DataSource:
     def __init__(self, name):
         self.name = name
+        self._usage = 0
+
+    def use(self, count=1):
+        self._usage += count
+
+    def release(self, count=1):
+        if self._usage >= count:
+            self._usage -= count
+            if self._usage == 0:
+                self.clear_all()
+        else:
+            print("Release already released data source", count, self)
 
     def create(self, shape):
         pass
@@ -76,8 +88,10 @@ class DataSource:
     def update_user_parameters(self):
         pass
 
-class DataSourcesHandler:
-    def __init__(self):
+
+class DataSourcesHandler(DataSource):
+    def __init__(self, name):
+        DataSource.__init__(self, name)
         self.sources = []
 
     def get_source(self, name):
@@ -91,18 +105,37 @@ class DataSourcesHandler:
 
     def add_source(self, source):
         if source is not None:
-            self.sources.append(source)
+            if source not in self.sources:
+                self.sources.append(source)
+                if self._usage > 0:
+                    source.use(self._usage)
+            else:
+                print("Adding already added source", source)
 
     def remove_source(self, source):
         if source is not None:
             self.sources.remove(source)
+            if self._usage > 0:
+                source.release(self._usage)
 
     def remove_source_by_name(self, name):
         source = None
         for source in self.sources:
             if source.name == name:
                 self.sources.remove(source)
+                if self._usage > 0:
+                    source.release(self._usage)
                 break
+
+    def use(self, count=1):
+        DataSource.use(self, count)
+        for source in self.sources:
+            source.use(count)
+
+    def release(self, count=1):
+        DataSource.release(self, count)
+        for source in self.sources:
+            source.release(count)
 
     def create(self, shape):
         for source in self.sources:
@@ -130,7 +163,3 @@ class DataSourcesHandler:
     def clear(self, shape, instance):
         for source in self.sources:
             source.clear(shape, shape.instance)
-
-    def clear_all(self):
-        for source in self.sources:
-            source.clear_all()

@@ -35,8 +35,8 @@ class ShapeObject(VisibleObject):
     default_camera_mask = VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
-        self.sources = DataSourcesHandler()
-        self.patch_sources = DataSourcesHandler()
+        self.sources = DataSourcesHandler("shape")
+        self.patch_sources = DataSourcesHandler("patch")
         self.shape = None
         self.owner = None
         self.appearance = appearance
@@ -203,6 +203,8 @@ class ShapeObject(VisibleObject):
         self.configure_render_order()
         if settings.color_picking and self.get_oid_color() is not None:
             self.instance.set_shader_input("color_picking", self.get_oid_color())
+        self.sources.use()
+        self.patch_sources.use()
         self.schedule_jobs([])
 
     def configure_render_order(self):
@@ -330,9 +332,11 @@ class ShapeObject(VisibleObject):
     def remove_instance(self):
         # This method could be called even if the instance does not exist
         if self.instance is None: return
-        self.sources.clear(self.shape, self.shape.instance)
-        self.patch_sources.clear_all()
+        # Remove the shadows data sources as shadows won't be checked anymore
         self.shadows.clear_shadows()
+        self.sources.clear(self.shape, self.shape.instance)
+        self.sources.release()
+        self.patch_sources.release()
         self.shape.remove_instance()
         if self.instance is not None:
             self.instance.remove_node()

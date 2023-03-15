@@ -129,7 +129,7 @@ class PatchData:
 
 class PatchedData(DataSource):
     def __init__(self, name, size, overlap, max_lod=100):
-        self.name = name
+        DataSource.__init__(self, name)
         self.size = size
         self.overlap = overlap
         self.max_lod = max_lod

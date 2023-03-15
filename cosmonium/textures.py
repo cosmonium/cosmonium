@@ -95,6 +95,12 @@ class TextureBase(object):
         self.panda = True
         self.input_name = None
 
+    def use(self, count=1):
+        pass
+
+    def release(self, count=1):
+        pass
+
     def set_target(self, panda, input_name=None):
         self.panda = panda
         self.input_name = input_name
