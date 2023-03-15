@@ -1469,6 +1469,7 @@ class Cosmonium(CosmoniumBase):
 
         self.update_universe(self.time.time_full, dt)
         self.update_worlds(self.time.time_full, dt)
+        self.update_height_under()
 
         nearest_system = self.find_nearest_system()
         #TODO: anchors should be distance sorted
@@ -1481,7 +1482,6 @@ class Cosmonium(CosmoniumBase):
         self.update_scene_anchors()
         self.find_local_lights()
         self.check_scattering()
-        self.update_height_under()
 
         if self.trigger_check_settings:
             for visible in self.visibles:
