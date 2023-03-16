@@ -30,6 +30,13 @@ from .ellipsoid import DistancePointEllipsoid, TriaxialGeodeticToCartesian, Poin
 class EllipsoidModelInterface(ABC):
 
     @abstractmethod
+    def copy_extend(self, delta: float) -> EllipsoidModelInterface:
+        """
+        Create a copy of this model with all the axes increased by delta
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def get_shape_axes(self) -> LVector3d:
         """
         Return the axes to be used to create the shape
@@ -114,6 +121,9 @@ class SphereModel(EllipsoidModelInterface):
     def __init__(self, radius):
         self.radius = radius
 
+    def copy_extend(self, delta: float) -> SphereModel:
+        return SphereModel(self.radius + delta)
+
     def get_shape_axes(self) -> LVector3d:
         return LVector3(self.radius)
 
@@ -192,6 +202,9 @@ class SpheroidModel(EllipsoidModelInterface):
     def __init__(self, radius, ellipticity):
         self.radius = radius
         self.ellipticity = ellipticity
+
+    def copy_extend(self, delta: float) -> SpheroidModel:
+        return SpheroidModel(self.radius + delta, self.ellipticity)
 
     def get_shape_axes(self) -> LVector3d:
         return LVector3(1.0, 1.0, 1.0 - self.ellipticity) * self.radius
@@ -298,9 +311,12 @@ class SpheroidModel(EllipsoidModelInterface):
 
 
 class EllipsoidModel(EllipsoidModelInterface):
-    def __init__(self, axes):
+    def __init__(self, axes: LVector3d):
         self.axes = axes
-        self.radius = max(axes)
+        self.radius: float = max(axes)
+
+    def copy_extend(self, delta: float) -> SphereModel:
+        return EllipsoidModel(self.axes + LVector3d(delta))
 
     def get_shape_axes(self) -> LVector3d:
         return self.axes
