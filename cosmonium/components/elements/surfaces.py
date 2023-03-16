@@ -94,10 +94,6 @@ class EllipsoidSurface(Surface):
         #TODO: This is a workaround for patchedshape scale, this should be fixed
         self.height_scale = self.radius
 
-    def set_radius(self, axes):
-        self.scale = axes
-        self.model = EllipsoidModel(axes)
-
     def configure_shape(self):
         self.shape.set_axes(self.model.get_shape_axes())
         self.shape.set_scale(LVector3(self.radius))

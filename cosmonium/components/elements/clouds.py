@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import CullFaceAttrib, DepthOffsetAttrib
+from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LVector3d
 from panda3d.core import LQuaternion
 
 from ...shapes.shape_object import ShapeObject
@@ -33,15 +33,16 @@ class Clouds(EllipsoidFlatSurface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
-        EllipsoidFlatSurface.__init__(self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        EllipsoidFlatSurface.__init__(
+            self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
         self.scale_base = None
         self.inside = None
         self.body = None
         if appearance is not None:
-            #TODO: Disabled as it causes blinking
-            pass#appearance.check_transparency()
- 
+            # TODO: Disabled as it causes blinking
+            pass  # appearance.check_transparency()
+
     def get_component_name(self):
         return _('Clouds')
 
@@ -52,12 +53,12 @@ class Clouds(EllipsoidFlatSurface):
         self.instance.set_bin("transparent", 0)
 
     def configure_shape(self):
-        self.radius = self.body.surface.get_average_radius() + self.height
+        self.model = self.body.surface.model.copy_extend(self.height)
+        self.radius = self.model.radius
         #TODO : temporary until height_scale is removed from patchedshape
         self.height_scale = self.radius
-        scale = self.body.surface.get_scale()
-        factor = 1.0 + self.height / self.body.surface.get_average_radius()
-        self.set_radius(scale * factor)
+        self.shape.set_axes(self.model.get_shape_axes())
+        self.shape.set_scale(LVector3d(self.radius))
 
     def check_settings(self):
         self.set_shown(settings.show_clouds)
@@ -96,7 +97,9 @@ class Clouds(EllipsoidFlatSurface):
 
     def get_user_parameters(self):
         group = ShapeObject.get_user_parameters(self)
-        group.add_parameter(AutoUserParameter('Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.body.get_apparent_radius() * 0.01]))
+        group.add_parameter(
+            AutoUserParameter(
+                'Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.body.get_apparent_radius() * 0.01]))
         return group
 
     def update_user_parameters(self):
