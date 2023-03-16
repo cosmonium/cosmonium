@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ from panda3d.core import LVecBase3, LVector3
 from panda3d.core import BitMask32
 from panda3d.core import CollisionSphere, CollisionNode
 
-from .. import settings
 
 #TODO: Should inherit from VisibleObject !
 class Shape:
@@ -35,7 +34,6 @@ class Shape:
         self.instance = None
         self.collision_solid = None
         self.scale = LVector3(1.0, 1.0, 1.0)
-        self.radius = 1.0
         self.owner = None
         self.instance_ready = False
         self.task = None
@@ -118,12 +116,7 @@ class Shape:
         pass
 
     def set_scale(self, scale):
-        self.radius = max(scale)
         self.scale = scale
-
-    def set_radius(self, radius):
-        self.radius = radius
-        self.scale = LVector3(radius, radius, radius)
 
     def get_scale(self):
         return self.scale
@@ -155,24 +148,16 @@ class Shape:
 
 class InstanceShape(Shape):
     deferred_instance = True
+
     def __init__(self, instance):
         Shape.__init__(self)
         self.instance = instance
-        bounds = self.instance.getTightBounds()
-        if bounds is not None:
-            (l, r) = bounds
-            self.radius = max(r - l) / 2
-        else:
-            self.radius = 0
 
     async def create_instance(self):
         self.apply_owner()
         self.parent.apply_instance(self.instance)
         self.instance_ready = True
         return self.instance
-
-    def get_apparent_radius(self):
-        return self.radius
 
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
