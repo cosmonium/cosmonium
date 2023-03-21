@@ -254,8 +254,8 @@ class ShapeObject(VisibleObject):
                     self.shader.create(self.shape, self.appearance)
                     self.shader.apply(self.shape.instance)
                     self.first_patch = False
-            patch.patch_done()
-            self.shape.patch_done(patch)
+            patch.patch_done(early=False)
+            self.shape.patch_done(patch, early=False)
         if settings.debug_shape_task:
             print(globalClock.getFrameCount(), "DONE", patch.str_id())
 
@@ -291,8 +291,8 @@ class ShapeObject(VisibleObject):
                 print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready)
             patch.instance_ready = True
             self.patch_sources.early_apply(patch)
-            patch.patch_done()
-            self.shape.patch_done(patch)
+            patch.patch_done(early=True)
+            self.shape.patch_done(patch, early=True)
 
     def update_shape(self):
         if self.instance is not None and self.shape is not None and self.instance_ready:

@@ -190,7 +190,7 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
     def create_object_instances(self, scene_anchor, patch, terrain_patch):
         pass
 
-    def patch_done(self, terrain_patch):
+    def patch_done(self, terrain_patch, early):
         if terrain_patch in self.patch_map:
             patch = self.patch_map[terrain_patch]
             if patch.data is None:

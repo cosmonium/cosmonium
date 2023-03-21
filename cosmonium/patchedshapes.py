@@ -82,7 +82,7 @@ class PatchLayer:
     def create_instance(self, patch):
         pass
 
-    def patch_done(self, patch):
+    def patch_done(self, patch, early):
         pass
 
     def update_instance(self, patch):
@@ -199,12 +199,12 @@ class PatchBase(Shape):
     def calc_outer_tessellation_level(self, update):
         self.neighbours.calc_outer_tessellation_level(update)
 
-    def patch_done(self):
+    def patch_done(self, early):
         self.quadtree_node.set_instance_ready(self.instance_ready)
         if self.instance is not None:
             self.instance.unstash()
         for layer in self.layers:
-            layer.patch_done(self)
+            layer.patch_done(self, early)
 
     def create_geometry_instance(self):
         for layer in self.layers:
@@ -710,9 +710,9 @@ class PatchedShapeBase(Shape):
             self.data_store.clear()
         Shape.remove_instance(self)
 
-    def patch_done(self, patch):
+    def patch_done(self, patch, early):
         for linked_object in self.linked_objects:
-            linked_object.patch_done(patch)
+            linked_object.patch_done(patch, early)
         if self.data_store is not None:
             self.data_store.update_patch(patch)
 

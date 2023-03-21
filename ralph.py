@@ -147,7 +147,7 @@ class WaterLayer(PatchLayer):
         if self.config.visible:
             self.water.create_instance()
 
-    def patch_done(self, patch):
+    def patch_done(self, patch, early):
         pass
 
     def update_instance(self, patch):
@@ -163,7 +163,9 @@ class PhysicsLayer(PatchLayer):
         self.physics = physics
         self.instance = None
 
-    def patch_done(self, patch):
+    def patch_done(self, patch, early):
+        if early:
+            return
         heightmap_patch = patch.owner.heightmap.get_patch_data(patch, strict=True)
         shape = BulletHeightfieldShape(heightmap_patch.texture, patch.owner.heightmap.height_scale, ZUp)
         shape.setUseDiamondSubdivision(True)
