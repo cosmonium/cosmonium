@@ -433,6 +433,7 @@ class RalphControl(EventsControllerBase):
         self.accept("shift-f8", self.engine.terrain_shape.dump_tree)
         self.accept("shift-control-f8", self.engine.terrain_shape.dump_patches)
         self.accept('control-f8', self.toggle_split_merge_debug)
+        self.accept('f9', self.toggle_shader_debug_coord)
         self.accept('shift-f9', self.toggle_bb)
         self.accept('control-f9', self.toggle_frustum)
         self.accept("f10", self.engine.save_screenshot)
@@ -452,6 +453,10 @@ class RalphControl(EventsControllerBase):
 
     def toggle_split_merge_debug(self):
         settings.debug_lod_split_merge = not settings.debug_lod_split_merge
+
+    def toggle_shader_debug_coord(self):
+        settings.shader_debug_coord = not settings.shader_debug_coord
+        self.engine.trigger_check_settings = True
 
     def toggle_bb(self):
         settings.debug_lod_show_bb = not settings.debug_lod_show_bb
