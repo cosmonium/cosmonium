@@ -574,7 +574,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.check_settings()
 
     def get_height(self, position):
-        height = self.terrain_surface.get_height_at(position[0], position[1])
+        height = self.terrain_surface.get_height_under(position)
         if self.has_water and self.water.visible and height < self.water.level:
             height = self.water.level
         return height
