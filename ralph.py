@@ -284,7 +284,9 @@ class RalphConfigParser(YamlModuleParser):
             self.layers.append(PopulatorYamlParser.decode(layer))
 
         self.appearance = AppearanceYamlParser.decode(appearance, self.heightmap, 1.0, patched_shape=True)
-        self.appearance.texture_source.extend *= 1000
+        if hasattr(self.appearance, 'texture_source'):
+            # TODO: Patch of texture dictionary should be done properly
+            self.appearance.texture_source.extend *= 1000
 
         if water is not None:
             level = water.get('level', 0)
