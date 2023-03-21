@@ -270,7 +270,10 @@ class RalphConfigParser(YamlModuleParser):
         self.coord_scale = self.tile_size / 16384
 
         self.heightmap = HeightmapYamlParser.decode(data.get('heightmap', {}), 'heightmap', patched=True, scale=self.tile_size, coord_scale=self.coord_scale)
-        self.biome = HeightmapYamlParser.decode(data.get('biome', {}), 'biome', patched=True, scale=self.tile_size, coord_scale=self.coord_scale)
+        if biome is not None:
+            self.biome = HeightmapYamlParser.decode(data.get('biome'), 'biome', patched=True, scale=self.tile_size, coord_scale=self.coord_scale)
+        else:
+            self.biome = None
 
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.tile_size)
@@ -493,7 +496,8 @@ class RoamingRalphDemo(CosmoniumBase):
         if self.terrain_shape.data_store is not None:
             data_source.append(self.terrain_shape.data_store.get_shader_data_source())
         data_source.append(self.ralph_config.heightmap.get_data_source(self.terrain_shape.data_store is not None))
-        data_source.append(self.ralph_config.biome.get_data_source(self.terrain_shape.data_store is not None))
+        if self.ralph_config.biome is not None:
+            data_source.append(self.ralph_config.biome.get_data_source(self.terrain_shape.data_store is not None))
         data_source.append(self.ralph_config.appearance.get_data_source())
         if OpenGLConfig.hardware_tessellation:
             tessellation_control = ConstantTessellationControl()
