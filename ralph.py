@@ -449,7 +449,7 @@ class RalphControl(EventsControllerBase):
         self.accept('shift-f9', self.toggle_bb)
         self.accept('control-f9', self.toggle_frustum)
         self.accept("f10", self.engine.save_screenshot)
-        self.accept("shift-f11", self.engine.scene_manager.ls)
+        self.accept("shift-f11", self.debug_ls)
         self.accept('alt-enter', self.engine.toggle_fullscreen)
         self.accept('{', self.engine.incr_ambient, [-0.05])
         self.accept('}', self.engine.incr_ambient, [+0.05])
@@ -477,6 +477,10 @@ class RalphControl(EventsControllerBase):
     def toggle_frustum(self):
         settings.debug_lod_frustum = not settings.debug_lod_frustum
         self.engine.trigger_check_settings = True
+
+    def debug_ls(self):
+        self.engine.scene_manager.ls()
+        self.engine.physics.ls()
 
     def update(self, time, dt):
         if self.keymap.get("sun-left"):
@@ -644,6 +648,9 @@ class RoamingRalphDemo(CosmoniumBase):
             self.physics = Physics(self.ralph_config.physics.debug)
             self.physics.enable()
             self.physics.set_gravity(self.ralph_config.physics.gravity)
+            if self.ralph_config.physics.debug:
+                print("Disabling camera at origin")
+                settings.camera_at_origin = False
         else:
             self.physics = None
         self.physic_objects = []

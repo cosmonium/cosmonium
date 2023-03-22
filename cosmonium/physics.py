@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 #
 
 
-from panda3d.core import LVector3d
 from panda3d.bullet import BulletWorld, BulletDebugNode
+from panda3d.core import LVector3d, NodePath
 
 class Physics():
     def __init__(self, enable_debug):
@@ -30,9 +30,9 @@ class Physics():
 
     def enable(self):
         self.physics_world = BulletWorld()
-        self.render_world = render.attach_new_node('physics-root')
+        self.render_world = NodePath('physics-root')
         if self.enable_debug:
-            self.debug = self.render_world.attach_new_node(BulletDebugNode('Debug'))
+            self.debug = render.attach_new_node(BulletDebugNode('Debug'))
             self.debug.show()
             #self.debug.node().showNormals(True)
             self.physics_world.set_debug_node(self.debug.node())
@@ -58,3 +58,6 @@ class Physics():
     def update(self, time, dt):
         if self.physics_world is None: return
         self.physics_world.do_physics(dt)
+
+    def ls(self):
+        self.render_world.ls()
