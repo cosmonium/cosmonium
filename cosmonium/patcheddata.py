@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ class PatchData:
         self.width = width
         self.height = height
         self.overlap = overlap
-        self.r_width = self.width - overlap * 2
-        self.r_height = self.height - overlap * 2
+        self.r_width = self.width - overlap * 2 - 1
+        self.r_height = self.height - overlap * 2 - 1
         self.r_x0 = patch.x0 - overlap / self.r_width * (patch.x1 - patch.x0)
         self.r_x1 = patch.x1 + overlap / self.r_width * (patch.x1 - patch.x0)
         self.r_y0 = patch.y0 - overlap / self.r_height * (patch.y1 - patch.y0)
@@ -68,8 +68,8 @@ class PatchData:
         else:
             x_delta = (shape_patch.x - self.data_patch.x) / self.data_patch.size
             y_delta = (shape_patch.y - self.data_patch.y) / self.data_patch.size
-        r_scale_x = (self.width - self.overlap * 2 - 1) / self.width
-        r_scale_y = (self.height - self.overlap * 2 - 1) / self.height
+        r_scale_x = self.r_width / self.width
+        r_scale_y = self.r_height / self.height
         texture_offset = LVector2((self.overlap + 0.5) / self.width + x_delta * r_scale_x, (self.overlap + 0.5) / self.height + y_delta * r_scale_y)
         texture_scale = LVector2(r_scale_x / scale, r_scale_y / scale)
         return texture_offset, texture_scale
@@ -124,7 +124,7 @@ class PatchData:
         self.data_ready = True
         self.data_lod = self.patch.lod
         self.texture_offset = LVector2((self.overlap + 0.5) / self.width, (self.overlap + 0.5) / self.height)
-        self.texture_scale = LVector2((self.width - self.overlap * 2 - 1) / self.width, (self.height - self.overlap * 2 - 1) / self.height)
+        self.texture_scale = LVector2(self.r_width / self.width, self.r_height / self.height)
         self.loaded = True
 
 class PatchedData(DataSource):
