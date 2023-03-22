@@ -1,0 +1,122 @@
+terrain:
+    tile-size: 32
+    max-distance: 16
+    max-lod: 0
+    heightmap-size: 32
+physics:
+    enable: true
+    model: models/crates.3ds
+    debug: false
+heightmap:
+    overlap: 0
+    max-height: 500
+    filter: bilinear
+    size: 32
+    func:
+      aliases:
+        perlin: gpunoise:perlin
+        cellular: stegu:cellulardiff
+      func2:
+        0
+      func:
+        mul:
+         - y
+         - 2000
+      noise2:
+        add:
+            - 10.0
+            - add:
+                - fbm:
+                    noise:
+                      ridged: perlin
+                    octaves: 8
+                    length: 256
+                    scale: 50
+                - fbm:
+                    noise:
+                      ridged:
+                        noise: perlin
+                        shift: False
+                    octaves: 8
+                    length: 2048
+                    scale: 250
+biome:
+    max-height: 1
+    scale-length: 32768.0
+    overlap: 0
+    noise:
+      aliases:
+        perlin: gpunoise:perlin
+      noise:
+        fbm:
+            noise: perlin
+            octaves: 4
+            length: 16.384
+
+appearance:
+    type: procedural
+    textures:
+      entries:
+        grass: data/procedural/textures/grass/GrassGreenTexture0003.jpg
+        snow: data/procedural/textures/snow/SnowIceTexture0007.jpg
+        rock: data/procedural/textures/rock/SeamlessMixedStone0009.jpg
+        gravel: data/procedural/textures/gravel/gravel_01.png
+        soil: data/procedural/textures/soil/dirt_02.png
+      scale: [0.5, 0.5]
+      tiling: hash
+    control2:
+         type: colormap
+         percentage: true
+         entries:
+           - height: 0
+             bottom: [0, 0, 0] #black
+             top: [255, 120, 255] #Purple
+           - height: .2
+             top: [120, 120, 255] #Blue
+           - height: .4
+             top: [120, 255, 255] #Aqua
+           - height: .6
+             top: [120, 255, 1201] #Green
+           - height: .7
+             top: [255, 255, 120] #Yellow
+           - height: .9
+             top: [255, 120, 120] #Red
+           - height: 1.0
+             top: [255, 255, 255] #White
+           - height: 1.0
+             top: [0, 0, 0] #black
+    control:
+       biome:
+           - entry:
+               slope:
+                 - entry: gravel
+                 - entry:
+                     height:
+                     - entry: soil
+                       height: 200
+                       height-units: km
+                     - entry: snow
+                       height: 500
+                       height-units: km
+                       blend: 10
+                   angle: 5
+                   blend: 5
+           - entry:
+               slope:
+                   - entry: soil
+                   - entry:
+                       height:
+                           - entry: grass
+                             height: 200
+                             height-units: km
+                           - entry: snow
+                             height: 500
+                             height-units: km
+                             blend: 10
+                     angle: 5
+                     blend: 5
+                   - entry: rock
+                     angle: 35
+                     blend: 10
+             value: 0
+             blend: 0.1

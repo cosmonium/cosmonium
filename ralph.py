@@ -166,16 +166,24 @@ class PhysicsLayer(PatchLayer):
     def patch_done(self, patch, early):
         if early:
             return
-        heightmap_patch = patch.owner.heightmap.get_patch_data(patch, strict=True)
-        shape = BulletHeightfieldShape(heightmap_patch.texture, patch.owner.heightmap.height_scale, ZUp)
+        terrain = patch.owner.owner.terrain
+        heightmap = terrain.heightmap
+        heightmap_patch = heightmap.get_patch_data(patch, strict=True)
+        terrain_scale = terrain.get_scale()
+        patch_scale =  patch.get_scale()
+        assert heightmap_patch.width == heightmap_patch.height
+        assert patch_scale[0] == patch_scale[1]
+        print(terrain_scale, patch_scale, heightmap_patch.width, heightmap.max_height)
+        shape = BulletHeightfieldShape(heightmap_patch.texture, heightmap.max_height, ZUp)
         shape.setUseDiamondSubdivision(True)
-        self.instance = NodePath(BulletRigidBodyNode('Heightfield'))
+        self.instance = NodePath(BulletRigidBodyNode('Heightfield ' + patch.str_id()))
         self.instance.node().add_shape(shape)
-        x = (patch.x0 + patch.x1) / 2.0
-        y = (patch.y0 + patch.y1) / 2.0
-        z = patch.owner.heightmap.height_scale / 2
-        self.instance.set_pos(patch.scale * x, patch.scale * y , z)
-        self.instance.set_scale(patch.scale / heightmap_patch.width, patch.scale / heightmap_patch.height, 1.0)
+        x = terrain_scale[0] * (patch.x0 + patch.x1) / 2.0
+        y = terrain_scale[1] * (patch.y0 + patch.y1) / 2.0
+        self.instance.set_pos(x, y, heightmap.max_height / 2)
+        self.instance.set_scale(terrain_scale[0] * patch_scale[0] / (heightmap_patch.width - 1),
+                                terrain_scale[1] * patch_scale[1] / (heightmap_patch.height - 1),
+                                1) #terrain_scale[2])
         self.instance.setCollideMask(BitMask32.allOn())
         self.physics.add(self.instance)
 
@@ -396,15 +404,15 @@ class RalphWord(CartesianWorld):
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         CartesianWorld.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
-        if self.enable_physics and self.physics_instance is None:
-            bounds = self.instance.get_tight_bounds()
+        if self.ship_object.instance is not None and self.enable_physics and self.physics_instance is None:
+            bounds = self.ship_object.instance.get_tight_bounds()
             dims = bounds[1] - bounds[0]
             width = max(dims[0], dims[1]) / 2.0
             height = dims[2]
             self.physics_instance = NodePath(BulletRigidBodyNode("Ralph"))
             shape = BulletCapsuleShape(width, height - 2 * width, ZUp)
             self.physics_instance.node().addShape(shape)
-            self.physics_instance.node().setMass(1.0)
+            self.physics_instance.node().setMass(60.0)
             self.physics_instance.node().setKinematic(True)
             base.physics.add(self.physics_instance)
 
@@ -412,8 +420,8 @@ class RalphWord(CartesianWorld):
         CartesianWorld.update(self, time, dt)
         if self.physics_instance is not None:
             offset = LPoint3d(0, 0, 0.8)
-            self.physics_instance.set_pos(*(self._local_position + offset))
-            self.physics_instance.set_quat(LQuaternion(*self._orientation))
+            self.physics_instance.set_pos(*(self.anchor.get_local_position() + offset))
+            self.physics_instance.set_quat(LQuaternion(*self.anchor.get_absolute_orientation()))
 
     def get_apparent_radius(self):
         return 1.5
@@ -563,7 +571,7 @@ class RoamingRalphDemo(CosmoniumBase):
                          self.physics,
                          self.ralph_config.physics.mass,
                          self.ralph_config.physics.limit)
-        box.create_instance(self.ralph)
+        box.create_instance(self.ralph_world.anchor)
         self.physic_objects.append(box)
 
     def toggle_water(self):
