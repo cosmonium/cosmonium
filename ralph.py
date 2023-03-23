@@ -173,17 +173,16 @@ class PhysicsLayer(PatchLayer):
         patch_scale =  patch.get_scale()
         assert heightmap_patch.width == heightmap_patch.height
         assert patch_scale[0] == patch_scale[1]
-        print(terrain_scale, patch_scale, heightmap_patch.width, heightmap.max_height)
-        shape = BulletHeightfieldShape(heightmap_patch.texture, heightmap.max_height, ZUp)
+        shape = BulletHeightfieldShape(heightmap_patch.texture, heightmap.max_height * terrain_scale[2], ZUp)
         shape.setUseDiamondSubdivision(True)
         self.instance = NodePath(BulletRigidBodyNode('Heightfield ' + patch.str_id()))
         self.instance.node().add_shape(shape)
         x = terrain_scale[0] * (patch.x0 + patch.x1) / 2.0
         y = terrain_scale[1] * (patch.y0 + patch.y1) / 2.0
-        self.instance.set_pos(x, y, heightmap.max_height / 2)
+        self.instance.set_pos(x, y, heightmap.max_height / 2 * terrain_scale[2])
         self.instance.set_scale(terrain_scale[0] * patch_scale[0] / (heightmap_patch.width - 1),
                                 terrain_scale[1] * patch_scale[1] / (heightmap_patch.height - 1),
-                                1) #terrain_scale[2])
+                                1)
         self.instance.setCollideMask(BitMask32.allOn())
         self.physics.add(self.instance)
 
