@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+from math import log2, ceil
 import numpy
 
 from panda3d.core import Texture
@@ -92,6 +93,12 @@ class AverageLuminosityStage(SceneStage):
         return False
 
     def create(self, pipeline):
+        width = self.win.get_x_size()
+        height = self.win.get_y_size()
+        min_size = log2(4)
+        x_level = max(log2(width) - min_size, 0)
+        y_level = max(log2(height) - min_size, 0)
+        self.levels = int(ceil(min(x_level, y_level)))
         if False:
             self.luminance_textures = []
             width = self.win.get_x_size()
@@ -120,10 +127,7 @@ class AverageLuminosityStage(SceneStage):
             target.set_shader(shader)
             target.root.set_shader_input('source', self.luminance_textures[0])
         else:
-            self.levels = 11
             self.luminance_textures = []
-            width = self.win.get_x_size()
-            height = self.win.get_y_size()
             luminance_tc = TextureConfiguration(
                 format=Texture.F_r32,
                 wrap_u=Texture.WM_border_color, wrap_v=Texture.WM_border_color,
