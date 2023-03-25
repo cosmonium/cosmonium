@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+from math import ceil, log2
 from panda3d.core import Texture
 
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
@@ -84,8 +85,8 @@ class DownscaleBloomStage(SceneStage):
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors
-        self.levels = 10
-        self.brightness_threshold = False
+        self.levels: int = 0
+        self.brightness_threshold: bool = False
         self.bloom_textures: list[Texture] = []
         self.target_textures: list[Texture] = []
 
@@ -98,6 +99,7 @@ class DownscaleBloomStage(SceneStage):
     def create(self, pipeline):
         width = self.win.get_x_size()
         height = self.win.get_y_size()
+        self.levels = int(ceil(min(log2(width), log2(height))))
         bloom_tc = TextureConfiguration(
             format=Texture.F_rgb32,
             wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
