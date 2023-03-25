@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -31,8 +31,6 @@ class Pipeline:
     def set_win(self, win):
         self.win = win
         self.base_sort = self.win.get_sort() - 100
-        for stage in self.stages.values():
-            stage.set_win(win)
 
     def request_slot(self):
         self.base_sort += 1
@@ -41,8 +39,7 @@ class Pipeline:
     def add_stage(self, stage):
         self.stages[stage.name] = stage
         self.ordered_stages.append(stage)
-        stage.set_win(self.win)
-        stage.set_engine(self.graphics_engine)
+        stage.init(self.win, self.graphics_engine, self)
         stage.update_win_size(self.win_size)
         for request in stage.requires():
             for previous_stage in reversed(self.ordered_stages[:-1]):

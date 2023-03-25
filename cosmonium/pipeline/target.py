@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -73,12 +73,10 @@ class TargetMixinBase:
         self.win_size = None
         self.size = (0, 0)
 
-    def set_engine(self, engine):
-        self.graphics_engine = engine
-
-    def set_win(self, win):
+    def init(self, win, engine):
         self.win = win
         self.win_size = (self.win.get_x_size(), self.win.get_y_size())
+        self.graphics_engine = engine
 
     def update_win_size(self, size):
         raise NotImplementedError()
@@ -271,8 +269,8 @@ class BufferMixin(TargetMixinBase):
 
 
 class ScreenMixin(TargetMixinBase):
-    def set_win(self, win):
-        TargetMixinBase.set_win(self, win)
+    def init(self, win, engine):
+        TargetMixinBase.init(self, win, engine)
         self.target = win
 
     def update_win_size(self, size):

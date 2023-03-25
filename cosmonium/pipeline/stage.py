@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -29,9 +29,15 @@ class PipelineStage():
         self.name = name
         self.win = None
         self.engine = None
+        self.pipeline = None
         self.targets: list[SceneTarget] = []
         self.sources = {}
         self.scene_manager = None
+
+    def init(self, win, engine, pipeline):
+        self.win = win
+        self.engine = engine
+        self.pipeline = pipeline
 
     def requires(self):
         return []
@@ -58,20 +64,13 @@ class PipelineStage():
     def set_scene(self, scene_manager):
         self.scene_manager = scene_manager
 
-    def set_win(self, win):
-        self.win = win
-
-    def set_engine(self, engine):
-        self.engine = engine
-
     def update_win_size(self, size):
         for target in self.targets:
             target.update_win_size(size)
 
     def add_target(self, target):
         self.targets.append(target)
-        target.set_win(self.win)
-        target.set_engine(self.engine)
+        target.init(self.win, self.engine)
 
     def create(self, pipeline):
         raise NotImplementedError()
