@@ -24,7 +24,7 @@ from math import ceil, log2
 from panda3d.core import Texture
 
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
-from ...shaders.base import ShaderProgram
+from ...shaders.base import ShaderProgram, ShaderBase
 from ...textures import TextureConfiguration
 
 from ..stage import SceneStage
@@ -89,6 +89,9 @@ class DownscaleBloomStage(SceneStage):
         self.brightness_threshold: bool = False
         self.bloom_textures: list[Texture] = []
         self.target_textures: list[Texture] = []
+        self.brightness_threshold_shader: ShaderBase = None
+        self.downscale_shader: ShaderBase = None
+        self.upscale_shader: ShaderBase = None
 
     def provides(self):
         return {'bloom': 'color'}
@@ -96,57 +99,74 @@ class DownscaleBloomStage(SceneStage):
     def requires(self):
         return ['scene']
 
+    def create_shaders(self):
+        self.brightness_threshold_shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
+        self.brightness_threshold_shader.create(None, None)
+        self.downscale_shader = PostProcessShader(fragment_shader=BloomDownscaleFragmentShader())
+        self.downscale_shader.create(None, None)
+        self.upscale_shader = PostProcessShader(fragment_shader=BloomUpscaleFragmentShader())
+        self.upscale_shader.create(None, None)
+
+    def _create_textures_for_level(self, width, height, level):
+        scale = 1 << level
+        self.bloom_textures.append(
+            self.bloom_tc.create_2d(f"bloom_{level}", width // scale, height // scale))
+        self.target_textures.append(
+            self.bloom_tc.create_2d(f"bloom_target_{level}", width // scale, height // scale))
+
+
+    def _create_downscale_target_for_level(self, pipeline, level):
+        scale = 1 << level
+        target = ProcessTarget(f"bloom_downscale_{level}")
+        target.set_relative_size((1.0 / scale, 1.0 / scale))
+        target.add_color_target(self.colors, srgb_colors=False, texture=self.bloom_textures[level])
+        self.add_target(target)
+        target.create(pipeline)
+        target.set_shader(self.downscale_shader)
+        target.root.set_shader_input('source', self.bloom_textures[level - 1])
+
+
+    def _create_upscale_target_for_level(self, pipeline, level):
+        scale = 1 << (level - 1)
+        target = ProcessTarget(f"bloom_upscale_{level}")
+        target.set_relative_size((1.0 / scale, 1.0 / scale))
+        target.add_color_target(self.colors, srgb_colors=False, texture=self.target_textures[level - 1])
+        self.add_target(target)
+        target.create(pipeline)
+        target.set_shader(self.upscale_shader)
+        target.root.set_shader_input('source', self.bloom_textures[level - 1])
+        target.root.set_shader_input('upper', self.target_textures[level])
+
     def create(self, pipeline):
+        self.create_shaders()
         width = self.win.get_x_size()
         height = self.win.get_y_size()
         self.levels = int(ceil(min(log2(width), log2(height))))
-        bloom_tc = TextureConfiguration(
+        self.bloom_tc = TextureConfiguration(
             format=Texture.F_rgb32,
             wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
             minfilter=Texture.FT_linear,
             magfilter=Texture.FT_linear)
-        for i in range(self.levels):
-            scale = 1 << i
-            self.bloom_textures.append(bloom_tc.create_2d(f"bloom_{i}", width // scale, height // scale))
-            self.target_textures.append(bloom_tc.create_2d(f"bloom_target_{i}", width // scale, height // scale))
+
+        for level in range(self.levels):
+            self._create_textures_for_level(width, height, level)
 
         if self.brightness_threshold:
             target = ProcessTarget("brightness_threshold")
             target.add_color_target(self.colors, srgb_colors=False, texture=self.bloom_textures[0])
             self.add_target(target)
             target.create(pipeline)
-            shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
-            shader.create(None, None)
-            target.set_shader(shader)
+            target.set_shader(self.brightness_threshold_shader)
             target.root.set_shader_input("max_luminance", pipeline.max_luminance)
             target.root.set_shader_input('scene', self.get_source('scene'))
         else:
             self.bloom_textures[0] = self.get_source('scene')
 
-        shader = PostProcessShader(fragment_shader=BloomDownscaleFragmentShader())
-        shader.create(None, None)
         for level in range(1, self.levels):
-            scale = 1 << level
-            target = ProcessTarget(f"bloom_downscale_{level}")
-            target.set_relative_size((1.0 / scale, 1.0 / scale))
-            target.add_color_target(self.colors, srgb_colors=False, texture=self.bloom_textures[level])
-            self.add_target(target)
-            target.create(pipeline)
-            target.set_shader(shader)
-            target.root.set_shader_input('source', self.bloom_textures[level - 1])
+            self._create_downscale_target_for_level(pipeline, level)
 
-        shader = PostProcessShader(fragment_shader=BloomUpscaleFragmentShader())
-        shader.create(None, None)
         for level in range(self.levels - 1, 0, -1):
-            scale = 1 << (level - 1)
-            target = ProcessTarget(f"bloom_upscale_{level}")
-            target.set_relative_size((1.0 / scale, 1.0 / scale))
-            target.add_color_target(self.colors, srgb_colors=False, texture=self.target_textures[level - 1])
-            self.add_target(target)
-            target.create(pipeline)
-            target.set_shader(shader)
-            target.root.set_shader_input('source', self.bloom_textures[level - 1])
-            target.root.set_shader_input('upper', self.target_textures[level])
+            self._create_upscale_target_for_level(pipeline, level)
 
     def update(self, pipeline):
         if self.brightness_threshold:
@@ -156,8 +176,25 @@ class DownscaleBloomStage(SceneStage):
 
     def update_win_size(self, size):
         SceneStage.update_win_size(self, size)
+        width, height = size
         if len(self.bloom_textures) > 0:
-            width, height = size
+            new_levels = int(ceil(min(log2(width), log2(height))))
+            if new_levels > self.levels:
+                # Add new levels
+                for level in range(self.levels, new_levels):
+                    self._create_textures_for_level(width, height, level)
+                for level in range(self.levels, new_levels):
+                    self._create_downscale_target_for_level(self.pipeline, level)
+                for level in range(self.levels, new_levels):
+                    self._create_upscale_target_for_level(self.pipeline, level)
+                self.pipeline.request_slots_update()
+            elif new_levels < self.levels:
+                # Remove levels
+                for level in range(new_levels, self.levels):
+                    self.remove_target_by_name(f"bloom_downscale_{level}")
+                    self.remove_target_by_name(f"bloom_upscale_{level}")
+                self.target_textures = self.target_textures[:new_levels]
+            self.levels = new_levels
             for i in range(self.levels):
                 scale = 1 << i
                 self.bloom_textures[i].set_x_size(width // scale)
