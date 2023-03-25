@@ -31,6 +31,7 @@ class PipelineStage():
         self.engine = None
         self.pipeline = None
         self.targets: list[SceneTarget] = []
+        self.targets_map: dict[str, SceneTarget] = {}
         self.sources = {}
         self.scene_manager = None
 
@@ -70,7 +71,22 @@ class PipelineStage():
 
     def add_target(self, target):
         self.targets.append(target)
+        self.targets_map[target.name] = target
         target.init(self.win, self.engine)
+
+    def remove_target(self, target):
+        target.remove()
+        self.targets.remove(target)
+        del self.targets_map[target.name]
+
+    def remove_target_by_name(self, name):
+        target = self.targets_map[name]
+        target.remove()
+        self.targets.remove(target)
+        del self.targets_map[name]
+
+    def get_target_by_name(self, name):
+        return self.targets_map[name]
 
     def create(self, pipeline):
         raise NotImplementedError()
