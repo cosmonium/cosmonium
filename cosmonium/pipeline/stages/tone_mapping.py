@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -45,13 +45,13 @@ class SimpleToneMappingFragmentShader(ShaderComponent):
         code.append("uniform float exposure;")
 
     def fragment_shader(self, code):
-        code.append('  vec3 exposed_color = pixel_color * exposure;')
         if self.luminance_tonemap:
             code.append('  vec3 xyy = linear_to_xyy(pixel_color);')
             code.append('  float exposed_luminance = xyy.z * exposure;')
             code.append(f'  float ldr = {self.tonemapping_func}(exposed_luminance);')
             code.append('  result = xyy_to_linear(vec3(xyy.x, xyy.y, ldr));')
         else:
+            code.append('  vec3 exposed_color = pixel_color * exposure;')
             code.append(f'  result = vec3({self.tonemapping_func}(exposed_color.r), {self.tonemapping_func}(exposed_color.g), {self.tonemapping_func}(exposed_color.b));')
 
 
