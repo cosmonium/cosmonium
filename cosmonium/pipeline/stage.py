@@ -102,6 +102,9 @@ class PipelineStage():
     def update(self, pipeline):
         pass
 
+    def update_slots(self):
+        for target in self.targets:
+            target.update_slot(self.pipeline)
 
 class ProcessStage(PipelineStage):
     def prepare(self, prepare_data):

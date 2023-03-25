@@ -24,12 +24,18 @@ class Pipeline:
         self.ordered_stages = []
         self.win = win
         self.graphics_engine = engine
-        if self.win is not None:
-            self.base_sort = self.win.get_sort() - 100
+        self.base_sort = None
         self.win_size = (0, 0)
+        self.update_slots_requested = False
+        if self.win is not None:
+            self.reset_slots()
 
     def set_win(self, win):
+        assert len(self.ordered_stages) == 0
         self.win = win
+        self.reset_slots()
+
+    def reset_slots(self):
         self.base_sort = self.win.get_sort() - 100
 
     def request_slot(self):
@@ -62,10 +68,21 @@ class Pipeline:
         for stage in self.stages.values():
             stage.remove()
 
+    def request_slots_update(self):
+        self.update_slots_requested = True
+
+    def update_slots(self):
+        self.reset_slots()
+        for stage in self.ordered_stages:
+            stage.update_slots()
+
     def update_win_size(self, width, height):
         self.size = (width, height)
         for stage in self.stages.values():
             stage.update_win_size(self.size)
+        if self.update_slots_requested:
+            self.update_slots()
+            self.update_slots_requested = False
 
 
 class ProcessPipeline(Pipeline):

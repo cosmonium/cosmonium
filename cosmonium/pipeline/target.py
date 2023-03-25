@@ -81,6 +81,9 @@ class TargetMixinBase:
     def update_win_size(self, size):
         raise NotImplementedError()
 
+    def update_slot(self, pipeline):
+        raise NotImplementedError()
+
     def size_updated(self):
         raise NotImplementedError()
 
@@ -234,6 +237,10 @@ class BufferMixin(TargetMixinBase):
         else:
             self.target.set_active(True)
 
+    def update_slot(self, pipeline):
+        slot = pipeline.request_slot()
+        self.target.set_sort(slot)
+
     def prepare(self, prepare_data):
         if not self.one_shot:
             print("Can't call prepare on non one-shot target")
@@ -277,6 +284,9 @@ class ScreenMixin(TargetMixinBase):
         self.win_size = size
         self.size = size
         self.size_updated()
+
+    def update_slot(self, pipeline):
+        pass
 
 
 class TargetShaderMixin():
