@@ -85,6 +85,7 @@ class DownscaleBloomStage(SceneStage):
         SceneStage.__init__(self, name)
         self.colors = colors
         self.levels = 10
+        self.brightness_threshold = False
         self.bloom_textures: list[Texture] = []
         self.target_textures: list[Texture] = []
 
@@ -107,15 +108,18 @@ class DownscaleBloomStage(SceneStage):
             self.bloom_textures.append(bloom_tc.create_2d(f"bloom_{i}", width // scale, height // scale))
             self.target_textures.append(bloom_tc.create_2d(f"bloom_target_{i}", width // scale, height // scale))
 
-        target = ProcessTarget("brightness_threshold")
-        target.add_color_target(self.colors, srgb_colors=False, texture=self.bloom_textures[0])
-        self.add_target(target)
-        target.create(pipeline)
-        shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
-        shader.create(None, None)
-        target.set_shader(shader)
-        target.root.set_shader_input("max_luminance", pipeline.max_luminance)
-        target.root.set_shader_input('scene', self.get_source('scene'))
+        if self.brightness_threshold:
+            target = ProcessTarget("brightness_threshold")
+            target.add_color_target(self.colors, srgb_colors=False, texture=self.bloom_textures[0])
+            self.add_target(target)
+            target.create(pipeline)
+            shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
+            shader.create(None, None)
+            target.set_shader(shader)
+            target.root.set_shader_input("max_luminance", pipeline.max_luminance)
+            target.root.set_shader_input('scene', self.get_source('scene'))
+        else:
+            self.bloom_textures[0] = self.get_source('scene')
 
         shader = PostProcessShader(fragment_shader=BloomDownscaleFragmentShader())
         shader.create(None, None)
@@ -143,7 +147,8 @@ class DownscaleBloomStage(SceneStage):
             target.root.set_shader_input('upper', self.target_textures[level])
 
     def update(self, pipeline):
-        self.targets[0].root.set_shader_input("max_luminance", pipeline.max_luminance)
+        if self.brightness_threshold:
+            self.targets[0].root.set_shader_input("max_luminance", pipeline.max_luminance)
         #for i in range(self.levels):
         #    self.target_textures[i].clear_image()
 
