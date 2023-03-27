@@ -1,11 +1,32 @@
+#
+# This file is part of Cosmonium.
+#
+# Copyright (C) 2018-2023 Laurent Deru.
+#
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+import sys
+
 from panda3d.core import WindowProperties
 from panda3d.core import load_prc_file_data
 
 from .. import settings
 
-import sys
 
 class Screen:
+
     def __init__(self, base, srgb, multisamples, stereoscopic):
         self.base = base
         self.srgb = srgb
@@ -20,7 +41,7 @@ class Screen:
             have_window = True
         except Exception:
             pass
-        #TODO: Obsolete workaround
+        # TODO: Obsolete workaround
         if have_window:
             self.base.bufferViewer.win = self.base.win
         return have_window
@@ -52,7 +73,7 @@ class Screen:
             if self._create_main_window():
                 return
 
-        #Can't create window even without multisampling
+        # Can't create window even without multisampling
         if settings.use_gl_version is not None:
             print("Failed to open window with OpenGL Core; falling back to older OpenGL.")
             load_prc_file_data("", "gl-version")

@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from __future__ import annotations
 
@@ -35,6 +34,7 @@ from ..target import ProcessTarget
 
 
 class AverageLuminanceFragmentShader(ShaderProgram):
+
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -42,7 +42,7 @@ class AverageLuminanceFragmentShader(ShaderProgram):
         return 'avg-luminance'
 
     def create_outputs(self, code: list[str]) -> None:
-        code.append(f"out float result;")
+        code.append("out float result;")
 
     def create_uniforms(self, code: list[str]) -> None:
         code.append("uniform sampler2D source;")
@@ -52,6 +52,7 @@ class AverageLuminanceFragmentShader(ShaderProgram):
 
 
 class LuminanceFragmentShader(ShaderComponent):
+
     def get_id(self) -> str:
         return 'luminance'
 
@@ -60,6 +61,7 @@ class LuminanceFragmentShader(ShaderComponent):
 
 
 class LuminanceDownscaleFragmentShader(ShaderProgram):
+
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -83,6 +85,7 @@ class LuminanceDownscaleFragmentShader(ShaderProgram):
 
 
 class AverageLuminosityStage(SceneStage):
+
     def __init__(self, name):
         SceneStage.__init__(self, name)
         self.levels = 0
@@ -108,7 +111,8 @@ class AverageLuminosityStage(SceneStage):
         return int(ceil(min(x_level, y_level)))
 
     def _create_luminance_shader(self):
-        self.luminance_shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceFragmentShader(), output_type='float'))
+        self.luminance_shader = PostProcessShader(
+            fragment_shader=SimplePostProcessFragmentShader(LuminanceFragmentShader(), output_type='float'))
         self.luminance_shader.create(None, None)
 
     def _create_average_shader(self):
@@ -128,7 +132,8 @@ class AverageLuminosityStage(SceneStage):
         scale = 1 << level
         target = ProcessTarget(f"luminance_downscale_{level}")
         target.set_relative_size((1.0 / scale, 1.0 / scale))
-        target.add_color_target((32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram)
+        target.add_color_target(
+            (32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram)
         self.add_target(target)
         target.create(pipeline)
         target.set_shader(self.downscale_shader)

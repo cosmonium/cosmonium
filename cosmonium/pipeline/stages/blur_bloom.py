@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from __future__ import annotations
 
@@ -25,7 +24,6 @@ from panda3d.core import Texture
 from ...textures import TextureConfiguration
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.base import ShaderProgram
-from ...shaders.base import FileShader
 
 from ..stage import SceneStage
 from ..target import ProcessTarget
@@ -34,6 +32,7 @@ from .bloom_threshold import LuminanceThresholdFragmentShader
 
 
 class BlurPassFragmentShader(ShaderProgram):
+
     def __init__(self, horizontal: bool):
         ShaderProgram.__init__(self, 'fragment')
         self.horizontal = horizontal
@@ -68,6 +67,7 @@ class BlurPassFragmentShader(ShaderProgram):
 
 
 class BlurBloomStage(SceneStage):
+
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors
@@ -110,7 +110,7 @@ class BlurBloomStage(SceneStage):
         target.set_shader(vertical_shader)
         target.root.set_shader_input('scene', self.targets[1].get_attachment('color'))
 
-        buffers = [ self.targets[1].get_attachment('color'),  self.targets[2].get_attachment('color')]
+        buffers = [self.targets[1].get_attachment('color'), self.targets[2].get_attachment('color')]
         even = True
 
         for i in range(5):

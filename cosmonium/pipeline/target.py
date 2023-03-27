@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from panda3d.core import Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture, NodePath, DisplayRegion
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
@@ -25,6 +24,7 @@ from ..textures import TextureConfiguration
 
 
 class TextureTarget:
+
     def __init__(self, to_ram, render_target, config, texture):
         self.texture = texture
         self.to_ram = to_ram
@@ -53,19 +53,21 @@ class TextureTarget:
 
 
 class RenderTarget:
+
     def __init__(self, name):
         self.name = name
         self.sort = 0
         self.dr: DisplayRegion = None
 
     def create_display_region(self):
-        #Create the display region and attach the camera
+        # Create the display region and attach the camera
         self.dr = self.target.make_display_region((0, 1, 0, 1))
         self.dr.disable_clears()
         self.dr.set_scissor_enabled(False)
 
 
 class TargetMixinBase:
+
     def __init__(self):
         self.target: GraphicsOutput = None
         self.win = None
@@ -89,6 +91,7 @@ class TargetMixinBase:
 
 
 class BufferMixin(TargetMixinBase):
+
     def __init__(self):
         TargetMixinBase.__init__(self)
         self.requested_size = (1, 1)
@@ -144,13 +147,28 @@ class BufferMixin(TargetMixinBase):
     def get_attachment(self, name: str) -> Texture:
         return self.texture_targets[name].texture
 
-    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration(), texture=None):
+    def add_color_target(
+            self,
+            color_bits,
+            srgb_colors=True,
+            name='color',
+            to_ram=False,
+            config=TextureConfiguration(),
+            texture=None):
         self.color_bits = color_bits
         self.srgb_colors = srgb_colors
         texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config, texture)
         self.texture_targets[name] = texture_target
 
-    def add_depth_target(self, depth_bits, stencil_bits=0, float_depth=False, name='depth', to_ram=False, config=TextureConfiguration(), texture=None):
+    def add_depth_target(
+            self,
+            depth_bits,
+            stencil_bits=0,
+            float_depth=False,
+            name='depth',
+            to_ram=False,
+            config=TextureConfiguration(),
+            texture=None):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
@@ -174,7 +192,7 @@ class BufferMixin(TargetMixinBase):
         if name is None:
             name = f"aux_{self.nb_aux}"
         self.nb_aux += 1
-        #TODO: Map to int, hfloat, float
+        # TODO: Map to int, hfloat, float
         texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux_float_0, config, texture)
         self.texture_targets[name] = texture_target
 
@@ -219,8 +237,9 @@ class BufferMixin(TargetMixinBase):
         fbprops = self.make_fbprops()
         winprops = self.make_winprops()
         buffer_options = self.make_buffer_options()
-        self.target = self.graphics_engine.make_output(self.win.get_pipe(), self.name, -1,
-            fbprops, winprops,  buffer_options, self.win.get_gsg(), self.win)
+        self.target = self.graphics_engine.make_output(
+            self.win.get_pipe(), self.name, -1,
+            fbprops, winprops, buffer_options, self.win.get_gsg(), self.win)
         print("New buffer", self.target.get_fb_properties(), winprops)
 
     def create_target(self, pipeline):
@@ -264,7 +283,7 @@ class BufferMixin(TargetMixinBase):
         self.target.clear_render_textures()
         for texture_target in self.texture_targets.values():
             texture_target.clear()
-        #TODO: Do we need to call release_all() on all textures ?
+        # TODO: Do we need to call release_all() on all textures ?
 
     def remove(self):
         if self.target is not None:
@@ -276,6 +295,7 @@ class BufferMixin(TargetMixinBase):
 
 
 class ScreenMixin(TargetMixinBase):
+
     def init(self, win, engine):
         TargetMixinBase.init(self, win, engine)
         self.target = win
@@ -290,26 +310,27 @@ class ScreenMixin(TargetMixinBase):
 
 
 class TargetShaderMixin():
+
     def __init__(self):
         self.root: NodePath = None
         self.camera = None
         self.shader = None
 
     def create_target_geom(self):
-        #Create the plane with the texture
+        # Create the plane with the texture
         cm = CardMaker("plane")
         cm.set_frame_fullscreen_quad()
-        #TODO: This should either be done inside the passthrough vertex shader
+        # TODO: This should either be done inside the passthrough vertex shader
         # Or in the heightmap sampler.
-        #x_margin = 1.0 / self.width / 2.0
-        #y_margin = 1.0 / self.height / 2.0
-        #cm.set_uv_range((-x_margin, -y_margin), (1 + x_margin, 1 + y_margin))
+        # x_margin = 1.0 / self.width / 2.0
+        # y_margin = 1.0 / self.height / 2.0
+        # cm.set_uv_range((-x_margin, -y_margin), (1 + x_margin, 1 + y_margin))
         self.root = NodePath(cm.generate())
         self.root.set_depth_test(False)
         self.root.set_depth_write(False)
 
     def create_target_cam(self):
-        #Create the camera for the buffer
+        # Create the camera for the buffer
         cam = Camera("buffer-cam")
         lens = OrthographicLens()
         lens.set_film_size(2, 2)
@@ -336,6 +357,7 @@ class TargetShaderMixin():
 
 
 class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
+
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         BufferMixin.__init__(self)
@@ -354,6 +376,7 @@ class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
 
 
 class SceneTarget(RenderTarget, BufferMixin):
+
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         BufferMixin.__init__(self)
@@ -371,6 +394,7 @@ class SceneTarget(RenderTarget, BufferMixin):
 
 
 class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
+
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         TargetShaderMixin.__init__(self)
@@ -386,6 +410,7 @@ class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
 
 
 class PasstroughTarget(RenderTarget, ScreenMixin):
+
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         ScreenMixin.__init__(self)

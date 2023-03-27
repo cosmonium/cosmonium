@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 from math import log2, pow, exp
@@ -37,6 +37,7 @@ from .stages.tone_mapping import ToneMappingStage
 
 
 class ScenePipelineBase(Pipeline):
+
     def __init__(self, engine):
         Pipeline.__init__(self, win=None, engine=engine)
 
@@ -66,6 +67,7 @@ class ScenePipelineBase(Pipeline):
 
 
 class BasicScenePipeline(ScenePipelineBase):
+
     def __init__(self, engine=None):
         ScenePipelineBase.__init__(self, engine=engine)
         self.screen = None
@@ -97,6 +99,7 @@ class BasicScenePipeline(ScenePipelineBase):
 
 
 class ScenePipeline(ScenePipelineBase):
+
     def __init__(self, engine=None):
         ScenePipelineBase.__init__(self, engine=engine)
         self.screen = None
@@ -167,11 +170,12 @@ class ScenePipeline(ScenePipelineBase):
                     self.add_stage(BlurBloomStage("simple_bloom", hdr_colors))
                 self.add_stage(BloomApplyStage("bloom_appply", hdr_colors))
             self.add_stage(ToneMappingStage("tone_mapping", ldr_colors))
-            annotation_render_stage = AnnotationsRenderStage("annotations",
-                                       camera_mask=BaseObject.AnnotationCameraFlag,
-                                       colors=hdr_colors_alpha,
-                                       srgb=False,
-                                       inverse_z=self.inverse_z)
+            annotation_render_stage = AnnotationsRenderStage(
+                "annotations",
+                camera_mask=BaseObject.AnnotationCameraFlag,
+                colors=hdr_colors_alpha,
+                srgb=False,
+                inverse_z=self.inverse_z)
             self.add_stage(annotation_render_stage)
         if settings.use_srgb and not self.framebuffer_srgb:
             self.add_stage(ColorCorrectionStage("color_correction", ldr_colors))

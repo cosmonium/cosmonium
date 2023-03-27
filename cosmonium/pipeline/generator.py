@@ -1,35 +1,35 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import AsyncFuture
 from direct.task import Task
+from panda3d.core import AsyncFuture
 
 from ..pipeline.pipeline import ProcessPipeline
 
 
 class GeneratorChain(ProcessPipeline):
+
     def __init__(self, win=None, engine=None):
         ProcessPipeline.__init__(self, win, engine)
         self.busy = False
         self.queue = []
-        taskMgr.add(self.check_generation, 'tex_generation', sort = -10000)
+        taskMgr.add(self.check_generation, 'tex_generation', sort=-10000)
 
     def check_generation(self, task):
         if len(self.queue) > 0:
@@ -37,7 +37,7 @@ class GeneratorChain(ProcessPipeline):
             if not future.cancelled():
                 future.set_result(self.gather())
             else:
-                #print("Dropping result", tid)
+                # print("Dropping result", tid)
                 pass
             self.schedule_next()
         return Task.cont
@@ -46,7 +46,7 @@ class GeneratorChain(ProcessPipeline):
         while len(self.queue) > 0:
             (tid, shader_data, future, controller) = self.queue[0]
             if not future.cancelled():
-                #print("TRIGGER", tid)
+                # print("TRIGGER", tid)
                 if controller is not None:
                     if controller.is_waiting():
                         self.trigger(shader_data)
@@ -58,7 +58,7 @@ class GeneratorChain(ProcessPipeline):
                 else:
                     self.trigger(shader_data)
                     break
-            #print("Remove cancelled job", tid)
+            # print("Remove cancelled job", tid)
             self.queue.pop(0)
         else:
             self.busy = False
@@ -74,7 +74,9 @@ class GeneratorChain(ProcessPipeline):
         self.schedule(tid, shader_data, future, controller)
         return future
 
+
 class GeneratorPool(object):
+
     def __init__(self, chains):
         self.chains = chains
 

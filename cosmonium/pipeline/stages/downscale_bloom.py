@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2023 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from __future__ import annotations
 
@@ -34,6 +33,7 @@ from .bloom_threshold import LuminanceThresholdFragmentShader
 
 
 class BloomDownscaleFragmentShader(ShaderProgram):
+
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -56,6 +56,7 @@ class BloomDownscaleFragmentShader(ShaderProgram):
 
 
 class BloomUpscaleFragmentShader(ShaderProgram):
+
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -82,6 +83,7 @@ class BloomUpscaleFragmentShader(ShaderProgram):
 
 
 class DownscaleBloomStage(SceneStage):
+
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors
@@ -100,7 +102,8 @@ class DownscaleBloomStage(SceneStage):
         return ['scene']
 
     def create_shaders(self):
-        self.brightness_threshold_shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
+        self.brightness_threshold_shader = PostProcessShader(
+            fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
         self.brightness_threshold_shader.create(None, None)
         self.downscale_shader = PostProcessShader(fragment_shader=BloomDownscaleFragmentShader())
         self.downscale_shader.create(None, None)
@@ -114,7 +117,6 @@ class DownscaleBloomStage(SceneStage):
         self.target_textures.append(
             self.bloom_tc.create_2d(f"bloom_target_{level}", width // scale, height // scale))
 
-
     def _create_downscale_target_for_level(self, pipeline, level):
         scale = 1 << level
         target = ProcessTarget(f"bloom_downscale_{level}")
@@ -124,7 +126,6 @@ class DownscaleBloomStage(SceneStage):
         target.create(pipeline)
         target.set_shader(self.downscale_shader)
         target.root.set_shader_input('source', self.bloom_textures[level - 1])
-
 
     def _create_upscale_target_for_level(self, pipeline, level):
         scale = 1 << (level - 1)
@@ -171,7 +172,7 @@ class DownscaleBloomStage(SceneStage):
     def update(self, pipeline):
         if self.brightness_threshold:
             self.targets[0].root.set_shader_input("max_luminance", pipeline.max_luminance)
-        #for i in range(self.levels):
+        # for i in range(self.levels):
         #    self.target_textures[i].clear_image()
 
     def update_win_size(self, size):
