@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,10 +22,8 @@ from .base import ShaderShadow
 
 
 class ShaderSphereShadow(ShaderShadow):
-    use_vertex = True
-    use_vertex_frag = True
-    world_vertex = True
-    model_vertex = True
+
+    fragment_requires = {'world_vertex'}
 
     def __init__(self, max_occluders, far_sun, oblate_occluder):
         ShaderShadow.__init__(self)
@@ -98,6 +96,7 @@ class ShaderSphereShadow(ShaderShadow):
         code.append("    //Not in shadow");
         code.append("  }")
         code.append("}")
+
 
 class ShaderSphereSelfShadow(ShaderShadow):
     #TODO: Until proper self-shadowing is added, the effect of the normal map

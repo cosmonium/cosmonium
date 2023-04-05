@@ -78,8 +78,7 @@ class PointsSetShapeObject(VisibleObject):
         # TODO: This is wrong 
         self.appearance.scan_model(shape.instance)
         self.appearance.apply(shape, shape.instance)
-        # TODO: Don't recreate shader each time
-        self.shader.create(None, self.appearance)
+        self.shader.create(None, self.appearance, force=False)
         self.shader.apply(shape.instance)
         if self.use_sprites:
             shape.instance.node().setBounds(OmniBoundingVolume())

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from ..utils import TransparencyBlend
 
 
 class ShaderAppearance(ShaderComponent):
+
     def __init__(self):
         ShaderComponent.__init__(self)
         self.data = None
@@ -42,6 +43,9 @@ class ShaderAppearance(ShaderComponent):
         self.has_attribute_color = False
         self.has_material = False
 
+        self.vertex_requires = set()
+        self.fragment_requires = set()
+
     def fragment_shader_decl(self, code):
         if self.has_surface:
             code.append("vec4 surface_color;")
@@ -58,7 +62,9 @@ class ShaderAppearance(ShaderComponent):
             code.append("float metallic;")
             code.append("float perceptual_roughness;")
 
+
 class TextureAppearance(ShaderAppearance):
+
     def get_id(self):
         config = ""
         if self.has_surface:
@@ -102,6 +108,13 @@ class TextureAppearance(ShaderAppearance):
 
         self.has_nightscale = appearance.nightscale is not None
         self.has_backlit = appearance.backlit is not None
+
+        if self.has_normal:
+            self.fragment_requires.add('world_normal')
+            if self.normal_texture_tangent_space:
+                self.fragment_requires.add('tangent')
+                if appearance.generate_binormal:
+                    self.fragment_requires.add('generate_binormal')
 
     def fragment_shader(self, code):
         if self.has_surface:

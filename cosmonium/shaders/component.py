@@ -19,14 +19,12 @@
 
 
 class ShaderComponent(object):
-    use_vertex = False
-    use_vertex_frag = False
-    model_vertex = False
-    world_vertex = False
-    use_normal = False
-    model_normal = False
-    world_normal = False
-    use_tangent = False
+
+    vertex_requires = set()
+    vertex_provides = set()
+
+    fragment_requires = set()
+    fragment_provides = set()
 
     def __init__(self):
         self.shader = None

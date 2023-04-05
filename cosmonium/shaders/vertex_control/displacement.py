@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@ from .vertex_control import VertexControl
 
 
 class DisplacementVertexControl(VertexControl):
-    use_normal = True
+
+    vertex_provides = {'model_vertex'} #'model_normal
+    vertex_requires = {'tangent'}
 
     def __init__(self, heightmap, create_normals=False):
         VertexControl.__init__(self)

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,14 +22,13 @@ from ..component import ShaderComponent
 
 
 class VertexControl(ShaderComponent):
-    use_double = False
-    has_vertex = True
-    has_normal = False
+
     def update_vertex(self, code):
         pass
 
     def update_normal(self, code):
         pass
 
+
 class DefaultVertexControl(VertexControl):
-    has_vertex = False
+    pass

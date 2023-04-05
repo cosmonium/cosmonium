@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -85,10 +85,11 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
         if error: print("Unknown source '%s' requested" % source)
         return ''
 
+
 class ProceduralMap(ShaderAppearance):
-    use_vertex = True
-    world_vertex = True
-    model_vertex = True
+
+    # TODO: should be done by data_source
+    fragment_requires = {'world_vertex', 'world_normal'}
 
     def __init__(self, textures_control, heightmap, create_normals=False):
         ShaderAppearance.__init__(self)
@@ -122,10 +123,8 @@ class ProceduralMap(ShaderAppearance):
         if self.has_normal_texture:
             code += ['pixel_normal = surface_normal;']
 
+
 class DetailMap(ShaderAppearance):
-    use_vertex = True
-    world_vertex = True
-    model_vertex = True
 
     def __init__(self, textures_control, heightmap, create_normals=True):
         ShaderAppearance.__init__(self)
@@ -134,6 +133,9 @@ class DetailMap(ShaderAppearance):
         self.create_normals = create_normals
         self.normal_texture_tangent_space = True
         self.resolved = False
+        self.fragment_requires = {'model_vertex', 'world_vertex'}
+        if self.create_normals:
+            self.fragment_requires.add('tangent')
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance.texture_source)

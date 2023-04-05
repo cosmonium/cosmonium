@@ -247,8 +247,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return group
 
 class ONeilScatteringBase(AtmosphericScattering):
-    use_vertex = True
-    world_vertex = True
+
     str_id = None
 
     def __init__(self, parameters, atmosphere=False, extinction_only=False, calc_in_fragment=False, normalize=False, displacement=False, hdr=False):
@@ -257,12 +256,16 @@ class ONeilScatteringBase(AtmosphericScattering):
         self.atmosphere = atmosphere
         self.extinction_only = extinction_only
         self.calc_in_fragment = calc_in_fragment
-        self.use_vertex_frag = calc_in_fragment
         self.normalize = normalize
         self.displacement = displacement
         self.hdr = hdr
-        self.use_normal = False#not self.atmosphere
         self.inside = False
+        if calc_in_fragment:
+            self.vertex_requires = set()
+            self.fragment_requires = {'world_vertex'}
+        else:
+            self.vertex_requires = {'world_vertex'}
+            self.fragment_requires = set()
 
     def set_parameters(self, parameters):
         self.parameters = parameters

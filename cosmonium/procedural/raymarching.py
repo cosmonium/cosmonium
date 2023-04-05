@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -101,8 +101,8 @@ class RayMarchingAppearanceBase(AppearanceBase):
 
 
 class RayMarchingShader(ShaderAppearance):
-    use_vertex = True
-    world_vertex = True
+
+    fragment_requires = {'world_vertex'}
 
     def __init__(self):
         ShaderAppearance.__init__(self)

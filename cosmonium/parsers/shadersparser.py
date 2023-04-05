@@ -23,10 +23,9 @@ from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..shaders.lighting.oren_nayar import OrenNayarPhongLightingModel
 from ..shaders.lighting.pbr import PbrLightingModel
 from ..shaders.custom import CustomShaderComponent
-from ..shaders.appearance import TextureAppearance
 from ..celestia.shaders import LunarLambertLightingModel
-from .noiseparser import NoiseYamlParser
 from .yamlparser import YamlModuleParser
+
 
 class CustomShaderComponentYamlParser(YamlModuleParser):
     count = 0
@@ -35,18 +34,14 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         custom_id = "custom%d" % cls.count
         cls.count += 1
         custom = CustomShaderComponent(custom_id)
-        custom.use_vertex = data.get('use-vertex', False)
-        custom.use_vertex_frag = data.get('use-vertex-frag', False)
-        custom.model_vertex = data.get('model-vertex', False)
-        custom.world_vertex = data.get('world-vertex', False)
-        custom.use_normal = data.get('use-normal', False)
-        custom.model_normal = data.get('model-normal', False)
-        custom.world_normal = data.get('world-normal', False)
-        custom.use_tangent = data.get('use-tangent', False)
-        if data.get('update-vertex') is not None:
-            custom.has_vertex = True
-        if data.get('update-normal') is not None:
-            custom.has_normal = True
+        for required in data.get('vertex-requires', []):
+            custom.vertex_requires.add(required)
+        for provides in data.get('vertex-provides', []):
+            custom.vertex_provides.add(required)
+        for required in data.get('fragment-requires', []):
+            custom.fragment_requires.add(required)
+        for required in data.get('fragment-provides', []):
+            custom.fragment_provides.add(provides)
 
         custom.vertex_uniforms_data = [data.get('vertex-uniforms', '')]
         custom.vertex_inputs_data = [data.get('vertex-inputs', '')]
@@ -63,6 +58,7 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         custom.fragment_shader_data = [data.get('fragment-shader', '')]
 
         return custom
+
 
 class LightingModelYamlParser(YamlModuleParser):
     @classmethod
@@ -87,6 +83,7 @@ class LightingModelYamlParser(YamlModuleParser):
             print("Lighting model type", object_type, "unknown")
             model = None
         return model
+
 
 class VertexControlYamlParser(YamlModuleParser):
     @classmethod

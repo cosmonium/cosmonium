@@ -37,8 +37,10 @@ class NoInstanceControl(InstanceControl):
         InstanceControl.__init__(self, 0)
 
 class OffsetScaleInstanceControl(InstanceControl):
-    use_vertex = True
-    world_vertex = True
+
+    vertex_requires = {'model_vertex'}
+    vertex_provides = {'world_vertex'}
+
     def get_id(self):
         return "offset%d" % self.max_instances
 

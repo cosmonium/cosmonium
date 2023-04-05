@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,15 +20,10 @@
 
 from .base import LightingModel
 
-from ... import settings
 
 class PbrLightingModel(LightingModel):
-    use_vertex = True
-    use_vertex_frag = True
-    world_vertex = True
-    use_normal = True
-    use_normal = True
-    world_normal = True
+
+    fragment_requires = {'world_vertex', 'world_normal'}
 
     def get_id(self):
         return "pbr"

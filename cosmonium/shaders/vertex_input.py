@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -31,11 +31,12 @@ class VertexInput(ShaderComponent):
         self.config = shader
 
 class DirectVertexInput(VertexInput):
+
     def vertex_inputs(self, code):
         code.append("in vec4 p3d_Vertex;")
-        if self.config.use_normal or self.config.vertex_control.use_normal:
+        if 'model_normal' in self.config.vertex_requires:
             code.append("in vec4 p3d_Normal;")
-        if self.config.use_tangent:
+        if 'tangent' in self.config.vertex_requires:
             code.append("in vec4 p3d_Binormal;")
             code.append("in vec4 p3d_Tangent;")
         for i in range(self.config.nb_textures_coord):
@@ -43,11 +44,11 @@ class DirectVertexInput(VertexInput):
 
     def vertex_shader(self, code):
         code.append("model_vertex4 = p3d_Vertex;")
-        if self.config.use_normal or self.config.vertex_control.use_normal:
+        if 'model_normal' in self.config.vertex_requires:
             code.append("model_normal4 = vec4(p3d_Normal.xyz, 0.0);")
-        if self.config.use_tangent:
+        if 'tangent' in self.config.vertex_requires:
             code.append("model_tangent4 = vec4(p3d_Tangent.xyz, 0.0);")
-            if self.config.generate_binormal:
+            if 'generate_binormal' in self.config.vertex_requires:
                 #TODO: Should be done here ?
                 code.append("model_binormal4 = vec4(cross(p3d_Normal.xyz, p3d_Tangent.xyz) * p3d_Tangent.w, 0.0);")
             else:

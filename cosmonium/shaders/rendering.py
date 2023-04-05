@@ -20,6 +20,7 @@
 
 from .base import ShaderProgram, StructuredShader
 from .appearance import TextureAppearance
+from .component import ShaderComponent
 from .data_source.base import CompositeShaderDataSource
 from .data_source.panda import PandaShaderDataSource
 from .instancing import NoInstanceControl
@@ -102,23 +103,21 @@ class VertexShader(ShaderProgram):
             code.append("in vec4 oid;")
 
     def create_outputs(self, code):
-        if self.config.fragment_uses_vertex:
-            if self.config.model_vertex:
-                code.append("out vec3 model_vertex;")
-            if self.config.world_vertex:
-                code.append("out vec3 world_vertex;")
-        if self.config.fragment_uses_normal:
-            if self.config.model_normal:
-                code.append("out vec3 model_normal;")
-            if self.config.world_normal:
-                code.append("out vec3 world_normal;")
-                if self.config.normals_use_centroid:
-                    code.append("centroid out vec3 centroid_world_normal;")
-        if self.config.fragment_uses_tangent:
-            code.append("out vec3 binormal;")
-            code.append("out vec3 tangent;")
-        if self.config.relative_vector_to_obs:
-            code.append("out vec3 relative_vector_to_obs;")
+        if 'model_vertex' in self.config.fragment_requires:
+            code.append("out vec3 v_model_vertex;")
+        if 'world_vertex' in self.config.fragment_requires:
+            code.append("out vec3 v_world_vertex;")
+        if 'model_normal' in self.config.fragment_requires:
+            code.append("out vec3 v_model_normal;")
+        if 'world_normal' in self.config.fragment_requires:
+            code.append("out vec3 v_world_normal;")
+            if 'centroid_world_normal' in self.config.fragment_requires:
+                code.append("centroid out vec3 v_centroid_world_normal;")
+        if 'tangent' in self.config.fragment_requires:
+            code.append("out vec3 v_binormal;")
+            code.append("out vec3 v_tangent;")
+        if 'relative_vector_to_obs' in self.config.fragment_requires:
+            code.append("out vec3 v_relative_vector_to_obs;")
         for i in range(self.config.nb_textures_coord):
             code.append("out vec4 texcoord%i;" % i)
         if not self.config.use_model_texcoord:
@@ -145,9 +144,9 @@ class VertexShader(ShaderProgram):
 
     def create_body(self, code):
         code.append("vec4 model_vertex4;")
-        if self.config.use_normal or self.config.vertex_control.use_normal:
+        if 'model_normal' in self.config.vertex_requires or 'world_normal' in self.config.vertex_requires:
             code.append("vec4 model_normal4;")
-        if self.config.use_tangent:
+        if 'tangent' in self.config.vertex_requires:
             code.append("vec4 model_binormal4;")
             code.append("vec4 model_tangent4;")
         for i in range(self.config.nb_textures_coord):
@@ -155,24 +154,18 @@ class VertexShader(ShaderProgram):
         if not self.config.use_model_texcoord:
             code.append("vec4 model_texcoord0p;")
         self.vertex_source.vertex_shader(code)
-        if self.config.use_vertex:
-            if self.config.world_vertex:
-                code.append("vec4 world_vertex4;")
-            if self.config.eye_vertex:
-                code.append("vec4 eye_vertex4;")
-            if not self.config.fragment_uses_vertex:
-                if self.config.model_vertex:
-                    code.append("vec3 model_vertex;")
-                if self.config.world_vertex:
-                    code.append("vec3 world_vertex;")
-                if self.config.eye_vertex:
-                    code.append("vec3 eye_vertex;")
-        if self.config.use_normal and not self.config.fragment_uses_normal:
-            if self.config.model_normal:
-                code.append("vec3 model_normal;")
-            if self.config.world_normal:
-                code.append("vec3 world_normal;")
-        if not self.config.fragment_uses_tangent:
+        code.append("vec3 model_vertex;")
+        if 'world_vertex' in self.config.vertex_requires:
+            code.append("vec4 world_vertex4;")
+            code.append("vec3 world_vertex;")
+        if 'eye_vertex' in self.config.vertex_requires:
+            code.append("vec4 eye_vertex4;")
+            code.append("vec3 eye_vertex;")
+        if 'model_normal' in self.config.vertex_requires:
+            code.append("vec3 model_normal;")
+        if 'world_normal' in self.config.vertex_requires:
+            code.append("vec3 world_normal;")
+        if 'tangent' in self.config.vertex_requires:
             code.append("vec3 binormal;")
             code.append("vec3 tangent;")
 
@@ -180,32 +173,31 @@ class VertexShader(ShaderProgram):
         self.appearance.vertex_shader_decl(code)
         self.data_source.vertex_shader_decl(code)
 
-        if self.vertex_control.has_vertex:
+        if 'model_vertex' in self.vertex_control.vertex_provides:
             self.vertex_control.update_vertex(code)
-        if self.config.use_normal and self.vertex_control.has_normal:
+        if 'model_normal' in self.config.vertex_requires and 'model_normal' in self.vertex_control.vertex_provides:
             self.vertex_control.update_normal(code)
-        if self.config.use_vertex and self.config.world_vertex and not (self.vertex_control.world_vertex or self.instance_control.world_vertex):
+        if 'world_vertex' in self.config.vertex_requires and not ('world_vertex' in self.vertex_control.vertex_provides or 'world_vertex' in self.instance_control.vertex_provides):
             code.append("world_vertex4 = p3d_ModelMatrix * model_vertex4;")
-            if self.config.eye_vertex:
-                code.append("eye_vertex4 = p3d_ViewMatrix * world_vertex4;")
+        if 'eye_vertex' in self.config.vertex_requires:
+            code.append("eye_vertex4 = p3d_ViewMatrix * world_vertex4;")
         self.instance_control.update_vertex(code)
-        if self.config.use_normal:
+        if 'model_normal' in self.config.vertex_requires or 'world_normal' in self.config.vertex_requires:
             self.instance_control.update_normal(code)
-        if self.vertex_control.world_vertex or self.instance_control.world_vertex:
+        if 'world_vertex' in self.vertex_control.vertex_provides or 'world_vertex' in self.instance_control.vertex_provides:
             code.append("gl_Position = p3d_ProjectionMatrix * (p3d_ViewMatrix * world_vertex4);")
         else:
             code.append("gl_Position = p3d_ProjectionMatrix * (p3d_ModelViewMatrix * model_vertex4);")
-        if self.config.use_normal:
-            if self.config.model_normal:
-                code.append("model_normal = model_normal4.xyz;")
-            if self.config.world_normal:
-                code.append("world_normal = normalize((p3d_ModelMatrixInverseTranspose * model_normal4).xyz);")
-                if self.config.fragment_uses_normal and self.config.normals_use_centroid:
-                    code.append("centroid_world_normal = world_normal;")
-        if self.config.use_tangent or self.config.fragment_uses_tangent:
+        if 'model_normal' in self.config.vertex_requires:
+            code.append("model_normal = model_normal4.xyz;")
+        if 'world_normal' in self.config.vertex_requires:
+            code.append("world_normal = normalize((p3d_ModelMatrixInverseTranspose * model_normal4).xyz);")
+        if 'centroid_world_normal' in self.config.vertex_requires:
+            code.append("centroid_world_normal = world_normal;")
+        if 'tangent' in self.config.vertex_requires:
             code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
             code.append("binormal = vec3(normalize(p3d_ModelMatrix * model_binormal4));")
-        if self.config.relative_vector_to_obs:
+        if 'relative_vector_to_obs' in self.config.vertex_requires:
                 code.append("vec3 vector_to_obs = -vertex.xyz / vertex.w;")
                 code.append("vec3 relative_vector_to_obs_tmp;")
                 code.append("relative_vector_to_obs_tmp.x = dot(p3d_Tangent, vector_to_obs);")
@@ -216,13 +208,12 @@ class VertexShader(ShaderProgram):
             code.append("texcoord%i = model_texcoord%i;" % (i, i))
         if not self.config.use_model_texcoord:
             code.append("texcoord0p = model_texcoord0p;")
-        if self.config.use_vertex:
-            if self.config.model_vertex:
-                code.append("model_vertex = model_vertex4.xyz / model_vertex4.w;")
-            if self.config.world_vertex:
-                code.append("world_vertex = world_vertex4.xyz / world_vertex4.w;")
-            if self.config.eye_vertex:
-                code.append("eye_vertex = eye_vertex4.xyz / eye_vertex4.w;")
+        if 'model_vertex' in self.config.vertex_requires:
+            code.append("model_vertex = model_vertex4.xyz / model_vertex4.w;")
+        if 'world_vertex' in self.config.vertex_requires:
+            code.append("world_vertex = world_vertex4.xyz / world_vertex4.w;")
+        if 'eye_vertex' in self.config.vertex_requires:
+            code.append("eye_vertex = eye_vertex4.xyz / eye_vertex4.w;")
         for shadow in self.shadows:
             shadow.vertex_shader(code)
         self.point_control.vertex_shader(code)
@@ -230,6 +221,21 @@ class VertexShader(ShaderProgram):
         self.scattering.vertex_shader(code)
         self.data_source.vertex_shader(code)
         self.appearance.vertex_shader(code)
+        if 'model_vertex' in self.config.fragment_requires:
+            code.append("v_model_vertex = model_vertex;")
+        if 'world_vertex' in self.config.fragment_requires:
+            code.append("v_world_vertex = world_vertex;")
+        if 'model_normal' in self.config.fragment_requires:
+            code.append("v_model_normal = model_normal;")
+        if 'world_normal' in self.config.fragment_requires:
+            code.append("v_world_normal = world_normal;")
+            if 'centroid_world_normal' in self.config.fragment_requires:
+                code.append("v_centroid_world_normal = centroid_world_normal;")
+        if 'tangent' in self.config.fragment_requires:
+            code.append("v_tangent = tangent;")
+            code.append("v_binormal = binormal;")
+        if 'relative_vector_to_obs' in self.config.fragment_requires:
+            code.append("v_relative_vector_to_obs = relative_vector_to_obs;")
         if self.config.color_picking and self.config.vertex_oids:
             code.append("color_picking = oid;")
 
@@ -304,23 +310,21 @@ class FragmentShader(ShaderProgram):
             code.append("layout (binding=0, rgba8) uniform writeonly image2D oid_store;")
 
     def create_inputs(self, code):
-        if self.config.fragment_uses_vertex:
-            if self.config.model_vertex:
-                code.append("in vec3 model_vertex;")
-            if self.config.world_vertex:
-                code.append("in vec3 world_vertex;")
-        if self.config.fragment_uses_normal:
-            if self.config.model_normal:
-                code.append("in vec3 model_normal;")
-            if self.config.world_normal:
-                code.append("in vec3 world_normal;")
-                if self.config.normals_use_centroid:
-                    code.append("centroid in vec3 centroid_world_normal;")
-        if self.config.fragment_uses_tangent:
-            code.append("in vec3 binormal;")
-            code.append("in vec3 tangent;")
-        if self.config.relative_vector_to_obs:
-            code.append("in vec3 relative_vector_to_obs;")
+        if 'model_vertex' in self.config.fragment_requires:
+            code.append("in vec3 v_model_vertex;")
+        if 'world_vertex' in self.config.fragment_requires:
+            code.append("in vec3 v_world_vertex;")
+        if 'model_normal' in self.config.fragment_requires:
+            code.append("in vec3 v_model_normal;")
+        if 'world_normal' in self.config.fragment_requires:
+            code.append("in vec3 v_world_normal;")
+            if 'centroid_world_normal' in self.config.fragment_requires:
+                code.append("centroid out vec3 v_centroid_world_normal;")
+        if 'tangent' in self.config.fragment_requires:
+            code.append("in vec3 v_tangent;")
+            code.append("in vec3 v_binormal;")
+        if 'relative_vector_to_obs' in self.config.fragment_requires:
+            code.append("in vec3 v_relative_vector_to_obs;")
         for i in range(self.config.nb_textures_coord):
             code.append("in vec4 texcoord%i;" % i)
         if not self.config.use_model_texcoord:
@@ -355,33 +359,42 @@ class FragmentShader(ShaderProgram):
     def create_body(self, code):
         if self.version < 130:
             code.append("vec4 frag_color[%d];" % self.nb_outputs)
+        if 'model_vertex' in self.config.fragment_requires:
+            code.append("vec3 model_vertex = v_model_vertex;")
+        if 'world_vertex' in self.config.fragment_requires:
+            code.append("vec3 world_vertex = v_world_vertex;")
+        if 'model_normal' in self.config.fragment_requires:
+            code.append("vec3 model_normal = normalize(v_model_normal);")
+        if 'world_normal' in self.config.fragment_requires:
+            if 'centroid_world_normal' in self.config.fragment_requires:
+                code.append("vec3 world_normal;")
+                code.append("vec3 normal;")
+                code.append("if (abs(dot(v_world_normal, v_world_normal) - 1) > 0.01) {")
+                code.append("  world_normal = normalize(v_centroid_world_normal);")
+                code.append("} else {")
+                code.append("  world_normal = normalize(v_world_normal);")
+                code.append("}")
+            else:
+                code.append("vec3 world_normal = normalize(v_world_normal);")
+            code.append("vec3 normal = world_normal;")
+            if self.appearance.has_normal:
+                    code.append("vec3 shape_normal = normal;")
+        if 'tangent' in self.config.fragment_requires:
+            code.append("vec3 tangent = normalize(v_tangent);")
+            code.append("vec3 binormal = normalize(v_binormal);")
+
         self.point_control.fragment_shader_decl(code)
         self.appearance.fragment_shader_decl(code)
         self.data_source.fragment_shader_decl(code)
-        if self.config.relative_vector_to_obs:
-            code.append("vec3 relative_vector_to_obs_norm = normalize(relative_vector_to_obs);")
+        if 'relative_vector_to_obs_norm' in self.config.fragment_requires:
+            code.append("vec3 relative_vector_to_obs_norm = normalize(v_relative_vector_to_obs);")
 #         if self.config.has_bump_texture:
 #             self.data_source.fragment_shader_distort_coord(code)
 #             code.append("vec3 parallax_offset = relative_vector_to_obs_norm * (tex%i.rgb * 2.0 - 1.0) * bump_height;" % self.bump_map_index)
 #             code.append("texcoord_tex%d.xyz -= parallax_offset;" % self.texture_index)
-        if self.config.fragment_uses_normal:
-            if self.config.model_normal:
-                code.append("vec3 model_normal = normalize(model_normal);")
-            if self.config.world_normal:
-                if self.config.normals_use_centroid:
-                    code.append("vec3 normal;")
-                    code.append("if (abs(dot(world_normal, world_normal) - 1) > 0.01) {")
-                    code.append("  normal = normalize(centroid_world_normal);")
-                    code.append("} else {")
-                    code.append("  normal = normalize(world_normal);")
-                    code.append("}")
-                else:
-                    code.append("vec3 normal = normalize(world_normal);")
-                if self.appearance.has_normal:
-                    code.append("vec3 shape_normal = normal;")
         self.data_source.fragment_shader(code)
         self.appearance.fragment_shader(code)
-        if self.config.fragment_uses_normal and self.appearance.has_normal:
+        if 'world_normal' in self.config.fragment_requires and self.appearance.has_normal:
             if self.appearance.normal_texture_tangent_space:
                 code += [
                          "normal *= pixel_normal.z;",
@@ -552,20 +565,10 @@ class RenderingShader(StructuredShader):
 
         self.nb_textures_coord = 0
 
-        self.use_vertex = False
-        self.model_vertex = False
-        self.world_vertex = False
-        self.eye_vertex = False
-        self.fragment_uses_vertex = False
-        self.relative_vector_to_obs = False
-        self.use_normal = False
-        self.model_normal = False
-        self.world_normal = False
-        self.fragment_uses_normal = False
-        self.use_tangent = False
-        self.generate_binormal = False
-        self.fragment_uses_tangent = False
-        self.normals_use_centroid = False
+        self.vertex_requires = set()
+        self.vertex_provides = set()
+        self.fragment_requires = set()
+        self.fragment_provides = set()
         self.use_model_texcoord = use_model_texcoord
         self.color_picking = settings.color_picking
 
@@ -612,9 +615,15 @@ class RenderingShader(StructuredShader):
         #As the list is referenced by the fragment shader no need to apply to fragment too...
 
     def create_shader_configuration(self, appearance):
+        self.vertex_requires = set()
+        self.vertex_provides = set()
+        self.fragment_requires = set()
+        self.fragment_provides = set()
+
         self.nb_textures_coord = 1
 
-        self.normals_use_centroid = settings.use_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid
+        if settings.use_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid:
+            self.fragment_requires.add('centroid_world_normal')
         self.data_source.create_shader_configuration(appearance)
 
         self.appearance.create_shader_configuration(appearance)
@@ -625,100 +634,22 @@ class RenderingShader(StructuredShader):
 #             self.use_tangent = True
 #             self.relative_vector_to_obs = True
 
-        if self.appearance.use_vertex:
-            self.use_vertex = True
-            if self.appearance.model_vertex:
-                self.model_vertex = True
-            if  self.appearance.world_vertex:
-                self.world_vertex = True
-            self.fragment_uses_vertex = True
+        component: ShaderComponent
+        for component in (self.appearance, *self.after_effects, self.vertex_control, self.point_control, self.instance_control, self.lighting_model, self.scattering, *self.shadows):
+            self.vertex_requires.update(component.vertex_requires)
+            self.vertex_provides.update(component.vertex_provides)
 
-        for effect in self.after_effects:
-            if effect.use_vertex:
-                self.use_vertex = True
-                if effect.model_vertex:
-                    self.model_vertex = True
-                if  effect.world_vertex:
-                    self.world_vertex = True
-                self.fragment_uses_vertex = True
+        component: ShaderComponent
+        for component in (self.appearance, *self.after_effects, self.lighting_model, self.scattering, *self.shadows):
+            self.fragment_requires.update(component.fragment_requires)
+            self.fragment_provides.update(component.fragment_provides)
 
-        if self.vertex_control.use_vertex:
-            self.use_vertex = True
-            if self.vertex_control.model_vertex:
-                self.model_vertex = True
-            if self.vertex_control.world_vertex:
-                self.world_vertex = True
-        if self.vertex_control.use_normal:
-            self.use_normal = True
-        if self.vertex_control.use_tangent:
-            self.use_tangent = True
+        for fragment_required in self.fragment_requires:
+            if not fragment_required in self.fragment_provides:
+                self.vertex_requires.add(fragment_required)
 
-        if self.point_control.use_vertex:
-            self.use_vertex = True
-            if self.point_control.model_vertex:
-                self.model_vertex = True
-            if self.point_control.world_vertex:
-                self.world_vertex = True
-
-        if self.instance_control.use_vertex:
-            self.use_vertex = True
-            if self.instance_control.model_vertex:
-                self.model_vertex = True
-            if self.instance_control.world_vertex:
-                self.world_vertex = True
-
-        if self.lighting_model.use_vertex:
-            self.use_vertex = True
-            if self.lighting_model.model_vertex:
-                self.model_vertex = True
-            if self.lighting_model.world_vertex:
-                self.world_vertex = True
-            if self.lighting_model.use_vertex_frag:
-                self.fragment_uses_vertex = True
-
-        if self.lighting_model.use_normal:
-            self.use_normal = True
-            self.model_normal = self.lighting_model.model_normal
-            self.world_normal = self.lighting_model.world_normal
-            self.fragment_uses_normal = True
-
-        if self.lighting_model.use_tangent:
-            self.use_tangent = True
-            self.fragment_uses_tangent = True
-
-        if self.lighting_model.use_normal and self.appearance.has_normal and self.appearance.normal_texture_tangent_space:
-            self.use_tangent = True
-            self.fragment_uses_tangent = True
-
-        if self.scattering.use_vertex:
-            self.use_vertex = True
-            if self.scattering.model_vertex:
-                self.model_vertex = True
-            if self.scattering.world_vertex:
-                self.world_vertex = True
-            if self.scattering.use_vertex_frag:
-                self.fragment_uses_vertex = True
-
-        for shadow in self.shadows:
-            if shadow.use_vertex:
-                self.use_vertex = True
-                if shadow.model_vertex:
-                    self.model_vertex = True
-                if shadow.world_vertex:
-                    self.world_vertex = True
-                if shadow.use_vertex_frag:
-                    self.fragment_uses_vertex = True
-
-            if shadow.use_normal:
-                self.use_normal = True
-                if shadow.model_normal:
-                    self.model_normal = True
-                if shadow.world_normal:
-                    self.world_normal = True
-
-        #TODO: Should be done in data source
-        if self.use_tangent:
-            self.generate_binormal = appearance.generate_binormal
+        if 'world_normal' in self.vertex_requires:
+            self.vertex_requires.add('model_normal')
 
     def get_shader_id(self):
         if settings.shader_debug_fragment_shader == 'default':

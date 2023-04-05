@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@ from .vertex_control import VertexControl
 
 
 class NormalizedCubeVertexControl(VertexControl):
-    use_vertex = True
-    has_normal = True
+
+    vertex_requires = {'model_vertex'}
+    vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 
     def get_id(self):
         return "normcube"
@@ -45,9 +46,11 @@ class NormalizedCubeVertexControl(VertexControl):
     def update_shader_patch_static(self, shape, patch, appearance):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
 
+
 class SquaredDistanceCubeVertexControl(VertexControl):
-    use_vertex = True
-    has_normal = True
+
+    vertex_requires = {'model_vertex'}
+    vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 
     def get_id(self):
         return "sqrtcube"
@@ -74,10 +77,11 @@ class SquaredDistanceCubeVertexControl(VertexControl):
     def update_shader_patch_static(self, shape, patch, appearance):
         patch.instance.set_shader_input('patch_offset', patch.source_normal * patch.offset)
 
+
 class DoubleSquaredDistanceCubeVertexControl(VertexControl):
-    use_double = True
-    use_vertex = True
-    has_normal = True
+
+    vertex_requires = {'model_vertex'}
+    vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 
     def get_id(self):
         return "sqrtcubedouble"

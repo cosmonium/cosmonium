@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -593,8 +593,9 @@ class GalaxyDataSource(DataSource):
         instance.setShaderInput("scale_factor", shape.owner.scene_anchor.scene_scale_factor)
 
 class GalaxyPointControl(PointControl):
-    use_vertex = True
-    world_vertex = True
+
+    vertex_requires = {'world_vertex'}
+
     def get_id(self):
         return "pt-galaxy"
 

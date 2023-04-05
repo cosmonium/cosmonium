@@ -24,17 +24,11 @@ from .component import ShaderComponent
 class CustomShaderComponent(ShaderComponent):
     def __init__(self, component_id):
         self.component_id = component_id
-        self.has_vertex = False
-        self.has_normal = False
-        self.use_vertex = False
-        self.use_vertex_frag = False
-        self.model_vertex = False
-        self.world_vertex = False
-        self.use_normal = False
-        self.model_normal = False
-        self.world_normal = False
-        self.use_tangent = False
-        self.use_double = False
+
+        self.vertex_requires = set()
+        self.vertex_provides = set()
+        self.fragment_requires = set()
+        self.fragment_provides = set()
 
         self.vertex_uniforms_data = []
         self.vertex_inputs_data = []
