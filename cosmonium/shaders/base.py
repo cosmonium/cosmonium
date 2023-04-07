@@ -116,6 +116,7 @@ class ShaderProgram(object):
         self.shader_type = shader_type
         self.version = settings.shader_version
         self.functions = {}
+        self.file_id: str = None
 
     def get_shader_id(self):
         return ''
@@ -221,8 +222,11 @@ float to_srgb(float value) {
         shader = '\n'.join(code)
         if dump is not None:
             shaders_path = create_path_for('shaders')
-            with open(os.path.join(shaders_path, "%s.%s.glsl" % (dump, self.shader_type)), "w") as shader_file:
+            self.file_id = os.path.join(shaders_path, "%s.%s.glsl" % (dump, self.shader_type))
+            with open(self.file_id, "w") as shader_file:
                 shader_file.write(shader)
+        else:
+            self.file_id = shader_id
         return shader
 
 class StructuredShader(ShaderBase):
@@ -269,5 +273,15 @@ class StructuredShader(ShaderBase):
                              tess_evaluation=tess_evaluation,
                              geometry=geometry,
                              fragment=fragment)
-        shader.set_filename(Shader.SL_GLSL, shader_id)
+        shader.set_filename(-1, f"{shaders_path}/{dump}")
+        if vertex:
+            shader.set_filename(Shader.ST_vertex, self.vertex_shader.file_id)
+        if tess_control:
+            shader.set_filename(Shader.ST_tess_control, self.tessellation_control_shader.file_id)
+        if tess_evaluation:
+            shader.set_filename(Shader.ST_tess_evaluation, self.tessellation_eval_shader.file_id)
+        if geometry:
+            shader.set_filename(Shader.ST_geometry, self.geometry_shader.file_id)
+        if fragment:
+            shader.set_filename(Shader.ST_fragment, self.fragment_shader.file_id)
         return shader
