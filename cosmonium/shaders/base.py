@@ -242,7 +242,8 @@ class StructuredShader(ShaderBase):
         shader_id = self.get_shader_id()
         if settings.dump_shaders:
             dump = hashlib.md5(shader_id.encode()).hexdigest()
-            print("Creating shader %s (%s)" %(shader_id, dump))
+            shaders_path = create_path_for('shaders')
+            print(f"Creating shader {shader_id} ({shaders_path}/{dump})")
         else:
             dump = None
             print("Creating shader", shader_id)
