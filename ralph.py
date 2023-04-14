@@ -479,7 +479,8 @@ class RalphControl(EventsControllerBase):
 
     def debug_ls(self):
         self.engine.scene_manager.ls()
-        self.engine.physics.ls()
+        if self.engine.physics is not None:
+            self.engine.physics.ls()
 
     def update(self, time, dt):
         if self.keymap.get("sun-left"):
