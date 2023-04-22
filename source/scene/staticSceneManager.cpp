@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "staticSceneManager.h"
 #include "cameraHolder.h"
+#include "directionalLight.h"
 #include "displayRegion.h"
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
@@ -42,6 +43,9 @@ StaticSceneManager::StaticSceneManager(NodePath render) :
       far_plane = settings->default_far_plane;
   }
   root = render.attach_new_node("root");
+  PT(DirectionalLight) directional_light = new DirectionalLight("fake-light");
+  directional_light->set_color(LColor(0));
+  fake_light = root.attach_new_node(directional_light);
 }
 
 
@@ -124,6 +128,7 @@ void
 StaticSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, SceneAnchorCollection visibles, SceneAnchorCollection resolved)
 {
   root.set_state(state.get_state());
+  root.set_light(fake_light);
 }
 
 

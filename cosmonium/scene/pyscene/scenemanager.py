@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput
+from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput, DirectionalLight
 from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
 from panda3d.core import GeomNode, DrawMask
@@ -113,6 +113,9 @@ class StaticSceneManager(SceneManagerBase):
         self.infinity = None
         self.lens_far_limit = settings.lens_far_limit
         self.root = render.attach_new_node('root')
+        fake_light = DirectionalLight('fake-light')
+        fake_light.set_color((0, 0, 0, 1))
+        self.fake_ambient_np = self.root.attach_new_node(fake_light)
 
     @property
     def camera(self):
@@ -156,6 +159,7 @@ class StaticSceneManager(SceneManagerBase):
 
     def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
+        self.root.set_light(self.fake_ambient_np)
 
     def ls(self):
         self.root.ls()
@@ -183,6 +187,10 @@ class DynamicSceneManager(SceneManagerBase):
         self.mid_plane_ratio = settings.mid_plane_ratio
         self.infinity = self.infinite_plane
         self.root = render.attach_new_node('root')
+        fake_light = DirectionalLight('fake-light')
+        fake_light.set_color((0, 0, 0, 0))
+        fake_ambient_np = self.root.attach_new_node(fake_light)
+        self.root.set_light(fake_ambient_np)
 
     @property
     def camera(self):
@@ -265,6 +273,7 @@ class DynamicSceneManager(SceneManagerBase):
     def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.setShaderInput("midPlane", self.midPlane)
+        self.root.set_light(self.fake_ambient_np)
 
     def ls(self):
         self.root.ls()
@@ -483,6 +492,10 @@ class SceneRegion:
     def create(self, rendering_passes, state, camera_holder, inverse_z, section_near, section_far, sort_index):
         self.rendering_passes = [rendering_pass.copy() for rendering_pass in rendering_passes]
         self.root.set_state(state)
+        fake_light = DirectionalLight('fake-light')
+        fake_light.set_color((0, 0, 0, 0))
+        fake_ambient_np = self.root.attach_new_node(fake_light)
+        self.root.set_light(fake_ambient_np)
         for scene_anchor in self.bodies:
             if scene_anchor.instance.has_parent():
                 clone = self.root.attach_new_node("region-anchor")

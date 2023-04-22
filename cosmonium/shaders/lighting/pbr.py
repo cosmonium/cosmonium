@@ -18,27 +18,19 @@
 #
 
 
-from .base import LightingModel
+from ..component import ShaderComponent
+from .base import BRDFInterface
 
 
-class PbrLightingModel(LightingModel):
+class PbrLightingModel(ShaderComponent, BRDFInterface):
 
-    fragment_requires = {'world_vertex', 'world_normal'}
+    fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def get_id(self):
         return "pbr"
 
-    def vertex_uniforms(self, code):
-        LightingModel.vertex_uniforms(self, code)
-        code.append("uniform vec3 light_dir;")
-
     def fragment_uniforms(self, code):
-        LightingModel.fragment_uniforms(self, code)
-        code.append("uniform float ambient_coef;")
         code.append("uniform float backlit;")
-        code.append("uniform vec3 light_dir;")
-        code.append("uniform vec4 ambient_color;")
-        code.append("uniform vec4 light_color;")
 
     def point_material(self, code):
         code.append('''
@@ -73,7 +65,7 @@ PointVectors calc_point_vectors(vec3 normal, vec3 obs_dir, vec3 light_dir)
 {
     vec3 half_vec = normalize(light_dir + obs_dir);
 
-    float n_dot_l = clamp(dot(normal, light_dir), 0.0, 1.0);
+    float n_dot_l = min(dot(normal, light_dir), 1.0);
     float n_dot_v = clamp(dot(normal, obs_dir), 0.0, 1.0);
     float n_dot_h = clamp(dot(normal, half_vec), 0.0, 1.0);
     float l_dot_h = clamp(dot(light_dir, half_vec), 0.0, 1.0);
@@ -161,8 +153,8 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         self.shader.fragment_shader.add_function(code, 'calc_shade', self.calc_shade)
         code.append("vec3 f0 = vec3(0.04);")
 
-    def fragment_shader(self, code):
-        code.append("vec3 obs_dir = normalize(-world_vertex);")
+    def prepare_material(self, code):
+        code.append("vec3 obs_dir = normalize(-eye_vertex);")
         code.append("metallic = clamp(metallic, 0, 1);")
         code.append("perceptual_roughness = clamp(perceptual_roughness, 0, 1);")
         code.append("PointMaterial material;")
@@ -174,13 +166,11 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("float reflectance = max(max(material.specular_color.r, material.specular_color.g), material.specular_color.b);")
         code.append("material.reflectance0 = material.specular_color.rgb;")
         code.append("material.reflectance90 = vec3(clamp(reflectance * 50.0, 0.0, 1.0));")
-        #TODO: Loop here over light sources
-        code.append('PointVectors vectors = calc_point_vectors(normal, obs_dir, light_dir);')
+
+    def light_contribution(self, code, result, light_direction, light_color):
+        code.append(f"PointVectors vectors = calc_point_vectors(eye_normal, obs_dir, {light_direction});")
         code.append("vec3 shade = calc_shade(material, vectors);")
-        code.append("total_diffuse_color.rgb = vectors.n_dot_l * light_color.rgb * shade * shadow;")
-        code.append("vec4 ambient = ambient_color * ambient_coef;")
-        if self.appearance.has_occlusion:
-            code.append("ambient *= surface_occlusion;")
-        code.append("total_diffuse_color.rgb += material.diffuse_color * ambient.rgb;")
-        code.append("total_diffuse_color.a = surface_color.a;")
-        self.apply_emission(code, 'vectors.n_dot_l')
+        code.append(f"{result} = vectors.n_dot_l * {light_color}.rgb * shade;")
+
+    def cos_light_normal(self):
+        return "vectors.n_dot_l"

@@ -18,15 +18,16 @@
 #
 
 
-from .base import ShaderShadow
+from ..component import ShaderComponent
+from .base import ShaderShadowInterface
 
 
-class ShaderPSSMShadowMap(ShaderShadow):
+class ShaderPSSMShadowMap(ShaderComponent, ShaderShadowInterface):
 
     fragment_requires = {'world_vertex'}
 
     def __init__(self, name):
-        ShaderShadow.__init__(self)
+        ShaderComponent.__init__(self)
         self.name = name
         self.num_splits = 5
 
@@ -56,7 +57,7 @@ vec3 project(mat4 mvp, vec3 p) {
     def fragment_extra(self, code):
         self.shader.fragment_shader.add_function(code, 'project', self.project)
 
-    def fragment_shader(self, code):
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
         code.append('''
     // Find in which split the current point is present.
     int split = 99;

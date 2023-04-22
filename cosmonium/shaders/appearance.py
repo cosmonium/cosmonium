@@ -110,7 +110,7 @@ class TextureAppearance(ShaderAppearance):
         self.has_backlit = appearance.backlit is not None
 
         if self.has_normal:
-            self.fragment_requires.add('world_normal')
+            self.fragment_requires.add('eye_normal')
             if self.normal_texture_tangent_space:
                 self.fragment_requires.add('tangent')
                 if appearance.generate_binormal:

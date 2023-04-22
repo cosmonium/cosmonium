@@ -18,9 +18,10 @@
 #
 
 
-from .base import ShaderShadow
+from ..component import ShaderComponent
+from .base import ShaderShadowInterface
 
-class ShaderRingsShadow(ShaderShadow):
+class ShaderRingsShadow(ShaderComponent, ShaderShadowInterface):
 
     fragment_requires = {'world_vertex'}
 
@@ -34,14 +35,14 @@ class ShaderRingsShadow(ShaderShadow):
         code.append("uniform float ring_outer_radius;")
         code.append("uniform vec3 body_center;")
 
-    def fragment_shader(self, code):
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
         #Simple line-plane intersection:
         #line is surface of the planet to the center of the light source
         #plane is the plane of the rings system
         code.append("vec3 new_pos = world_vertex - body_center;")
-        code.append("float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot(light_dir, ring_normal.xyz);")
+        code.append(f"float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot({light_direction}, ring_normal.xyz);")
         code.append("if (ring_intersection_param > 0.0) {")
-        code.append("  vec3 ring_intersection = new_pos + light_dir * ring_intersection_param;")
+        code.append(f"  vec3 ring_intersection = new_pos + {light_direction} * ring_intersection_param;")
         code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
         code.append("  shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
         code.append("} else {")

@@ -18,10 +18,10 @@
 #
 
 
-from ..shaders.lighting.base import LightingModel
+from ..shaders.lighting.base import LightingModelBase
 
 
-class LunarLambertLightingModel(LightingModel):
+class LunarLambertLightingModel(LightingModelBase):
 
     fragment_requires = {'world_vertex', 'world_normal'}
 
@@ -29,7 +29,7 @@ class LunarLambertLightingModel(LightingModel):
         return "lunar"
 
     def fragment_uniforms(self, code):
-        LightingModel.fragment_uniforms(self, code)
+        LightingModelBase.fragment_uniforms(self, code)
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 light_dir;")
         code.append("uniform vec4 ambient_color;")

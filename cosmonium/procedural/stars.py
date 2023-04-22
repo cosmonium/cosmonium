@@ -24,7 +24,7 @@ from ..astro import units
 from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory, VertexSizeLodControl
 from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.flat import FlatLightingModel
+from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..appearances import Appearance
 from ..textures import SurfaceTexture
 from ..objects.surface_factory import SurfaceFactory
@@ -45,7 +45,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         lod_control = VertexSizeLodControl(max_vertex_size=settings.patch_max_vertex_size,
                                            density=settings.patch_constant_density)
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
-        shader = RenderingShader(lighting_model=FlatLightingModel())
+        shader = RenderingShader(lighting_model=PureEmissionLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
         if settings.use_pbr:
             radiance = body.anchor.get_radiant_flux() / (4 * pi * pi * body.radius * body.radius / units.m / units.m)

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,8 +18,10 @@
 #
 
 
-from ..component import ShaderComponent
+class ShaderShadowInterface:
 
+    def prepare_shadow_for(self, code, light, light_direction, eye_light_direction):
+        pass
 
-class ShaderShadow(ShaderComponent):
-    pass
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
+        pass

@@ -433,7 +433,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def update(self, scene_manager):
         ShadowMapShadowCaster.update(self, scene_manager)
         if self.shadow_map is not None:
-            self.shadow_map.set_pos(self.light.light_instance.get_pos())
+            pos = - self.light.light_direction * self.light.target.get_bounding_radius()
+            self.shadow_map.set_pos(pos)
 
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)

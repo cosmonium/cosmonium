@@ -25,7 +25,8 @@ from ...datasource import DataSource
 from ...textures import TextureConfiguration
 from ...shaders.base import StructuredShader, ShaderProgram
 from ...shaders.rendering import RenderingShader
-from ...shaders.lighting.base import LightingModel
+from ...shaders.lighting.base import LightingModelBase, AtmosphereLightingModel
+from ...shaders.lighting.scattering import ScatteringInterface
 from ...shaders.scattering import AtmosphericScattering
 from ...utils import TransparencyBlend
 from ...parameters import AutoUserParameter, UserParameter
@@ -44,15 +45,15 @@ class ONeilAtmosphereBase(Atmosphere):
         self.blend = TransparencyBlend.TB_Alpha
 
     def update_shader_params(self):
-        self.shader.scattering.set_inside(self.inside)
+        self.shader.lighting_model.scattering.set_inside(self.inside)
 
     def do_update_scattering(self, shape_object, atmosphere, extinction):
-        shape_object.shader.scattering.set_inside(self.inside)
+        shape_object.shader.lighting_model.scattering.set_inside(self.inside)
         if atmosphere:
-            shape_object.shader.scattering.set_hdr(self.atm_hdr)
+            shape_object.shader.lighting_model.scattering.set_hdr(self.atm_hdr)
         else:
-            shape_object.shader.scattering.set_hdr(self.hdr)
-        shape_object.shader.scattering.set_extinction_only(extinction)
+            shape_object.shader.lighting_model.scattering.set_hdr(self.hdr)
+        shape_object.shader.lighting_model.scattering.set_extinction_only(extinction)
 
 class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
     AtmosphereRatio = 1.025
@@ -87,7 +88,7 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.atm_normalize = atm_normalize
         self.hdr = hdr
         self.atm_hdr = atm_hdr
-        shader = RenderingShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
+        shader = RenderingShader(lighting_model=LightingModelBase(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     def set_body(self, body):
@@ -171,7 +172,8 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookup_samples = lookup_samples
         self.lookuptable_generator = None
         self.pbOpticalDepth = None
-        shader = RenderingShader(lighting_model=LightingModel(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
+        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
+        shader.lighting_model.set_scattering(self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
     def create_generator(self):
@@ -246,7 +248,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                             )
         return group
 
-class ONeilScatteringBase(AtmosphericScattering):
+class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
 
     str_id = None
 
@@ -262,9 +264,9 @@ class ONeilScatteringBase(AtmosphericScattering):
         self.inside = False
         if calc_in_fragment:
             self.vertex_requires = set()
-            self.fragment_requires = {'world_vertex'}
+            self.fragment_requires = {'world_vertex', 'world_normal'}
         else:
-            self.vertex_requires = {'world_vertex'}
+            self.vertex_requires = {'world_vertex', 'world_normal'}
             self.fragment_requires = set()
 
     def set_parameters(self, parameters):
@@ -312,6 +314,10 @@ class ONeilScatteringBase(AtmosphericScattering):
         if not self.calc_in_fragment:
             self.uniforms_scattering(code)
 
+    def vertex_extra(self, code):
+        if not self.calc_in_fragment:
+            self.calc_scattering(code)
+
     def vertex_outputs(self, code):
         if not self.calc_in_fragment:
             code.append("out vec3 rayleigh_inscattering;")
@@ -324,10 +330,6 @@ class ONeilScatteringBase(AtmosphericScattering):
         if self.calc_in_fragment:
             self.uniforms_scattering(code)
         self.uniforms_colors(code)
-        if self.atmosphere:
-            # TODO: This is a dirty workaround as atmosphere element has no lighting component
-            # And so the uniform is missing for shadows
-            code.append("uniform vec3 light_dir;")
 
     def fragment_inputs(self, code):
         if not self.calc_in_fragment:
@@ -336,10 +338,6 @@ class ONeilScatteringBase(AtmosphericScattering):
             code.append("in vec3 transmittance;")
             if self.atmosphere:
                 code.append("in vec3 v3Direction;")
-
-    def vertex_shader(self, code):
-        if not self.calc_in_fragment:
-            self.calc_scattering(code)
 
     def calc_colors(self, code):
         if self.atmosphere:
@@ -358,10 +356,45 @@ class ONeilScatteringBase(AtmosphericScattering):
             if self.hdr:
                 code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
 
-    def fragment_shader(self, code):
+    def oneil_incoming_light_for(self, code):
+        code.append("void oneil_incoming_light_for(in vec3 world_vertex, in vec3 world_normal, in vec3 light_direction, vec3 light_color, out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {")
+        if self.calc_in_fragment:
+            if self.atmosphere:
+                code.append("    vec3 v3Direction;")
+            code.append("    vec3 rayleigh_inscattering;")
+            code.append("    vec3 mie_inscattering;")
+            if self.atmosphere:
+                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+            else:
+                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+        if self.atmosphere:
+            code.append("    float fCos = dot(light_direction, v3Direction) / length(v3Direction);")
+            code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
+            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
+            code.append("    in_scatter = (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
+        else:
+            code.append("    in_scatter = rayleigh_inscattering + mie_inscattering;")
+            code.append("    incoming_light_color = light_color;")
+        code.append("}")
+
+    def fragment_extra(self, code):
         if self.calc_in_fragment:
             self.calc_scattering(code)
-        self.calc_colors(code)
+        self.oneil_incoming_light_for(code)
+
+    def prepare_scattering_for(self, code, light_direction, light_color):
+        if not self.calc_in_fragment:
+            if self.atmosphere:
+                code.append(f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+            else:
+                code.append(f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, rayleigh_inscattering, mie_inscattering, transmittance);")
+
+    def calc_transmittance(self, code):
+        pass
+
+    def incoming_light_for(self, code, light_direction, light_color):
+        code.append(f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);")
+
 
 class ONeilSimpleScattering(ONeilScatteringBase):
     str_id = 'oneil-simple'
@@ -527,6 +560,9 @@ class ONeilScatteringDataSourceBase(DataSource):
         rotation_mat_inv = LMatrix4()
         rotation_mat_inv.invert_from(rotation_mat)
         descale_mat = rotation_mat_inv * descale * rotation_mat
+        camera_rot.extract_to_matrix(rotation_mat)
+        rotation_mat.invert_in_place()
+        descale_mat *= rotation_mat
         pos = body.anchor.rel_position
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
         star_pos = light_source.anchor.get_local_position() - body.anchor.get_local_position()
@@ -728,7 +764,6 @@ class ONeilScattering(ONeilScatteringBase):
     def uniforms_scattering(self, code):
         code.append("uniform vec3 v3OriginPos;")       # Center of the planet
         code.append("uniform vec3 v3CameraPos;")       # The camera's current position
-        code.append("uniform vec3 v3LightPos;")        # The direction vector to the light source
         code.append("uniform vec3 v3Absorption;")      # Absorption coefs for the red, green, and blue channels
         code.append("uniform float fCameraHeight;")    # The camera's current height
         code.append("uniform float fCameraHeight2;")   # fCameraHeight^2
@@ -749,12 +784,15 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("#define DELTA 1e-6")
 
     def calc_scattering(self, code):
-        if self.calc_in_fragment and self.atmosphere:
-            code.append("vec3 v3Direction;")
-        if self.calc_in_fragment:
-            code.append("vec3 rayleigh_inscattering;")
-            code.append("vec3 mie_inscattering;")
-            code.append("vec3 transmittance;")
+        code.append("void oneil_calc_scattering(")
+        code.append("        in vec3 world_vertex,")
+        code.append("        in vec3 world_normal,")
+        code.append("        in vec3 v3LightPos,")
+        if self.atmosphere:
+            code.append("        out vec3 v3Direction,")
+        code.append("        out vec3 rayleigh_inscattering,")
+        code.append("        out vec3 mie_inscattering,")
+        code.append("        out vec3 transmittance) {")
         if self.normalize:
             if self.atmosphere:
                 code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;")
@@ -860,6 +898,7 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
+        code.append("}")
 
 class ONeilScatteringDataSource(ONeilScatteringDataSourceBase):
     def apply(self, shape, instance):

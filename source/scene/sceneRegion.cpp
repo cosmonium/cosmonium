@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "collisionRay.h"
 #include "collisionTraverser.h"
 #include "dcast.h"
+#include "directionalLight.h"
 #include "displayRegion.h"
 #include "graphicsOutput.h"
 #include "renderPass.h"
@@ -101,6 +102,10 @@ SceneRegion::create(std::vector<PT(RenderPass)> parent_rendering_passes,
     int sort_index)
 {
     root.set_state(state);
+    PT(DirectionalLight) directional_light = new DirectionalLight("fake-light");
+    directional_light->set_color(LColor(0));
+    NodePath fake_light = root.attach_new_node(directional_light);
+    root.set_light(fake_light);
     for (auto body : bodies) {
         NodePath * instance = body->get_instance();
         if (instance->has_parent()) {

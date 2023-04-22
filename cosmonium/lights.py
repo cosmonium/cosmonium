@@ -26,6 +26,7 @@ from panda3d.core import DirectionalLight
 from .astro.astro import abs_mag_to_lum
 from .astro import units
 from .datasource import DataSource
+from .shaders.data_source.global_lights import GlobalLightsShaderDataSource
 from . import settings
 
 class SurrogateLight:
@@ -44,6 +45,7 @@ class SurrogateLight:
 
     def create_light_node(self):
         self.light_instance = self.target.scene_anchor.unshifted_instance.attach_new_node(self.light_node)
+        self.target.scene_anchor.instance.set_light(self.light_instance)
 
     def update_light(self):
         self.light_direction = self.target.anchor.get_local_position() - self.source.anchor.get_local_position()
@@ -72,21 +74,63 @@ class SurrogateLight:
         light_color *= illuminance
         return light_color
 
-    def update(self, instance):
+    def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.source.light_color)
         if settings.use_pbr:
             luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
             illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
             light_color *= illuminance
-        instance.setShaderInput("light_dir", *-self.light_direction)
-        instance.setShaderInput("light_color", light_color)
-        instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
-        instance.setShaderInput("ambient_color", (1, 1, 1, 1))
+        instance.setShaderInput("global_light_direction", *-self.light_direction)
+        instance.setShaderInput("global_light_color", light_color)
+
+class GlobalLight:
+    def __init__(self, source, target):
+        self.source = source
+        self.target = target
+        self.light_direction = None
+        self.light_distance = None
+
+    def create_light(self):
+        pass
+
+    def remove_light(self):
+        pass
+
+    def update_light(self):
+        self.light_direction = self.target.anchor.get_local_position() - self.source.anchor.get_local_position()
+        self.light_distance = self.light_direction.length()
+        self.light_direction /= self.light_distance
+
+    def update_instance(self, camera_pos):
+        pass
+
+    def apply(self, instance):
+        pass
+
+    def get_illuminance(self):
+        light_color = LColor(self.source.light_color)
+        luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
+        illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+        light_color *= illuminance
+        return light_color
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        light_color = LColor(self.source.light_color)
+        if False and settings.use_pbr:
+            luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
+            illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+            light_color *= illuminance
+        instance.setShaderInput("global_light_direction", *-self.light_direction)
+        instance.setShaderInput("global_light_eye_direction", *camera_rot.conjugate().xform(-self.light_direction))
+        instance.setShaderInput("global_light_color", light_color)
 
 class LightSources(DataSource):
     def __init__(self):
         DataSource.__init__(self, 'lights')
         self.lights = []
+
+    def get_data_source(self):
+        return GlobalLightsShaderDataSource(self)
 
     def add_light(self, light):
         self.lights.append(light)
@@ -120,4 +164,6 @@ class LightSources(DataSource):
 
     def update(self, shape, instance, camera_pos, camera_rot):
         for light in self.lights:
-            light.update(instance)
+            light.update(shape, instance, camera_pos, camera_rot)
+        instance.setShaderInput("ambient_coef", settings.corrected_global_ambient)
+        instance.setShaderInput("ambient_color", (1, 1, 1, 1))

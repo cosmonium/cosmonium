@@ -57,6 +57,9 @@ class CompositeShaderDataSource(ShaderDataSource):
         self.sources.append(source)
         source.set_shader(self.shader)
 
+    def remove_source(self, source_id):
+        self.sources = list(filter(lambda source: not source.has_source_for(source_id), self.sources))
+
     def create_shader_configuration(self, appearance):
         for source in self.sources:
             source.create_shader_configuration(appearance)

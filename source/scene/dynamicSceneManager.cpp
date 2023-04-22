@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "collisionNode.h"
 #include "collisionRay.h"
 #include "collisionTraverser.h"
+#include "directionalLight.h"
 #include "displayRegion.h"
 #include "geomNode.h"
 #include "graphicsOutput.h"
@@ -54,6 +55,9 @@ DynamicSceneManager::DynamicSceneManager(NodePath render) :
       far_plane = settings->default_far_plane;
   }
   root = render.attach_new_node("root");
+  PT(DirectionalLight) directional_light = new DirectionalLight("fake-light");
+  directional_light->set_color(LColor(0));
+  fake_light = root.attach_new_node(directional_light);
 }
 
 
@@ -165,6 +169,7 @@ DynamicSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, Sc
   root.set_state(state.get_state());
   CPT(InternalName) name = InternalName::make("midPlane");
   root.set_shader_input(name, LVecBase4(mid_plane));
+  root.set_light(fake_light);
 }
 
 

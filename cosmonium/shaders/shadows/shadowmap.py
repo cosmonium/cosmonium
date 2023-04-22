@@ -18,15 +18,16 @@
 #
 
 
-from .base import ShaderShadow
+from ..component import ShaderComponent
+from .base import ShaderShadowInterface
 from ... import settings
 
-class ShaderShadowMap(ShaderShadow):
+class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
 
     fragment_requires = {'world_vertex', 'world_normal'}
 
     def __init__(self, name, use_bias):
-        ShaderShadow.__init__(self)
+        ShaderComponent.__init__(self)
         self.name = name
         self.use_bias = use_bias
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias
@@ -43,7 +44,7 @@ class ShaderShadowMap(ShaderShadow):
         return name
 
     def vertex_uniforms(self, code):
-        code.append("uniform mat4 trans_world_to_clip_of_%sLightSource;" % self.name)
+        code.append("uniform mat4 trans_view_to_clip_of_%sLightSource;" % self.name)
         if self.use_bias:
             code.append("uniform float %s_shadow_normal_bias;" % self.name)
             code.append("uniform float %s_shadow_slope_bias;" % self.name)
@@ -68,13 +69,13 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
         if self.use_bias:
             self.shader.fragment_shader.add_function(code, 'shadow_get_bias', self.get_bias)
 
-    def vertex_shader(self, code):
+    def prepare_shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.use_bias:
-            code.append("vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, light_dir);" % (self.name, self.name, self.name))
-            code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * (world_vertex4 + vec4(%s_offset, 0.0));" % (self.name, self.name, self.name))
+            code.append(f"vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, {light_direction});" % (self.name, self.name, self.name))
+            code.append("vec4 %s_lightclip = trans_view_to_clip_of_%sLightSource * (eye_vertex4 + vec4(%s_offset, 0.0));" % (self.name, self.name, self.name))
             code.append("%s_lightclip.z -= %s_shadow_depth_bias * %s_lightclip.w;" % (self.name, self.name, self.name))
         else:
-            code.append("vec4 %s_lightclip = trans_world_to_clip_of_%sLightSource * world_vertex4;" % (self.name, self.name))
+            code.append("vec4 %s_lightclip = trans_view_to_clip_of_%sLightSource * eye_vertex4;" % (self.name, self.name))
         code.append("%s_lightcoord = %s_lightclip * vec4(0.5, 0.5, 0.5, 1.0) + %s_lightclip.w * vec4(0.5, 0.5, 0.5, 0.0);" % (self.name, self.name, self.name))
 
     def fragment_uniforms(self, code):
@@ -111,7 +112,7 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
         if self.use_pcf_16:
             self.shader.fragment_shader.add_function(code, 'shadow_pcf_16', self.pcf_16)
 
-    def fragment_shader(self, code):
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.shader.fragment_shader.version < 130:
             code.append("shadow *= 1.0 - (1.0 - shadow2D(%s_depthmap, %s_lightcoord.xyz).x) * %s_shadow_coef;" % (self.name, self.name, self.name))
         else:

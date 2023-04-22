@@ -18,15 +18,16 @@
 #
 
 
-from .base import ShaderShadow
+from ..component import ShaderComponent
+from .base import ShaderShadowInterface
 
 
-class ShaderSphereShadow(ShaderShadow):
+class ShaderSphereShadow(ShaderComponent, ShaderShadowInterface):
 
     fragment_requires = {'world_vertex'}
 
     def __init__(self, max_occluders, far_sun, oblate_occluder):
-        ShaderShadow.__init__(self)
+        ShaderComponent.__init__(self)
         self.max_occluders = max_occluders
         self.far_sun = far_sun
         self.oblate_occluder = oblate_occluder
@@ -48,7 +49,7 @@ class ShaderSphereShadow(ShaderShadow):
             code.append("uniform mat4 occluder_transform[%d];" % self.max_occluders)
         code.append("uniform int nb_of_occluders;")
 
-    def fragment_shader(self, code):
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
         code.append("for (int i = 0; i < nb_of_occluders; i++) {")
         if self.oblate_occluder:
             code.append("  vec3 scaled_world_vertex = occluder_centers[i] + mat3(occluder_transform[i]) * (world_vertex - occluder_centers[i]);")
@@ -98,7 +99,7 @@ class ShaderSphereShadow(ShaderShadow):
         code.append("}")
 
 
-class ShaderSphereSelfShadow(ShaderShadow):
+class ShaderSphereSelfShadow(ShaderComponent, ShaderShadowInterface):
     #TODO: Until proper self-shadowing is added, the effect of the normal map
     #is damped by this factor when the angle between the normal and the light
     #is negative (angle > 90deg)
@@ -107,7 +108,7 @@ class ShaderSphereSelfShadow(ShaderShadow):
     def get_id(self):
         return 'sssn' if self.appearance.has_normal else 'sss'
 
-    def fragment_shader(self, code):
+    def shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.appearance.has_normal:
-            code.append("float terminator_coef = dot(shape_normal, light_dir);")
+            code.append(f"float terminator_coef = dot(shape_eye_normal, {eye_light_direction});")
             code.append("shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))

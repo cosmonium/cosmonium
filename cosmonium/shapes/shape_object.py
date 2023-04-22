@@ -29,6 +29,7 @@ from ..shadows import MultiShadows
 from ..parameters import ParametersGroup
 
 from .. import settings
+from cosmonium.shaders.lighting.scattering import NoScattering
 
 
 class ShapeObject(VisibleObject):
@@ -101,8 +102,10 @@ class ShapeObject(VisibleObject):
 
     def set_lights(self, lights):
         self.sources.remove_source_by_name('lights')
+        self.shader.data_source.remove_source('global_lights')
         if lights is not None:
             self.sources.add_source(lights)
+            self.shader.data_source.add_source(lights.get_data_source())
 
     def set_oid_color(self, oid_color):
         self.oid_color = oid_color
@@ -140,14 +143,14 @@ class ShapeObject(VisibleObject):
 
     def set_scattering(self, scattering_source, scattering_shader):
         self.sources.remove_source_by_name('scattering')
-        self.shader.set_scattering(scattering_shader)
+        self.shader.lighting_model.set_scattering(scattering_shader)
         self.update_shader()
         self.sources.add_source(scattering_source)
         if self.instance is not None and self.instance_ready:
             scattering_source.apply(self.shape, self.instance)
 
     def remove_scattering(self):
-        self.shader.remove_scattering()
+        self.shader.lighting_model.set_scattering(NoScattering())
         self.update_shader()
         self.sources.remove_source_by_name('scattering')
         if self.instance is not None:

@@ -26,11 +26,11 @@ from .data_source.panda import PandaShaderDataSource
 from .instancing import NoInstanceControl
 from .lighting.lambert import LambertPhongLightingModel
 from .point_control import NoPointControl
-from .scattering import AtmosphericScattering
 from .tesselation import QuadTessellationVertexInput, TessellationControl
 from .vertex_control.vertex_control import DefaultVertexControl
 from .vertex_input import DirectVertexInput
 from .. import settings
+from cosmonium.shaders.lighting.base import ShadingLightingModel
 
 
 class TessellationVertexShader(ShaderProgram):
@@ -54,8 +54,7 @@ class VertexShader(ShaderProgram):
                  point_control,
                  instance_control,
                  shadows,
-                 lighting_model,
-                 scattering):
+                 lighting_model):
         ShaderProgram.__init__(self, shader_type)
         self.config = config
         self.vertex_source = vertex_source
@@ -66,7 +65,6 @@ class VertexShader(ShaderProgram):
         self.instance_control = instance_control
         self.shadows = shadows
         self.lighting_model = lighting_model
-        self.scattering = scattering
 
     def create_layout(self, code):
         self.vertex_source.vertex_layout(code)
@@ -77,6 +75,8 @@ class VertexShader(ShaderProgram):
         code.append("uniform mat4 p3d_ModelMatrixInverseTranspose;")
         code.append("uniform mat4 p3d_ViewMatrix;")
         code.append("uniform mat4 p3d_ModelViewMatrix;")
+        if 'eye_normal' in self.config.fragment_requires:
+            code.append("uniform mat3 p3d_NormalMatrix;")
         code.append("uniform vec2 win_size;")
         code.append("uniform vec2 target_size;")
         self.vertex_control.vertex_uniforms(code)
@@ -85,7 +85,6 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_uniforms(code)
         self.lighting_model.vertex_uniforms(code)
-        self.scattering.vertex_uniforms(code)
         self.data_source.vertex_uniforms(code)
         self.appearance.vertex_uniforms(code)
 
@@ -94,7 +93,6 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_inputs(code)
         self.lighting_model.vertex_inputs(code)
-        self.scattering.vertex_inputs(code)
         self.point_control.vertex_inputs(code)
         self.instance_control.vertex_inputs(code)
         self.data_source.vertex_inputs(code)
@@ -107,12 +105,16 @@ class VertexShader(ShaderProgram):
             code.append("out vec3 v_model_vertex;")
         if 'world_vertex' in self.config.fragment_requires:
             code.append("out vec3 v_world_vertex;")
+        if 'eye_vertex' in self.config.fragment_requires:
+            code.append("out vec3 v_eye_vertex;")
         if 'model_normal' in self.config.fragment_requires:
             code.append("out vec3 v_model_normal;")
         if 'world_normal' in self.config.fragment_requires:
             code.append("out vec3 v_world_normal;")
-            if 'centroid_world_normal' in self.config.fragment_requires:
-                code.append("centroid out vec3 v_centroid_world_normal;")
+        if 'centroid_world_normal' in self.config.fragment_requires:
+            code.append("centroid out vec3 v_centroid_world_normal;")
+        if 'eye_normal' in self.config.fragment_requires:
+            code.append("out vec3 v_eye_normal;")
         if 'tangent' in self.config.fragment_requires:
             code.append("out vec3 v_binormal;")
             code.append("out vec3 v_tangent;")
@@ -127,7 +129,6 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_outputs(code)
         self.lighting_model.vertex_outputs(code)
-        self.scattering.vertex_outputs(code)
         self.data_source.vertex_outputs(code)
         self.appearance.vertex_outputs(code)
         if self.config.color_picking and self.config.vertex_oids:
@@ -139,12 +140,13 @@ class VertexShader(ShaderProgram):
         self.vertex_source.vertex_extra(code)
         self.vertex_control.vertex_extra(code)
         self.point_control.vertex_extra(code)
+        self.lighting_model.vertex_extra(code)
         for shadow in self.shadows:
             shadow.vertex_extra(code)
 
     def create_body(self, code):
         code.append("vec4 model_vertex4;")
-        if 'model_normal' in self.config.vertex_requires or 'world_normal' in self.config.vertex_requires:
+        if 'model_normal' in self.config.vertex_requires:
             code.append("vec4 model_normal4;")
         if 'tangent' in self.config.vertex_requires:
             code.append("vec4 model_binormal4;")
@@ -165,6 +167,8 @@ class VertexShader(ShaderProgram):
             code.append("vec3 model_normal;")
         if 'world_normal' in self.config.vertex_requires:
             code.append("vec3 world_normal;")
+        if 'eye_normal' in self.config.vertex_requires:
+            code.append("vec3 eye_normal;")
         if 'tangent' in self.config.vertex_requires:
             code.append("vec3 binormal;")
             code.append("vec3 tangent;")
@@ -179,9 +183,9 @@ class VertexShader(ShaderProgram):
             self.vertex_control.update_normal(code)
         if 'world_vertex' in self.config.vertex_requires and not ('world_vertex' in self.vertex_control.vertex_provides or 'world_vertex' in self.instance_control.vertex_provides):
             code.append("world_vertex4 = p3d_ModelMatrix * model_vertex4;")
+        self.instance_control.update_vertex(code)
         if 'eye_vertex' in self.config.vertex_requires:
             code.append("eye_vertex4 = p3d_ViewMatrix * world_vertex4;")
-        self.instance_control.update_vertex(code)
         if 'model_normal' in self.config.vertex_requires or 'world_normal' in self.config.vertex_requires:
             self.instance_control.update_normal(code)
         if 'world_vertex' in self.vertex_control.vertex_provides or 'world_vertex' in self.instance_control.vertex_provides:
@@ -192,8 +196,8 @@ class VertexShader(ShaderProgram):
             code.append("model_normal = model_normal4.xyz;")
         if 'world_normal' in self.config.vertex_requires:
             code.append("world_normal = normalize((p3d_ModelMatrixInverseTranspose * model_normal4).xyz);")
-        if 'centroid_world_normal' in self.config.vertex_requires:
-            code.append("centroid_world_normal = world_normal;")
+        if 'eye_normal' in self.config.vertex_requires:
+            code.append("eye_normal = normalize(p3d_NormalMatrix * model_normal4.xyz);")
         if 'tangent' in self.config.vertex_requires:
             code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
             code.append("binormal = vec3(normalize(p3d_ModelMatrix * model_binormal4));")
@@ -218,22 +222,25 @@ class VertexShader(ShaderProgram):
             shadow.vertex_shader(code)
         self.point_control.vertex_shader(code)
         self.lighting_model.vertex_shader(code)
-        self.scattering.vertex_shader(code)
         self.data_source.vertex_shader(code)
         self.appearance.vertex_shader(code)
         if 'model_vertex' in self.config.fragment_requires:
             code.append("v_model_vertex = model_vertex;")
         if 'world_vertex' in self.config.fragment_requires:
             code.append("v_world_vertex = world_vertex;")
+        if 'eye_vertex' in self.config.fragment_requires:
+            code.append("v_eye_vertex = eye_vertex;")
         if 'model_normal' in self.config.fragment_requires:
             code.append("v_model_normal = model_normal;")
         if 'world_normal' in self.config.fragment_requires:
             code.append("v_world_normal = world_normal;")
-            if 'centroid_world_normal' in self.config.fragment_requires:
-                code.append("v_centroid_world_normal = centroid_world_normal;")
+        if 'centroid_world_normal' in self.config.fragment_requires:
+            code.append("v_centroid_world_normal = world_normal;")
+        if 'eye_normal' in self.config.fragment_requires:
+            code.append("v_eye_normal = eye_normal;")
         if 'tangent' in self.config.fragment_requires:
-            code.append("v_tangent = tangent;")
-            code.append("v_binormal = binormal;")
+            code.append("v_tangent = mat3(p3d_ViewMatrix) * tangent;")
+            code.append("v_binormal = mat3(p3d_ViewMatrix) * binormal;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
             code.append("v_relative_vector_to_obs = relative_vector_to_obs;")
         if self.config.color_picking and self.config.vertex_oids:
@@ -274,7 +281,6 @@ class FragmentShader(ShaderProgram):
                  appearance,
                  shadows,
                  lighting_model,
-                 scattering,
                  vertex_control,
                  point_control,
                  after_effects):
@@ -284,7 +290,6 @@ class FragmentShader(ShaderProgram):
         self.appearance = appearance
         self.shadows = shadows
         self.lighting_model = lighting_model
-        self.scattering = scattering
         self.vertex_control = vertex_control
         self.point_control = point_control
         self.after_effects = after_effects
@@ -300,7 +305,6 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_uniforms(code)
         self.lighting_model.fragment_uniforms(code)
-        self.scattering.fragment_uniforms(code)
         self.point_control.fragment_uniforms(code)
         for effect in self.after_effects:
             effect.fragment_uniforms(code)
@@ -314,12 +318,16 @@ class FragmentShader(ShaderProgram):
             code.append("in vec3 v_model_vertex;")
         if 'world_vertex' in self.config.fragment_requires:
             code.append("in vec3 v_world_vertex;")
+        if 'eye_vertex' in self.config.fragment_requires:
+            code.append("in vec3 v_eye_vertex;")
         if 'model_normal' in self.config.fragment_requires:
             code.append("in vec3 v_model_normal;")
         if 'world_normal' in self.config.fragment_requires:
             code.append("in vec3 v_world_normal;")
-            if 'centroid_world_normal' in self.config.fragment_requires:
-                code.append("centroid out vec3 v_centroid_world_normal;")
+        if 'centroid_world_normal' in self.config.fragment_requires:
+            code.append("centroid in vec3 v_centroid_world_normal;")
+        if 'eye_normal' in self.config.fragment_requires:
+            code.append("in vec3 v_eye_normal;")
         if 'tangent' in self.config.fragment_requires:
             code.append("in vec3 v_tangent;")
             code.append("in vec3 v_binormal;")
@@ -334,7 +342,6 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_inputs(code)
         self.lighting_model.fragment_inputs(code)
-        self.scattering.fragment_inputs(code)
         self.vertex_control.fragment_inputs(code)
         self.point_control.fragment_inputs(code)
         if self.config.color_picking and self.config.vertex_oids:
@@ -351,7 +358,6 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_extra(code)
         self.lighting_model.fragment_extra(code)
-        self.scattering.fragment_extra(code)
         self.point_control.fragment_extra(code)
         for effect in self.after_effects:
             effect.fragment_extra(code)
@@ -363,12 +369,13 @@ class FragmentShader(ShaderProgram):
             code.append("vec3 model_vertex = v_model_vertex;")
         if 'world_vertex' in self.config.fragment_requires:
             code.append("vec3 world_vertex = v_world_vertex;")
+        if 'eye_vertex' in self.config.fragment_requires:
+            code.append("vec3 eye_vertex = v_eye_vertex;")
         if 'model_normal' in self.config.fragment_requires:
             code.append("vec3 model_normal = normalize(v_model_normal);")
         if 'world_normal' in self.config.fragment_requires:
             if 'centroid_world_normal' in self.config.fragment_requires:
                 code.append("vec3 world_normal;")
-                code.append("vec3 normal;")
                 code.append("if (abs(dot(v_world_normal, v_world_normal) - 1) > 0.01) {")
                 code.append("  world_normal = normalize(v_centroid_world_normal);")
                 code.append("} else {")
@@ -377,8 +384,10 @@ class FragmentShader(ShaderProgram):
             else:
                 code.append("vec3 world_normal = normalize(v_world_normal);")
             code.append("vec3 normal = world_normal;")
+        if 'eye_normal' in self.config.fragment_requires:
+            code.append("vec3 eye_normal = normalize(v_eye_normal);")
             if self.appearance.has_normal:
-                    code.append("vec3 shape_normal = normal;")
+                    code.append("vec3 shape_eye_normal = eye_normal;")
         if 'tangent' in self.config.fragment_requires:
             code.append("vec3 tangent = normalize(v_tangent);")
             code.append("vec3 binormal = normalize(v_binormal);")
@@ -394,24 +403,20 @@ class FragmentShader(ShaderProgram):
 #             code.append("texcoord_tex%d.xyz -= parallax_offset;" % self.texture_index)
         self.data_source.fragment_shader(code)
         self.appearance.fragment_shader(code)
-        if 'world_normal' in self.config.fragment_requires and self.appearance.has_normal:
+        if 'eye_normal' in self.config.fragment_requires and self.appearance.has_normal:
             if self.appearance.normal_texture_tangent_space:
                 code += [
-                         "normal *= pixel_normal.z;",
-                         "normal += tangent * pixel_normal.x;",
-                         "normal += binormal * pixel_normal.y;",
-                         "normal = normalize(normal);",
+                         "eye_normal *= pixel_normal.z;",
+                         "eye_normal += tangent * pixel_normal.x;",
+                         "eye_normal += binormal * pixel_normal.y;",
+                         "eye_normal = normalize(eye_normal);",
                          ]
             else:
-                code.append("normal = pixel_normal;")
+                code.append("eye_normal = pixel_normal;")
         if settings.shader_debug_fragment_shader == 'default':
             code.append("vec4 total_diffuse_color = vec4(0, 0, 0, 0);")
             code.append("vec3 total_emission_color = vec3(0, 0, 0);")
-            code.append("float shadow = 1.0;")
-            for shadow in self.shadows:
-                shadow.fragment_shader(code)
             self.lighting_model.fragment_shader(code)
-            self.scattering.fragment_shader(code)
             self.point_control.fragment_shader(code)
             code.append("vec4 total_color = total_diffuse_color + vec4(total_emission_color, 0.0);")
             for effect in self.after_effects:
@@ -420,12 +425,12 @@ class FragmentShader(ShaderProgram):
             if settings.shader_debug_fragment_shader == 'diffuse':
                 code.append("vec4 total_color = surface_color;")
             if settings.shader_debug_fragment_shader == 'normal':
-                if self.config.fragment_uses_normal:
+                if 'world_normal' in self.config.fragment_requires:
                     code.append("vec4 total_color = vec4((normal + vec3(1.0)) / 2.0, 1.0);")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
             elif settings.shader_debug_fragment_shader == 'normalmap':
-                if self.config.fragment_uses_normal and self.appearance.has_normal:
+                if 'eye_normal' in self.config.fragment_requires and self.appearance.has_normal:
                     code.append("vec4 total_color = vec4((pixel_normal + vec3(1.0)) / 2.0, 1.0);")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
@@ -465,7 +470,6 @@ class RenderingShader(StructuredShader):
                  appearance=None,
                  shadows=None,
                  lighting_model=None,
-                 scattering=None,
                  tessellation_control=None,
                  vertex_control=None,
                  point_control=None,
@@ -481,9 +485,7 @@ class RenderingShader(StructuredShader):
         if shadows is None:
             shadows = []
         if lighting_model is None:
-            lighting_model = LambertPhongLightingModel()
-        if scattering is None:
-            scattering = AtmosphericScattering()
+            lighting_model = ShadingLightingModel(LambertPhongLightingModel())
         lighting_model.set_shader(self)
         if vertex_control is None:
             vertex_control = DefaultVertexControl()
@@ -509,8 +511,6 @@ class RenderingShader(StructuredShader):
             shadow.appearance  = appearance
         self.lighting_model = lighting_model
         self.lighting_model.set_shader(self)
-        self.scattering = scattering
-        self.scattering.set_shader(self)
         self.vertex_control = vertex_control
         self.vertex_control.set_shader(self)
         self.point_control = point_control
@@ -537,8 +537,7 @@ class RenderingShader(StructuredShader):
                                                         point_control=self.point_control,
                                                         instance_control=self.instance_control,
                                                         shadows=self.shadows,
-                                                        lighting_model=self.lighting_model,
-                                                        scattering=self.scattering)
+                                                        lighting_model=self.lighting_model)
         else:
             self.tessellation_control = TessellationControl()
             self.tessellation_eval_shader = None
@@ -551,24 +550,18 @@ class RenderingShader(StructuredShader):
                                               point_control=self.point_control,
                                               instance_control=self.instance_control,
                                               shadows=self.shadows,
-                                              lighting_model=self.lighting_model,
-                                              scattering=self.scattering)
+                                              lighting_model=self.lighting_model)
         self.fragment_shader = FragmentShader(self,
                                               data_source=self.data_source,
                                               appearance=self.appearance,
                                               shadows=self.shadows,
                                               lighting_model=self.lighting_model,
-                                              scattering=self.scattering,
                                               vertex_control=vertex_control,
                                               point_control=self.point_control,
                                               after_effects=self.after_effects)
 
         self.nb_textures_coord = 0
 
-        self.vertex_requires = set()
-        self.vertex_provides = set()
-        self.fragment_requires = set()
-        self.fragment_provides = set()
         self.use_model_texcoord = use_model_texcoord
         self.color_picking = settings.color_picking
 
@@ -576,18 +569,6 @@ class RenderingShader(StructuredShader):
         self.instance_control = instance_control
         #TODO: wrong if there is tessellation
         self.vertex_shader.instance_control = instance_control
-
-    def set_scattering(self, scattering):
-        self.scattering = scattering
-        self.scattering.shader = self
-        if self.tessellation_eval_shader is None:
-            self.vertex_shader.scattering = scattering
-        else:
-            self.tessellation_eval_shader.scattering = scattering
-        self.fragment_shader.scattering = scattering
-
-    def remove_scattering(self):
-        self.set_scattering(AtmosphericScattering())
 
     def add_shadows(self, shadow):
         self.shadows.append(shadow)
@@ -622,11 +603,9 @@ class RenderingShader(StructuredShader):
 
         self.nb_textures_coord = 1
 
-        if settings.use_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid:
-            self.fragment_requires.add('centroid_world_normal')
         self.data_source.create_shader_configuration(appearance)
-
         self.appearance.create_shader_configuration(appearance)
+        self.lighting_model.create_shader_configuration(appearance)
 
 #         if self.has_bump_texture:
 #             self.fragment_uses_vertex = True
@@ -635,12 +614,12 @@ class RenderingShader(StructuredShader):
 #             self.relative_vector_to_obs = True
 
         component: ShaderComponent
-        for component in (self.appearance, *self.after_effects, self.vertex_control, self.point_control, self.instance_control, self.lighting_model, self.scattering, *self.shadows):
+        for component in (self.appearance, *self.after_effects, self.vertex_control, self.point_control, self.instance_control, self.lighting_model, *self.shadows):
             self.vertex_requires.update(component.vertex_requires)
             self.vertex_provides.update(component.vertex_provides)
 
         component: ShaderComponent
-        for component in (self.appearance, *self.after_effects, self.lighting_model, self.scattering, *self.shadows):
+        for component in (self.appearance, *self.after_effects, self.lighting_model, *self.shadows):
             self.fragment_requires.update(component.fragment_requires)
             self.fragment_provides.update(component.fragment_provides)
 
@@ -648,7 +627,14 @@ class RenderingShader(StructuredShader):
             if not fragment_required in self.fragment_provides:
                 self.vertex_requires.add(fragment_required)
 
+        if 'eye_vertex' in self.vertex_requires:
+            self.vertex_requires.add('world_vertex')
+        if 'world_normal' in self.fragment_requires:
+            if settings.use_multisampling and settings.multisamples > 0 and settings.shader_normals_use_centroid:
+                self.fragment_requires.add('centroid_world_normal')
         if 'world_normal' in self.vertex_requires:
+            self.vertex_requires.add('model_normal')
+        if 'eye_normal' in self.vertex_requires:
             self.vertex_requires.add('model_normal')
 
     def get_shader_id(self):
@@ -668,9 +654,6 @@ class RenderingShader(StructuredShader):
         lm_id = self.lighting_model.get_id()
         if lm_id:
             name += "-" + lm_id
-        sc_id = self.scattering.get_id()
-        if sc_id:
-            name += "-" + sc_id
         vc_id = self.vertex_control.get_id()
         if vc_id:
             name += "-" + vc_id
@@ -697,13 +680,12 @@ class RenderingShader(StructuredShader):
 
     def define_shader(self, shape, appearance):
         self.create_shader_configuration(appearance)
-        self.scattering.define_shader(shape, appearance)
+        # TODO: self.scattering.define_shader(shape, appearance)
 
     def get_user_parameters(self):
         group = StructuredShader.get_user_parameters(self)
         group.add_parameter(self.lighting_model.get_user_parameters())
         group.add_parameter(self.appearance.get_user_parameters())
-        group.add_parameter(self.scattering.get_user_parameters())
         group.add_parameter(self.vertex_control.get_user_parameters())
         group.add_parameter(self.point_control.get_user_parameters())
         group.add_parameter(self.instance_control.get_user_parameters())

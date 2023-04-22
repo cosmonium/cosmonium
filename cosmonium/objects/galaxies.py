@@ -35,7 +35,7 @@ from ..sprites import ExpPointSprite
 from ..textures import TransparentTexture, DirectTextureSource
 from ..shaders.point_control import PointControl
 from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.flat import FlatLightingModel
+from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..utils import TransparencyBlend
 from ..utils import mag_to_scale_nolimit, srgb_to_linear
 from ..parameters import AutoUserParameter, UserParameter
@@ -67,7 +67,7 @@ class Galaxy(DeepSpaceObject):
                 point_control = GalaxyPointControl()
             else:
                 point_control = None
-            shader = RenderingShader(lighting_model=FlatLightingModel(), point_control=point_control)
+            shader = RenderingShader(lighting_model=PureEmissionLightingModel(), point_control=point_control)
         #Disable color picking as it has huge impact on performance
         shader.color_picking = False
         if appearance is None:

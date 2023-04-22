@@ -21,7 +21,6 @@
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import Texture, CullBinManager
-from panda3d.core import AmbientLight
 from panda3d.core import LightRampAttrib, AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
@@ -48,7 +47,7 @@ from .objects.systems import StellarSystem, SimpleSystem
 from .engine.c_settings import c_settings
 from .engine.anchors import StellarAnchor
 from .engine.traversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
-from .lights import SurrogateLight, LightSources
+from .lights import SurrogateLight, GlobalLight, LightSources
 from .components.annotations.grid import Grid
 from .astro.frame import BodyReferenceFrame
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
@@ -422,7 +421,6 @@ class Cosmonium(CosmoniumBase):
         self.time = Time()
         self.current_sequence = None
         self.autopilot = None
-        self.globalAmbient = None
         self.oid_texture = None
         self.camera_controllers = []
         self.camera_controller = None
@@ -994,10 +992,6 @@ class Cosmonium(CosmoniumBase):
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
-        if self.globalAmbient is not None:
-            self.common_state.clearLight(self.globalAmbientPath)
-            self.globalAmbientPath.removeNode()
-        self.globalAmbient=AmbientLight('globalAmbient')
         if settings.use_srgb:
             corrected_ambient = pow(settings.global_ambient, 2.2)
         else:
@@ -1005,9 +999,6 @@ class Cosmonium(CosmoniumBase):
         settings.corrected_global_ambient = corrected_ambient
         print("Ambient light level:  %.2f" % settings.global_ambient)
         self.gui.update_info("Ambient light level:  %.2f" % settings.global_ambient, duration=0.5, fade=1.0)
-        self.globalAmbient.setColor((corrected_ambient, corrected_ambient, corrected_ambient, 1))
-        self.globalAmbientPath = self.common_state.attachNewNode(self.globalAmbient)
-        self.common_state.setLight(self.globalAmbientPath)
         self.common_state.set_shader_input("global_ambient", settings.corrected_global_ambient)
         configParser.save()
 
@@ -1246,7 +1237,8 @@ class Cosmonium(CosmoniumBase):
                 body.set_lights(lights)
             light = body.lights.get_light_for(star.body)
             if light is None:
-                light = SurrogateLight(star.body, body)
+                #light = SurrogateLight(star.body, body)
+                light = GlobalLight(star.body, body)
                 body.lights.add_light(light)
             light.update_light()
 
@@ -1480,8 +1472,8 @@ class Cosmonium(CosmoniumBase):
         self.update_luminosity()
         self.update_states()
         self.update_scene_anchors()
-        self.find_local_lights()
         self.check_scattering()
+        self.find_local_lights()
 
         if self.trigger_check_settings:
             for visible in self.visibles:

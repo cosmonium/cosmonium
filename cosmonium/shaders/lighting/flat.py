@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
 #
 
 
-from .base import LightingModel
+from .base import LightingModelBase
 
 
-class FlatLightingModel(LightingModel):
+class FlatLightingModel(LightingModelBase):
     def get_id(self):
         return "flat"
 

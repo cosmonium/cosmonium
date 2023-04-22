@@ -18,46 +18,80 @@
 #
 
 
-from .base import LightingModel
+from ..component import ShaderComponent
+from .base import BRDFInterface
 
 
-class LambertPhongLightingModel(LightingModel):
+class LambertPhongLightingModel(ShaderComponent, BRDFInterface):
 
-    fragment_requires = {'world_vertex', 'world_normal'}
+    fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def get_id(self):
         return "lambert"
 
-    def vertex_uniforms(self, code):
-        LightingModel.vertex_uniforms(self, code)
-        code.append("uniform vec3 light_dir;")
-
-    def fragment_uniforms(self, code):
-        LightingModel.fragment_uniforms(self, code)
-        code.append("uniform float ambient_coef;")
-        code.append("uniform float backlit;")
-        code.append("uniform vec3 light_dir;")
-        code.append("uniform vec4 ambient_color;")
-        code.append("uniform vec4 light_color;")
-
-    def fragment_shader(self, code):
-        #TODO: should be done only using .rgb (or vec3) and apply alpha channel in the end
-        code.append("vec4 total_diffuse = vec4(0.0);")
-        code.append("float n_dot_l = dot(normal, light_dir);")
-        code.append("if (n_dot_l > 0.0) {")
+    def lambert_phong_material(self, code):
+        code.append("struct LambertPhongMaterial")
+        code.append("{")
+        code.append("    vec3 diffuse_color;")
         if self.appearance.has_specular:
-            code.append("  vec3 obs_dir = normalize(-world_vertex);")
-            code.append("  vec3 half_vec = normalize(light_dir + obs_dir);")
-            code.append("  float spec_angle = clamp(dot(normal, half_vec), 0.0, 1.0);")
-            code.append("  vec4 specular = light_color * pow(spec_angle, shininess);")
-            code.append("  total_diffuse_color.rgb += specular.rgb * specular_color.rgb * shadow;")
-        code.append("  float diffuse_coef = clamp(n_dot_l, 0.0, 1.0) * shadow;")
-        code.append("  total_diffuse += light_color * diffuse_coef;")
+            code.append("    vec3 specular_color;")
+            code.append("    float shininess;")
+        code.append("};")
+
+    def lambert_phong_vectors(self, code):
+        code.append("struct LambertPhongVectors")
+        code.append("{")
+        if self.appearance.has_specular:
+            code.append("    float n_dot_h;")
+        code.append("    float n_dot_l;")
+        code.append("};")
+
+    def lambert_phong_calc_vectors(self, code):
+        code.append("LambertPhongVectors calc_lambert_phong_vectors(vec3 normal, vec3 obs_dir, vec3 light_dir)")
+        code.append("{")
+        code.append("    float n_dot_l = min(dot(normal, light_dir), 1.0);")
+        if self.appearance.has_specular:
+            code.append("    vec3 half_vec = normalize(light_dir + obs_dir);")
+            code.append("    float n_dot_h = clamp(dot(normal, half_vec), 0.0, 1.0);")
+        code.append("    return LambertPhongVectors(")
+        if self.appearance.has_specular:
+            code.append("        n_dot_h,")
+        code.append("        n_dot_l")
+        code.append("    );")
         code.append("}")
-        #code.append("vec4 ambient = ambient_color * ambient_coef;")
-        #if self.appearance.has_occlusion:
-        #    code.append("ambient *= surface_occlusion;")
-        #code.append("total_diffuse += ambient;")
-        code.append("total_diffuse.a = 1.0;")
-        code.append("total_diffuse_color += surface_color * total_diffuse;")
-        self.apply_emission(code, 'n_dot_l')
+
+    def lambert_phong_brdf(self, code):
+        code.append("vec3 lambert_phong_brdf(in LambertPhongMaterial material, in LambertPhongVectors vectors, in vec3 light_direction, in vec3 light_color) {")
+        code.append("  vec3 contribution = vec3(0);")
+        code.append("  if (vectors.n_dot_l > 0.0) {")
+        if self.appearance.has_specular:
+            code.append("    vec3 specular = light_color * pow(vectors.n_dot_h, material.shininess);")
+            code.append("    contribution += specular * material.specular_color;")
+        code.append("    float diffuse_coef = clamp(vectors.n_dot_l, 0.0, 1.0);")
+        code.append("    contribution += light_color * diffuse_coef * material.diffuse_color;")
+        code.append("  }")
+        code.append("  return contribution;")
+        code.append("}")
+
+    def fragment_extra(self, code):
+        self.lambert_phong_material(code)
+        self.lambert_phong_vectors(code)
+        self.lambert_phong_calc_vectors(code)
+        self.lambert_phong_brdf(code)
+
+    def prepare_material(self, code):
+        code.append("  LambertPhongMaterial material;")
+        code.append("  material.diffuse_color = surface_color.rgb;")
+        if self.appearance.has_specular:
+            code.append("  material.specular_color = specular_color.rgb;")
+            code.append("  material.shininess = shininess;")
+            code.append("  vec3 obs_dir = normalize(-eye_vertex);")
+        else:
+            code.append("  vec3 obs_dir = vec3(0);")
+
+    def light_contribution(self, code, result, light_direction, light_color):
+        code.append(f"    LambertPhongVectors vectors = calc_lambert_phong_vectors(eye_normal, obs_dir, {light_direction});")
+        code.append(f"    {result} = lambert_phong_brdf(material, vectors, {light_direction}, {light_color}.rgb);")
+
+    def cos_light_normal(self):
+        return "vectors.n_dot_l"

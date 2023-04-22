@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #
 
 
+from ..shaders.lighting.base import ShadingLightingModel
 from ..shaders.lighting.flat import FlatLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..shaders.lighting.oren_nayar import OrenNayarPhongLightingModel
@@ -65,16 +66,16 @@ class LightingModelYamlParser(YamlModuleParser):
     def decode(cls, data, appearance):
         (object_type, parameters) = cls.get_type_and_data(data, 'lambert-phong')
         if object_type == 'lambert-phong':
-            model = LambertPhongLightingModel()
+            model = ShadingLightingModel(LambertPhongLightingModel())
         elif object_type == 'oren-nayar':
-            model = OrenNayarPhongLightingModel()
+            model = ShadingLightingModel(OrenNayarPhongLightingModel())
             #TODO: This should be done a better way...
             if appearance.roughness is None:
                 appearance.roughness = 0.9
         elif object_type == 'lunar-lambert':
             model = LunarLambertLightingModel()
         elif object_type == 'pbr':
-            model = PbrLightingModel()
+            model = ShadingLightingModel(PbrLightingModel())
         elif object_type == 'flat':
             model = FlatLightingModel()
         elif object_type == 'custom':

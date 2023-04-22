@@ -48,7 +48,7 @@ from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, rem
 from cosmonium.scene.sceneanchor import SceneAnchorCollection
 from cosmonium.scene.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
 from cosmonium.engine.c_settings import c_settings
-from cosmonium.lights import LightSources, SurrogateLight
+from cosmonium.lights import LightSources, GlobalLight
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders.rendering import RenderingShader
@@ -711,7 +711,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     async def init(self):
         self.lights = LightSources()
-        self.light = SurrogateLight(FakeLightSource(), None)
+        self.light = GlobalLight(FakeLightSource(), None)
         self.light.light_direction = LVector3d(1, 0, 0)
         self.lights.add_light(self.light)
 
@@ -755,6 +755,11 @@ class RoamingRalphDemo(CosmoniumBase):
                 shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
             self.terrain_surface.sources.add_source(shadows_data_source)
         self.terrain.add_source(self.lights)
+        for component in self.terrain.components:
+            if hasattr(component, 'object_template'):
+                component.object_template.shader.data_source.add_source(self.lights.get_data_source())
+            else:
+                component.shader.data_source.add_source(self.lights.get_data_source())
 
         await self.create_instance()
         self.create_tile(0, 0)
@@ -790,6 +795,7 @@ class RoamingRalphDemo(CosmoniumBase):
                 shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
             self.ralph_shape_object.sources.add_source(shadows_data_source)
         self.ralph_shape_object.sources.add_source(self.lights)
+        self.ralph_shape_object.shader.data_source.add_source(self.lights.get_data_source())
 
         self.camera_controller = SurfaceFollowCameraController()
         #self.camera_controller = FixedCameraController()
