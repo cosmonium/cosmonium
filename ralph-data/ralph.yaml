@@ -1,7 +1,7 @@
 terrain:
-    tile-size: 16384
-    max-distance: 16384
-heightmap:
+  tile-size: 16384
+  max-distance: 16384
+  heightmap:
     max-height: 500
     scale-length: 32768.0
     noise:
@@ -54,7 +54,7 @@ heightmap:
                       length: 1.280
                       scale: 40
               - -100.0
-biome:
+  biome:
     max-height: 1
     scale-length: 32768.0
     noise:
@@ -65,7 +65,7 @@ biome:
             noise: perlin
             octaves: 4
             length: 16.384
-layers:
+  layers:
   - shape:
       type: mesh
       model: 'ralph-data/models/trees/tree1'
@@ -97,16 +97,15 @@ layers:
       material: false
     placer: random
     min-lod: 4
-water:
+  water:
     level: 0
     visible: true
     scale: 8
-fog2:
+  fog2:
     falloff: 0.035
     density: 10
     ground: -300
-
-appearance:
+  appearance:
     type: procedural
     textures:
       entries:

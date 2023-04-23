@@ -53,24 +53,20 @@ from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders.rendering import RenderingShader
 from cosmonium.shaders.fog import Fog
-from cosmonium.shaders.tesselation import ConstantTessellationControl
 from cosmonium.shaders.shadows.shadowmap import ShaderShadowMap
 from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
-from cosmonium.shaders.vertex_control.displacement import DisplacementVertexControl
 from cosmonium.shapes.actor import ActorShape
 from cosmonium.shapes.composite import CompositeShapeObject
 from cosmonium.shapes.shape_object import ShapeObject
-from cosmonium.components.elements.surfaces import HeightmapFlatSurface
-from cosmonium.tiles import Tile, TiledShape, GpuPatchTerrainLayer, MeshTerrainLayer
-from cosmonium.patchedshapes import PatchFactory, PatchLayer, VertexSizeMaxDistanceLodControl
+from cosmonium.tiles import Tile, GpuPatchTerrainLayer, MeshTerrainLayer
+from cosmonium.patchedshapes import PatchFactory, PatchLayer
 from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster, PSSMShadowMapDataSource
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
-from cosmonium.parsers.heightmapsparser import HeightmapYamlParser
+from cosmonium.parsers.surfacesparser import FlatSurfaceParser
 from cosmonium.controllers.controllers import ShipFlatSurfaceBodyMover
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
-from cosmonium.parsers.appearancesparser import AppearanceYamlParser
 from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.utils import quaternion_from_euler
@@ -262,40 +258,21 @@ class PhysicsConfig():
 
 class RalphConfigParser(YamlModuleParser):
     def decode(self, data):
-        biome = data.get('biome', None)
-        control = data.get('control', None)
-        appearance = data.get('appearance', None)
         water = data.get('water', None)
         fog = data.get('fog', None)
         physics = data.get('physics', {})
 
-        terrain = data.get('terrain', {})
+        terrain = data.get('terrain')
+        self.terrain_surface = FlatSurfaceParser.decode(terrain)
         self.tile_size = terrain.get("tile-size", 1024)
-        self.tile_density = terrain.get('tile-density', 64)
-        self.max_vertex_size = terrain.get('max-vertex-size', 128)
-        self.max_lod = terrain.get('max-lod', 10)
-        self.max_distance = terrain.get('max-distance', 1.001 * 1024 * sqrt(2))
-        #TODO: coord_scale should simply be tile_size
-        self.coord_scale = self.tile_size / 16384
-
-        self.heightmap = HeightmapYamlParser.decode(data.get('heightmap', {}), 'heightmap', patched=True, scale=self.tile_size, coord_scale=self.coord_scale)
-        if biome is not None:
-            self.biome = HeightmapYamlParser.decode(data.get('biome'), 'biome', patched=True, scale=self.tile_size, coord_scale=self.coord_scale)
-        else:
-            self.biome = None
 
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.tile_size)
 
-        layers = data.get('layers', [])
+        layers = terrain.get('layers', [])
         self.layers = []
         for layer in layers:
             self.layers.append(PopulatorYamlParser.decode(layer))
-
-        self.appearance = AppearanceYamlParser.decode(appearance, self.heightmap, 1.0, patched_shape=True)
-        if hasattr(self.appearance, 'texture_source'):
-            # TODO: Patch of texture dictionary should be done properly
-            self.appearance.texture_source.extend *= 1000
 
         if water is not None:
             level = water.get('level', 0)
@@ -502,64 +479,19 @@ class RalphAppConfig:
         self.test_start = False
 
 class RoamingRalphDemo(CosmoniumBase):
-    def create_terrain_shader(self):
-#         control4 = HeightColorMap('colormap',
-#                 [
-#                  ColormapLayer(0.00, top=LRGBColor(0, 0.1, 0.24)),
-#                  ColormapLayer(0.40, top=LRGBColor(0, 0.1, 0.24)),
-#                  ColormapLayer(0.49, top=LRGBColor(0, 0.6, 0.6)),
-#                  ColormapLayer(0.50, bottom=LRGBColor(0.9, 0.8, 0.6), top=LRGBColor(0.5, 0.4, 0.3)),
-#                  ColormapLayer(0.80, top=LRGBColor(0.2, 0.3, 0.1)),
-#                  ColormapLayer(0.90, top=LRGBColor(0.7, 0.6, 0.4)),
-#                  ColormapLayer(1.00, bottom=LRGBColor(1, 1, 1), top=LRGBColor(1, 1, 1)),
-#                 ])
-        data_source = []
-        if self.terrain_shape.data_store is not None:
-            data_source.append(self.terrain_shape.data_store.get_shader_data_source())
-        data_source.append(self.ralph_config.heightmap.get_data_source(self.terrain_shape.data_store is not None))
-        if self.ralph_config.biome is not None:
-            data_source.append(self.ralph_config.biome.get_data_source(self.terrain_shape.data_store is not None))
-        data_source.append(self.ralph_config.appearance.get_data_source())
-        if OpenGLConfig.hardware_tessellation:
-            tessellation_control = ConstantTessellationControl()
-        else:
-            tessellation_control = None
-        self.terrain_shader = RenderingShader(appearance=self.ralph_config.appearance.get_shader_appearance(),
-                                          tessellation_control=tessellation_control,
-                                          vertex_control=DisplacementVertexControl(self.ralph_config.heightmap),
-                                          data_source=data_source)
-        if self.shadows:
-            if self.pssm_shadows:
-                self.terrain_shader.add_shadows(ShaderPSSMShadowMap('shadows'))
-            else:
-                self.terrain_shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
-
     def create_tile(self, x, y):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.tile_factory = TileFactory(self.ralph_config.heightmap,
-                                        self.ralph_config.tile_density, self.ralph_config.tile_size,
-                                        self.has_water, self.water,
-                                        self.ralph_config.physics.enable, self.physics)
-        self.terrain_shape = TiledShape(self.tile_factory,
-                                        self.ralph_config.tile_size,
-                                        VertexSizeMaxDistanceLodControl(self.ralph_config.max_distance / self.ralph_config.tile_size,
-                                                                        self.ralph_config.max_vertex_size,
-                                                                        density=settings.patch_constant_density,
-                                                                        max_lod=self.ralph_config.max_lod))
-        self.create_terrain_shader()
-        self.terrain_surface = HeightmapFlatSurface(
-                               'surface',
-                               self.ralph_config.tile_size,
-                               self.terrain_shape,
-                               self.ralph_config.heightmap,
-                               self.ralph_config.biome,
-                               self.ralph_config.appearance,
-                               self.terrain_shader,
-                               clickable=False)
+        self.terrain_surface = self.ralph_config.terrain_surface
+        self.terrain_shape = self.terrain_surface.shape
         self.terrain = CompositeShapeObject("terrain")
         self.terrain.add_component(self.terrain_surface)
+        if self.shadows:
+            if self.pssm_shadows:
+                self.terrain_surface.shader.add_shadows(ShaderPSSMShadowMap('shadows'))
+            else:
+                self.terrain_surface.shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
 
     async def create_instance(self):
         #TODO: Should do init correctly

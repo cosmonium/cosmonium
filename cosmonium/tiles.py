@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -21,10 +21,11 @@
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
-from .patchedshapes import CullingFrustum, QuadTreeNode, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer
+from .patchedshapes import CullingFrustum, QuadTreeNode, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer, PatchFactory
 from .patchneighbours import PatchNeighboursBase
 from .textures import TexCoord
 from .geometry import geometry
+from .opengl import OpenGLConfig
 from . import settings
 
 
@@ -101,6 +102,40 @@ class MeshTerrainLayer(PatchLayer):
     def update_instance(self, patch):
         self.remove_instance()
         self.create_instance(patch)
+
+class TileFactory(PatchFactory):
+    def __init__(self, heightmap, tile_density, size):
+        self.heightmap = heightmap
+        self.tile_density = tile_density
+        self.size = size
+
+    def get_patch_limits(self, patch):
+        height_scale = self.heightmap.height_scale
+        height_offset = self.heightmap.height_offset
+        min_height = self.heightmap.min_height
+        max_height = self.heightmap.max_height
+        mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0
+        if patch is not None:
+            patch_data = self.heightmap.get_patch_data(patch, strict=False)
+            if patch_data is not None:
+                #TODO: This should be done inside the heightmap patch
+                min_height = patch_data.min_height * height_scale + height_offset
+                max_height = patch_data.max_height * height_scale + height_offset
+                mean_height = patch_data.mean_height * height_scale + height_offset
+            else:
+                print("NO PATCH DATA !!!", patch.str_id())
+        return (min_height, max_height, mean_height)
+
+    def create_patch(self, parent, lod, face, x, y):
+        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
+        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
+        if OpenGLConfig.hardware_tessellation:
+            terrain_layer = GpuPatchTerrainLayer()
+        else:
+            terrain_layer = MeshTerrainLayer()
+        patch.add_layer(terrain_layer)
+        return patch
 
 class TiledShape(PatchedShapeBase):
     def __init__(self, factory, scale, lod_control):

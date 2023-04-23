@@ -305,6 +305,9 @@ class HeightmapSurface(EllipsoidSurface):
 
 
 class FlatSurface(Surface):
+    def __init__(self, name, shape, appearance, shader, clickable=True):
+        Surface.__init__(self, name,  shape=shape, appearance=appearance, shader=shader, clickable=clickable)
+
     @property
     def size(self):
         return self.shape.scale

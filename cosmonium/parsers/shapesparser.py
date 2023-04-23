@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from ..patchedshapes import PatchedSpherePatchFactory, SquaredDistanceSquarePatc
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 from ..procedural.raymarching import RayMarchingShape
+from ..tiles import TiledShape
 
 from .yamlparser import YamlModuleParser
 
@@ -59,11 +60,20 @@ class MeshYamlParser(YamlModuleParser):
         shape = MeshShape(model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context=YamlModuleParser.context)
         return (shape, {'create-uv': create_uv})
 
+
 class RayMarchingYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
         shape = RayMarchingShape()
         return (shape, {})
+
+
+class TiledPlaneYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(self, data):
+        shape = TiledShape(None, data.get('tile-size'), None)
+        return (shape, {})
+
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
@@ -91,6 +101,8 @@ class ShapeYamlParser(YamlModuleParser):
             shape, extra = MeshYamlParser.decode(shape_data, radius)
         elif shape_type == 'raymarching':
             shape, extra = RayMarchingYamlParser.decode(shape_data)
+        elif shape_type == 'tiled-plane':
+            shape, extra = TiledPlaneYamlParser.decode(shape_data)
         else:
             print("Unknown shape", shape_type)
         return shape, extra

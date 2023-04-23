@@ -555,13 +555,12 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
 class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
-    def __init__(self, factory, heightmap=None, lod_control=None):
+    def __init__(self, factory=None, heightmap=None, lod_control=None):
         Shape.__init__(self)
-        self.factory = factory
-        #TODO: Should not be done here
-        self.factory.set_lod_control(lod_control)
-        self.factory.set_heightmap(heightmap)
-        self.factory.set_owner(self)
+        if factory is not None:
+            self.set_factory(factory, heightmap, lod_control)
+        else:
+            self.factory = None
         self.axes = LVector3d(1)
         self.data_store = None
         if settings.patch_data_store:
@@ -577,6 +576,13 @@ class PatchedShapeBase(Shape):
         self.culling_frustum = None
         self.frustum_node = None
         self.frustum_rel_position = None
+
+    def set_factory(self, factory, heightmap, lod_control):
+        self.factory = factory
+        #TODO: Should not be done here
+        self.factory.set_lod_control(lod_control)
+        self.factory.set_heightmap(heightmap)
+        self.factory.set_owner(self)
 
     #TODO: Ugly workaround until we get rid of surface in PatchFactory
     def set_owner(self, owner):
@@ -601,13 +607,15 @@ class PatchedShapeBase(Shape):
         return PatchedShapePatchDataSource(self)
 
     def set_heightmap(self, heightmap):
-        self.factory.set_heightmap(heightmap)
+        if self.factory is not None:
+            self.factory.set_heightmap(heightmap)
         if self.data_store is not None and settings.patch_parameters_data_store:
             self.data_store.parameters.add_data_source(heightmap)
 
     def set_lod_control(self, lod_control):
         self.lod_control = lod_control
-        self.factory.set_lod_control(lod_control)
+        if self.factory is not None:
+            self.factory.set_lod_control(lod_control)
 
     def add_linked_object(self, linked_object):
         self.linked_objects.append(linked_object)
