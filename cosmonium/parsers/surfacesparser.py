@@ -31,7 +31,7 @@ from ..heightmap import heightmapRegistry
 from ..shapes.mesh import MeshShape
 from ..catalogs import objectsDB
 from ..opengl import OpenGLConfig
-from ..tiles import TileFactory
+from ..tiles import TileFactory, GpuPatchTerrainLayerFactory, MeshTerrainLayerFactory
 from .. import settings
 
 from .yamlparser import YamlModuleParser
@@ -192,7 +192,11 @@ class FlatSurfaceParser(YamlModuleParser):
 
         if shape.is_spherical():
             if shape.patchable:
-                factory = TileFactory(heightmap, tile_density, tile_size)
+                if OpenGLConfig.hardware_tessellation:
+                    terrain_layer_factory = GpuPatchTerrainLayerFactory()
+                else:
+                    terrain_layer_factory = MeshTerrainLayerFactory()
+                factory = TileFactory(heightmap, tile_density, tile_size, terrain_layer_factory)
                 lod_control = VertexSizeMaxDistanceLodControl(
                     max_distance / tile_size,
                     max_vertex_size,

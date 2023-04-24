@@ -103,11 +103,32 @@ class MeshTerrainLayer(PatchLayer):
         self.remove_instance()
         self.create_instance(patch)
 
+
+class TerrainLayerFactoryInterface:
+    def create_layer(self, patch):
+        raise NotImplementedError()
+
+
+class MeshTerrainLayerFactory(TerrainLayerFactoryInterface):
+    def create_layer(self, patch):
+        return MeshTerrainLayer()
+
+
+class GpuPatchTerrainLayerFactory(TerrainLayerFactoryInterface):
+    def create_layer(self, patch):
+        return GpuPatchTerrainLayer()
+
+
 class TileFactory(PatchFactory):
-    def __init__(self, heightmap, tile_density, size):
+    def __init__(self, heightmap, tile_density, size, terrain_layer_factory):
         self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
+        self.layers_factories = []
+        self.layers_factories.append(terrain_layer_factory)
+
+    def add_layer_factory(self, layer_factory: TerrainLayerFactoryInterface):
+        self.layers_factories.append(layer_factory)
 
     def get_patch_limits(self, patch):
         height_scale = self.heightmap.height_scale
@@ -130,11 +151,9 @@ class TileFactory(PatchFactory):
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
-        if OpenGLConfig.hardware_tessellation:
-            terrain_layer = GpuPatchTerrainLayer()
-        else:
-            terrain_layer = MeshTerrainLayer()
-        patch.add_layer(terrain_layer)
+        for layer_factory in self.layers_factories:
+            layer = layer_factory.create_layer(patch)
+            patch.add_layer(layer)
         return patch
 
 class TiledShape(PatchedShapeBase):

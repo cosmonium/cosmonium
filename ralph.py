@@ -58,8 +58,8 @@ from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
 from cosmonium.shapes.actor import ActorShape
 from cosmonium.shapes.composite import CompositeShapeObject
 from cosmonium.shapes.shape_object import ShapeObject
-from cosmonium.tiles import Tile, GpuPatchTerrainLayer, MeshTerrainLayer
-from cosmonium.patchedshapes import PatchFactory, PatchLayer
+from cosmonium.tiles import TerrainLayerFactoryInterface
+from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster, PSSMShadowMapDataSource
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
@@ -71,7 +71,6 @@ from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.utils import quaternion_from_euler
 from cosmonium.cosmonium import CosmoniumBase
-from cosmonium.opengl import OpenGLConfig
 from cosmonium import settings
 
 from cosmonium.astro import units
@@ -83,47 +82,6 @@ units.Km = 1000.0
 from math import pow, pi, sqrt
 import argparse
 
-class TileFactory(PatchFactory):
-    def __init__(self, heightmap, tile_density, size, has_water, water, has_physics, physics):
-        self.heightmap = heightmap
-        self.tile_density = tile_density
-        self.size = size
-        self.has_water = has_water
-        self.water = water
-        self.has_physics = has_physics
-        self.physics = physics
-
-    def get_patch_limits(self, patch):
-        height_scale = self.heightmap.height_scale
-        height_offset = self.heightmap.height_offset
-        min_height = self.heightmap.min_height# * height_scale + height_offset
-        max_height = self.heightmap.max_height# * height_scale + height_offset
-        mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0# * height_scale + height_offset
-        if patch is not None:
-            patch_data = self.heightmap.get_patch_data(patch, strict=False)
-            if patch_data is not None:
-                #TODO: This should be done inside the heightmap patch
-                min_height = patch_data.min_height * height_scale + height_offset
-                max_height = patch_data.max_height * height_scale + height_offset
-                mean_height = patch_data.mean_height * height_scale + height_offset
-            else:
-                print("NO PATCH DATA !!!", patch.str_id())
-        return (min_height, max_height, mean_height)
-
-    def create_patch(self, parent, lod, face, x, y):
-        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
-        patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
-        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
-        if OpenGLConfig.hardware_tessellation:
-            terrain_layer = GpuPatchTerrainLayer()
-        else:
-            terrain_layer = MeshTerrainLayer()
-        patch.add_layer(terrain_layer)
-        if self.has_water:
-            patch.add_layer(WaterLayer(self.water))
-        if self.has_physics:
-            patch.add_layer(PhysicsLayer(self.physics))
-        return patch
 
 class WaterLayer(PatchLayer):
     def __init__(self, config):
@@ -153,6 +111,15 @@ class WaterLayer(PatchLayer):
         if self.water is not None:
             self.water.remove_instance()
             self.water = None
+
+
+class WaterLayerFactory(TerrainLayerFactoryInterface):
+    def __init__(self, water):
+        self.water = water
+
+    def create_layer(self, patch):
+        return WaterLayer(self.water)
+
 
 class PhysicsLayer(PatchLayer):
     def __init__(self, physics):
@@ -187,6 +154,15 @@ class PhysicsLayer(PatchLayer):
         self.physics.remove(self.instance)
         self.instance.remove_node()
         self.instance = None
+
+
+class PhysicsLayerFactory(TerrainLayerFactoryInterface):
+    def __init__(self, physics):
+        self.physics = physics
+
+    def create_layer(self, patch):
+        return PhysicsLayer(self.physics)
+
 
 class PhysicsBox():
     def __init__(self, model, physics, mass, limit):
@@ -492,6 +468,10 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.terrain_surface.shader.add_shadows(ShaderPSSMShadowMap('shadows'))
             else:
                 self.terrain_surface.shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
+        if self.has_water:
+            self.terrain_shape.factory.add_layer_factory(WaterLayerFactory(self.water))
+        if self.physics is not None:
+            self.terrain_shape.factory.add_layer_factory(PhysicsLayerFactory(self.physics))
 
     async def create_instance(self):
         #TODO: Should do init correctly
