@@ -636,15 +636,13 @@ class RoamingRalphDemo(CosmoniumBase):
             self.fog = None
         self.terrain_world = FlatTerrainWorld("terrain")
         self.terrain_world.on_visible(self.scene_manager)
-        self.terrain_world.add_component(self.terrain)
         self.terrain_world.set_terrain(self.terrain_surface)
-        self.terrain_surface.set_body(self.terrain_world)
-        self.terrain_world.surface = self
+        self.terrain_world.set_lights(self.lights)
         self.terrain_world.context = self
         self.terrain_world.model_body_center_offset = 0.0
         self.worlds.add_world(self.terrain_world)
         for component in self.ralph_config.layers:
-            self.terrain.add_component(component)
+            self.terrain_world.add_component(component)
             component.set_terrain(self.terrain_surface)
             self.terrain_shape.add_linked_object(component)
 
@@ -666,12 +664,6 @@ class RoamingRalphDemo(CosmoniumBase):
             else:
                 shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
             self.terrain_surface.sources.add_source(shadows_data_source)
-        self.terrain.add_source(self.lights)
-        for component in self.terrain.components:
-            if hasattr(component, 'object_template'):
-                component.object_template.shader.data_source.add_source(self.lights.get_data_source())
-            else:
-                component.shader.data_source.add_source(self.lights.get_data_source())
 
         await self.create_instance()
         self.create_tile(0, 0)
