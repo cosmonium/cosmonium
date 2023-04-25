@@ -124,6 +124,7 @@ class SimpleWorld(SceneWorld):
             self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 
     def on_visible(self, scene_manager):
+        self.visible = True
         self.components.visible = True
         self.scene_anchor.create_instance(scene_manager)
         self.scene_anchor.update(scene_manager)
@@ -131,14 +132,17 @@ class SimpleWorld(SceneWorld):
     def on_hidden(self, scene_manager):
         self.scene_anchor.remove_instance()
         self.components.visible = False
+        self.visible = False
 
     def add_component(self, component):
         self.components.add_component(component)
         component.set_owner(self)
+        component.set_lights(self.lights)
 
     def remove_component(self, component):
-        self.components.remove_component(component)
-        component.set_owner(None)
+        if component is not None:
+            self.components.remove_component(component)
+            component.set_owner(None)
 
     def check_settings(self):
         self.components.check_settings()
@@ -213,25 +217,29 @@ class OriginCenteredWorld(SimpleWorld):
 
 class FlatTerrainWorld(OriginCenteredWorld):
     def __init__(self, name):
-        self.terrain = None
+        self.surface = None
         OriginCenteredWorld.__init__(self, name)
 
     def create_anchor(self):
-        return FlatSurfaceAnchor(0, self, self.terrain)
+        return FlatSurfaceAnchor(0, self, self.surface)
 
-    def set_terrain(self, terrain):
-        self.terrain = terrain
-        self.anchor.set_surface(terrain)
+    def set_terrain(self, surface):
+        self.remove_component(self.surface)
+        self.surface = surface
+        self.anchor.set_surface(surface)
+        if surface is not None:
+            self.add_component(surface)
+            surface.set_body(self)
 
     def get_height_under(self, position):
-        if self.terrain is not None:
-            return self.terrain.get_height_under(position)
+        if self.surface is not None:
+            return self.surface.get_height_under(position)
         else:
             return 0
 
     def get_point_under(self, position):
-        if self.terrain is not None:
-            return self.terrain.get_point_under(position)
+        if self.surface is not None:
+            return self.surface.get_point_under(position)
         else:
             return position
 
