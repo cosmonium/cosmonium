@@ -718,20 +718,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.nav.speed = 25
         self.nav.rot_step_per_sec = 2
 
-        self.worlds.update_anchor(0, 0)
-        self.camera_controller.update(0, 0)
-        self.mover.update()
-        self.worlds.update_anchor_obs(self.observer.anchor, 0)
-        self.worlds.update(0, 0)
-        self.worlds.update_obs(self.observer.anchor)
-        self.worlds.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
-        if self.ralph_config.physics.enable:
-            for physic_object in self.physic_objects:
-                physic_object.update(self.observer)
-
-        self.terrain.update_instance(self.scene_manager, self.observer.get_local_position(), None)
-
         taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
         taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
 
