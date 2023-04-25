@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -24,11 +24,13 @@ from panda3d.core import Texture, GeomEnums
 
 from ..shaders.instancing import OffsetScaleInstanceControl
 from ..datasource import DataSource
+from ..foundation import VisibleObject
 from .. import settings
 
 from random import random, uniform
 from array import array
 from itertools import chain
+
 
 class TerrainObjectFactory(object):
     def __init__(self):
@@ -37,28 +39,35 @@ class TerrainObjectFactory(object):
     def create_object(self):
         return None
 
-# TODO: Should inherit from ShapeObject
-class TerrainPopulatorBase(object):
+
+class TerrainPopulatorBase(VisibleObject):
     def __init__(self, object_template, count, placer):
+        VisibleObject.__init__(self, None)
         self.terrain = None
         self.object_template = object_template
         self.count = count
         self.placer = placer
         self.max_instances = None
+        self.task = None
 
     def set_parent(self, parent):
-        self.parent = parent
+        VisibleObject.set_parent(self, parent)
         self.object_template.set_parent(parent)
 
     def set_owner(self, owner):
-        self.owner = owner
+        VisibleObject.set_owner(self, owner)
         self.object_template.set_owner(owner)
+
+    def set_scene_anchor(self, scene_anchor):
+        VisibleObject.set_scene_anchor(self, scene_anchor)
+        self.object_template.set_scene_anchor(scene_anchor)
 
     def set_terrain(self, terrain):
         self.terrain = terrain
 
-    def check_settings(self):
-        pass
+    def set_lights(self, lights):
+        VisibleObject.set_lights(self, lights)
+        self.object_template.set_lights(lights)
 
     def add_source(self, source):
         self.object_template.add_source(source)
@@ -94,11 +103,20 @@ class TerrainPopulatorBase(object):
     def configure_object_template(self):
         pass
 
-    async def create_instance(self, scene_anchor):
-        await self.create_object_template(scene_anchor)
+    def update(self, time, dt):
+        self.object_template.update(time, dt)
 
-    def update_lod(self, camera_pos, camera_rot):
-        pass
+    def task_done(self, task):
+        self.task = None
+
+    #TODO: Temporarily stolen from foundation to be able to spawn task
+    def check_and_create_instance(self):
+        if not self.instance and not self.task:
+            self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
+
+    async def create_instance(self):
+        await self.create_object_template(self.scene_anchor)
+        self.instance = self.object_template.instance
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         self.object_template.update_instance(scene_manager, camera_pos, camera_rot)
