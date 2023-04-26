@@ -463,11 +463,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape = self.terrain_surface.shape
         self.terrain = CompositeShapeObject("terrain")
         self.terrain.add_component(self.terrain_surface)
-        if self.shadows:
-            if self.pssm_shadows:
-                self.terrain_surface.shader.add_shadows(ShaderPSSMShadowMap('shadows'))
-            else:
-                self.terrain_surface.shader.add_shadows(ShaderShadowMap('shadows', use_bias=False))
         if self.has_water:
             self.terrain_shape.factory.add_layer_factory(WaterLayerFactory(self.water))
         if self.physics is not None:
@@ -648,8 +643,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         if self.shadows:
             if self.pssm_shadows:
-                self.shadow_caster = PSSMShadowMapShadowCaster(self.light, self.terrain_world)
-                self.shadow_caster.create()
+                self.worlds.set_global_shadows(PSSMShadowMapShadowCaster(self.light, self.terrain_world))
             else:
                 self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
                 self.shadow_caster.create()
@@ -657,13 +651,6 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.shadow_caster.shadow_map.snap_cam = True
         else:
             self.shadow_caster = None
-
-        if self.shadows:
-            if self.pssm_shadows:
-                shadows_data_source = PSSMShadowMapDataSource('shadows', self.shadow_caster)
-            else:
-                shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=False, calculate_shadow_coef=False)
-            self.terrain_surface.sources.add_source(shadows_data_source)
 
         await self.create_instance()
         self.create_tile(0, 0)
@@ -678,11 +665,6 @@ class RoamingRalphDemo(CosmoniumBase):
                                       scale=LVector3d(0.2, 0.2, 0.2))
         self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
         self.ralph_shader = RenderingShader()
-        if self.shadows:
-            if self.pssm_shadows:
-                self.ralph_shader.add_shadows(ShaderPSSMShadowMap('shadows'))
-            else:
-                self.ralph_shader.add_shadows(ShaderShadowMap('shadows', use_bias=True))
 
         self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
         self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
@@ -692,12 +674,6 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_world.anchor.set_bounding_radius(1.5)
         self.ralph_shape_object.body = self.ralph_world
         self.ralph_shape_object.set_owner(self.ralph_world)
-        if self.shadows:
-            if self.pssm_shadows:
-                shadows_data_source = PSSMShadowMapDataSource('shadows', self.shadow_caster)
-            else:
-                shadows_data_source = ShadowMapDataSource('shadows', self.shadow_caster, use_bias=True, calculate_shadow_coef=False)
-            self.ralph_shape_object.sources.add_source(shadows_data_source)
         self.ralph_shape_object.sources.add_source(self.lights)
         self.ralph_shape_object.shader.data_source.add_source(self.lights.get_data_source())
 
@@ -751,7 +727,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         if self.shadow_caster is not None:
             if self.pssm_shadows:
-                self.shadow_caster.update(self.scene_manager)
+                pass #self.shadow_caster.update(self.scene_manager)
             else:
                 vec = self.ralph_world.anchor.get_local_position() - self.observer.anchor.get_local_position()
                 vec.set_z(0)
@@ -768,6 +744,7 @@ class RoamingRalphDemo(CosmoniumBase):
             world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
             world.scene_anchor.update(self.scene_manager)
         self.scene_manager.update_scene_and_camera(0, self.c_camera_holder)
+        self.worlds.find_shadows()
 
         self.worlds.update_lod(self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
         return task.cont
