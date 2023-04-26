@@ -211,8 +211,6 @@ class FlatSurfaceParser(YamlModuleParser):
                 surface = FlatSurface(
                     'surface',
                     shape,
-                    heightmap,
-                    biome,
                     appearance,
                     shader,
                     clickable=False)

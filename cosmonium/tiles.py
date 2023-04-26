@@ -131,21 +131,24 @@ class TileFactory(PatchFactory):
         self.layers_factories.append(layer_factory)
 
     def get_patch_limits(self, patch):
-        height_scale = self.heightmap.height_scale
-        height_offset = self.heightmap.height_offset
-        min_height = self.heightmap.min_height
-        max_height = self.heightmap.max_height
-        mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0
-        if patch is not None:
-            patch_data = self.heightmap.get_patch_data(patch, strict=False)
-            if patch_data is not None:
-                #TODO: This should be done inside the heightmap patch
-                min_height = patch_data.min_height * height_scale + height_offset
-                max_height = patch_data.max_height * height_scale + height_offset
-                mean_height = patch_data.mean_height * height_scale + height_offset
-            else:
-                print("NO PATCH DATA !!!", patch.str_id())
-        return (min_height, max_height, mean_height)
+        if self.heightmap is not None:
+            height_scale = self.heightmap.height_scale
+            height_offset = self.heightmap.height_offset
+            min_height = self.heightmap.min_height
+            max_height = self.heightmap.max_height
+            mean_height = (self.heightmap.min_height + self.heightmap.max_height) / 2.0
+            if patch is not None:
+                patch_data = self.heightmap.get_patch_data(patch, strict=False)
+                if patch_data is not None:
+                    #TODO: This should be done inside the heightmap patch
+                    min_height = patch_data.min_height * height_scale + height_offset
+                    max_height = patch_data.max_height * height_scale + height_offset
+                    mean_height = patch_data.mean_height * height_scale + height_offset
+                else:
+                    print("NO PATCH DATA !!!", patch.str_id())
+            return (min_height, max_height, mean_height)
+        else:
+            return (0, 0, 0)
 
     def create_patch(self, parent, lod, face, x, y):
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
