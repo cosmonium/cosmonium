@@ -129,7 +129,7 @@ class PhysicsLayer(PatchLayer):
     def patch_done(self, patch, early):
         if early:
             return
-        terrain = patch.owner.owner.terrain
+        terrain = patch.owner.owner.surface
         heightmap = terrain.heightmap
         heightmap_patch = heightmap.get_patch_data(patch, strict=True)
         terrain_scale = terrain.get_scale()
