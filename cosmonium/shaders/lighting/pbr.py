@@ -126,7 +126,7 @@ float trowbridge_reitz(PointMaterial material, PointVectors vectors)
         code.append('''
 vec3 calc_shade(PointMaterial material, PointVectors vectors)
 {
-    if (vectors.n_dot_l > 0.0 || vectors.n_dot_v > 0.0)
+    if (vectors.n_dot_l > 0.0 && vectors.n_dot_v > 0.0)
     {
         vec3 F = fresnel_schlick(material, vectors);
         float V = smith_joint(material, vectors);
