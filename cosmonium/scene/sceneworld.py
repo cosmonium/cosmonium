@@ -29,6 +29,14 @@ from ..namedobject import NamedObject
 class Worlds:
     def __init__(self):
         self.worlds = []
+        self.global_shadows = None
+
+    def set_global_shadows(self, global_shadows):
+        if self.global_shadows is not None:
+            self.global_shadows.remove()
+        self.global_shadows = global_shadows
+        if self.global_shadows is not None:
+            self.global_shadows.create()
 
     def add_world(self, world):
         self.worlds.append(world)
@@ -63,6 +71,18 @@ class Worlds:
         for world in self.worlds:
             world.check_visibility(frustum, pixel_size)
 
+    def find_shadows(self):
+        for world in self.worlds:
+            world.start_shadows_update()
+
+        if self.global_shadows:
+            for world in self.worlds:
+                for component in world.get_components():
+                    self.global_shadows.add_target(component)
+
+        for world in self.worlds:
+            world.end_shadows_update()
+
     def update_lod(self, camera_pos, camera_rot):
         for world in self.worlds:
             world.update_lod(camera_pos, camera_rot)
@@ -72,6 +92,8 @@ class Worlds:
             world.check_settings()
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.global_shadows is not None:
+            self.global_shadows.update(scene_manager)
         for world in self.worlds:
             world.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
