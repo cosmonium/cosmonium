@@ -27,6 +27,7 @@ from panda3d._rplight import PSSMCameraRig
 
 from .foundation import BaseObject
 from .datasource import DataSource
+from .shaders.shadows.pssm import ShaderPSSMShadowMap
 from .shaders.shadows.shadowmap import ShaderShadowMap
 from .shaders.shadows.rings import ShaderRingsShadow
 from .shaders.shadows.ellipsoid import ShaderSphereShadow
@@ -436,8 +437,15 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
             pos = - self.light.light_direction * self.light.target.get_bounding_radius()
             self.shadow_map.set_pos(pos)
 
+    def create_shader_component(self, self_shadow):
+        return ShaderShadowMap(self.name, use_bias=self_shadow)
+
+    def create_data_source(self, self_shadow):
+        return ShadowMapDataSource(self.name, self, use_bias=self_shadow, calculate_shadow_coef=True)
+
     def add_target(self, shape_object, self_shadow=False):
         shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)
+
 
 class PSSMShadowMapShadowCaster(ShadowCasterBase):
     def __init__(self, light, occluder):
@@ -473,6 +481,15 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
 
     def update(self, scene_manager):
         self.shadow_map.update(scene_manager.camera, LVector3(*self.light.light_direction))
+
+    def create_shader_component(self, self_shadow):
+        return ShaderPSSMShadowMap(self.name)
+
+    def create_data_source(self, self_shadow):
+        return PSSMShadowMapDataSource(self.name, self)
+
+    def add_target(self, shape_object):
+        shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow=False)
 
 
 class PSSMShadowMapDataSource(DataSource):
@@ -665,9 +682,9 @@ class ShadowMapShadows(ShadowBase):
         self.casters.append(caster)
         if not caster in self.old_casters:
             print("Add shadow caster", caster.name, "on", self.target.owner.get_friendly_name())
-            shadow_shader =  ShaderShadowMap(caster.name, use_bias=self_shadow)
+            shadow_shader =  caster.create_shader_component(self_shadow)
             self.shader_components[caster] = shadow_shader
-            data_source = ShadowMapDataSource(caster.name, caster, use_bias=self_shadow, calculate_shadow_coef=True)
+            data_source = caster.create_data_source(self_shadow)
             self.target.sources.add_source(data_source)
             self.data_sources[caster] = data_source
             self.target.shader.add_shadows(shadow_shader)
