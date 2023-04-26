@@ -109,6 +109,16 @@ class TerrainPopulatorBase(VisibleObject):
     def task_done(self, task):
         self.task = None
 
+    @property
+    def shadows(self):
+        return self.object_template.shadows
+
+    def start_shadows_update(self):
+        self.object_template.start_shadows_update()
+
+    def end_shadows_update(self):
+        self.object_template.end_shadows_update()
+
     #TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
