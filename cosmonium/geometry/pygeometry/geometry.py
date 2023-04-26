@@ -337,7 +337,10 @@ def UVPatch(axes, rings, sectors, x0, y0, x1, y1,
             cos_r = cos(pi * (y0 + r * dy / rings))
             point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
             normal = LVector3d(point)
-            tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+            if sin_r != 0:
+                tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+            else:
+                tangent = LVector3d(-axes[0], 0, 0)
             if global_texture:
                 gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:

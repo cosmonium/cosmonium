@@ -140,7 +140,12 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
                 sin_s * sin_r,
                 -cos_r);
             LVector3d normal(point);
-            LVector3d tangent(-axes[0] * point[1], axes[1] * point[0], 0);
+            LVector3d tangent;
+            if (sin_r > 0) {
+                tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0);
+            } else {
+                tangent = LVector3d(-axes[0], 0, 0);
+            }
             if (global_texture) {
                 gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
             } else {

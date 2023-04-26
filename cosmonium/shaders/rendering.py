@@ -425,8 +425,8 @@ class FragmentShader(ShaderProgram):
             if settings.shader_debug_fragment_shader == 'diffuse':
                 code.append("vec4 total_color = surface_color;")
             if settings.shader_debug_fragment_shader == 'normal':
-                if 'world_normal' in self.config.fragment_requires:
-                    code.append("vec4 total_color = vec4((normal + vec3(1.0)) / 2.0, 1.0);")
+                if 'eye_normal' in self.config.fragment_requires:
+                    code.append("vec4 total_color = vec4((eye_normal + vec3(1.0)) / 2.0, 1.0);")
                 else:
                     code.append("vec4 total_color = vec4(1.0);")
             elif settings.shader_debug_fragment_shader == 'normalmap':
