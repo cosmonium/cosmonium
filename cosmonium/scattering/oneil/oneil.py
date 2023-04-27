@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2023 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ from ...shaders.rendering import RenderingShader
 from ...shaders.lighting.base import LightingModelBase, AtmosphereLightingModel
 from ...shaders.lighting.scattering import ScatteringInterface
 from ...shaders.scattering import AtmosphericScattering
-from ...utils import TransparencyBlend
 from ...parameters import AutoUserParameter, UserParameter
 from ...pipeline.shaders import GeneratorVertexShader
 from ...pipeline.target import ProcessTarget
@@ -40,9 +39,6 @@ from math import pow, pi
 
 
 class ONeilAtmosphereBase(Atmosphere):
-    def __init__(self, shape, appearance, shader):
-        Atmosphere.__init__(self, shape, appearance, shader)
-        self.blend = TransparencyBlend.TB_Alpha
 
     def update_shader_params(self):
         self.shader.lighting_model.scattering.set_inside(self.inside)
