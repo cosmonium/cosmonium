@@ -88,7 +88,7 @@ class DownscaleBloomStage(SceneStage):
         SceneStage.__init__(self, name)
         self.colors = colors
         self.levels: int = 0
-        self.brightness_threshold: bool = False
+        self.brightness_threshold: bool = True
         self.bloom_textures: list[Texture] = []
         self.target_textures: list[Texture] = []
         self.brightness_threshold_shader: ShaderBase = None
@@ -158,7 +158,8 @@ class DownscaleBloomStage(SceneStage):
             self.add_target(target)
             target.create(pipeline)
             target.set_shader(self.brightness_threshold_shader)
-            target.root.set_shader_input("max_luminance", pipeline.max_luminance)
+            target.root.set_shader_input("bloom_threshold", pipeline.max_luminance)
+            self.targets[0].root.set_shader_input("bloom_knee", 0.5)
             target.root.set_shader_input('scene', self.get_source('scene'))
         else:
             self.bloom_textures[0] = self.get_source('scene')
@@ -171,7 +172,7 @@ class DownscaleBloomStage(SceneStage):
 
     def update(self, pipeline):
         if self.brightness_threshold:
-            self.targets[0].root.set_shader_input("max_luminance", pipeline.max_luminance)
+            self.targets[0].root.set_shader_input("bloom_threshold", pipeline.max_luminance)
         # for i in range(self.levels):
         #    self.target_textures[i].clear_image()
 

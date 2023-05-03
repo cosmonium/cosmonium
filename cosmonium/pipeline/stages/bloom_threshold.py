@@ -28,12 +28,12 @@ class LuminanceThresholdFragmentShader(ShaderComponent):
         return 'luminance-threshold'
 
     def fragment_uniforms(self, code: list[str]) -> None:
-        code.append('uniform float max_luminance;')
+        code.append('uniform float bloom_threshold;')
+        code.append('uniform float bloom_knee;')
 
     def fragment_shader(self, code: list[str]) -> None:
         code.append('  float luminance = dot(pixel_color, vec3(0.2126, 0.7152, 0.0722));')
-        code.append('  if (luminance > max_luminance) {')
-        code.append('    result = pixel_color;')
-        code.append('  } else {')
-        code.append('    result = vec3(0.0);')
-        code.append('  }')
+        code.append('  float soft = min(max(0, luminance - bloom_threshold + bloom_threshold * bloom_knee), 2 *  bloom_threshold * bloom_knee);')
+        code.append('  soft = soft * soft / (4 * bloom_threshold * bloom_knee + 1e-9);')
+        code.append('  float weight = max(soft, luminance - bloom_threshold) / max(luminance, 1e-9);')
+        code.append('  result = pixel_color * weight;')
