@@ -701,6 +701,8 @@ class RoamingRalphDemo(CosmoniumBase):
         dt = globalClock.getDt()
         self.update_id += 1
 
+        self.pipeline.process_last_frame(dt)
+
         if self.trigger_check_settings:
             self.terrain.check_settings()
             self.trigger_check_settings = False
