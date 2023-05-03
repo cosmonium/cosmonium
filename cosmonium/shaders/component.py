@@ -106,6 +106,7 @@ class CompositeShaderComponent(ShaderComponent):
 
     def remove_component(self, component: ShaderComponent):
         self.components.remove(component)
+        component.set_shader(None)
         self.fragment_provides = set()
         self.fragment_requires = set()
         self.vertex_provides = set()
