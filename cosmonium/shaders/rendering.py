@@ -595,6 +595,10 @@ class RenderingShader(StructuredShader):
         self.after_effects.append(after_effect)
         #As the list is referenced by the fragment shader no need to apply to fragment too...
 
+    def remove_after_effect(self, after_effect):
+        self.after_effects.remove(after_effect)
+        #As the list is referenced by the fragment shader no need to apply to fragment too...
+
     def create_shader_configuration(self, appearance):
         self.vertex_requires = set()
         self.vertex_provides = set()
