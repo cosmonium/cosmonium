@@ -75,7 +75,10 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.G = mie_phase_asymmetry
         self.Kr = rayleigh_coef
         self.Km = mie_coef
-        self.ESun = sun_power
+        if settings.use_pbr:
+            self.ESun = 1.0
+        else:
+            self.ESun = sun_power
         self.samples = samples
         self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
@@ -150,7 +153,10 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.mie_scale_depth = mie_scale_depth
         self.Km_alpha = mie_alpha_coef
         self.Km_beta = mie_beta_coef
-        self.ESun = sun_power
+        if settings.use_pbr:
+            self.ESun = 1.0
+        else:
+            self.ESun = sun_power
         self.samples = samples
         self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
@@ -335,23 +341,6 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
             if self.atmosphere:
                 code.append("in vec3 v3Direction;")
 
-    def calc_colors(self, code):
-        if self.atmosphere:
-            code.append("    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);")
-            code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
-            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
-            code.append("    total_diffuse_color.rgb = shadow * (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
-            if self.hdr:
-                code.append("    total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-            code.append("    total_diffuse_color.a = max(total_diffuse_color.r, max(total_diffuse_color.g, total_diffuse_color.b));")
-        else:
-            if self.extinction_only:
-                code.append("  total_diffuse_color.rgb = total_diffuse_color.rgb * transmittance;")
-            else:
-                code.append("  total_diffuse_color.rgb = shadow * (rayleigh_inscattering + mie_inscattering) + total_diffuse_color.rgb * transmittance * (1.0 - global_ambient) + surface_color.rgb * global_ambient;")
-            if self.hdr:
-                code.append("  total_diffuse_color.rgb = 1.0 -exp(total_diffuse_color.rgb * -fExposure);")
-
     def oneil_incoming_light_for(self, code):
         code.append("void oneil_incoming_light_for(in vec3 world_vertex, in vec3 world_normal, in vec3 light_direction, vec3 light_color, out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {")
         if self.calc_in_fragment:
@@ -360,9 +349,9 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
             code.append("    vec3 rayleigh_inscattering;")
             code.append("    vec3 mie_inscattering;")
             if self.atmosphere:
-                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
             else:
-                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, rayleigh_inscattering, mie_inscattering, transmittance);")
         if self.atmosphere:
             code.append("    float fCos = dot(light_direction, v3Direction) / length(v3Direction);")
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
@@ -526,8 +515,8 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         code.append("  }")
 
         code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
-        code.append("  rayleigh_inscattering = v3FrontColor * (v3InvWavelength * fKrESun);")
-        code.append("  mie_inscattering = v3FrontColor * fKmESun;")
+        code.append("  rayleigh_inscattering = v3FrontColor * (v3InvWavelength * fKrESun * v3LightColor);")
+        code.append("  mie_inscattering = v3FrontColor * fKmESun * v3LightColor;")
         code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
@@ -784,6 +773,7 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("        in vec3 world_vertex,")
         code.append("        in vec3 world_normal,")
         code.append("        in vec3 v3LightPos,")
+        code.append("        in vec3 v3LightColor,")
         if self.atmosphere:
             code.append("        out vec3 v3Direction,")
         code.append("        out vec3 rayleigh_inscattering,")
@@ -889,8 +879,8 @@ class ONeilScattering(ONeilScatteringBase):
         code.append("      v3SamplePoint += v3SampleRay;")
         code.append("  }")
         code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
-        code.append("  rayleigh_inscattering = v3RayleighSum * v3KrESun;")
-        code.append("  mie_inscattering = v3MieSum * v3KmESun;")
+        code.append("  rayleigh_inscattering = v3RayleighSum * v3KrESun * v3LightColor;")
+        code.append("  mie_inscattering = v3MieSum * v3KmESun * v3LightColor;")
         code.append("  transmittance = v3Attenuate;")
         if self.atmosphere:
             code.append("  v3Direction = -v3Ray;")
