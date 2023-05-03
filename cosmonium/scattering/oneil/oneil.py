@@ -23,6 +23,7 @@ from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 from ...components.elements.atmosphere import Atmosphere
 from ...datasource import DataSource
 from ...textures import TextureConfiguration
+from ...shaders.after_effects.hdr import HDR
 from ...shaders.base import StructuredShader, ShaderProgram
 from ...shaders.rendering import RenderingShader
 from ...shaders.lighting.base import LightingModelBase, AtmosphereLightingModel
@@ -85,8 +86,12 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         self.atm_calc_in_fragment = atm_calc_in_fragment
         self.normalize = normalize
         self.atm_normalize = atm_normalize
-        self.hdr = hdr
-        self.atm_hdr = atm_hdr
+        if settings.use_pbr:
+            self.hdr = False
+            self.atm_hdr = False
+        else:
+            self.hdr = hdr
+            self.atm_hdr = atm_hdr
         shader = RenderingShader(lighting_model=LightingModelBase(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
         self.set_shader(shader)
 
@@ -134,13 +139,14 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                  mie_beta_coef,
                  sun_power,
                  samples,
-                 exposure,
                  calc_in_fragment,
                  atm_calc_in_fragment,
                  normalize,
                  atm_normalize,
                  hdr,
+                 exposure,
                  atm_hdr,
+                 atm_exposure,
                  lookup_size,
                  lookup_samples,
                  appearance):
@@ -158,7 +164,6 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         else:
             self.ESun = sun_power
         self.samples = samples
-        self.exposure = exposure
         self.calc_in_fragment = calc_in_fragment
         self.atm_calc_in_fragment = atm_calc_in_fragment
         self.normalize = normalize
@@ -169,6 +174,8 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         else:
             self.hdr = hdr
             self.atm_hdr = atm_hdr
+        self.exposure = exposure
+        self.atm_exposure = atm_exposure
         self.height = height
         self.lookup_size = lookup_size
         self.lookup_samples = lookup_samples
@@ -208,7 +215,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         return scattering
 
     def create_data_source(self, atmosphere):
-        return ONeilScatteringDataSource(self)
+        return ONeilScatteringDataSource(self, atmosphere)
 
     def generate_lookup_table(self):
         self.lookuptable_generator.trigger({'shader': {'lookuptable': {'parameters': self}}})
@@ -263,6 +270,7 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
         self.normalize = normalize
         self.displacement = displacement
         self.hdr = hdr
+        self.hdr_after_effect = None
         self.inside = False
         if calc_in_fragment:
             self.vertex_requires = set()
@@ -270,6 +278,15 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
         else:
             self.vertex_requires = {'world_vertex', 'world_normal'}
             self.fragment_requires = set()
+
+    def set_shader(self, shader):
+        if self.hdr:
+            if shader:
+                self.hdr_after_effect = HDR()
+                shader.add_after_effect(self.hdr_after_effect)
+            else:
+                self.shader.remove_after_effect(self.hdr_after_effect)
+        AtmosphericScattering.set_shader(self, shader)
 
     def set_parameters(self, parameters):
         self.parameters = parameters
@@ -309,8 +326,6 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
         if self.atmosphere:
             code.append("uniform float fg;")
             code.append("uniform float fg2;")
-        code.append("uniform float fExposure;")
-        code.append("uniform float global_ambient;")
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -329,6 +344,7 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
                 code.append("out vec3 v3Direction;")
 
     def fragment_uniforms(self, code):
+        AtmosphericScattering.fragment_uniforms(self, code)
         if self.calc_in_fragment:
             self.uniforms_scattering(code)
         self.uniforms_colors(code)
@@ -522,9 +538,10 @@ class ONeilSimpleScattering(ONeilScatteringBase):
             code.append("  v3Direction = v3CameraPos - scaled_vertex;")
 
 class ONeilScatteringDataSourceBase(DataSource):
-    def __init__(self, parameters):
+    def __init__(self, parameters, atmosphere):
         DataSource.__init__(self, 'scattering')
         self.parameters = parameters
+        self.atmosphere = atmosphere
 
     def update(self, shape, instance, camera_pos, camera_rot):
         body = self.parameters.body
@@ -592,7 +609,11 @@ class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
 
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)
-        shape.instance.setShaderInput("fExposure", parameters.exposure)
+        if parameters.hdr:
+            if self.atmosphere:
+                shape.instance.setShaderInput("exposure", parameters.atm_exposure)
+            else:
+                shape.instance.setShaderInput("exposure", parameters.exposure)
 
         shape.instance.setShaderInput("fOuterRadius", outer_radius)
         shape.instance.setShaderInput("fInnerRadius", inner_radius)
@@ -913,7 +934,11 @@ class ONeilScatteringDataSource(ONeilScatteringDataSourceBase):
 
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)
-        shape.instance.setShaderInput("fExposure", parameters.exposure)
+        if parameters.hdr:
+            if self.atmosphere:
+                shape.instance.setShaderInput("exposure", parameters.atm_exposure)
+            else:
+                shape.instance.setShaderInput("exposure", parameters.exposure)
 
         shape.instance.setShaderInput("fOuterRadius", outer_radius)
         shape.instance.setShaderInput("fInnerRadius", inner_radius)
