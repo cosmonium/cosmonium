@@ -283,6 +283,9 @@ class StellarObject(NamedObject):
     def get_app_magnitude(self):
         return self.anchor.get_apparent_magnitude()
 
+    def get_point_radiance(self, distance):
+        return self.anchor.get_point_radiance(distance)
+
     def calc_global_distance_to(self, position):
         direction = self.get_position() - position
         length = direction.length()

@@ -446,6 +446,9 @@ class RalphControl(EventsControllerBase):
 class FakeLightSource:
     light_color = LColor(1, 1, 1, 1)
 
+    def get_point_radiance(self, distance):
+        return 1 / pi
+
 class SimpleShadowCaster(CustomShadowMapShadowCaster):
     def update(self):
         pass

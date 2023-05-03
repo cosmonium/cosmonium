@@ -67,18 +67,10 @@ class SurrogateLight:
     def apply(self, instance):
         pass
 
-    def get_illuminance(self):
-        light_color = LColor(self.source.light_color)
-        luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
-        illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
-        light_color *= illuminance
-        return light_color
-
     def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.source.light_color)
         if settings.use_pbr:
-            luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
-            illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+            illuminance = pi * self.source.get_point_radiance(self.light_distance)
             light_color *= illuminance
         instance.setShaderInput("global_light_direction", *-self.light_direction)
         instance.setShaderInput("global_light_color", light_color)
@@ -107,18 +99,10 @@ class GlobalLight:
     def apply(self, instance):
         pass
 
-    def get_illuminance(self):
-        light_color = LColor(self.source.light_color)
-        luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
-        illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
-        light_color *= illuminance
-        return light_color
-
     def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.source.light_color)
-        if False and settings.use_pbr:
-            luminosity = abs_mag_to_lum(self.source.get_abs_magnitude())
-            illuminance = luminosity * units.sun_luminous_intensity / (self.light_distance * self.light_distance * 1000000)
+        if settings.use_pbr:
+            illuminance = pi * self.source.get_point_radiance(self.light_distance)
             light_color *= illuminance
         instance.setShaderInput("global_light_direction", *-self.light_direction)
         instance.setShaderInput("global_light_eye_direction", *camera_rot.conjugate().xform(-self.light_direction))
