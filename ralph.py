@@ -52,15 +52,13 @@ from cosmonium.lights import LightSources, GlobalLight
 from cosmonium.procedural.water import WaterNode
 from cosmonium.appearances import ModelAppearance
 from cosmonium.shaders.rendering import RenderingShader
-from cosmonium.shaders.fog import Fog
-from cosmonium.shaders.shadows.shadowmap import ShaderShadowMap
-from cosmonium.shaders.shadows.pssm import ShaderPSSMShadowMap
+from cosmonium.shaders.after_effects.fog import Fog
 from cosmonium.shapes.actor import ActorShape
 from cosmonium.shapes.composite import CompositeShapeObject
 from cosmonium.shapes.shape_object import ShapeObject
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
-from cosmonium.shadows import ShadowMapDataSource, CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster, PSSMShadowMapDataSource
+from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
 from cosmonium.parsers.surfacesparser import FlatSurfaceParser
