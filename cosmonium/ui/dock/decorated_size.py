@@ -22,8 +22,8 @@ from __future__ import annotations
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectFrame import DirectFrame
 from directguilayout.gui import Sizer
-from panda3d.core import NodePath, TextNode
 
+from ...geometry.geometry import FrameGeom
 from .base import FrameColorTexture
 
 
@@ -46,23 +46,13 @@ class DecoratedSizer(Sizer):
             parent=parent,
             state=DGG.NORMAL,
             )
-        self.bg_frame = DirectFrame(
-            **frame_parameters,
-            parent=self.frame,
-            state=DGG.NORMAL,
-            )
 
     def update_frame(self):
         size = self.get_size()
-        self.frame['frameSize'] = (0, size[0] + 1, -size[1] - 1, 0)
-        self.bg_frame['frameSize'] = (0, size[0] - self.border[0] * 2 + 1, -size[1] + self.border[1] * 2 - 1, 0)
-        self.bg_frame.set_pos(self.border[0], 0, -self.border[1])
-        decorator = TextNode('bg')
-        decorator.set_text(" ")
-        decorator.set_card_actual(*self.frame['frameSize'])
-        decorator.set_card_border(self.border[0] * 2, 1 / 3)
-        decorator.set_card_texture(self.colors.texture)
-        self.frame['geom'] = NodePath(decorator.generate())
+        self.frame['frameSize'] = (0, size[0], -size[1], 0)
+        geom = FrameGeom(size, self.border, texture=False)
+        geom.set_color(*self.border_color)
+        self.frame['geom'] = geom
 
     def set_pos(self, pos):
         Sizer.set_pos(self, pos)
