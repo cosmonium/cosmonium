@@ -29,7 +29,7 @@ class ScatteringInterface:
     def calc_transmittance(self, code):
         raise NotImplementedError()
 
-    def incoming_light_for(self, code, light_direction, light_color):
+    def incoming_light_for(self, code, light_direction, light_color, ambient_diffuse):
         raise NotImplementedError()
 
 
@@ -44,3 +44,4 @@ class NoScattering(ShaderComponent, ScatteringInterface):
     def incoming_light_for(self, code, light_direction, light_color):
         code.append(f"    incoming_light_color = {light_color}.rgb;")
         code.append("    in_scatter = vec3(0);")
+        code.append("    ambient_diffuse = vec3(0);")

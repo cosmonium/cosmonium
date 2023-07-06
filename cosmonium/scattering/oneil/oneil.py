@@ -20,14 +20,11 @@
 
 from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
-from ...components.elements.atmosphere import Atmosphere
 from ...datasource import DataSource
 from ...textures import TextureConfiguration
 from ...shaders.after_effects.hdr import HDR
 from ...shaders.base import StructuredShader, ShaderProgram
-from ...shaders.rendering import RenderingShader
-from ...shaders.lighting.base import LightingModelBase, AtmosphereLightingModel
-from ...shaders.lighting.scattering import ScatteringInterface
+from ...shaders.lighting.scattering import ScatteringInterface as ShaderScatteringInterface
 from ...shaders.scattering import AtmosphericScattering
 from ...parameters import AutoUserParameter, UserParameter
 from ...pipeline.shaders import GeneratorVertexShader
@@ -35,14 +32,12 @@ from ...pipeline.target import ProcessTarget
 from ...pipeline.stage import ProcessStage
 from ...pipeline.factory import PipelineFactory
 from ... import settings
+from ..scattering import ScatteringBase
 
 from math import pow, pi
 
 
-class ONeilAtmosphereBase(Atmosphere):
-
-    def update_shader_params(self):
-        self.shader.lighting_model.scattering.set_inside(self.inside)
+class ONeilScatteringBase(ScatteringBase):
 
     def do_update_scattering(self, shape_object, atmosphere, extinction):
         shape_object.shader.lighting_model.scattering.set_inside(self.inside)
@@ -52,11 +47,13 @@ class ONeilAtmosphereBase(Atmosphere):
             shape_object.shader.lighting_model.scattering.set_hdr(self.hdr)
         shape_object.shader.lighting_model.scattering.set_extinction_only(extinction)
 
-class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
+
+class ONeilSimpleScattering(ONeilScatteringBase):
+
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
+
     def __init__(self,
-                 shape,
                  wavelength,
                  mie_phase_asymmetry,
                  rayleigh_coef,
@@ -69,9 +66,8 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
                  normalize,
                  atm_normalize,
                  hdr,
-                 atm_hdr,
-                 appearance):
-        ONeilAtmosphereBase.__init__(self, shape, appearance, None)
+                 atm_hdr):
+        super().__init__()
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
         self.Kr = rayleigh_coef
@@ -92,8 +88,10 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
         else:
             self.hdr = hdr
             self.atm_hdr = atm_hdr
-        shader = RenderingShader(lighting_model=LightingModelBase(), scattering=self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
-        self.set_shader(shader)
+        self.body = None
+        self.body_radius = None
+        self.radius = None
+        self.ratio = None
 
     def set_body(self, body):
         self.body = body
@@ -125,9 +123,8 @@ class ONeilSimpleAtmosphere(ONeilAtmosphereBase):
                             )
         return group
 
-class ONeilAtmosphere(ONeilAtmosphereBase):
+class ONeilScattering(ONeilScatteringBase):
     def __init__(self,
-                 shape,
                  height,
                  wavelength,
                  mie_phase_asymmetry,
@@ -148,9 +145,8 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                  atm_hdr,
                  atm_exposure,
                  lookup_size,
-                 lookup_samples,
-                 appearance):
-        ONeilAtmosphereBase.__init__(self, shape, appearance, None)
+                 lookup_samples):
+        super().__init__()
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
         self.rayleigh_scale_depth = rayleigh_scale_depth
@@ -181,9 +177,6 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookup_samples = lookup_samples
         self.lookuptable_generator = None
         self.pbOpticalDepth = None
-        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
-        shader.lighting_model.set_scattering(self.create_scattering_shader(atmosphere=True, displacement=False, extinction=False))
-        self.set_shader(shader)
 
     def create_generator(self):
         self.lookuptable_generator = PipelineFactory.instance().create_simple_pipeline()
@@ -193,8 +186,8 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
         self.lookuptable_generator.trigger({'shader': {'lookuptable': {'parameters': self}}})
         self.pbOpticalDepth = self.lookuptable_generator.gather().get('lookuptable').get('color')
 
-    def remove_instance(self):
-        ONeilAtmosphereBase.remove_instance(self)
+    def clear(self):
+        super().clear()
         if self.lookuptable_generator is not None:
             self.lookuptable_generator.remove()
             self.lookuptable_generator = None
@@ -208,10 +201,9 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
-            scattering = ONeilScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
+            scattering = ONeilScatteringShader(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
         else:
-            scattering = ONeilScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
-        scattering.inside = self.inside
+            scattering = ONeilScatteringShader(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
         return scattering
 
     def create_data_source(self, atmosphere):
@@ -257,7 +249,7 @@ class ONeilAtmosphere(ONeilAtmosphereBase):
                             )
         return group
 
-class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
+class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface):
 
     str_id = None
 
@@ -395,9 +387,11 @@ class ONeilScatteringBase(AtmosphericScattering, ScatteringInterface):
 
     def incoming_light_for(self, code, light_direction, light_color):
         code.append(f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);")
+        if not self.atmosphere:
+            code.append("ambient_diffuse = vec3(0);")
 
 
-class ONeilSimpleScattering(ONeilScatteringBase):
+class ONeilSimpleScatteringShader(ONeilScatteringBase):
     str_id = 'oneil-simple'
 
     def uniforms_scattering(self, code):
@@ -764,7 +758,7 @@ class ONeilLookupTableRenderStage(ProcessStage):
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
-class ONeilScattering(ONeilScatteringBase):
+class ONeilScatteringShader(ONeilScatteringShaderBase):
     str_id = 'oneil'
 
     def uniforms_scattering(self, code):

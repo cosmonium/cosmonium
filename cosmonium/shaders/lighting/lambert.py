@@ -93,5 +93,8 @@ class LambertPhongLightingModel(ShaderComponent, BRDFInterface):
         code.append(f"    LambertPhongVectors vectors = calc_lambert_phong_vectors(eye_normal, obs_dir, {light_direction});")
         code.append(f"    {result} = lambert_phong_brdf(material, vectors, {light_direction}, {light_color}.rgb);")
 
+    def ambient_contribution(self, code, result, ambient_diffuse):
+        code.append(f"    {result} = material.diffuse_color * {ambient_diffuse}.rgb;")
+
     def cos_light_normal(self):
         return "vectors.n_dot_l"

@@ -21,31 +21,24 @@
 from panda3d.core import CullFaceAttrib
 from panda3d.core import LQuaternion
 
-from ...appearances import Appearance
 from ...shapes.shape_object import ShapeObject
-from ...shapes.spheres import SphereShape
 from ...utils import TransparencyBlend
-from ...shaders.scattering import AtmosphericScattering
 
 from ... import settings
 
 
 class Atmosphere(ShapeObject):
-    def __init__(self, shape=None, appearance=None, shader=None):
-        if shape is None:
-            shape = SphereShape()
-        if appearance is None:
-            appearance = Appearance()
+    def __init__(self, scattering, shape, appearance, shader):
         ShapeObject.__init__(self, 'atmosphere', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        self.scattering = scattering
         self.inside = None
         self.body = None
-        self.body_radius = None
         self.radius = None
-        self.ratio = None
         self.blend = TransparencyBlend.TB_Additive
-        self.shape_objects = []
-        self.attenuated_objects = []
-        self.sources.add_source(self.create_data_source(atmosphere=True))
+        scattering.add_shape_object(self, atmosphere=True)
+
+    def add_shape_object(self, shape_object):
+        self.scattering.add_shape_object(shape_object)
 
     def get_component_name(self):
         return _('Atmosphere')
@@ -55,73 +48,18 @@ class Atmosphere(ShapeObject):
 
     def set_body(self, body):
         self.body = body
+        self.scattering.set_body(body)
+        self.radius = self.scattering.radius
+        self.body_radius = self.scattering.body_radius
+        self.ratio = self.scattering.ratio
 
     def check_settings(self):
         if settings.show_atmospheres != self.shown:
-            for shape_object in self.shape_objects:
-                if self.shown:
-                    self.remove_scattering_on(shape_object)
-                else:
-                    self.set_scattering_on(shape_object, atmosphere=False, extinction=False)
-            for shape_object in self.attenuated_objects:
-                if self.shown:
-                    self.remove_scattering_on(shape_object)
-                else:
-                    self.set_scattering_on(shape_object, atmosphere=False, extinction=True)
+            if self.shown:
+                self.scattering.disable_scattering()
+            else:
+                self.scattering.enable_scattering()
         self.set_shown(settings.show_atmospheres)
-
-    def set_scattering_on(self, shape_object, atmosphere, extinction):
-        data_source = self.create_data_source(atmosphere)
-        scattering = self.create_scattering_shader(atmosphere=atmosphere, displacement=not shape_object.is_flat(), extinction=extinction)
-        shape_object.set_scattering(data_source, scattering)
-
-    def remove_scattering_on(self, shape_object):
-        shape_object.remove_scattering()
-
-    def do_update_scattering(self, shape_object, atmosphere, extinction):
-        pass
-
-    def update_scattering(self):
-        if not settings.show_atmospheres: return
-        self.do_update_scattering(self, atmosphere=True, extinction=False)
-        self.update_shader()
-        for shape_object in self.shape_objects:
-            self.do_update_scattering(shape_object, atmosphere=False, extinction=False)
-            shape_object.update_shader()
-        for shape_object in self.attenuated_objects:
-            self.do_update_scattering(shape_object, atmosphere=False, extinction=True)
-            shape_object.update_shader()
-
-    def add_shape_object(self, shape_object):
-        if shape_object in self.shape_objects: return
-        print("Add scattering on", shape_object.get_name())
-        self.shape_objects.append(shape_object)
-        if shape_object in self.attenuated_objects:
-            self.attenuated_objects.remove(shape_object)
-        if self.shown:
-            self.set_scattering_on(shape_object, atmosphere=False, extinction=False)
-
-    def remove_shape_object(self, shape_object):
-        if shape_object in self.shape_objects:
-            print("Remove scattering on", shape_object.get_name())
-            self.shape_objects.remove(shape_object)
-            if self.shown:
-                self.remove_scattering_on(shape_object)
-
-    def add_attenuated_object(self, shape_object):
-        if shape_object is self: return
-        if shape_object in self.shape_objects: return
-        if shape_object in self.attenuated_objects: return
-        print("Apply extinction on", shape_object.owner.get_name(), ':', shape_object.get_name())
-        self.attenuated_objects.append(shape_object)
-        if self.shown:
-            self.set_scattering_on(shape_object, atmosphere=False, extinction=True)
-
-    def remove_attenuated_object(self, shape_object):
-        if shape_object in self.attenuated_objects:
-            self.attenuated_objects.remove(shape_object)
-            if self.shown:
-                self.remove_scattering_on(shape_object)
 
     def get_pixel_height(self):
         return self.body.anchor.visible_size * (self.ratio - 1.0)
@@ -148,36 +86,25 @@ class Atmosphere(ShapeObject):
         inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             self.inside = inside
-            self.update_shader_params()
-            self.update_shader()
-            self.update_scattering()
+            self.scattering.update_scattering()
             if self.inside:
                 print("Entering atmosphere")
                 observer.has_scattering = True
-                observer.scattering = self
+                observer.scattering = self.scattering
                 #TODO: To replace with a flag once update_id is merged in
                 observer.apply_scattering = 5
             else:
                 print("Leaving atmosphere")
-                for shape_object in self.attenuated_objects:
-                    self.remove_scattering_on(shape_object)
-                    shape_object.update_shader()
+                self.scattering.remove_all_attenuated_objects()
                 observer.has_scattering = False
                 observer.scattering = None
                 observer.apply_scattering = 0
-                self.attenuated_objects = []
         elif observer.apply_scattering > 0:
             observer.apply_scattering -= 1
 
-    def create_data_source(self, atmosphere):
-        raise NotImplementedError()
-
-    def create_scattering_shader(self, atmosphere, displacement, extinction):
-        return AtmosphericScattering()
-
     def update_user_parameters(self):
         ShapeObject.update_user_parameters(self)
-        self.update_scattering()
+        self.scattering.update_scattering()
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
@@ -187,9 +114,7 @@ class Atmosphere(ShapeObject):
     def remove_instance(self):
         ShapeObject.remove_instance(self)
         self.inside = None
-        for shape_object in self.attenuated_objects:
-            self.remove_scattering_on(shape_object)
-        self.attenuated_objects = []
+        self.scattering.clear()
         self.context.observer.has_scattering = False
         self.context.observer.scattering = None
         self.context.observer.apply_scattering = 0

@@ -80,7 +80,7 @@ class ShaderSphereShadow(ShaderComponent, ShaderShadowInterface):
         code.append("      if (separation <= star_ar - occluder_ar) {")
         code.append("        //Occluder fully inside star, attenuation is the ratio of the visible surfaces");
         code.append("        float surface_ratio = clamp((occluder_ar * occluder_ar) / (star_ar * star_ar), 0, 1);");
-        code.append("        shadow *= 1.0 - surface_ratio;");
+        code.append("        global_shadow *= 1.0 - surface_ratio;");
         code.append("      } else {");
         code.append("        //Occluder partially occluding star, use linear approximation");
         code.append("        float surface_ratio = clamp((occluder_ar * occluder_ar) / (star_ar * star_ar), 0, 1);");
@@ -88,10 +88,10 @@ class ShaderSphereShadow(ShaderComponent, ShaderShadowInterface):
         #TODO: Smoothstep is added here to hide precision artifacts in the penumbra
         #It causes the penumbra to appear darker than it should
         #code.append("        shadow *= surface_ratio * (separation - ar_diff) / (star_ar + occluder_ar - ar_diff);")
-        code.append("        shadow *= surface_ratio * smoothstep(0, 1, (separation - ar_diff) / (star_ar + occluder_ar - ar_diff));")
+        code.append("        global_shadow *= surface_ratio * smoothstep(0, 1, (separation - ar_diff) / (star_ar + occluder_ar - ar_diff));")
         code.append("      }");
         code.append("    } else {");
-        code.append("      shadow = 0.0; //Full overlap")
+        code.append("      global_shadow = 0.0; //Full overlap")
         code.append("    }")
         code.append("  } else {")
         code.append("    //Not in shadow");
@@ -111,4 +111,4 @@ class ShaderSphereSelfShadow(ShaderComponent, ShaderShadowInterface):
     def shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.appearance.has_normal:
             code.append(f"float terminator_coef = dot(shape_eye_normal, {eye_light_direction});")
-            code.append("shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))
+            code.append("global_shadow *= smoothstep(0.0, 1.0, (%f + terminator_coef) * %f);" % (self.fake_self_shadow, 1.0 / self.fake_self_shadow))

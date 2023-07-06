@@ -114,9 +114,9 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
 
     def shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.shader.fragment_shader.version < 130:
-            code.append("shadow *= 1.0 - (1.0 - shadow2D(%s_depthmap, %s_lightcoord.xyz).x) * %s_shadow_coef;" % (self.name, self.name, self.name))
+            code.append("local_shadow *= 1.0 - (1.0 - shadow2D(%s_depthmap, %s_lightcoord.xyz).x) * %s_shadow_coef;" % (self.name, self.name, self.name))
         else:
             if self.use_pcf_16:
-                code.append("shadow *= 1.0 - (1.0 - shadow_pcf_16(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
+                code.append("local_shadow *= 1.0 - (1.0 - shadow_pcf_16(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
             else:
-                code.append("shadow *= 1.0 - (1.0 - textureProj(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))
+                code.append("local_shadow *= 1.0 - (1.0 - textureProj(%s_depthmap, %s_lightcoord)) * %s_shadow_coef;" % (self.name, self.name, self.name))

@@ -21,12 +21,16 @@
 from panda3d.core import LVector3d
 
 from ..appearances import Appearance
-from ..scattering.oneil.oneil import ONeilSimpleAtmosphere
-from ..scattering.oneil.oneil import ONeilAtmosphere
-from ..celestia.atmosphere import CelestiaAtmosphere
+from ..components.elements.atmosphere import Atmosphere
+from ..scattering.oneil.oneil import ONeilSimpleScattering
+from ..scattering.oneil.oneil import ONeilScattering
+from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.base import AtmosphereLightingModel
+from ..celestia.scattering import CelestiaScattering
 
 from .yamlparser import YamlModuleParser
 from .shapesparser import ShapeYamlParser
+
 
 class CelestiaAtmosphereYamlParser(YamlModuleParser):
     @classmethod
@@ -40,15 +44,18 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
         absorption_coef = data.get('absorption', None)
         appearance = Appearance()
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
-        atmosphere = CelestiaAtmosphere(height = atmosphere_height,
-                                    shape=shape,
-                                    appearance=appearance,
-                                    mie_scale_height = mie_scale_height,
-                                    mie_coef = mie_coef,
-                                    mie_phase_asymmetry = mie_phase_asymmetry,
-                                    rayleigh_coef = rayleigh_coef,
-                                    rayleigh_scale_height = rayleigh_scale_height,
-                                    absorption_coef = absorption_coef)
+        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
+        scattering = CelestiaScattering(
+            height = atmosphere_height,
+            shape=shape,
+            appearance=appearance,
+            mie_scale_height = mie_scale_height,
+            mie_coef = mie_coef,
+            mie_phase_asymmetry = mie_phase_asymmetry,
+            rayleigh_coef = rayleigh_coef,
+            rayleigh_scale_height = rayleigh_scale_height,
+            absorption_coef = absorption_coef)
+        atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
 
 class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
@@ -68,21 +75,23 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
         atm_hdr = data.get('atm-hdr', True)
         appearance = Appearance()
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
-        atmosphere = ONeilSimpleAtmosphere(shape=shape,
-                                           wavelength = [0.650, 0.570, 0.465],
-                                           mie_phase_asymmetry=mie_phase_asymmetry,
-                                           mie_coef=mie_coef,
-                                           rayleigh_coef=rayleigh_coef,
-                                           sun_power=sun_power,
-                                           samples=samples,
-                                           exposure=exposure,
-                                           calc_in_fragment=calc_in_fragment,
-                                           atm_calc_in_fragment=atm_calc_in_fragment,
-                                           normalize=normalize,
-                                           atm_normalize=atm_normalize,
-                                           hdr=hdr,
-                                           atm_hdr=atm_hdr,
-                                           appearance=appearance)
+        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
+        scattering = ONeilSimpleScattering(
+            wavelength = [0.650, 0.570, 0.465],
+            mie_phase_asymmetry=mie_phase_asymmetry,
+            mie_coef=mie_coef,
+            rayleigh_coef=rayleigh_coef,
+            sun_power=sun_power,
+            samples=samples,
+            exposure=exposure,
+            calc_in_fragment=calc_in_fragment,
+            atm_calc_in_fragment=atm_calc_in_fragment,
+            normalize=normalize,
+            atm_normalize=atm_normalize,
+            hdr=hdr,
+            atm_hdr=atm_hdr,
+            appearance=appearance)
+        atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
 
 class ONeilAtmosphereYamlParser(YamlModuleParser):
@@ -110,29 +119,30 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
         mie_scale_depth /= height
         appearance = Appearance()
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
-        atmosphere = ONeilAtmosphere(shape=shape,
-                                     height=height,
-                                     wavelength = [0.650, 0.570, 0.465],
-                                     mie_phase_asymmetry=mie_phase_asymmetry,
-                                     rayleigh_scale_depth=rayleigh_scale_depth,
-                                     rayleigh_coef=rayleigh_coef,
-                                     rayleigh_absorption=rayleigh_absorption,
-                                     mie_scale_depth=mie_scale_depth,
-                                     mie_alpha_coef=mie_alpha_coef,
-                                     mie_beta_coef=mie_beta_coef,
-                                     sun_power=sun_power,
-                                     samples=samples,
-                                     calc_in_fragment=calc_in_fragment,
-                                     atm_calc_in_fragment=atm_calc_in_fragment,
-                                     normalize=normalize,
-                                     atm_normalize=atm_normalize,
-                                     hdr=hdr,
-                                     exposure=exposure,
-                                     atm_hdr=atm_hdr,
-                                     atm_exposure=atm_exposure,
-                                     lookup_size=256,
-                                     lookup_samples=50,
-                                     appearance=appearance)
+        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
+        scattering = ONeilScattering(
+            height=height,
+            wavelength = [0.650, 0.570, 0.465],
+            mie_phase_asymmetry=mie_phase_asymmetry,
+            rayleigh_scale_depth=rayleigh_scale_depth,
+            rayleigh_coef=rayleigh_coef,
+            rayleigh_absorption=rayleigh_absorption,
+            mie_scale_depth=mie_scale_depth,
+            mie_alpha_coef=mie_alpha_coef,
+            mie_beta_coef=mie_beta_coef,
+            sun_power=sun_power,
+            samples=samples,
+            calc_in_fragment=calc_in_fragment,
+            atm_calc_in_fragment=atm_calc_in_fragment,
+            normalize=normalize,
+            atm_normalize=atm_normalize,
+            hdr=hdr,
+            exposure=exposure,
+            atm_hdr=atm_hdr,
+            atm_exposure=atm_exposure,
+            lookup_size=256,
+            lookup_samples=50)
+        atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
 
 class AtmosphereYamlParser(YamlModuleParser):

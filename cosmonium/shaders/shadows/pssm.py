@@ -90,6 +90,6 @@ vec3 project(mat4 mvp, vec3 p) {
         float depth_sample = textureLod(PSSMShadowAtlas, projected_coord, 0).x;
         float shadow_factor = step(ref_depth, depth_sample);
 
-        shadow *= shadow_factor;
+        local_shadow *= shadow_factor;
     }
 ''')

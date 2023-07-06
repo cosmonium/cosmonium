@@ -27,10 +27,11 @@ from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orb
     names_list, body_path
 from .shaders import LunarLambertLightingModel
 
-from ..celestia.atmosphere import CelestiaAtmosphere
+from ..celestia.scattering import CelestiaScattering
 from ..objects.reflective import ReflectiveBody
 from ..objects.systems import ReferencePoint
 from ..objects.rings import StellarRings
+from ..components.elements.atmosphere import Atmosphere
 from ..components.elements.surfaces import EllipsoidFlatSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
@@ -38,6 +39,7 @@ from ..appearances import Appearance
 from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape
 from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.base import AtmosphereLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
 from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
@@ -119,14 +121,18 @@ def instanciate_atmosphere(data):
             print("Key of Atmosphere", key, "not supported")
     clouds_appearance.bake()
     if mie_phase_asymmetry != 0.0:
-        atmosphere = CelestiaAtmosphere(height = atmosphere_height,
-                                    appearance=Appearance(),
-                                    mie_scale_height = mie_scale_height,
-                                    mie_coef = mie_coef,
-                                    mie_phase_asymmetry = mie_phase_asymmetry,
-                                    rayleigh_coef = rayleigh_coef,
-                                    rayleigh_scale_height = rayleigh_scale_height,
-                                    absorption_coef = absorption_coef)
+        scattering = CelestiaScattering(
+            height = atmosphere_height,
+            mie_scale_height = mie_scale_height,
+            mie_coef = mie_coef,
+            mie_phase_asymmetry = mie_phase_asymmetry,
+            rayleigh_coef = rayleigh_coef,
+            rayleigh_scale_height = rayleigh_scale_height,
+            absorption_coef = absorption_coef)
+        shape = SphereShape()
+        appearance = Appearance()
+        shader = RenderingShader(lighting_model=AtmosphereLightingModel())
+        atmosphere = Atmosphere(scattering, shape, appearance, shader)
     if clouds_height != 0:
         shader=RenderingShader(lighting_model=LambertPhongLightingModel())
         clouds = Clouds(clouds_height, clouds_appearance, shader)

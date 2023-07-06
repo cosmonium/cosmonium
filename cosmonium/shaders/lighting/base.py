@@ -23,7 +23,9 @@ from .scattering import NoScattering
 
 
 class LightingModelBase(ShaderComponent):
-    pass
+
+    def set_scattering(self, scattering):
+        raise NotImplementedError()
 
 
 class BRDFInterface:
@@ -31,7 +33,10 @@ class BRDFInterface:
     def prepare_material(self, code):
         raise NotImplementedError()
 
-    def light_contribution(self, code, light_direction, light_color):
+    def light_contribution(self, code, result, light_direction, light_color):
+        raise NotImplementedError()
+
+    def ambient_contribution(self, code, result, ambient_diffuse):
         raise NotImplementedError()
 
     def cos_light_normal(self):
@@ -39,7 +44,7 @@ class BRDFInterface:
 
 
 class EmissionModelInterface:
-    def light_contribution(self, code, light_direction, light_color):
+    def light_contribution(self, code, light_direction, light_color, cos_light_angle):
         raise NotImplementedError()
 
     def global_emission(self, code):
@@ -71,7 +76,7 @@ class BacklitEmission(ShaderComponent, EmissionModelInterface):
 
     def light_contribution(self, code, light_direction, light_color, cos_light_angle):
         code.append(f"if ({cos_light_angle} < 0.0) {{")
-        code.append(f"  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-{cos_light_angle}) * shadow;")
+        code.append(f"  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-{cos_light_angle}) * global_shadow;")
         code.append("}")
 
     def global_emission(self, code):
@@ -175,7 +180,7 @@ uniform struct p3d_LightModelParameters {
         code.append("    vec3 light_position = p3d_LightSource[i].position.xyz - eye_vertex * p3d_LightSource[i].position.w;")
         code.append("    vec3 light_direction = normalize(light_position);")
         code.append("    float shadow = 1.0;")
-        code.append("    vec3 contribution;")
+        code.append("    vec3 contribution = vec3(0);")
         self.brdf.light_contribution(code, "contribution", "light_direction", "p3d_LightSource[i].diffuse")
         code.append("    total_diffuse_color.rgb += contribution * shadow;")
         code.append("}")
@@ -185,13 +190,17 @@ uniform struct p3d_LightModelParameters {
         code.append("for (int i = 0; i < 1; ++i) {")
         code.append("    vec3 incoming_light_color;")
         code.append("    vec3 in_scatter;")
-        code.append("    float shadow = 1.0;")
+        code.append("    vec3 ambient_diffuse;")
+        code.append("    float global_shadow = 1.0;")
+        code.append("    float local_shadow = 1.0;")
         for shadow in self.shader.shadows:
             shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
         self.scattering.incoming_light_for(code, global_lights + "eye_direction", global_lights + "color")
-        code.append("    vec3 contribution;")
-        self.brdf.light_contribution(code, "contribution", global_lights + "eye_direction", "incoming_light_color")
-        code.append("    total_diffuse_color.rgb += (contribution * transmittance + in_scatter) * shadow;")
+        code.append("    vec3 direct_contribution;")
+        self.brdf.light_contribution(code, "direct_contribution", global_lights + "eye_direction", "incoming_light_color")
+        code.append("    vec3 indirect_contribution;")
+        self.brdf.ambient_contribution(code, "indirect_contribution", "ambient_diffuse")
+        code.append("    total_diffuse_color.rgb += ((direct_contribution * local_shadow + indirect_contribution ) * transmittance + in_scatter) * global_shadow;")
         self.emission.light_contribution(code, global_lights + "direction", global_lights + "eye_direction", self.brdf.cos_light_normal())
         code.append("}")
         code.append("vec3 ambient = surface_color.rgb * (ambient_color * ambient_coef + p3d_LightModel.ambient.rgb);")

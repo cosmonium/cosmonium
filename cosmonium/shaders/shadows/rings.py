@@ -44,7 +44,7 @@ class ShaderRingsShadow(ShaderComponent, ShaderShadowInterface):
         code.append("if (ring_intersection_param > 0.0) {")
         code.append(f"  vec3 ring_intersection = new_pos + {light_direction} * ring_intersection_param;")
         code.append('  float ring_shadow_local = (length(ring_intersection) - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);')
-        code.append("  shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
+        code.append("  global_shadow *= 1.0 - texture2D(shadow_ring_tex, vec2(ring_shadow_local, 0.0)).a;")
         code.append("} else {")
         code.append("  //Not in shadow")
         code.append("}")

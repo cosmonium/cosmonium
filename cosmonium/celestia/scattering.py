@@ -20,22 +20,19 @@
 
 from panda3d.core import LVector3d
 
-from ..components.elements.atmosphere import Atmosphere
 from ..datasource import DataSource
-from ..utils import TransparencyBlend
-from ..shaders.rendering import RenderingShader
+from ..scattering.scattering import ScatteringBase
 from ..shaders.scattering import AtmosphericScattering
 
 from math import log
 
 
-class CelestiaAtmosphere(Atmosphere):
+class CelestiaScattering(ScatteringBase):
     def __init__(self, height,
                  mie_coef=0.0, mie_scale_height=0.0, mie_phase_asymmetry=0.0,
                  rayleigh_coef=None, rayleigh_scale_height=0.0,
-                 absorption_coef=None,
-                 shape=None, appearance=None, shader=None):
-        Atmosphere.__init__(self, shape=shape, appearance=appearance, shader=shader)
+                 absorption_coef=None):
+        super().__init__()
         self.height = height
         self.mie_coef = mie_coef
         self.mie_scale_height = mie_scale_height
@@ -49,9 +46,6 @@ class CelestiaAtmosphere(Atmosphere):
             self.absorption_coef = LVector3d()
         else:
             self.absorption_coef = LVector3d(*absorption_coef)
-        self.blend = TransparencyBlend.TB_AlphaAdditive
-        shader = RenderingShader(lighting_model=CelestiaScatteringShader(self, atmosphere=True, extinction_only=False))
-        self.set_shader(shader)
 
     def set_body(self, body):
         self.body = body
