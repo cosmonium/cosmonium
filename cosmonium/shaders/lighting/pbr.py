@@ -172,5 +172,8 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         code.append("vec3 shade = calc_shade(material, vectors);")
         code.append(f"{result} = vectors.n_dot_l * {light_color}.rgb * shade;")
 
+    def ambient_contribution(self, code, result, ambient_diffuse):
+        code.append(f"    {result} = material.diffuse_color * {ambient_diffuse}.rgb;")
+
     def cos_light_normal(self):
         return "vectors.n_dot_l"
