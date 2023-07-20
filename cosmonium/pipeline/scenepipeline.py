@@ -113,6 +113,7 @@ class ScenePipeline(ScenePipelineBase):
         self.inverse_z = False
         self.hdr = False
         self.bloom = False
+        self.adaptive_exposure = False
         self.avg_luminosity = 1.0
         self.ev100 = 1.0
         self.ev100_corrected = 1.0
@@ -138,6 +139,7 @@ class ScenePipeline(ScenePipelineBase):
         if settings.use_pbr:
             self.hdr = True
             self.bloom = True
+            self.adaptive_exposure = True
         self.render_buffer_multisamples = settings.multisamples if settings.use_multisampling else 0
 
     def build_pipeline(self) -> None:
@@ -186,12 +188,13 @@ class ScenePipeline(ScenePipelineBase):
 
     def process_last_frame(self, dt: float) -> None:
         if self.hdr:
-            avg_luminosity = self.avg.extract_level()
-            if not isinf(avg_luminosity) and not isnan(avg_luminosity):
-                self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (1 - exp(-dt * self.adaptation_rate))
-            self.ev100 = log2(max(self.avg_luminosity, 0.00000001) * 100 / 12.5)
-            self.ev100_corrected = self.ev100 - self.exposure_correction
-            self.max_luminance = 1.2 * pow(2, self.ev100_corrected)
-            self.exposure = 1.0 / self.max_luminance
-        for stage in self.ordered_stages:
-            stage.update(self)
+            if self.adaptive_exposure:
+                avg_luminosity = self.avg.extract_level()
+                if not isinf(avg_luminosity) and not isnan(avg_luminosity):
+                    self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (1 - exp(-dt * self.adaptation_rate))
+                self.ev100 = log2(max(self.avg_luminosity, 0.00000001) * 100 / 12.5)
+                self.ev100_corrected = self.ev100 - self.exposure_correction
+                self.max_luminance = 1.2 * pow(2, self.ev100_corrected)
+                self.exposure = 1.0 / self.max_luminance
+            for stage in self.ordered_stages:
+                stage.update(self)
