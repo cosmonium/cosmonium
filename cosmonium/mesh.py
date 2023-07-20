@@ -24,7 +24,7 @@ import os
 
 import gltf
 
-from .dircontext import defaultDirContext, main_dir
+from .dircontext import main_dir
 from . import cache
 from . import settings
 
@@ -38,18 +38,6 @@ def init_mesh_loader():
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
     get_model_path().prepend_directory(Filename.from_os_specific(os.path.join(main_dir, 'models')))
-
-async def load_model(pattern, context=defaultDirContext):
-    filename = context.find_model(pattern)
-    if filename is not None:
-        print("Loading model", filename)
-        return await loader.loadModel(Filename.from_os_specific(filename).get_fullpath(), blocking=False)
-    else:
-        print("Model not found", pattern)
-        return None
-
-async def load_panda_model(pattern):
-    return await loader.loadModel(pattern, blocking=False)
 
 def load_panda_model_sync(pattern):
     return loader.loadModel(pattern)

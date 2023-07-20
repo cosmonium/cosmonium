@@ -24,11 +24,12 @@ from .mesh import MeshShape
 from ..dircontext import defaultDirContext
 
 class ActorShape(MeshShape):
-    def __init__(self, model, animations, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, attribution=None, context=defaultDirContext):
-        MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, True, attribution, context)
+    def __init__(self, model, animations, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, panda=True, attribution=None, context=defaultDirContext):
+        MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context)
         self.animations = animations
 
     async def load(self):
+        self.fullpath = self.model
         return Actor(self.model, self.animations)
 
     def stop(self, animName=None, partName=None):

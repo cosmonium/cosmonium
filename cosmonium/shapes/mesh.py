@@ -20,10 +20,9 @@
 
 from panda3d.core import LQuaternion, LQuaterniond
 from panda3d.core import LPoint3d, LVector3d
-from panda3d.core import NodePath, ModelPool
+from panda3d.core import NodePath, ModelPool, Filename
 
 from ..dircontext import defaultDirContext
-from ..mesh import load_model, load_panda_model
 from ..parameters import ParametersGroup, AutoUserParameter, UserParameter
 #TODO: There shouldn't be a dependency towards astro
 from ..astro import units
@@ -58,6 +57,7 @@ class MeshShape(Shape):
             self.radius = max(*self.source_scale_factor)
         else:
             self.radius = 0.0
+        self.fullpath = None
 
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
@@ -81,11 +81,18 @@ class MeshShape(Shape):
     def is_spherical(self):
         return False
 
-    def load(self):
+    async def load(self):
         if self.panda:
-            return load_panda_model(self.model)
+            self.fullpath = self.model
+            return await loader.loadModel(self.model, blocking=False)
         else:
-            return load_model(self.model, self.context)
+            self.fullpath = self.context.find_model(self.model)
+            if self.fullpath is not None:
+                print("Loading model", self.fullpath)
+                return await loader.loadModel(Filename.from_os_specific(self.fullpath).get_fullpath(), blocking=False)
+            else:
+                print("Model not found", self.model)
+                return None
 
     async def create_instance(self):
         self.instance = NodePath('mesh-holder')
@@ -111,5 +118,5 @@ class MeshShape(Shape):
     def remove_instance(self):
         Shape.remove_instance(self)
         if self.mesh is not None:
-            ModelPool.release_model(self.mesh.node())
+            ModelPool.release_model(self.fullpath)
             self.mesh = None
