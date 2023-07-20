@@ -50,6 +50,9 @@ class TerrainPopulatorBase(VisibleObject):
         self.max_instances = None
         self.task = None
 
+    def is_flat(self):
+        return True
+
     def set_parent(self, parent):
         VisibleObject.set_parent(self, parent)
         self.object_template.set_parent(parent)
@@ -68,6 +71,9 @@ class TerrainPopulatorBase(VisibleObject):
     def set_lights(self, lights):
         VisibleObject.set_lights(self, lights)
         self.object_template.set_lights(lights)
+
+    def set_scattering(self, data_source, scattering_shader):
+        self.object_template.set_scattering(data_source, scattering_shader)
 
     def add_source(self, source):
         self.object_template.add_source(source)
