@@ -17,7 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from math import log2, pow, exp
+from math import log2, pow, exp, isinf, isnan
 
 from ..foundation import BaseObject
 from ..scene.scenemanager import SceneManagerBase
@@ -187,7 +187,8 @@ class ScenePipeline(ScenePipelineBase):
     def process_last_frame(self, dt: float) -> None:
         if self.hdr:
             avg_luminosity = self.avg.extract_level()
-            self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (1 - exp(-dt * self.adaptation_rate))
+            if not isinf(avg_luminosity) and not isnan(avg_luminosity):
+                self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (1 - exp(-dt * self.adaptation_rate))
             self.ev100 = log2(max(self.avg_luminosity, 0.00000001) * 100 / 12.5)
             self.ev100_corrected = self.ev100 - self.exposure_correction
             self.max_luminance = 1.2 * pow(2, self.ev100_corrected)
