@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import PerspectiveLens, NodePath, LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at
+from panda3d.core import PerspectiveLens, NodePath, LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, look_at, LMatrix4
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.LerpInterval import LerpFunc
 
@@ -315,7 +315,8 @@ class CameraHolder(CameraBase):
         if not settings.camera_at_origin:
             self.camera_np.set_pos(*self.get_local_position())
         self.camera_np.set_quat(LQuaternion(*self.get_absolute_orientation()))
-        mat = self.camera_np.get_mat()
+        mat = LMatrix4()
+        self.camera_np.get_quat().extract_to_matrix(mat)
         bh = self.lens.make_bounds()
         self.anchor.rel_frustum = InfiniteFrustum(bh, mat, LPoint3d())
         self.anchor.frustum = InfiniteFrustum(bh, mat, self.anchor.get_absolute_position())
