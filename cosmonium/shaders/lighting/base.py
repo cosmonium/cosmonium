@@ -19,6 +19,7 @@
 
 
 from ..component import ShaderComponent, CompositeShaderComponent
+from ..shadows.locallights import ShaderLocalShadows
 from .scattering import NoScattering
 
 
@@ -105,9 +106,11 @@ class ShadingLightingModel(CompositeShaderComponent):
         self.brdf = brdf
         self.scattering = NoScattering()
         self.emission = NoEmission()
+        self.local_shadows = ShaderLocalShadows()
         self.add_component(brdf)
         self.add_component(self.scattering)
         self.add_component(self.emission)
+        self.add_component(self.local_shadows)
         self._appearance = None
 
     @property
@@ -139,6 +142,21 @@ class ShadingLightingModel(CompositeShaderComponent):
             self.emission = NoEmission()
         self.add_component(self.emission)
 
+    def vertex_uniforms(self, code):
+        CompositeShaderComponent.fragment_uniforms(self, code)
+        code.append("""
+uniform struct p3d_LightSourceParameters {
+    vec4 position;
+    vec4 diffuse;
+    vec4 specular;
+    vec3 attenuation;
+    vec3 spotDirection;
+    float spotCosCutoff;
+    sampler2DShadow shadowMap;
+    mat4 shadowViewMatrix;
+} p3d_LightSource[8];
+""")
+
     def fragment_uniforms(self, code):
         CompositeShaderComponent.fragment_uniforms(self, code)
         code.append("""
@@ -149,6 +167,8 @@ uniform struct p3d_LightSourceParameters {
     vec3 attenuation;
     vec3 spotDirection;
     float spotCosCutoff;
+    sampler2DShadow shadowMap;
+    mat4 shadowViewMatrix;
 } p3d_LightSource[8];
 
 uniform struct p3d_LightModelParameters {
@@ -157,11 +177,15 @@ uniform struct p3d_LightModelParameters {
 
 """)
         code.append("const float LIGHT_CUTOFF = 0.001;")
+        code.append("const float SPOTSMOOTH = 0.001;")
         code.append("uniform float ambient_coef;")
         code.append("uniform vec3 ambient_color;")
 
     def vertex_shader(self, code):
         CompositeShaderComponent.vertex_shader(self, code)
+        code.append("for (int i = 0; i < p3d_LightSource.length(); ++i) {")
+        self.local_shadows.prepare_shadow_for(code, "i")
+        code.append("}")
         global_lights = self.shader.data_source.get_source_for('global_lights')
         code.append("for (int i = 0; i < 1; ++i) {")
         for shadow in self.shader.shadows:
@@ -177,9 +201,18 @@ uniform struct p3d_LightModelParameters {
         code.append("    if (dot(lightcol, lightcol) < LIGHT_CUTOFF) {")
         code.append("        continue;")
         code.append("    }")
+        code.append("    float shadow = 1.0;")
         code.append("    vec3 light_position = p3d_LightSource[i].position.xyz - eye_vertex * p3d_LightSource[i].position.w;")
         code.append("    vec3 light_direction = normalize(light_position);")
-        code.append("    float shadow = 1.0;")
+        code.append("    float light_distance = length(light_position);")
+        code.append("    vec3 attenuation_params = p3d_LightSource[i].attenuation;")
+        code.append("    float attenuation_factor = 1.0 / (attenuation_params.x + attenuation_params.y * light_distance + attenuation_params.z * light_distance * light_distance);")
+        code.append("    shadow *= attenuation_factor;")
+        code.append("    float spot_cos = dot(normalize(p3d_LightSource[i].spotDirection), -light_direction);")
+        code.append("    float spot_cutoff = p3d_LightSource[i].spotCosCutoff;")
+        code.append("    float shadow_spot = smoothstep(spot_cutoff - SPOTSMOOTH, spot_cutoff + SPOTSMOOTH, spot_cos);")
+        code.append("    shadow *= shadow_spot;")
+        self.local_shadows.shadow_for(code, "i")
         code.append("    vec3 contribution = vec3(0);")
         self.brdf.light_contribution(code, "contribution", "light_direction", "p3d_LightSource[i].diffuse")
         code.append("    total_diffuse_color.rgb += contribution * shadow;")

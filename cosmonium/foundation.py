@@ -42,6 +42,8 @@ class BaseObject(object):
     ShadowCameraFlag = DrawMask.bit(30)
     AllCamerasMask = DrawMask.all_on()
 
+    concrete_object = True
+
     def __init__(self, name):
         self.name =name
         self.shown = self.default_shown
