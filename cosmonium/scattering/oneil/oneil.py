@@ -104,7 +104,7 @@ class ONeilSimpleScattering(ONeilScatteringBase):
             scattering = ONeilSimpleScattering(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
         else:
             scattering = ONeilSimpleScattering(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
-        scattering.inside = self.inside
+        scattering.set_inside(self.inside)
         return scattering
 
     def create_data_source(self, atmosphere):
@@ -204,6 +204,7 @@ class ONeilScattering(ONeilScatteringBase):
             scattering = ONeilScatteringShader(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
         else:
             scattering = ONeilScatteringShader(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
+        scattering.set_inside(self.inside)
         return scattering
 
     def create_data_source(self, atmosphere):

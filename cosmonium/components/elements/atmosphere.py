@@ -86,7 +86,7 @@ class Atmosphere(ShapeObject):
         inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             self.inside = inside
-            self.scattering.update_scattering()
+            self.scattering.set_inside(self.inside)
             if self.inside:
                 print("Entering atmosphere")
                 observer.has_scattering = True

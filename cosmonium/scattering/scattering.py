@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import Optional, TYPE_CHECKING
 
 from .. import settings
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from ..shapes.shape_object import ShapeObject
 
 
-class ScatteringBase:
+class ScatteringBase(ABC):
 
     def __init__(self):
         self.atmospheres: set[ShapeObject] = set()
@@ -41,6 +42,7 @@ class ScatteringBase:
 
     def set_inside(self, inside: bool) -> None:
         self.inside = inside
+        self.update_scattering()
 
     def enable_scattering(self) -> None:
         for shape_object in self.shape_objects:
@@ -114,15 +116,15 @@ class ScatteringBase:
             shape_object.update_shader()
         self.attenuated_objects = []
 
-    def update_shader_params(self) -> None:
-        raise NotImplementedError()
-
+    @abstractmethod
     def do_update_scattering(
-            self, shape_object: ShapeObject, inside: bool, atmosphere: bool, extinction: bool) -> None:
+            self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
     def create_scattering_shader(self, atmosphere: bool, displacement: bool, extinction: bool) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
     def create_data_source(self, atmosphere: bool) -> None:
         raise NotImplementedError()
