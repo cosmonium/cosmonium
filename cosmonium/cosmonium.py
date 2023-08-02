@@ -49,7 +49,7 @@ from .engine.anchors import StellarAnchor
 from .engine.traversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser, FindShadowCastersTraverser
 from .lights import SurrogateLight, GlobalLight, LightSources
 from .components.annotations.grid import Grid
-from .astro.frame import BodyReferenceFrame
+from .astro.frame import AnchorReferenceFrame, BodyReferenceFrames
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
@@ -1150,9 +1150,9 @@ class Cosmonium(CosmoniumBase):
         #TODO: this should not be done
         if not isinstance(to_add, StellarAnchor): return
         #TODO: There should be a mechanism to retrieve them
-        if isinstance(to_add.orbit.frame, BodyReferenceFrame):
+        if isinstance(to_add.orbit.frame, BodyReferenceFrames):
             self._add_extra(to_add.orbit.frame.anchor)
-        if isinstance(to_add.rotation.frame, BodyReferenceFrame):
+        if isinstance(to_add.rotation.frame, BodyReferenceFrames):
             self._add_extra(to_add.rotation.frame.anchor)
         if not to_add in self.extra:
             self.extra.append(to_add)

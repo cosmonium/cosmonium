@@ -25,6 +25,7 @@
 #include "luse.h"
 #include"type_utils.h"
 
+class AnchorBase;
 class StellarAnchor;
 
 // TODO: This should be an actual class and J2000BarycentricEclipticReferenceFrame derives from it
@@ -99,22 +100,26 @@ PUBLISHED:
 class AnchorReferenceFrame : public ReferenceFrame
 {
 PUBLISHED:
-  AnchorReferenceFrame(StellarAnchor *anchor = 0);
+  AnchorReferenceFrame(AnchorBase *anchor = 0);
 
 protected:
   AnchorReferenceFrame(AnchorReferenceFrame const &other);
 
 PUBLISHED:
-StellarAnchor *get_anchor(void);
-  void set_anchor(StellarAnchor *anchor);
+  PT(ReferenceFrame) make_copy(void) const;
+
+  AnchorBase *get_anchor(void) const;
+  void set_anchor(AnchorBase *anchor);
   MAKE_PROPERTY(anchor, get_anchor, set_anchor);
 
   virtual LPoint3d get_center(void);
 
   virtual LPoint3d get_absolute_reference_point(void);
 
+  virtual LQuaterniond get_orientation(void);
+
 protected:
-  PT(StellarAnchor) anchor;
+  PT(AnchorBase) anchor;
 
   MAKE_TYPE("AnchorReferenceFrame", ReferenceFrame);
 };
@@ -122,7 +127,7 @@ protected:
 class J2000EclipticReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  J2000EclipticReferenceFrame(StellarAnchor *anchor = 0);
+  J2000EclipticReferenceFrame(AnchorBase *anchor = 0);
 
 protected:
   J2000EclipticReferenceFrame(J2000EclipticReferenceFrame const &other);
@@ -138,7 +143,7 @@ PUBLISHED:
 class J2000EquatorialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  J2000EquatorialReferenceFrame(StellarAnchor *anchor = 0);
+  J2000EquatorialReferenceFrame(AnchorBase *anchor = 0);
 
 protected:
   J2000EquatorialReferenceFrame(J2000EquatorialReferenceFrame const &other);
@@ -154,7 +159,7 @@ PUBLISHED:
 class CelestialReferenceFrame : public AnchorReferenceFrame
 {
 PUBLISHED:
-  CelestialReferenceFrame(StellarAnchor *anchor = 0,
+  CelestialReferenceFrame(AnchorBase *anchor = 0,
       double right_ascension=0.0,
       double declination=0.0,
       double longitude_at_node=0.0);
@@ -180,7 +185,34 @@ protected:
   MAKE_TYPE("CelestialReferenceFrame", AnchorReferenceFrame);
 };
 
-class OrbitReferenceFrame : public AnchorReferenceFrame
+class StellarAnchorReferenceFrame : public ReferenceFrame
+{
+PUBLISHED:
+  StellarAnchorReferenceFrame(StellarAnchor *anchor = 0);
+
+protected:
+  StellarAnchorReferenceFrame(StellarAnchorReferenceFrame const &other);
+
+PUBLISHED:
+  PT(ReferenceFrame) make_copy(void) const;
+
+  StellarAnchor *get_anchor(void);
+  void set_anchor(StellarAnchor *anchor);
+  MAKE_PROPERTY(anchor, get_anchor, set_anchor);
+
+  virtual LPoint3d get_center(void);
+
+  virtual LPoint3d get_absolute_reference_point(void);
+
+  virtual LQuaterniond get_orientation(void);
+
+protected:
+  PT(StellarAnchor) anchor;
+
+  MAKE_TYPE("StellarAnchorReferenceFrame", ReferenceFrame);
+};
+
+class OrbitReferenceFrame : public StellarAnchorReferenceFrame
 {
 PUBLISHED:
   OrbitReferenceFrame(StellarAnchor *anchor = 0);
@@ -193,10 +225,10 @@ PUBLISHED:
 
   virtual LQuaterniond get_orientation(void);
 
-  MAKE_TYPE("OrbitReferenceFrame", AnchorReferenceFrame);
+  MAKE_TYPE("OrbitReferenceFrame", StellarAnchorReferenceFrame);
 };
 
-class EquatorialReferenceFrame : public AnchorReferenceFrame
+class EquatorialReferenceFrame : public StellarAnchorReferenceFrame
 {
 PUBLISHED:
   EquatorialReferenceFrame(StellarAnchor *anchor = 0);
@@ -209,10 +241,10 @@ PUBLISHED:
 
   virtual LQuaterniond get_orientation(void);
 
-  MAKE_TYPE("EquatorialReferenceFrame", AnchorReferenceFrame);
+  MAKE_TYPE("EquatorialReferenceFrame", StellarAnchorReferenceFrame);
 };
 
-class SynchroneReferenceFrame : public AnchorReferenceFrame
+class SynchroneReferenceFrame : public StellarAnchorReferenceFrame
 {
 PUBLISHED:
   SynchroneReferenceFrame(StellarAnchor *anchor = 0);
@@ -225,7 +257,7 @@ PUBLISHED:
 
   virtual LQuaterniond get_orientation(void);
 
-  MAKE_TYPE("SynchroneReferenceFrame", AnchorReferenceFrame);
+  MAKE_TYPE("SynchroneReferenceFrame", StellarAnchorReferenceFrame);
 };
 
 class RelativeReferenceFrame : public ReferenceFrame

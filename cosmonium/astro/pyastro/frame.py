@@ -128,6 +128,9 @@ class AnchorReferenceFrame(ReferenceFrame):
     def get_center(self):
         return self.anchor.get_local_position()
 
+    def get_orientation(self):
+        return self.anchor.get_absolute_orientation()
+
     def get_absolute_reference_point(self):
         return self.anchor.get_absolute_reference_point()
 
