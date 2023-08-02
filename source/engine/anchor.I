@@ -19,42 +19,42 @@
 
 
 double
-StellarAnchor::get_albedo(void) const
+AnchorBase::get_albedo(void) const
 {
   return _albedo;
 }
 
 
 void
-StellarAnchor::set_albedo(double albedo)
+AnchorBase::set_albedo(double albedo)
 {
   _albedo = albedo;
 }
 
 
 double
-StellarAnchor::get_intrinsic_luminosity(void) const
+AnchorBase::get_intrinsic_luminosity(void) const
 {
   return _intrinsic_luminosity;
 }
 
 
 void
-StellarAnchor::set_intrinsic_luminosity(double intrinsic_luminosity)
+AnchorBase::set_intrinsic_luminosity(double intrinsic_luminosity)
 {
   _intrinsic_luminosity = intrinsic_luminosity;
 }
 
 
 double
-StellarAnchor::get_reflected_luminosity(void) const
+AnchorBase::get_reflected_luminosity(void) const
 {
   return _reflected_luminosity;
 }
 
 
 double
-StellarAnchor::get_point_radiance(void) const
+AnchorBase::get_point_radiance(void) const
 {
   return _point_radiance;
 }

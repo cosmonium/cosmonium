@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,22 @@
 #include "anchor.h"
 
 class ReferenceFrame;
+class StellarAnchor;
 
 class CartesianAnchor : public AnchorBase
 {
 PUBLISHED:
+  CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color);
   CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame);
   virtual ~CartesianAnchor(void);
+
+  virtual bool is_stellar(void) const;
+
+  virtual bool has_orbit(void) const;
+
+  virtual bool has_rotation(void) const;
+
+  virtual bool has_frame(void) const;
 
   virtual double get_position_bounding_radius(void);
 
@@ -84,6 +94,9 @@ PUBLISHED:
 
   virtual void update_state(CameraAnchor &observer, unsigned long int update_id);
 
+  //Temporary
+  virtual void update_luminosity(StellarAnchor *star = 0);
+
 protected:
   PT(ReferenceFrame) frame;
   LPoint3d _frame_position;
@@ -136,6 +149,4 @@ protected:
   MAKE_TYPE("ObserverAnchor", CartesianAnchor);
 };
 
-
 #endif //CARTESIANANCHORS_H
-

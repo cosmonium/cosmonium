@@ -56,7 +56,7 @@ AnchorTreeBase::set_rebuild_needed(void)
 
 TypeHandle AnchorBase::_type_handle;
 
-AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object) :
+AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -80,7 +80,13 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object) :
   distance_to_obs(0.0),
   vector_to_obs(0.0),
   visible_size(0.0),
-  z_distance(0.0)
+  z_distance(0.0),
+  // Temporary
+  point_color(point_color),
+  _intrinsic_luminosity(0.0),
+  _reflected_luminosity(0.0),
+  _point_radiance(0.0),
+  _albedo(0.0)
 {
   Py_INCREF(ref_object);
 }
@@ -103,6 +109,18 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+LColor
+AnchorBase::get_point_color(void)
+{
+  return point_color;
+}
+
+void
+AnchorBase::set_point_color(LColor color)
+{
+  this->point_color = color;
 }
 
 double

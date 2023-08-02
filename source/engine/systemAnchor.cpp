@@ -33,7 +33,7 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
 }
 
 void
-SystemAnchor::add_child(StellarAnchor *child)
+SystemAnchor::add_child(AnchorBase *child)
 {
     children.push_back(child);
     child->parent = this;
@@ -43,7 +43,7 @@ SystemAnchor::add_child(StellarAnchor *child)
 }
 
 void
-SystemAnchor::remove_child(StellarAnchor *child)
+SystemAnchor::remove_child(AnchorBase *child)
 {
   auto it = std::find(children.begin(), children.end(), child);
   if (it != children.end()) {

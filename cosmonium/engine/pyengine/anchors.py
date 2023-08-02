@@ -71,6 +71,18 @@ class AnchorBase():
     def traverse(self, visitor):
         visitor.traverse_anchor(self)
 
+    def is_stellar(self):
+        return True
+
+    def has_orbit(self):
+        return False
+
+    def has_rotation(self):
+        return False
+
+    def has_frame(self):
+        return False
+
     def get_bounding_radius(self):
         return self.bounding_radius
 
@@ -133,16 +145,23 @@ class AnchorBase():
         self.update_observer(observer, update_id)
         self.update_state(observer, update_id)
 
-    def update_app_magnitude(self, star):
-        pass
-
 
 class CartesianAnchor(AnchorBase):
-    def __init__(self, anchor_class, body, frame):
+    def __init__(self, anchor_class, body, frame, point_color=None):
         AnchorBase.__init__(self, anchor_class, body)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
+        self.point_color = point_color
+        self._intrinsic_luminosity = 0
+        self._reflected_luminosity = 0
+        self._point_radiance = 0
+
+    def is_stellar(self):
+        return False
+
+    def has_frame(self):
+        return True
 
     def copy(self, other):
         self.frame = other.get_frame()
@@ -174,6 +193,30 @@ class CartesianAnchor(AnchorBase):
 
     def get_position_bounding_radius(self):
         return 0.0
+
+    def get_absolute_magnitude(self):
+        return lum_to_abs_mag(self.get_radiant_flux() / units.L0)
+
+    def get_apparent_magnitude(self):
+        if self.distance_to_obs > 0:
+            return abs_to_app_mag(self.get_absolute_magnitude(), self.distance_to_obs)
+        else:
+            return 1000.0
+
+    def get_radiant_flux(self):
+        """
+        Returns the radiant flux, expressed in W.
+        """
+        return self._intrinsic_luminosity + self._reflected_luminosity
+
+    def get_point_radiance(self, distance):
+        """
+        Returns the anchor radiance. This method assume the source is a point-like light source aligned with the normal of the receiver.
+        """
+        return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
+
+    def update_luminosity(self, star):
+        pass
 
     def set_absolute_reference_point(self, new_reference_point):
         old_local = self.frame.get_local_position(self._frame_position)
@@ -253,7 +296,7 @@ class CartesianAnchor(AnchorBase):
 
 class CameraAnchor(CartesianAnchor):
     def __init__(self, body, frame):
-        CartesianAnchor.__init__(self, 0, body, frame)
+        CartesianAnchor.__init__(self, 0, body, frame, None)
         self.camera_vector = LVector3d()
         self.frustum = None
         self.rel_frustum = None
@@ -265,12 +308,12 @@ class CameraAnchor(CartesianAnchor):
 
 
 class OriginAnchor(CartesianAnchor):
-    def __init__(self, anchor_class, body):
-        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame())
+    def __init__(self, anchor_class, body, point_color=None):
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
 
 class FlatSurfaceAnchor(OriginAnchor):
-    def __init__(self, anchor_class, body, surface):
-        OriginAnchor.__init__(self, anchor_class, body)
+    def __init__(self, anchor_class, body, surface, point_color=None):
+        OriginAnchor.__init__(self, anchor_class, body, point_color)
         self.surface = surface
 
     def set_surface(self, surface):
@@ -294,8 +337,8 @@ class FlatSurfaceAnchor(OriginAnchor):
 
 
 class ObserverAnchor(CartesianAnchor):
-    def __init__(self, anchor_class, body):
-        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame())
+    def __init__(self, anchor_class, body, point_color=None):
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
 
     def update(self, time, update_id):
         #TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
@@ -342,6 +385,12 @@ class StellarAnchor(AnchorBase):
         #TODO: Should be done properly
         #orbit.body = body
         #rotation.body = body
+
+    def has_orbit(self):
+        return True
+
+    def has_rotation(self):
+        return True
 
     def get_position_bounding_radius(self):
         return self.orbit.get_bounding_radius()

@@ -21,6 +21,7 @@
 #include "anchorTraverser.h"
 #include "octreeNode.h"
 #include "astro.h"
+#include "dcast.h"
 
 TypeHandle OctreeAnchor::_type_handle;
 
@@ -76,7 +77,7 @@ OctreeAnchor::create_octree(void)
   for (auto child : children) {
     child->update(0, 0);
     child->rebuild();
-    octree->add(child);
+    octree->add(DCAST(StellarAnchor, child));
   }
 }
 

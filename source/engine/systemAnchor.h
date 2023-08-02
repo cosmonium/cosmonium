@@ -39,13 +39,13 @@ PUBLISHED:
   virtual void update_luminosity(StellarAnchor *star = 0);
   virtual void rebuild(void);
 
-  void add_child(StellarAnchor *child);
-  void remove_child(StellarAnchor *child);
+  void add_child(AnchorBase *child);
+  void remove_child(AnchorBase *child);
 
   void set_primary(StellarAnchor *primary);
 
 public:
-  std::vector<PT(StellarAnchor)> children;
+  std::vector<PT(AnchorBase)> children;
   PT(StellarAnchor) primary;
 
   MAKE_TYPE("SystemAnchor", StellarAnchor);

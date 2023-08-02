@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,13 +63,25 @@ PUBLISHED:
     Reflective = 2,
     System = 4
   };
-  AnchorBase(unsigned int anchor_class, PyObject *ref_object);
+  AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color);
 
   virtual ~AnchorBase(void);
 
   PyObject *get_object(void) const;
   void set_body(PyObject *ref_object); //TODO: Is set needed ?
   MAKE_PROPERTY(body, get_object, set_body);
+
+  LColor get_point_color(void);
+  void set_point_color(LColor color);
+  MAKE_PROPERTY(point_color, get_point_color, set_point_color);
+
+  virtual bool is_stellar(void) const = 0;
+
+  virtual bool has_orbit(void) const = 0;
+
+  virtual bool has_rotation(void) const = 0;
+
+  virtual bool has_frame(void) const = 0;
 
   double get_bounding_radius(void);
 
@@ -104,6 +116,20 @@ PUBLISHED:
   LPoint3d get_cached_local_position(void) { return _local_position; }
 
   LQuaterniond get_cached_absolute_orientation(void) {return _orientation; }
+
+  INLINE double get_albedo(void) const;
+  INLINE void set_albedo(double albedo);
+  MAKE_PROPERTY(_albedo, get_albedo, set_albedo);
+
+  INLINE double get_intrinsic_luminosity(void) const;
+  INLINE void set_intrinsic_luminosity(double intrinsic_luminosity);
+  MAKE_PROPERTY(_intrinsic_luminosity, get_intrinsic_luminosity, set_intrinsic_luminosity);
+
+  INLINE double get_reflected_luminosity(void) const;
+  MAKE_PROPERTY(_reflected_luminosity, get_reflected_luminosity);
+
+  INLINE double get_point_radiance(void) const;
+  MAKE_PROPERTY(_point_radiance, get_point_radiance);
 
 public:
   PyObject *ref_object;
@@ -141,7 +167,17 @@ PUBLISHED:
 protected:
   double bounding_radius;
 
+public:
+  // Temporary
+  LColor point_color;
+  double _albedo;
+  double _intrinsic_luminosity;
+  double _reflected_luminosity;
+  double _point_radiance;
+
   MAKE_TYPE("AnchorBase", AnchorTreeBase);
 };
+
+#include "anchor.I"
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,11 +26,20 @@
 #include "settings.h"
 #include "infiniteFrustum.h"
 #include "anchorTraverser.h"
+#include "stellarAnchor.h"
 
 TypeHandle CartesianAnchor::_type_handle;
 
+CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color) :
+    AnchorBase(anchor_class, ref_object, point_color),
+    frame(frame),
+    _frame_position(0.0),
+    _frame_orientation(LQuaterniond::ident_quat())
+{
+}
+
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame) :
-    AnchorBase(anchor_class, ref_object),
+    AnchorBase(anchor_class, ref_object, LColor(0)),
     frame(frame),
     _frame_position(0.0),
     _frame_orientation(LQuaterniond::ident_quat())
@@ -39,6 +48,30 @@ CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object
 
 CartesianAnchor::~CartesianAnchor(void)
 {
+}
+
+bool
+CartesianAnchor::is_stellar(void) const
+{
+    return false;
+}
+
+bool
+CartesianAnchor::has_orbit(void) const
+{
+    return false;
+}
+
+bool
+CartesianAnchor::has_rotation(void) const
+{
+    return false;
+}
+
+bool
+CartesianAnchor::has_frame(void) const
+{
+    return true;
 }
 
 void
@@ -241,6 +274,10 @@ CartesianAnchor::update_state(CameraAnchor &observer, unsigned long int update_i
   }
 }
 
+void
+CartesianAnchor::update_luminosity(StellarAnchor *star)
+{
+}
 
 TypeHandle OriginAnchor::_type_handle;
 

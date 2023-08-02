@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,14 @@ PUBLISHED:
       LColor point_color);
   virtual ~StellarAnchor(void);
 
+  virtual bool is_stellar(void) const;
+
+  virtual bool has_orbit(void) const;
+
+  virtual bool has_rotation(void) const;
+
+  virtual bool has_frame(void) const;
+
   OrbitBase *get_orbit(void);
   void set_orbit(OrbitBase * orbit);
   MAKE_PROPERTY(orbit, get_orbit, set_orbit);
@@ -42,10 +50,6 @@ PUBLISHED:
   RotationBase *get_rotation(void);
   void set_rotation(RotationBase * rotation);
   MAKE_PROPERTY(rotation, get_rotation, set_rotation);
-
-  LColor get_point_color(void);
-  void set_point_color(LColor color);
-  MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
   virtual double get_position_bounding_radius(void);
 
@@ -83,32 +87,11 @@ PUBLISHED:
 
   virtual void update_luminosity(StellarAnchor *star = 0);
 
-  INLINE double get_albedo(void) const;
-  INLINE void set_albedo(double albedo);
-  MAKE_PROPERTY(_albedo, get_albedo, set_albedo);
-
-  INLINE double get_intrinsic_luminosity(void) const;
-  INLINE void set_intrinsic_luminosity(double intrinsic_luminosity);
-  MAKE_PROPERTY(_intrinsic_luminosity, get_intrinsic_luminosity, set_intrinsic_luminosity);
-
-  INLINE double get_reflected_luminosity(void) const;
-  MAKE_PROPERTY(_reflected_luminosity, get_reflected_luminosity);
-
-  INLINE double get_point_radiance(void) const;
-  MAKE_PROPERTY(_point_radiance, get_point_radiance);
-
 public:
   double get_reflected_luminosity(StellarAnchor *star);
 
 public:
   LQuaterniond _equatorial;
-  double _albedo;
-  double _intrinsic_luminosity;
-  double _reflected_luminosity;
-  double _point_radiance;
-
-public:
-  LColor point_color;
 
 protected:
   PT(OrbitBase) orbit;
@@ -116,7 +99,5 @@ protected:
 
   MAKE_TYPE("StellarAnchor", AnchorBase);
 };
-
-#include "stellarAnchor.I"
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2023 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,20 +34,39 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color) :
-    AnchorBase(anchor_class, ref_object),
+    AnchorBase(anchor_class, ref_object, point_color),
     orbit(orbit),
     rotation(rotation),
-    point_color(point_color),
-    _equatorial(LQuaterniond::ident_quat()),
-    _intrinsic_luminosity(0.0),
-    _reflected_luminosity(0.0),
-    _point_radiance(0.0),
-    _albedo(0.0)
+    _equatorial(LQuaterniond::ident_quat())
 {
 }
 
 StellarAnchor::~StellarAnchor(void)
 {
+}
+
+bool
+StellarAnchor::is_stellar(void) const
+{
+    return true;
+}
+
+bool
+StellarAnchor::has_orbit(void) const
+{
+    return true;
+}
+
+bool
+StellarAnchor::has_rotation(void) const
+{
+    return true;
+}
+
+bool
+StellarAnchor::has_frame(void) const
+{
+    return false;
 }
 
 OrbitBase *
@@ -72,18 +91,6 @@ void
 StellarAnchor::set_rotation(RotationBase * rotation)
 {
   this->rotation = rotation;
-}
-
-LColor
-StellarAnchor::get_point_color(void)
-{
-  return point_color;
-}
-
-void
-StellarAnchor::set_point_color(LColor color)
-{
-  this->point_color = color;
 }
 
 double
