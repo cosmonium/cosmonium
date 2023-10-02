@@ -26,13 +26,14 @@ from direct.interval.MetaInterval import Parallel, Sequence
 from direct.interval.FunctionInterval import Wait
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-from .astro.frame import SynchroneReferenceFrame
+from .astro.frame import BodyReferenceFrame, SynchroneReferenceFrame
 from .astro import units
 from .utils import isclose
 from .objects.systems import SimpleSystem
 from . import settings
 
 from math import acos, pi, exp, log
+
 
 class AutoPilot(object):
     def __init__(self, ui):
@@ -178,7 +179,10 @@ class AutoPilot(object):
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
         if up is None:
             up = LVector3d.up()
-        frame = SynchroneReferenceFrame(target.anchor)
+        if target.anchor.has_rotation():
+            frame = SynchroneReferenceFrame(target.anchor)
+        else:
+            frame = BodyReferenceFrame(target.anchor)
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")

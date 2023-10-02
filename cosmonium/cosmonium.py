@@ -1013,9 +1013,14 @@ class Cosmonium(CosmoniumBase):
         self.sync = None
         if self.follow is not None:
             print("Follow", self.follow.get_name())
-            self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
-            self.update_extra(self.follow)
-            self.observer.set_frame(OrbitReferenceFrame(body.anchor))
+            if body.anchor.has_orbit():
+                self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
+                self.update_extra(self.follow)
+                self.observer.set_frame(OrbitReferenceFrame(body.anchor))
+            else:
+                self.ship.anchor.set_frame(BodyReferenceFrame(body.anchor))
+                self.update_extra(self.follow)
+                self.observer.set_frame(BodyReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -1031,9 +1036,14 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         if self.sync is not None:
             print("Sync", self.sync.get_name())
-            self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
-            self.update_extra(self.sync)
-            self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
+            if body.anchor.has_rotation():
+                self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
+                self.update_extra(self.sync)
+                self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
+            else:
+                self.ship.anchor.set_frame(BodyReferenceFrame(body.anchor))
+                self.update_extra(self.follow)
+                self.observer.set_frame(BodyReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -1147,13 +1157,16 @@ class Cosmonium(CosmoniumBase):
 
     def _add_extra(self, to_add):
         if to_add is None: return
-        #TODO: this should not be done
-        if not isinstance(to_add, StellarAnchor): return
-        #TODO: There should be a mechanism to retrieve them
-        if isinstance(to_add.orbit.frame, BodyReferenceFrames):
-            self._add_extra(to_add.orbit.frame.anchor)
-        if isinstance(to_add.rotation.frame, BodyReferenceFrames):
-            self._add_extra(to_add.rotation.frame.anchor)
+        if to_add.has_orbit():
+            #TODO: There should be a mechanism to retrieve them
+            if isinstance(to_add.orbit.frame, BodyReferenceFrames):
+                self._add_extra(to_add.orbit.frame.anchor)
+        if to_add.has_rotation():
+            if isinstance(to_add.rotation.frame, BodyReferenceFrames):
+                self._add_extra(to_add.rotation.frame.anchor)
+        if to_add.has_frame():
+            if isinstance(to_add.frame, BodyReferenceFrames):
+                self._add_extra(to_add.frame.anchor)
         if not to_add in self.extra:
             self.extra.append(to_add)
 

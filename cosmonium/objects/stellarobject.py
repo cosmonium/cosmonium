@@ -173,7 +173,7 @@ class StellarObject(NamedObject):
             return name
 
     def create_label_instance(self):
-        if isinstance(self.anchor.orbit, FixedPosition):
+        if not self.anchor.has_orbit() or isinstance(self.anchor.orbit, FixedPosition):
             return FixedOrbitLabel(self.get_ascii_name() + '-label', self)
         else:
             return StellarBodyLabel(self.get_ascii_name() + '-label', self)
@@ -210,7 +210,7 @@ class StellarObject(NamedObject):
         self.body_class = body_class
 
     def create_orbit_object(self):
-        if self.orbit_object is None and self.anchor.orbit.is_dynamic():
+        if self.orbit_object is None and self.anchor.has_orbit() and self.anchor.orbit.is_dynamic():
             self.orbit_object = Orbit(self)
             self.orbit_object.check_settings()
 

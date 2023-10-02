@@ -110,7 +110,7 @@ class Huds():
                 else:
                     altitude = selected.anchor.distance_to_obs - radius
                     self.topLeft.set(0, _("Altitude: ")  + toUnit(altitude, units.lengths_scale))
-            if not selected.virtual_object:
+            if not selected.virtual_object and selected.anchor.is_stellar():
                 self.topLeft.set(1, _("Radius: ") + "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale, 'x')))
                 self.topLeft.set(2, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
                 if selected.is_emissive():
@@ -126,7 +126,10 @@ class Huds():
                     self.topLeft.set(4, "")
                     self.topLeft.set(5, "")
             else:
-                self.topLeft.set(1, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
+                if selected.anchor.is_stellar():
+                    self.topLeft.set(1, _("Abs (app) magnitude: ") + "%g (%g)" % (selected.get_abs_magnitude(), selected.get_app_magnitude()))
+                else:
+                    self.topLeft.set(1, "")
                 self.topLeft.set(2, "")
                 self.topLeft.set(3, "")
                 self.topLeft.set(4, "")
