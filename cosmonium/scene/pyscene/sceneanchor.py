@@ -143,9 +143,10 @@ class AbsoluteSceneAnchor(SceneAnchor):
     def update(self, scene_manager):
         if settings.camera_at_origin:
             self.scene_position = self.anchor.rel_position / scene_manager.scale
-            self.instance.set_pos(*self.scene_position)
         self.scene_scale_factor = 1.0 / scene_manager.scale
-        self.instance.set_scale(self.scene_scale_factor)
+        if self.instance is not None:
+            self.instance.set_pos(*self.scene_position)
+            self.instance.set_scale(self.scene_scale_factor)
 
 class ObserverSceneAnchor(SceneAnchor):
     anchor_name = 'observer-anchor'
@@ -155,9 +156,10 @@ class ObserverSceneAnchor(SceneAnchor):
     def update(self, scene_manager):
         if not settings.camera_at_origin:
             self.scene_position = self.anchor._position / scene_manager.scale
-            self.instance.set_pos(*self.scene_position)
         self.scene_scale_factor = 1.0 / scene_manager.scale
-        self.instance.set_scale(self.scene_scale_factor)
+        if self.instance is not None:
+            self.instance.set_pos(*self.scene_position)
+            self.instance.set_scale(self.scene_scale_factor)
 
 class SceneAnchorCollection(list):
     def add_scene_anchor(self, scene_anchor):

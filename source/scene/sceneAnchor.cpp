@@ -297,8 +297,10 @@ AbsoluteSceneAnchor::update(SceneManager *scene_manager)
   Settings *settings = Settings::get_global_ptr();
   if (settings->camera_at_origin) {
       scene_position = anchor->rel_position / scene_manager->get_scale();
+  }
+  scene_scale_factor = 1.0 / scene_manager->get_scale();
+  if (has_instance) {
       instance.set_pos(LCAST(PN_stdfloat, scene_position));
-      scene_scale_factor = 1.0 / scene_manager->get_scale();
       instance.set_scale(scene_scale_factor);
   }
 }
@@ -319,8 +321,10 @@ ObserverSceneAnchor::update(SceneManager *scene_manager)
   Settings *settings = Settings::get_global_ptr();
   if (!settings->camera_at_origin) {
       scene_position = anchor->rel_position / scene_manager->get_scale();
+  }
+  scene_scale_factor = 1.0 / scene_manager->get_scale();
+  if (has_instance) {
       instance.set_pos(LCAST(PN_stdfloat, scene_position));
-      scene_scale_factor = 1.0 / scene_manager->get_scale();
       instance.set_scale(scene_scale_factor);
   }
 }
