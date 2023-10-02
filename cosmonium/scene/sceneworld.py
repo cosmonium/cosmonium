@@ -27,6 +27,8 @@ from ..astro.frame import AbsoluteReferenceFrame
 from ..namedobject import NamedObject
 
 class Worlds:
+    stellar_object = False
+
     def __init__(self):
         self.worlds = []
         self.global_shadows = None
@@ -102,6 +104,8 @@ class SceneWorld(NamedObject):
     virtual_object = False
     background = False
     support_offset_body_center = False
+    stellar_object = False
+
     def __init__(self, name):
         NamedObject.__init__(self, [name], None, None)
         self.anchor = None

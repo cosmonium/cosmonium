@@ -36,9 +36,13 @@ class ScatteringBase(ABC):
         self.shape_objects: list[ShapeObject] = []
         self.attenuated_objects: list[ShapeObject] = []
         self.inside: Optional[bool] = None
+        self.light = None
 
     def clear(self) -> None:
         self.remove_all_attenuated_objects()
+
+    def set_light(self, light):
+        self.light = light
 
     def set_inside(self, inside: bool) -> None:
         self.inside = inside
@@ -128,3 +132,6 @@ class ScatteringBase(ABC):
     @abstractmethod
     def create_data_source(self, atmosphere: bool) -> None:
         raise NotImplementedError()
+
+    def update(self, time, dt):
+        pass

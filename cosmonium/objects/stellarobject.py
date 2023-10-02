@@ -50,6 +50,7 @@ class StellarObject(NamedObject):
     support_offset_body_center = True
     allow_scattering = False
     background = False
+    stellar_object = True
     nb_update = 0
     nb_obs = 0
     nb_visibility = 0

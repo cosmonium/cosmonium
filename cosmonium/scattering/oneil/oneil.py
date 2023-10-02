@@ -417,6 +417,7 @@ class ONeilSimpleScatteringShader(ONeilScatteringBase):
         code.append("uniform int nSamples;")
         code.append("uniform float fSamples;")
         code.append("uniform float model_scale;")
+        code.append("uniform float height_scale;")
         code.append("uniform mat3 atm_descale;")
 
     def scale_func(self, code):
@@ -449,7 +450,7 @@ class ONeilSimpleScatteringShader(ONeilScatteringBase):
             else:
                 code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
                 if self.displacement:
-                    code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
+                    code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
             code.append("  vec3 scaled_vertex = atm_descale * (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
@@ -544,27 +545,37 @@ class ONeilScatteringDataSourceBase(DataSource):
         if body.lights is None or len(body.lights.lights) == 0:
             print("No light source for scattering")
             return
-        light_source = body.lights.lights[0].source
         factor = 1.0 / shape.parent.body.scene_anchor.scene_scale_factor
         inner_radius = self.parameters.body_radius
 
-        #TODO: We should get the oblateness correctly
-        body_scale = self.parameters.body.surface.get_scale()
-        descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
-        rotation_mat = LMatrix4()
-        orientation = LQuaternion(*shape.parent.body.anchor.get_absolute_orientation())
-        orientation.extract_to_matrix(rotation_mat)
-        rotation_mat_inv = LMatrix4()
-        rotation_mat_inv.invert_from(rotation_mat)
-        descale_mat = rotation_mat_inv * descale * rotation_mat
-        camera_rot.extract_to_matrix(rotation_mat)
-        rotation_mat.invert_in_place()
-        descale_mat *= rotation_mat
-        pos = body.anchor.rel_position
+        if body.stellar_object:
+            #TODO: We should get the oblateness correctly
+            body_scale = self.parameters.body.surface.get_scale()
+            descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
+            rotation_mat = LMatrix4()
+            orientation = LQuaternion(*shape.parent.body.anchor.get_absolute_orientation())
+            orientation.extract_to_matrix(rotation_mat)
+            rotation_mat_inv = LMatrix4()
+            rotation_mat_inv.invert_from(rotation_mat)
+            descale_mat = rotation_mat_inv * descale * rotation_mat
+            camera_rot.extract_to_matrix(rotation_mat)
+            rotation_mat.invert_in_place()
+            descale_mat *= rotation_mat
+            height_scale = inner_radius
+            offset = LVector3d()
+        else:
+            descale_mat = LMatrix4.ident_mat()
+            height_scale = 1.0
+            offset =  LVector3d(0, 0, inner_radius)
+        pos = body.anchor.rel_position - offset
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
-        star_pos = light_source.anchor.get_local_position() - body.anchor.get_local_position()
-        scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
-        scaled_star_pos.normalize()
+        if self.parameters.light is None:
+            light_source = body.lights.lights[0].source
+            star_pos = light_source.anchor.get_local_position() - body.anchor.get_local_position()
+            scaled_star_pos = descale_mat.xform_point(LPoint3(*star_pos))
+            scaled_star_pos.normalize()
+        else:
+            scaled_star_pos = self.parameters.light.light_direction
         camera_height = scaled_pos.length()
         if camera_height > inner_radius * 100:
             scaled_pos *= 100.0 * inner_radius / camera_height
@@ -577,6 +588,7 @@ class ONeilScatteringDataSourceBase(DataSource):
 
         instance.setShaderInput("v3LightPos", scaled_star_pos)
         instance.setShaderInput("model_scale", factor)
+        instance.setShaderInput("height_scale", height_scale)
         instance.setShaderInput("atm_descale", descale_mat)
 
 class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
@@ -781,6 +793,7 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("uniform sampler2D pbOpticalDepth;")
         code.append("uniform int nSamples;")
         code.append("uniform float model_scale;")
+        code.append("uniform float height_scale;")
         code.append("uniform mat3 atm_descale;")
         code.append("#define DELTA 1e-6")
 
@@ -801,7 +814,7 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
             else:
                 code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
                 if self.displacement:
-                    code.append("  scaled_vertex += world_normal * vertex_height * fInnerRadius;")
+                    code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
             code.append("  vec3 scaled_vertex = atm_descale * (world_vertex * model_scale - v3OriginPos);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
