@@ -41,7 +41,7 @@ class SceneAnchor:
         self.scene_position = LPoint3d()
         self.scene_orientation = LQuaternion()
         self.scene_distance = 0.0
-        self.scene_scale_factor = 0.0
+        self.scene_scale_factor = 1.0
         self.scene_rel_position = LPoint3d()
         self.world_body_center_offset = LVector3d()
         self.scene_body_center_offset = LVector3d()
