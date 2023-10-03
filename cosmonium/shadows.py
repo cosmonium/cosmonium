@@ -425,7 +425,10 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
     def remove_camera(self):
         print("Remove shadow camera for", self.occluder.get_name())
-        self.shadow_map.remove()
+        if self.shadow_map is not None:
+            self.shadow_map.remove()
+        else:
+            print("Removing already removed shadow camera")
         for target in list(self.targets.keys()):
             self.remove_target(target)
         self.shadow_map = None
