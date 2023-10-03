@@ -37,3 +37,6 @@ from . import nebulasparser
 from . import systemsparser
 from . import shipsparser
 from . import pluginparser
+
+from . import scatteringparser
+from . import oneilscatteringparser

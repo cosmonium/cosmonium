@@ -97,7 +97,7 @@ class YamlParser(object):
             object_data = {}
         elif isinstance(data, str):
             object_type = data
-            object_data = {}
+            object_data = {'type': object_type}
         else:
             if detect_trivial and len(data) == 1 and data.get('type') is None:
                 object_type = list(data)[0]
@@ -210,3 +210,23 @@ class YamlModuleParser(YamlParser):
             print("Could not find", filename)
         return data
 
+
+class TypedYamlParser(YamlParser):
+
+    parsers = {}
+    default_type = None
+    detect_trivial = False
+
+    @classmethod
+    def register(cls, name, parser):
+        cls.parsers[name] = parser
+
+    @classmethod
+    def decode(cls, data, **extra):
+        (object_type, parameters) = cls.get_type_and_data(data, cls.default_type, detect_trivial=cls.detect_trivial)
+        if object_type in cls.parsers:
+            parser = cls.parsers[object_type]
+            return parser.decode(parameters, **extra)
+        else:
+            print("Unknown type '%s'" % object_type, data)
+            return None
