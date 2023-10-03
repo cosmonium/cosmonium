@@ -50,7 +50,7 @@ class BodyController():
             print("Can not create a mover with dynamic rotation", self.anchor.rotation)
             return
         if isinstance(self.anchor.orbit.frame, SurfaceReferenceFrame) and isinstance(self.anchor.rotation.frame, SurfaceReferenceFrame):
-            self.mover = FlatSurfaceBodyMover(self.anchor)
+            self.mover = SurfaceBodyMover(self.anchor)
         else:
             self.mover = CartesianBodyMover(self.anchor)
 
@@ -131,9 +131,29 @@ class SurfaceBodyController(BodyController):
 
     def update(self, time, dt):
         position = self.calc_surface_position()
-        self.mover.set_pos(position)
+        self.mover.set_frame_position(position)
         orientation = self.calc_surface_orientation()
-        self.mover.set_rot(orientation)
+        self.mover.set_frame_orientation(orientation)
+
+
+class FlatSurfaceBodyController(BodyController):
+    def __init__(self, anchor, position):
+        BodyController.__init__(self, anchor)
+        self.position = position
+        self.terrain = None
+
+    def init(self):
+        self.terrain = self.anchor.body.get_terrain()
+        super().init()
+
+    def create_mover(self):
+        """
+        """
+        self.mover = FlatSurfaceBodyMover(self.anchor, self.terrain)
+        self.mover.update()
+
+    def update(self, time, dt):
+        self.mover.update()
 
 
 class BodyMover():
@@ -219,7 +239,7 @@ class BodyMover():
 
 #Temporary class until a common interface between object and stellar bodies is implemented
 
-class ShipMover(BodyMover):
+class CartesianBodyMover(BodyMover):
     #TODO: Temporary
     @property
     def orbit_rot_camera(self):
@@ -294,95 +314,53 @@ class ShipMover(BodyMover):
         new_rot = utils.relative_rotation(self.anchor.get_absolute_orientation(), LVector3d.up(), pi)
         self.anchor.set_absolute_orientation(new_rot)
 
-class CartesianBodyMover(BodyMover):
-    def set_pos(self, position):
-        self.anchor.orbit.set_frame_position(position)
-
-    def get_pos(self):
-        return self.anchor.orbit.get_frame_position_at(0)
-
-    def set_rot(self, rotation):
-        self.anchor.rotation.set_frame_rotation(rotation)
-
-    def get_rot(self):
-        return self.anchor.rotation.get_frame_rotation_at(0)
-
-    def delta(self, delta):
-        self.set_pos(self.get_pos() + delta)
-
-    def step(self, direction, distance):
-        rotation = LQuaterniond()
-        look_at(rotation, direction, LVector3d.up())
-        delta = rotation.xform(LVector3d(0, distance, 0))
-        self.delta(delta)
-
-    def step_relative(self, distance):
-        rotation = self.anchor.rotation.get_frame_rotation_at(0) #TODO: retrieve simulation time
-        direction = rotation.xform(LVector3d.forward())
-        self.step(direction, distance)
-
-    def turn(self, angle):
-        new_rotation = LQuaterniond()
-        new_rotation.setFromAxisAngleRad(angle, LVector3d.up())
-        self.set_rot(new_rotation)
-
-    def turn_relative(self, step):
-        rotation = self.get_rot()
-        delta = LQuaterniond()
-        delta.setFromAxisAngleRad(step, LVector3d.up())
-        new_rotation = delta * rotation
-        self.set_rot(new_rotation)
-
-class FlatSurfaceBodyMover(CartesianBodyMover):
+class SurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor):
         CartesianBodyMover.__init__(self, anchor)
-        #TODO: We assume the frame is shared between the orbit and the rotation
-        #This will be simplified when the orbit and rotation will disappear for anchors
-        self.frame = self.anchor.orbit.frame
+        self.surface = surface
         self.altitude = 0.0
 
     def update(self):
         #Refresh altitude in case the anchor has changed shape (often due to change of LOD)
         self.set_altitude(self.altitude)
+        # Force internal update of the controlled anchor
+        self.anchor.update(0, 0)
 
     def set_pos(self, position):
         (x, y, altitude) = position
-        new_orbit_pos = LPoint3d(x, y, 1.0)
-        self.anchor.orbit.set_frame_position(new_orbit_pos)
-        new_pos = self.anchor.orbit.get_local_position_at(0)
-        distance = self.frame.anchor.body.get_height_under(new_pos) - self.frame.anchor.get_apparent_radius()
-        new_orbit_pos[2] = distance + altitude
-        self.anchor.orbit.set_frame_position(new_orbit_pos)
+        new_frame_pos = LPoint3d(x, y, 1.0)
+        new_local_pos = self.anchor.calc_local_position_of(new_frame_pos)
+        distance = self.surface.get_height_under(new_local_pos)
+        new_frame_pos[2] = distance + altitude
+        self.anchor.set_frame_position(new_frame_pos)
         self.altitude = altitude
 
     def get_pos(self):
-        position = LPoint3d(self.anchor.orbit.get_frame_position())
-        position[2] = self.altitude
-        return position
+        return self.anchor.get_frame_position()
 
     def get_rot(self):
-        #TODO: It's not really a reference axis...
-        return self.anchor.rotation.reference_axes.rotation
+        return self.anchor.get_frame_orientation()
 
     def set_rot(self, rotation):
-        self.anchor.rotation.reference_axes.rotation = rotation
+        self.anchor.set_frame_orientation(rotation)
 
     def get_altitude(self):
         return self.altitude
 
     def set_altitude(self, altitude):
-        pos = self.anchor.orbit.get_local_position_at(0)
-        distance = self.anchor.frame.anchor.get_height_under(pos) - self.frame.anchor.get_apparent_radius()
-        frame_pos = self.anchor.orbit.position
-        frame_pos[2] = distance + altitude
+        pos = self.anchor.get_local_position()
+        distance = self.surface.get_height_under(pos)
+        new_frame_pos = LPoint3d(self.anchor.get_frame_position())
+        new_frame_pos[2] = distance + altitude
+        self.anchor.set_frame_position(new_frame_pos)
         self.altitude = altitude
 
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)
 
-class ShipFlatSurfaceBodyMover(ShipMover):
+class FlatSurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor, surface):
-        ShipMover.__init__(self, anchor)
+        CartesianBodyMover.__init__(self, anchor)
         self.surface = surface
         self.altitude = 0.0
 
@@ -416,50 +394,6 @@ class ShipFlatSurfaceBodyMover(ShipMover):
         new_frame_pos[2] = distance + altitude
         self.anchor.set_frame_position(new_frame_pos)
         self.altitude = altitude
-
-    def step_altitude(self, step):
-        self.set_altitude(self.get_altitude() + step)
-
-class CartesianFlatSurfaceBodyMover(CartesianBodyMover):
-    def __init__(self, anchor):
-        CartesianBodyMover.__init__(self, anchor)
-        self.altitude = 0.0
-
-    def update(self):
-        #Refresh altitude in case the anchor has changed shape (often due to change of LOD)
-        self.set_altitude(self.altitude)
-
-    def set_pos(self, position):
-        (x, y, altitude) = position
-        new_frame_pos = LPoint3d(x, y, 0)
-        self.anchor.set_frame_pos(new_frame_pos)
-        new_pos = self.anchor.get_pos()
-        distance = self.anchor.frame.anchor.get_height_under(new_pos)
-        new_frame_pos[2] = distance + altitude
-        self.anchor.set_frame_pos(new_frame_pos)
-        self.altitude = altitude
-
-    def get_pos(self):
-        pos = self.anchor.get_frame_pos()
-        pos = LPoint3d(pos[0], pos[1], self.altitude)
-        return pos
-
-    def get_altitude(self):
-        return self.altitude
-
-    def set_altitude(self, altitude):
-        pos = self.anchor.get_pos()
-        distance = self.anchor.frame.anchor.get_height_under(pos)
-        new_frame_pos = LPoint3d(self.anchor.get_frame_pos())
-        new_frame_pos[2] = distance + altitude
-        self.anchor.set_frame_position(new_frame_pos)
-        self.altitude = altitude
-
-    #TODO: Needed to replace as the CartesianBodyMover version uses anchor orbit orientation
-    def step_relative(self, distance):
-        rotation = self.anchor._frame_rotation
-        direction = rotation.xform(LVector3d.forward())
-        self.step(direction, distance)
 
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)

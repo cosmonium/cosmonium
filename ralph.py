@@ -62,7 +62,7 @@ from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCa
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
 from cosmonium.parsers.surfacesparser import FlatSurfaceParser
-from cosmonium.controllers.controllers import ShipFlatSurfaceBodyMover
+from cosmonium.controllers.controllers import FlatSurfaceBodyMover
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.physics import Physics
@@ -687,7 +687,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.controller = RalphControl(self.skybox, self)
         self.controller.register_events()
 
-        self.mover = ShipFlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+        self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
         self.mover.activate()
         self.nav = ControlNav()
         self.nav.set_controller(self.mover)

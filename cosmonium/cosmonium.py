@@ -61,7 +61,7 @@ from .astro.units import J2000_Orientation, J200_EclipticOrientation
 from .astro.astro import abs_mag_to_lum
 from .bodyclass import bodyClasses
 from .autopilot import AutoPilot
-from .controllers.controllers import ShipMover
+from .controllers.controllers import CartesianBodyMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
@@ -72,7 +72,7 @@ from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
 from .nav import FreeNav, WalkNav, ControlNav
-from .controllers.controllers import BodyController, FlatSurfaceBodyMover
+from .controllers.controllers import BodyController, SurfaceBodyMover
 from .ships import NoShip
 from .astro import units
 from .parsers.yamlparser import YamlModuleParser
@@ -685,8 +685,8 @@ class Cosmonium(CosmoniumBase):
         print("Switching ship to", self.ship.get_name())
         if self.ship is not None:
             self.worlds.add_world(self.ship)
-            self.autopilot.set_controller(ShipMover(self.ship.anchor))
-            self.nav.set_controller(ShipMover(self.ship.anchor))
+            self.autopilot.set_controller(CartesianBodyMover(self.ship.anchor))
+            self.nav.set_controller(CartesianBodyMover(self.ship.anchor))
             if old_ship is not None:
                 self.ship.anchor.copy(old_ship.anchor)
             if self.camera_controller is not None:
@@ -719,7 +719,7 @@ class Cosmonium(CosmoniumBase):
         if nav.require_controller() and controller is None:
             return
         if controller is None and self.ship is not None:
-            controller = ShipMover(self.ship.anchor)
+            controller = CartesianBodyMover(self.ship.anchor)
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
@@ -1078,7 +1078,7 @@ class Cosmonium(CosmoniumBase):
         if self.selected is None: return
         print("Can not take control")
         return
-        mover = FlatSurfaceBodyMover(self.selected)
+        mover = SurfaceBodyMover(self.selected)
         print("Take control")
         self.fly = True
         self.follow = None
