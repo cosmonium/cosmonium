@@ -50,7 +50,10 @@ def abs_mag_to_lum(abs_magnitude):
 
 # M* = M0 - 2.5 * log10(L* / L0)
 def lum_to_abs_mag(luminosity):
-    return units.sun_abs_magnitude - log(luminosity) / luminosity_magnitude_factor
+    if luminosity > 0:
+        return units.sun_abs_magnitude - log(luminosity) / luminosity_magnitude_factor
+    else:
+        return 1000.0
 
 radiance_coef =  units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
 
