@@ -61,6 +61,9 @@ class TerrainPopulatorBase(VisibleObject):
         VisibleObject.set_owner(self, owner)
         self.object_template.set_owner(owner)
 
+    def set_body(self, body):
+        self.object_template.set_body(body)
+
     def set_scene_anchor(self, scene_anchor):
         VisibleObject.set_scene_anchor(self, scene_anchor)
         self.object_template.set_scene_anchor(scene_anchor)

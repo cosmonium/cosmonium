@@ -38,6 +38,10 @@ class LocalLight(VisibleObject):
         self.cast_shadows = cast_shadows
         self.light_node = None
         self._node_color = LColor(self.color.xyz * self.power, 1)
+        self.body = None
+
+    def set_body(self, body):
+        self.body = body
 
     def remove_instance(self):
         if self.instance is not None:

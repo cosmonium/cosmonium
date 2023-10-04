@@ -163,12 +163,14 @@ class SimpleWorld(SceneWorld):
     def add_component(self, component):
         self.components.add_component(component)
         component.set_owner(self)
+        component.set_body(self)
         component.set_lights(self.lights)
 
     def remove_component(self, component):
         if component is not None:
             self.components.remove_component(component)
             component.set_owner(None)
+            component.set_body(None)
 
     def check_settings(self):
         self.components.check_settings()

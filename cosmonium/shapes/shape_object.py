@@ -53,6 +53,10 @@ class ShapeObject(VisibleObject):
         self.shadow_casters = {}
         self.first_patch = True
         self.task = None
+        self.body = None
+
+    def set_body(self, body):
+        self.body = body
 
     def check_settings(self):
         self.shape.check_settings()

@@ -58,6 +58,9 @@ class BaseObject(object):
     def set_owner(self, owner):
         self.owner = owner
 
+    def set_body(self, body):
+        self.body = body
+
     def get_user_parameters(self):
         return None
 
