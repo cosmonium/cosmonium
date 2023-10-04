@@ -1123,9 +1123,7 @@ class Cosmonium(CosmoniumBase):
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 
     def update_worlds(self, time, dt):
-        self.worlds.update_anchor(time, self.update_id)
-        self.worlds.update_anchor_obs(self.observer.anchor, self.update_id)
-        self.worlds.update(time, dt)
+        self.worlds.update(time, dt, self.update_id, self.observer)
 
     @pstat
     def update_universe(self, time, dt):
@@ -1338,7 +1336,7 @@ class Cosmonium(CosmoniumBase):
             #print("OLD VISIBLE", old_visible.body.get_name())
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
-                old_visible.body.on_point(self.scene_manager)
+                old_visible.body.on_point(scene_manager)
 
     @pstat
     def update_lod(self):

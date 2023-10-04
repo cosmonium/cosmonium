@@ -38,36 +38,28 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from direct.showbase.DirectObject import DirectObject
-from panda3d.core import LColor
-from panda3d.core import LPoint3d, LQuaterniond, LVector3, LVector3d, LQuaternion, BitMask32, NodePath
+from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
+from cosmonium.scene.flatuniverse import FlatUniverse
 from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
 from cosmonium.scene.sceneanchor import SceneAnchorCollection
-from cosmonium.scene.sceneworld import Worlds, CartesianWorld, FlatTerrainWorld
+from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld
 from cosmonium.engine.c_settings import c_settings
-from cosmonium.lights import LightSources, GlobalLight
 from cosmonium.procedural.water import WaterNode
-from cosmonium.appearances import ModelAppearance
-from cosmonium.shaders.rendering import RenderingShader
 from cosmonium.shaders.after_effects.fog import Fog
-from cosmonium.shapes.actor import ActorShape
-from cosmonium.shapes.composite import CompositeShapeObject
-from cosmonium.shapes.shape_object import ShapeObject
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
 from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
-from cosmonium.parsers.surfacesparser import FlatSurfaceParser
 from cosmonium.controllers.controllers import FlatSurfaceBodyMover
+from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
+from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
-from cosmonium.parsers.populatorsparser import PopulatorYamlParser
 from cosmonium.physics import Physics
 from cosmonium.ui.splash import NoSplash
-from cosmonium.utils import quaternion_from_euler
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium import settings
 
@@ -231,22 +223,22 @@ class PhysicsConfig():
         self.debug = debug
 
 class RalphConfigParser(YamlModuleParser):
+    def __init__(self, worlds):
+        YamlModuleParser.__init__(self)
+        self.worlds = worlds
+
     def decode(self, data):
         water = data.get('water', None)
         fog = data.get('fog', None)
         physics = data.get('physics', {})
 
+        parser = FlatUniverseYamlParser(self.worlds)
+        parser.decode(data)
         terrain = data.get('terrain')
-        self.terrain_surface = FlatSurfaceParser.decode(terrain)
         self.tile_size = terrain.get("tile-size", 1024)
 
         self.shadow_size = terrain.get('shadow-size', 16)
         self.shadow_box_length = terrain.get('shadow-depth', self.tile_size)
-
-        layers = terrain.get('layers', [])
-        self.layers = []
-        for layer in layers:
-            self.layers.append(PopulatorYamlParser.decode(layer))
 
         if water is not None:
             level = water.get('level', 0)
@@ -272,67 +264,9 @@ class RalphConfigParser(YamlModuleParser):
         enable_debug = physics.get('debug', False)
         self.physics = PhysicsConfig(has_physics, gravity, model, mass, limit, enable_debug)
 
+        ralph = data.get('ralph', {})
+        self.ralph_shape_object = ActorObjectYamlParser.decode(ralph)
         return True
-
-class RaphSkyBox(DirectObject):
-    def __init__(self):
-        self.skybox = None
-        self.sun_color = None
-        self.skybox_color = None
-        self.light_angle = None
-        self.light_dir = LVector3d.up()
-        self.light_quat = LQuaternion()
-        self.light_color = (1.0, 1.0, 1.0, 1.0)
-        self.fog = None
-
-    def init(self, config):
-        skynode = base.camera.attachNewNode('skybox')
-        base.camera.hide(BaseObject.AllCamerasMask)
-        base.camera.show(BaseObject.DefaultCameraFlag | BaseObject.WaterCameraFlag)
-        self.skybox = loader.loadModel('ralph-data/models/rgbCube')
-        self.skybox.reparentTo(skynode)
-
-        self.skybox.setTextureOff(1)
-        self.skybox.setShaderOff(1)
-        self.skybox.setTwoSided(True)
-        # make big enough to cover whole terrain, else there'll be problems with the water reflections
-        self.skybox.setScale(1.5 * config.tile_size)
-        self.skybox.setBin('background', 1)
-        self.skybox.setDepthWrite(False)
-        self.skybox.setDepthTest(False)
-        self.skybox.setLightOff(1)
-        self.skybox.setShaderOff(1)
-        self.skybox.setFogOff(1)
-
-        #self.skybox.setColor(.55, .65, .95, 1.0)
-        self.skybox_color = LColor(pow(0.5, 1/2.2), pow(0.6, 1/2.2), pow(0.7, 1/2.2), 1.0)
-        self.sun_color = LColor(pow(1.0, 1/2.2), pow(0.9, 1/2.2), pow(0.7, 1/2.2), 1.0)
-        self.skybox.setColor(self.skybox_color)
-
-    def set_fog(self, fog):
-        self.fog = fog
-        self.set_light_angle(self.light_angle)
-
-    def set_light_angle(self, angle):
-        self.light_angle = angle
-        self.light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3.forward())
-        self.light_dir = self.light_quat.xform(-LVector3.up())
-        cosA = self.light_dir.dot(-LVector3.up())
-        if cosA >= 0:
-            coef = sqrt(cosA)
-            self.light_color = (1, coef, coef, 1)
-            new_sky_color = self.skybox_color * cosA
-            new_sky_color[3] = 1.0
-            self.skybox.setColor(new_sky_color)
-            if self.fog is not None:
-                self.fog.fog_color = self.skybox_color * cosA
-                self.fog.sun_color = self.sun_color * cosA
-        else:
-            self.light_color = (0, 0, 0, 1)
-            self.skybox.setColor(self.light_color)
-            if self.fog is not None:
-                self.fog.fog_color = self.skybox_color * 0
-                self.fog.sun_color = self.sun_color * 0
 
 class RalphWord(CartesianWorld):
     def __init__(self, name, ship_object, radius, enable_physics):
@@ -342,6 +276,7 @@ class RalphWord(CartesianWorld):
         self.current_state = None
         self.physics_instance = None
         self.enable_physics = enable_physics
+        self.anchor.set_bounding_radius(radius)
 
     def set_state(self, new_state):
         if self.current_state == new_state: return
@@ -372,9 +307,6 @@ class RalphWord(CartesianWorld):
             offset = LPoint3d(0, 0, 0.8)
             self.physics_instance.set_pos(*(self.anchor.get_local_position() + offset))
             self.physics_instance.set_quat(LQuaternion(*self.anchor.get_absolute_orientation()))
-
-    def get_apparent_radius(self):
-        return 1.5
 
 class RalphControl(EventsControllerBase):
     def __init__(self, sun, engine):
@@ -436,13 +368,8 @@ class RalphControl(EventsControllerBase):
     def update(self, time, dt):
         if self.keymap.get("sun-left"):
             self.sun.set_light_angle(self.sun.light_angle + 30 * dt)
-            self.engine.update_shader()
         if self.keymap.get("sun-right"):
             self.sun.set_light_angle(self.sun.light_angle - 30 * dt)
-            self.engine.update_shader()
-
-class FakeLightSource:
-    light_color = LColor(1, 1, 1, 1)
 
     def get_point_radiance(self, distance):
         return 1 / pi
@@ -460,10 +387,9 @@ class RoamingRalphDemo(CosmoniumBase):
         self.terrain_shape.add_root_patch(x, y)
 
     def create_terrain(self):
-        self.terrain_surface = self.ralph_config.terrain_surface
+        self.terrain_world = self.worlds.terrain
+        self.terrain_surface = self.terrain_world.surface
         self.terrain_shape = self.terrain_surface.shape
-        self.terrain = CompositeShapeObject("terrain")
-        self.terrain.add_component(self.terrain_surface)
         if self.has_water:
             self.terrain_shape.factory.add_layer_factory(WaterLayerFactory(self.water))
         if self.physics is not None:
@@ -521,10 +447,6 @@ class RoamingRalphDemo(CosmoniumBase):
     def incr_ambient(self, ambient_incr):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
-    def update_shader(self):
-        self.terrain.update_shader()
-        self.ralph_shape_object.update_shader()
-
     #TODO: Needed by patchedshapes.py update_lod()
     def get_min_radius(self):
         return 0
@@ -532,6 +454,7 @@ class RoamingRalphDemo(CosmoniumBase):
     def __init__(self, args):
         self.app_config = RalphAppConfig()
         CosmoniumBase.__init__(self)
+        SceneWorld.context = self
 
         self.update_id = 0
         settings.color_picking = False
@@ -540,12 +463,14 @@ class RoamingRalphDemo(CosmoniumBase):
         settings.infinite_far_plane = False
         self.gui = None
 
+        self.worlds = FlatUniverse()
+
         if args.config is not None:
             self.config_file = args.config
         else:
             self.config_file = 'ralph-data/ralph.yaml'
         self.splash = NoSplash()
-        self.ralph_config = RalphConfigParser()
+        self.ralph_config = RalphConfigParser(self.worlds)
         if self.ralph_config.load_and_parse(self.config_file) is None:
             sys.exit(1)
 
@@ -565,7 +490,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.fullscreen = False
         self.shadow_caster = None
-        self.set_ambient(0.3)
+        self.set_ambient(settings.global_ambient)
         self.shadows = True
         self.pssm_shadows = True
         self.init_c_settings()
@@ -584,15 +509,10 @@ class RoamingRalphDemo(CosmoniumBase):
         self.scene_manager.scale = 1.0
         self.pipeline.create()
         self.pipeline.set_scene_manager(self.scene_manager)
-        self.worlds = Worlds()
 
         self.context = self
         self.oid_color = 0
         self.oid_texture = None
-
-        self.skybox = RaphSkyBox()
-        self.skybox.init(self.ralph_config)
-        self.skybox.set_light_angle(45)
 
         base.setFrameRateMeter(True)
 
@@ -618,33 +538,17 @@ class RoamingRalphDemo(CosmoniumBase):
             self.c_camera_holder.cos_fov2 = self.observer.cos_fov2
 
     async def init(self):
-        self.lights = LightSources()
-        self.light = GlobalLight(FakeLightSource(), None)
-        self.light.light_direction = LVector3d(1, 0, 0)
-        self.lights.add_light(self.light)
-
         self.create_terrain()
         if self.ralph_config.fog_parameters is not None:
             self.fog = Fog(**self.ralph_config.fog_parameters)
-            self.terrain.add_after_effect(self.fog)
-            self.skybox.set_fog(self.fog)
+            # self.terrain.add_after_effect(self.fog)
+            # self.skybox.set_fog(self.fog)
         else:
             self.fog = None
-        self.terrain_world = FlatTerrainWorld("terrain")
-        self.terrain_world.on_visible(self.scene_manager)
-        self.terrain_world.set_terrain(self.terrain_surface)
-        self.terrain_world.set_lights(self.lights)
-        self.terrain_world.context = self
-        self.terrain_world.model_body_center_offset = 0.0
-        self.worlds.add_world(self.terrain_world)
-        for component in self.ralph_config.layers:
-            self.terrain_world.add_component(component)
-            component.set_terrain(self.terrain_surface)
-            self.terrain_shape.add_linked_object(component)
 
         if self.shadows:
             if self.pssm_shadows:
-                self.worlds.set_global_shadows(PSSMShadowMapShadowCaster(self.light, self.terrain_world))
+                self.worlds.set_global_shadows(PSSMShadowMapShadowCaster(self.worlds.lights.lights[0], self.terrain_world))
             else:
                 self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
                 self.shadow_caster.create()
@@ -658,25 +562,10 @@ class RoamingRalphDemo(CosmoniumBase):
 
         # Create the main character, Ralph
 
-        self.ralph_shape = ActorShape("ralph-data/models/ralph",
-                                      {"run": "ralph-data/models/ralph-run",
-                                       "walk": "ralph-data/models/ralph-walk"},
-                                      auto_scale_mesh=False,
-                                      rotation=quaternion_from_euler(180, 0, 0),
-                                      scale=LVector3d(0.2, 0.2, 0.2))
-        self.ralph_appearance = ModelAppearance(vertex_color=True, material=False)
-        self.ralph_shader = RenderingShader()
-
-        self.ralph_shape_object = ShapeObject('ralph', self.ralph_shape, self.ralph_appearance, self.ralph_shader, clickable=False)
+        self.ralph_shape_object = self.ralph_config.ralph_shape_object
         self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
-        self.ralph_world.on_visible(self.scene_manager)
-        #self.ralph_world.add_component(self.ralph_shape_object)
         self.worlds.add_world(self.ralph_world)
-        self.ralph_world.anchor.set_bounding_radius(1.5)
-        self.ralph_shape_object.body = self.ralph_world
-        self.ralph_shape_object.set_owner(self.ralph_world)
-        self.ralph_shape_object.sources.add_source(self.lights)
-        self.ralph_shape_object.shader.data_source.add_source(self.lights.get_data_source())
+        self.worlds.add_special(self.ralph_world)
 
         self.camera_controller = SurfaceFollowCameraController()
         #self.camera_controller = FixedCameraController()
@@ -684,7 +573,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.camera_controller.set_body(self.terrain_world)
         self.camera_controller.set_camera_hints(distance=5, max=1.5)
 
-        self.controller = RalphControl(self.skybox, self)
+        self.controller = RalphControl(self.worlds.lights.lights[0], self)
         self.controller.register_events()
 
         self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
@@ -705,15 +594,19 @@ class RoamingRalphDemo(CosmoniumBase):
         self.pipeline.process_last_frame(dt)
 
         if self.trigger_check_settings:
-            self.terrain.check_settings()
+            self.worlds.check_settings()
             self.trigger_check_settings = False
 
-        self.worlds.update_anchor(0, self.update_id)
+        self.worlds.start_update()
+        self.worlds.update_specials(0, self.update_id)
         self.nav.update(0, dt)
         self.controller.update(0, dt)
         self.mover.update()
         self.camera_controller.update(0, dt)
-        self.worlds.update_anchor_obs(self.observer.anchor, self.update_id)
+        self.worlds.update_specials_observer(self.observer, self.update_id)
+
+        self.worlds.update(0, dt, self.update_id, self.observer)
+        self.worlds.update_height_under(self.observer)
 
         if self.ralph_config.physics.enable:
             to_remove = []
@@ -724,9 +617,6 @@ class RoamingRalphDemo(CosmoniumBase):
                     to_remove.append(physic_object)
             for physic_object in to_remove:
                 self.physic_objects.remove(physic_object)
-
-        #TODO: Proper light management should be added
-        self.light.light_direction = self.skybox.light_dir
 
         if self.shadow_caster is not None:
             if self.pssm_shadows:
@@ -740,21 +630,23 @@ class RoamingRalphDemo(CosmoniumBase):
                 self.shadow_caster.shadow_map.set_direction(self.skybox.light_dir)
                 self.shadow_caster.shadow_map.set_pos(self.ralph_world.anchor.get_local_position() - vec * dist + vec * self.ralph_config.shadow_size / 2)
 
-        self.worlds.update(0, dt)
-        self.worlds.update_obs(self.observer.anchor)
-        self.worlds.check_visibility(self.observer.anchor.frustum, self.observer.anchor.pixel_size)
-        for world  in self.worlds.worlds:
-            world.anchor._height_under = world.get_height_under(self.observer.anchor.get_local_position())
-            world.scene_anchor.update(self.scene_manager)
         self.scene_manager.update_scene_and_camera(0, self.c_camera_holder)
-        self.worlds.find_shadows()
 
-        self.worlds.update_lod(self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
+        self.worlds.update_states()
+        self.worlds.update_scene_anchors(self.scene_manager)
+        #self.worlds.check_scattering()
+
+
+        self.worlds.find_shadows()
+        self.worlds.update_instances_state(self.scene_manager)
+        self.worlds.update_lod(self.observer)
+
         return task.cont
 
     def update_instances_task(self, task):
-        self.worlds.check_and_update_instance(self.scene_manager, self.observer.anchor.get_local_position(), self.observer.anchor.get_absolute_orientation())
+        self.worlds.update_instances(self.scene_manager, self.observer)
         self.scene_manager.build_scene(self.common_state, self.c_camera_holder, SceneAnchorCollection(), SceneAnchorCollection())
+
         return task.cont
 
     def print_debug(self):

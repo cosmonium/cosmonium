@@ -20,16 +20,35 @@
 
 from math import pi
 
-from panda3d.core import LVector3, LColor
+from panda3d.core import LVector3, LColor, LQuaterniond
 from panda3d.core import DirectionalLight
 
-from .astro.astro import abs_mag_to_lum
-from .astro import units
 from .datasource import DataSource
 from .shaders.data_source.global_lights import GlobalLightsShaderDataSource
 from . import settings
 
-class SurrogateLight:
+
+class LightInterface:
+    def create_light(self):
+        pass
+
+    def remove_light(self):
+        pass
+
+    def update_light(self):
+        pass
+
+    def update_instance(self, camera_pos):
+        pass
+
+    def apply(self, instance):
+        pass
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        pass
+
+
+class SurrogateLight(LightInterface):
     def __init__(self, source, target):
         self.source = source
         self.target = target
@@ -64,9 +83,6 @@ class SurrogateLight:
         self.light_instance = None
         self.light_node = None
 
-    def apply(self, instance):
-        pass
-
     def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.source.light_color)
         if settings.use_pbr:
@@ -75,29 +91,18 @@ class SurrogateLight:
         instance.setShaderInput("global_light_direction", *-self.light_direction)
         instance.setShaderInput("global_light_color", light_color)
 
-class GlobalLight:
+
+class GlobalLight(LightInterface):
     def __init__(self, source, target):
         self.source = source
         self.target = target
         self.light_direction = None
         self.light_distance = None
 
-    def create_light(self):
-        pass
-
-    def remove_light(self):
-        pass
-
     def update_light(self):
         self.light_direction = self.target.anchor.get_local_position() - self.source.anchor.get_local_position()
         self.light_distance = self.light_direction.length()
         self.light_direction /= self.light_distance
-
-    def update_instance(self, camera_pos):
-        pass
-
-    def apply(self, instance):
-        pass
 
     def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.source.light_color)
@@ -107,6 +112,30 @@ class GlobalLight:
         instance.setShaderInput("global_light_direction", *-self.light_direction)
         instance.setShaderInput("global_light_eye_direction", *camera_rot.conjugate().xform(-self.light_direction))
         instance.setShaderInput("global_light_color", light_color)
+
+
+class InfiniteSun(LightInterface):
+    def __init__(self, angle):
+        self.light_angle = angle
+        self.light_direction = None
+        self.light_color = LColor(1)
+        self.illuminance = pi
+        self.set_light_angle(angle)
+
+    def set_light_angle(self, angle):
+        self.light_angle = angle
+        light_quat = LQuaterniond()
+        light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3.forward())
+        self.light_direction = light_quat.xform(-LVector3.up())
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        light_color = LColor(self.light_color)
+        if settings.use_pbr:
+            light_color *= self.illuminance
+        instance.setShaderInput("global_light_direction", *-self.light_direction)
+        instance.setShaderInput("global_light_eye_direction", *camera_rot.conjugate().xform(-self.light_direction))
+        instance.setShaderInput("global_light_color", light_color)
+
 
 class LightSources(DataSource):
     def __init__(self):

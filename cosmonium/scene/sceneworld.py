@@ -22,6 +22,7 @@ from panda3d.core import LColor, LVector3d
 
 from ..foundation import CompositeObject
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from .sceneanchor import SceneAnchorCollection
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
 from ..astro.frame import AbsoluteReferenceFrame
 from ..namedobject import NamedObject
@@ -31,7 +32,16 @@ class Worlds:
 
     def __init__(self):
         self.worlds = []
+        self.specials = []
         self.global_shadows = None
+        self.old_visibles = []
+        self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = []
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
 
     def set_global_shadows(self, global_shadows):
         if self.global_shadows is not None:
@@ -46,9 +56,21 @@ class Worlds:
     def remove_world(self, world):
         self.worlds.remove(world)
 
+    def add_special(self, world):
+        self.specials.append(world)
+
+    def update_specials(self, time, update_id):
+        for world in self.specials:
+            world.anchor.update(time, update_id)
+
     def update_anchor(self, time, update_id):
         for world in self.worlds:
             world.anchor.update(time, update_id)
+
+    def update_specials_observer(self, observer, update_id):
+        for world in self.specials:
+            world.anchor.update_observer(observer.anchor, update_id)
+            world.anchor.update_id = update_id
 
     def update_anchor_obs(self, observer, update_id):
         for world in self.worlds:
@@ -61,17 +83,57 @@ class Worlds:
             world.scene_anchor.create_instance(scene_manager)
             world.scene_anchor.update(scene_manager)
 
-    def update(self, time, dt):
-        for world in self.worlds:
-            world.update(time, dt)
+    def start_update(self):
+        self.old_visibles = self.visibles
+        self.visibles = []
+        self.becoming_visibles = []
+        self.no_longer_visibles = []
+        self.old_resolved = self.resolved
+        self.resolved = []
+        self.becoming_resolved = []
+        self.no_longer_resolved = []
 
-    def update_obs(self, observer):
+    def update(self, time, dt, update_id, observer):
+        self.update_anchor(time, update_id)
+        self.update_anchor_obs(observer.anchor, update_id)
         for world in self.worlds:
-            world.update_obs(observer)
+            if world.anchor.visible:
+                self.visibles.append(world.anchor)
+            if world.anchor.resolved:
+                self.resolved.append(world.anchor)
 
-    def check_visibility(self, frustum, pixel_size):
-        for world in self.worlds:
-            world.check_visibility(frustum, pixel_size)
+    def update_states(self):
+        visibles = []
+        resolved = []
+        self.visible_scene_anchors = SceneAnchorCollection()
+        self.resolved_scene_anchors = SceneAnchorCollection()
+        for anchor in self.visibles:
+            visible = anchor.resolved
+            if visible:
+                visibles.append(anchor)
+                self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+                if not anchor.was_visible:
+                    self.becoming_visibles.append(anchor)
+                if anchor.resolved:
+                    resolved.append(anchor)
+                    self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+            else:
+                if anchor.was_visible:
+                    self.no_longer_visibles.append(anchor)
+            anchor.visible = visible
+        for anchor in self.old_visibles:
+            if not anchor in self.visibles:
+                self.no_longer_visibles.append(anchor)
+                anchor.was_visible = anchor.visible
+                anchor.visible = False
+        self.visibles = visibles
+        self.resolved = resolved
+        for anchor in resolved:
+            if not anchor.was_resolved:
+                self.becoming_resolved.append(anchor)
+        for anchor in self.old_resolved:
+            if not anchor in self.resolved:
+                self.no_longer_resolved.append(anchor)
 
     def find_shadows(self):
         for world in self.worlds:
@@ -80,24 +142,71 @@ class Worlds:
         if self.global_shadows:
             for world in self.worlds:
                 for component in world.get_components():
-                    self.global_shadows.add_target(component)
+                    if component.concrete_object:
+                        self.global_shadows.add_target(component)
 
         for world in self.worlds:
             world.end_shadows_update()
 
-    def update_lod(self, camera_pos, camera_rot):
-        for world in self.worlds:
+    def update_height_under(self, observer):
+        for anchor in self.resolved:
+            anchor._height_under = anchor.body.get_height_under(observer.get_local_position())
+
+    def update_scene_anchors(self, scene_manager):
+        for newly_visible in self.becoming_visibles:
+            newly_visible.body.scene_anchor.create_instance(scene_manager)
+        for visible in self.visibles:
+            visible.body.scene_anchor.update(scene_manager)
+        for old_visible in self.no_longer_visibles:
+            old_visible.body.scene_anchor.remove_instance()
+
+    def update_instances_state(self, scene_manager):
+        #for occluder in self.shadow_casters:
+        #    occluder.update_scene(self.c_observer)
+        #    occluder.body.scene_anchor.update(scene_manager)
+        for newly_visible in self.becoming_visibles:
+            # print("NEW VISIBLE", newly_visible.body.get_name())
+            if newly_visible.resolved:
+                newly_visible.body.on_resolved(scene_manager)
+        for newly_resolved in self.becoming_resolved:
+            # print("NEW RESOLVED", newly_resolved.body.get_name())
+            newly_resolved.body.on_resolved(scene_manager)
+        for old_resolved in self.no_longer_resolved:
+            # print("OLD RESOLVED", old_resolved.body.get_name())
+            old_resolved.body.on_point(scene_manager)
+        for old_visible in self.no_longer_visibles:
+            # print("OLD VISIBLE", old_visible.body.get_name())
+            #self.labels.remove_label(old_visible.body)
+            if old_visible.resolved:
+                old_visible.body.on_point(scene_manager)
+
+    def update_lod(self, observer):
+        camera_pos = observer.get_local_position()
+        camera_rot = observer.get_absolute_orientation()
+        frustum = observer.anchor.rel_frustum
+        pixel_size = observer.anchor.pixel_size
+        for resolved in self.resolved:
+            world = resolved.body
+            #TODO: this will update the body's components
+            world.update_obs(observer)
+            world.check_visibility(frustum, pixel_size)
             world.update_lod(camera_pos, camera_rot)
+
+    def update_instances(self, scene_manager, observer):
+        camera_pos = observer.get_local_position()
+        camera_rot = observer.get_absolute_orientation()
+
+        if self.global_shadows is not None:
+            self.global_shadows.update(scene_manager)
+
+        for resolved in self.resolved:
+            world = resolved.body
+            world.check_and_update_instance(scene_manager, camera_pos, camera_rot)
+        self.update_scene_anchor(scene_manager)
 
     def check_settings(self):
         for world in self.worlds:
             world.check_settings()
-
-    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
-        if self.global_shadows is not None:
-            self.global_shadows.update(scene_manager)
-        for world in self.worlds:
-            world.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
 
 class SceneWorld(NamedObject):
@@ -137,6 +246,11 @@ class SimpleWorld(SceneWorld):
         self.lights = lights
         self.components.set_lights(lights)
 
+    def set_scattering(self, scattering):
+        for component in self.components.components:
+            if component.concrete_object:
+                scattering.add_shape_object(component)
+
     def get_height_under(self, position):
         return 0.0
 
@@ -156,6 +270,7 @@ class SimpleWorld(SceneWorld):
         self.scene_anchor.update(scene_manager)
 
     def on_hidden(self, scene_manager):
+        self.components.remove_instance()
         self.scene_anchor.remove_instance()
         self.components.visible = False
         self.visible = False
@@ -180,7 +295,8 @@ class SimpleWorld(SceneWorld):
         self.on_visible(scene_manager)
 
     def on_point(self, scene_manager):
-        pass
+        #TODO!
+        self.on_hidden(scene_manager)
 
     def update(self, time, dt):
         self.components.update(time, dt)
@@ -197,7 +313,8 @@ class SimpleWorld(SceneWorld):
     def start_shadows_update(self):
         #TODO: Add method in CompositeObject
         for component in self.components.components:
-            component.start_shadows_update()
+            if component.concrete_object:
+                component.start_shadows_update()
 
     def self_shadows_update(self, light_source):
         pass
@@ -207,7 +324,8 @@ class SimpleWorld(SceneWorld):
 
     def end_shadows_update(self):
         for component in self.components.components:
-            component.end_shadows_update()
+            if component.concrete_object:
+                component.end_shadows_update()
 
     def update_lod(self, camera_pos, camera_rot):
         self.components.update_lod(camera_pos, camera_rot)
@@ -247,6 +365,7 @@ class FlatTerrainWorld(OriginCenteredWorld):
     def __init__(self, name):
         self.surface = None
         OriginCenteredWorld.__init__(self, name)
+        self.model_body_center_offset = 0.0
 
     def create_anchor(self):
         return FlatSurfaceAnchor(0, self, self.surface)

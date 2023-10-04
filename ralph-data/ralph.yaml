@@ -1,3 +1,25 @@
+lights:
+  - {}
+
+ralph:
+  shape:
+    model: ralph-data/models/ralph
+    animations:
+        run: ralph-data/models/ralph-run
+        walk: ralph-data/models/ralph-walk
+    auto-scale: false
+    rotation: [180, 0, 0]
+    scale: [0.2, 0.2, 0.2]
+  appearance:
+    type: model
+    vertex-color: true
+    material: false
+
+scattering:
+  type: oneil
+  size: 32768
+  height: 60000
+
 terrain:
   tile-size: 16384
   max-distance: 16384

@@ -36,10 +36,14 @@ class ScatteringBase(ABC):
         self.shape_objects: list[ShapeObject] = []
         self.attenuated_objects: list[ShapeObject] = []
         self.inside: Optional[bool] = None
+        self.body = None
         self.light = None
 
     def clear(self) -> None:
         self.remove_all_attenuated_objects()
+
+    def set_body(self, body):
+        self.body = body
 
     def set_light(self, light):
         self.light = light

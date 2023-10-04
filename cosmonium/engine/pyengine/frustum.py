@@ -48,3 +48,6 @@ class InfiniteFrustum(object):
 
     def get_position(self):
         return self.position
+
+    def __str__(self):
+        return "InfiniteFrustum " + str(self.planes)

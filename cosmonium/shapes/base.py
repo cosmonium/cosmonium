@@ -97,7 +97,7 @@ class Shape:
             self.instance.hide()
 
     def str_id(self):
-        return 'shape'
+        return self.get_name()
 
     def set_owner(self, owner):
         self.owner = owner

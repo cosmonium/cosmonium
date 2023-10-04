@@ -88,13 +88,12 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         else:
             self.hdr = hdr
             self.atm_hdr = atm_hdr
-        self.body = None
         self.body_radius = None
         self.radius = None
         self.ratio = None
 
     def set_body(self, body):
-        self.body = body
+        super().set_body(body)
         self.body_radius = body.get_min_radius()
         self.radius = self.body_radius * self.AtmosphereRatio
         self.ratio = self.AtmosphereRatio
@@ -194,7 +193,7 @@ class ONeilScattering(ONeilScatteringBase):
         self.pbOpticalDepth = None
 
     def set_body(self, body):
-        self.body = body
+        super().set_body(body)
         self.body_radius = body.get_average_radius()
         self.radius = self.body_radius + self.height
         self.ratio = self.radius / self.body_radius

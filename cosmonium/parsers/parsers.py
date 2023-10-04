@@ -39,4 +39,5 @@ from . import shipsparser
 from . import pluginparser
 
 from . import scatteringparser
+from . import fogscatterparser
 from . import oneilscatteringparser
