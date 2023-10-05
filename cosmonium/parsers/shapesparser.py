@@ -45,6 +45,11 @@ class MeshYamlParser(YamlModuleParser):
             scale = LVector3d(radius)
         else:
             scale = data.get('scale', None)
+            if scale is not None:
+                if isinstance(scale, list):
+                    scale = LVector3d(*scale)
+                else:
+                    scale = LVector3d(scale)
         if offset is not None:
             offset = LVector3d(*offset)
         if rotation_data is not None:
