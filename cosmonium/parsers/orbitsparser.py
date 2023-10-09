@@ -22,7 +22,7 @@ from panda3d.core import LPoint3d
 
 from ..astro.elementsdb import orbit_elements_db
 from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit
-from ..astro.frame import AbsoluteReferenceFrame, BodyReferenceFrame, J2000EclipticReferenceFrame
+from ..astro.frame import AbsoluteReferenceFrame, BodyReferenceFrames, J2000EclipticReferenceFrame
 from ..astro import units
 from ..astro.astro import calc_orientation
 
@@ -149,7 +149,7 @@ class OrbitYamlParser(YamlModuleParser):
                 #TODO: An error should be raised instead !
                 orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
             #TODO: this should not be done arbitrarily
-            if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.anchor is None:
+            if isinstance(orbit.frame, BodyReferenceFrames) and orbit.frame.anchor is None:
                 orbit.frame.set_anchor(parent.anchor)
         return orbit
 

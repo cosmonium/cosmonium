@@ -33,15 +33,15 @@ class StellarSystem(StellarObject):
     virtual_object = True
     support_offset_body_center = False
 
-    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
-        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
+        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.children = []
         self.children_map = ObjectsDB()
         #Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
 
-    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
         return SystemAnchor(self, orbit, rotation, point_color)
 
     def is_system(self):
@@ -181,10 +181,10 @@ class StellarSystem(StellarObject):
                     scene_manager.add_spread_object(child.orbit_object.instance)
 
 class OctreeSystem(StellarSystem):
-    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
-        StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
+        StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
 
-    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
         return OctreeAnchor(self, orbit, rotation, point_color)
 
     def dumpOctree(self):
@@ -200,8 +200,8 @@ class OctreeSystem(StellarSystem):
         self.anchor.rebuild()
 
 class SimpleSystem(StellarSystem):
-    def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, body_class='system', point_color=None, description=''):
-        StellarSystem.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+    def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, frame=None, body_class='system', point_color=None, description=''):
+        StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.star_system = star_system
         self.set_primary(primary)
 

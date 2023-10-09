@@ -230,6 +230,12 @@ CartesianAnchor::calc_frame_orientation_of(LQuaterniond orientation)
   return frame->get_frame_orientation(orientation);
 }
 
+LPoint3d
+CartesianAnchor::calc_local_position_of_frame(LPoint3d position)
+{
+  return frame->get_local_position(position);
+}
+
 void
 CartesianAnchor::update(double time, unsigned long int update_id)
 {

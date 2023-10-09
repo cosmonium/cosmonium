@@ -20,6 +20,33 @@ scattering:
   size: 32768
   height: 60000
 
+worlds:
+  - name: dummy
+    controller:
+      type: flat-surface
+    lights:
+      - name: light
+        disabled: true
+        type: point
+        power: 5
+        position: [0, 0, 1]
+        direction: [1, 0, -0.5]
+        shadows: {}
+    entities:
+      - name: lamp
+        disabled: true
+        shape:
+          type: mesh
+          model: ralph-data/models/LightsPunctualLamp.glb
+        lighting-model: pbr
+      - name: sponza
+        disabled: true
+        shape:
+          type: mesh
+          model: ralph-data/models/sponza.glb
+          scale: 20
+        lighting-model: pbr
+
 terrain:
   tile-size: 16384
   max-distance: 16384

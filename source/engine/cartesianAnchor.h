@@ -88,6 +88,8 @@ PUBLISHED:
 
   LQuaterniond calc_frame_orientation_of(LQuaterniond orientation);
 
+  LPoint3d calc_local_position_of_frame(LPoint3d position);
+
   virtual void update(double time, unsigned long int update_id);
 
   virtual void update_observer(CameraAnchor &observer, unsigned long int update_id);

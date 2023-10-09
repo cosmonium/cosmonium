@@ -29,7 +29,7 @@ from ..astro import units
 class Star(EmissiveBody):
     def __init__(self, names, source_names, radius=None, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
-                 orbit=None, rotation=None,
+                 orbit=None, rotation=None, frame=None,
                  abs_magnitude=None, temperature=None, spectral_type=None,
                  atmosphere=None, clouds=None,
                  body_class='star',  point_color=None,
@@ -58,7 +58,7 @@ class Star(EmissiveBody):
         EmissiveBody.__init__(self, names=names, source_names=source_names,
                               radius=radius, oblateness=oblateness, scale=scale,
                               surface=surface, surface_factory=surface_factory,
-                              orbit=orbit, rotation=rotation,
+                              orbit=orbit, rotation=rotation, frame=frame,
                               abs_magnitude=abs_magnitude,
                               atmosphere=atmosphere, clouds=clouds,
                               body_class=body_class, point_color=point_color,

@@ -329,7 +329,7 @@ class SurfaceBodyMover(CartesianBodyMover):
     def set_pos(self, position):
         (x, y, altitude) = position
         new_frame_pos = LPoint3d(x, y, 1.0)
-        new_local_pos = self.anchor.calc_local_position_of(new_frame_pos)
+        new_local_pos = self.anchor.calc_local_position_of_frame(new_frame_pos)
         distance = self.surface.get_height_under(new_local_pos)
         new_frame_pos[2] = distance + altitude
         self.anchor.set_frame_position(new_frame_pos)

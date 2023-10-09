@@ -22,7 +22,7 @@ from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticR
 from ..astro.frame import J2000EquatorialReferenceFrame, J2000BarycentricEquatorialReferenceFrame
 from ..astro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..astro.frame import CelestialReferenceFrame
-from ..astro.frame import BodyReferenceFrame
+from ..astro.frame import BodyReferenceFrames
 from ..astro.framesdb import frames_db
 
 from .yamlparser import YamlModuleParser
@@ -93,7 +93,7 @@ class FrameYamlParser(YamlModuleParser):
         else:
             frame = frames_db.get(object_type)
             #TODO: this should not be done arbitrarily
-            if parent is not None and isinstance(frame, BodyReferenceFrame):
+            if parent is not None and isinstance(frame, BodyReferenceFrames):
                 frame.set_anchor(parent.anchor)
             return frame
 

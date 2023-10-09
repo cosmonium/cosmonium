@@ -69,16 +69,18 @@ class NoShip(ShipBase):
         return 0.0
 
 class VisibleShip(ShipBase):
+
     anchor_class = 2
     editable = True
     orbit_rot_camera = False
+
     def __init__(self, name, ship_object, radius):
+        self.radius = radius
         ShipBase.__init__(self, name)
         self.ship_object = ship_object
         #TODO: Remove this
         self.ship_object.color_picking = False
         self.ship_object.shader.color_picking = False
-        self.radius = radius
         self.add_component(ship_object)
         ship_object.set_body(self)
         self.anchor.set_bounding_radius(radius)

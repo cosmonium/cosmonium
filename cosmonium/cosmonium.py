@@ -1018,9 +1018,9 @@ class Cosmonium(CosmoniumBase):
                 self.update_extra(self.follow)
                 self.observer.set_frame(OrbitReferenceFrame(body.anchor))
             else:
-                self.ship.anchor.set_frame(BodyReferenceFrame(body.anchor))
+                self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
                 self.update_extra(self.follow)
-                self.observer.set_frame(BodyReferenceFrame(body.anchor))
+                self.observer.set_frame(AnchorReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -1041,9 +1041,9 @@ class Cosmonium(CosmoniumBase):
                 self.update_extra(self.sync)
                 self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
             else:
-                self.ship.anchor.set_frame(BodyReferenceFrame(body.anchor))
+                self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
                 self.update_extra(self.follow)
-                self.observer.set_frame(BodyReferenceFrame(body.anchor))
+                self.observer.set_frame(AnchorReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())

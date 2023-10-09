@@ -20,6 +20,7 @@
 
 from panda3d.core import LColor
 
+from ..engine.anchors import CartesianAnchor
 from ..foundation import CompositeObject
 from ..namedobject import NamedObject
 from ..components.annotations.body_label import StellarBodyLabel, FixedOrbitLabel
@@ -56,7 +57,7 @@ class StellarObject(NamedObject):
     nb_visibility = 0
     nb_instance = 0
 
-    def __init__(self, names, source_names, orbit=None, rotation=None, body_class=None, point_color=None, description=''):
+    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
         NamedObject.__init__(self, names, source_names, description)
         self.system = None
         self.body_class = body_class
@@ -66,7 +67,7 @@ class StellarObject(NamedObject):
         #if not (orbit.dynamic or rotation.dynamic):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         #else:
-        self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, point_color)
+        self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, frame, point_color)
         self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center, LColor(),
                                         background=self.background, virtual_object=self.virtual_object,
                                         spread_object=self.spread_object)
@@ -103,8 +104,11 @@ class StellarObject(NamedObject):
         self.lights = lights
         self.components.set_lights(lights)
 
-    def create_anchor(self, anchor_class, orbit, rotation, point_color):
-        return DynamicStellarAnchor(anchor_class, self, orbit, rotation, point_color)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
+        if rotation is None and orbit is None:
+            return CartesianAnchor(anchor_class, self, frame, point_color)
+        else:
+            return DynamicStellarAnchor(anchor_class, self, orbit, rotation, point_color)
 
     def is_system(self):
         return False

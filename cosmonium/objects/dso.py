@@ -33,13 +33,13 @@ class DeepSpaceObject(EmissiveBody):
     def __init__(self, names, source_names, radius, radius_units=units.Ly,
                  abs_magnitude=None,
                  surface=None,
-                 orbit=None, rotation=None,
+                 orbit=None, rotation=None, frame=None,
                  body_class=None, point_color=None,
                  description=''):
         radius = radius * radius_units
         EmissiveBody.__init__(self, names, source_names, radius=radius,
                               surface=surface,
-                              orbit=orbit, rotation=rotation,
+                              orbit=orbit, rotation=rotation, frame=frame,
                               abs_magnitude=abs_magnitude,
                               body_class=body_class, point_color=point_color,
                               description=description)

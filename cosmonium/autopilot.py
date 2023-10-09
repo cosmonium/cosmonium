@@ -26,7 +26,7 @@ from direct.interval.MetaInterval import Parallel, Sequence
 from direct.interval.FunctionInterval import Wait
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-from .astro.frame import BodyReferenceFrame, SynchroneReferenceFrame
+from .astro.frame import AnchorReferenceFrame, SynchroneReferenceFrame
 from .astro import units
 from .utils import isclose
 from .objects.systems import SimpleSystem
@@ -182,7 +182,7 @@ class AutoPilot(object):
         if target.anchor.has_rotation():
             frame = SynchroneReferenceFrame(target.anchor)
         else:
-            frame = BodyReferenceFrame(target.anchor)
+            frame = AnchorReferenceFrame(target.anchor)
         up = frame.get_orientation().xform(up)
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")

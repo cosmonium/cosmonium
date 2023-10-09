@@ -584,6 +584,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.nav.speed = 25
         self.nav.rot_step_per_sec = 2
 
+        self.worlds.init()
+
         taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
         taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
 

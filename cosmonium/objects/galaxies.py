@@ -57,7 +57,7 @@ class Galaxy(DeepSpaceObject):
                  shape_type=None,
                  shape=None,
                  appearance=None,
-                 orbit=None, rotation=None,
+                 orbit=None, rotation=None, frame=None,
                  body_class='galaxy', point_color=None,
                  description=''):
         self.shape_type = shape_type
@@ -76,7 +76,7 @@ class Galaxy(DeepSpaceObject):
         surface.sources.add_source(GalaxyDataSource())
         DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
                               surface=surface,
-                              orbit=orbit, rotation=rotation,
+                              orbit=orbit, rotation=rotation, frame=frame,
                               abs_magnitude=abs_magnitude, body_class=body_class)
         self._extend = self.radius
 

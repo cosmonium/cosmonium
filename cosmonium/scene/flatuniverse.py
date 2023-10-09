@@ -70,6 +70,9 @@ class FlatUniverse(Worlds):
         self.terrain = terrain
         self.add_world(terrain)
 
+    def get_terrain(self):
+        return self.terrain
+
     def update(self, time, dt, update_id, observer):
         Worlds.update(self, time, dt, update_id, observer)
         self.lights.update_lights()

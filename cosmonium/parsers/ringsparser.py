@@ -54,6 +54,7 @@ class StellarRingsYamlParser(YamlModuleParser):
                               rings_object=rings_object,
                               orbit=orbit,
                               rotation=rotation,
+                              frame=None,
                               point_color=point_color)
         parent.add_child_fast(body)
         return body

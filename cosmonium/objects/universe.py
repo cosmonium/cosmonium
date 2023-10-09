@@ -36,7 +36,7 @@ class Universe(OctreeSystem):
                               description='Universe')
         self.visible = True
 
-    def create_anchor(self, anchor_class, orbit, rotation, point_color):
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
         return UniverseAnchor(self, orbit, rotation, point_color)
 
     def get_fullname(self, separator='/'):

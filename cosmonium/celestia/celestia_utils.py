@@ -22,7 +22,7 @@ from ..astro import bayer
 from ..astro import units
 from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
 from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro.frame import BodyReferenceFrame, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.astro import calc_orientation_from_incl_an
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 
@@ -47,7 +47,7 @@ def instanciate_custom_orbit(data, parent_anchor):
         #TODO: An error should be raised instead !
         orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
     #TODO: this should not be done arbitrarily
-    if isinstance(orbit.frame, BodyReferenceFrame) and orbit.frame.anchor is None:
+    if isinstance(orbit.frame, BodyReferenceFrames) and orbit.frame.anchor is None:
         orbit.frame.set_anchor(parent_anchor)
     return orbit
 
@@ -181,7 +181,7 @@ def instanciate_custom_rotation(data, parent_anchor):
     if rotation is None:
         rotation = UnknownRotation()
     #TODO: this should not be done arbitrarily
-    if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.anchor is None:
+    if isinstance(rotation.frame, BodyReferenceFrames) and rotation.frame.anchor is None:
         rotation.frame.set_anchor(parent_anchor)
     return rotation
 

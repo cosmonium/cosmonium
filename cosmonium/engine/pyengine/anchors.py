@@ -265,6 +265,9 @@ class CartesianAnchor(AnchorBase):
     def calc_relative_position_to(self, position):
         return (self._global_position - position) + self.get_local_position()
 
+    def calc_local_position_of_frame(self, frame_position):
+        return self.frame.get_local_position(frame_position)
+
     def calc_frame_position_of_absolute(self, position):
         return self.frame.get_frame_position(position - self._global_position)
 

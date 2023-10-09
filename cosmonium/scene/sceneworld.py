@@ -43,6 +43,10 @@ class Worlds:
         self.becoming_resolved = []
         self.no_longer_resolved = []
 
+    def init(self):
+        for world in self.worlds:
+            world.init()
+
     def set_global_shadows(self, global_shadows):
         if self.global_shadows is not None:
             self.global_shadows.remove()
@@ -52,8 +56,10 @@ class Worlds:
 
     def add_world(self, world):
         self.worlds.append(world)
+        world.set_parent(self)
 
     def remove_world(self, world):
+        world.set_parent(None)
         self.worlds.remove(world)
 
     def add_special(self, world):
@@ -65,6 +71,8 @@ class Worlds:
 
     def update_anchor(self, time, update_id):
         for world in self.worlds:
+            if world.controller is not None:
+                world.controller.update(time, 0)
             world.anchor.update(time, update_id)
 
     def update_specials_observer(self, observer, update_id):
@@ -210,6 +218,7 @@ class Worlds:
 
 
 class SceneWorld(NamedObject):
+
     virtual_object = False
     background = False
     support_offset_body_center = False
@@ -219,6 +228,13 @@ class SceneWorld(NamedObject):
         NamedObject.__init__(self, [name], None, None)
         self.anchor = None
         self.scene_anchor = None
+        self.parent = None
+
+    def init(self):
+        pass
+
+    def set_parent(self, parent):
+        self.parent = parent
 
 class SimpleWorld(SceneWorld):
     def __init__(self, name):
@@ -226,6 +242,7 @@ class SimpleWorld(SceneWorld):
         self.anchor = self.create_anchor()
         self.anchor.body = self
         self.scene_anchor = self.create_scene_anchor()
+        self.controller = None
         self.lights = None
 
         self.components = CompositeObject('<root>')
@@ -234,11 +251,18 @@ class SimpleWorld(SceneWorld):
         #TODO: To remove, needed by cam controller
         self.apparent_radius = 0.0
 
+    def init(self):
+        if self.controller is not None:
+            self.controller.init()
+
     def create_anchor(self):
         raise NotImplementedError()
 
     def create_scene_anchor(self):
         raise NotImplementedError()
+
+    def set_controller(self, controller):
+        self.controller = controller
 
     def set_lights(self, lights):
         if self.lights is not None:
@@ -339,16 +363,26 @@ class SimpleWorld(SceneWorld):
     def get_apparent_radius(self):
         return self.apparent_radius
 
+
 class CartesianWorld(SimpleWorld):
+
     anchor_class = 0
+
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
+        self.anchor.set_bounding_radius(self.get_bounding_radius())
 
     def create_anchor(self):
         return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame())
 
     def create_scene_anchor(self):
         return SceneAnchor(self.anchor, False, LColor(), True)
+
+    def get_terrain(self):
+        return self.parent.get_terrain()
+
+    def get_bounding_radius(self):
+        return 100
 
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):

@@ -53,8 +53,13 @@ class ReflectiveYamlParser(YamlModuleParser):
         point_color = data.get('point-color', [1, 1, 1])
         point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
         frame = FrameYamlParser.decode(data.get('frame'), actual_parent)
-        orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent)
+        if data.get('controller') is None:
+            orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
+            rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent)
+            frame = None
+        else:
+            orbit = None
+            rotation = None
         body = ReflectiveBody(names=translated_names,
                               source_names=source_names,
                               body_class=body_class,
@@ -63,6 +68,7 @@ class ReflectiveYamlParser(YamlModuleParser):
                               scale=scale,
                               orbit=orbit,
                               rotation=rotation,
+                              frame=frame,
                               atmosphere=atmosphere,
                               clouds=clouds,
                               point_color=point_color,

@@ -34,11 +34,11 @@ class StellarBody(StellarObject):
 
     def __init__(self, names, source_names, radius, oblateness=None, scale=None,
                  surface=None, surface_factory=None,
-                 orbit=None, rotation=None,
+                 orbit=None, rotation=None, frame=None,
                  atmosphere=None, clouds=None,
                  body_class=None, point_color=None,
                  description=''):
-        StellarObject.__init__(self, names, source_names, orbit, rotation, body_class, point_color, description)
+        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.surface = None
         self.clouds = clouds
         self.atmosphere = atmosphere

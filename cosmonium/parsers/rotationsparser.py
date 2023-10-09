@@ -22,7 +22,7 @@ from panda3d.core import LQuaterniond, LVector3d
 
 from ..astro.elementsdb import rotation_elements_db
 from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro.frame import BodyReferenceFrame
+from ..astro.frame import BodyReferenceFrames
 from ..astro.astro import calc_orientation, calc_orientation_from_incl_an
 from ..astro import units
 from .. import utils
@@ -122,7 +122,7 @@ class RotationYamlParser(YamlModuleParser):
                 #TODO: An error should be raised instead
                 rotation = UnknownRotation()
             #TODO: this should not be done arbitrarily
-            if isinstance(rotation.frame, BodyReferenceFrame) and rotation.frame.anchor is None:
+            if isinstance(rotation.frame, BodyReferenceFrames) and rotation.frame.anchor is None:
                 rotation.frame.set_anchor(parent.anchor)
             if isinstance(rotation, SynchronousRotation) and rotation.parent_body is None:
                 if parent.system is not None:
