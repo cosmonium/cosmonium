@@ -21,6 +21,7 @@
 
 from math import pi
 
+from .components.elements.surfaces import EllipsoidSurface
 from .objects.stellarbody import StellarBody
 from .objects.reflective import ReflectiveBody
 from .astro import units
@@ -156,17 +157,19 @@ class Debug:
             print("\tType:", selected.__class__.__name__)
             print("\tDistance:", selected.anchor.distance_to_obs / units.Km, 'Km')
             print("\tRadius", selected.get_apparent_radius(), "Km", "Extend:", selected.get_bounding_radius(), "Km", "Visible:", selected.anchor.visible, selected.anchor.visible_size, "px")
-            print("\tApp magnitude:", selected.get_app_magnitude(), '(', selected.get_abs_magnitude(), ')')
-            if isinstance(selected, StellarBody):
-                print("\tPhase:", selected.get_phase())
+            if selected.anchor.is_stellar():
+                print("\tApp magnitude:", selected.get_app_magnitude(), '(', selected.get_abs_magnitude(), ')')
+                if isinstance(selected, StellarBody):
+                    print("\tPhase:", selected.get_phase())
             print("\tGlobal position", selected.anchor.get_absolute_reference_point())
-            print("\tLocal position", selected.anchor.get_local_position(), '(Frame:', selected.anchor.orbit.get_frame_position_at(self.engine.time.time_full), ')')
+            print("\tLocal position", selected.anchor.get_local_position(), '(Frame:', selected.anchor.get_frame_position(), ')')
             print("\tOrientation", selected.anchor.get_absolute_orientation())
             print("\tVector to obs", selected.anchor.vector_to_obs)
             print("\tVisible:", selected.anchor.visible, "Resolved:", selected.anchor.resolved, '(', selected.anchor.visible_size, ') Override:', selected.anchor.visibility_override)
             print("\tUpdate frozen:", selected.anchor.update_frozen)
-            print("\tOrbit:", selected.anchor.orbit.__class__.__name__, selected.anchor.orbit.frame)
-            print("\tRotation:", selected.anchor.rotation.__class__.__name__, selected.anchor.rotation.frame)
+            if selected.anchor.is_stellar():
+                print("\tOrbit:", selected.anchor.orbit.__class__.__name__, selected.anchor.orbit.frame)
+                print("\tRotation:", selected.anchor.rotation.__class__.__name__, selected.anchor.rotation.frame)
             if selected.label is not None:
                 print("\tLabel visible:", selected.label.visible)
             if isinstance(selected, ReflectiveBody) and selected.surface is not None:
@@ -190,7 +193,7 @@ class Debug:
                         print("Patches:", len(selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                if selected.surface is not None:
+                if selected.surface is not None and isinstance(selected.surface, EllipsoidSurface):
                     lon, lat, h = selected.surface.cartesian_to_geodetic(selected.local_to_surface_position(observer.get_local_position()))
                     print("\tLongLat:", lon * 180 / pi, lat * 180 / pi)
                     height = selected.anchor._height_under
