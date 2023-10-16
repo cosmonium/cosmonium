@@ -40,7 +40,7 @@ PUBLISHED:
 
   virtual bool has_frame(void) const;
 
-  virtual double get_position_bounding_radius(void);
+  virtual double get_position_bounding_radius(void) const;
 
   virtual void traverse(AnchorTraverser &visitor);
 
@@ -48,7 +48,7 @@ PUBLISHED:
 
   void copy(CartesianAnchor const &other);
 
-  ReferenceFrame *get_frame(void) { return frame; }
+  ReferenceFrame *get_frame(void) const { return frame; }
   void set_frame(ReferenceFrame *frame);
   MAKE_PROPERTY(frame, get_frame, set_frame);
 
@@ -56,25 +56,25 @@ PUBLISHED:
 
   void set_frame_position(LPoint3d position);
 
-  LPoint3d get_frame_position(void);
+  LPoint3d get_frame_position(void) const;
 
   void set_frame_orientation(LQuaterniond rotation);
 
-  LQuaterniond get_frame_orientation(void);
+  LQuaterniond get_frame_orientation(void) const;
 
-  virtual LPoint3d get_local_position(void);
+  virtual LPoint3d get_local_position(void) const;
 
   void set_local_position(LPoint3d position);
 
-  virtual LPoint3d get_absolute_reference_point(void);
+  virtual LPoint3d get_absolute_reference_point(void) const;
 
   virtual void set_absolute_reference_point(LPoint3d new_reference_point);
 
-  virtual LPoint3d get_absolute_position(void);
+  virtual LPoint3d get_absolute_position(void) const;
 
   void set_absolute_position(LPoint3d position);
 
-  virtual LQuaterniond get_absolute_orientation(void);
+  virtual LQuaterniond get_absolute_orientation(void) const;
 
   void set_absolute_orientation(LQuaterniond orientation);
 

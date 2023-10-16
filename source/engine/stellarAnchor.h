@@ -43,37 +43,37 @@ PUBLISHED:
 
   virtual bool has_frame(void) const;
 
-  OrbitBase *get_orbit(void);
+  OrbitBase *get_orbit(void) const;
   void set_orbit(OrbitBase * orbit);
   MAKE_PROPERTY(orbit, get_orbit, set_orbit);
 
-  RotationBase *get_rotation(void);
+  RotationBase *get_rotation(void) const;
   void set_rotation(RotationBase * rotation);
   MAKE_PROPERTY(rotation, get_rotation, set_rotation);
 
-  virtual double get_position_bounding_radius(void);
+  virtual double get_position_bounding_radius(void) const;
 
   virtual void traverse(AnchorTraverser &visitor);
 
   virtual void rebuild(void);
 
-  virtual LPoint3d get_absolute_reference_point(void);
+  virtual LPoint3d get_absolute_reference_point(void) const;
 
-  virtual LPoint3d get_absolute_position(void);
+  virtual LPoint3d get_absolute_position(void) const;
 
-  virtual LPoint3d get_local_position(void);
+  virtual LPoint3d get_local_position(void) const;
 
-  virtual LQuaterniond get_absolute_orientation(void);
+  virtual LQuaterniond get_absolute_orientation(void) const;
 
-  virtual LQuaterniond get_equatorial_rotation(void);
+  virtual LQuaterniond get_equatorial_rotation(void) const;
 
-  virtual LQuaterniond get_sync_rotation(void);
+  virtual LQuaterniond get_sync_rotation(void) const;
 
-  virtual double get_absolute_magnitude(void);
+  virtual double get_absolute_magnitude(void) const;
 
-  virtual double get_apparent_magnitude(void);
+  virtual double get_apparent_magnitude(void) const;
 
-  virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
+  virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor) const;
 
   virtual void update(double time, unsigned long int update_id);
 
@@ -84,7 +84,7 @@ PUBLISHED:
   virtual void update_luminosity(StellarAnchor *star = 0);
 
 public:
-  double get_reflected_luminosity(StellarAnchor *star);
+  double get_reflected_luminosity(StellarAnchor *star) const;
 
 public:
   LQuaterniond _equatorial;

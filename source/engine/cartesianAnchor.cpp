@@ -86,7 +86,7 @@ CartesianAnchor::rebuild(void)
 }
 
 double
-CartesianAnchor::get_position_bounding_radius(void)
+CartesianAnchor::get_position_bounding_radius(void) const
 {
   return 0;
 }
@@ -94,10 +94,10 @@ CartesianAnchor::get_position_bounding_radius(void)
 void
 CartesianAnchor::copy(CartesianAnchor const &other)
 {
-  frame = other.frame;
-  _global_position = other._global_position;
-  _frame_position = other._frame_position;
-  _frame_orientation = other._frame_orientation;
+  frame = other.get_frame();
+  _global_position = other.get_absolute_reference_point();
+  _frame_position = other.get_frame_position();
+  _frame_orientation = other.get_frame_orientation();
 }
 
 void
@@ -129,7 +129,7 @@ CartesianAnchor::set_frame_position(LPoint3d position)
 }
 
 LPoint3d
-CartesianAnchor::get_frame_position(void)
+CartesianAnchor::get_frame_position(void) const
 {
   return _frame_position;
 }
@@ -141,13 +141,13 @@ CartesianAnchor::set_frame_orientation(LQuaterniond rotation)
 }
 
 LQuaterniond
-CartesianAnchor::get_frame_orientation(void)
+CartesianAnchor::get_frame_orientation(void) const
 {
   return _frame_orientation;
 }
 
 LPoint3d
-CartesianAnchor::get_local_position(void)
+CartesianAnchor::get_local_position(void) const
 {
   return frame->get_local_position(_frame_position);
 }
@@ -159,7 +159,7 @@ CartesianAnchor::set_local_position(LPoint3d position)
 }
 
 LPoint3d
-CartesianAnchor::get_absolute_reference_point(void)
+CartesianAnchor::get_absolute_reference_point(void) const
 {
   return _global_position;
 }
@@ -175,7 +175,7 @@ CartesianAnchor::set_absolute_reference_point(LPoint3d new_reference_point)
 }
 
 LPoint3d
-CartesianAnchor::get_absolute_position(void)
+CartesianAnchor::get_absolute_position(void) const
 {
   return _global_position + get_local_position();
 }
@@ -188,7 +188,7 @@ CartesianAnchor::set_absolute_position(LPoint3d position)
 }
 
 LQuaterniond
-CartesianAnchor::get_absolute_orientation(void)
+CartesianAnchor::get_absolute_orientation(void) const
 {
   return frame->get_absolute_orientation(_frame_orientation);
 }

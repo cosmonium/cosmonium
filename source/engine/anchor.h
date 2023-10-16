@@ -35,7 +35,7 @@ public:
   AnchorTreeBase(unsigned int anchor_class);
   virtual ~AnchorTreeBase(void);
 
-  AnchorTreeBase *get_parent(void);
+  AnchorTreeBase *get_parent(void) const;
   void set_parent(AnchorTreeBase *parent);
   MAKE_PROPERTY(parent, get_parent, set_parent); //TODO: keep set parent ?
 
@@ -72,7 +72,7 @@ PUBLISHED:
   void set_body(PyObject *ref_object); //TODO: Is set needed ?
   MAKE_PROPERTY(body, get_object, set_body);
 
-  LColor get_point_color(void);
+  LColor get_point_color(void) const;
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
@@ -84,23 +84,23 @@ PUBLISHED:
 
   virtual bool has_frame(void) const = 0;
 
-  double get_bounding_radius(void);
+  double get_bounding_radius(void) const;
 
   void set_bounding_radius(double bounding_radius);
 
-  virtual double get_position_bounding_radius(void) = 0;
+  virtual double get_position_bounding_radius(void) const = 0;
 
-  virtual LPoint3d get_absolute_reference_point(void) = 0;
+  virtual LPoint3d get_absolute_reference_point(void) const = 0;
 
-  virtual LPoint3d get_absolute_position(void) = 0;
+  virtual LPoint3d get_absolute_position(void) const = 0;
 
-  virtual LPoint3d get_local_position(void) = 0;
+  virtual LPoint3d get_local_position(void) const = 0;
 
-  virtual LQuaterniond get_absolute_orientation(void) = 0;
+  virtual LQuaterniond get_absolute_orientation(void) const = 0;
 
-  virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
+  virtual LPoint3d calc_absolute_relative_position(AnchorBase const *anchor) const;
 
-  virtual LPoint3d calc_absolute_relative_position_to(LPoint3d position);
+  virtual LPoint3d calc_absolute_relative_position_to(LPoint3d position) const;
 
   virtual void update(double time, unsigned long int update_id) = 0;
 
@@ -112,11 +112,11 @@ PUBLISHED:
 
   virtual void update_luminosity(StellarAnchor *star) = 0;
 
-  INLINE double get_apparent_radius(void) { return get_bounding_radius(); }
+  INLINE double get_apparent_radius(void) const { return get_bounding_radius(); }
 
   LPoint3d get_cached_absolute_position(void) const { return _global_position; }
 
-  LPoint3d get_cached_local_position(void) { return _local_position; }
+  LPoint3d get_cached_local_position(void) const { return _local_position; }
 
   LQuaterniond get_cached_absolute_orientation(void) {return _orientation; }
 

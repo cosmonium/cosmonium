@@ -70,7 +70,7 @@ StellarAnchor::has_frame(void) const
 }
 
 OrbitBase *
-StellarAnchor::get_orbit(void)
+StellarAnchor::get_orbit(void) const
 {
   return orbit;
 }
@@ -82,7 +82,7 @@ StellarAnchor::set_orbit(OrbitBase * orbit)
 }
 
 RotationBase *
-StellarAnchor::get_rotation(void)
+StellarAnchor::get_rotation(void) const
 {
   return rotation;
 }
@@ -94,7 +94,7 @@ StellarAnchor::set_rotation(RotationBase * rotation)
 }
 
 double
-StellarAnchor::get_position_bounding_radius(void)
+StellarAnchor::get_position_bounding_radius(void) const
 {
   return orbit->get_bounding_radius();
 }
@@ -111,58 +111,58 @@ StellarAnchor::rebuild(void)
 }
 
 LPoint3d
-StellarAnchor::get_absolute_reference_point(void)
+StellarAnchor::get_absolute_reference_point(void) const
 {
   return _global_position;
 }
 
 LPoint3d
-StellarAnchor::get_absolute_position(void)
+StellarAnchor::get_absolute_position(void) const
 {
   return _position;
 }
 
 LPoint3d
-StellarAnchor::get_local_position(void)
+StellarAnchor::get_local_position(void) const
 {
   return _local_position;
 }
 
 LQuaterniond
-StellarAnchor::get_absolute_orientation(void)
+StellarAnchor::get_absolute_orientation(void) const
 {
   return _orientation;
 }
 
 LQuaterniond
-StellarAnchor::get_equatorial_rotation(void)
+StellarAnchor::get_equatorial_rotation(void) const
 {
   return _equatorial;
 }
 
 LQuaterniond
-StellarAnchor::get_sync_rotation(void)
+StellarAnchor::get_sync_rotation(void) const
 {
   return _orientation;
 }
 
 
 double
-StellarAnchor::get_absolute_magnitude(void)
+StellarAnchor::get_absolute_magnitude(void) const
 {
   return lum_to_abs_mag(get_radiant_flux() / L0);
 }
 
 
 double
-StellarAnchor::get_apparent_magnitude(void)
+StellarAnchor::get_apparent_magnitude(void) const
 {
   return abs_to_app_mag(get_absolute_magnitude(), distance_to_obs);
 }
 
 
 LPoint3d
-StellarAnchor::calc_absolute_relative_position(AnchorBase *anchor)
+StellarAnchor::calc_absolute_relative_position(AnchorBase *anchor) const
 {
     LPoint3d reference_point_delta = anchor->get_absolute_reference_point() - _global_position;
     LPoint3d local_delta = anchor->get_local_position() - _local_position;
@@ -221,7 +221,7 @@ StellarAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
 
 
 double
-StellarAnchor::get_reflected_luminosity(StellarAnchor *star)
+StellarAnchor::get_reflected_luminosity(StellarAnchor *star) const
 {
     LVector3d vector_to_star = calc_absolute_relative_position(star);
     double distance_to_star = vector_to_star.length();

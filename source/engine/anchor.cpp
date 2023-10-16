@@ -34,7 +34,7 @@ AnchorTreeBase::~AnchorTreeBase(void)
 }
 
 AnchorTreeBase *
-AnchorTreeBase::get_parent(void)
+AnchorTreeBase::get_parent(void) const
 {
   return parent;
 }
@@ -112,7 +112,7 @@ AnchorBase::set_body(PyObject *ref_object)
 }
 
 LColor
-AnchorBase::get_point_color(void)
+AnchorBase::get_point_color(void) const
 {
   return point_color;
 }
@@ -124,7 +124,7 @@ AnchorBase::set_point_color(LColor color)
 }
 
 double
-AnchorBase::get_bounding_radius(void)
+AnchorBase::get_bounding_radius(void) const
 {
   return bounding_radius;
 }
@@ -136,7 +136,7 @@ AnchorBase::set_bounding_radius(double bounding_radius)
 }
 
 LPoint3d
-AnchorBase::calc_absolute_relative_position(AnchorBase *anchor)
+AnchorBase::calc_absolute_relative_position(AnchorBase const *anchor) const
 {
   LPoint3d reference_point_delta = anchor->get_absolute_reference_point() - _global_position;
   LPoint3d local_delta = anchor->get_local_position() - get_local_position();
@@ -145,7 +145,7 @@ AnchorBase::calc_absolute_relative_position(AnchorBase *anchor)
 }
 
 LPoint3d
-AnchorBase::calc_absolute_relative_position_to(LPoint3d position)
+AnchorBase::calc_absolute_relative_position_to(LPoint3d position) const
 {
   return (get_absolute_reference_point() - position) + get_local_position();
 }
