@@ -73,10 +73,6 @@ PUBLISHED:
 
   virtual double get_apparent_magnitude(void);
 
-  virtual double get_radiant_flux(void);
-
-  virtual double get_point_radiance(double distance);
-
   virtual LPoint3d calc_absolute_relative_position(AnchorBase *anchor);
 
   virtual void update(double time, unsigned long int update_id);

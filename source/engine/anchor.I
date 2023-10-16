@@ -54,7 +54,20 @@ AnchorBase::get_reflected_luminosity(void) const
 
 
 double
-AnchorBase::get_point_radiance(void) const
+AnchorBase::get_cached_point_radiance(void) const
 {
   return _point_radiance;
+}
+
+double
+AnchorBase::get_radiant_flux(void) const
+{
+  return _intrinsic_luminosity + _reflected_luminosity;
+}
+
+
+double
+AnchorBase::get_point_radiance(double distance) const
+{
+  return (_intrinsic_luminosity + _reflected_luminosity) / (4 * M_PI * distance * distance * 1000 * 1000);
 }

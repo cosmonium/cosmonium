@@ -27,6 +27,7 @@
 
 class AnchorTraverser;
 class CameraAnchor;
+class StellarAnchor;
 
 class AnchorTreeBase : public TypedObject, public ReferenceCount
 {
@@ -109,6 +110,8 @@ PUBLISHED:
 
   virtual void update_all(double time, CameraAnchor &observer, unsigned long int update_id);
 
+  virtual void update_luminosity(StellarAnchor *star) = 0;
+
   INLINE double get_apparent_radius(void) { return get_bounding_radius(); }
 
   LPoint3d get_cached_absolute_position(void) const { return _global_position; }
@@ -116,6 +119,10 @@ PUBLISHED:
   LPoint3d get_cached_local_position(void) { return _local_position; }
 
   LQuaterniond get_cached_absolute_orientation(void) {return _orientation; }
+
+  INLINE double get_point_radiance(double distance) const;
+
+  INLINE double get_radiant_flux(void) const;
 
   INLINE double get_albedo(void) const;
   INLINE void set_albedo(double albedo);
@@ -128,8 +135,8 @@ PUBLISHED:
   INLINE double get_reflected_luminosity(void) const;
   MAKE_PROPERTY(_reflected_luminosity, get_reflected_luminosity);
 
-  INLINE double get_point_radiance(void) const;
-  MAKE_PROPERTY(_point_radiance, get_point_radiance);
+  INLINE double get_cached_point_radiance(void) const;
+  MAKE_PROPERTY(_point_radiance, get_cached_point_radiance);
 
 public:
   PyObject *ref_object;

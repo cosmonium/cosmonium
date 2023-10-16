@@ -161,20 +161,6 @@ StellarAnchor::get_apparent_magnitude(void)
 }
 
 
-double
-StellarAnchor::get_radiant_flux(void)
-{
-  return _intrinsic_luminosity + _reflected_luminosity;
-}
-
-
-double
-StellarAnchor::get_point_radiance(double distance)
-{
-  return (_intrinsic_luminosity + _reflected_luminosity) / (4 * M_PI * distance * distance * 1000 * 1000);
-}
-
-
 LPoint3d
 StellarAnchor::calc_absolute_relative_position(AnchorBase *anchor)
 {
