@@ -37,9 +37,7 @@ class AnchorTraverser : public ReferenceCount
 PUBLISHED:
   virtual ~AnchorTraverser(void);
 
-  virtual void traverse_anchor(StellarAnchor *anchor);
-
-  virtual void traverse_anchor(CartesianAnchor *anchor);
+  virtual void traverse_anchor(AnchorBase *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -67,7 +65,7 @@ class UpdateTraverser : public AnchorTraverserCollector
 PUBLISHED:
   UpdateTraverser(double time, CameraAnchor &observer, double lowest_radiance, unsigned long int update_id);
 
-  virtual void traverse_anchor(StellarAnchor *anchor);
+  virtual void traverse_anchor(AnchorBase *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -92,7 +90,7 @@ PUBLISHED:
   AnchorBase *get_closest_system(void);
   MAKE_PROPERTY(closest_system, get_closest_system);
 
-  virtual void traverse_anchor(StellarAnchor *anchor);
+  virtual void traverse_anchor(AnchorBase *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -113,7 +111,7 @@ class FindLightSourceTraverser : public AnchorTraverserCollector
 PUBLISHED:
   FindLightSourceTraverser(double lowest_radiance, LPoint3d position);
 
-  virtual void traverse_anchor(StellarAnchor *anchor);
+  virtual void traverse_anchor(AnchorBase *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 
@@ -135,7 +133,7 @@ PUBLISHED:
 
   bool check_cast_shadow(AnchorBase *anchor);
 
-  virtual void traverse_anchor(StellarAnchor *anchor);
+  virtual void traverse_anchor(AnchorBase *anchor);
 
   virtual bool enter_system(SystemAnchor *anchor);
 

@@ -32,12 +32,7 @@ AnchorTraverser::~AnchorTraverser(void)
 {
 }
 void
-AnchorTraverser::traverse_anchor(StellarAnchor *anchor)
-{
-}
-
-void
-AnchorTraverser::traverse_anchor(CartesianAnchor *anchor)
+AnchorTraverser::traverse_anchor(AnchorBase *anchor)
 {
 }
 
@@ -85,7 +80,7 @@ UpdateTraverser::UpdateTraverser(double time, CameraAnchor &observer, double low
 }
 
 void
-UpdateTraverser::traverse_anchor(StellarAnchor *anchor)
+UpdateTraverser::traverse_anchor(AnchorBase *anchor)
 {
     anchor->update_all(time, observer, update_id);
     anchor->update_id = update_id;
@@ -169,7 +164,7 @@ FindClosestSystemTraverser::get_closest_system(void)
 }
 
 void
-FindClosestSystemTraverser::traverse_anchor(StellarAnchor *anchor)
+FindClosestSystemTraverser::traverse_anchor(AnchorBase *anchor)
 {
 }
 
@@ -212,7 +207,7 @@ FindLightSourceTraverser::FindLightSourceTraverser(double lowest_radiance, LPoin
 }
 
 void
-FindLightSourceTraverser::traverse_anchor(StellarAnchor *anchor)
+FindLightSourceTraverser::traverse_anchor(AnchorBase *anchor)
 {
   collected.push_back(anchor);
 }
@@ -347,7 +342,7 @@ FindShadowCastersTraverser::check_cast_shadow(AnchorBase *occluder)
 }
 
 void
-FindShadowCastersTraverser::traverse_anchor(StellarAnchor *anchor)
+FindShadowCastersTraverser::traverse_anchor(AnchorBase *anchor)
 {
   if (anchor != target && (anchor->content & AnchorBase::Reflective) != 0 && check_cast_shadow(anchor)) {
     collected.push_back(anchor);
