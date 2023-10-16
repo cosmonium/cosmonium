@@ -194,15 +194,6 @@ class CartesianAnchor(AnchorBase):
     def get_position_bounding_radius(self):
         return 0.0
 
-    def get_absolute_magnitude(self):
-        return lum_to_abs_mag(self.get_radiant_flux() / units.L0)
-
-    def get_apparent_magnitude(self):
-        if self.distance_to_obs > 0:
-            return abs_to_app_mag(self.get_absolute_magnitude(), self.distance_to_obs)
-        else:
-            return 1000.0
-
     def get_radiant_flux(self):
         """
         Returns the radiant flux, expressed in W.
