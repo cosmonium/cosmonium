@@ -647,7 +647,7 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def update_instances_task(self, task):
         self.worlds.update_instances(self.scene_manager, self.observer)
-        self.scene_manager.build_scene(self.common_state, self.c_camera_holder, SceneAnchorCollection(), SceneAnchorCollection())
+        self.scene_manager.build_scene(self.common_state, self.c_camera_holder, self.worlds.visible_scene_anchors, self.worlds.resolved_scene_anchors)
 
         return task.cont
 

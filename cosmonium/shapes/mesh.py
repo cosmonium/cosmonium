@@ -58,6 +58,8 @@ class MeshShape(Shape):
         else:
             self.radius = 0.0
         self.fullpath = None
+        self.has_lights = False
+        self.lights = []
 
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
@@ -113,6 +115,8 @@ class MeshShape(Shape):
         self.update_shape()
         self.apply_owner()
         self.mesh.reparent_to(self.instance)
+        self.lights = self.instance.find_all_matches('**/+Light')
+        self.has_lights = len(self.lights) > 0
         return self.instance
 
     def remove_instance(self):
@@ -120,3 +124,5 @@ class MeshShape(Shape):
         if self.mesh is not None:
             ModelPool.release_model(self.fullpath)
             self.mesh = None
+        self.has_lights = False
+        self.lights = []

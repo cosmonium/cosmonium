@@ -27,6 +27,7 @@ from panda3d.core import CollisionSphere, CollisionNode
 #TODO: Should inherit from VisibleObject !
 class Shape:
     patchable = False
+    has_lights = False
     use_collision_solid = False
     deferred_instance = False
 

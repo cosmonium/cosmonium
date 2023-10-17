@@ -160,6 +160,9 @@ class StaticSceneManager(SceneManagerBase):
     def build_scene(self, state, camera_holder, visibles, resolved):
         self.root.set_state(state.get_state())
         self.root.set_light(self.fake_ambient_np)
+        for anchor in resolved:
+            for light in anchor.lights:
+                self.root.set_light(light)
 
     def ls(self):
         self.root.ls()

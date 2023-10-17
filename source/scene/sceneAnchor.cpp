@@ -56,6 +56,29 @@ SceneAnchor::~SceneAnchor(void)
 {
 }
 
+void
+SceneAnchor::add_light(NodePath light)
+{
+    lights.add_path(light);
+}
+
+void
+SceneAnchor::add_lights(NodePathCollection const &lights)
+{
+    this->lights += lights;
+}
+
+NodePathCollection const &
+SceneAnchor::get_lights(void) const
+{
+    return lights;
+}
+
+void
+SceneAnchor::remove_light(NodePath light)
+{
+    lights.remove_path(light);
+}
 
 void
 SceneAnchor::create_instance(SceneManager *scene_manager)

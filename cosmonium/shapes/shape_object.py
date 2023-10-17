@@ -213,6 +213,8 @@ class ShapeObject(VisibleObject):
         self.sources.use()
         self.patch_sources.use()
         self.schedule_jobs([])
+        if self.shape.has_lights:
+            scene_anchor.add_lights(self.shape.lights)
 
     def configure_render_order(self):
         pass

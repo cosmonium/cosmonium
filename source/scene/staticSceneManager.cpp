@@ -25,6 +25,7 @@
 #include "graphicsOutput.h"
 #include "perspectiveLens.h"
 #include "renderPass.h"
+#include "sceneAnchor.h"
 #include "settings.h"
 #include "dcast.h"
 
@@ -129,6 +130,12 @@ StaticSceneManager::build_scene(NodePath state, CameraHolder *camera_holder, Sce
 {
   root.set_state(state.get_state());
   root.set_light(fake_light);
+  for (auto anchor : resolved) {
+    auto lights = anchor->get_lights();
+    for (int i = 0; i < lights.get_num_paths(); ++i) {
+      root.set_light(lights[i]);
+    }
+  }
 }
 
 

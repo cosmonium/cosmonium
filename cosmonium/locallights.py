@@ -46,7 +46,7 @@ class LocalLight(VisibleObject):
     def remove_instance(self):
         if self.instance is not None:
             self.light_node = None
-            base.render.clear_light(self.instance)
+            self.scene_anchor.remove_light(self.instance)
         super().remove_instance()
 
 
@@ -62,8 +62,7 @@ class LocalDirectionalLight(LocalLight):
         self.light_node.set_color(self._node_color)
         self.instance = self.scene_anchor.unshifted_instance.attach_new_node(self.light_node)
         self.instance.set_pos(self.position)
-        #self.scene_anchor.unshifted_instance.set_light(self.instance)
-        base.render.set_light(self.instance)
+        self.scene_anchor.add_light(self.instance)
         if self.cast_shadows:
             self.light_node.set_shadow_caster(True, 1024, 1024)
             lens = self.light_node.get_lens()
@@ -83,8 +82,7 @@ class LocalPointLight(LocalLight):
             self.light_node.set_max_distance(self.max_distance)
         self.instance = self.scene_anchor.unshifted_instance.attach_new_node(self.light_node)
         self.instance.set_pos(self.position)
-        #self.scene_anchor.unshifted_instance.set_light(self.instance)
-        base.render.set_light(self.instance)
+        self.scene_anchor.add_light(self.instance)
         if self.cast_shadows:
             self.light_node.set_shadow_caster(True, 1024, 1024)
 
@@ -114,8 +112,7 @@ class LocalSpotLight(LocalLight):
         self.instance.set_quat(quat)
         lens = self.light_node.get_lens()
         lens.set_fov(self.cone[1] * 2, self.cone[1] * 2)
-        #self.scene_anchor.unshifted_instance.set_light(self.instance)
-        base.render.set_light(self.instance)
+        self.scene_anchor.add_light(self.instance)
         if self.cast_shadows:
             self.light_node.set_shadow_caster(True, 1024, 1024)
             # lens.set_near_far(self.lens.near, self.lens.far)

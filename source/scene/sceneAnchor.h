@@ -23,6 +23,7 @@
 #include "referenceCount.h"
 #include "pandabase.h"
 #include "nodePath.h"
+#include "nodePathCollection.h"
 #include "luse.h"
 #include"type_utils.h"
 
@@ -41,6 +42,11 @@ PUBLISHED:
       bool virtual_object=false,
       bool spread_object=false);
   virtual ~SceneAnchor(void);
+
+  void add_light(NodePath light);
+  void add_lights(NodePathCollection const &lights);
+  NodePathCollection const & get_lights(void) const;
+  void remove_light(NodePath light);
 
   void create_instance(SceneManager *scene_manager);
   void remove_instance(void);
@@ -91,6 +97,7 @@ protected:
   bool virtual_object;
   bool spread_object;
   LColor oid_color;
+  NodePathCollection lights;
 
 PUBLISHED:
   LPoint3d scene_position;

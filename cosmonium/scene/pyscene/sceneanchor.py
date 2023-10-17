@@ -45,6 +45,19 @@ class SceneAnchor:
         self.scene_rel_position = LPoint3d()
         self.world_body_center_offset = LVector3d()
         self.scene_body_center_offset = LVector3d()
+        self.lights = []
+
+    def add_light(self, light):
+        self.lights.append(light)
+
+    def add_lights(self, lights):
+        self.lights += lights
+
+    def remove_light(self, light):
+        try:
+            self.lights.remove(light)
+        except ValueError:
+            pass
 
     def create_instance(self, scene_manager):
         if self.instance is None:
