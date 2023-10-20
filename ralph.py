@@ -48,7 +48,6 @@ from cosmonium.scene.sceneanchor import SceneAnchorCollection
 from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld
 from cosmonium.engine.c_settings import c_settings
 from cosmonium.procedural.water import WaterNode
-from cosmonium.shaders.after_effects.fog import Fog
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
@@ -229,7 +228,6 @@ class RalphConfigParser(YamlModuleParser):
 
     def decode(self, data):
         water = data.get('water', None)
-        fog = data.get('fog', None)
         physics = data.get('physics', {})
 
         parser = FlatUniverseYamlParser(self.worlds)
@@ -247,14 +245,6 @@ class RalphConfigParser(YamlModuleParser):
             self.water = WaterConfig(level, visible, scale)
         else:
             self.water = WaterConfig(0, False, 1.0)
-
-        if fog is not None:
-            self.fog_parameters = {}
-            self.fog_parameters['fall_off'] = fog.get('falloff', 0.035)
-            self.fog_parameters['density'] = fog.get('density', 20)
-            self.fog_parameters['ground'] = fog.get('ground', -500)
-        else:
-            self.fog_parameters = None
 
         has_physics = physics.get('enable', False)
         gravity = physics.get('gravity', 9.81)
@@ -539,12 +529,6 @@ class RoamingRalphDemo(CosmoniumBase):
 
     async def init(self):
         self.create_terrain()
-        if self.ralph_config.fog_parameters is not None:
-            self.fog = Fog(**self.ralph_config.fog_parameters)
-            # self.terrain.add_after_effect(self.fog)
-            # self.skybox.set_fog(self.fog)
-        else:
-            self.fog = None
 
         if self.shadows:
             if self.pssm_shadows:
