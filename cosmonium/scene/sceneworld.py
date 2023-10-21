@@ -271,9 +271,10 @@ class SimpleWorld(SceneWorld):
         self.components.set_lights(lights)
 
     def set_scattering(self, scattering):
-        for component in self.components.components:
-            if component.concrete_object:
-                scattering.add_shape_object(component)
+        if scattering is not None:
+            for component in self.components.components:
+                if component.concrete_object:
+                    scattering.add_shape_object(component)
 
     def get_height_under(self, position):
         return 0.0

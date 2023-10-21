@@ -48,9 +48,10 @@ class FlatUniverse(Worlds):
 
     def set_scattering(self, scattering):
         self.scattering = scattering
-        scattering.set_light(self.lights.lights[0])
-        scattering.set_inside(True)
-        scattering.set_body(self)
+        if scattering is not None:
+            scattering.set_light(self.lights.lights[0])
+            scattering.set_inside(True)
+            scattering.set_body(self)
         for world in self.worlds:
             world.set_scattering(self.scattering)
 
@@ -76,4 +77,5 @@ class FlatUniverse(Worlds):
     def update(self, time, dt, update_id, observer):
         Worlds.update(self, time, dt, update_id, observer)
         self.lights.update_lights()
-        self.scattering.update(0, dt)
+        if self.scattering is not None:
+            self.scattering.update(0, dt)

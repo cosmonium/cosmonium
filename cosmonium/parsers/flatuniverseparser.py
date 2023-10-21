@@ -43,8 +43,9 @@ class FlatUniverseYamlParser(YamlModuleParser):
             self.universe.add_light(light)
         scattering = ScatteringYamlParser.decode(data.get('scattering'))
         self.universe.set_scattering(scattering)
-        skybox = SkyBoxYamlParser.decode({}, scattering)
-        self.universe.set_skybox(skybox)
+        if scattering is not None:
+            skybox = SkyBoxYamlParser.decode({}, scattering)
+            self.universe.set_skybox(skybox)
         for world_data in data.get('worlds', []):
             world = CartesianWorldYamlParser.decode(world_data, parent=self.universe)
             self.universe.add_world(world)
