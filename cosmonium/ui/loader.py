@@ -248,8 +248,6 @@ class UIConfigLoader:
         size = data.get('size', 32)
         decoration_size = data.get('decoration-size', (1, 1))
         orientation = data.get('orientation', 'horizontal')
-        background_color = data.get('background-color', settings.panel_background)
-        border_color = data.get('border-color', [1, 0, 0, 1])
         widgets = []
         for widget_data in data.get('widgets', []):
             widget = self.load_widget(widget_data)
@@ -300,18 +298,33 @@ class UIConfigLoader:
             color = None
         return color
 
-    def load_skin_entry(self, data):
+    def load_skin_entry(self, data, skin):
+        if skin is not None:
+            extends_name = data.get('extend', 'default')
+            extends = skin.get(extends_name)
+        else:
+            extends = None
         background_color = self.parse_color(data.get('background-color'))
         text_color = self.parse_color(data.get('text-color'))
-        entry = UISkinEntry(extends=None)
-        entry.background_color = background_color
-        entry.text_color = text_color
+        border_color = self.parse_color(data.get('border-color'))
+        entry = UISkinEntry(extends=extends)
+        if background_color:
+            entry.background_color = background_color
+        if text_color:
+            entry.text_color = text_color
+        if border_color:
+            entry.border_color = border_color
         return entry
 
     def load_skin(self, data):
         skin = UISkin()
-        default = self.load_skin_entry(data.get('default', {}))
+        default = self.load_skin_entry(data.get('default', {}), skin=None)
         skin.add_entry('default', default)
+        for name, entry_data in data.items():
+            if name == 'default':
+                continue
+            entry = self.load_skin_entry(entry_data, skin)
+            skin.add_entry(name, entry)
         return skin
 
     def load_skin_file(self, skin_file):
