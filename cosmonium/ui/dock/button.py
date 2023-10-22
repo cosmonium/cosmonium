@@ -54,7 +54,7 @@ class ButtonDockWidget(DGuiDockWidget):
         self.rescale = rescale
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        parameters = skin.get_dgui_parameters_for('default', 'button')
+        parameters = skin.get_dgui_parameters_for('button')
         size = self.size or parent.size
         scale = LVector3(size)
         button = DirectButton(

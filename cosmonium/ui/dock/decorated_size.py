@@ -29,23 +29,24 @@ from .base import FrameColorTexture
 
 class DecoratedSizer(Sizer):
 
-    def __init__(self, border, image, geom, border_color, *args, **kwargs):
+    def __init__(self, border, image, geom, *args, **kwargs):
         Sizer.__init__(self, *args, **kwargs)
         self.frame = None
         self.border = border
         self.image = image
         self.geom = geom
-        self.border_color = border_color
+        self.border_color = None
 
     def create(self, parent, skin):
-        borders_parameters = skin.get_dgui_parameters_for('default', 'borders')
+        borders_parameters = skin.get_dgui_parameters_for('borders')
         self.colors = FrameColorTexture(**borders_parameters)
-        frame_parameters = skin.get_dgui_parameters_for('default', 'frame')
+        frame_parameters = skin.get_dgui_parameters_for('frame')
         self.frame = DirectFrame(
             **frame_parameters,
             parent=parent,
             state=DGG.NORMAL,
             )
+        self.border_color = skin.border_color
 
     def update_frame(self):
         size = self.get_size()

@@ -41,8 +41,6 @@ class LayoutDockWidget(DockWidgetBase):
             decoration_size: tuple[int],
             image=None,
             geom=None,
-            background_color=None,
-            border_color=None,
             proportions=None,
             alignments=None,
             borders=None,
@@ -52,7 +50,7 @@ class LayoutDockWidget(DockWidgetBase):
         self.size = size
         self.direction = direction
         self.decoration_size = decoration_size
-        self.widget = DecoratedSizer(self.decoration_size, image, geom, border_color, direction, gaps=gaps)
+        self.widget = DecoratedSizer(self.decoration_size, image, geom, direction, gaps=gaps)
         self.sizer = self.widget
         self.frame = None
         self.widgets = widgets

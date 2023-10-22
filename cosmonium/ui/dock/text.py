@@ -59,7 +59,7 @@ class TextDockWidget(DGuiDockWidget):
             TextDockWidget.font = font.load()
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        parameters = skin.get_dgui_parameters_for('default', 'label')
+        parameters = skin.get_dgui_parameters_for('label')
         scale = LVector3(self.size or parent.size)
         label = DirectLabel(
             **parameters,

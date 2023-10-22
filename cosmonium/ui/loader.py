@@ -256,8 +256,6 @@ class UIConfigLoader:
         return LayoutDockWidget(
             size, orientation, widgets,
             decoration_size=decoration_size,
-            background_color=background_color,
-            border_color=border_color,
             alignments=alignments, borders=borders,
             gaps=gaps)
 

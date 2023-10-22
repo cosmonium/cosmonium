@@ -42,8 +42,9 @@ class Dock(HUDObject):
         self.update_instance()
 
     def create(self, parent, skin):
+        skin_entry = skin.get('dock')
         self.instance = DirectFrame(parent=parent)
-        self.layout.create(self, self.instance, skin)
+        self.layout.create(self, self.instance, skin_entry)
 
     def update_instance(self):
         if self.instance is None:
