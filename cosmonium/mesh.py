@@ -32,7 +32,7 @@ from . import settings
 def _remove_loader(extension):
     registry = LoaderFileTypeRegistry.get_global_ptr()
     while True:
-        ftype = registry.get_type_from_extension("glb")
+        ftype = registry.get_type_from_extension(extension)
         if ftype is None:
             break
         registry.unregister_type(ftype)
