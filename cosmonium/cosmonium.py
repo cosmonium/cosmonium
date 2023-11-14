@@ -147,6 +147,7 @@ class CosmoniumBase(ShowBase):
 
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
+        mesh.init_mesh_loader()
 
     def find_lang(self):
         languages = None
@@ -387,7 +388,6 @@ class Cosmonium(CosmoniumBase):
     def __init__(self):
         CosmoniumBase.__init__(self)
 
-        mesh.init_mesh_loader()
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
         fontsManager.register_fonts(defaultDirContext.find_font('fontawesome'))
         fontsManager.register_fonts(defaultDirContext.find_font('materialdesign'))
