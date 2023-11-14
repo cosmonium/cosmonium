@@ -38,7 +38,7 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LQuaternion, BitMask32, NodePath
 from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
 
 from cosmonium.foundation import BaseObject
@@ -51,9 +51,9 @@ from cosmonium.procedural.water import WaterNode
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
-from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase
+from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, FixedCameraController, EventsControllerBase
 from cosmonium.nav import ControlNav
-from cosmonium.controllers.controllers import FlatSurfaceBodyMover
+from cosmonium.controllers.controllers import CartesianBodyMover, FlatSurfaceBodyMover
 from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
 from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
@@ -232,7 +232,7 @@ class RalphConfigParser(YamlModuleParser):
 
         parser = FlatUniverseYamlParser(self.worlds)
         parser.decode(data)
-        terrain = data.get('terrain')
+        terrain = data.get('terrain', {})
         self.tile_size = terrain.get("tile-size", 1024)
 
         self.shadow_size = terrain.get('shadow-size', 16)
@@ -314,8 +314,9 @@ class RalphControl(EventsControllerBase):
         self.accept("shift-f3", self.engine.toggle_wireframe)
         self.accept("f5", self.engine.bufferViewer.toggleEnable)
         self.accept('f8', self.toggle_lod_freeze)
-        self.accept("shift-f8", self.engine.terrain_shape.dump_tree)
-        self.accept("shift-control-f8", self.engine.terrain_shape.dump_patches)
+        if self.engine.terrain_shape is not None:
+            self.accept("shift-f8", self.engine.terrain_shape.dump_tree)
+            self.accept("shift-control-f8", self.engine.terrain_shape.dump_patches)
         self.accept('control-f8', self.toggle_split_merge_debug)
         self.accept('f9', self.toggle_shader_debug_coord)
         self.accept('shift-f9', self.toggle_bb)
@@ -378,12 +379,15 @@ class RoamingRalphDemo(CosmoniumBase):
 
     def create_terrain(self):
         self.terrain_world = self.worlds.terrain
-        self.terrain_surface = self.terrain_world.surface
-        self.terrain_shape = self.terrain_surface.shape
-        if self.has_water:
-            self.terrain_shape.factory.add_layer_factory(WaterLayerFactory(self.water))
-        if self.physics is not None:
-            self.terrain_shape.factory.add_layer_factory(PhysicsLayerFactory(self.physics))
+        if self.terrain_world is not None:
+            self.terrain_surface = self.terrain_world.surface
+            self.terrain_shape = self.terrain_surface.shape
+            if self.has_water:
+                self.terrain_shape.factory.add_layer_factory(WaterLayerFactory(self.water))
+            if self.physics is not None and self.physics.support_heightmap:
+                self.terrain_shape.factory.add_layer_factory(PhysicsLayerFactory(self.physics))
+        else:
+            self.terrain_shape = None
 
     async def create_instance(self):
         #TODO: Should do init correctly
@@ -531,7 +535,8 @@ class RoamingRalphDemo(CosmoniumBase):
         self.create_terrain()
 
         await self.create_instance()
-        self.create_tile(0, 0)
+        if self.terrain_world is not None:
+            self.create_tile(0, 0)
 
         # Create the main character, Ralph
 
@@ -551,16 +556,22 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             self.shadow_caster = None
 
-        self.camera_controller = SurfaceFollowCameraController()
-        #self.camera_controller = FixedCameraController()
+        if self.terrain_world:
+            self.camera_controller = SurfaceFollowCameraController()
+            self.camera_controller.set_body(self.terrain_world)
+            self.camera_controller.set_camera_hints(distance=5, max=1.5)
+        else:
+            self.camera_controller = FixedCameraController()
+            self.camera_controller.set_camera_hints(position=LVector3d(0, -2, 1))
         self.camera_controller.activate(self.observer, self.ralph_world.anchor)
-        self.camera_controller.set_body(self.terrain_world)
-        self.camera_controller.set_camera_hints(distance=5, max=1.5)
 
         self.controller = RalphControl(self.worlds.lights.lights[0], self)
         self.controller.register_events()
 
-        self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+        if self.terrain_world:
+            self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+        else:
+            self.mover = CartesianBodyMover(self.ralph_world.anchor)
         self.mover.activate()
         self.nav = ControlNav()
         self.nav.set_controller(self.mover)
@@ -636,8 +647,9 @@ class RoamingRalphDemo(CosmoniumBase):
         return task.cont
 
     def print_debug(self):
-        print("Height:", self.get_height(self.ralph_world.anchor.get_local_position()),
-              self.terrain_surface.get_height_under(self.ralph_world.anchor.get_local_position()))
+        if self.terrain_world is not None:
+            print("Height:", self.get_height(self.ralph_world.anchor.get_local_position()),
+                  self.terrain_surface.get_height_under(self.ralph_world.anchor.get_local_position()))
         print("Ralph:", self.ralph_world.anchor.get_local_position(), self.ralph_world.anchor.get_frame_position(), self.ralph_world.anchor.get_frame_orientation().get_hpr(), self.ralph_world.anchor.get_absolute_orientation().get_hpr())
         print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
         position = self.ralph_world.anchor.get_local_position()
