@@ -530,17 +530,6 @@ class RoamingRalphDemo(CosmoniumBase):
     async def init(self):
         self.create_terrain()
 
-        if self.shadows:
-            if self.pssm_shadows:
-                self.worlds.set_global_shadows(PSSMShadowMapShadowCaster(self.worlds.lights.lights[0], self.terrain_world))
-            else:
-                self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
-                self.shadow_caster.create()
-                self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
-                self.shadow_caster.shadow_map.snap_cam = True
-        else:
-            self.shadow_caster = None
-
         await self.create_instance()
         self.create_tile(0, 0)
 
@@ -550,6 +539,17 @@ class RoamingRalphDemo(CosmoniumBase):
         self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
         self.worlds.add_world(self.ralph_world)
         self.worlds.add_special(self.ralph_world)
+
+        if self.shadows:
+            if self.pssm_shadows:
+                self.worlds.set_global_shadows(PSSMShadowMapShadowCaster(self.worlds.lights.lights[0], self.ralph_world))
+            else:
+                self.shadow_caster = SimpleShadowCaster(self.light, self.terrain_world)
+                self.shadow_caster.create()
+                self.shadow_caster.shadow_map.set_lens(self.ralph_config.shadow_size, -self.ralph_config.shadow_box_length / 2.0, self.ralph_config.shadow_box_length / 2.0, self.skybox.light_dir)
+                self.shadow_caster.shadow_map.snap_cam = True
+        else:
+            self.shadow_caster = None
 
         self.camera_controller = SurfaceFollowCameraController()
         #self.camera_controller = FixedCameraController()
