@@ -22,6 +22,7 @@ from panda3d.core import loadPrcFileData, LoaderFileTypeRegistry, Filename, get_
 
 import os
 
+from gltf import GltfSettings
 from gltf._loader import GltfLoader
 
 from .dircontext import main_dir
@@ -36,6 +37,9 @@ def _remove_loader(extension):
         if ftype is None:
             break
         registry.unregister_type(ftype)
+
+def set_physics_engine(engine_name):
+    GltfSettings.collision_shapes = engine_name
 
 def init_mesh_loader():
     if settings.use_assimp:
