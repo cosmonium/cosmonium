@@ -19,6 +19,7 @@
 
 
 #include "sceneRegion.h"
+#include "bitMask.h"
 #include "camera.h"
 #include "cameraHolder.h"
 #include "collisionHandlerQueue.h"
@@ -32,6 +33,7 @@
 #include "renderPass.h"
 #include "sceneAnchor.h"
 #include "sceneManager.h"
+#include "settings.h"
 
 
 TypeHandle SceneRegion::_type_handle;
@@ -152,17 +154,18 @@ SceneRegion::remove(void)
 PT(CollisionHandlerQueue)
 SceneRegion::pick_scene(LPoint2 mpos)
 {
+  Settings *settings = Settings::get_global_ptr();
   NodePath cam_np = rendering_passes[0]->camera;
   CollisionTraverser picker;
   CollisionHandlerQueue *pq = new CollisionHandlerQueue();
   PT(CollisionNode) picker_node = new CollisionNode("mouseRay");
   NodePath picker_np = cam_np.attach_new_node(picker_node);
-  picker_node->set_from_collide_mask(CollisionNode::get_default_collide_mask() | GeomNode::get_default_collide_mask());
+  picker_node->set_from_collide_mask(BitMask32::bit(settings->mouse_click_collision_bit));
   PT(CollisionRay) picker_ray = new CollisionRay();
   picker_ray->set_from_lens(DCAST(LensNode, cam_np.node()), mpos.get_x(), mpos.get_y());
   picker_node->add_solid(picker_ray);
   picker.add_collider(picker_np, pq);
-  //picker.show_collisions(self.root);
+  //picker.show_collisions(root);
   picker.traverse(root);
   pq->sort_entries();
   picker_np.remove_node();

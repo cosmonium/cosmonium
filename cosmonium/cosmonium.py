@@ -1115,6 +1115,7 @@ class Cosmonium(CosmoniumBase):
             c_settings.mag_pixel_scale = settings.mag_pixel_scale
             c_settings.max_app_magnitude = settings.max_app_magnitude
             c_settings.smallest_glare_mag = settings.smallest_glare_mag
+            c_settings.mouse_click_collision_bit = settings.mouse_click_collision_bit
 
     def update_c_settings(self):
         if c_settings is not None:

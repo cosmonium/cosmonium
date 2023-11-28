@@ -55,6 +55,8 @@ PUBLISHED:
   double lowest_app_magnitude;
   double max_app_magnitude;
   double smallest_glare_mag;
+
+  int mouse_click_collision_bit;
 };
 
 extern Settings settings;

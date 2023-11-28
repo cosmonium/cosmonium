@@ -258,6 +258,9 @@ worker_callback_task_sort = -10
 main_update_task_sort = 0
 instances_update_task_sort = 10
 
+# Collision bits
+mouse_click_collision_bit = 0
+
 shader_version = None
 color_picking = False
 

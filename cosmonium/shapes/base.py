@@ -18,10 +18,11 @@
 #
 
 
-from panda3d.core import GeomNode
 from panda3d.core import LVecBase3, LVector3
 from panda3d.core import BitMask32
 from panda3d.core import CollisionSphere, CollisionNode
+
+from .. import settings
 
 
 #TODO: Should inherit from VisibleObject !
@@ -135,16 +136,16 @@ class Shape:
         self.clickable = clickable
         if self.use_collision_solid and self.collision_solid is not None:
             if clickable:
-                self.collision_solid.node().setIntoCollideMask(CollisionNode.getDefaultCollideMask())
+                self.collision_solid.node().set_into_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
             else:
-                self.collision_solid.node().setIntoCollideMask(BitMask32.all_off())
+                self.collision_solid.node().set_into_collide_mask(BitMask32.all_off())
             #The instance itself is not clickable
-            self.instance.setCollideMask(BitMask32.all_off())
+            self.instance.set_collide_mask(BitMask32.all_off())
         else:
             if clickable:
-                self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
+                self.instance.set_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
             else:
-                self.instance.setCollideMask(BitMask32.all_off())
+                self.instance.set_collide_mask(BitMask32.all_off())
 
 
 class InstanceShape(Shape):

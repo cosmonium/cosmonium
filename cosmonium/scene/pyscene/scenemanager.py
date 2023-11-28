@@ -20,10 +20,10 @@
 
 from __future__ import annotations
 
-from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput, DirectionalLight
+from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput, DirectionalLight, BitMask32
 from panda3d.core import CollisionTraverser, CollisionNode
 from panda3d.core import CollisionHandlerQueue, CollisionRay
-from panda3d.core import GeomNode, DrawMask
+from panda3d.core import DrawMask
 
 from ...pstats import pstat
 from ... import settings
@@ -213,7 +213,7 @@ class DynamicSceneManager(SceneManagerBase):
         pq = CollisionHandlerQueue()
         picker_node = CollisionNode('mouseRay')
         picker_np = camera.attach_new_node(picker_node)
-        picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
+        picker_node.set_from_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
         picker_ray = CollisionRay()
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
@@ -535,11 +535,11 @@ class SceneRegion:
         picker_ray = CollisionRay()
         picker_node = CollisionNode('mouseRay')
         picker_np = self.rendering_passes[0].camera.attach_new_node(picker_node)
-        picker_node.set_from_collide_mask(CollisionNode.get_default_collide_mask() | GeomNode.get_default_collide_mask())
+        picker_node.set_from_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
         picker_ray.set_from_lens(self.rendering_passes[0].camera.node(), mpos.get_x(), mpos.get_y())
-        #picker.show_collisions(region.root)
+        #picker.show_collisions(self.root)
         picker.traverse(self.root)
         picker_np.remove_node()
         pq.sort_entries()
