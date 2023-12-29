@@ -54,6 +54,7 @@ class ShapeObject(VisibleObject):
         self.first_patch = True
         self.task = None
         self.body = None
+        self.physics = None
 
     def set_body(self, body):
         self.body = body
@@ -215,6 +216,11 @@ class ShapeObject(VisibleObject):
         self.schedule_jobs([])
         if self.shape.has_lights:
             scene_anchor.add_lights(self.shape.lights)
+        if self.physics is not None and self.context.physics:
+            if self.physics == 'mesh':
+                physics_instances = self.context.physics.build_from_geom(shape_instance, dynamic=False, compress=False)
+                #physics_instance.set_scale(self.get_scale())
+            self.context.physics.add_objects(self, physics_instances)
 
     def configure_render_order(self):
         pass

@@ -44,4 +44,5 @@ class EntityYamlParser(YamlModuleParser):
         lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
         shader = RenderingShader(lighting_model=lighting_model)
         entity = ShapeObject(name, shape, appearance, shader)
+        entity.physics = data.get('physics')
         return entity
