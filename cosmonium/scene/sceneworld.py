@@ -67,6 +67,14 @@ class Worlds:
 
     def update_specials(self, time, update_id):
         for world in self.specials:
+            if world.controller is not None:
+                pass #world.controller.update(time, 0)
+            world.anchor.update(time, update_id)
+
+    def update_specials_after_physics(self, time, update_id):
+        for world in self.specials:
+            if world.controller is not None:
+                world.controller.update(time, 0)
             world.anchor.update(time, update_id)
 
     def update_anchor(self, time, update_id):
@@ -229,6 +237,7 @@ class SceneWorld(NamedObject):
         self.anchor = None
         self.scene_anchor = None
         self.parent = None
+        self.mover = None
 
     def init(self):
         pass

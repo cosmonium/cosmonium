@@ -38,26 +38,26 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LQuaternion, BitMask32, NodePath
-from panda3d.bullet import BulletHeightfieldShape, BulletBoxShape, BulletRigidBodyNode, BulletCapsuleShape, ZUp
+from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath, LVector3d
+from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp
 
 from cosmonium.foundation import BaseObject
 from cosmonium.scene.flatuniverse import FlatUniverse
 from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
-from cosmonium.scene.sceneanchor import SceneAnchorCollection
 from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld
 from cosmonium.engine.c_settings import c_settings
 from cosmonium.procedural.water import WaterNode
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
-from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, FixedCameraController, EventsControllerBase
-from cosmonium.nav import ControlNav
-from cosmonium.controllers.controllers import CartesianBodyMover, FlatSurfaceBodyMover
+from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase, FixedCameraController
+from cosmonium.nav import ControlNav, KineticNav
+from cosmonium.controllers.controllers import FlatSurfaceBodyMover, CartesianBodyMover
 from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
 from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
-from cosmonium.physics import Physics
+from cosmonium.physics.bullet import BulletPhysics, BulletMover
+from cosmonium.physics.collision import CollisionPhysics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium import settings
@@ -136,11 +136,11 @@ class PhysicsLayer(PatchLayer):
                                 terrain_scale[1] * patch_scale[1] / (heightmap_patch.height - 1),
                                 1)
         self.instance.setCollideMask(BitMask32.allOn())
-        self.physics.add(self.instance)
+        self.physics.add_object(self, self.instance)
 
     def remove_instance(self):
         if self.instance is None: return
-        self.physics.remove(self.instance)
+        self.physics.remove_object(self, self.instance)
         self.instance.remove_node()
         self.instance = None
 
@@ -169,24 +169,19 @@ class PhysicsBox():
         self.mesh.reparent_to(self.instance)
         self.instance.reparent_to(render)
 
-        bounds = self.instance.get_tight_bounds()
-        half_size = (bounds[1] - bounds[0]) / 2.0
-        shape = BulletBoxShape(half_size)
-
-        self.physics_instance = NodePath(BulletRigidBodyNode('Box'))
-        self.physics_instance.node().set_mass(self.mass)
-        self.physics_instance.node().add_shape(shape)
+        self.physics_instance = self.physics.build_from_geom(self.mesh)[0]
+        self.physics.set_mass(self.physics_instance, self.mass)
         self.physics_instance.setCollideMask(BitMask32.allOn())
         #TODO: Replace with calc_absolute_...
-        position = observer.get_local_position() + observer.get_absolute_orientation().xform(LPoint3d(0, 15, 5))
+        position = observer.get_local_position() + observer.get_absolute_orientation().xform(LPoint3d(0, 10, 5))
         self.physics_instance.set_pos(*position)
-        self.physics.add(self.physics_instance)
+        self.physics.add_object(self, self.physics_instance)
 
     def remove_instance(self):
         if self.instance is not None:
             self.instance.remove_node()
             self.instance = None
-            self.physics.remove(self.physics_instance)
+            self.physics.remove_object(self, self.physics_instance)
             self.physics_instance = None
 
     def update(self, observer):
@@ -213,8 +208,7 @@ class WaterConfig():
         self.scale = scale
 
 class PhysicsConfig():
-    def __init__(self, enable, gravity, model, mass, limit, debug):
-        self.enable = enable
+    def __init__(self, gravity, model, mass, limit, debug):
         self.gravity = gravity
         self.model = model
         self.mass = mass
@@ -247,25 +241,37 @@ class RalphConfigParser(YamlModuleParser):
             self.water = WaterConfig(0, False, 1.0)
 
         has_physics = physics.get('enable', False)
-        gravity = physics.get('gravity', 9.81)
-        model = physics.get('model', None)
-        mass = physics.get('mass', 20)
-        limit = physics.get('limit', 100)
-        enable_debug = physics.get('debug', False)
-        self.physics = PhysicsConfig(has_physics, gravity, model, mass, limit, enable_debug)
+        debug = physics.get('debug', False)
+        if has_physics:
+            engine = physics.get('engine', 'bullet')
+            gravity = physics.get('gravity', 9.81)
+            if engine == 'bullet':
+                engine = BulletPhysics(debug)
+            else:
+                engine = CollisionPhysics()
+            model = physics.get('model', None)
+            mass = physics.get('mass', 0.01)
+            limit = physics.get('limit', 100)
+        else:
+            engine = None
+        self.physics = engine
+        if has_physics:
+            self.physics_config = PhysicsConfig(gravity, model, mass, limit, debug)
 
         ralph = data.get('ralph', {})
         self.ralph_shape_object = ActorObjectYamlParser.decode(ralph)
+        self.start_position = ralph.get('position')
         return True
 
 class RalphWord(CartesianWorld):
-    def __init__(self, name, ship_object, radius, enable_physics):
+    def __init__(self, name, ship_object, radius, physics):
         CartesianWorld.__init__(self, name)
         self.add_component(ship_object)
         self.ship_object = ship_object
         self.current_state = None
+        self.physics_node = None
         self.physics_instance = None
-        self.enable_physics = enable_physics
+        self.physics = physics
         self.anchor.set_bounding_radius(radius)
 
     def set_state(self, new_state):
@@ -279,22 +285,15 @@ class RalphWord(CartesianWorld):
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         CartesianWorld.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
-        if self.ship_object.instance is not None and self.enable_physics and self.physics_instance is None:
-            bounds = self.ship_object.instance.get_tight_bounds()
-            dims = bounds[1] - bounds[0]
-            width = max(dims[0], dims[1]) / 2.0
-            height = dims[2]
-            self.physics_instance = NodePath(BulletRigidBodyNode("Ralph"))
-            shape = BulletCapsuleShape(width, height - 2 * width, ZUp)
-            self.physics_instance.node().addShape(shape)
-            self.physics_instance.node().setMass(60.0)
-            self.physics_instance.node().setKinematic(True)
-            base.physics.add(self.physics_instance)
+        if self.ship_object.instance is not None and self.physics is not None and self.physics_instance is None:
+            physics_shape = self.physics.create_capsule_shape_for(self.ship_object.instance)
+            self.physics_node = self.physics.create_controller_for(physics_shape)
+            self.physics_instance = base.physics.add_controller(self, self.ship_object.instance, self.physics_node)
 
     def update(self, time, dt):
         CartesianWorld.update(self, time, dt)
         if self.physics_instance is not None:
-            offset = LPoint3d(0, 0, 0.8)
+            offset = LPoint3d(0, 0, 0)
             self.physics_instance.set_pos(*(self.anchor.get_local_position() + offset))
             self.physics_instance.set_quat(LQuaternion(*self.anchor.get_absolute_orientation()))
 
@@ -397,12 +396,12 @@ class RoamingRalphDemo(CosmoniumBase):
             WaterNode.create_cam()
 
     def spawn_box(self):
-        if not self.ralph_config.physics.enable: return
-        if self.ralph_config.physics.model is None: return
-        box = PhysicsBox(self.ralph_config.physics.model,
+        if not self.physics: return
+        if self.ralph_config.physics_config.model is None: return
+        box = PhysicsBox(self.ralph_config.physics_config.model,
                          self.physics,
-                         self.ralph_config.physics.mass,
-                         self.ralph_config.physics.limit)
+                         self.ralph_config.physics_config.mass,
+                         self.ralph_config.physics_config.limit)
         box.create_instance(self.ralph_world.anchor)
         self.physic_objects.append(box)
 
@@ -471,15 +470,13 @@ class RoamingRalphDemo(CosmoniumBase):
         self.has_water = True
         self.water = self.ralph_config.water
 
-        if self.ralph_config.physics.enable:
-            self.physics = Physics(self.ralph_config.physics.debug)
+        self.physics = self.ralph_config.physics
+        if self.physics:
             self.physics.enable()
-            self.physics.set_gravity(self.ralph_config.physics.gravity)
-            if self.ralph_config.physics.debug:
+            self.physics.set_gravity(self.ralph_config.physics_config.gravity)
+            if self.ralph_config.physics_config.debug:
                 print("Disabling camera at origin")
                 settings.camera_at_origin = False
-        else:
-            self.physics = None
         self.physic_objects = []
 
         self.fullscreen = False
@@ -541,9 +538,10 @@ class RoamingRalphDemo(CosmoniumBase):
         # Create the main character, Ralph
 
         self.ralph_shape_object = self.ralph_config.ralph_shape_object
-        self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.ralph_config.physics.enable)
+        self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.physics)
         self.worlds.add_world(self.ralph_world)
         self.worlds.add_special(self.ralph_world)
+        self.ralph_world.anchor.do_update()
 
         if self.shadows:
             if self.pssm_shadows:
@@ -568,16 +566,26 @@ class RoamingRalphDemo(CosmoniumBase):
         self.controller = RalphControl(self.worlds.lights.lights[0], self)
         self.controller.register_events()
 
-        if self.terrain_world:
-            self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+        if self.physics is None or not self.physics.support_heightmap:
+            if self.terrain_world:
+                self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+            else:
+                self.mover = CartesianBodyMover(self.ralph_world.anchor)
         else:
-            self.mover = CartesianBodyMover(self.ralph_world.anchor)
+            self.mover = BulletMover(self.ralph_world)
         self.mover.activate()
-        self.nav = ControlNav()
+        if self.ralph_config.start_position is not None:
+            self.mover.set_local_position(LPoint3d(*self.ralph_config.start_position))
+
+        if self.mover.kinetic_mover:
+            self.nav = KineticNav()
+        else:
+            self.nav = ControlNav()
         self.nav.set_controller(self.mover)
         self.nav.register_events(self)
-        self.nav.speed = 25
+        self.nav.speed = 2
         self.nav.rot_step_per_sec = 2
+        self.ralph_world.mover = self.mover
 
         self.worlds.init()
 
@@ -594,18 +602,15 @@ class RoamingRalphDemo(CosmoniumBase):
             self.worlds.check_settings()
             self.trigger_check_settings = False
 
+        self.mover.feedback()
+
         self.worlds.start_update()
         self.worlds.update_specials(0, self.update_id)
         self.nav.update(0, dt)
         self.controller.update(0, dt)
         self.mover.update()
-        self.camera_controller.update(0, dt)
-        self.worlds.update_specials_observer(self.observer, self.update_id)
 
-        self.worlds.update(0, dt, self.update_id, self.observer)
-        self.worlds.update_height_under(self.observer)
-
-        if self.ralph_config.physics.enable:
+        if self.physics:
             to_remove = []
             self.physics.update(0, dt)
             for physic_object in self.physic_objects:
@@ -614,6 +619,14 @@ class RoamingRalphDemo(CosmoniumBase):
                     to_remove.append(physic_object)
             for physic_object in to_remove:
                 self.physic_objects.remove(physic_object)
+
+        self.worlds.update_specials_after_physics(0, self.update_id)
+
+        self.camera_controller.update(0, dt)
+        self.worlds.update_specials_observer(self.observer, self.update_id)
+
+        self.worlds.update(0, dt, self.update_id, self.observer)
+        self.worlds.update_height_under(self.observer)
 
         if self.shadow_caster is not None:
             if self.pssm_shadows:
