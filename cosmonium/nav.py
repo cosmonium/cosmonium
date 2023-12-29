@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond, LMatrix3d
+from panda3d.core import LVector3, LVector3d, LPoint3d, LQuaterniond, LMatrix3d
 from . import settings
 from .astro import units
 from math import pi, exp
@@ -701,6 +701,85 @@ class ControlNav(InteractiveNavigationController):
 
     def change_altitude(self, rate):
         if rate == 0.0: return
+
+    def turn(self, angle):
+        self.controller.turn_relative(angle)
+
+
+class KineticNav(InteractiveNavigationController):
+    rot_step_per_sec = pi/4
+    speed = 10  * units.m
+    distance_speed = 2.0
+
+    def __init__(self):
+        InteractiveNavigationController.__init__(self)
+        self.controller = None
+        self.speed_factor = 1.0
+
+    def get_name(self):
+        return 'Kinetic control'
+
+    def get_id(self):
+        return 'kinetic'
+
+    def require_controller(self):
+        return True
+
+    def set_controller(self, controller):
+        self.controller = controller
+
+    def register_events(self, event_ctrl):
+        self.keyMap = {"left": 0, "right": 0,
+                       "up": 0, "down": 0,
+                       "home": 0, "end": 0,
+                       "jump": 0
+                       }
+        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0])
+        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0])
+        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0])
+        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0])
+        event_ctrl.accept(" ", self.setKey, ['jump', 1])
+        event_ctrl.accept(" -up", self.setKey, ['jump', 0])
+
+    def remove_events(self, event_ctrl):
+        event_ctrl.ignore("arrow_up")
+        event_ctrl.ignore("arrow_up-up")
+        event_ctrl.ignore("arrow_down")
+        event_ctrl.ignore("arrow_down-up")
+        event_ctrl.ignore("arrow_left")
+        event_ctrl.ignore("arrow_left-up")
+        event_ctrl.ignore("arrow_right")
+        event_ctrl.ignore("arrow_right-up")
+        event_ctrl.ignore(" ")
+        event_ctrl.ignore(" -up")
+
+    def update(self, time, dt):
+        is_moving = False
+        speed = LVector3(0, 0, 0)
+        y = self.keyMap['up'] - self.keyMap['down']
+        if y:
+            speed.set_y(y * self.speed * self.speed_factor)
+            is_moving = True
+
+        if self.keyMap['left']:
+            self.turn(self.rot_step_per_sec * dt)
+
+        if self.keyMap['right']:
+            self.turn(-self.rot_step_per_sec * dt)
+
+        self.set_speed_relative(speed)
+
+        if is_moving:
+            self.controller.set_state('moving')
+        else:
+            self.controller.set_state('idle')
+
+    def set_speed_relative(self, speed):
+        self.controller.set_speed_relative(speed)
 
     def turn(self, angle):
         self.controller.turn_relative(angle)

@@ -19,7 +19,7 @@
 
 
 from math import pi
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at, LPoint3
 
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation
@@ -161,6 +161,10 @@ class BodyMover():
     Base class for the mover helper. A mover hides to the controller how to update the position and rotation of the anchor.
     It also provides helper method to do basic movements.
     """
+
+    kinetic_mover = False
+    position_mover = True
+
     def __init__(self, anchor):
         self.anchor = anchor
 
@@ -168,6 +172,9 @@ class BodyMover():
         pass
 
     def update(self):
+        pass
+
+    def feedback(self):
         pass
 
     def set_pos(self, position):
