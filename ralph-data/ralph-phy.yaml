@@ -1,7 +1,40 @@
+lights:
+  - {}
+
+ralph:
+  shape:
+    model: ralph-data/models/ralph
+    animations:
+        run: ralph-data/models/ralph-run
+        walk: ralph-data/models/ralph-walk
+    auto-scale: false
+    rotation: [180, 0, 0]
+    scale: [0.2, 0.2, 0.2]
+  appearance:
+    type: model
+    vertex-color: true
+    material: false
+  position: [0, 0, 1]
+
 physics:
     enable: true
-    model: models/crates.3ds
-    debug: false
+    engine: bullet
+    model: crates.3ds
+    debug: true
+
+worlds:
+  - name: dummy
+    controller:
+      type: flat-surface
+    entities:
+      - name: lamp
+        disabled: false
+        shape:
+          type: mesh
+          model: ralph-data/models/LightsPunctualLamp.glb
+        physics: mesh
+        lighting-model: pbr
+
 terrain:
   tile-size: 32
   max-distance: 16
