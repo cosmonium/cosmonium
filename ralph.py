@@ -322,6 +322,7 @@ class RalphControl(EventsControllerBase):
         self.accept('control-f9', self.toggle_frustum)
         self.accept("f10", self.engine.save_screenshot)
         self.accept("shift-f11", self.debug_ls)
+        self.accept("shift-f12", self.debug_print_tasks)
         self.accept('alt-enter', self.engine.toggle_fullscreen)
         self.accept('{', self.engine.incr_ambient, [-0.05])
         self.accept('}', self.engine.incr_ambient, [+0.05])
@@ -354,6 +355,9 @@ class RalphControl(EventsControllerBase):
         self.engine.scene_manager.ls()
         if self.engine.physics is not None:
             self.engine.physics.ls()
+
+    def debug_print_tasks(self):
+        print(taskMgr)
 
     def update(self, time, dt):
         if self.keymap.get("sun-left"):
