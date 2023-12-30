@@ -60,7 +60,7 @@ from cosmonium.physics.bullet import BulletPhysics, BulletMover
 from cosmonium.physics.collision import CollisionPhysics
 from cosmonium.ui.splash import NoSplash
 from cosmonium.cosmonium import CosmoniumBase
-from cosmonium import settings
+from cosmonium import settings, mesh
 
 from cosmonium.astro import units
 
@@ -477,6 +477,7 @@ class RoamingRalphDemo(CosmoniumBase):
             if self.ralph_config.physics_config.debug:
                 print("Disabling camera at origin")
                 settings.camera_at_origin = False
+            mesh.set_physics_engine('bullet')
         self.physic_objects = []
 
         self.fullscreen = False
