@@ -110,7 +110,7 @@ PUBLISHED:
 
   virtual void update_all(double time, CameraAnchor &observer, unsigned long int update_id);
 
-  virtual void update_luminosity(StellarAnchor *star) = 0;
+  virtual void update_luminosity(StellarAnchor *star = 0) = 0;
 
   INLINE double get_apparent_radius(void) const { return get_bounding_radius(); }
 
