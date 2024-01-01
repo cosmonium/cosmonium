@@ -24,7 +24,7 @@ from ... import settings
 
 class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
 
-    fragment_requires = {'world_vertex', 'world_normal'}
+    fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def __init__(self, name, use_bias):
         ShaderComponent.__init__(self)
@@ -71,7 +71,7 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
 
     def prepare_shadow_for(self, code, light, light_direction, eye_light_direction):
         if self.use_bias:
-            code.append(f"vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, world_normal, {light_direction});" % (self.name, self.name, self.name))
+            code.append(f"vec3 %s_offset = get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, eye_normal, {light_direction});" % (self.name, self.name, self.name))
             code.append("vec4 %s_lightclip = trans_view_to_clip_of_%sLightSource * (eye_vertex4 + vec4(%s_offset, 0.0));" % (self.name, self.name, self.name))
             code.append("%s_lightclip.z -= %s_shadow_depth_bias * %s_lightclip.w;" % (self.name, self.name, self.name))
         else:
