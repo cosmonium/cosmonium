@@ -30,7 +30,7 @@ from ... import settings
 
 
 class Window():
-    texture = None
+
     def __init__(self, title_text, scale, parent=None, child=None, transparent=False, owner=None):
         self.title_text = title_text
         self.scale = scale
@@ -50,8 +50,8 @@ class Window():
         self.pad = 0
         self.event_handler = DirectObject()
         self.button_thrower = base.buttonThrowers[0].node()
-        self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs = [-1])
-        self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs = [1])
+        self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs=[-1])
+        self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs=[1])
         self.scrollers = []
 
 #         if Window.texture is None:
@@ -68,10 +68,12 @@ class Window():
                                   align=TextNode.ALeft,
                                   font=None,
                                   mayChange=True)
-        bounds = self.title.getTightBounds()
-        self.title_frame['frameSize'] = [0, bounds[1][0] - bounds[0][0] + self.title_pad[0] * 2,
-                                         0, bounds[1][2] - bounds[0][2] + self.title_pad[1] * 2]
-        self.title.setPos( -bounds[0][0] + self.title_pad[0],  -bounds[0][2] + self.title_pad[1])
+        bounds = self.title.get_tight_bounds()
+        size = bounds[1] - bounds[0]
+        bottom_left = bounds[0]
+        self.title_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
+                                         0, size[2] + self.title_pad[1] * 2]
+        self.title.setTextPos(-bottom_left[0] + self.title_pad[0], -bottom_left[2] + self.title_pad[1])
         self.close_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
         self.close = OnscreenText(text='X',
                                   style=Plain,
@@ -82,11 +84,13 @@ class Window():
                                   align=TextNode.ACenter,
                                   font=None,
                                   mayChange=True)
-        bounds = self.close.getTightBounds()
-        self.close_frame['frameSize'] = [0, bounds[1][0] - bounds[0][0] + self.title_pad[0] * 2,
+        bounds = self.close.get_tight_bounds()
+        size = bounds[1] - bounds[0]
+        bottom_left = bounds[0]
+        self.close_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
                                          self.title_frame['frameSize'][2], self.title_frame['frameSize'][3]]
-        self.close.setPos( -bounds[0][0] + self.title_pad[0],  -bounds[0][2] + self.title_pad[1])
-        self.frame.setPos(0, 0, 0)
+        self.close.setTextPos(-bottom_left[0] + self.title_pad[0], -bottom_left[2] + self.title_pad[1])
+        self.frame.set_pos(0, 0, 0)
         self.title_frame.bind(DGG.B1PRESS, self.start_drag)
         self.title_frame.bind(DGG.B1RELEASE, self.stop_drag)
         self.close_frame.bind(DGG.B1PRESS, self.close_window)
@@ -99,21 +103,21 @@ class Window():
             self.update()
 
     def update(self):
-        if self.child is not None:
-            frame_size = list(self.child.frame['frameSize'])
-            if frame_size is not None:
-                frame_size[0] -= self.pad
-                frame_size[1] += self.pad
-                frame_size[2] += self.pad
-                frame_size[3] -= self.pad
-            self.frame['frameSize'] = frame_size
-        if self.frame['frameSize'] is not None:
-            width = self.frame['frameSize'][1] - self.frame['frameSize'][0]
-            title_size = self.title_frame['frameSize']
-            title_size[0] = 0
-            title_size[1] = width
-            self.title_frame['frameSize'] = title_size
-            self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)
+        if self.child is None:
+            return
+        frame_size = list(self.child.frame['frameSize'])
+        frame_size[0] -= self.pad
+        frame_size[1] += self.pad
+        frame_size[2] += self.pad
+        frame_size[3] -= self.pad
+        self.frame['frameSize'] = frame_size
+        width = frame_size[1] - frame_size[0]
+        height = frame_size[3] - frame_size[2]
+        title_size = self.title_frame['frameSize']
+        title_size[0] = 0
+        title_size[1] = width
+        self.title_frame['frameSize'] = title_size
+        self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)
 
     def register_scroller(self, scroller):
         self.scrollers.append(scroller)
@@ -123,7 +127,8 @@ class Window():
         region = base.mouseWatcherNode.getOverRegion()
         if region is not None:
             widget = base.render2d.find("**/*{0}".format(region.name))
-            if widget.is_empty() or isinstance(widget.node(), PGSliderBar) or isinstance(widget.getParent().node(), PGSliderBar):
+            if (widget.is_empty() or
+                    isinstance(widget.node(), PGSliderBar) or isinstance(widget.getParent().node(), PGSliderBar)):
                 return
 
         # Get the mouse-position
@@ -135,9 +140,8 @@ class Window():
         # Determine whether any of the scrolled-frames are under the mouse-pointer
         for scroller in self.scrollers:
             bounds = scroller['frameSize']
-            pos = scroller.get_relative_point(base.render2d, Point3(mouse_pos.get_x() ,0, mouse_pos.get_y()))
-            if pos.x > bounds[0] and pos.x < bounds[1] and \
-                pos.z > bounds[2] and pos.z < bounds[3]:
+            pos = scroller.get_relative_point(base.render2d, Point3(mouse_pos.get_x(), 0, mouse_pos.get_y()))
+            if pos.x > bounds[0] and pos.x < bounds[1] and pos.z > bounds[2] and pos.z < bounds[3]:
                 found_scroller = scroller
                 break
 
@@ -155,13 +159,14 @@ class Window():
     def start_drag(self, event):
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
-            self.drag_start = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x() ,0, mpos.get_y())) - self.frame.getPos()
+            current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
+            self.drag_start = current_pos - self.frame.get_pos()
             taskMgr.add(self.drag, "drag", -1)
 
     def drag(self, task):
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x() ,0, mpos.get_y()))
+            current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
             self.frame.set_pos(current_pos - self.drag_start)
         return task.again
 
@@ -172,7 +177,7 @@ class Window():
 
     def stop_drag(self, event):
         taskMgr.remove("drag")
-        self.last_pos = self.frame.getPos()
+        self.last_pos = self.frame.get_pos()
 
     def destroy(self):
         if self.frame is not None:
@@ -182,7 +187,7 @@ class Window():
         self.event_handler.ignore_all()
 
     def getPos(self):
-        return self.frame.getPos()
+        return self.frame.get_pos()
 
     def setPos(self, pos):
-        self.frame.setPos(pos)
+        self.frame.set_pos(pos)
