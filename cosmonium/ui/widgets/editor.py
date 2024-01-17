@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from ...parameters import UserParameter
 from ...utils import isclose
 from ... import settings
 
-from .direct_widget_container import DirectWidgetContainer
+from .tabbed_frame import TabbedFrameContainer
 from .window import Window
 
 
@@ -202,17 +202,18 @@ class ParamEditor():
 
     def create_layout(self, group):
         scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
-        button_height = self.font_size * 2 * settings.ui_scale
-        self.layout = DirectWidgetContainer(TabbedFrame(frameSize=(0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0),
-                                                        tab_frameSize = (0, 7, 0, 2),
-                                                        tab_scale=scale3,
-                                                        tab_text_align = TextNode.ALeft,
-                                                        tab_text_pos = (0.2, 0.6),
-                                                        tabUnselectedColor = settings.tab_background,
-                                                        tabSelectedColor = settings.panel_background,
-                                                        scroll_scrollBarWidth=self.font_size,
-                                                        scroll_verticalScroll_pageSize=self.font_size))
-        self.layout.frame.setPos(0, 0, -button_height)
+        tabbed_frame = TabbedFrame(
+            frameSize=(0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0),
+            tab_frameSize = (0, 7, 0, 2),
+            tab_scale=scale3,
+            tab_text_align = TextNode.ALeft,
+            tab_text_pos = (0.2, 0.6),
+            tabUnselectedColor = settings.tab_background,
+            tabSelectedColor = settings.panel_background,
+            scroll_scrollBarWidth=self.font_size,
+            scroll_verticalScroll_pageSize=self.font_size,
+            )
+        self.layout = TabbedFrameContainer(tabbed_frame)
         for section in group.parameters:
             sizer = Sizer("vertical")
             frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
@@ -220,7 +221,7 @@ class ParamEditor():
             sizer.update((self.width * settings.ui_scale, self.height * settings.ui_scale))
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
-            self.layout.frame.addPage(frame, section.name)
+            tabbed_frame.addPage(frame, section.name)
         title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame.viewingArea)
