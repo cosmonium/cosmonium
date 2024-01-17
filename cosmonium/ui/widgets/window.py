@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ class Window():
         size = bounds[1] - bounds[0]
         bottom_left = bounds[0]
         self.title_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
-                                         0, size[2] + self.title_pad[1] * 2]
-        self.title.setTextPos(-bottom_left[0] + self.title_pad[0], -bottom_left[2] + self.title_pad[1])
+                                         -size[2] - self.title_pad[1] * 2, 0]
+        self.title.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
         self.close_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
         self.close = OnscreenText(text='X',
                                   style=Plain,
@@ -89,7 +89,7 @@ class Window():
         bottom_left = bounds[0]
         self.close_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
                                          self.title_frame['frameSize'][2], self.title_frame['frameSize'][3]]
-        self.close.setTextPos(-bottom_left[0] + self.title_pad[0], -bottom_left[2] + self.title_pad[1])
+        self.close.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
         self.frame.set_pos(0, 0, 0)
         self.title_frame.bind(DGG.B1PRESS, self.start_drag)
         self.title_frame.bind(DGG.B1RELEASE, self.stop_drag)
@@ -105,16 +105,17 @@ class Window():
     def update(self):
         if self.child is None:
             return
+        title_frame_size = self.title_frame['frameSize']
+        title_height = title_frame_size[3] - title_frame_size[2]
+        self.child.set_pos(0, 0, -title_height)
         frame_size = list(self.child.frame['frameSize'])
         frame_size[0] -= self.pad
         frame_size[1] += self.pad
-        frame_size[2] += self.pad
-        frame_size[3] -= self.pad
-        self.frame['frameSize'] = frame_size
+        frame_size[2] -= self.pad
+        frame_size[3] += self.pad
         width = frame_size[1] - frame_size[0]
         height = frame_size[3] - frame_size[2]
         title_size = self.title_frame['frameSize']
-        title_size[0] = 0
         title_size[1] = width
         self.title_frame['frameSize'] = title_size
         self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)

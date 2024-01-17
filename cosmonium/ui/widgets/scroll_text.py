@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,11 +23,14 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 
+from .direct_widget_container import DirectWidgetContainer
 
-class ScrollText():
+
+class ScrollText(DirectWidgetContainer):
     def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12,
                  parent=None,
                  frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 0.5, -1.0, 0)):
+        super().__init__(None)
         if parent is None:
             parent = aspect2d
         self.parent = parent
@@ -46,10 +49,3 @@ class ScrollText():
         bounds = self.text.getTightBounds()
         self.frame['canvasSize'] = [0, bounds[1][0] - bounds[0][0], -bounds[1][2] + bounds[0][2], 0]
         self.text.setPos(-bounds[0][0], -bounds[1][2])
-        self.frame.setPos(0, 0, 0)
-
-    def destroy(self):
-        self.frame.destroy()
-
-    def reparent_to(self, parent):
-        self.frame.reparent_to(parent)

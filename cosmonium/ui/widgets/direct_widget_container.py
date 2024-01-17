@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -25,5 +25,11 @@ class DirectWidgetContainer():
     def destroy(self):
         self.frame.destroy()
 
-    def reparent_to(self, parent):
+    def reparentTo(self, parent):
         self.frame.reparent_to(parent)
+
+    def setPos(self, *args):
+        self.frame.setPos(*args)
+
+    reparent_to = reparentTo
+    set_pos = setPos
