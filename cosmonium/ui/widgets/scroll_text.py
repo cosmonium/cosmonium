@@ -29,15 +29,13 @@ from .direct_widget_container import DirectWidgetContainer
 class ScrollText(DirectWidgetContainer):
     def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12,
                  parent=None,
-                 frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 0.5, -1.0, 0)):
+                 frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 800, -600, 0)):
         super().__init__(None)
-        if parent is None:
-            parent = aspect2d
         self.parent = parent
         self.frame = DirectScrolledFrame(parent=parent, frameColor=frameColor, state=DGG.DISABLED,
                                          frameSize=frameSize,
                                          relief=DGG.FLAT,
-                                         scrollBarWidth=scale[0] * font_size,
+                                         scrollBarWidth=font_size,
                                          horizontalScroll_relief=DGG.FLAT,
                                          verticalScroll_relief=DGG.FLAT,
                                          )

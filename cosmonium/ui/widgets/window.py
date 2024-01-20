@@ -24,7 +24,6 @@ from direct.gui.DirectGui import DirectFrame, DGG
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.OnscreenText import OnscreenText, Plain
-from direct.showbase.ShowBaseGlobal import aspect2d
 
 from ... import settings
 
@@ -41,7 +40,7 @@ class Window():
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
         if parent is None:
-            parent = aspect2d
+            parent = pixel2d
         self.parent = parent
         if transparent:
             frameColor = (0, 0, 0, 0)
