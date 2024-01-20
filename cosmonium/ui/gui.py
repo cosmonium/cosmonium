@@ -123,7 +123,7 @@ class Gui(object):
         self.license.load('COPYING.md')
         self.about = TextWindow('About', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.about.set_text(about_text)
-        self.filewindow = FileWindow('Select', self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
+        self.filewindow = FileWindow('Select', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
         self.menubar.create(self.font, self.scale)
         if settings.show_hud:
             self.show_hud()
