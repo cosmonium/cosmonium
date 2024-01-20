@@ -18,9 +18,9 @@
 #
 
 
-from panda3d.core import Texture, Filename
+from panda3d.core import AsyncFuture, Texture, Filename
 from direct.stdpy import threading
-from direct.task.Task import Task, AsyncFuture
+from direct.task.Task import Task
 
 from queue import Queue, Empty
 
