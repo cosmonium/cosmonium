@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ class Browser(object):
             self.renderer = cefpanda.CEFPanda(self.layout, settings.use_srgb)
             self.renderer.use_mouse = False
         self.layout.create()
-        self.window = Window("Browser", scale=self.scale, child=None, owner=self, transparent=False)
+        self.window = Window("Browser", scale=self.scale, child=None, owner=self)
 
     def load(self, url):
         if not cefpanda_valid:

@@ -30,7 +30,7 @@ from ... import settings
 
 class Window():
 
-    def __init__(self, title_text, scale, parent=None, child=None, transparent=False, owner=None):
+    def __init__(self, title_text, scale, parent=None, child=None, owner=None):
         self.title_text = title_text
         self.scale = scale
         self.title_size = settings.ui_font_size
@@ -42,10 +42,6 @@ class Window():
         if parent is None:
             parent = pixel2d
         self.parent = parent
-        if transparent:
-            frameColor = (0, 0, 0, 0)
-        else:
-            frameColor = (0.5, 0.5, 0.5, 1)
         self.pad = 0
         self.event_handler = DirectObject()
         self.button_thrower = base.buttonThrowers[0].node()
@@ -56,7 +52,7 @@ class Window():
 #         if Window.texture is None:
 #             Window.texture = loader.loadTexture('textures/futureui1.png')
 #         image_scale = (scale[0] * Window.texture.get_x_size(), 1, scale[1] * Window.texture.get_y_size())
-        self.frame = DirectFrame(parent=parent, state=DGG.NORMAL, frameColor=frameColor)#, image=self.texture, image_scale=image_scale)
+        self.frame = DirectFrame(parent=parent, state=DGG.NORMAL)#, image=self.texture, image_scale=image_scale)
         self.title_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
         self.title = OnscreenText(text=self.title_text,
                                   style=Plain,
@@ -107,11 +103,7 @@ class Window():
         title_frame_size = self.title_frame['frameSize']
         title_height = title_frame_size[3] - title_frame_size[2]
         self.child.set_pos(0, 0, -title_height)
-        frame_size = list(self.child.frame['frameSize'])
-        frame_size[0] -= self.pad
-        frame_size[1] += self.pad
-        frame_size[2] -= self.pad
-        frame_size[3] += self.pad
+        frame_size = self.child.frame['frameSize']
         width = frame_size[1] - frame_size[0]
         height = frame_size[3] - frame_size[2]
         title_size = self.title_frame['frameSize']

@@ -222,6 +222,12 @@ class ParamEditor():
             size = sizer.min_size
             frame['frameSize'] = (0, size[0], -size[1], 0)
             tabbed_frame.addPage(frame, section.name)
+        self.button_background = DirectFrame(
+            parent=tabbed_frame,
+            state=DGG.NORMAL,
+            frameColor=settings.panel_background,
+            sortOrder=tabbed_frame['sortOrder'] - 1)
+        self.button_background['frameSize'] = [0, self.width * settings.ui_scale, 0, self.layout.height_offset]
         title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame.viewingArea)

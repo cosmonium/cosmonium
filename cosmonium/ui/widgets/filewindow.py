@@ -66,7 +66,7 @@ class FileWindow():
                                            fileExtensions=extensions,
                                            icons=self.icons)
         self.layout.frame['frameSize'] = [0, width, -height, 0]
-        self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
 
     def show(self, current_path, callback, show_files=True, extensions=[]):
         self.callback = callback

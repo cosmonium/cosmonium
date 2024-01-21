@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ class InfoWindow():
         size = sizer.min_size
         self.layout.frame['canvasSize'] = (0, size[0], -size[1], 0)
         title = "Body information"
-        self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self, transparent=True)
+        self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)
 
     def make_title_entry(self, frame, title):
