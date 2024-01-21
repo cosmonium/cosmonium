@@ -139,7 +139,7 @@ class InfoWindow():
             return
         self.create_layout(body)
         if self.last_pos is None:
-            self.last_pos = (0, 0, -100)
+            self.last_pos = (100, 0, -100)
         self.window.setPos(self.last_pos)
         self.window.update()
 

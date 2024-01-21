@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -37,6 +37,6 @@ class ObjectEditorWindow(ParamEditor):
         self.editor = ObjectEditors.get_editor_for(body)
         self.create_layout(self.editor.get_user_parameters())
         if self.last_pos is None:
-            self.last_pos = (0, 0, -100)
+            self.last_pos = (100, 0, -100)
         self.window.setPos(self.last_pos)
         self.window.update()
