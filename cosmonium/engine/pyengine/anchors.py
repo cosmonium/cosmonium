@@ -544,7 +544,7 @@ class OctreeAnchor(SystemAnchor):
                              radius,
                              luminosity)
         # TODO: Should be done during rebuild
-        _intrinsic_luminosity = luminosity
+        self._intrinsic_luminosity = luminosity
         #TODO: Right now an octree contains anything
         self.content = ~0
         self.recreate_octree = True
