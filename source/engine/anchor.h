@@ -62,8 +62,10 @@ PUBLISHED:
   enum AnchorClass {
     Emissive   = 1,
     Reflective = 2,
-    System = 4
+    System = 4,
+    OctreeSystem = 8
   };
+
   AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color);
 
   virtual ~AnchorBase(void);

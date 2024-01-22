@@ -28,16 +28,19 @@ from ..engine.anchors import UniverseAnchor
 from .systems import OctreeSystem
 
 class Universe(OctreeSystem):
-    def __init__(self, context):
-        OctreeSystem.__init__(self, ['Universe'], [],
-                              orbit=AbsoluteFixedPosition(absolute_reference_point=LPoint3d(),
-                                                          frame=AbsoluteReferenceFrame()),
-                              rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
-                              description='Universe')
+    def __init__(self, radius):
+        OctreeSystem.__init__(
+            self,
+            ['Universe'],
+            [],
+            orbit=AbsoluteFixedPosition(absolute_reference_point=LPoint3d(), frame=AbsoluteReferenceFrame()),
+            rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
+            radius=radius,
+            description='Universe')
         self.visible = True
 
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
-        return UniverseAnchor(self, orbit, rotation, point_color)
+        return UniverseAnchor(self, orbit, rotation, self.radius, point_color)
 
     def get_fullname(self, separator='/'):
         return ''

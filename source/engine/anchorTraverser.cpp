@@ -135,7 +135,7 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(St
         if (leaf->_intrinsic_luminosity > lowest_luminosity) {
             LVector3d direction = leaf->get_absolute_position() - frustum_position;
             distance = direction.length();
-            if (distance > 0.0) {
+            if (distance > 0.0 && distance > leaf->get_bounding_radius()) {
                 double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
                 if (point_radiance > lowest_radiance) {
                     traverse = observer.frustum->is_sphere_in(leaf->get_absolute_position(), leaf->get_bounding_radius());
@@ -195,8 +195,12 @@ FindClosestSystemTraverser::traverse_octree_node(OctreeNode *octree_node, std::v
     LPoint3d local_delta = leaf->get_local_position() - observer.get_local_position();
     double leaf_distance = (global_delta + local_delta).length();
     if (leaf_distance < distance) {
-      distance = leaf_distance;
-      system = leaf;
+        if ((leaf->content & StellarAnchor::OctreeSystem) != 0) {
+            leaf->traverse(*this);
+        } else {
+            distance = leaf_distance;
+            system = leaf;
+        }
     }
   }
 }
@@ -279,7 +283,7 @@ FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vec
   for (auto leaf : leaves) {
     if (leaf->_intrinsic_luminosity > lowest_luminosity) {
       distance = (leaf->get_absolute_reference_point() - position).length();
-      if (distance > 0.0) {
+      if (distance > 0.0 && distance > leaf->get_bounding_radius()) {
         double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
         if (point_radiance > lowest_radiance) {
           leaf->traverse(*this);

@@ -19,8 +19,10 @@
 
 #include "octreeNode.h"
 #include "anchor.h"
+#include "octreeAnchor.h"
 #include "stellarAnchor.h"
 #include "anchorTraverser.h"
+#include "dcast.h"
 
 #include "iostream"
 #include "math.h"
@@ -64,6 +66,12 @@ OctreeNode::set_rebuild_needed(void)
 void
 OctreeNode::rebuild(void)
 {
+    for (auto leaf : leaves) {
+        if ((leaf->content & AnchorBase::OctreeSystem) != 0) {
+            OctreeAnchor *anchor = DCAST(OctreeAnchor, leaf);
+            anchor->rebuild();
+        }
+    }
     for (auto child : children) {
         if (child != 0 && child->rebuild_needed) {
             child->rebuild();

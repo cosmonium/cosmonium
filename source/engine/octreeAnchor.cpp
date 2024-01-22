@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2024 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,19 +28,19 @@ TypeHandle OctreeAnchor::_type_handle;
 OctreeAnchor::OctreeAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
+    double radius,
     LColor point_color) :
     SystemAnchor(ref_object, orbit, rotation, point_color),
     recreate_octree(true)
 {
-  //TODO: Turn this into a parameter or infer it from the children
-  bounding_radius = 100000.0 * Ly;
+    bounding_radius = radius;
   //TODO: Should be configurable
-  double top_level_absolute_magnitude = app_to_abs_mag(6.0, bounding_radius * sqrt(3));
+  double top_level_absolute_magnitude = app_to_abs_mag(6.0, radius * sqrt(3));
   double luminosity = abs_mag_to_lum(top_level_absolute_magnitude) * L0;
   //TODO: position should be extracted from orbit
   octree = new OctreeNode(0, /*this,*/ 0,
       LPoint3d(10 * Ly, 10 * Ly, 10 * Ly),
-      bounding_radius,
+      radius,
       luminosity);
   octree->parent = this;
   //TODO: Should be done during rebuild

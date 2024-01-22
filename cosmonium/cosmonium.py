@@ -434,7 +434,7 @@ class Cosmonium(CosmoniumBase):
         self.init_c_settings()
 
         self.worlds = Worlds()
-        self.universe = Universe(self)
+        self.universe = Universe(100000.0 * units.Ly)
         self.background = ObserverCenteredWorld("background", background=True)
         self.worlds.add_world(self.background)
         self.labels = Labels()

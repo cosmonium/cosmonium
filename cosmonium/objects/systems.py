@@ -181,11 +181,12 @@ class StellarSystem(StellarObject):
                     scene_manager.add_spread_object(child.orbit_object.instance)
 
 class OctreeSystem(StellarSystem):
-    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
+    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, radius=None, point_color=None, description=''):
+        self.radius = radius
         StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
 
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
-        return OctreeAnchor(self, orbit, rotation, point_color)
+        return OctreeAnchor(self, orbit, rotation, self.radius, point_color)
 
     def dumpOctree(self):
         self.anchor.dump_octree()

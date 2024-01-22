@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -360,9 +360,11 @@ class ControlledCartesianAnchor(CartesianAnchor):
 
 
 class StellarAnchor(AnchorBase):
-    Emissive   = 1
-    Reflective = 2
-    System     = 4
+    Emissive     = 1
+    Reflective   = 2
+    System       = 4
+    OctreeAnchor = 8
+
     def __init__(self, anchor_class, body, orbit, rotation, point_color):
         AnchorBase.__init__(self, anchor_class, body)
         #TODO: To remove
@@ -530,17 +532,16 @@ class SystemAnchor(DynamicStellarAnchor):
             StellarAnchor.update_luminosity(self, star)
 
 class OctreeAnchor(SystemAnchor):
-    def __init__(self, body, orbit, rotation, point_color):
+    def __init__(self, body, orbit, rotation, radius, point_color):
         SystemAnchor.__init__(self, body, orbit, rotation, point_color)
-        #TODO: Turn this into a parameter or infer it from the children
-        self.bounding_radius = 100000.0 * units.Ly
+        self.bounding_radius = radius
         #TODO: Should be configurable
-        abs_magnitude = app_to_abs_mag(6.0, self.bounding_radius * sqrt(3))
+        abs_magnitude = app_to_abs_mag(6.0, radius * sqrt(3))
         luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         #TODO: position should be extracted from orbit
         self.octree = OctreeNode(0, self,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             self.bounding_radius,
+                             radius,
                              luminosity)
         # TODO: Should be done during rebuild
         _intrinsic_luminosity = luminosity
@@ -575,8 +576,8 @@ class OctreeAnchor(SystemAnchor):
 
 
 class UniverseAnchor(OctreeAnchor):
-    def __init__(self, body, orbit, rotation, point_color):
-        OctreeAnchor.__init__(self, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, radius, point_color):
+        OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color)
         self.visible = True
         self.resolved = True
 

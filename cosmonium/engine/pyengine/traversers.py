@@ -89,7 +89,7 @@ class UpdateTraverser(AnchorTraverser):
             traverse = False
             if leaf._intrinsic_luminosity > lowest_luminosity:
                 distance = (leaf._global_position - frustum_position).length()
-                if distance > 0.0:
+                if distance > 0.0 and distance > leaf.bounding_radius:
                     point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
                     if point_radiance > self.lowest_radiance:
                         traverse = frustum.is_sphere_in(leaf._global_position, leaf.bounding_radius)
@@ -119,8 +119,11 @@ class FindClosestSystemTraverser(AnchorTraverser):
             local_delta = leaf._local_position - local_position
             distance = (global_delta + local_delta).length()
             if distance < self.distance:
-                self.distance = distance
-                self.closest_system = leaf
+                if (leaf.content & StellarAnchor.OctreeAnchor) != 0:
+                    leaf.traverse(self)
+                else:
+                    self.distance = distance
+                    self.closest_system = leaf
 
 
 class FindLightSourceTraverser(AnchorTraverser):
@@ -183,7 +186,7 @@ class FindLightSourceTraverser(AnchorTraverser):
         for leaf in octree_node.leaves:
             if leaf._intrinsic_luminosity > lowest_luminosity:
                 distance = (leaf._global_position - self.position).length()
-                if distance > 0.0:
+                if distance > 0.0 and distance > leaf.bounding_radius:
                     point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
                     if point_radiance > self.lowest_radiance:
                         leaf.traverse(self)

@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2024 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,9 @@ TypeHandle UniverseAnchor::_type_handle;
 UniverseAnchor::UniverseAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
+    double radius,
     LColor point_color) :
-    OctreeAnchor(ref_object, orbit, rotation, point_color)
+    OctreeAnchor(ref_object, orbit, rotation, radius, point_color)
 {
   visible = true;
   resolved = true;

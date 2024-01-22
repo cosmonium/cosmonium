@@ -23,11 +23,15 @@ from panda3d.core import LPoint3d
 from math import sqrt
 
 class OctreeNode(object):
+
+    OctreeSystem = 8
+
     max_level = 200
     max_leaves = 75
     nb_cells = 0
     nb_leaves = 0
     child_factor = 0.25
+
     def __init__(self, level, parent, center, width, threshold, index = -1):
         self.level = level
         self.parent = parent
@@ -61,6 +65,9 @@ class OctreeNode(object):
             self.parent.set_rebuild_needed()
 
     def rebuild(self):
+        for leaf in self.leaves:
+            if (leaf.content & self.OctreeSystem) != 0:
+                leaf.rebuild()
         for child in self.children:
             if child is not None and child.rebuild_needed:
                 child.rebuild()
