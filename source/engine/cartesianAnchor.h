@@ -56,7 +56,7 @@ PUBLISHED:
 
   void set_frame_position(LPoint3d position);
 
-  LPoint3d get_frame_position(void) const;
+  virtual LPoint3d get_frame_position(void) const;
 
   void set_frame_orientation(LQuaterniond rotation);
 

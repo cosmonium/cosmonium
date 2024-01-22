@@ -63,6 +63,8 @@ PUBLISHED:
 
   virtual LPoint3d get_local_position(void) const;
 
+  virtual LPoint3d get_frame_position(void) const;
+
   virtual LQuaterniond get_absolute_orientation(void) const;
 
   virtual LQuaterniond get_equatorial_rotation(void) const;

@@ -397,6 +397,9 @@ class StellarAnchor(AnchorBase):
     def get_absolute_position(self):
         return self._global_position + self._local_position
 
+    def get_frame_position(self):
+        return self.orbit.frame.get_frame_position(self._local_position)
+
     def get_local_position(self):
         return self._local_position
 

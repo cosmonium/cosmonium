@@ -98,6 +98,8 @@ PUBLISHED:
 
   virtual LPoint3d get_local_position(void) const = 0;
 
+  virtual LPoint3d get_frame_position(void) const = 0;
+
   virtual LQuaterniond get_absolute_orientation(void) const = 0;
 
   virtual LPoint3d calc_absolute_relative_position(AnchorBase const *anchor) const;

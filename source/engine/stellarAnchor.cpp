@@ -128,6 +128,12 @@ StellarAnchor::get_local_position(void) const
   return _local_position;
 }
 
+LPoint3d
+StellarAnchor::get_frame_position(void) const
+{
+    return orbit->get_frame()->get_frame_position(_local_position);
+}
+
 LQuaterniond
 StellarAnchor::get_absolute_orientation(void) const
 {
