@@ -18,6 +18,10 @@
  */
 
 
+// include astro.h for M_PI definition
+#include "astro.h"
+
+
 double
 AnchorBase::get_albedo(void) const
 {
