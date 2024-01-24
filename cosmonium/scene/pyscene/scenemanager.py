@@ -525,6 +525,8 @@ class SceneRegion:
         for rendering_pass in self.rendering_passes:
             rendering_pass.remove()
         self.rendering_passes = []
+        # We must explicitly remove all the attached lights or they are kept around (is this a Panda3D bug ?)
+        self.root.clear_light()
         # Note: This assume that all the instances attached to the root will be detached
         # If it's no longer the case, we have to manually detach them before destroying the root
         self.root = None

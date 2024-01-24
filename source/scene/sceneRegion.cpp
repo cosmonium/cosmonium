@@ -148,6 +148,10 @@ SceneRegion::remove(void)
     rendering_pass->remove();
   }
   rendering_passes.clear();
+  // We must explicitly remove all the attached lights or they are kept around (is this a Panda3D bug ?)
+  root.clear_light();
+  // Note: This assume that all the instances attached to the root will be detached
+  //If it's no longer the case, we have to manually detach them before destroying the root
 }
 
 
