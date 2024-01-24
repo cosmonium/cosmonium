@@ -192,8 +192,8 @@ class DynamicSceneManager(SceneManagerBase):
         self.root = render.attach_new_node('root')
         fake_light = DirectionalLight('fake-light')
         fake_light.set_color((0, 0, 0, 0))
-        fake_ambient_np = self.root.attach_new_node(fake_light)
-        self.root.set_light(fake_ambient_np)
+        self.fake_ambient_np = self.root.attach_new_node(fake_light)
+        self.root.set_light(self.fake_ambient_np)
 
     @property
     def camera(self):
