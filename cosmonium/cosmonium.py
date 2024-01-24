@@ -1151,7 +1151,7 @@ class Cosmonium(CosmoniumBase):
         lowest_radiance = abs_mag_to_lum(-10) * units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
         traverser = FindLightSourceTraverser(lowest_radiance, self.observer.get_absolute_position())
         self.universe.anchor.traverse(traverser)
-        self.global_light_sources = traverser.get_collected()
+        self.global_light_sources = sorted(traverser.get_collected(), key=lambda x: x._intrinsic_luminosity)
         # print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
 
     def _add_extra(self, to_add):
