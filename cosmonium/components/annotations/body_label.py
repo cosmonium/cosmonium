@@ -72,8 +72,7 @@ class StellarBodyLabel(ObjectLabel):
 
 class FixedOrbitLabel(StellarBodyLabel):
     def check_visibility(self, frustum, pixel_size):
-        #TODO: Should be refactored !
-        if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved and (self.label_source.primary is None or (self.label_source.primary.label is not None and self.label_source.primary.label.visible)):
+        if self.label_source.virtual_object and self.label_source.is_system() and self.label_source.anchor.resolved:
             self.visible = False
             return
         app_magnitude = radiance_to_mag(self.label_source.anchor._point_radiance)
