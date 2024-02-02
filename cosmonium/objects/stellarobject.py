@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LColor
+from panda3d.core import LColor, LVector3d
 
 from ..engine.anchors import CartesianAnchor
 from ..foundation import CompositeObject
@@ -303,6 +303,13 @@ class StellarObject(NamedObject):
 
     def get_height_under(self, position):
         return self.get_apparent_radius()
+
+    def get_point_under(self, position):
+        return self.anchor.get_local_position()
+
+    def get_tangent_plane_under(self, position):
+        vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
+        return vectors
 
     def set_visibility_override(self, override):
         if override == self.anchor.visibility_override: return
