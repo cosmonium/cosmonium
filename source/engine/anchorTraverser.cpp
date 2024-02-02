@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2023 Laurent Deru.
+ * Copyright (C) 2018-2024 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,12 +135,13 @@ UpdateTraverser::traverse_octree_node(OctreeNode *octree_node, std::vector<PT(St
         if (leaf->_intrinsic_luminosity > lowest_luminosity) {
             LVector3d direction = leaf->get_absolute_position() - frustum_position;
             distance = direction.length();
-            if (distance > 0.0 && distance > leaf->get_bounding_radius()) {
+            if (distance > leaf->get_bounding_radius()) {
                 double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
                 if (point_radiance > lowest_radiance) {
                     traverse = observer.frustum->is_sphere_in(leaf->get_absolute_position(), leaf->get_bounding_radius());
                 }
             } else {
+                // We are inside the leaf object
                 traverse = true;
             }
         }
@@ -171,7 +172,8 @@ FindClosestSystemTraverser::traverse_anchor(AnchorBase *anchor)
 bool
 FindClosestSystemTraverser::enter_system(SystemAnchor *anchor)
 {
-  return false;
+  // We only enter octree systems
+  return (anchor->content & StellarAnchor::OctreeSystem) != 0;
 }
 
 void
@@ -194,16 +196,19 @@ FindClosestSystemTraverser::traverse_octree_node(OctreeNode *octree_node, std::v
     LPoint3d global_delta = leaf->get_absolute_reference_point() - observer.get_absolute_reference_point();
     LPoint3d local_delta = leaf->get_local_position() - observer.get_local_position();
     double leaf_distance = (global_delta + local_delta).length();
-    if (leaf_distance < distance) {
-        if ((leaf->content & StellarAnchor::OctreeSystem) != 0) {
+    if ((leaf->content & StellarAnchor::OctreeSystem) != 0) {
+        if (leaf_distance - leaf->get_bounding_radius() < distance) {
             leaf->traverse(*this);
-        } else {
+        }
+    } else {
+        if (leaf_distance < distance) {
             distance = leaf_distance;
             system = leaf;
         }
     }
   }
 }
+
 FindLightSourceTraverser::FindLightSourceTraverser(double lowest_radiance, LPoint3d position) :
     lowest_radiance(lowest_radiance),
     position(position)
@@ -223,7 +228,7 @@ FindLightSourceTraverser::enter_system(SystemAnchor *anchor)
   LPoint3d global_delta = anchor->get_absolute_reference_point() - position;
   if ((anchor->content & AnchorBase::Emissive) != 0) {
       double distance = (global_delta).length();
-      if (distance > 0) {
+      if (distance > anchor->get_bounding_radius()) {
           double point_radiance = anchor->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
           return point_radiance > lowest_radiance;
       } else {
@@ -283,12 +288,13 @@ FindLightSourceTraverser::traverse_octree_node(OctreeNode *octree_node, std::vec
   for (auto leaf : leaves) {
     if (leaf->_intrinsic_luminosity > lowest_luminosity) {
       distance = (leaf->get_absolute_reference_point() - position).length();
-      if (distance > 0.0 && distance > leaf->get_bounding_radius()) {
+      if (distance > leaf->get_bounding_radius()) {
         double point_radiance = leaf->_intrinsic_luminosity / (4 * M_PI * distance * distance * 1000 * 1000);
         if (point_radiance > lowest_radiance) {
           leaf->traverse(*this);
         }
       } else {
+        // We are inside the leaf object
         leaf->traverse(*this);
       }
     }

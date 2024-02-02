@@ -560,7 +560,7 @@ class OctreeAnchor(SystemAnchor):
         self.rebuild_needed = False
 
     def traverse(self, visitor):
-        if visitor.enter_octree_node(self.octree):
+        if visitor.enter_system(self):
             self.octree.traverse(visitor)
 
     def create_octree(self):

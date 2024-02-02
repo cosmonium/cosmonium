@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -89,11 +89,12 @@ class UpdateTraverser(AnchorTraverser):
             traverse = False
             if leaf._intrinsic_luminosity > lowest_luminosity:
                 distance = (leaf._global_position - frustum_position).length()
-                if distance > 0.0 and distance > leaf.bounding_radius:
+                if distance > leaf.bounding_radius:
                     point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
                     if point_radiance > self.lowest_radiance:
                         traverse = frustum.is_sphere_in(leaf._global_position, leaf.bounding_radius)
                 else:
+                    # We are inside the leaf object
                     traverse = True
             if traverse:
                 leaf.traverse(self)
@@ -105,6 +106,10 @@ class FindClosestSystemTraverser(AnchorTraverser):
         self._global_position = observer._global_position
         self.closest_system = system
         self.distance = distance
+
+    def enter_system(self, anchor):
+        # We only enter octree systems
+        return (anchor.content & StellarAnchor.OctreeAnchor) != 0
 
     def enter_octree_node(self, octree_node):
         #TODO: Check node content ?
@@ -118,10 +123,11 @@ class FindClosestSystemTraverser(AnchorTraverser):
             global_delta = leaf._global_position - global_position
             local_delta = leaf._local_position - local_position
             distance = (global_delta + local_delta).length()
-            if distance < self.distance:
-                if (leaf.content & StellarAnchor.OctreeAnchor) != 0:
+            if (leaf.content & StellarAnchor.OctreeAnchor) != 0:
+                if distance - leaf.bounding_radius < self.distance:
                     leaf.traverse(self)
-                else:
+            else:
+                if distance < self.distance:
                     self.distance = distance
                     self.closest_system = leaf
 
@@ -143,10 +149,11 @@ class FindLightSourceTraverser(AnchorTraverser):
         global_delta = anchor._global_position - self.position
         if anchor.content & StellarAnchor.Emissive != 0:
             distance = (global_delta).length()
-            if distance > 0:
+            if distance > anchor.bounding_radius:
                 point_radiance = anchor._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
                 return point_radiance > self.lowest_radiance
             else:
+                # We are inside the system
                 return True
         else:
             return False
@@ -186,11 +193,12 @@ class FindLightSourceTraverser(AnchorTraverser):
         for leaf in octree_node.leaves:
             if leaf._intrinsic_luminosity > lowest_luminosity:
                 distance = (leaf._global_position - self.position).length()
-                if distance > 0.0 and distance > leaf.bounding_radius:
+                if distance > leaf.bounding_radius:
                     point_radiance = leaf._intrinsic_luminosity / (4 * pi * distance * distance * 1000 * 1000)
                     if point_radiance > self.lowest_radiance:
                         leaf.traverse(self)
                 else:
+                    # We are inside the leaf object
                     leaf.traverse(self)
 
 

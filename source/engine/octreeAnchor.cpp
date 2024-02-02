@@ -53,7 +53,7 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
 void
 OctreeAnchor::traverse(AnchorTraverser &visitor)
 {
-  if (visitor.enter_octree_node(octree)) {
+  if (visitor.enter_system(this)) {
     octree->traverse(visitor);
   }
 }
