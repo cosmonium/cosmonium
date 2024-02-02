@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
 from panda3d.core import ShaderAttrib
 
-from .dso import DeepSpaceObject
+from .systems import OctreeSystem
 
 from ..appearances import AppearanceBase
 from ..datasource import DataSource
@@ -37,20 +37,25 @@ from ..shaders.point_control import PointControl
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..utils import TransparencyBlend
-from ..utils import mag_to_scale_nolimit, srgb_to_linear
+from ..utils import srgb_to_linear
 from ..parameters import AutoUserParameter, UserParameter
 
 from ..astro import units
+from ..astro.astro import abs_mag_to_lum
 from .. import settings
 
 from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from random import random, gauss, choice, seed
 
 
-class Galaxy(DeepSpaceObject):
+class Galaxy(OctreeSystem):
+    background = True
     has_rotation_axis = False
+    has_reference_axis = False
+    has_halo = True
     has_resolved_halo = False
     support_offset_body_center = False
+    virtual_object = False
 
     def __init__(self, names, source_names, radius=None, radius_units=units.Ly,
                  abs_magnitude=None,
@@ -60,6 +65,10 @@ class Galaxy(DeepSpaceObject):
                  orbit=None, rotation=None, frame=None,
                  body_class='galaxy', point_color=None,
                  description=''):
+        radius = radius * radius_units
+        super().__init__(names, source_names, orbit, rotation, frame, body_class, radius, point_color, description)
+        #TODO: This should be done in create_anchor
+        self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         self.shape_type = shape_type
         shader = None
         if shader is None:
@@ -72,13 +81,45 @@ class Galaxy(DeepSpaceObject):
         shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
-        surface = EllipsoidFlatSurface(radius=radius * radius_units, shape=shape, appearance=appearance, shader=shader)
-        surface.sources.add_source(GalaxyDataSource())
-        DeepSpaceObject.__init__(self, names, source_names, radius, radius_units,
-                              surface=surface,
-                              orbit=orbit, rotation=rotation, frame=frame,
-                              abs_magnitude=abs_magnitude, body_class=body_class)
-        self._extend = self.radius
+        self.surface = EllipsoidFlatSurface(radius=radius, shape=shape, appearance=appearance, shader=shader)
+        self.surface.sources.add_source(GalaxyDataSource())
+        self.components.add_component(self.surface)
+        self.surface.set_body(self)
+        self.surface.set_owner(self)
+
+    def get_apparent_radius(self):
+        return self.radius
+
+    def get_height_under(self, position):
+        return 0.0
+
+    def create_components(self):
+        super().create_components()
+        self.components.add_component(self.surface)
+        self.surface.set_oid_color(self.oid_color)
+        self.configure_shape()
+
+    def remove_components(self):
+        self.unconfigure_shape()
+        super().remove_components()
+        self.components.remove_component(self.surface)
+
+    def get_components(self):
+        #TODO: This is a hack to be fixed in v0.3.0
+        components = []
+        if self.surface is not None:
+            components.append(self.surface)
+        return components
+
+    def configure_shape(self):
+        if self.surface is not None:
+            self.surface.configure_shape()
+        self.surface.appearance.set_magnitude(self, self.surface.shape)
+
+    def unconfigure_shape(self):
+        if self.surface is not None:
+            self.surface.unconfigure_shape()
+
 
 class GalaxyAppearance(AppearanceBase):
     image = None
@@ -136,6 +177,9 @@ class GalaxyAppearance(AppearanceBase):
         if self.transparency:
             instance.setShaderInput("transparency_level", self.transparency_level)
         shape.instance_ready = True
+
+    def update(self, shape, instance, camera_pos, camera_rot):
+        self.set_magnitude(shape.owner, shape)
 
     def get_user_parameters(self):
         return [

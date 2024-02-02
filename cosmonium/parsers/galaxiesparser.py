@@ -156,6 +156,7 @@ class GalaxyShapeYamlParser(YamlModuleParser):
         else:
             return cls.decode_shape(data)
 
+
 class GalaxyYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
         name = data.get('name')
@@ -183,7 +184,10 @@ class GalaxyYamlParser(YamlModuleParser):
                     radius_units=radius_units,
                     orbit=orbit,
                     rotation=rotation)
+        children_data = data.get('children', [])
+        children = ObjectYamlParser.decode(children_data, galaxy)
         parent.add_child_fast(galaxy)
         return galaxy
+
 
 ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())
