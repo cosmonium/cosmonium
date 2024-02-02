@@ -200,6 +200,10 @@ class OctreeSystem(StellarSystem):
     def rebuild(self):
         self.anchor.rebuild()
 
+    def is_emissive(self):
+        return True
+
+
 class SimpleSystem(StellarSystem):
     def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, frame=None, body_class='system', point_color=None, description=''):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
