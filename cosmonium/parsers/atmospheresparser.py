@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,12 +18,8 @@
 #
 
 
-from panda3d.core import LVector3d
-
 from ..appearances import Appearance
 from ..components.elements.atmosphere import Atmosphere
-from ..scattering.oneil.oneil import ONeilSimpleScattering
-from ..scattering.oneil.oneil import ONeilScattering
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.base import AtmosphereLightingModel
 from ..celestia.scattering import CelestiaScattering

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -36,13 +36,14 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
         mie_coef = data.get('mie', 0.0015)
         sun_power = data.get('power', 15.0)
         samples = data.get('samples', 5)
-        exposure = data.get('exposure', 0.8)
         calc_in_fragment = data.get('calc-in-fragment', True)
         normalize = data.get('normalize', True)
         hdr = data.get('hdr', True)
+        exposure = data.get('exposure', 1)
         atm_calc_in_fragment = data.get('atm-calc-in-fragment', True)
         atm_normalize = data.get('atm-normalize', True)
         atm_hdr = data.get('atm-hdr', True)
+        atm_exposure = data.get('atm-exposure', 0.8)
         scattering = ONeilSimpleScattering(
             wavelength = [0.650, 0.570, 0.465],
             mie_phase_asymmetry=mie_phase_asymmetry,
@@ -50,17 +51,18 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
             rayleigh_coef=rayleigh_coef,
             sun_power=sun_power,
             samples=samples,
-            exposure=exposure,
             calc_in_fragment=calc_in_fragment,
             atm_calc_in_fragment=atm_calc_in_fragment,
             normalize=normalize,
             atm_normalize=atm_normalize,
             hdr=hdr,
-            atm_hdr=atm_hdr)
+            exposure=exposure,
+            atm_hdr=atm_hdr,
+            atm_exposure=atm_exposure)
         return scattering
 
 
-class ONeilAtmosphereYamlParser(YamlParser):
+class ONeilScatteringYamlParser(YamlParser):
     @classmethod
     def decode(self, data):
         height = data.get('height', 160)
@@ -108,4 +110,5 @@ class ONeilAtmosphereYamlParser(YamlParser):
         return scattering
 
 
-ScatteringYamlParser.register('oneil', ONeilAtmosphereYamlParser())
+ScatteringYamlParser.register('oneil', ONeilScatteringYamlParser())
+ScatteringYamlParser.register('oneil:simple', ONeilSimpleScatteringYamlParser())
