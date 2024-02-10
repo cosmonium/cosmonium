@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -549,7 +549,7 @@ class ONeilScatteringDataSourceBase(DataSource):
 
         if body.stellar_object:
             #TODO: We should get the oblateness correctly
-            body_scale = self.parameters.body.surface.get_scale()
+            body_scale = self.parameters.body.surface.get_shape_axes()
             descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
             rotation_mat = LMatrix4()
             orientation = LQuaternion(*shape.parent.body.anchor.get_absolute_orientation())
