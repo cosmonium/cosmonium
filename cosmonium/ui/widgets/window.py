@@ -25,6 +25,7 @@ from direct.gui.DirectSlider import DirectSlider
 from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.OnscreenText import OnscreenText, Plain
 
+from ...geometry.geometry import FrameGeom
 from ... import settings
 
 
@@ -42,6 +43,8 @@ class Window():
         if parent is None:
             parent = pixel2d
         self.parent = parent
+        self.border = (1, 1)
+        self.border_color = (0, 0, 0, 1)
         self.pad = 0
         self.event_handler = DirectObject()
         self.button_thrower = base.buttonThrowers[0].node()
@@ -49,10 +52,12 @@ class Window():
         self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs=[1])
         self.scrollers = []
 
-#         if Window.texture is None:
-#             Window.texture = loader.loadTexture('textures/futureui1.png')
-#         image_scale = (scale[0] * Window.texture.get_x_size(), 1, scale[1] * Window.texture.get_y_size())
-        self.frame = DirectFrame(parent=parent, state=DGG.NORMAL)#, image=self.texture, image_scale=image_scale)
+        self.frame = DirectFrame(parent=parent, state=DGG.NORMAL)
+        if max(self.border) > 0:
+            self.decorator_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(0, 0, 0, 0))
+            self.decorator_frame.set_pos((-self.border[0], 0, self.border[1]))
+        else:
+            self.decorator_frame = None
         self.title_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
         self.title = OnscreenText(text=self.title_text,
                                   style=Plain,
@@ -88,6 +93,9 @@ class Window():
         self.frame.set_pos(0, 0, 0)
         self.title_frame.bind(DGG.B1PRESS, self.start_drag)
         self.title_frame.bind(DGG.B1RELEASE, self.stop_drag)
+        if self.decorator_frame is not None:
+            self.decorator_frame.bind(DGG.B1PRESS, self.start_drag)
+            self.decorator_frame.bind(DGG.B1RELEASE, self.stop_drag)
         self.close_frame.bind(DGG.B1PRESS, self.close_window)
         self.set_child(child)
 
@@ -113,6 +121,13 @@ class Window():
         title_size[1] = width
         self.title_frame['frameSize'] = title_size
         self.close_frame.set_pos(width - self.close_frame['frameSize'][1], 0, 0)
+        if self.decorator_frame is not None:
+            extended_width = width + self.border[0] * 2
+            extended_height = height + title_height  + self.border[1] * 2
+            geom = FrameGeom((extended_width, extended_height), self.border, outer=False, texture=False)
+            geom.set_color(*self.border_color)
+            self.decorator_frame['geom'] = geom
+            self.decorator_frame['frameSize'] = [0, extended_width, 0, -extended_height]
 
     def set_limits(self, limits):
         pos = self.frame.get_pos()
