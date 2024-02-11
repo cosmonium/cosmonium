@@ -106,13 +106,13 @@ class Window():
         title_frame_size = self.title_frame['frameSize']
         title_height = title_frame_size[3] - title_frame_size[2]
         self.child.set_pos(0, 0, -title_height)
-        frame_size = self.child.frame['frameSize']
+        frame_size = self.child.frame_size()
         width = frame_size[1] - frame_size[0]
         height = frame_size[3] - frame_size[2]
         title_size = self.title_frame['frameSize']
         title_size[1] = width
         self.title_frame['frameSize'] = title_size
-        self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)
+        self.close_frame.set_pos(width - self.close_frame['frameSize'][1], 0, 0)
 
     def set_limits(self, limits):
         pos = self.frame.get_pos()

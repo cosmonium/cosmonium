@@ -25,11 +25,15 @@ class DirectWidgetContainer():
     def destroy(self):
         self.frame.destroy()
 
+    def frameSize(self):
+        return self.frame['frameSize']
+
     def reparentTo(self, parent):
         self.frame.reparent_to(parent)
 
     def setPos(self, *args):
         self.frame.setPos(*args)
 
+    frame_size = frameSize
     reparent_to = reparentTo
     set_pos = setPos

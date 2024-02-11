@@ -29,6 +29,11 @@ class TabbedFrameContainer(DirectWidgetContainer):
         self.height_offset = self.frame['tab_frameSize'][3] * self.frame['tab_scale'][2]
         self.frame.set_pos(LPoint3(0, 0, -self.height_offset))
 
+    def frameSize(self):
+        fs = self.frame['frameSize']
+        frame_size = (fs[0], fs[1], fs[2] - self.height_offset, fs[3])
+        return frame_size
+
     def setPos(self, *args):
         if len(args) == 1:
             pos = args[0]
@@ -36,4 +41,5 @@ class TabbedFrameContainer(DirectWidgetContainer):
             pos = LPoint3(*args)
         self.frame.set_pos(LPoint3(pos[0], 0, pos[2] - self.height_offset))
 
+    frame_size = frameSize
     set_pos = setPos
