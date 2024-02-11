@@ -22,7 +22,7 @@ from panda3d.core import CullFaceAttrib, LVector2
 from .geometry import empty_geom, empty_node
 
 
-def FrameGeom(frame_size, border_size=(1, 1), texture=False):
+def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
     (path, node) = empty_node('frame')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
         'frame', 8 * 4, 8 * 2, normal=False, texture=texture, tanbin=False)
@@ -31,53 +31,63 @@ def FrameGeom(frame_size, border_size=(1, 1), texture=False):
     frame_size = LVector2(*frame_size)
     border_size = LVector2(*border_size)
 
+    if outer:
+        left = -border_size[0]
+        right = frame_size[0] + border_size[0]
+        top = border_size[1]
+        bottom = -frame_size[1] - border_size[1]
+    else:
+        left = 0
+        right = frame_size[0]
+        top = 0
+        bottom = -frame_size[1]
     # Top left corner
-    gvw.add_data3(0, 0, 0)
-    gvw.add_data3(border_size[0], 0, 0)
-    gvw.add_data3(border_size[0], 0, -border_size[1])
-    gvw.add_data3(0, 0, -border_size[1])
+    gvw.add_data3(left, 0, top)
+    gvw.add_data3(right - border_size[0], 0, top)
+    gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+    gvw.add_data3(left, 0, top - border_size[1])
 
     # Top frame
-    gvw.add_data3(border_size[0], 0, 0)
-    gvw.add_data3(frame_size[0] - border_size[0], 0, 0)
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -border_size[1])
-    gvw.add_data3(border_size[0], 0, -border_size[1])
+    gvw.add_data3(left + border_size[0], 0, top)
+    gvw.add_data3(right - border_size[0], 0, top)
+    gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+    gvw.add_data3(left + border_size[0], 0, top - border_size[1])
 
     # Top right corner
-    gvw.add_data3(frame_size[0] - border_size[0], 0, 0)
-    gvw.add_data3(frame_size[0], 0, 0)
-    gvw.add_data3(frame_size[0], 0, -border_size[1])
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -border_size[1])
+    gvw.add_data3(right - border_size[0], 0, top)
+    gvw.add_data3(right, 0, top)
+    gvw.add_data3(right, 0, top - border_size[1])
+    gvw.add_data3(right - border_size[0], 0, top - border_size[1])
 
     # left frame
-    gvw.add_data3(0, 0, -border_size[1])
-    gvw.add_data3(border_size[0], 0, -border_size[1])
-    gvw.add_data3(border_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(0, 0, -frame_size[1] + border_size[1])
+    gvw.add_data3(left, 0, top - border_size[1])
+    gvw.add_data3(left + border_size[0], 0, top - border_size[1])
+    gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
+    gvw.add_data3(left, 0, bottom+ border_size[1])
 
     # bottom left corner
-    gvw.add_data3(0, 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(border_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(border_size[0], 0, -frame_size[1])
-    gvw.add_data3(0, 0, -frame_size[1])
+    gvw.add_data3(left, 0, bottom + border_size[1])
+    gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
+    gvw.add_data3(left + border_size[0], 0, bottom)
+    gvw.add_data3(left, 0, bottom)
 
     # Right frame
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -border_size[1])
-    gvw.add_data3(frame_size[0], 0, -border_size[1])
-    gvw.add_data3(frame_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -frame_size[1] + border_size[1])
+    gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+    gvw.add_data3(right, 0, top - border_size[1])
+    gvw.add_data3(right, 0, bottom + border_size[1])
+    gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
 
     # bottom right corner
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(frame_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(frame_size[0], 0, -frame_size[1])
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -frame_size[1])
+    gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
+    gvw.add_data3(right, 0, bottom + border_size[1])
+    gvw.add_data3(right, 0, bottom)
+    gvw.add_data3(right - border_size[0], 0, bottom)
 
     # bottom left corner
-    gvw.add_data3(border_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -frame_size[1] + border_size[1])
-    gvw.add_data3(frame_size[0] - border_size[0], 0, -frame_size[1])
-    gvw.add_data3(border_size[0], 0, -frame_size[1])
+    gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
+    gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
+    gvw.add_data3(right - border_size[0], 0, bottom)
+    gvw.add_data3(left + border_size[0], 0, bottom)
 
     for i in range(8):
         offset = i * 4
