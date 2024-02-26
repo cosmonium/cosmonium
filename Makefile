@@ -1,7 +1,7 @@
 PLATFORM=
 TARGET_PLATFORM=
 PYTHON_VERSION=3
-PYTHON_ABI=cp38-cp38
+PYTHON_ABI=cp39-cp39
 PYTHON=python$(PYTHON_VERSION)
 SOURCE_TARGET=build
 SOURCE_OPTIONS=
@@ -63,25 +63,25 @@ endif
 ifeq ($(PLATFORM),win_amd64)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)-x64/python/python.exe
     OS_SDK=8.1
-    PYTHON_VERSION=3.7
+    PYTHON_VERSION=3.9
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
 
 ifeq ($(PLATFORM),win32)
     PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)/python/python.exe
     OS_SDK=8.1
-    PYTHON_VERSION=3.7
+    PYTHON_VERSION=3.9
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
 
 ifneq ($(findstring manylinux2014,$(PLATFORM)),)
     SOURCE_TARGET=build-manylinux2014
-    PYTHON_VERSION=3.7
+    PYTHON_VERSION=3.9
 endif
 
 ifeq ($(PLATFORM),macosx_10_9_x86_64)
     OS_SDK=10.9
-    PYTHON_VERSION=3.7
+    PYTHON_VERSION=3.9
     SOURCE_OPTIONS+=--macosx-sdk $(OS_SDK)
     ifneq ($(RELEASE),1)
         SOURCE_OPTIONS+="--use-sdk-path"
@@ -102,6 +102,10 @@ endif
 
 ifeq ($(PYTHON_VERSION),3.8)
   PYTHON_ABI=cp38-cp38
+endif
+
+ifeq ($(PYTHON_VERSION),3.9)
+  PYTHON_ABI=cp39-cp39
 endif
 
 PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
