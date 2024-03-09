@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -125,7 +125,7 @@ class SphereModel(EllipsoidModelInterface):
         return SphereModel(self.radius + delta)
 
     def get_shape_axes(self) -> LVector3d:
-        return LVector3(self.radius)
+        return LVector3d(self.radius)
 
     def get_point_under(self, position: LPoint3d) -> LPoint3d:
         return position.normalized() * self.radius
@@ -207,7 +207,7 @@ class SpheroidModel(EllipsoidModelInterface):
         return SpheroidModel(self.radius + delta, self.ellipticity)
 
     def get_shape_axes(self) -> LVector3d:
-        return LVector3(1.0, 1.0, 1.0 - self.ellipticity) * self.radius
+        return LVector3d(1.0, 1.0, 1.0 - self.ellipticity) * self.radius
 
     def get_point_under(self, position: LPoint3d) -> LPoint3d:
         if position[0] != 0.0:
