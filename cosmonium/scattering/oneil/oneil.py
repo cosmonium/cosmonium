@@ -565,7 +565,7 @@ class ONeilScatteringDataSourceBase(DataSource):
             rotation_mat_inv = LMatrix4()
             rotation_mat_inv.invert_from(rotation_mat)
             camera_mat = LMatrix4()
-            camera_rot.extract_to_matrix(camera_mat)
+            LQuaternion(*camera_rot).extract_to_matrix(camera_mat)
             descale_mat = rotation_mat_inv * descale * rotation_mat
             eye_descale_mat = camera_mat * descale_mat
             height_scale = inner_radius
