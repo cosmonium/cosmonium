@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -930,7 +930,8 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - min_radius)
         cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
         transform_mat = LMatrix4()
-        transform_mat.invert_from(self.instance.get_net_transform().get_mat())
+        transform = self.instance.get_net_transform()
+        transform_mat.invert_from(transform.get_mat())
         transform_mat = cam_transform_mat * transform_mat
         near = 1.e-6
         if settings.use_horizon_culling:
