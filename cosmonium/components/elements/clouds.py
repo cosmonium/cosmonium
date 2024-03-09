@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LVector3d
+from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LVector3
 from panda3d.core import LQuaternion
 
 from ...shapes.shape_object import ShapeObject
@@ -58,7 +58,7 @@ class Clouds(EllipsoidFlatSurface):
         #TODO : temporary until height_scale is removed from patchedshape
         self.height_scale = self.radius
         self.shape.set_axes(self.model.get_shape_axes())
-        self.shape.set_scale(LVector3d(self.radius))
+        self.shape.set_scale(LVector3(self.radius))
 
     def check_settings(self):
         self.set_shown(settings.show_clouds)
