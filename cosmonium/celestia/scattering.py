@@ -23,6 +23,7 @@ from panda3d.core import LVector3d
 from ..datasource import DataSource
 from ..scattering.scattering import ScatteringBase
 from ..shaders.scattering import AtmosphericScattering
+from ..shapes.shape_object import ShapeObject
 
 from math import log
 
@@ -58,6 +59,9 @@ class CelestiaScattering(ScatteringBase):
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         return CelestiaScatteringShader(self, atmosphere, extinction)
+
+    def do_update_scattering(self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
+        pass
 
 
 class CelestiaScatteringShader(AtmosphericScattering):
@@ -109,12 +113,14 @@ uniform vec3  invScatterCoeffSum;
 
 uniform vec3 v3LightDir;
 ''']
-        if not self.atmosphere:
-            code.append("uniform float global_ambient;")
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
             self.uniforms_scattering(code)
+
+    def vertex_extra(self, code):
+        if not self.calc_in_fragment:
+            self.celestia_calc_scattering(code)
 
     def vertex_outputs(self, code):
         if not self.calc_in_fragment:
@@ -123,6 +129,7 @@ uniform vec3 v3LightDir;
             code.append("out vec3 eyeDir_obj;")
 
     def fragment_uniforms(self, code):
+        AtmosphericScattering.fragment_uniforms(self, code)
         if self.calc_in_fragment:
             self.uniforms_scattering(code)
         self.uniforms_colors(code)
@@ -133,8 +140,13 @@ uniform vec3 v3LightDir;
             code.append("in vec3 scatterEx;")
             code.append("in vec3 eyeDir_obj;")
 
-    def calc_scattering(self, code):
-        code += ['''
+    def celestia_calc_scattering(self, code):
+        code += ['''void celestia_calc_scattering(
+    in vec3 world_vertex,
+    out vec3 scatteredColor,
+    out vec3 scatterEx,
+    out vec3 eyeDir_obj) {
+
     vec3 v3Pos = (world_vertex - v3OriginPos) * model_scale;
     vec3 eyeDir = normalize(v3CameraPos - v3Pos);
     vec3 eyePosition = v3CameraPos;
@@ -183,10 +195,14 @@ uniform vec3 v3LightDir;
     scatteredColor = sunColor * (1.0 - exp(-scatterCoeffSum * density * distAtm));
 
     eyeDir_obj = eyeDir;
+}
 ''']
 
-    def calc_colors(self, code):
+    def celestia_incoming_light_for(self, code):
         code += ['''
+void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in vec3 eyeDir_obj,
+        in vec3 v3LightDir, in vec3 light_color,
+        out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {
     vec3 V = normalize(eyeDir_obj);
     float cosTheta = dot(V, v3LightDir);
 
@@ -198,23 +214,34 @@ uniform vec3 v3LightDir;
 
     // TODO: Consider premultiplying by invScatterCoeffSum
     vec3 scatteredComponent = (phRayleigh * rayleighCoeff + phMie * mieCoeff) * invScatterCoeffSum * scatteredColor;
+    in_scatter = scatteredComponent;
+    incoming_light_color = light_color;
+    transmittance = scatterEx;
 ''']
         if self.atmosphere:
-            code.append("    total_diffuse_color = vec4(shadow * scatteredComponent, dot(scatterEx, vec3(0.333, 0.333, 0.333)));;")
-        else:
-            if self.extinction_only:
-                code.append("    total_diffuse_color = vec4(total_diffuse_color.rgb * scatterEx, total_diffuse_color.a);")
-            else:
-                code.append("    total_diffuse_color = vec4(shadow * scatteredComponent + total_diffuse_color.rgb * scatterEx * (1.0 - global_ambient) + surface_color.rgb * global_ambient, total_diffuse_color.a);")
+            code.append('in_scatter = in_scatter * dot(scatterEx, vec3(0.333, 0.333, 0.333));')
+        code.append('}')
 
-    def vertex_shader(self, code):
-        if not self.calc_in_fragment:
-            self.calc_scattering(code)
-
-    def fragment_shader(self, code):
+    def fragment_extra(self, code):
         if self.calc_in_fragment:
-            self.calc_scattering(code)
-        self.calc_colors(code)
+            self.celestia_calc_scattering(code)
+        self.celestia_incoming_light_for(code)
+
+    def prepare_scattering_for(self, code, light_direction, light_color):
+        if not self.calc_in_fragment:
+            code.append("celestia_calc_scattering(world_vertex, scatteredColor, scatterEx, eyeDir_obj);")
+
+    def calc_transmittance(self, code):
+        pass
+
+    def incoming_light_for(self, code, light_direction, light_color):
+        code.append(
+            "celestia_incoming_light_for("
+            f"scatteredColor, scatterEx, eyeDir_obj, {light_direction}, {light_color}.rgb, "
+            "incoming_light_color, in_scatter, transmittance);")
+        if not self.atmosphere:
+            code.append("ambient_diffuse = vec3(0);")
+
 
 class CelestiaScatteringDataSource(DataSource):
     AtmosphereExtinctionThreshold = 0.05
@@ -244,8 +271,8 @@ class CelestiaScatteringDataSource(DataSource):
 
         #shadermanager.cpp 3446
         skySphereRadius = atmPlanetRadius + -parameters.mie_scale_height * log(self.AtmosphereExtinctionThreshold)
-        mieCoeff        = parameters.mie_coef * objRadius
-        rayleighCoeff   = parameters.rayleigh_coef * objRadius
+        mieCoeff = parameters.mie_coef * objRadius
+        rayleighCoeff = parameters.rayleigh_coef * objRadius
         absorptionCoeff = parameters.absorption_coef * objRadius
 
         r = skySphereRadius / objRadius
@@ -295,7 +322,8 @@ class CelestiaScatteringDataSource(DataSource):
         light_dir = light_source.anchor.get_local_position() - body.anchor.get_local_position()
         light_dir.normalize()
 
-        instance.setShaderInput("v3OriginPos", shape.owner.anchor.rel_position * shape.owner.scene_anchor.scene_scale_factor)
+        instance.setShaderInput(
+            "v3OriginPos", shape.owner.anchor.rel_position * shape.owner.scene_anchor.scene_scale_factor)
         instance.setShaderInput("v3CameraPos", -shape.owner.anchor.rel_position / radius)
 
         instance.setShaderInput("v3LightDir", *light_dir)
