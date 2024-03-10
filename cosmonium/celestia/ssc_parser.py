@@ -39,7 +39,7 @@ from ..appearances import Appearance
 from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape
 from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.base import AtmosphereLightingModel
+from ..shaders.lighting.base import AtmosphereLightingModel, ShadingLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
 from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
@@ -134,7 +134,8 @@ def instanciate_atmosphere(data):
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
     if clouds_height != 0:
-        shader=RenderingShader(lighting_model=LambertPhongLightingModel())
+        lighting_model = ShadingLightingModel(LambertPhongLightingModel())
+        shader=RenderingShader(lighting_model=lighting_model)
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
 
@@ -331,6 +332,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         lighting_model = LunarLambertLightingModel()
     else:
         lighting_model = LambertPhongLightingModel()
+    lighting_model = ShadingLightingModel(lighting_model)
     surface = EllipsoidFlatSurface(
                           shape=shape,
                           radius=radius,
