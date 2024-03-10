@@ -170,6 +170,7 @@ def instanciate_rings(name, data, parent):
                           rings_object=rings_object,
                           orbit=orbit,
                           rotation=rotation,
+                          frame=None,
                           point_color=appearance.diffuseColor)
     return body
 
