@@ -18,21 +18,27 @@
 #
 
 
-from panda3d.core import NodePath
+from panda3d.core import LVector3d, NodePath
 
 from ..geometry import geometry
 from .base import Shape
 
 
 class SphereShape(Shape):
-    template = None
+
+    def __init__(self):
+        Shape.__init__(self)
+        self.axes = LVector3d(1)
+        self.radius = 1.0
+
+    def set_axes(self, axes):
+        self.axes = axes
+        self.radius = max(*axes)
+
     async def create_instance(self):
-        if self.template is None:
-            self.template = geometry.UVSphere(radius=1, rings=45, sectors=90)
-        self.instance = NodePath('shpere')
-        self.template.instanceTo(self.instance)
+        self.instance = geometry.UVSphere(self.axes / self.radius, rings=45, sectors=90)
         if self.use_collision_solid:
-            self.create_collision_solid()
+            self.create_collision_solid(self.radius)
         self.apply_owner()
         return self.instance
 

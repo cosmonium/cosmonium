@@ -140,7 +140,7 @@ def CubeGeom():
     return path
 
 
-def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
+def UVSphere(axes, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
         'uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
@@ -155,8 +155,9 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
         v = 1.0 - v
     if inv_texture_u:
         u = 1.0 - u
+    normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
     gtw.add_data2(u, v)
-    gvw.add_data3(0, 0, radius)
+    gvw.add_data3(0, 0, axes[2])
     gnw.add_data3(0, 0, 1)
     gtanw.add_data3(0, 1, 0)
     gbiw.add_data3(1, 0, 0)
@@ -166,9 +167,12 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
             sin_s = sin(2 * pi * s * S + pi)
             sin_r = sin(pi * r * R)
             cos_r = cos(pi * r * R)
-            x = cos_s * sin_r
-            y = sin_s * sin_r
-            z = -cos_r
+            point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+            normal = LVector3d(point)
+            if sin_r != 0:
+                tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+            else:
+                tangent = LVector3d(-axes[0], 0, 0)
             u = s * S
             v = r * R
             if inv_texture_v:
@@ -176,12 +180,14 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
             if inv_texture_u:
                 u = 1.0 - u
             gtw.add_data2(u, v)
-            gvw.add_data3(x * radius, y * radius, z * radius)
-            gnw.add_data3(x, y, z)
-            # Derivation wrt s and normalization (sin_r is dropped)
-            gtanw.add_data3(-sin_s, cos_s, 0)  # -y, x, 0
-            # Derivation wrt r
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+            point.componentwise_mult(axes)
+            gvw.add_data3d(point)
+            normal.componentwise_mult(normal_coefs)
+            normal.normalize()
+            gnw.add_data3d(normal)
+            tangent.normalize()
+            gtanw.add_data3d(tangent)
+            binormal = normal.cross(tangent)
             binormal.normalize()
             gbiw.add_data3d(binormal)
     u = 0.0
@@ -191,7 +197,7 @@ def UVSphere(radius=1, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=Fa
     if inv_texture_u:
         u = 1.0 - u
     gtw.add_data2(u, v)
-    gvw.add_data3(0, 0, -radius)
+    gvw.add_data3(0, 0, -axes[2])
     gnw.add_data3(0, 0, -1)
     gtanw.add_data3(1, 0, 0)
     gbiw.add_data3(0, 1, 0)
