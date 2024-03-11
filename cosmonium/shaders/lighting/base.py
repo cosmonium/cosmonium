@@ -143,7 +143,7 @@ class ShadingLightingModel(CompositeShaderComponent):
         self.add_component(self.emission)
 
     def vertex_uniforms(self, code):
-        CompositeShaderComponent.fragment_uniforms(self, code)
+        CompositeShaderComponent.vertex_uniforms(self, code)
         code.append("""
 uniform struct p3d_LightSourceParameters {
     vec4 position;
