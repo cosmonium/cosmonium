@@ -39,13 +39,13 @@ install:
          git submodule update --init --force --recursive
   - ps: |
         $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev2725-g86b1f9a281/Panda3D-1.11.0.dev2725-py3.7-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
+        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3368-gd9052bae76/Panda3D-1.11.0.dev3368-py3.9-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
         c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe /S /D="C:\Panda3D-1.11.0-x64" | Out-Null
   - ps: |
         $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.10/panda3d-1.10.10-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
+        $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.14/panda3d-1.10.14-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
         Expand-Archive -Path c:\projects\cosmonium\thirdparty-tools.zip
-        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.10/thirdparty -Destination c:\Panda3D-1.11.0-x64\thirdparty
+        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.14/thirdparty -Destination c:\Panda3D-1.11.0-x64\thirdparty
 
 #---------------------------------#
 #       build configuration       #
@@ -55,7 +55,7 @@ install:
 platform: x64
 
 environment:
-  PATH: 'C:\Python37-x64;%PATH%'
+  PATH: 'C:\Python39-x64;%PATH%'
 
 # scripts to run before build
 before_build:
