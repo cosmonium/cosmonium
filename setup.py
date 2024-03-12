@@ -129,6 +129,7 @@ config = {
                     "textures/cosmonium-16.png",
                 ],
             },
+            'bam_model_extensions': [],
         },
         'bdist_apps': {
             'installers': {
