@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Checkout submodules
       run: |
         git submodule sync --recursive
@@ -32,7 +32,7 @@ jobs:
         ./cosmonium --test-start
     - name: Upload logs
       if: ${{ always() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: linux-logs
         path: ~/.cache/cosmonium/log/output.log
@@ -50,13 +50,13 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Checkout submodules
       run: |
         git submodule sync --recursive
         git submodule update --init --force --recursive --depth=1
     - name: Set up Python 3.9
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -95,13 +95,13 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Checkout submodules
       run: |
         git submodule sync --recursive
         git submodule update --init --force --recursive --depth=1
     - name: Set up Python 3.9
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
     - name: Install pip
@@ -124,7 +124,7 @@ jobs:
         ./cosmonium.exe --test-start | Out-Null
     - name: Upload logs
       if: ${{ always() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: windows-logs
         path: ~/AppData/Local/Cosmonium/Logs/output.log
