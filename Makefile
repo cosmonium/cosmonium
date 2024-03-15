@@ -7,8 +7,15 @@ OS_SDK=
 RELEASE=0
 REQUIREMENTS=
 PANDA3D_BASE_VERSION=1.11.0
-PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3368
-PANDA3D_VERSION_LONG=$(PANDA3D_VERSION)-gd9052bae76
+CUSTOM_PANDA3D=1
+ifeq ($(CUSTOM_PANDA3D),1)
+    EXTRA_INDEX=""
+    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3368
+    PANDA3D_VERSION_LONG=$(PANDA3D_VERSION)-gd9052bae76
+else
+    EXTRA_INDEX="--extra-index-url https://archive.panda3d.org/simple"
+    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3368
+endif
 
 BASE_VERSION=0.2.1.1
 TAG_VERSION=0.3.0
@@ -92,7 +99,12 @@ endif
 
 PYTHON_ABI=`$(PYTHON) tools/pyversion.py`
 
-PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
+
+ifeq ($(CUSTOM_PANDA3D),1)
+    PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
+else
+    PANDA3D_WHEEL="panda3d==$(PANDA3D_VERSION)"
+endif
 
 build: build-version build-source update-mo update-ui-mo update-data-mo
 
@@ -150,10 +162,16 @@ ifeq ($(REQUIREMENTS),)
 endif
 
 build-req:
-ifneq ($(PANDA3D_WHEEL),)
-	@echo "$(PANDA3D_WHEEL)" > $(REQUIREMENTS)
+ifneq ($(EXTRA_INDEX),)
+	@echo "$(EXTRA_INDEX)" > $(REQUIREMENTS)
 else
-	@echo panda3d > $(REQUIREMENTS)
+	@echo > $(REQUIREMENTS)
+endif
+
+ifneq ($(PANDA3D_WHEEL),)
+	@echo "$(PANDA3D_WHEEL)" >> $(REQUIREMENTS)
+else
+	@echo panda3d >> $(REQUIREMENTS)
 endif
 	@cat requirements.txt >> $(REQUIREMENTS)
 	@cat $(REQUIREMENTS)
