@@ -77,10 +77,6 @@ ifeq ($(PLATFORM),win32)
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
 
-ifneq ($(findstring manylinux2014,$(PLATFORM)),)
-    SOURCE_TARGET=build-manylinux2014
-endif
-
 ifeq ($(PLATFORM),macosx_10_9_x86_64)
     OS_SDK=10.9
     SOURCE_OPTIONS+=--macosx-sdk $(OS_SDK)
@@ -153,6 +149,7 @@ endif
 
 clean:
 	@cd source && "$(MAKE)" clean
+	@rm -f cosmonium/buildversion.py
 
 BUILD_REQ:=
 
@@ -190,5 +187,11 @@ bclean:
 DIST_FILES=$(patsubst dist/%, %, $(wildcard dist/*.zip dist/*.tar.gz dist/*.exe dist/*.toto))
 shasum:
 	cd dist && for file in $(DIST_FILES); do shasum -a 512 $$file > $$file.sha512; done
+
+create-manylinux2014:
+	docker build -t cosmonium-manylinux2024-builder -f tools/docker/Dockerfile.manylinux2014 tools
+
+build-manylinux2014:
+	docker run --rm -v `pwd`:/app cosmonium-manylinux2024-builder /app/tools/build-manylinux2014.sh
 
 .PHONY: build build-req build-source update-mo bapp bdist shasum

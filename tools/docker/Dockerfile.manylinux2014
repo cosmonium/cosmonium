@@ -1,0 +1,7 @@
+FROM quay.io/pypa/manylinux2014_x86_64
+
+ADD . /app
+
+WORKDIR /app
+
+RUN /app/setup-manylinux2014.sh
