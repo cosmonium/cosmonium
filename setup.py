@@ -32,6 +32,7 @@ from cosmonium.version import version_str
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
 requirements_path = None
+include_modules = []
 
 if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')
@@ -44,6 +45,7 @@ for (index, arg) in enumerate(sys.argv):
             log_filename = '$HOME/Library/Logs/cosmonium/output.log'
         elif platform.startswith('win'):
             log_filename = '$USER_APPDATA/Cosmonium/Logs/output.log'
+            include_modules.append('win32')
         else:
             log_filename = '$HOME/.cache/cosmonium/log/output.log'
         break
@@ -101,8 +103,7 @@ config = {
             },
             'include_modules':
             {
-                'win_amd64': ['win32.*'],
-                'win32': ['win32.*'],
+                '*': include_modules,
             },
             'rename_paths': {'lib/dummypy/': ''},
             'gui_apps': {
