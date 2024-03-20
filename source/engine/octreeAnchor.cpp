@@ -40,7 +40,7 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
   //TODO: position should be extracted from orbit
   octree = new OctreeNode(0, /*this,*/ 0,
       LPoint3d(10 * Ly, 10 * Ly, 10 * Ly),
-      radius,
+      radius * 2,
       luminosity);
   octree->parent = this;
   //TODO: Should be done during rebuild

@@ -544,7 +544,7 @@ class OctreeAnchor(SystemAnchor):
         #TODO: position should be extracted from orbit
         self.octree = OctreeNode(0, self,
                              LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             radius,
+                             radius * 2,
                              luminosity)
         # TODO: Should be done during rebuild
         self._intrinsic_luminosity = luminosity
