@@ -32,7 +32,7 @@ from cosmonium.version import version_str
 
 log_filename = '$USER_APPDATA/cosmonium/output.log'
 requirements_path = None
-include_modules = []
+include_modules = ['numpy.core._multiarray_tests']
 
 if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')
