@@ -1,4 +1,5 @@
-numpy==1.26.4
+numpy==1.26.4 ; python_version >= "3.9"
+numpy==1.24.4 ; python_version < "3.9"
 pywin32 ; sys_platform == 'win32' or sys_platform == 'win_amd64'
 ruamel.yaml==0.18.6
 ruamel.yaml.clib==0.2.8
