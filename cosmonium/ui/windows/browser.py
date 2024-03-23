@@ -18,9 +18,11 @@
 #
 
 
-from ..widgets.window import Window
-from ... import settings
+from panda3d.core import LVector2
 import traceback
+
+from ... import settings
+from ..widgets.window import Window
 
 
 cefpanda_valid = False
@@ -34,7 +36,7 @@ except Exception:
 
 class Browser(object):
     def __init__(self, scale, owner=None):
-        self.scale = scale
+        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.owner = owner
         self.window = None
         self.renderer = None
@@ -42,7 +44,7 @@ class Browser(object):
 
     def create_renderer(self):
         if self .renderer is None:
-            self.layout = cefpanda.CefDirectFrameTarget(self.scale, 600, 800)
+            self.layout = cefpanda.CefDirectFrameTarget((1, 1), 600, 800)
             self.renderer = cefpanda.CEFPanda(self.layout, settings.use_srgb)
             self.renderer.use_mouse = False
         self.layout.create()
@@ -64,7 +66,7 @@ class Browser(object):
         self.create_renderer()
         self.window.set_child(self.layout)
         if self.last_pos is None:
-            self.last_pos = (-self.layout.frame['frameSize'][1] / 2, 0, -self.layout.frame['frameSize'][3] / 2)
+            self.last_pos = (100, 0, -100)
         self.window.setPos(self.last_pos)
         self.window.update()
 

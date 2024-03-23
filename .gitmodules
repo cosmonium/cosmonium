@@ -8,7 +8,7 @@
 	branch = cosmonium
 [submodule "third-party/cefpanda"]
 	path = third-party/cefpanda
-	url = https://github.com/cosmonium/cefpanda
+	url = ../cefpanda
         branch = cosmonium
 [submodule "third-party/gltf"]
 	path = third-party/gltf
