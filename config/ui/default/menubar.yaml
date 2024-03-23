@@ -60,6 +60,9 @@ menubar:
     - title: '_Edit'
       event: 'gui-show-editor'
       enabled: 'has-object-selected'
+    - title: "More info"
+      menu: extra-info
+      enabled: 'has-object-selected'
     -
     - title: '_Go to'
       event: 'goto-selected'

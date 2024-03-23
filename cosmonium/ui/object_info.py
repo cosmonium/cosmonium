@@ -224,12 +224,12 @@ def star(body):
     general.append([_("Radius"), "%s (%s)" % (toUnit(body.get_apparent_radius(), units.lengths_scale), toUnit(body.get_apparent_radius(), units.diameter_scale))])
     general.append([_("Spectral type"), body.spectral_type.get_text() if body.spectral_type is not None else _('Unknown')])
     general.append([_("Abs magnitude"), "%g" % body.get_abs_magnitude()])
-    general.append([_("Luminosity"), "%g W (%gx Sun)" % (body.get_luminosity() * units.L0,  body.get_luminosity())])
+    general.append([_("Luminosity"), "%g W (%gx Sun)" % (body.anchor.get_radiant_flux(),  body.anchor.get_radiant_flux() / units.L0)])
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.description != '':
         general.append([_("Description"), body.description])
     if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
-        texts.append(ObjectInfo.get_info_for(body.system.orbit))
+        texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
     else:
         texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
     texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
