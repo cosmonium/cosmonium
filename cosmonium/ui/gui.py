@@ -134,6 +134,9 @@ class Gui(object):
         else:
             self.hide_menu()
 
+    def get_ui(self):
+        return self
+
     def load(self, ui_config_file):
         loader = UIConfigLoader()
         return loader.load(ui_config_file)
@@ -239,6 +242,13 @@ class Gui(object):
         if self.hud is not None:
             self.hud.update_size()
 
+    def get_limits(self):
+        if self.menubar_shown:
+            y_offset = self.menubar.get_height() / self.scale[1]
+        else:
+            y_offset = 0
+        return (0, self.width, -y_offset, -self.height)
+
     def hide(self):
         self.hud.hide()
         self.hide_menu()
@@ -276,12 +286,19 @@ class Gui(object):
     def show_menu(self):
         self.menubar.show()
         self.menubar_shown = True
-        self.hud.set_y_offset(self.menubar.get_height())
+        y_offset = self.menubar.get_height()
+        self.hud.set_y_offset(y_offset)
+        limits = self.get_limits()
+        for window in self.opened_windows:
+            window.set_limits(limits)
 
     def hide_menu(self):
         self.menubar.hide()
         self.menubar_shown = False
         self.hud.set_y_offset(0)
+        limits = self.get_limits()
+        for window in self.opened_windows:
+            window.set_limits(limits)
 
     def toggle_menu(self):
         if self.menubar_shown:

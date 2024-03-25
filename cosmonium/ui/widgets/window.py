@@ -91,6 +91,9 @@ class Window():
         self.close_frame.bind(DGG.B1PRESS, self.close_window)
         self.set_child(child)
 
+    def get_ui(self):
+        return self.owner.get_ui()
+
     def set_child(self, child):
         if child is not None:
             self.child = child
@@ -110,6 +113,11 @@ class Window():
         title_size[1] = width
         self.title_frame['frameSize'] = title_size
         self.close_frame.setPos(width - self.close_frame['frameSize'][1], 0, 0)
+
+    def set_limits(self, limits):
+        pos = self.frame.get_pos()
+        new_pos = (min(max(pos[0], limits[0]), limits[1]), 0, max(min(pos[2], limits[2]), limits[3]))
+        self.frame.set_pos(new_pos)
 
     def register_scroller(self, scroller):
         self.scrollers.append(scroller)
@@ -159,7 +167,11 @@ class Window():
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
             current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
-            self.frame.set_pos(current_pos - self.drag_start)
+            # Don't let the top left corner go out of the UI limits
+            limits = self.get_ui().get_limits()
+            pos = current_pos - self.drag_start
+            new_pos = (min(max(pos[0], limits[0]), limits[1]), 0, max(min(pos[2], limits[2]), limits[3]))
+            self.frame.set_pos(new_pos)
         return task.again
 
     def close_window(self, event=None):

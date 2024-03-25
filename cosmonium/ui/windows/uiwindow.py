@@ -31,6 +31,13 @@ class UIWindow():
         self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.owner = owner
 
+    def get_ui(self):
+        return self.owner.get_ui()
+
+    def set_limits(self, limits):
+        if self.window is not None:
+            self.window.set_limits(limits)
+
     def create_layout(self, *args, **kwargs):
         pass
 
