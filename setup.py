@@ -79,7 +79,6 @@ config = {
                 'ralph-data/**',
                 'textures/**',
                 '*.md',
-                'lib/dummypy/*',
                 'locale/**'
             ],
             'exclude_patterns': [
@@ -105,7 +104,6 @@ config = {
             {
                 '*': include_modules,
             },
-            'rename_paths': {'lib/dummypy/': ''},
             'gui_apps': {
                 'cosmonium': 'main.py',
                 #'ralph': 'ralph.py',
