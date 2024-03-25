@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import TextNode, NodePath, LVector3, LVector2
+from panda3d.core import TextNode, LVector3, LVector2
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectLabel import DirectLabel
@@ -34,23 +34,26 @@ from ...parameters import UserParameter
 from ...utils import isclose
 from ... import settings
 
-from .tabbed_frame import TabbedFrameContainer
-from .window import Window
+from ..widgets.tabbed_frame import TabbedFrameContainer
+from ..widgets.window import Window
+from .uiwindow import UIWindow
 
 
-class ParamEditor():
+class ParamEditor(UIWindow):
     def __init__(self, font_family, font_size = 14, owner=None):
-        self.window = None
-        self.layout = None
-        self.last_pos = None
+        UIWindow.__init__(self, owner)
         self.font_size = font_size
-        self.owner = owner
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         border = round(self.font_size / 4.0)
         self.borders = (round(self.font_size), 0, border, border)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
+
+    def make_entries(self):
+        pass
+
+    def update_parameter(self, param):
+        pass
 
     def create_text_entry(self, frame, param):
         entry = DirectEntry(parent=frame,
@@ -200,7 +203,8 @@ class ParamEditor():
                     sizer.add(hsizer, proportions=(1., 0.), borders=self.borders)
                 self.add_parameter(frame, hsizer, param)
 
-    def create_layout(self, group):
+    def create_layout(self, *args, **kwargs):
+        group = self.make_entries(*args, **kwargs)
         scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
         tabbed_frame = TabbedFrame(
             frameSize=(0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0),
@@ -231,9 +235,6 @@ class ParamEditor():
         title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame.viewingArea)
-
-    def update_parameter(self, param):
-        pass
 
     def do_update(self, value, slider, param, component=None):
         value = param.convert_to_type(value)
@@ -267,21 +268,3 @@ class ParamEditor():
                 if not isclose(entry.getValue(), new_value, rel_tol=1e-6):
                     entry.setValue(new_value)
         self.update_parameter(param)
-
-    def hide(self):
-        if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-
-    def shown(self):
-        return self.window is not None
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.last_pos = self.window.getPos()
-            self.window = None
-            self.layout = None
-            if self.owner is not None:
-                self.owner.window_closed(self)

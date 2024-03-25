@@ -18,25 +18,22 @@
 #
 
 
-from panda3d.core import LVector2, TextNode
+from panda3d.core import TextNode
 
 from ...dircontext import defaultDirContext
 from ... import settings
 from ..markdown import create_markdown_renderer
 
-from .scroll_text import ScrollText
-from .window import Window
+from ..widgets.scroll_text import ScrollText
+from ..widgets.window import Window
+from .uiwindow import UIWindow
 
 
-class TextWindow():
+class TextWindow(UIWindow):
     def __init__(self, title, font_family, font_size = 14, owner=None):
+        UIWindow.__init__(self, owner)
         self.title = title
-        self.window = None
-        self.layout = None
-        self.last_pos = None
         self.font_size = font_size
-        self.owner = owner
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         self.markdown = create_markdown_renderer(font_family)
 
@@ -62,33 +59,3 @@ class TextWindow():
             font_size=self.font_size)
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)
-
-    def show(self):
-        self.create_layout()
-        if self.last_pos is None:
-            if self.owner is not None:
-                width = self.layout.frame['frameSize'][1] - self.layout.frame['frameSize'][0]
-                height = self.layout.frame['frameSize'][3] - self.layout.frame['frameSize'][2]
-                self.last_pos = ((self.owner.width - width) / 2, 0, -(self.owner.height - height) / 2)
-            else:
-                self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
-
-    def hide(self):
-        if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-
-    def shown(self):
-        return self.window is not None
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.last_pos = self.window.getPos()
-            self.window = None
-            self.layout = None
-            if self.owner is not None:
-                self.owner.window_closed(self)

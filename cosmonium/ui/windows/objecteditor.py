@@ -18,8 +18,8 @@
 #
 
 
-from ..widgets.editor import ParamEditor
 from ..editors.editors import ObjectEditors
+from .editor import ParamEditor
 
 
 class ObjectEditorWindow(ParamEditor):
@@ -30,13 +30,6 @@ class ObjectEditorWindow(ParamEditor):
     def update_parameter(self, param):
         self.editor.update_user_parameters()
 
-    def show(self, body):
-        if self.shown():
-            print("Editor already shown")
-            return
+    def make_entries(self, body):
         self.editor = ObjectEditors.get_editor_for(body)
-        self.create_layout(self.editor.get_user_parameters())
-        if self.last_pos is None:
-            self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
+        return self.editor.get_user_parameters()

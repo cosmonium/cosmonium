@@ -20,25 +20,14 @@
 
 from ...bodyclass import bodyClasses
 from ...parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
-from ... import settings
 
-from ..widgets.editor import ParamEditor
+from .editor import ParamEditor
 
 
 class Preferences(ParamEditor):
     def __init__(self, cosmonium, font_family, font_size = 14, owner=None):
         ParamEditor.__init__(self, font_family, font_size, owner)
         self.cosmonium = cosmonium
-
-    def show(self):
-        if self.shown():
-            print("Editor already shown")
-            return
-        self.create_layout(self.make_entries())
-        if self.last_pos is None:
-            self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
 
     def update_parameter(self, param):
         ParamEditor.update_parameter(self, param)
@@ -54,7 +43,6 @@ class Preferences(ParamEditor):
                                 ParametersGroup(_('Advanced'), self.make_advanced()),
                                 ParametersGroup(_('Debug'), self.make_debug()),
                                 ])
-
 
     def make_general(self):
         return [ParametersGroup(_('Mouse'),

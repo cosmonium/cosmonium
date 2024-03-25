@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,14 +18,13 @@
 #
 
 
-from panda3d.core import TextNode, LVector3, LVector2
+from panda3d.core import TextNode, LVector3
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectButton import DirectButton
 from directspinbox.DirectSpinBox import DirectSpinBox
 
-from tabbedframe.TabbedFrame import TabbedFrame
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 
@@ -33,17 +32,14 @@ from ... import settings
 
 from ..widgets.direct_widget_container import DirectWidgetContainer
 from ..widgets.window import Window
+from .uiwindow import UIWindow
 
 
-class TimeEditor():
+class TimeEditor(UIWindow):
     def __init__(self, time, font_family, font_size = 14, owner=None):
+        UIWindow.__init__(self, owner)
         self.time = time
-        self.window = None
-        self.layout = None
-        self.last_pos = None
         self.font_size = font_size
-        self.owner = owner
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
         self.width = settings.default_window_width
@@ -154,31 +150,3 @@ class TimeEditor():
 
     def cancel(self):
         self.hide()
-
-    def show(self):
-        if self.shown():
-            print("Time Editor already shown")
-            return
-        self.create_layout()
-        if self.last_pos is None:
-            self.last_pos = (0, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
-
-    def hide(self):
-        if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-
-    def shown(self):
-        return self.window is not None
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.last_pos = self.window.getPos()
-            self.window = None
-            self.layout = None
-            if self.owner is not None:
-                self.owner.window_closed(self)

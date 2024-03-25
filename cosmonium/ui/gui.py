@@ -32,13 +32,13 @@ from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .huds import Huds
 from .query import Query
-from .widgets.textwindow import TextWindow
-from .widgets.filewindow import FileWindow
 from .clipboard import create_clipboard
 from .windows.browser import Browser
+from .windows.filewindow import FileWindow
 from .windows.info import InfoWindow
 from .windows.objecteditor import ObjectEditorWindow
 from .windows.preferences import Preferences
+from .windows.textwindow import TextWindow
 from .windows.time import TimeEditor
 from .menubuilder import MenuBuilder
 from .menubar import Menubar

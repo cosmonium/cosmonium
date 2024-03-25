@@ -18,12 +18,11 @@
 #
 
 
-from panda3d.core import LVector2
 import traceback
 
 from ... import settings
 from ..widgets.window import Window
-
+from .uiwindow import UIWindow
 
 cefpanda_valid = False
 try:
@@ -34,21 +33,18 @@ except Exception:
     traceback.print_exc()
 
 
-class Browser(object):
+class Browser(UIWindow):
     def __init__(self, scale, owner=None):
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
-        self.owner = owner
-        self.window = None
+        UIWindow.__init__(self, owner)
         self.renderer = None
-        self.last_pos = None
 
-    def create_renderer(self):
+    def create_layout(self):
         if self .renderer is None:
             self.layout = cefpanda.CefDirectFrameTarget((1, 1), 600, 800)
             self.renderer = cefpanda.CEFPanda(self.layout, settings.use_srgb)
             self.renderer.use_mouse = False
         self.layout.create()
-        self.window = Window("Browser", scale=self.scale, child=None, owner=self)
+        self.window = Window("Browser", scale=self.scale, child=self.layout, owner=self)
 
     def load(self, url):
         if not cefpanda_valid:
@@ -61,33 +57,18 @@ class Browser(object):
     def show(self):
         if not cefpanda_valid:
             return
-        if self.shown():
-            return
-        self.create_renderer()
-        self.window.set_child(self.layout)
-        if self.last_pos is None:
-            self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
+        UIWindow.show(self)
 
     def hide(self):
         if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
             self.renderer.load_url("about:blank")
             self.renderer.use_mouse = False
             self.layout.destroy()
-            self.window = None
-
-    def shown(self):
-        return self.window is not None
+        UIWindow.hide(self)
 
     def window_closed(self, window):
         if window is self.window:
             self.renderer.load_url("about:blank")
             self.renderer.use_mouse = False
             self.layout.destroy()
-            self.last_pos = self.window.getPos()
-            self.window = None
-            if self.owner is not None:
-                self.owner.window_closed(self)
+        UIWindow.window_closed(self, window)

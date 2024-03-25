@@ -20,14 +20,13 @@
 
 from direct.gui.DirectGui import DirectFrame, DGG
 from directfolderbrowser.DirectFolderBrowser import DirectFolderBrowser
-from panda3d.core import LVector2
 
-from ... import settings
-from .window import Window
-from .direct_widget_container import DirectWidgetContainer
+from ..widgets.window import Window
+from ..widgets.direct_widget_container import DirectWidgetContainer
+from .uiwindow import UIWindow
 
 
-class FileWindow():
+class FileWindow(UIWindow):
     icons = {
         'reload': "textures/icons/Reload.png",
         'up': "textures/icons/FolderUp.png",
@@ -37,14 +36,10 @@ class FileWindow():
         'file': "textures/icons/File.png"
         }
     def __init__(self, title, font_family, font_size = 14, owner=None):
+        UIWindow.__init__(self, owner)
         self.title = title
-        self.window = None
-        self.layout = None
         self.browser = None
-        self.last_pos = None
         self.font_size = font_size
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
-        self.owner = owner
         self.callback = None
 
     def done(self, status):
@@ -52,7 +47,8 @@ class FileWindow():
             self.callback(self.browser.get())
         self.hide()
 
-    def create_layout(self, path, show_files, extensions):
+    def create_layout(self, path, callback, show_files=True, extensions=[]):
+        self.callback = callback
         if path is None:
             path = "~"
         width = 800
@@ -68,35 +64,7 @@ class FileWindow():
         self.layout.frame['frameSize'] = [0, width, -height, 0]
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
 
-    def show(self, current_path, callback, show_files=True, extensions=[]):
-        self.callback = callback
-        self.create_layout(current_path, show_files, extensions)
-        if self.last_pos is None:
-            if self.owner is not None:
-                width = self.layout.frame['frameSize'][1] - self.layout.frame['frameSize'][0]
-                height = self.layout.frame['frameSize'][3] - self.layout.frame['frameSize'][2]
-                self.last_pos = ((self.owner.width - width) / 2, 0, -(self.owner.height - height) / 2)
-            else:
-                self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
-
     def hide(self):
-        if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-            self.browser = None
-            self.callback = None
-
-    def shown(self):
-        return self.window is not None
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.last_pos = self.window.getPos()
-            self.window = None
-            self.layout = None
-            if self.owner is not None:
-                self.owner.window_closed(self)
+        UIWindow.hide(self)
+        self.browser = None
+        self.callback = None

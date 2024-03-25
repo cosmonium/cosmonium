@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import TextNode, LVector2
+from panda3d.core import TextNode
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 from direct.gui.DirectLabel import DirectLabel
@@ -32,18 +32,16 @@ from ..object_info import ObjectInfo
 from ..widgets.window import Window
 from ..widgets.direct_widget_container import DirectWidgetContainer
 
+from .uiwindow import UIWindow
 
-class InfoWindow():
+
+class InfoWindow(UIWindow):
     def __init__(self, scale, font_family, font_size = 14, owner=None):
-        self.window = None
-        self.layout = None
-        self.last_pos = None
+        UIWindow.__init__(self, owner)
         self.font_size = font_size
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
         self.title_scale = (self.font_size * settings.ui_scale * 1.2, self.font_size * settings.ui_scale * 1.2)
         self.borders = (self.font_size / 4.0, 0, self.font_size / 4.0, self.font_size / 4.0)
-        self.owner = owner
         self.font_normal = fontsManager.get_font(font_family, Font.STYLE_NORMAL)
         if self.font_normal is not None:
             self.font_normal = self.font_normal.load()
@@ -132,31 +130,3 @@ class InfoWindow():
                         value_widget = SizerWidget(value_label)
                         hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
                         hsizer.add(value_widget, borders=borders, alignments=("min", "left"))
-
-    def show(self, body):
-        if self.shown():
-            print("Info panel already shown")
-            return
-        self.create_layout(body)
-        if self.last_pos is None:
-            self.last_pos = (100, 0, -100)
-        self.window.setPos(self.last_pos)
-        self.window.update()
-
-    def hide(self):
-        if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-
-    def shown(self):
-        return self.window is not None
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.last_pos = self.window.getPos()
-            self.window = None
-            self.layout = None
-            if self.owner is not None:
-                self.owner.window_closed(self)
