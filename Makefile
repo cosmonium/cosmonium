@@ -106,6 +106,7 @@ build: build-version build-source update-mo update-ui-mo update-data-mo
 
 build-source:
 	cd source && "$(MAKE)" $(SOURCE_TARGET) PYTHON="$(PYTHON)" OPTIONS="$(SOURCE_OPTIONS)"
+	@mkdir -p lib/
 ifeq ($(OS),Windows_NT)
 	@mv -f source/*.pyd lib/
 else
