@@ -39,10 +39,12 @@ class Browser(UIWindow):
         self.renderer = None
 
     def create_layout(self):
+        self.layout = cefpanda.CefDirectFrameTarget((1, 1), 600, 800)
         if self .renderer is None:
-            self.layout = cefpanda.CefDirectFrameTarget((1, 1), 600, 800)
             self.renderer = cefpanda.CEFPanda(self.layout, settings.use_srgb)
             self.renderer.use_mouse = False
+        else:
+            self.renderer.set_target(self.layout)
         self.layout.create()
         self.window = Window("Browser", scale=self.scale, child=self.layout, owner=self)
 
