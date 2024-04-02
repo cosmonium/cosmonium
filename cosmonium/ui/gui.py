@@ -89,6 +89,17 @@ class Gui(object):
         self.calc_scale()
         self.width = 0
         self.height = 0
+
+        self.cosmonium.p2dTopCenter = cosmonium.pixel2d.attach_new_node('p2dTopCenter')
+        self.cosmonium.p2dBottomCenter = cosmonium.pixel2d.attach_new_node('p2dBottomCenter')
+        self.cosmonium.p2dLeftCenter = cosmonium.pixel2d.attach_new_node('p2dLeftCenter')
+        self.cosmonium.p2dRightCenter = cosmonium.pixel2d.attach_new_node('p2dRightCenter')
+
+        self.cosmonium.p2dTopLeft = cosmonium.pixel2d.attach_new_node('p2dTopLeft')
+        self.cosmonium.p2dTopRight = cosmonium.pixel2d.attach_new_node('p2dTopRight')
+        self.cosmonium.p2dBottomLeft = cosmonium.pixel2d.attach_new_node('p2dBottomLeft')
+        self.cosmonium.p2dBottomRight = cosmonium.pixel2d.attach_new_node('p2dBottomRight')
+
         self.update_size(self.screen_width, self.screen_height)
         font = fontsManager.get_font(settings.hud_font, Font.STYLE_NORMAL)
         if font is not None:
@@ -238,7 +249,18 @@ class Gui(object):
         self.cosmonium.a2dTopRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dTop)
         self.cosmonium.a2dBottomLeft.setPos(self.cosmonium.a2dLeft, 0, self.cosmonium.a2dBottom)
         self.cosmonium.a2dBottomRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dBottom)
+
         self.cosmonium.pixel2d.setScale(2.0 / width, 1.0, 2.0 / height)
+        self.cosmonium.p2dTopCenter.setPos(self.width / 2, 0, 0)
+        self.cosmonium.p2dBottomCenter.setPos(self.width / 2, 0, -self.height)
+        self.cosmonium.p2dLeftCenter.setPos(0, 0, -self.height / 2)
+        self.cosmonium.p2dRightCenter.setPos(self.width, 0, -self.height / 2)
+
+        self.cosmonium.p2dTopLeft.setPos(0, 0, 0)
+        self.cosmonium.p2dTopRight.setPos(self.width - 1, 0, 0)
+        self.cosmonium.p2dBottomLeft.setPos(0, 0, -self.height + 1)
+        self.cosmonium.p2dBottomRight.setPos(self.width - 1, 0, -self.height + 1)
+
         if self.hud is not None:
             self.hud.update_size()
 
