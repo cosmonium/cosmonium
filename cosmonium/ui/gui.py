@@ -121,7 +121,7 @@ class Gui(object):
         self.popup_menu = Popup(self, self.cosmonium, self.menu_builder.create_menu(ui_config.popup))
         self.popup_menu_shown = False
 
-        self.hud = Huds(self, self.scale, self.font, ui_config.dock, ui_config.skin)
+        self.hud = Huds(self, self.font, ui_config.dock, ui_config.skin)
         self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
         self.opened_windows = []
         self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
@@ -308,9 +308,8 @@ class Gui(object):
     def show_menu(self):
         self.menubar.show()
         self.menubar_shown = True
-        y_offset = self.menubar.get_height()
-        self.hud.set_y_offset(y_offset)
         limits = self.get_limits()
+        self.hud.set_y_offset(-limits[2])
         for window in self.opened_windows:
             window.set_limits(limits)
 

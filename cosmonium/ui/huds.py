@@ -34,18 +34,18 @@ from .hud.textline import TextLine
 
 
 class Huds():
-    def __init__(self, gui, scale, font, dock, skin):
-        self.scale = scale
+    def __init__(self, gui, font, dock, skin):
+        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
         self.font = font
         offset = LVector2()
-        self.title = TextLine(base.a2dTopLeft, self.scale, offset, TextNode.ALeft, LVector2(0, 1), self.font, settings.hud_info_text_size, settings.hud_color)
+        self.title = TextLine(base.p2dTopLeft, self.scale, offset, TextNode.ALeft, LVector2(0, 1), self.font, settings.hud_info_text_size, settings.hud_color)
         title_height = self.title.get_height()
-        self.topLeft = TextBlock(base.a2dTopLeft, self.scale, LVector2(0, title_height), TextNode.ALeft, True, 10, self.font, settings.hud_text_size)
-        self.bottomLeft = TextBlock(base.a2dBottomLeft, self.scale, offset, TextNode.ALeft, False, 5, self.font, settings.hud_text_size)
-        self.topRight = TextBlock(base.a2dTopRight, self.scale, offset, TextNode.ARight, True, 5, self.font, settings.hud_text_size)
-        self.bottomRight = TextBlock(base.a2dBottomRight, self.scale, offset, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
+        self.topLeft = TextBlock(base.p2dTopLeft, self.scale, LVector2(0, title_height), TextNode.ALeft, True, 10, self.font, settings.hud_text_size)
+        self.bottomLeft = TextBlock(base.p2dBottomLeft, self.scale, offset, TextNode.ALeft, False, 5, self.font, settings.hud_text_size)
+        self.topRight = TextBlock(base.p2dTopRight, self.scale, offset, TextNode.ARight, True, 5, self.font, settings.hud_text_size)
+        self.bottomRight = TextBlock(base.p2dBottomRight, self.scale, offset, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
         #TODO: Info should be moved out of HUD
-        self.info = FadeTextLine(base.a2dBottomLeft, self.scale, offset, TextNode.ALeft, LVector2(0, -3), self.font, settings.hud_info_text_size)
+        self.info = FadeTextLine(base.p2dBottomLeft, self.scale, offset, TextNode.ALeft, LVector2(0, -3), self.font, settings.hud_info_text_size)
         # TODO: Temporary broken way to instanciate a dock
         if dock is not None:
             layout, orientation, location = dock
