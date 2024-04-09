@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -86,6 +86,7 @@ from . import settings
 from . import pstats
 from . import version
 
+from itertools import chain
 from math import pi
 import subprocess
 import platform
@@ -1240,7 +1241,8 @@ class Cosmonium(CosmoniumBase):
         else:
             star = None
         if star is None: return
-        for anchor in self.resolved:
+        # The lights for the shadow casters mmust also be updated, even if not visible as their shadows are
+        for anchor in chain(self.resolved, self.shadow_casters):
             if anchor.content & StellarAnchor.System != 0: continue
             if anchor.content & StellarAnchor.Reflective == 0: continue
             body = anchor.body
