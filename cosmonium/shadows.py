@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -606,8 +606,8 @@ class SphereShadowDataSource(DataSource):
             radii.append(radius * scale)
             if self.oblate_occluder:
                 #TODO: This should refactored with the code in oneil and moved to the body class
-                planet_scale = occluder.surface.get_scale()
-                descale = LMatrix4.scale_mat(radius / planet_scale[0], radius / planet_scale[1], radius / planet_scale[2])
+                body_scale = occluder.surface.get_shape_axes()
+                descale = LMatrix4.scale_mat(radius / body_scale[0], radius / body_scale[1], radius / body_scale[2])
                 rotation_mat = LMatrix4()
                 orientation = LQuaternion(*occluder.anchor.get_absolute_orientation())
                 orientation.extract_to_matrix(rotation_mat)
