@@ -414,7 +414,8 @@ class Cosmonium(CosmoniumBase):
         self.no_longer_resolved = []
         self.global_light_sources = []
         self.orbits = []
-        self.shadow_casters = []
+        self.shadow_casters = set()
+        self.shadows = {}
         self.nearest_system = None
         self.nearest_body = None
         self.hdr = 0
@@ -1258,37 +1259,37 @@ class Cosmonium(CosmoniumBase):
 
     @pstat
     def find_shadows(self):
-        self.shadow_casters = []
+        self.shadow_casters = set()
+        self.shadows = {}
         if self.nearest_system is None or not self.nearest_system.anchor.resolved: return
         if len(self.global_light_sources) == 0: return
-        reflectives = []
         for anchor in self.resolved:
             if anchor.content & StellarAnchor.System != 0: continue
             if anchor.content & StellarAnchor.Reflective == 0: continue
-            anchor.body.start_shadows_update()
-            reflectives.append(anchor)
-
-        for light_source in self.global_light_sources:
-            for reflective in reflectives:
-                surrogate_light = reflective.body.lights.get_light_for(light_source.body)
-                if surrogate_light is None: continue
-                reflective.body.self_shadows_update(surrogate_light)
+            for light_source in self.global_light_sources:
                 # print("TEST", reflective.body.get_name())
-                traverser = FindShadowCastersTraverser(reflective, light_source.body.anchor.get_local_position(), light_source.get_bounding_radius())
+                traverser = FindShadowCastersTraverser(anchor, light_source.body.anchor.get_local_position(), light_source.get_bounding_radius())
                 self.nearest_system.anchor.traverse(traverser)
-                #print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
-                for occluder in traverser.get_collected():
-                    if not occluder in self.shadow_casters:
-                        self.shadow_casters.append(occluder)
-                    if occluder.body.lights is None:
-                        lights = LightSources()
-                        occluder.body.set_lights(lights)
-                    surrogate_light = occluder.body.lights.get_light_for(light_source.body)
-                    if surrogate_light is None: continue
-                    occluder.body.add_shadow_target(surrogate_light, reflective.body)
+                occluders = traverser.get_collected()
+                self.shadows[anchor] = occluders
+                # print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
+                self.shadow_casters.update(occluders)
 
-        for reflective in reflectives:
-            reflective.body.end_shadows_update()
+    @pstat
+    def apply_shadows(self):
+        for anchor in self.shadows:
+            anchor.body.start_shadows_update()
+
+            for light_source in self.global_light_sources:
+                light = anchor.body.lights.get_light_for(light_source.body)
+                if light is not None:
+                    anchor.body.self_shadows_update(light)
+                for occluder in self.shadows[anchor]:
+                    light = occluder.body.lights.get_light_for(light_source.body)
+                    if light is not None:
+                        occluder.body.add_shadow_target(light, anchor.body)
+
+            anchor.body.end_shadows_update()
 
     @pstat
     def check_scattering(self):
@@ -1487,6 +1488,7 @@ class Cosmonium(CosmoniumBase):
         self.update_states()
         self.update_scene_anchors()
         self.check_scattering()
+        self.find_shadows()
         self.find_local_lights()
 
         if self.trigger_check_settings:
@@ -1499,7 +1501,7 @@ class Cosmonium(CosmoniumBase):
             self.equatorial_grid.check_settings()
             self.trigger_check_settings = False
 
-        self.find_shadows()
+        self.apply_shadows()
         self.update_instances_state()
         self.update_lod()
         update.set_level(StellarObject.nb_update)
