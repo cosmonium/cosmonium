@@ -366,7 +366,10 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
             code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
             code.append("    in_scatter = (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
         else:
-            code.append("    in_scatter = rayleigh_inscattering + mie_inscattering;")
+            if self.extinction_only:
+                code.append("    in_scatter = vec3(0);")
+            else:
+                code.append("    in_scatter = rayleigh_inscattering + mie_inscattering;")
             code.append("    incoming_light_color = light_color;")
         code.append("}")
 
