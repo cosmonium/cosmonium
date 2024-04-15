@@ -671,12 +671,12 @@ class RoamingRalphDemo(CosmoniumBase):
         print("Ralph:", self.ralph_world.anchor.get_local_position(), self.ralph_world.anchor.get_frame_position(), self.ralph_world.anchor.get_frame_orientation().get_hpr(), self.ralph_world.anchor.get_absolute_orientation().get_hpr())
         print("Camera:", self.observer.get_local_position(), self.observer.get_absolute_orientation().get_hpr())
         position = self.ralph_world.anchor.get_local_position()
-        coord = self.ralph_shape_object.shape.global_to_shape_coord(position[0], position[1])
+        coord = self.ralph_shape_object.shape.parametric_to_shape_coord(position[0], position[1])
         patch = self.ralph_shape_object.shape.find_patch_at(coord)
         if patch is not None:
             print("Ralph patch:", patch.str_id())
         position = self.observer.anchor.get_local_position()
-        coord = self.ralph_shape_object.shape.global_to_shape_coord(position[0], position[1])
+        coord = self.ralph_shape_object.shape.parametric_to_shape_coord(position[0], position[1])
         patch = self.ralph_shape_object.shape.find_patch_at(coord)
         if patch is not None:
             print("Camera patch:", patch.str_id())

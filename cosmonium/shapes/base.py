@@ -123,7 +123,7 @@ class Shape:
     def get_scale(self):
         return self.scale
 
-    def global_to_shape_coord(self, x, y):
+    def parametric_to_shape_coord(self, x, y):
         return (x, y)
 
     def coord_to_uv(self, coord):

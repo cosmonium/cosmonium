@@ -1000,7 +1000,7 @@ class PatchedSphereShape(EllipsoidPatchedShape):
         self.create_child_patch(patch, 1, 1)
         self.create_child_patch(patch, 0, 1)
 
-    def global_to_shape_coord(self, x, y):
+    def parametric_to_shape_coord(self, x, y):
         return (x, y)
 
     def find_patch_at(self, coord):
@@ -1095,7 +1095,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
                 (u, v) = (1.0 - u, 1.0 - v)
         return (face, u, v)
 
-    def global_to_shape_coord(self, x, y):
+    def parametric_to_shape_coord(self, x, y):
         theta = (y - 0.5) * pi
         phi = (x - 0.5) * 2 * pi
         xp = cos(theta) * cos(phi)

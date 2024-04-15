@@ -61,8 +61,8 @@ class Surface(ShapeObject):
     def get_height_patch(self, patch, u, v):
         raise NotImplementedError
 
-    def global_to_shape_coord(self, x, y):
-        return self.shape.global_to_shape_coord(x, y)
+    def parametric_to_shape_coord(self, x, y):
+        return self.shape.parametric_to_shape_coord(x, y)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
@@ -139,8 +139,8 @@ class EllipsoidSurface(Surface):
     def get_tangent_plane_under(self, position):
         return self.model.get_tangent_plane_under(position)
 
-    def global_to_shape_coord(self, x, y):
-        return self.shape.global_to_shape_coord(x, y)
+    def parametric_to_shape_coord(self, x, y):
+        return self.shape.parametric_to_shape_coord(x, y)
 
 
 class EllipsoidFlatSurface(EllipsoidSurface):
@@ -258,7 +258,7 @@ class HeightmapSurface(EllipsoidSurface):
 
     def get_alt_under(self, position, strict=False):
         (x, y, _h) = self.model.cartesian_to_parametric(position)
-        coord = self.shape.global_to_shape_coord(x, y)
+        coord = self.shape.parametric_to_shape_coord(x, y)
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
             u, v = patch.coord_to_uv(coord)
@@ -388,7 +388,7 @@ class HeightmapFlatSurface(FlatSurface):
 
     def get_alt_under(self, position, strict=False):
         #print("get_height_at", x, y)
-        coord = self.shape.global_to_shape_coord(position[0], position[1])
+        coord = self.shape.parametric_to_shape_coord(position[0], position[1])
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
             u, v = patch.coord_to_uv(coord)

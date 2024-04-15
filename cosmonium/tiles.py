@@ -175,7 +175,7 @@ class TiledShape(PatchedShapeBase):
         far = camera.lens.get_far()
         self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
 
-    def global_to_shape_coord(self, x, y):
+    def parametric_to_shape_coord(self, x, y):
         return (x / self.scale, y / self.scale)
 
     def find_patch_at(self, coord):
