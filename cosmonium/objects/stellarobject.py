@@ -75,6 +75,7 @@ class StellarObject(NamedObject):
         self.oid_color = None
         #Flags
         self.selected = False
+        self.focused = False
         #Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         #Components
@@ -252,6 +253,9 @@ class StellarObject(NamedObject):
             if name.upper() == name_up:
                 return True
         return False
+
+    def set_focused(self, focused):
+        self.focused = focused
 
     def set_selected(self, selected):
         self.selected = selected

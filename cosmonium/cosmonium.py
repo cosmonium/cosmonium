@@ -399,7 +399,8 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         self.sync = None
         self.track = None
-        self.extra = []
+        self.focused_objects = set()
+        self.old_focused_objects = set()
         self.fly = False
         self.nav_controllers = []
         self.nav = None
@@ -785,7 +786,7 @@ class Cosmonium(CosmoniumBase):
             self.selected.set_selected(False)
         if body is not None:
             print("Select", body.get_name())
-            self.update_extra(body)
+            self.update_extra(body.anchor)
             body.set_selected(True)
         self.selected = body
         if self.fly:
@@ -1017,11 +1018,11 @@ class Cosmonium(CosmoniumBase):
             print("Follow", self.follow.get_name())
             if body.anchor.has_orbit():
                 self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
-                self.update_extra(self.follow)
+                self.update_extra(self.follow.anchor)
                 self.observer.set_frame(OrbitReferenceFrame(body.anchor))
             else:
                 self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
-                self.update_extra(self.follow)
+                self.update_extra(self.follow.anchor)
                 self.observer.set_frame(AnchorReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
@@ -1040,11 +1041,11 @@ class Cosmonium(CosmoniumBase):
             print("Sync", self.sync.get_name())
             if body.anchor.has_rotation():
                 self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
-                self.update_extra(self.sync)
+                self.update_extra(self.sync.anchor)
                 self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
             else:
                 self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
-                self.update_extra(self.follow)
+                self.update_extra(self.sync.anchor)
                 self.observer.set_frame(AnchorReferenceFrame(body.anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
@@ -1156,44 +1157,54 @@ class Cosmonium(CosmoniumBase):
         self.global_light_sources = sorted(traverser.get_collected(), key=lambda x: x._intrinsic_luminosity)
         # print("LIGHTS", list(map(lambda x: x.body.get_name(), self.global_light_sources)))
 
-    def _add_extra(self, to_add):
+    def _find_extra(self, update_list, to_add):
         if to_add is None: return
         if to_add.has_orbit():
             #TODO: There should be a mechanism to retrieve them
             if isinstance(to_add.orbit.frame, BodyReferenceFrames):
-                self._add_extra(to_add.orbit.frame.anchor)
+                self._find_extra(update_list, to_add.orbit.frame.anchor)
         if to_add.has_rotation():
             if isinstance(to_add.rotation.frame, BodyReferenceFrames):
-                self._add_extra(to_add.rotation.frame.anchor)
+                self._find_extra(update_list, to_add.rotation.frame.anchor)
         if to_add.has_frame():
             if isinstance(to_add.frame, BodyReferenceFrames):
-                self._add_extra(to_add.frame.anchor)
-        if not to_add in self.extra:
-            self.extra.append(to_add)
+                self._find_extra(update_list, to_add.frame.anchor)
+        if not to_add in update_list:
+            update_list.append(to_add)
 
     def update_extra(self, *args):
-        self.extra = []
+        update_list = []
         #TODO: temporary
-        for body in args:
-            if body is None: continue
-            self._add_extra(body.anchor)
-        for anchor in self.extra:
+        for anchor in args:
+            if anchor is None: continue
+            self._find_extra(update_list, anchor)
+        for anchor in update_list:
             anchor.update(self.time.time_full, self.update_id)
+        return update_list
 
-    def update_extra_observer(self):
-        for anchor in self.extra:
+    def update_extra_observer(self, update_list):
+        for anchor in update_list:
             anchor.update_observer(self.observer.anchor, self.update_id)
             anchor.update_id = self.update_id
 
+    def add_focused_object(self, body):
+        if body is not None:
+            self.focused_objects.add(body.anchor)
+            body.set_focused(True)
+            try:
+                self.old_focused_objects.remove(body.anchor)
+            except KeyError:
+                pass
+
     @pstat
-    def update_luminosity(self):
+    def update_luminosity(self, extra):
         if len(self.global_light_sources) > 0:
             star = self.global_light_sources[0]
         else:
             star = None
         for visible_object in self.visibles:
             visible_object.update_luminosity(star)
-        for anchor in self.extra:
+        for anchor in extra:
             #TODO: This will not work for objects in an another system
             anchor.update_luminosity(star)
 
@@ -1243,7 +1254,7 @@ class Cosmonium(CosmoniumBase):
             star = None
         if star is None: return
         # The lights for the shadow casters mmust also be updated, even if not visible as their shadows are
-        for anchor in chain(self.resolved, self.shadow_casters):
+        for anchor in chain(self.resolved, self.shadow_casters, self.focused_objects):
             if anchor.content & StellarAnchor.System != 0: continue
             if anchor.content & StellarAnchor.Reflective == 0: continue
             body = anchor.body
@@ -1341,6 +1352,9 @@ class Cosmonium(CosmoniumBase):
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
+        for old_focused in self.old_focused_objects:
+            old_focused.body.set_focused(False)
+        self.old_focused_objects = set()
 
     @pstat
     def update_lod(self):
@@ -1440,7 +1454,8 @@ class Cosmonium(CosmoniumBase):
     def main_update_task(self, task):
         # Reset all states
         self.update_id += 1
-        self.to_update_extra = []
+        self.old_focused_objects = self.focused_objects
+        self.focused_objects = set()
         self.old_visibles = self.visibles
         self.visibles = []
         self.becoming_visibles = []
@@ -1460,10 +1475,16 @@ class Cosmonium(CosmoniumBase):
         # print("FRAME", globalClock.get_frame_count())
         self.gui.update()
         self.time.update_time(dt)
-        self.update_extra(self.selected, self.follow, self.sync, self.track, self.nearest_system)
+        self.add_focused_object(self.follow)
+        self.add_focused_object(self.nearest_system)
+        self.add_focused_object(self.selected)
+        self.add_focused_object(self.sync)
+        self.add_focused_object(self.track)
+
+        extra_update = self.update_extra(*self.focused_objects)
         self.nav.update(self.time.time_full, dt)
         self.camera_controller.update(self.time.time_full, dt)
-        self.update_extra_observer()
+        self.update_extra_observer(extra_update)
 
         update = pstats.levelpstat('update', 'Bodies')
         obs = pstats.levelpstat('obs', 'Bodies')
@@ -1484,7 +1505,7 @@ class Cosmonium(CosmoniumBase):
         self.scene_manager.update_scene_and_camera(distance, self.c_camera_holder)
 
         self.find_global_light_sources()
-        self.update_luminosity()
+        self.update_luminosity(extra_update)
         self.update_states()
         self.update_scene_anchors()
         self.check_scattering()

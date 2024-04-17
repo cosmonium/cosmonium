@@ -63,6 +63,17 @@ class StellarBody(StellarObject):
             self.atmosphere.set_owner(self)
         self.anchor.set_bounding_radius(self.get_bounding_radius())
 
+    def set_focused(self, focused):
+        StellarObject.set_focused(self, focused)
+        if not self.init_components:
+            if focused:
+                if self.surface is None:
+                    self.create_surface()
+                    self.auto_surface = True
+            else:
+                if self.auto_surface:
+                    self.surface = None
+
     def get_or_create_system(self):
         if self.system is None:
             print("Creating system for", self.get_name())
@@ -149,7 +160,7 @@ class StellarBody(StellarObject):
         self.unconfigure_shape()
         StellarObject.remove_components(self)
         self.components.remove_component(self.surface)
-        if self.auto_surface:
+        if not self.focused and self.auto_surface:
             self.surface = None
         self.components.remove_component(self.clouds)
         self.components.remove_component(self.atmosphere)
