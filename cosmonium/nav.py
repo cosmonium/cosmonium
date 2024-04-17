@@ -425,10 +425,10 @@ class FreeNav(InteractiveNavigationController):
         if rate == 0.0: return
         target = self.select_target()
         if target is None: return
-        #direction = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point()) - self.controller.get_local_position()
-        (tangent, binormal, normal) = target.get_tangent_plane_under(self.controller.get_local_position())
-        surface_point = target.get_point_under(self.controller.get_local_position())
-        direction = self.controller.get_local_position() - surface_point
+        local_position = self.controller.anchor.calc_absolute_relative_position_to(target.anchor.get_absolute_reference_point())
+        (tangent, binormal, normal) = target.get_tangent_plane_under(local_position)
+        surface_point = target.get_point_under(local_position)
+        direction = local_position - surface_point
         altitude = direction.dot(normal)
         if altitude > 0:
             if rate < 0 or altitude >= settings.min_altitude:
