@@ -264,6 +264,9 @@ class BufferMixin(TargetMixinBase):
         if not self.one_shot:
             print("Can't call prepare on non one-shot target")
             return
+        if self.target is None:
+            print("Calling prepare on a removed target")
+            return
         self.clear()
         self.create_textures()
         if prepare_data is not None:
@@ -275,6 +278,9 @@ class BufferMixin(TargetMixinBase):
     def trigger(self):
         if not self.one_shot:
             print("Can't call trigger on non one-shot target")
+            return
+        if self.target is None:
+            print("Calling trigger on a removed target")
             return
         self.target.set_one_shot(True)
         self.target.set_active(True)

@@ -63,6 +63,10 @@ class GeneratorChain(ProcessPipeline):
         else:
             self.busy = False
 
+    def remove(self):
+        ProcessPipeline.remove(self)
+        self.queue = []
+
     def schedule(self, tid, shader_data, future, controller):
         self.queue.append((tid, shader_data, future, controller))
         if not self.busy:
