@@ -151,8 +151,12 @@ float to_srgb(float value) {
 
     def create_shader_version(self, code):
         if self.version is not None:
-            code.append("#version %d" % self.version)
-            if self.version >= 300 and OpenGLConfig.core_profile:
+            if self.version < 300:
+                code.append(f"#version {self.version}")
+            else:
+                profile = 'core' if OpenGLConfig.core_profile else 'compatibility'
+                code.append(f"#version {self.version} {profile}")
+            if OpenGLConfig.core_profile:
                 code.append("#define texture2D texture")
 
     def create_layout(self, code):
