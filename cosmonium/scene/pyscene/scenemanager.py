@@ -304,7 +304,7 @@ class RegionSceneManager(SceneManagerBase):
         self.spread_objects = []
         self.background_region = None
         self.camera_mask = None
-        self.infinity = 1e9
+        self.infinity = 1e24  # 100 GLy in km
         self.inverse_z = settings.use_inverse_z
 
     def has_regions(self):

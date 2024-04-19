@@ -39,7 +39,7 @@ TypeHandle RegionSceneManager::_type_handle;
 
 double RegionSceneManager::min_near = 1e-6;
 double RegionSceneManager::max_near_region = 1e5;
-double RegionSceneManager::infinity = 1e9;
+double RegionSceneManager::infinity = 1e24;  // 100 GLy in km
 
 
 static PStatCollector _build_scene_collector("Engine:build_scene");
