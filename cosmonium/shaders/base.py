@@ -153,6 +153,7 @@ float to_srgb(float value) {
         if self.version is not None:
             if self.version < 300:
                 code.append(f"#version {self.version}")
+                code.append("float textureProj(sampler2DShadow sampler, vec4 p) { return shadow2D(sampler, p.xyz / p.w).r; }")
             else:
                 profile = 'core' if OpenGLConfig.core_profile else 'compatibility'
                 code.append(f"#version {self.version} {profile}")
@@ -183,7 +184,7 @@ float to_srgb(float value) {
             new_out = "attribute "
         else:
             new_out = "varying "
-        regex = re.compile("^\s*in\s+")
+        regex = re.compile("^\s*(centroid\s+)?in\s+")
         for line in code:
             new_line = regex.sub(new_out, line)
             new_code.append(new_line)
@@ -193,7 +194,7 @@ float to_srgb(float value) {
         if self.shader_type != 'vertex':
             return code
         new_code = []
-        regex = re.compile("^\s*out\s+")
+        regex = re.compile("^\s*(centroid\s+)?out\s+")
         for line in code:
             new_line = regex.sub("varying ", line)
             new_code.append(new_line)

@@ -31,7 +31,7 @@ class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
         self.name = name
         self.use_bias = use_bias
         self.use_slope_scale_bias = settings.shadows_slope_scale_bias
-        self.use_pcf_16 = settings.shadows_pcf_16
+        self.use_pcf_16 = settings.shader_version >= 130 and settings.shadows_pcf_16
 
     def get_id(self):
         name = 'sm-' + self.name
@@ -39,7 +39,7 @@ class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
             name += '-b'
         if self.use_slope_scale_bias:
             name += '-sl'
-        if self.use_slope_scale_bias:
+        if self.use_pcf_16:
             name += '-pcf16'
         return name
 
