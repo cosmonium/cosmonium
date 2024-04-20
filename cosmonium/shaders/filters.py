@@ -207,10 +207,10 @@ float textureBSplineDerivX(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture2D(sam, offset.xz).x;
-    float p01 = texture2D(sam, offset.yz).x;
-    float p10 = texture2D(sam, offset.xw).x;
-    float p11 = texture2D(sam, offset.yw).x;
+    float p00 = texture(sam, offset.xz).x;
+    float p01 = texture(sam, offset.yz).x;
+    float p10 = texture(sam, offset.xw).x;
+    float p11 = texture(sam, offset.yw).x;
 
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
@@ -236,10 +236,10 @@ float textureBSplineDerivY(sampler2D sam, vec2 pos)
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float p00 = texture2D(sam, offset.xz).x;
-    float p01 = texture2D(sam, offset.yz).x;
-    float p10 = texture2D(sam, offset.xw).x;
-    float p11 = texture2D(sam, offset.yw).x;
+    float p00 = texture(sam, offset.xz).x;
+    float p01 = texture(sam, offset.yz).x;
+    float p10 = texture(sam, offset.xw).x;
+    float p11 = texture(sam, offset.yw).x;
 
     float a = (p01 - p00) * sx;
     float b = (p11 - p10) * sx;

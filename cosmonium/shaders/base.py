@@ -153,12 +153,12 @@ float to_srgb(float value) {
         if self.version is not None:
             if self.version < 300:
                 code.append(f"#version {self.version}")
+                code.append("vec4 texture(sampler2D sampler, vec2 p) { return texture2D(sampler, p); }")
+                code.append("vec4 texture(sampler3D sampler, vec3 p) { return texture3D(sampler, p); }")
                 code.append("float textureProj(sampler2DShadow sampler, vec4 p) { return shadow2D(sampler, p.xyz / p.w).r; }")
             else:
                 profile = 'core' if OpenGLConfig.core_profile else 'compatibility'
                 code.append(f"#version {self.version} {profile}")
-            if OpenGLConfig.core_profile:
-                code.append("#define texture2D texture")
 
     def create_layout(self, code):
         pass

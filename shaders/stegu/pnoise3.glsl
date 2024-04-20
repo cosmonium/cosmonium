@@ -18,31 +18,31 @@ float pnoise3(in vec3 p)
     vec3 pf = fract(p);     // Fractional part for interpolation
  
     // Noise contributions from (x=0, y=0), z=0 and z=1
-    float perm00 = texture2D(permTexture, pi.xy).a ;
-    vec3  grad000 = texture2D(permTexture, vec2(perm00, pi.z)).rgb * 4.0 - 1.0;
+    float perm00 = texture(permTexture, pi.xy).a ;
+    vec3  grad000 = texture(permTexture, vec2(perm00, pi.z)).rgb * 4.0 - 1.0;
     float n000 = dot(grad000, pf);
-    vec3  grad001 = texture2D(permTexture, vec2(perm00, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
+    vec3  grad001 = texture(permTexture, vec2(perm00, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
     float n001 = dot(grad001, pf - vec3(0.0, 0.0, 1.0));
  
     // Noise contributions from (x=0, y=1), z=0 and z=1
-    float perm01 = texture2D(permTexture, pi.xy + vec2(0.0, permTexUnit)).a ;
-    vec3  grad010 = texture2D(permTexture, vec2(perm01, pi.z)).rgb * 4.0 - 1.0;
+    float perm01 = texture(permTexture, pi.xy + vec2(0.0, permTexUnit)).a ;
+    vec3  grad010 = texture(permTexture, vec2(perm01, pi.z)).rgb * 4.0 - 1.0;
     float n010 = dot(grad010, pf - vec3(0.0, 1.0, 0.0));
-    vec3  grad011 = texture2D(permTexture, vec2(perm01, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
+    vec3  grad011 = texture(permTexture, vec2(perm01, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
     float n011 = dot(grad011, pf - vec3(0.0, 1.0, 1.0));
  
     // Noise contributions from (x=1, y=0), z=0 and z=1
-    float perm10 = texture2D(permTexture, pi.xy + vec2(permTexUnit, 0.0)).a ;
-    vec3  grad100 = texture2D(permTexture, vec2(perm10, pi.z)).rgb * 4.0 - 1.0;
+    float perm10 = texture(permTexture, pi.xy + vec2(permTexUnit, 0.0)).a ;
+    vec3  grad100 = texture(permTexture, vec2(perm10, pi.z)).rgb * 4.0 - 1.0;
     float n100 = dot(grad100, pf - vec3(1.0, 0.0, 0.0));
-    vec3  grad101 = texture2D(permTexture, vec2(perm10, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
+    vec3  grad101 = texture(permTexture, vec2(perm10, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
     float n101 = dot(grad101, pf - vec3(1.0, 0.0, 1.0));
  
     // Noise contributions from (x=1, y=1), z=0 and z=1
-    float perm11 = texture2D(permTexture, pi.xy + vec2(permTexUnit, permTexUnit)).a ;
-    vec3  grad110 = texture2D(permTexture, vec2(perm11, pi.z)).rgb * 4.0 - 1.0;
+    float perm11 = texture(permTexture, pi.xy + vec2(permTexUnit, permTexUnit)).a ;
+    vec3  grad110 = texture(permTexture, vec2(perm11, pi.z)).rgb * 4.0 - 1.0;
     float n110 = dot(grad110, pf - vec3(1.0, 1.0, 0.0));
-    vec3  grad111 = texture2D(permTexture, vec2(perm11, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
+    vec3  grad111 = texture(permTexture, vec2(perm11, pi.z + permTexUnit)).rgb * 4.0 - 1.0;
     float n111 = dot(grad111, pf - vec3(1.0, 1.0, 1.0));
  
     // Blend contributions along x

@@ -135,7 +135,7 @@ class PandaShaderDataSource(ShaderDataSource):
 
     def create_sample_texture(self, texture_id):
         code = []
-        code.append("vec4 tex%i = texture2D(p3d_Texture%i, texcoord_tex%d.xy);" % (texture_id, texture_id, texture_id))
+        code.append("vec4 tex%i = texture(p3d_Texture%i, texcoord_tex%d.xy);" % (texture_id, texture_id, texture_id))
         return code
 
     def fragment_uniforms(self, code):

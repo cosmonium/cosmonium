@@ -42,7 +42,7 @@ class TextureHardwareInterpolator(TextureInterpolator):
         code += ['''
 vec4 texture_hardware_fetch( sampler2D sam, vec2 uv )
 {
-    return texture2D( sam, uv );
+    return texture( sam, uv );
 }
 ''']
 
@@ -67,10 +67,10 @@ vec4 texture_software_fetch( sampler2D sam, vec2 uv )
     vec2 iuv = floor( st );
     vec2 fuv = fract( st );
 
-    vec4 a = texture2D( sam, (iuv+vec2(0.5,0.5))/res );
-    vec4 b = texture2D( sam, (iuv+vec2(1.5,0.5))/res );
-    vec4 c = texture2D( sam, (iuv+vec2(0.5,1.5))/res );
-    vec4 d = texture2D( sam, (iuv+vec2(1.5,1.5))/res );
+    vec4 a = texture( sam, (iuv+vec2(0.5,0.5))/res );
+    vec4 b = texture( sam, (iuv+vec2(1.5,0.5))/res );
+    vec4 c = texture( sam, (iuv+vec2(0.5,1.5))/res );
+    vec4 d = texture( sam, (iuv+vec2(1.5,1.5))/res );
 
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );

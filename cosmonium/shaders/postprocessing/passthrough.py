@@ -112,7 +112,7 @@ class TexturePassThroughFragmentShader(ShaderProgram):
         self.add_function(code, 'to_srgb', self.to_srgb)
 
     def create_body(self, code):
-        code.append("vec4 final_color = texture2D(color_buffer, uv.xy);")
+        code.append("vec4 final_color = texture(color_buffer, uv.xy);")
         if self.config.hdr:
             code.append("final_color = 1.0 - exp(final_color * -exposure);")
         if self.config.gamma_correction:

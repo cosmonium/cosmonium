@@ -1,7 +1,7 @@
 #version 140
 
 #if __VERSION__ > 120
-#define texture2D texture
+#define texture texture
 #endif
 
 // reflection_tex: reflection texture as produced by reflection camera
@@ -19,11 +19,11 @@ out vec4 color;
 void main()
 {
 	// calculate distortion from distortion map
-	vec4 distortion = normalize(texture2D(distortion_tex, texcoord1.xy / texcoord1.w) - waterdistort.x) * waterdistort.y;
+	vec4 distortion = normalize(texture(distortion_tex, texcoord1.xy / texcoord1.w) - waterdistort.x) * waterdistort.y;
 
 	// projectively sample the 2D reflection texture
    	vec4 coord = vec4(texcoord0.xy + distortion.xy, texcoord0.zw);
-	vec4 reflection  = texture2D(reflection_tex, coord.xy / coord.w);
+	vec4 reflection  = texture(reflection_tex, coord.xy / coord.w);
 
 	// refraction factor: smaller numbers make the water appear more reflective ("shinier")
     float factor = waterdistort.z;
