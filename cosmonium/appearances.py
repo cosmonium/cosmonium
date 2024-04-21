@@ -310,17 +310,17 @@ class Appearance(AppearanceBase):
     def load_textures(self, tasks_tree, shape, owner):
         tasks = []
         if self.texture:
-            tasks.append(self.texture.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         if self.normal_map:
-            tasks.append(self.normal_map.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.normal_map.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         if self.bump_map:
-            tasks.append(self.bump_map.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.bump_map.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         if self.specular_map:
-            tasks.append(self.specular_map.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.specular_map.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         if self.emission_texture:
-            tasks.append(self.emission_texture.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.emission_texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         if self.occlusion_map:
-            tasks.append(self.occlusion_map.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(self.occlusion_map.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         return gather(*tasks)
 
     def apply_textures(self, shape, instance):

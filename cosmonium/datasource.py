@@ -20,6 +20,8 @@
 
 from direct.task.Task import gather
 
+from . import settings
+
 
 class DataSourceTasksTree:
     def __init__(self, sources):
@@ -28,7 +30,7 @@ class DataSourceTasksTree:
         self.tasks = []
 
     def add_task_for(self, source, coro):
-        task = taskMgr.add(coro)
+        task = taskMgr.add(coro, sort=settings.shape_jobs_task_sort)
         self.named_tasks[source.name] = task
         self.tasks.append(task)
 

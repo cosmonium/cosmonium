@@ -174,7 +174,7 @@ class ShapeObject(VisibleObject):
     #TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
-            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
+            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), sort=settings.shape_jobs_task_sort, uponDeath=self.task_done)
 
     async def create_instance(self, scene_anchor):
         self.instance = NodePath('shape')
@@ -296,9 +296,9 @@ class ShapeObject(VisibleObject):
                     self.patch_sources.create(patch)
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
-                    patch.task = taskMgr.add(self.patch_task(patch), uponDeath=patch.task_done)
+                    patch.task = taskMgr.add(self.patch_task(patch), sort=settings.shape_jobs_task_sort, uponDeath=patch.task_done)
         if not self.shape.instance_ready and self.shape.task is None:
-            self.shape.task = taskMgr.add(self.shape_task(self.shape), uponDeath=self.shape.task_done)
+            self.shape.task = taskMgr.add(self.shape_task(self.shape), sort=settings.shape_jobs_task_sort, uponDeath=self.shape.task_done)
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:

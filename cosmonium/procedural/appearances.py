@@ -96,13 +96,13 @@ class TexturesDictionary(AppearanceBase):
         tasks = []
         for entry in self.blocks.values():
             for texture in entry.textures:
-                tasks.append(texture.load(tasks_tree, shape))
+                tasks.append(taskMgr.add(texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         return gather(*tasks)
 
     def load_texture_array(self, tasks_tree, shape, owner):
         tasks = []
         for texture in self.texture_arrays.values():
-            tasks.append(texture.load(tasks_tree, shape))
+            tasks.append(taskMgr.add(texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
         return gather(*tasks)
 
     def task_done(self, task):

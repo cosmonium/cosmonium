@@ -256,6 +256,7 @@ halo_depth = 100
 # Tasks order
 worker_callback_task_sort = -10
 main_update_task_sort = 35
+shape_jobs_task_sort = 37
 instances_update_task_sort = 40
 
 # Collision bits
