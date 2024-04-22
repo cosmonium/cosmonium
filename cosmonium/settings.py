@@ -167,6 +167,7 @@ debug_tex_loading = False
 
 sync_data_load = False
 sync_texture_load = False
+workers_use_task_chain = False
 
 debug_jump = False
 

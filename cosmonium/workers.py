@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -65,10 +65,21 @@ class AsyncLoader():
         self.base = base
         self.in_queue = Queue()
         self.cb_queue = Queue()
-        self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead', daemon=True)
+        if settings.workers_use_task_chain:
+            self.base.taskMgr.setupTaskChain(
+                name,
+                numThreads = 1,
+                tickClock = False,
+                threadPriority = None,
+                frameBudget = -1,
+                frameSync = False,
+                timeslicePriority = True)
+            self.process_task = self.base.taskMgr.add(self.processTask, name + 'ProcessTask', taskChain=name)
+        else:
+            self.process_thread = threading.Thread(target=self.processThread, name= name + 'ProcessThead', daemon=True)
+            self.process_thread.start()
         self.callback_task = self.base.taskMgr.add(
             self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort)
-        self.process_thread.start()
 
     def add_job(self, func, fargs):
         future = AsyncFuture()
@@ -76,19 +87,27 @@ class AsyncLoader():
         self.in_queue.put(job)
         return future
 
-    def processTask(self):
-        while True:
-            try:
-                job = self.in_queue.get()
-                (func, fargs, future) = job
-                if not future.cancelled():
-                    result = func(*fargs)
-                    self.cb_queue.put([future, result])
-                else:
-                    #print("job cancelled")
-                    pass
-            except Empty:
+    def process(self, timeout=None):
+        try:
+            job = self.in_queue.get(timeout=timeout)
+            (func, fargs, future) = job
+            if not future.cancelled():
+                result = func(*fargs)
+                self.cb_queue.put([future, result])
+            else:
+                #print("job cancelled")
                 pass
+        except Empty:
+            pass
+
+    def processThread(self):
+        while True:
+            self.process()
+
+    def processTask(self, task):
+        # A small but not null timeout is required to avoid draining CPU resources
+        self.process(timeout=0.001)
+        return Task.cont
 
     def callbackTask(self, task):
         try:
