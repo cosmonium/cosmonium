@@ -69,6 +69,7 @@ config = {
         'build_apps': {
             'requirements_path': requirements_path,
             'platforms': ['manylinux1_x86_64', 'manylinux1_i686', 'macosx_10_9_x86_64'],
+            'prefer_discrete_gpu': True,
             'include_patterns': [
                 'config/**',
                 'shaders/**',
