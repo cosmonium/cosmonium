@@ -33,6 +33,8 @@ sys.path.insert(1, 'third-party')
 sys.path.insert(1, 'third-party/cefpanda')
 sys.path.insert(1, 'third-party/gltf')
 
+from panda3d.core import ExecutionEnvironment
+
 from cosmonium.cosmonium import Cosmonium
 
 from cosmonium.parsers.yamlparser import YamlParser
@@ -125,10 +127,7 @@ class CosmoniumConfig(object):
         self.test_start = args.test_start
 
     def resolve_paths(self):
-        if getattr(sys, 'frozen', False):
-            base_path = os.path.dirname(sys.executable)
-        elif __file__:
-            base_path = os.path.dirname(__file__)
+        base_path = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
         if not os.path.isabs(self.common):
             self.common = os.path.join(base_path, self.common)
         if not os.path.isabs(self.main):
