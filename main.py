@@ -2,7 +2,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, me
 from cosmonium.astro.tables import uniform, wgccre
 
 import argparse
-import os
+
 
 class CosmoniumConfig(object):
     def __init__(self):
@@ -74,8 +74,20 @@ class CosmoniumConfig(object):
             self.celestia_data_list.append("C:\\Program Files\\Celestia")
         else:
             self.celestia_data_list.append("/usr/share/celestia")
-        self.celestia_support = ['data/solar-system/frames.yaml', 'data/solar-system/ssd.yaml', 'data/solar-system/manual-orbits.yaml', 'data/solar-system/celestia.yaml']
-        self.celestia_ssc = ["solarsys.ssc", "minormoons.ssc", "numberedmoons.ssc", "asteroids.ssc", "outersys.ssc"]#, "extrasolar.ssc"]
+        self.celestia_support = [
+            'data/solar-system/frames.yaml',
+            'data/solar-system/ssd.yaml',
+            'data/solar-system/manual-orbits.yaml',
+            'data/solar-system/celestia.yaml',
+            ]
+        self.celestia_ssc = [
+            "solarsys.ssc",
+            "minormoons.ssc",
+            "numberedmoons.ssc",
+            "asteroids.ssc",
+            "outersys.ssc",
+            # "extrasolar.ssc",
+            ]
         self.celestia_stc = ["nearstars.stc", "revised.stc", "spectbins.stc", "visualbins.stc", "extrasolar.stc"]
         self.celestia_dsc = ["galaxies.dsc"]
         self.celestia_stars_catalog = 'stars.dat'
@@ -112,6 +124,21 @@ class CosmoniumConfig(object):
             self.script = self.celestia_start_script
         self.test_start = args.test_start
 
+    def resolve_paths(self):
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        elif __file__:
+            base_path = os.path.dirname(__file__)
+        if not os.path.isabs(self.common):
+            self.common = os.path.join(base_path, self.common)
+        if not os.path.isabs(self.main):
+            self.main = os.path.join(base_path, self.main)
+        if not os.path.isabs(self.ui):
+            self.ui = os.path.join(base_path, self.ui)
+        if self.script and not os.path.isabs(self.script):
+            self.script = os.path.join(base_path, self.script)
+
+
 class CosmoniumConfigParser(YamlParser):
     def __init__(self, config_file):
         YamlParser.__init__(self)
@@ -136,7 +163,8 @@ class CosmoniumConfigParser(YamlParser):
         self.config.script = data.get('script', self.config.celestia_start_script)
 
     def decode(self, data):
-        if data is None: return
+        if data is None:
+            return
         celestia = data.get('celestia', False)
         celestia_data = data.get('celestia-data', {})
         if isinstance(celestia, bool):
@@ -156,11 +184,13 @@ class CosmoniumConfigParser(YamlParser):
             self.config.extra = [self.config.extra]
         self.config.prc_file = data.get('prc', self.config.prc_file)
 
+
 class CosmoniumApp(Cosmonium):
     def __init__(self, args):
         parser = CosmoniumConfigParser(os.path.join(settings.config_dir, 'cosmonium.yaml'))
         self.app_config = parser.load()
         self.app_config.update_from_args(args)
+        self.app_config.resolve_paths()
         settings.prc_file = self.app_config.prc_file
         Cosmonium.__init__(self)
 
@@ -258,6 +288,7 @@ class CosmoniumApp(Cosmonium):
             self.select_body(self.universe.find_by_name(self.app_config.default_target))
             self.autopilot.go_to_front(duration=0.0)
             self.gui.update_info(_("Welcome to Cosmonium!"))
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("script",
