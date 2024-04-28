@@ -21,8 +21,10 @@ BASE_VERSION=0.2.1.1
 TAG_VERSION=0.3.0
 COUNT=$(shell git rev-list --count v$(BASE_VERSION)..HEAD)
 SOURCE_DATE_EPOCH=$(shell git log -1 --pretty=%ct)
+PYTHONHASHSEED=0
 
 export SOURCE_DATE_EPOCH
+export PYTHONHASHSEED
 
 UI_LIST=default
 
