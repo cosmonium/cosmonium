@@ -266,7 +266,7 @@ SceneAnchor::get_shifted_instance(void)
 LColor
 SceneAnchor::get_oid_color(void)
 {
-    return background;
+    return oid_color;
 }
 
 
