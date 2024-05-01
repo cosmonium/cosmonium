@@ -61,13 +61,14 @@ import argparse
 
 class CosmoniumConfig(object):
     def __init__(self):
-        self.common = 'data/defaults.yaml'
-        self.main = 'data/cosmonium.yaml'
-        self.ui = 'config/ui/default/ui.yaml'
+        base_path = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
+        self.common = os.path.join(base_path, 'data/defaults.yaml')
+        self.main = os.path.join(base_path, 'data/cosmonium.yaml')
+        self.ui = os.path.join(base_path, 'config/ui/default/ui.yaml')
         self.default_home = None
         self.default_target = None
         self.script = None
-        self.extra = ['data/extra', settings.data_dir]
+        self.extra = [os.path.join(base_path, 'data/extra'), settings.data_dir]
         self.celestia = False
         self.celestia_data_list = ["../Celestia", "../CelestiaContent"]
         if sys.platform == "darwin":
@@ -126,17 +127,6 @@ class CosmoniumConfig(object):
             self.script = self.celestia_start_script
         self.test_start = args.test_start
 
-    def resolve_paths(self):
-        base_path = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
-        if not os.path.isabs(self.common):
-            self.common = os.path.join(base_path, self.common)
-        if not os.path.isabs(self.main):
-            self.main = os.path.join(base_path, self.main)
-        if not os.path.isabs(self.ui):
-            self.ui = os.path.join(base_path, self.ui)
-        if self.script and not os.path.isabs(self.script):
-            self.script = os.path.join(base_path, self.script)
-
 
 class CosmoniumConfigParser(YamlParser):
     def __init__(self, config_file):
@@ -189,7 +179,6 @@ class CosmoniumApp(Cosmonium):
         parser = CosmoniumConfigParser(os.path.join(settings.config_dir, 'cosmonium.yaml'))
         self.app_config = parser.load()
         self.app_config.update_from_args(args)
-        self.app_config.resolve_paths()
         settings.prc_file = self.app_config.prc_file
         Cosmonium.__init__(self)
 
