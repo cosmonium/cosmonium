@@ -177,11 +177,11 @@ class ShapeObject(VisibleObject):
             self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), sort=settings.shape_jobs_task_sort, uponDeath=self.task_done)
 
     async def create_instance(self, scene_anchor):
-        self.instance = NodePath('shape')
         #TODO: Temporarily here until foundation.show() is corrected
         if scene_anchor.instance is None:
             print("NO INSTANCE FOR", self, self.owner.get_name())
             return
+        self.instance = NodePath('shape')
         if self.shape.patchable:
             self.instance.reparent_to(scene_anchor.shifted_instance)
         else:
