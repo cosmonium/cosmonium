@@ -529,7 +529,9 @@ class RingShadowCaster(ShadowCasterBase):
         self.ring = ring
 
     def is_analytic(self):
-        return True
+        # Although ring shadows are analytic, ity still requires the ring texture.
+        # So we need to return False here to force the texture loading
+        return False
 
     def add_target(self, shape_object):
         shape_object.shadows.add_ring_shadow_caster(self)
