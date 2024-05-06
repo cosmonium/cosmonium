@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -104,7 +104,12 @@ class Atmosphere(ShapeObject):
 
     def update_user_parameters(self):
         ShapeObject.update_user_parameters(self)
-        self.scattering.update_scattering()
+        self.scattering.update_user_parameters()
+
+    def get_user_parameters(self):
+        group = ShapeObject.get_user_parameters(self)
+        group.add_parameters(self.scattering.get_user_parameters())
+        return group
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)

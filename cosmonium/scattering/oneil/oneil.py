@@ -112,7 +112,7 @@ class ONeilSimpleScattering(ONeilScatteringBase):
         return ONeilSimpleScatteringDataSource(self, atmosphere)
 
     def get_user_parameters(self):
-        group = Atmosphere.get_user_parameters(self)
+        group = ScatteringBase.get_user_parameters(self)
         group.add_parameters(
                              AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
                              AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
@@ -234,7 +234,7 @@ class ONeilScattering(ONeilScatteringBase):
         return self.mie_scale_depth * self.height
 
     def get_user_parameters(self):
-        group = Atmosphere.get_user_parameters(self)
+        group = ScatteringBase.get_user_parameters(self)
         group.add_parameters(
                              UserParameter('Rayleigh scale depth', self.set_rayleigh_scale_depth, self.get_rayleigh_scale_depth, UserParameter.TYPE_FLOAT, [0, self.height]),
                              AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),

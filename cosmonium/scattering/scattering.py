@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, TYPE_CHECKING
 
+from ..parameters import ParametersGroup
 from .. import settings
 
 if TYPE_CHECKING:
@@ -136,6 +137,12 @@ class ScatteringBase(ABC):
     @abstractmethod
     def create_data_source(self, atmosphere: bool) -> None:
         raise NotImplementedError()
+
+    def update_user_parameters(self):
+        self.update_scattering()
+
+    def get_user_parameters(self):
+        return ParametersGroup("Scattering")
 
     def update(self, time, dt):
         pass
