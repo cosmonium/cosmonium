@@ -767,6 +767,7 @@ class ONeilLookupTableRenderStage(ProcessStage):
     def create(self, pipeline):
         target = ProcessTarget(self.name)
         target.set_one_shot(True)
+        target.set_clear_texture(False)
         self.add_target(target)
         target.set_fixed_size(self.size)
         texture_config = TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
