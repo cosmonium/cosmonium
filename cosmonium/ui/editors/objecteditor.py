@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@
 
 from ...parameters import ParametersGroup
 from ...astro.orbits import FixedPosition
+
 from .editors import ObjectEditors
+
 
 class StellarObjectEditor:
     def __init__(self, stellar_object):
@@ -42,7 +44,7 @@ class StellarObjectEditor:
         self.rotation_editor = ObjectEditors.get_editor_for(self.stellar_object.anchor.rotation)
         general_group.add_parameter(self.rotation_editor.get_group())
         group.add_parameter(general_group)
-        #TODO: CompositeObject should have an iterator interface
+        # TODO: CompositeObject should have an iterator interface
         for component in self.stellar_object.components.components:
             component_group = component.get_user_parameters()
             if component_group is not None:
@@ -50,6 +52,9 @@ class StellarObjectEditor:
         return group
 
     def update_user_parameters(self):
+        # TODO: CompositeObject should have an iterator interface
+        for component in self.stellar_object.components.components:
+            component.update_user_parameters()
         self.orbit_editor.update_user_parameters()
         if self.orbit_object is not None:
             self.orbit_object.update_user_parameters()
