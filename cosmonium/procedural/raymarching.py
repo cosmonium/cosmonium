@@ -105,14 +105,14 @@ class RayMarchingAppearanceBase(AppearanceBase):
 
 class RayMarchingShader(ShaderAppearance):
 
-    fragment_requires = {'world_vertex'}
-
     def __init__(self):
         ShaderAppearance.__init__(self)
         self.hdr = False
         self.exposure = 4.0
         self.max_steps = 64
         self.has_surface = True
+        # TODO: This must be here as ShaderAppearance makes fragment_requires an instance attribute
+        self.fragment_requires = {'world_vertex'}
 
     def get_id(self):
         name = 'ray'
@@ -345,6 +345,10 @@ class VolumetricDensityRayMarchingAppearanceBase(RayMarchingAppearanceBase):
     def apply(self, shape, instance):
         RayMarchingAppearanceBase.apply(self, shape, instance)
         self.density.update(shape.instance)
+
+    def update_user_parameters(self):
+        RayMarchingAppearanceBase.update_user_parameters(self)
+        self.density.update_user_parameters()
 
     def get_user_parameters(self):
         group = RayMarchingAppearanceBase.get_user_parameters(self)
