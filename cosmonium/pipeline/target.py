@@ -108,9 +108,13 @@ class BufferMixin(TargetMixinBase):
         self.sort = 0
         self.active = True
         self.one_shot = False
+        self.clear_texture = True
 
     def set_one_shot(self, one_shot):
         self.one_shot = one_shot
+
+    def set_clear_texture(self, clear_texture):
+        self.clear_texture = clear_texture
 
     def set_fixed_size(self, size):
         self.requested_size = size
@@ -267,8 +271,9 @@ class BufferMixin(TargetMixinBase):
         if self.target is None:
             print("Calling prepare on a removed target")
             return
-        self.clear()
-        self.create_textures()
+        if self.clear_texture:
+            self.clear()
+            self.create_textures()
         if prepare_data is not None:
             for texture_name, texture_target in self.texture_targets.items():
                 config = prepare_data.get(texture_name)
@@ -371,7 +376,7 @@ class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
 
     def create(self, pipeline):
         self.create_target(pipeline)
-        if not self.one_shot:
+        if not self.one_shot or not self.clear_texture:
             self.create_textures()
         self.create_display_region()
         self.create_infra()
