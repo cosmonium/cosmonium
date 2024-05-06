@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -38,12 +38,11 @@ class RayMarchingShape(Shape):
     def __init__(self, radius=1.0, scale=None):
         Shape.__init__(self)
         self.radius = radius
+        self.axes = LVecBase3(radius)
         if scale is None:
-            self.radius = radius
-            self.scale = LVecBase3(self.radius, self.radius, self.radius)
+            self.scale = LVecBase3(1)
         else:
-            self.scale = LVecBase3(*scale) * radius
-            self.radius = max(scale) * radius
+            self.scale = LVecBase3(*scale)
         self.blend = TransparencyBlend.TB_PremultipliedAlpha
         self.scale_factor = 1.0
 
@@ -52,6 +51,10 @@ class RayMarchingShape(Shape):
 
     def get_apparent_radius(self):
         return self.radius
+
+    def set_axes(self, axes):
+        self.axes = axes
+        self.radius = max(*axes)
 
     async def create_instance(self):
         self.instance = NodePath("card")
