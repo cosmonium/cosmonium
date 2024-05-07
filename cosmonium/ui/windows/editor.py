@@ -24,7 +24,7 @@ from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectGui import DirectEntry, DirectSlider
-from directspinbox.DirectSpinBox import DirectSpinBox
+from directspinbox.DirectSpinBox import DirectSpinBox, WHEELDOWN, WHEELUP
 
 from tabbedframe.TabbedFrame import TabbedFrame
 from directguilayout.gui import Sizer
@@ -133,6 +133,8 @@ class ParamEditor(UIWindow):
                               valueEntry_text_align=TextNode.A_left,
                               valueEntry_frameColor=settings.entry_background,
                               scale=scale3)
+        entry.valueEntry.unbind(WHEELUP)
+        entry.valueEntry.unbind(WHEELDOWN)
         widget = SizerWidget(entry)
         return widget, (0, 0)
 
