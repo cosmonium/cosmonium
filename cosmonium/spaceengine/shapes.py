@@ -87,7 +87,7 @@ class SpaceEnginePatchedSquareShape(NormalizedSquareShape):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_radius, max_radius, mean_radius) = self.get_patch_limits(parent)
-        patch = SpaceEngineTextureSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius, self.use_shader, self.use_tessellation)
+        patch = SpaceEngineTextureSquarePatch(face, x, y, parent, lod, density, self.parent, min_radius, max_radius, mean_radius)
         #TODO: Temporary or make right
         patch.owner = self
         return patch

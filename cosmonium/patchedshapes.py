@@ -1119,10 +1119,6 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
             return None
 
 class NormalizedSquarePatchFactory(PatchFactory):
-    def __init__(self):
-        PatchFactory.__init__(self)
-        self.use_shader = False
-        self.use_tessellation = False
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
@@ -1141,10 +1137,6 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
         return (copysign(vx, x), copysign(vy, y))
 
 class SquaredDistanceSquarePatchFactory(PatchFactory):
-    def __init__(self):
-        PatchFactory.__init__(self)
-        self.use_shader = False
-        self.use_tessellation = False
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
