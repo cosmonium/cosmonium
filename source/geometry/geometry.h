@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2020 Laurent Deru.
+ * Copyright (C) 2018-2024 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,10 +27,10 @@
 
 class GeomVertexWriter;
 
-class TesselationInfo
+class TessellationInfo
 {
 PUBLISHED:
-  TesselationInfo(unsigned int inner, LVecBase4i outer);
+  TessellationInfo(unsigned int inner, LVecBase4i outer);
 
   unsigned int inner;
   LVecBase4i outer;
@@ -89,7 +89,7 @@ PUBLISHED:
           bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
 
   NodePath
-  make(LVector3d axes, TesselationInfo tesselation,
+  make(LVector3d axes, TessellationInfo tesselation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -124,7 +124,7 @@ PUBLISHED:
           bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
 
   NodePath
-  make(LVector3d axes, TesselationInfo tesselation,
+  make(LVector3d axes, TessellationInfo tesselation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -149,7 +149,7 @@ PUBLISHED:
   TilePatchGenerator();
 
   NodePath
-  make(double size, TesselationInfo tesselation,
+  make(double size, TessellationInfo tesselation,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.1, double skirt_uv=0.1);

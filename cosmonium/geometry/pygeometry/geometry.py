@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -588,7 +588,7 @@ def IcoSphere(radius=1, subdivisions=1):
     return path
 
 
-class TesselationInfo():
+class TessellationInfo():
 
     def __init__(self, inner, outer):
         self.inner = inner

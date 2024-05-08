@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 
 try:
-    from cosmonium_engine import TesselationInfo as CTesselationInfo
+    from cosmonium_engine import TessellationInfo as CTessellationInfo
     from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator, TilePatchGenerator
-    TesselationInfo = CTesselationInfo
+    TessellationInfo = CTessellationInfo
     uv_patch_generator = UVPatchGenerator()
     UVPatch = uv_patch_generator.make
     qcs_patch_generator = QCSPatchGenerator()
@@ -37,7 +37,7 @@ except ImportError as e:
     from .pygeometry.geometry import SquaredDistanceSquarePatch
     from .pygeometry.geometry import NormalizedSquarePatch
     from .pygeometry.geometry import Tile
-    from .pygeometry.geometry import TesselationInfo
+    from .pygeometry.geometry import TessellationInfo
 
 from .pygeometry.geometry import BoundingBoxGeom
 from .pygeometry.geometry import UVSphere, IcoSphere

@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2022 Laurent Deru.
+ * Copyright (C) 2018-2024 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 
 static PStatCollector _geom_collector("Engine:geom");
 
-TesselationInfo::TesselationInfo(unsigned int inner, LVecBase4i outer) :
+TessellationInfo::TessellationInfo(unsigned int inner, LVecBase4i outer) :
         inner(inner),
         outer(outer)
 {
@@ -499,7 +499,7 @@ QCSPatchGenerator::make_point(LVector3d axes,
 }
 
 NodePath
-QCSPatchGenerator::make(LVector3d axes, TesselationInfo tesselation,
+QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -779,7 +779,7 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
 }
 
 NodePath
-ImprovedQCSPatchGenerator::make(LVector3d axes, TesselationInfo tesselation,
+ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -955,7 +955,7 @@ TilePatchGenerator::make_point(double size,
 }
 
 NodePath
-TilePatchGenerator::make(double size, TesselationInfo tesselation,
+TilePatchGenerator::make(double size, TessellationInfo tesselation,
         bool inv_u, bool inv_v, bool swap_uv,
         bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv)

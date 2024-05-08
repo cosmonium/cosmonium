@@ -497,7 +497,7 @@ class NormalizedSquarePatchLayer(PatchLayer):
                                  abs(rotated_axes[1]),
                                  abs(rotated_axes[2]))
         self.instance = geometry.NormalizedSquarePatch(rotated_axes / patch.owner.radius,
-                                                       geometry.TesselationInfo(patch.density, patch.tessellation_outer_level),
+                                                       geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
                                                        patch.x0, patch.y0, patch.x1, patch.y1,
                                                        has_offset=patch.offset is not None,
                                                        offset=patch.offset if patch.offset is not None else 0.0,
@@ -535,7 +535,7 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
                                  abs(rotated_axes[1]),
                                  abs(rotated_axes[2]))
         self.instance = geometry.SquaredDistanceSquarePatch(rotated_axes / patch.owner.radius,
-                                                            geometry.TesselationInfo(patch.density, patch.tessellation_outer_level),
+                                                            geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
                                                             patch.x0, patch.y0, patch.x1, patch.y1,
                                                             has_offset=patch.offset is not None,
                                                             offset=patch.offset,

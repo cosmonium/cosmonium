@@ -89,7 +89,7 @@ class MeshTerrainLayer(PatchLayer):
         #print(tile_id)
         if tile_id not in self.template:
             self.template[tile_id] = geometry.Tile(1.0,
-                                                   geometry.TesselationInfo(patch.tessellation_inner_level, patch.tessellation_outer_level),
+                                                   geometry.TessellationInfo(patch.tessellation_inner_level, patch.tessellation_outer_level),
                                                    use_patch_adaptation=settings.use_patch_adaptation, use_patch_skirts=settings.use_patch_skirts,
                                                    skirt_size=patch.size / 33, skirt_uv=1 / 33)
         template = self.template[tile_id]
