@@ -50,6 +50,7 @@ worlds:
 terrain:
   tile-size: 16384
   max-distance: 16384
+  hw-tessellation: false
   heightmap:
     max-height: 500
     scale-length: 32768.0

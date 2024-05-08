@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -158,6 +158,7 @@ class FlatSurfaceParser(YamlModuleParser):
         max_lod = data.get('max-lod', 10)
         max_distance = data.get('max-distance', 1.001 * 1024 * sqrt(2))
         tile_density = data.get('tile-density', settings.patch_constant_density)
+        hw_tessellation = data.get('hw-tessellation', False)
 
         shape_data = data.get('shape')
         appearance = data.get('appearance')
@@ -192,7 +193,7 @@ class FlatSurfaceParser(YamlModuleParser):
 
         if shape.is_spherical():
             if shape.patchable:
-                if OpenGLConfig.hardware_tessellation:
+                if hw_tessellation and OpenGLConfig.hardware_tessellation:
                     terrain_layer_factory = GpuPatchTerrainLayerFactory()
                 else:
                     terrain_layer_factory = MeshTerrainLayerFactory()
@@ -225,7 +226,7 @@ class FlatSurfaceParser(YamlModuleParser):
                 appearance_source = appearance.get_data_source()
                 if appearance_source is not None:
                     data_source.append(appearance_source)
-                if OpenGLConfig.hardware_tessellation:
+                if hw_tessellation and OpenGLConfig.hardware_tessellation:
                     tessellation_control = ConstantTessellationControl()
                 else:
                     tessellation_control = None
