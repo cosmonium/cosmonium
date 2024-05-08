@@ -89,7 +89,7 @@ PUBLISHED:
           bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
 
   NodePath
-  make(LVector3d axes, TessellationInfo tesselation,
+  make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -124,7 +124,7 @@ PUBLISHED:
           bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
 
   NodePath
-  make(LVector3d axes, TessellationInfo tesselation,
+  make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
@@ -149,7 +149,7 @@ PUBLISHED:
   TilePatchGenerator();
 
   NodePath
-  make(double size, TessellationInfo tesselation,
+  make(double size, TessellationInfo tessellation,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.1, double skirt_uv=0.1);

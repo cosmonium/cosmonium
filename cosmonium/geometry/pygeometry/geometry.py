@@ -765,12 +765,12 @@ def make_primitives_skirt(prim, inner, nb_vertices):
 
 
 @named_pstat("geom")
-def Tile(size, tesselation,
+def Tile(size, tessellation,
          inv_u=False, inv_v=False, swap_uv=False,
          use_patch_adaptation=True,
          use_patch_skirts=True,
          skirt_size=0.1, skirt_uv=0.1):
-    inner = tesselation.inner
+    inner = tessellation.inner
     nb_vertices = inner + 1
     (path, node) = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
@@ -841,9 +841,9 @@ def Tile(size, tesselation,
                 gbiw.add_data3(0, 1, 0)
 
     if use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
         if use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tessellation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
         if use_patch_skirts:
@@ -983,7 +983,7 @@ def SquarePatch(height, inner, outer,
 
 @named_pstat("geom")
 def SquaredDistanceSquarePatch(
-        axes, tesselation,
+        axes, tessellation,
         x0, y0, x1, y1,
         inv_u=False, inv_v=False, swap_uv=False,
         x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -991,7 +991,7 @@ def SquaredDistanceSquarePatch(
         use_patch_skirts=True,
         skirt_size=0.001, skirt_uv=0.001):
     (path, node) = empty_node('uv')
-    inner = tesselation.inner
+    inner = tessellation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
@@ -1114,9 +1114,9 @@ def SquaredDistanceSquarePatch(
                 gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
         if use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tessellation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
         if use_patch_skirts:
@@ -1230,7 +1230,7 @@ def SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
 
 
 @named_pstat("geom")
-def NormalizedSquarePatch(axes, tesselation,
+def NormalizedSquarePatch(axes, tessellation,
                           x0, y0, x1, y1,
                           inv_u=False, inv_v=False, swap_uv=False,
                           x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
@@ -1239,7 +1239,7 @@ def NormalizedSquarePatch(axes, tesselation,
                           skirt_size=0.001, skirt_uv=0.001):
     (path, node) = empty_node('uv')
     #use_patch_skirts = False
-    inner = tesselation.inner
+    inner = tessellation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
@@ -1349,9 +1349,9 @@ def NormalizedSquarePatch(axes, tesselation,
                 gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
-        make_adapted_square_primitives(prim, inner, nb_vertices, tesselation.ratio)
+        make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
         if use_patch_skirts:
-            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tesselation.ratio)
+            make_adapted_square_primitives_skirt(prim, inner, nb_vertices, tessellation.ratio)
     else:
         make_square_primitives(prim, inner, nb_vertices)
         if use_patch_skirts:

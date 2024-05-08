@@ -499,7 +499,7 @@ QCSPatchGenerator::make_point(LVector3d axes,
 }
 
 NodePath
-QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
+QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -509,14 +509,14 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
 {
     _geom_collector.start();
 
-    unsigned int nb_vertices = tesselation.inner + 1;
+    unsigned int nb_vertices = tessellation.inner + 1;
 
-    unsigned int nb_prims = tesselation.inner * tesselation.inner;
+    unsigned int nb_prims = tessellation.inner * tessellation.inner;
     unsigned int nb_points = nb_vertices * nb_vertices;
 
     if (use_patch_skirts) {
         nb_points += nb_vertices * 4;
-        nb_prims += tesselation.inner * 4;
+        nb_prims += tessellation.inner * 4;
     }
 
     PT(GeomNode) node = new GeomNode("qcs");
@@ -573,7 +573,7 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
     for (unsigned int i = 0; i < nb_vertices; ++i) {
         for (unsigned int j = 0; j < nb_vertices; ++j) {
             make_point(axes,
-                    double(i) / tesselation.inner, double(j) / tesselation.inner,
+                    double(i) / tessellation.inner, double(j) / tessellation.inner,
                     x0, y0, dx, dy,
                     normal_coefs,
                     inv_u, inv_v, swap_uv,
@@ -591,17 +591,17 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
                     i = 0;
                     j = b;
                 } else if (a == 1) {
-                    i = tesselation.inner;
+                    i = tessellation.inner;
                     j = b;
                 } else if (a == 2) {
                     i = b;
                     j = 0;
                 } else if (a == 3) {
                     i = b;
-                    j = tesselation.inner;
+                    j = tessellation.inner;
                 }
                 make_point(reduced_axes,
-                        double(i) / tesselation.inner, double(j) / tesselation.inner,
+                        double(i) / tessellation.inner, double(j) / tessellation.inner,
                         x0, y0, dx, dy,
                         normal_coefs,
                         inv_u, inv_v, swap_uv,
@@ -612,14 +612,14 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
     }
 
     if (use_patch_adaptation) {
-        make_adapted_square_primitives(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+        make_adapted_square_primitives(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         if (use_patch_skirts) {
-            make_adapted_square_primitives_skirt(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+            make_adapted_square_primitives_skirt(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         }
     } else {
-        make_primitives(prim, tesselation.inner, nb_vertices);
+        make_primitives(prim, tessellation.inner, nb_vertices);
         if (use_patch_skirts) {
-            make_primitives_skirt(prim, tesselation.inner, nb_vertices);
+            make_primitives_skirt(prim, tessellation.inner, nb_vertices);
         }
     }
 
@@ -779,7 +779,7 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
 }
 
 NodePath
-ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
+ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
         bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
@@ -789,14 +789,14 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
 {
     _geom_collector.start();
 
-    unsigned int nb_vertices = tesselation.inner + 1;
+    unsigned int nb_vertices = tessellation.inner + 1;
 
-    unsigned int nb_prims = tesselation.inner * tesselation.inner;
+    unsigned int nb_prims = tessellation.inner * tessellation.inner;
     unsigned int nb_points = nb_vertices * nb_vertices;
 
     if (use_patch_skirts) {
         nb_points += nb_vertices * 4;
-        nb_prims += tesselation.inner * 4;
+        nb_prims += tessellation.inner * 4;
     }
 
     PT(GeomNode) node = new GeomNode("qcs");
@@ -853,7 +853,7 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
     for (unsigned int i = 0; i < nb_vertices; ++i) {
         for (unsigned int j = 0; j < nb_vertices; ++j) {
             make_point(axes,
-                    double(i) / tesselation.inner, double(j) / tesselation.inner,
+                    double(i) / tessellation.inner, double(j) / tessellation.inner,
                     x0, y0, dx, dy,
                     normal_coefs,
                     inv_u, inv_v, swap_uv,
@@ -875,17 +875,17 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
                     i = 0;
                     j = b;
                 } else if (a == 1) {
-                    i = tesselation.inner;
+                    i = tessellation.inner;
                     j = b;
                 } else if (a == 2) {
                     i = b;
                     j = 0;
                 } else if (a == 3) {
                     i = b;
-                    j = tesselation.inner;
+                    j = tessellation.inner;
                 }
                 make_point(reduced_axes,
-                        double(i) / tesselation.inner, double(j) / tesselation.inner,
+                        double(i) / tessellation.inner, double(j) / tessellation.inner,
                         x0, y0, dx, dy,
                         reduced_normal_coefs,
                         inv_u, inv_v, swap_uv,
@@ -896,14 +896,14 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tesselation,
     }
 
     if (use_patch_adaptation) {
-        make_adapted_square_primitives(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+        make_adapted_square_primitives(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         if (use_patch_skirts) {
-            make_adapted_square_primitives_skirt(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+            make_adapted_square_primitives_skirt(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         }
     } else {
-        make_primitives(prim, tesselation.inner, nb_vertices);
+        make_primitives(prim, tessellation.inner, nb_vertices);
         if (use_patch_skirts) {
-            make_primitives_skirt(prim, tesselation.inner, nb_vertices);
+            make_primitives_skirt(prim, tessellation.inner, nb_vertices);
         }
     }
 
@@ -955,21 +955,21 @@ TilePatchGenerator::make_point(double size,
 }
 
 NodePath
-TilePatchGenerator::make(double size, TessellationInfo tesselation,
+TilePatchGenerator::make(double size, TessellationInfo tessellation,
         bool inv_u, bool inv_v, bool swap_uv,
         bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv)
 {
     _geom_collector.start();
 
-    unsigned int nb_vertices = tesselation.inner + 1;
+    unsigned int nb_vertices = tessellation.inner + 1;
 
-    unsigned int nb_prims = tesselation.inner * tesselation.inner;
+    unsigned int nb_prims = tessellation.inner * tessellation.inner;
     unsigned int nb_points = nb_vertices * nb_vertices;
 
     if (use_patch_skirts) {
         nb_points += nb_vertices * 4;
-        nb_prims += tesselation.inner * 4;
+        nb_prims += tessellation.inner * 4;
     }
 
     PT(GeomNode) node = new GeomNode("qcs");
@@ -1000,9 +1000,9 @@ TilePatchGenerator::make(double size, TessellationInfo tesselation,
     }
 
     for (unsigned int i = 0; i < nb_vertices; ++i) {
-        double u = float(i) / tesselation.inner;
+        double u = float(i) / tessellation.inner;
         for (unsigned int j = 0; j < nb_vertices; ++j) {
-            double v = float(j) / tesselation.inner;
+            double v = float(j) / tessellation.inner;
             make_point(size,
                     u, v,
                     u, v, 0,
@@ -1018,21 +1018,21 @@ TilePatchGenerator::make(double size, TessellationInfo tesselation,
                 double u, v;
                 if (a == 0) {
                     x = 0.0;
-                    y = float(b) / tesselation.inner;
+                    y = float(b) / tessellation.inner;
                     u = -skirt_uv;
                     v = y;
                 } else if (a == 1) {
                     x = 1.0;
-                    y = float(b) / tesselation.inner;
+                    y = float(b) / tessellation.inner;
                     u = 1.0 + skirt_uv;
                     v = y;
                 } else if (a == 2) {
-                    x = float(b) / tesselation.inner;
+                    x = float(b) / tessellation.inner;
                     y = 0.0;
                     u = x;
                     v = -skirt_uv;
                 } else if (a == 3) {
-                    x = float(b) / tesselation.inner;
+                    x = float(b) / tessellation.inner;
                     y = 1.0;
                     u = x;
                     v = 1.0 + skirt_uv;
@@ -1047,14 +1047,14 @@ TilePatchGenerator::make(double size, TessellationInfo tesselation,
     }
 
     if (use_patch_adaptation) {
-        make_adapted_square_primitives(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+        make_adapted_square_primitives(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         if (use_patch_skirts) {
-            make_adapted_square_primitives_skirt(prim, tesselation.inner, nb_vertices, tesselation.ratio);
+            make_adapted_square_primitives_skirt(prim, tessellation.inner, nb_vertices, tessellation.ratio);
         }
     } else {
-        make_primitives(prim, tesselation.inner, nb_vertices);
+        make_primitives(prim, tessellation.inner, nb_vertices);
         if (use_patch_skirts) {
-            make_primitives_skirt(prim, tesselation.inner, nb_vertices);
+            make_primitives_skirt(prim, tessellation.inner, nb_vertices);
         }
     }
 
