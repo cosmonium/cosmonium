@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from .data_source.panda import PandaShaderDataSource
 from .instancing import NoInstanceControl
 from .lighting.lambert import LambertPhongLightingModel
 from .point_control import NoPointControl
-from .tesselation import QuadTessellationVertexInput, TessellationControl
+from .tessellation import QuadTessellationVertexInput, TessellationControl
 from .vertex_control.vertex_control import DefaultVertexControl
 from .vertex_input import DirectVertexInput
 from .. import settings

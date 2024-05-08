@@ -25,7 +25,7 @@ from ..components.elements.surfaces import FlatSurface, HeightmapFlatSurface
 from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceCategory
 from ..shaders.rendering import RenderingShader
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
-from ..shaders.tesselation import ConstantTessellationControl
+from ..shaders.tessellation import ConstantTessellationControl
 from ..patchedshapes import VertexSizeLodControl, TextureOrVertexSizeLodControl, VertexSizeMaxDistanceLodControl
 from ..heightmap import heightmapRegistry
 from ..shapes.mesh import MeshShape
