@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -54,9 +54,9 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
                               gl_in[3].gl_Position);
 ''']
         #TODO: Retrieve normals from tesselator
-        if self.config.use_normal or self.config.vertex_control.use_normal:
+        if 'model_normal' in self.config.vertex_requires:
             code.append("model_normal4 = vec4(0.0, 0.0, 1.0, 0.0);")
-        if self.config.use_tangent:
+        if 'tangent' in self.config.vertex_requires:
             code.append("model_binormal4 = vec4(1.0, 0.0, 0.0, 0.0);")
             code.append("model_tangent4 = vec4(0.0, 1.0, 0.0, 0.0);")
         for i in range(self.config.nb_textures_coord):
