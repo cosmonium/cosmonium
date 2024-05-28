@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from direct.gui.DirectFrame import DirectFrame
 from directguilayout.gui import Sizer
 
 from ...geometry.geometry import FrameGeom
-from .base import FrameColorTexture
+from ..skin import UIElement
 
 
 class DecoratedSizer(Sizer):
@@ -36,17 +36,16 @@ class DecoratedSizer(Sizer):
         self.image = image
         self.geom = geom
         self.border_color = None
+        self.element = None
 
     def create(self, parent, skin):
-        borders_parameters = skin.get_dgui_parameters_for('borders')
-        self.colors = FrameColorTexture(**borders_parameters)
-        frame_parameters = skin.get_dgui_parameters_for('frame')
+        self.element = UIElement('frame', class_='sizer')
         self.frame = DirectFrame(
-            **frame_parameters,
+            **skin.get_style(self.element),
             parent=parent,
             state=DGG.NORMAL,
             )
-        self.border_color = skin.border_color
+        self.border_color = skin.get(self.element).border_color
 
     def update_frame(self):
         size = self.get_size()

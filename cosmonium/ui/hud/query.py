@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,24 +18,25 @@
 #
 
 
-from panda3d.core import LVector3, KeyboardButton, TextNode, LColor
+from panda3d.core import KeyboardButton, TextNode
 from direct.gui.DirectGui import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.OnscreenText import OnscreenText
+from direct.task.TaskManagerGlobal import taskMgr
 
-class Query:
-    def __init__(self, scale, font, color, text_size, suggestions_text_size, query_delay):
-        self.scale = scale
-        self.font = font
-        self.color = color
-        self.text_size = text_size
-        self.suggestions_text_size = suggestions_text_size
+from ..skin import UIElement
+
+from .hud_object import HUDObject
+
+
+class Query(HUDObject):
+    def __init__(self, id_, anchor, offset, query_delay, owner=None):
+        HUDObject.__init__(self, id_, anchor, offset, owner)
         self.query_delay = query_delay
         self.background = None
         self.prefix = None
         self.query = None
         self.suggestions = None
-        self.owner = None
         self.current_selection = None
         self.current_list = []
         self.completion_task = None
@@ -99,7 +100,8 @@ class Query:
         self.current_selection = None
         if self.completion_task is not None:
             taskMgr.remove(self.completion_task)
-        self.completion_task = taskMgr.doMethodLater(self.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
+        self.completion_task = taskMgr.doMethodLater(
+            self.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
 
     def select(self, event):
         modifiers = event.getModifierButtons()
@@ -120,49 +122,48 @@ class Query:
 
     def open_query(self, owner):
         self.owner = owner
-        bg_color = LColor(*self.color)
-        bg_color[3] = 0.2
-        scale3 = LVector3(self.scale[0], 1.0, self.scale[1])
-        self.background = DirectFrame(frameColor=bg_color,
-                                      frameSize=(-1 / self.scale[0], 1.0 / self.scale[0],
-                                                 0.15 + self.scale[1] * self.text_size, 0.0),
-                                      parent=base.a2dBottomLeft)
-        self.prefix = OnscreenText(text=_("Target name:"),
-                                   font=self.font,
-                                   fg=self.color,
-                                   align=TextNode.ALeft,
-                                   parent=base.a2dBottomLeft,
-                                   scale=tuple(self.scale * self.text_size),
-                                   pos=(0, .15),
-                                   )
+        element = UIElement(None, id_=self.id_)
+        background_element = UIElement('frame', parent=element)
+        text_element = UIElement('onscreen-text', parent=element, class_='query-entry')
+        query_element = UIElement('entry', parent=element, class_='query-entry')
+        query_style = self.skin.get_style(query_element)
+        query_height = query_style['text_scale'][1]
+        suggestion_element = UIElement('onscreen-text', parent=element, id_='query-suggestion')
+        suggestion_style = self.skin.get_style(suggestion_element)
+        suggestion_height = suggestion_style['scale'][1] * (self.max_lines + 1) * 1.5
+        suggestion_offset = suggestion_style['scale'][1] * self.max_lines * 1.5
+        self.background = DirectFrame(
+            frameSize=(0, self.owner.width, query_height + suggestion_height, 0.0),
+            parent=self.anchor,
+            **self.skin.get_style(background_element))
+        self.prefix = OnscreenText(
+            text=_("Target name: "),
+            align=TextNode.ALeft,
+            parent=self.anchor,
+            pos=(0, suggestion_height),
+            **self.skin.get_style(text_element))
         bounds = self.prefix.getTightBounds()
-        length = bounds[1][0] - bounds[0][0] + self.scale[0] * self.text_size / 2
-        self.query = DirectEntry(text="",
-                                 text_fg=self.color,
-                                 scale=tuple(scale3 * self.text_size),
-                                 command=self.do_query,
-                                 parent=base.a2dBottomLeft,
-                                 frameColor=(0, 0, 0, 0),
-                                 pos=(length, 0, .15),
-                                 initialText = "",
-                                 numLines = 1,
-                                 width = 200,
-                                 entryFont=self.font,
-                                 focus=1,
-                                 suppressKeys=1)
+        length = bounds[1][0] - bounds[0][0]
+        self.query = DirectEntry(
+            text="",
+            command=self.do_query,
+            parent=self.anchor,
+            pos=(length, 0, suggestion_height),
+            initialText="",
+            numLines=1,
+            width=200,
+            focus=1,
+            suppressKeys=1,
+            **query_style)
         self.query.bind("press-escape-", self.escape)
         self.query.bind("press-tab-", self.select)
         self.query.accept(self.query.guiItem.getTypeEvent(), self.completion)
         self.query.accept(self.query.guiItem.getEraseEvent(), self.completion)
-        pos = self.prefix.getPos()
         bounds = self.query.getBounds()
-        llz = bounds[2] / self.text_size
-        self.suggestions = OnscreenText(text = "",
-                                       font=self.font,
-                                       fg=self.color,
-                                       align=TextNode.ALeft,
-                                       mayChange=True,
-                                       parent=base.a2dBottomLeft,
-                                       scale=tuple(self.scale * self.suggestions_text_size),
-                                       pos=(pos[0], pos[1] + llz),
-                                       )
+        self.suggestions = OnscreenText(
+            text="",
+            align=TextNode.ALeft,
+            mayChange=True,
+            parent=self.anchor,
+            pos=(0, suggestion_offset),
+            **suggestion_style)

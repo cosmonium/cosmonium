@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -31,21 +31,22 @@ from .dock.dock import Dock
 from .hud.fadetextline import FadeTextLine
 from .hud.textblock import TextBlock
 from .hud.textline import TextLine
-
+from .skin import UIElement
 
 class Huds():
-    def __init__(self, gui, font, dock, skin):
-        self.scale = LVector2(settings.ui_scale, settings.ui_scale)
-        self.font = font
+    def __init__(self, gui, dock, skin):
+        self.owner = gui
+        self.skin = skin
         offset = LVector2()
-        self.title = TextLine(base.p2dTopLeft, self.scale, offset, TextNode.ALeft, LVector2(0, 1), self.font, settings.hud_info_text_size, settings.hud_color)
+        self.element = UIElement(None, class_='hud', id_='hud')
+        self.title = TextLine('title', base.p2dTopLeft, offset, TextNode.ALeft, LVector2(0, 1), owner=self)
         title_height = self.title.get_height()
-        self.topLeft = TextBlock(base.p2dTopLeft, self.scale, LVector2(0, title_height), TextNode.ALeft, True, 10, self.font, settings.hud_text_size)
-        self.bottomLeft = TextBlock(base.p2dBottomLeft, self.scale, offset, TextNode.ALeft, False, 5, self.font, settings.hud_text_size)
-        self.topRight = TextBlock(base.p2dTopRight, self.scale, offset, TextNode.ARight, True, 5, self.font, settings.hud_text_size)
-        self.bottomRight = TextBlock(base.p2dBottomRight, self.scale, offset, TextNode.ARight, False, 5, self.font, settings.hud_text_size)
+        self.topLeft = TextBlock('topLeft', base.p2dTopLeft, LVector2(0, title_height), TextNode.ALeft, True, 10, owner=self)
+        self.bottomLeft = TextBlock('bottomLeft', base.p2dBottomLeft, offset, TextNode.ALeft, False, 5, owner=self)
+        self.topRight = TextBlock('topRight', base.p2dTopRight, offset, TextNode.ARight, True, 5, owner=self)
+        self.bottomRight = TextBlock('bottomRight', base.p2dBottomRight, offset, TextNode.ARight, False, 5, owner=self)
         #TODO: Info should be moved out of HUD
-        self.info = FadeTextLine(base.p2dBottomLeft, self.scale, offset, TextNode.ALeft, LVector2(0, -3), self.font, settings.hud_info_text_size)
+        self.info = FadeTextLine('info', base.p2dBottomLeft, offset, TextNode.ALeft, LVector2(0, -3), owner=self)
         # TODO: Temporary broken way to instanciate a dock
         if dock is not None:
             layout, orientation, location = dock

@@ -34,7 +34,7 @@ except Exception:
 
 
 class Browser(UIWindow):
-    def __init__(self, scale, owner=None):
+    def __init__(self, owner=None):
         UIWindow.__init__(self, owner)
         self.renderer = None
 

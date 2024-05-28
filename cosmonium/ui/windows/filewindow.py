@@ -35,11 +35,10 @@ class FileWindow(UIWindow):
         'folder': "textures/icons/Folder.png",
         'file': "textures/icons/File.png"
         }
-    def __init__(self, title, font_family, font_size = 14, owner=None):
+    def __init__(self, title, owner=None):
         UIWindow.__init__(self, owner)
         self.title = title
         self.browser = None
-        self.font_size = font_size
         self.callback = None
 
     def done(self, status):

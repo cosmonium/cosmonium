@@ -31,7 +31,7 @@ from ..parsers.configparser import configParser
 from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .huds import Huds
-from .query import Query
+from .hud.query import Query
 from .clipboard import create_clipboard
 from .windows.browser import Browser
 from .windows.filewindow import FileWindow
@@ -108,34 +108,36 @@ class Gui(object):
             self.font = None
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(base, base.messenger, self)
-        self.browser = Browser(self.scale, owner=self)
 
         ui_config = self.load(config_file)
+        self.skin = ui_config.skin
         self.translation = self.cosmonium.load_lang("ui", ui_config.locale)
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
 
+        self.hud = Huds(self, ui_config.dock, self.skin)
+        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
+        self.opened_windows = []
+        self.browser = Browser(owner=self)
+        self.editor = ObjectEditorWindow(owner=self)
+        self.time_editor = TimeEditor(self.time, owner=self)
+        self.info = InfoWindow(owner=self)
+        self.preferences = Preferences(self.cosmonium, owner=self)
+        self.help = TextWindow('Help', owner=self)
+        self.help.load('control.md')
+        self.license = TextWindow('License', owner=self)
+        self.license.load('COPYING.md')
+        self.about = TextWindow('About', owner=self)
+        self.about.set_text(about_text)
+        self.filewindow = FileWindow('Select', owner=self)
+
         self.menu_builder = MenuBuilder(self.translation, self.messenger, self.shortcuts, self.cosmonium.states_provider, self.cosmonium, self.mouse, self.browser)
         self.menu_builder.add_named_menus(ui_config.named_menus)
         self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar))
+        self.menubar.create(self.font, self.scale)
         self.popup_menu = Popup(self, self.cosmonium, self.menu_builder.create_menu(ui_config.popup))
         self.popup_menu_shown = False
 
-        self.hud = Huds(self, self.font, ui_config.dock, ui_config.skin)
-        self.query = Query(self.scale, self.font, settings.query_color, settings.query_text_size, settings.query_suggestion_text_size, settings.query_delay)
-        self.opened_windows = []
-        self.editor = ObjectEditorWindow(font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.time_editor = TimeEditor(self.time, font_family=settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.info = InfoWindow(self.scale, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.preferences = Preferences(self.cosmonium, settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.help = TextWindow('Help', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.help.load('control.md')
-        self.license = TextWindow('License', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.license.load('COPYING.md')
-        self.about = TextWindow('About', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.about.set_text(about_text)
-        self.filewindow = FileWindow('Select', settings.markdown_font, font_size=settings.ui_font_size, owner=self)
-        self.menubar.create(self.font, self.scale)
         if settings.show_hud:
             self.show_hud()
         else:

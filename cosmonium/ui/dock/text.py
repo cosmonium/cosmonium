@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ from direct.gui.DirectLabel import DirectLabel
 from panda3d.core import LVector3
 
 from ...fonts import fontsManager, Font
+from ..skin import UIElement
 from .base import DGuiDockWidget
 
 
@@ -59,10 +60,10 @@ class TextDockWidget(DGuiDockWidget):
             TextDockWidget.font = font.load()
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        parameters = skin.get_dgui_parameters_for('label')
+        label_element = UIElement('label', parent=parent.element)
         scale = LVector3(self.size or parent.size)
         label = DirectLabel(
-            **parameters,
+            **skin.get_style(label_element),
             text=self.text,
             text_font=self.font,
             scale=scale,

@@ -21,21 +21,20 @@
 from panda3d.core import TextNode
 
 from ...dircontext import defaultDirContext
-from ... import settings
 from ..markdown import create_markdown_renderer
 
 from ..widgets.scroll_text import ScrollText
 from ..widgets.window import Window
 from .uiwindow import UIWindow
+from cosmonium.ui.skin import UIElement
 
 
 class TextWindow(UIWindow):
-    def __init__(self, title, font_family, font_size = 14, owner=None):
+    def __init__(self, title, owner=None):
         UIWindow.__init__(self, owner)
         self.title = title
-        self.font_size = font_size
-        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
-        self.markdown = create_markdown_renderer(font_family)
+        self.element = UIElement('text-window')
+        self.markdown = create_markdown_renderer(self.skin.get(self.element).font_family)
 
     def load(self, filename, markdown=True):
         filename = defaultDirContext.find_doc(filename)
@@ -54,8 +53,6 @@ class TextWindow(UIWindow):
             parent=pixel2d,
             text=self.text,
             align=TextNode.ALeft,
-            scale=self.text_scale,
-            font=self.markdown.renderer.font_normal,
-            font_size=self.font_size)
+            owner=self)
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)

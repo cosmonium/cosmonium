@@ -24,26 +24,34 @@ from direct.gui.DirectGui import DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 
 from .direct_widget_container import DirectWidgetContainer
+from ..skin import UIElement
 
 
 class ScrollText(DirectWidgetContainer):
-    def __init__(self, text='', align=TextNode.ALeft, scale=(1, 1), font=None, font_size=12,
+    def __init__(self, text='', align=TextNode.ALeft,
                  parent=None,
-                 frameColor=(0.33, 0.33, 0.33, .66), frameSize=(0, 800, -600, 0)):
+                 frameSize=(0, 800, -600, 0),
+                 owner=None):
         super().__init__(None)
         self.parent = parent
-        self.frame = DirectScrolledFrame(parent=parent, frameColor=frameColor, state=DGG.DISABLED,
-                                         frameSize=frameSize,
-                                         relief=DGG.FLAT,
-                                         scrollBarWidth=font_size,
-                                         horizontalScroll_relief=DGG.FLAT,
-                                         verticalScroll_relief=DGG.FLAT,
-                                         )
-        self.text = OnscreenText(parent=self.frame.getCanvas(),
-                                 text=text,
-                                 align=align,
-                                 scale=tuple(scale * font_size),
-                                 font=font)
+        self.owner = owner
+        self.skin = owner.skin
+        scrolled_frame_element = UIElement('scrolled-frame', class_='scroll-text')
+        self.frame = DirectScrolledFrame(
+            parent=parent,
+            state=DGG.DISABLED,
+            frameSize=frameSize,
+            relief=DGG.FLAT,
+            horizontalScroll_relief=DGG.FLAT,
+            verticalScroll_relief=DGG.FLAT,
+            **self.skin.get_style(scrolled_frame_element)
+            )
+        text_element = UIElement('onscreen-text', parent=scrolled_frame_element)
+        self.text = OnscreenText(
+            parent=self.frame.getCanvas(),
+            text=text,
+            align=align,
+            **self.skin.get_style(text_element))
         bounds = self.text.getTightBounds()
         self.frame['canvasSize'] = [0, bounds[1][0] - bounds[0][0], -bounds[1][2] + bounds[0][2], 0]
         self.text.setPos(-bounds[0][0], -bounds[1][2])

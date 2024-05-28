@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from direct.gui.DirectFrame import DirectFrame
 from panda3d.core import LVector3
 
 from ..hud.hud_object import HUDObject
+from ..skin import UIElement
 
 
 class Dock(HUDObject):
@@ -33,6 +34,7 @@ class Dock(HUDObject):
         self.direction = direction
         self.location = location
         self.layout = layout
+        self.element = None
         if location in ('top', 'bottom', 'left', 'right'):
             self.center = True
         else:
@@ -42,9 +44,9 @@ class Dock(HUDObject):
         self.update_instance()
 
     def create(self, parent, skin):
-        skin_entry = skin.get('dock')
-        self.instance = DirectFrame(parent=parent)
-        self.layout.create(self, self.instance, skin_entry)
+        self.element = UIElement('frame', class_='dock')
+        self.instance = DirectFrame(parent=parent, **skin.get_style(self.element))
+        self.layout.create(self, self.instance, skin)
 
     def update_instance(self):
         if self.instance is None:

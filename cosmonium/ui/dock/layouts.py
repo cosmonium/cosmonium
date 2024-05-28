@@ -58,6 +58,7 @@ class LayoutDockWidget(DockWidgetBase):
 
     def create(self, dock: Dock, parent, skin) -> None:
         self.widget.create(dock.instance, skin)
+        self.element = self.widget.element
         for i, widget in enumerate(self.widgets):
             borders = LVector4(0)
             if self.direction == 'horizontal':

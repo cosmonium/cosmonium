@@ -18,15 +18,17 @@
 #
 
 
-from panda3d.core import Point3, TextNode, PGSliderBar
-from direct.showbase.DirectObject import DirectObject
 from direct.gui.DirectGui import DirectFrame, DGG
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.OnscreenText import OnscreenText, Plain
+from direct.showbase.DirectObject import DirectObject
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import Point3, TextNode, PGSliderBar
+
+from ..skin import UIElement
 
 from ...geometry.geometry import FrameGeom
-from ... import settings
 
 
 class Window():
@@ -34,18 +36,16 @@ class Window():
     def __init__(self, title_text, scale, parent=None, child=None, owner=None):
         self.title_text = title_text
         self.scale = scale
-        self.title_size = settings.ui_font_size
         self.owner = owner
+        self.skin = owner.skin
         self.child = None
         self.last_pos = None
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
         if parent is None:
-            parent = pixel2d
+            parent = base.pixel2d
         self.parent = parent
         self.border = (1, 1)
-        self.border_color = (0, 0, 0, 1)
-        self.pad = 0
         self.event_handler = DirectObject()
         self.button_thrower = base.buttonThrowers[0].node()
         self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs=[-1])
@@ -58,32 +58,33 @@ class Window():
             self.decorator_frame.set_pos((-self.border[0], 0, self.border[1]))
         else:
             self.decorator_frame = None
-        self.title_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
+        title_frame_element = UIElement('frame', class_='title-frame')
+        self.title_frame = DirectFrame(
+            parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(title_frame_element))
+        title_element = UIElement('onscreen-text', class_='title-text')
         self.title = OnscreenText(text=self.title_text,
                                   style=Plain,
-                                  fg=self.title_color,
-                                  scale=tuple(self.scale * self.title_size),
                                   parent=self.title_frame,
                                   pos=(0, 0),
                                   align=TextNode.ALeft,
-                                  font=None,
-                                  mayChange=True)
+                                  mayChange=True,
+                                  **self.skin.get_style(title_element))
         bounds = self.title.get_tight_bounds()
         size = bounds[1] - bounds[0]
         bottom_left = bounds[0]
         self.title_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
                                          -size[2] - self.title_pad[1] * 2, 0]
         self.title.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
-        self.close_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(.5, .5, .5, 1))
+        close_frame_element = UIElement('frame', class_='close-frame')
+        self.close_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(close_frame_element))
+        close_element = UIElement('onscreen-text', class_='close-text')
         self.close = OnscreenText(text='X',
                                   style=Plain,
-                                  fg=self.title_color,
-                                  scale=tuple(self.scale * self.title_size),
                                   parent=self.close_frame,
                                   pos=(0, 0),
                                   align=TextNode.ACenter,
-                                  font=None,
-                                  mayChange=True)
+                                  mayChange=True,
+                                  **self.skin.get_style(close_element))
         bounds = self.close.get_tight_bounds()
         size = bounds[1] - bounds[0]
         bottom_left = bounds[0]
@@ -122,10 +123,11 @@ class Window():
         self.title_frame['frameSize'] = title_size
         self.close_frame.set_pos(width - self.close_frame['frameSize'][1], 0, 0)
         if self.decorator_frame is not None:
+            frame_element = UIElement('borders', class_='border')
             extended_width = width + self.border[0] * 2
-            extended_height = height + title_height  + self.border[1] * 2
+            extended_height = height + title_height + self.border[1] * 2
             geom = FrameGeom((extended_width, extended_height), self.border, outer=False, texture=False)
-            geom.set_color(*self.border_color)
+            geom.set_color(*self.skin.get_style(frame_element)['border_color'])
             self.decorator_frame['geom'] = geom
             self.decorator_frame['frameSize'] = [0, extended_width, 0, -extended_height]
 
@@ -174,14 +176,14 @@ class Window():
     def start_drag(self, event):
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
+            current_pos = self.frame.parent.get_relative_point(base.render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
             self.drag_start = current_pos - self.frame.get_pos()
             taskMgr.add(self.drag, "drag", -1)
 
     def drag(self, task):
         if base.mouseWatcherNode.has_mouse():
             mpos = base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
+            current_pos = self.frame.parent.get_relative_point(base.render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
             # Don't let the top left corner go out of the UI limits
             limits = self.get_ui().get_limits()
             pos = current_pos - self.drag_start

@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -31,11 +31,10 @@ class FadeTextLine(TextLine):
 
     def set(self, text, pos, color, anchor, duration, fade):
         if anchor is None:
-            anchor = base.a2dBottomLeft
+            anchor = self.anchor
         TextLine.set_all(self, text, pos, anchor)
         self.instance.setColorScale(LColor(*color))
         if self.fade_sequence is not None:
             self.fade_sequence.pause()
-        self.fade_sequence = Sequence(Wait(duration),
-                                      self.instance.colorScaleInterval(fade, LColor(1, 1, 1, 0)))
+        self.fade_sequence = Sequence(Wait(duration), self.instance.colorScaleInterval(fade, LColor(1, 1, 1, 0)))
         self.fade_sequence.start()

@@ -30,18 +30,19 @@ from directguilayout.gui import Widget as SizerWidget
 
 from ... import settings
 
+from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
 from ..widgets.window import Window
 from .uiwindow import UIWindow
 
 
 class TimeEditor(UIWindow):
-    def __init__(self, time, font_family, font_size = 14, owner=None):
+    def __init__(self, time, owner=None):
         UIWindow.__init__(self, owner)
         self.time = time
-        self.font_size = font_size
-        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
-        self.borders = (self.font_size, 0, self.font_size / 4.0, self.font_size / 4.0)
+        self.element = UIElement('window', id_='time-window')
+        self.font_size = self.skin.get(self.element).font_size(None, False, None)
+        self.borders = (self.font_size / 4.0, self.font_size / 4.0, self.font_size / 4.0, self.font_size / 4.0)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
         self.day_entry = None
@@ -52,27 +53,29 @@ class TimeEditor(UIWindow):
         self.sec_entry = None
 
     def create_label(self, frame, text):
-        label = DirectLabel(parent=frame,
-                            text=text,
-                            textMayChange=True,
-                            text_scale=self.text_scale,
-                            text_align=TextNode.A_left)
+        label_element = UIElement('label', parent=self.element, class_='time-label')
+        label = DirectLabel(
+            parent=frame,
+            text=text,
+            textMayChange=True,
+            text_align=TextNode.A_left,
+            **self.skin.get_style(label_element))
         return label
 
     def create_spin_entry(self, frame, value, value_range, width):
-        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
-        entry = DirectSpinBox(parent=frame,
-                              value=value,
-                              valueType=int,
-                              textFormat='{}',
-                              minValue=value_range[0],
-                              maxValue=value_range[1],
-                              stepSize=1,
-                              suppressKeys=1,
-                              valueEntry_width = width,
-                              valueEntry_text_align=TextNode.A_left,
-                              valueEntry_frameColor=settings.entry_background,
-                              scale=scale3)
+        spin_element = UIElement('spin-box', parent=self.element, class_='time-spin-box')
+        entry = DirectSpinBox(
+            parent=frame,
+            value=value,
+            valueType=int,
+            textFormat='{}',
+            minValue=value_range[0],
+            maxValue=value_range[1],
+            stepSize=1,
+            suppressKeys=1,
+            valueEntry_width = width,
+            valueEntry_text_align=TextNode.A_left,
+            **self.skin.get_style(spin_element))
         return entry
 
     def add_entry(self, frame, hsizer, text, value, value_range, width):
@@ -108,7 +111,8 @@ class TimeEditor(UIWindow):
         self.sec_entry.setValue(secs)
 
     def create_layout(self):
-        frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
+        self.element = UIElement('frame', class_='time-editor')
+        frame = DirectFrame(state=DGG.NORMAL, **self.skin.get_style(self.element))
         self.layout = DirectWidgetContainer(frame)
         self.layout.frame.setPos(0, 0, 0)
         sizer = Sizer("vertical")
@@ -116,20 +120,26 @@ class TimeEditor(UIWindow):
         self.add_date(frame, sizer)
         self.set_current_time()
         hsizer = Sizer("horizontal")
-        ok = DirectButton(parent=frame,
-                          text=_("OK"),
-                          text_scale=self.text_scale,
-                          command = self.ok)
+        ok_button_element = UIElement('button', class_='ok-button')
+        ok = DirectButton(
+            parent=frame,
+            text=_("OK"),
+            command = self.ok,
+            **self.skin.get_style(ok_button_element))
         hsizer.add(SizerWidget(ok), alignments=("min", "center"), borders=self.borders)
-        current = DirectButton(parent=frame,
-                               text=_("Set current time"),
-                               text_scale=self.text_scale,
-                               command = self.set_current_time)
+        current_time_button_element = UIElement('button', class_='current-time-button')
+        current = DirectButton(
+            parent=frame,
+            text=_("Set current time"),
+            command = self.set_current_time,
+            **self.skin.get_style(current_time_button_element))
         hsizer.add(SizerWidget(current), alignments=("min", "center"), borders=self.borders)
-        cancel = DirectButton(parent=frame,
-                              text=_("Cancel"),
-                              text_scale=self.text_scale,
-                              command = self.cancel)
+        cancel_button_element = UIElement('button', class_='cancel-button')
+        cancel = DirectButton(
+            parent=frame,
+            text=_("Cancel"),
+            command = self.cancel,
+            **self.skin.get_style(cancel_button_element))
         hsizer.add(SizerWidget(cancel), alignments=("min", "center"), borders=self.borders)
         sizer.add(hsizer, borders=self.borders)
         sizer.update((self.width, self.height))

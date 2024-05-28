@@ -101,5 +101,13 @@ class FontsManager:
             print(f"Font family '{family}' unknown")
         return None
 
+    def load_font(self, family: str, style: str) -> Font | None:
+        font_entry = self.get_font(family, style)
+        if font_entry is not None:
+            font = font_entry.load()
+        else:
+            font = None
+        return font
+
 
 fontsManager = FontsManager()

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ from direct.gui.DirectGuiBase import DirectGuiWidget
 from panda3d.core import LVector3, TextNode
 
 from ...fonts import fontsManager, Font
-
+from ..skin import UIElement
 from .base import DGuiDockWidget
 
 
@@ -54,11 +54,11 @@ class ButtonDockWidget(DGuiDockWidget):
         self.rescale = rescale
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        parameters = skin.get_dgui_parameters_for('button')
+        button_element = UIElement('button', parent=parent.element)
         size = self.size or parent.size
         scale = LVector3(size)
         button = DirectButton(
-            **parameters,
+            **skin.get_style(button_element),
             relief=None,
             pressEffect=1,
             text_font=self.font,

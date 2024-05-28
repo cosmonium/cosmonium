@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import TextNode, LVector3, LVector2
+from panda3d.core import TextNode
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectLabel import DirectLabel
@@ -36,16 +36,13 @@ from ... import settings
 
 from ..widgets.tabbed_frame import TabbedFrameContainer
 from ..widgets.window import Window
+from ..skin import UIElement
 from .uiwindow import UIWindow
 
 
 class ParamEditor(UIWindow):
-    def __init__(self, font_family, font_size = 14, owner=None):
+    def __init__(self, owner=None):
         UIWindow.__init__(self, owner)
-        self.font_size = font_size
-        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
-        border = round(self.font_size / 4.0)
-        self.borders = (round(self.font_size), 0, border, border)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
 
@@ -56,26 +53,25 @@ class ParamEditor(UIWindow):
         pass
 
     def create_text_entry(self, frame, param):
+        entry_element = UIElement('entry', parent=self.element)
         entry = DirectEntry(parent=frame,
                             initialText=str(param.get_param()),
                             numLines = 1,
                             width = 10,
                             command=self.do_update,
                             extraArgs=[None, param],
-                            text_scale=self.font_size,
                             text_align=TextNode.A_left,
-                            suppressKeys=1)
+                            suppressKeys=1,
+                            **self.skin.get_style(entry_element))
         widget = SizerWidget(entry)
         return widget
 
     def create_bool_entry(self, frame, param):
+        check_button_element = UIElement('check-button', parent=self.element)
         btn = DirectCheckButton(parent=frame,
-                                text="",
-                                text_scale=self.text_scale,
                                 text_align=TextNode.A_left,
                                 boxPlacement="left",
                                 #borderWidth=(2, 2),
-                                indicator_text_scale=self.text_scale,
                                 indicator_text='A',
                                 indicator_text_pos=(0, 4),
                                 indicator_borderWidth=(2, 2),
@@ -84,22 +80,24 @@ class ParamEditor(UIWindow):
                                 suppressKeys=1,
                                 command=self.do_update,
                                 extraArgs=[None, param],
+                                **self.skin.get_style(check_button_element),
                                 )
         btn['indicatorValue'] = param.get_param()
         widget = SizerWidget(btn)
         return widget
 
     def create_slider_entry(self, frame, param, component=None):
+        slider_element = UIElement('slider', parent=self.element)
         if component is not None:
             scaled_value = param.get_param_component(component, scale=True)
         else:
             scaled_value = param.get_param(scale=True)
         slider = DirectSlider(parent=frame,
-                              scale=(self.font_size * 16, 1, self.font_size * 6),
                               value=scaled_value,
                               range=param.get_range(scale=True),
                               suppressKeys=1,
-                              command=self.do_update_slider
+                              command=self.do_update_slider,
+                              **self.skin.get_style(slider_element),
                               )
         widget1 = SizerWidget(slider)
         widget2 = self.create_spin_entry(frame, param, slider, component)
@@ -107,7 +105,7 @@ class ParamEditor(UIWindow):
         return widget1, widget2[0]
 
     def create_spin_entry(self, frame, param, slider=None, component=None):
-        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
+        spin_box_element = UIElement('spin-box', parent=self.element)
         value_range = param.get_range()
         value_type = param.get_type()
         if value_range is None:
@@ -131,98 +129,96 @@ class ParamEditor(UIWindow):
                               extraArgs=[slider, param, component],
                               valueEntry_width = 10,
                               valueEntry_text_align=TextNode.A_left,
-                              valueEntry_frameColor=settings.entry_background,
-                              scale=scale3)
+                              **self.skin.get_style(spin_box_element))
         entry.valueEntry.unbind(WHEELUP)
         entry.valueEntry.unbind(WHEELDOWN)
         widget = SizerWidget(entry)
         return widget, (0, 0)
 
     def add_parameter(self, frame, hsizer, param):
+        hsizer_element = UIElement('sizer', class_='editor-entry-sizer', parent=self.element)
+        label_element = UIElement('label', parent=self.element, class_='editor-entry-label')
         label = DirectLabel(parent=frame,
                             text=param.name,
                             textMayChange=True,
-                            text_scale=self.text_scale,
-                            text_align=TextNode.A_left)
+                            text_align=TextNode.A_left,
+                            **self.skin.get_style(label_element))
         widget = SizerWidget(label)
-        hsizer.add(widget, borders=self.borders, alignments=("min", "center"))
+        hsizer.add(widget, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
         if param.param_type == UserParameter.TYPE_BOOL:
             widget = self.create_bool_entry(frame, param)
-            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
             hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_STRING:
             widget = self.create_text_entry(frame, param)
-            hsizer.add(widget, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
             hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_INT:
             if param.value_range is not None:
                 widget1, widget2 = self.create_slider_entry(frame, param)
             else:
                 widget1, widget2 = self.create_spin_entry(frame, param)
-            hsizer.add(widget1, alignments=("min", "center"), borders=self.borders)
-            hsizer.add(widget2, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget1, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
+            hsizer.add(widget2, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
         elif param.param_type == UserParameter.TYPE_FLOAT:
             if param.value_range is not None:
                 widget1, widget2 = self.create_slider_entry(frame, param)
             else:
                 widget1, widget2 = self.create_spin_entry(frame, param)
-            hsizer.add(widget1, alignments=("min", "center"), borders=self.borders)
-            hsizer.add(widget2, alignments=("min", "center"), borders=self.borders)
+            hsizer.add(widget1, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
+            hsizer.add(widget2, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
         elif param.param_type == UserParameter.TYPE_VEC:
-            borders = (0, 0, round(self.font_size / 4.0), round(self.font_size / 4.0))
-            vsizer1 = Sizer("vertical", gaps=(0, round(self.font_size * .25)))
-            vsizer2 = Sizer("vertical", gaps=(0, round(self.font_size * .25)))
+            vector_element = UIElement('sizer', parent=self.element, class_='editor-entry-vector')
+            vsizer1 = Sizer("vertical", **self.skin.get_style(vector_element))
+            vsizer2 = Sizer("vertical", **self.skin.get_style(vector_element))
             for component in range(param.nb_components):
                 widget1, widget2 = self.create_slider_entry(frame, param, component)
-                vsizer1.add(widget1, proportions=(0., 1.), alignments=("min", "center"), borders=borders)
-                vsizer2.add(widget2, borders=borders)
-            hsizer.add(vsizer1, proportions=(0., 1.), borders=self.borders)
-            hsizer.add(vsizer2, borders=self.borders)
+                vsizer1.add(widget1, proportions=(0., 1.), alignments=("min", "center"), **self.skin.get_style(vector_element, usage='cell'))
+                vsizer2.add(widget2, **self.skin.get_style(vector_element, usage='cell'))
+            hsizer.add(vsizer1, proportions=(0., 1.), **self.skin.get_style(hsizer_element, usage='cell'))
+            hsizer.add(vsizer2, **self.skin.get_style(hsizer_element, usage='cell'))
         else:
             print("Unknown entry type", param.param_type)
 
     def add_parameters(self, frame, sizer, parameters, hsizer=None):
+        hsizer_element = UIElement('sizer', class_='editor-entry-sizer', parent=self.element)
+        label_element = UIElement('label', parent=self.element, class_='editor-section-label')
         for param in parameters:
             if param is None: continue
             if param.is_group():
                 if param.is_empty(): continue
-                border = round(self.font_size / 4.0)
-                borders = (round(self.font_size / 2), 0, border, border)
                 if param.name is not None:
                     label = DirectLabel(parent=frame,
                                         text=param.name,
                                         textMayChange=True,
-                                        text_scale=self.text_scale,
-                                        text_align=TextNode.A_left)
+                                        text_align=TextNode.A_left,
+                                        **self.skin.get_style(label_element))
                     widget = SizerWidget(label)
-                    sizer.add(widget, borders=borders)
-                hsizer = Sizer("horizontal", prim_limit=3, gaps=(0, round(self.font_size * .75)))
-                sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
+                    sizer.add(widget, **self.skin.get_style(label_element, dgui='sizer', usage='cell'))
+                hsizer = Sizer("horizontal", prim_limit=3, **self.skin.get_style(hsizer_element))
+                sizer.add(hsizer, alignments=("min", "expand"), **self.skin.get_style(hsizer_element, usage='cell'))
                 self.add_parameters(frame, sizer, param.parameters, hsizer)
             else:
                 if not hsizer:
-                    hsizer = Sizer("horizontal", prim_limit=3, gaps=(0, round(self.font_size * .75)))
-                    sizer.add(hsizer, proportions=(1., 0.), borders=self.borders)
+                    hsizer = Sizer("horizontal", prim_limit=3, **self.skin.get_style(hsizer_element))
+                    sizer.add(hsizer, proportions=(1., 0.), **self.skin.get_style(hsizer_element, usage='cell'))
                 self.add_parameter(frame, hsizer, param)
 
     def create_layout(self, *args, **kwargs):
         group = self.make_entries(*args, **kwargs)
-        scale3 = LVector3(self.text_scale[0], 1.0, self.text_scale[1])
+        tabbed_frame_element = UIElement('tabbed-frame', class_='editor')
         tabbed_frame = TabbedFrame(
             frameSize=(0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0),
+            **self.skin.get_style(tabbed_frame_element),
             tab_frameSize = (0, 7, 0, 2),
-            tab_scale=scale3,
             tab_text_align = TextNode.ALeft,
             tab_text_pos = (0.2, 0.6),
-            tabUnselectedColor = settings.tab_background,
-            tabSelectedColor = settings.panel_background,
-            scroll_scrollBarWidth=self.font_size,
-            scroll_verticalScroll_pageSize=self.font_size,
             )
         self.layout = TabbedFrameContainer(tabbed_frame)
         for section in group.parameters:
+            self.element = UIElement('frame', parent=tabbed_frame_element, class_='editor-canvas')
             sizer = Sizer("vertical")
-            frame = DirectFrame(state=DGG.NORMAL, frameColor=settings.panel_background)
+            frame = DirectFrame(state=DGG.NORMAL, **self.skin.get_style(self.element))
             self.add_parameters(frame, sizer, section.parameters)
             sizer.update((self.width * settings.ui_scale, self.height * settings.ui_scale))
             size = sizer.min_size
@@ -231,8 +227,9 @@ class ParamEditor(UIWindow):
         self.button_background = DirectFrame(
             parent=tabbed_frame,
             state=DGG.NORMAL,
-            frameColor=settings.panel_background,
+            **self.skin.get_style(self.element),
             sortOrder=tabbed_frame['sortOrder'] - 1)
+        self.element = None
         self.button_background['frameSize'] = [0, self.width * settings.ui_scale, 0, self.layout.height_offset]
         title = "Editor - " + group.name
         self.window = Window(title, parent=pixel2d, scale=self.scale, child=self.layout, owner=self)

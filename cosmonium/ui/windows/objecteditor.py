@@ -23,8 +23,8 @@ from .editor import ParamEditor
 
 
 class ObjectEditorWindow(ParamEditor):
-    def __init__(self, font_family, font_size=14, owner=None):
-        ParamEditor.__init__(self, font_family, font_size=font_size, owner=owner)
+    def __init__(self, owner=None):
+        ParamEditor.__init__(self, owner=owner)
         self.editor = None
 
     def update_parameter(self, param):

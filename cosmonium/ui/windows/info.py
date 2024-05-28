@@ -29,6 +29,7 @@ from ... import settings
 from ...fonts import fontsManager, Font
 
 from ..object_info import ObjectInfo
+from ..skin import UIElement
 from ..widgets.window import Window
 from ..widgets.direct_widget_container import DirectWidgetContainer
 
@@ -36,32 +37,24 @@ from .uiwindow import UIWindow
 
 
 class InfoWindow(UIWindow):
-    def __init__(self, scale, font_family, font_size = 14, owner=None):
+    def __init__(self, owner=None):
         UIWindow.__init__(self, owner)
-        self.font_size = font_size
-        self.text_scale = (self.font_size * settings.ui_scale, self.font_size * settings.ui_scale)
-        self.title_scale = (self.font_size * settings.ui_scale * 1.2, self.font_size * settings.ui_scale * 1.2)
-        self.borders = (self.font_size / 4.0, 0, self.font_size / 4.0, self.font_size / 4.0)
-        self.font_normal = fontsManager.get_font(font_family, Font.STYLE_NORMAL)
-        if self.font_normal is not None:
-            self.font_normal = self.font_normal.load()
-        self.font_bold = fontsManager.get_font(font_family, Font.STYLE_BOLD)
-        if self.font_bold is not None:
-            self.font_bold = self.font_bold.load()
-        if self.font_bold is None:
-            self.font_bold = self.font_normal
+        self.element = UIElement('window', id_='info-window')
+        self.font_size = self.skin.get(self.element).font_size(None, False, None)
         self.width = settings.default_window_width / 2
         self.height = settings.default_window_height
 
     def create_layout(self, body):
-        sizer = Sizer("vertical")
-        hsizer = Sizer("horizontal", prim_limit=2, gaps=(round(self.font_size * .5), round(self.font_size * .5)))
-        sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
+        self.element = UIElement('scrolled-frame', class_='info')
+        vsizer_element = UIElement('sizer', class_='vertical-sizer', parent=self.element)
+        sizer = Sizer("vertical", **self.skin.get_style(vsizer_element))
+        hsizer_element = UIElement('sizer', class_='entry-sizer', parent=self.element)
+        hsizer = Sizer("horizontal", prim_limit=2, **self.skin.get_style(hsizer_element))
+        sizer.add(hsizer, alignments=("min", "expand"), **self.skin.get_style(hsizer_element, usage='cell'))
         self.layout = DirectWidgetContainer(DirectScrolledFrame(state=DGG.NORMAL,
-                                                                frameColor=(0.33, 0.33, 0.33, .66),
-                                                                scrollBarWidth=self.font_size,
                                                                 horizontalScroll_relief=DGG.FLAT,
-                                                                verticalScroll_relief=DGG.FLAT))
+                                                                verticalScroll_relief=DGG.FLAT,
+                                                                 **self.skin.get_style(self.element)))
         self.layout.frame.setPos(0, 0, 0)
         self.make_entries(self.layout.frame.getCanvas(), hsizer, body)
         sizer.update((self.width, self.height))
@@ -73,21 +66,19 @@ class InfoWindow(UIWindow):
         self.window.register_scroller(self.layout.frame)
 
     def make_title_entry(self, frame, title):
+        label_element = UIElement('label', parent=self.element, class_='info-section-label')
         title_label = DirectLabel(parent=frame,
                                   text=title,
                                   text_align=TextNode.ALeft,
-                                  text_scale=self.title_scale,
-                                  text_font=self.font_bold,
-                                  frameColor=(0, 0, 0, 0))
+                                  **self.skin.get_style(label_element))
         return title_label
 
     def make_text_entry(self, frame, text):
+        label_element = UIElement('label', parent=self.element, class_='info-entry-label')
         label = DirectLabel(parent=frame,
                             text=text,
                             text_align=TextNode.ALeft,
-                            text_scale=self.text_scale,
-                            text_font=self.font_normal,
-                            frameColor=(0, 0, 0, 0))
+                            **self.skin.get_style(label_element))
         return label
 
     def make_entries(self, frame, hsizer, body):

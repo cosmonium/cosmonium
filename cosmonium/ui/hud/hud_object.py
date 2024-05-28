@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,10 +19,12 @@
 
 
 class HUDObject(object):
-    def __init__(self, anchor, scale, offset):
+    def __init__(self, id_, anchor, offset, owner):
+        self.id_ = id_
         self.anchor = anchor
-        self.scale = scale
         self.offset = offset
+        self.owner = owner
+        self.skin = owner.skin
         self.shown = True
         self.instance = None
 

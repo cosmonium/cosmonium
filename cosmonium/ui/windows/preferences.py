@@ -25,8 +25,8 @@ from .editor import ParamEditor
 
 
 class Preferences(ParamEditor):
-    def __init__(self, cosmonium, font_family, font_size = 14, owner=None):
-        ParamEditor.__init__(self, font_family, font_size, owner)
+    def __init__(self, cosmonium, owner=None):
+        ParamEditor.__init__(self, owner)
         self.cosmonium = cosmonium
 
     def update_parameter(self, param):
@@ -135,16 +135,6 @@ class Preferences(ParamEditor):
                                 [SettingParameter(_("UI scale with DPI"), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
                                  SettingParameter(_("Custom UI scale"), 'custom_ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                                  SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
-                                 SettingParameter(_("UI text size"), 'ui_font_size', UserParameter.TYPE_INT, [4, 32]),
-                                ]),
-                ParametersGroup(_('HUD'),
-                                [SettingParameter(_("HUD text size"), 'hud_text_size', UserParameter.TYPE_INT, [4, 32]),
-                                 SettingParameter(_("HUD info size"), 'hud_info_text_size', UserParameter.TYPE_INT, [4, 32]),
-                                 SettingParameter(_("HUD color"), 'hud_color', UserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                                ]),
-                ParametersGroup(_('Query'),
-                                [SettingParameter(_("Query size"), 'query_text_size', UserParameter.TYPE_INT, [4, 32]),
-                                 SettingParameter(_("Suggestion size"), 'query_suggestion_text_size', UserParameter.TYPE_INT, [4, 32]),
                                 ]),
                 ]
 

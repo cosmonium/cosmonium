@@ -1,0 +1,99 @@
+-
+  background-color: "#B2B2B2"
+  text-color: "#000000"
+  border-color: "#CCCCCC"
+  font-family: DejaVuSans
+  font-size: 12px
+
+- parent:
+    class: hud
+  text-color: [0.7, 0.7, 1.0]
+
+- element: onscreen-text
+  id: title
+  parent:
+    class: hud
+  font-size: 18px
+
+- element: onscreen-text
+  id: info
+  parent:
+    class: hud
+  font-size: 18px
+
+- parent:
+    id: query
+  text-color: [0.7, 0.7, 1.0]
+  background-color: [0, 0, 0, 0]
+
+- element: frame
+  parent:
+    id: query
+  background-color: [0.7, 0.7, 1.0, 0.3]
+
+- parent:
+    id: query
+  class: query-entry
+  font-size: 18
+
+- element: frame
+  class: title-frame
+  background-color: "#7F7F7F"
+
+- element: frame
+  class: close-frame
+  background-color: "#7F7F7F"
+
+- element: button
+  background-color: "#CCCCCC"
+  text-color: "#000000"
+  border-color: "#000000"
+
+- element: slider
+  text-color: "#CCCCCC"
+  background-color: "#000000"
+  border-color: "#000000"
+
+- element: tabbed-frame
+  state: selected
+  background-color: "#CCCCCC"
+
+- element: tabbed-frame
+  state: hover
+  background-color: "#CCCCCC"
+
+- element: tabbed-frame
+  state: clicked
+  background-color: "#CCCCCC"
+
+- element: slider
+  parent:
+    class: editor
+  width: 16em
+  height: 6em
+
+- element: label
+  class: editor-section-label
+  padding: .5em 0em .25em .5em
+
+- element: sizer
+  class: editor-entry-sizer
+  padding: 0.25em 0em 0.25em 1em
+  margin: 0em 0.75em
+
+- element: sizer
+  class: editor-entry-vector
+  padding: 0.25em 0em 0.25em 0em
+  margin: 0em 0.25em
+
+- element: sizer
+  class: entry-sizer
+  parent:
+    class: info
+  margin: 0.5em
+  padding: 0.25em
+
+- element: label
+  class: info-section-label
+  font-size: 1.17em
+  font-weight: bold

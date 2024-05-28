@@ -21,9 +21,8 @@
 import os
 from typing import NamedTuple
 
-from .. import settings
 from ..parsers.yamlparser import YamlParser
-from .skin import UISkinEntry, UISkin
+from .skin import ParentSelector, Selector, UISkinEntry, UISkin
 from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
 from .dock.button import ButtonDockWidget
 from .dock.layouts import LayoutDockWidget, SpaceDockWidget
@@ -288,41 +287,97 @@ class UIConfigLoader:
     @staticmethod
     def parse_color(data):
         if data is not None:
-            if len(data) == 7 and data.startswith('#'):
-                color = LColor(*tuple(int(data[i:i + 2], 16) / 255 for i in (1, 3, 5)), 1.0)
-            else:
-                print(f"Invalid color {data}")
+            if isinstance(data, str):
+                if len(data) == 7 and data.startswith('#'):
+                    color = LColor(*tuple(int(data[i:i + 2], 16) / 255 for i in (1, 3, 5)), 1.0)
+                else:
+                    print(f"Invalid color {data}")
+                    color = None
+            elif isinstance(data, list):
+                if len(data) == 4:
+                    color = LColor(*data)
+                elif len(data) == 3:
+                    color = LColor(*data, 1.0)
+                else:
+                    print(f"Invalid color {data}")
+                    color = None
         else:
             color = None
         return color
 
-    def load_skin_entry(self, data, skin):
-        if skin is not None:
-            extends_name = data.get('extend', 'default')
-            extends = skin.get(extends_name)
+    @staticmethod
+    def parse_length(data, entry):
+        if data is not None:
+            if isinstance(data, str):
+                if len(data) >= 3:
+                    value = float(data[0:-2])
+                    unit = data[-2:]
+                if unit == 'px':
+                    size = lambda element, font_size, skin: entry.calc_size_px(value, element, font_size, skin)
+                elif unit == 'em':
+                    size = lambda element, font_size, skin: entry.calc_size_em(value, element, font_size, skin)
+                else:
+                    print(f"Invalid size {data}")
+                    size = None
+            elif isinstance(data, (int, float)):
+                size = lambda element, font_size, skin: entry.calc_size_px(data, element, font_size, skin)
+            else:
+                print(f"Invalid size {data}")
+                size = None
         else:
-            extends = None
-        background_color = self.parse_color(data.get('background-color'))
-        text_color = self.parse_color(data.get('text-color'))
-        border_color = self.parse_color(data.get('border-color'))
-        entry = UISkinEntry(extends=extends)
-        if background_color:
-            entry.background_color = background_color
-        if text_color:
-            entry.text_color = text_color
-        if border_color:
-            entry.border_color = border_color
+            size = None
+        return size
+
+    @classmethod
+    def parse_edge_lengths(cls, data, entry):
+        if data is None:
+            return None
+        if isinstance(data, str):
+            items = data.split(' ')
+        lengths = [cls.parse_length(item, entry) for item in items]
+        # DirectGUI order is : l, r, b, t
+        if len(lengths) == 1:
+            lengths = lengths * 4
+        elif len(lengths) == 2:
+            lengths = [lengths[1], lengths[1], lengths[0], lengths[0]]
+        elif len(lengths) == 3:
+            lengths = [lengths[1], lengths[1], lengths[2], lengths[0]]
+        else:
+            lengths = [lengths[3], lengths[1], lengths[2], lengths[0]]
+        return lengths
+
+    def load_skin_selector(self, data):
+        element = data.get('element', None)
+        state = data.get('state', None)
+        class_ = data.get('class', None)
+        id_ = data.get('id', None)
+        selector = Selector(element, state, class_, id_)
+        if 'parent' in data:
+            parent_selector = self.load_skin_selector(data['parent'])
+            selector = ParentSelector(parent_selector, selector)
+        return selector
+
+    def load_skin_entry(self, data):
+        selector = self.load_skin_selector(data)
+        entry = UISkinEntry(selector, {})
+        entry.background_color = self.parse_color(data.get('background-color'))
+        entry.text_color = self.parse_color(data.get('text-color'))
+        entry.border_color = self.parse_color(data.get('border-color'))
+        entry.font_family = data.get('font-family')
+        entry.font_size = self.parse_length(data.get('font-size'), entry)
+        entry.font_style = data.get('font-style')
+        entry.font_weight = data.get('font-weight')
+        entry.margin = self.parse_edge_lengths(data.get('margin'), entry)
+        entry.padding = self.parse_edge_lengths(data.get('padding'), entry)
+        entry.width = self.parse_length(data.get('width'), entry)
+        entry.height = self.parse_length(data.get('height'), entry)
         return entry
 
     def load_skin(self, data):
         skin = UISkin()
-        default = self.load_skin_entry(data.get('default', {}), skin=None)
-        skin.add_entry('default', default)
-        for name, entry_data in data.items():
-            if name == 'default':
-                continue
-            entry = self.load_skin_entry(entry_data, skin)
-            skin.add_entry(name, entry)
+        for entry_data in data:
+            entry = self.load_skin_entry(entry_data)
+            skin.add_entry(entry)
         return skin
 
     def load_skin_file(self, skin_file):

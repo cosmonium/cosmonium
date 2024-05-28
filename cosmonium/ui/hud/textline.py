@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -18,41 +18,32 @@
 #
 
 
-from panda3d.core import LColor, LVector2, LVector3
+from panda3d.core import LVector2, LVector3
 from direct.gui.OnscreenText import OnscreenText, Plain
 
+from ..skin import UIElement
 from .hud_object import HUDObject
 
 
 class TextLine(HUDObject):
-    def __init__(self, anchor, scale, offset, align, pos, font, size, color=None):
-        HUDObject.__init__(self, anchor, scale, offset)
+    def __init__(self, id_, anchor, offset, align, pos, owner=None):
+        HUDObject.__init__(self, id_, anchor, offset, owner)
         self.align = align
         self.text = ""
-        self.font = font
-        self.size = size
         self.pos = LVector2(pos[0], -pos[1])
-        if color is None:
-            color = LColor(1, 1, 1, 1)
-        self.color = color
+        self.scale = None
         self.instance = self.create()
         self.update_instance()
 
-    def get_em_width(self):
-        return self.scale[0] * self.size
-
     def get_height(self):
-        return self.scale[1] * self.size
-
-    def set_font(self, font):
-        self.font = font
+        return self.scale[1]
 
     def update_instance(self):
-        if self.instance is None: return
+        if self.instance is None:
+            return
         x_offset = self.offset[0]
         y_offset = self.offset[1]
-        pos = LVector3(self.pos[0] * self.get_em_width() + x_offset, 0, self.pos[1] * self.get_height() + y_offset)
-        #self.instance.setScale(*self.scale)
+        pos = LVector3(self.pos[0] * self.scale[0] + x_offset, 0, self.pos[1] * self.scale[1] + y_offset)
         self.instance.set_pos(pos)
 
     def set_pos(self, pos):
@@ -65,14 +56,16 @@ class TextLine(HUDObject):
             self.instance.reparent_to(self.anchor)
 
     def create(self):
-        return OnscreenText(text="",
-                            style=Plain,
-                            fg=self.color,
-                            scale=tuple(self.scale * self.size),
-                            parent=self.anchor,
-                            align=self.align,
-                            font=self.font,
-                            mayChange=True)
+        text_line_element = UIElement('onscreen-text', parent=self.owner.element, id_=self.id_)
+        style = self.skin.get_style(text_line_element)
+        self.scale = style['scale']
+        return OnscreenText(
+            text="",
+            style=Plain,
+            parent=self.anchor,
+            align=self.align,
+            mayChange=True,
+            **style)
 
     def set_text(self, text):
         self.instance.setText(text)
