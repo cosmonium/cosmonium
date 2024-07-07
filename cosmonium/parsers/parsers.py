@@ -41,3 +41,4 @@ from . import pluginparser
 from . import scatteringparser
 from . import fogscatterparser
 from . import oneilscatteringparser
+from . import cameraparser

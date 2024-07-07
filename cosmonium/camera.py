@@ -365,6 +365,9 @@ class CameraController(EventsControllerBase):
     def require_target(self):
         return False
 
+    def set_terrain(self, terrain):
+        pass
+
     def set_camera_hints(self, **kwargs):
         pass
 
@@ -653,7 +656,7 @@ class SurfaceFollowCameraController(CameraController):
         CameraController.__init__(self)
         self.orbit_body = orbit_body
         self.change_distance = change_distance
-        self.body = None
+        self.terrain = None
         self.height = 2.0
         self.min_height = 1.0
         self.reference_min_distance = 1.0
@@ -696,8 +699,8 @@ class SurfaceFollowCameraController(CameraController):
                 self.accept("wheel_up", self.do_change_distance, [-0.1])
                 self.accept("wheel_down", self.do_change_distance, [0.1])
 
-    def set_body(self, body):
-        self.body = body
+    def set_terrain(self, terrain):
+        self.terrain = terrain
 
     def calc_projected_orientation(self):
         projected_vector_to_reference = self.reference_anchor.get_local_position() - self.camera.get_local_position()
@@ -795,7 +798,7 @@ class SurfaceFollowCameraController(CameraController):
             if distance < min_distance:
                 camera_position = camera_position - projected_vector_to_reference * (min_distance - distance)
 
-            surface_height = self.body.anchor._height_under
+            surface_height = self.terrain.anchor._height_under
             target_height = self.reference_anchor.get_local_position()[2]
             #print(self.height, self.min_height, surface_height, target_height)
             if surface_height + self.min_height < target_height + self.height:

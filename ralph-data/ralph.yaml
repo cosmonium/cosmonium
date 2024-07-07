@@ -1,3 +1,6 @@
+camera:
+  type: surface-follow
+
 lights:
   - {}
 

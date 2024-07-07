@@ -50,10 +50,11 @@ from cosmonium.procedural.water import WaterNode
 from cosmonium.tiles import TerrainLayerFactoryInterface
 from cosmonium.patchedshapes import PatchLayer
 from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
-from cosmonium.camera import CameraHolder, SurfaceFollowCameraController, EventsControllerBase, FixedCameraController
+from cosmonium.camera import CameraHolder, EventsControllerBase
 from cosmonium.nav import ControlNav, KineticNav
 from cosmonium.controllers.controllers import FlatSurfaceBodyMover, CartesianBodyMover
 from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
+from cosmonium.parsers.cameraparser import CameraControllerYamlParser
 from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.physics.bullet import BulletPhysics, BulletMover
@@ -261,6 +262,8 @@ class RalphConfigParser(YamlModuleParser):
         ralph = data.get('ralph', {})
         self.ralph_shape_object = ActorObjectYamlParser.decode(ralph)
         self.start_position = ralph.get('position')
+
+        self.camera_controller = CameraControllerYamlParser.decode(data.get('camera'))
         return True
 
 class RalphWord(CartesianWorld):
@@ -559,13 +562,8 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             self.shadow_caster = None
 
-        if self.terrain_world:
-            self.camera_controller = SurfaceFollowCameraController()
-            self.camera_controller.set_body(self.terrain_world)
-            self.camera_controller.set_camera_hints(distance=5, max=1.5)
-        else:
-            self.camera_controller = FixedCameraController()
-            self.camera_controller.set_camera_hints(position=LVector3d(0, -2, 1))
+        self.camera_controller = self.ralph_config.camera_controller
+        self.camera_controller.set_terrain(self.terrain_world)
         self.camera_controller.activate(self.observer, self.ralph_world.anchor)
 
         self.controller = RalphControl(self.worlds.lights.lights[0], self)
