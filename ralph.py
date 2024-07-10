@@ -54,7 +54,9 @@ from cosmonium.camera import CameraHolder, EventsControllerBase
 from cosmonium.nav import ControlNav, KineticNav
 from cosmonium.controllers.controllers import FlatSurfaceBodyMover, CartesianBodyMover
 from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
+from cosmonium.parsers.bulletparser import BulletPhysicsShapeYamlParser
 from cosmonium.parsers.cameraparser import CameraControllerYamlParser
+from cosmonium.parsers.collisionparser import CollisionShapeYamlParser
 from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.physics.bullet import BulletPhysics, BulletMover
@@ -244,9 +246,9 @@ class RalphConfigParser(YamlModuleParser):
         has_physics = physics.get('enable', False)
         debug = physics.get('debug', False)
         if has_physics:
-            engine = physics.get('engine', 'bullet')
+            engine_name = physics.get('engine', 'bullet')
             gravity = physics.get('gravity', 9.81)
-            if engine == 'bullet':
+            if engine_name == 'bullet':
                 engine = BulletPhysics(debug)
             else:
                 engine = CollisionPhysics()
@@ -260,17 +262,31 @@ class RalphConfigParser(YamlModuleParser):
             self.physics_config = PhysicsConfig(gravity, model, mass, limit, debug)
 
         ralph = data.get('ralph', {})
-        self.ralph_shape_object = ActorObjectYamlParser.decode(ralph)
+        if 'actor' in ralph:
+            self.ralph_shape_object = ActorObjectYamlParser.decode(ralph['actor'])
+        else:
+            self.ralph_shape_object = None
+        if has_physics:
+            if 'physics-shape' in ralph:
+                if engine_name == 'bullet':
+                    self.ralph_physics_shape = BulletPhysicsShapeYamlParser.decode(ralph['physics-shape'])
+                else:
+                    self.ralph_physics_shape = CollisionShapeYamlParser.decode(ralph['physics-shape'])
+            else:
+                self.ralph_physics_shape = None
+        else:
+            self.ralph_physics_shape = None
         self.start_position = ralph.get('position')
 
         self.camera_controller = CameraControllerYamlParser.decode(data.get('camera'))
         return True
 
 class RalphWord(CartesianWorld):
-    def __init__(self, name, ship_object, radius, physics):
+    def __init__(self, name, ship_object, physics_shape, radius, physics):
         CartesianWorld.__init__(self, name)
         self.add_component(ship_object)
         self.ship_object = ship_object
+        self.physics_shape = physics_shape
         self.current_state = None
         self.physics_node = None
         self.physics_instance = None
@@ -278,6 +294,7 @@ class RalphWord(CartesianWorld):
         self.anchor.set_bounding_radius(radius)
 
     def set_state(self, new_state):
+        if self.ship_object is None: return
         if self.current_state == new_state: return
         if new_state == 'moving':
             self.ship_object.shape.loop("run")
@@ -288,10 +305,18 @@ class RalphWord(CartesianWorld):
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         CartesianWorld.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
-        if self.ship_object.instance is not None and self.physics is not None and self.physics_instance is None:
-            physics_shape = self.physics.create_capsule_shape_for(self.ship_object.instance)
-            self.physics_node = self.physics.create_controller_for(physics_shape)
-            self.physics_instance = base.physics.add_controller(self, self.ship_object.instance, self.physics_node)
+        if self.physics is not None and self.physics_instance is None:
+            if self.physics_shape is None  and self.ship_object is not None and self.ship_object.instance is not None:
+                physics_shape = self.physics.create_capsule_shape_for(self.ship_object.instance)
+            else:
+                physics_shape = self.physics_shape
+            if physics_shape is not None:
+                self.physics_node = self.physics.create_controller_for(physics_shape)
+                if self.ship_object is not None:
+                    instance = self.ship_object.instance
+                else:
+                    instance = self.scene_anchor.instance
+                self.physics_instance = base.physics.add_controller(self, instance, self.physics_node)
 
     def update(self, time, dt):
         CartesianWorld.update(self, time, dt)
@@ -546,7 +571,7 @@ class RoamingRalphDemo(CosmoniumBase):
         # Create the main character, Ralph
 
         self.ralph_shape_object = self.ralph_config.ralph_shape_object
-        self.ralph_world = RalphWord('ralph', self.ralph_shape_object, 1.5, self.physics)
+        self.ralph_world = RalphWord('ralph', self.ralph_shape_object, self.ralph_config.ralph_physics_shape, 1.5, self.physics)
         self.worlds.add_world(self.ralph_world)
         self.worlds.add_special(self.ralph_world)
         self.ralph_world.anchor.do_update()

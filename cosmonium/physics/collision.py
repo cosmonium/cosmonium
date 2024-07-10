@@ -160,9 +160,14 @@ class ReactBodyController(PhysicsController):
         pass
 
     def update(self, time, dt):
-        if self.anchor.body.ship_object.instance is not None:
-            scene_position = self.anchor.body.ship_object.instance.get_pos()
-            self.anchor.body.ship_object.instance.set_pos(LPoint3())
-            position = self.anchor.get_local_position() + scene_position
-            self.mover.set_local_position(position)
+        if self.anchor.body.ship_object is not None:
+            if self.anchor.body.ship_object.instance is not None:
+                scene_position = self.anchor.body.ship_object.instance.get_pos()
+                self.anchor.body.ship_object.instance.set_pos(LPoint3())
+                position = self.anchor.get_local_position() + scene_position
+                self.mover.set_local_position(position)
+                self.mover.update()
+        else:
+            scene_position = self.anchor.body.scene_anchor.instance.get_pos()
+            self.mover.set_local_position(scene_position)
             self.mover.update()

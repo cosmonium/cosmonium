@@ -147,12 +147,15 @@ class BulletMover(KineticMover):
 
     def feedback(self):
         if self.entity.physics_node is not None:
-            bounds = self.entity.ship_object.instance.get_tight_bounds()
-            dims = bounds[1] - bounds[0]
-            # width = max(dims[0], dims[1]) / 2.0
-            height = dims[2]
-            offset = LVector3(0, 0, -height / 2)
-            self.entity.anchor.set_frame_position(self.entity.physics_instance.get_pos() + offset)
+            if self.entity.ship_object is not None:
+                bounds = self.entity.ship_object.instance.get_tight_bounds()
+                dims = bounds[1] - bounds[0]
+                # width = max(dims[0], dims[1]) / 2.0
+                height = dims[2]
+                offset = LVector3(0, 0, -height / 2)
+                self.entity.anchor.set_frame_position(self.entity.physics_instance.get_pos() + offset)
+            else:
+                self.entity.anchor.set_frame_position(self.entity.physics_instance.get_pos())
 
     def set_local_position(self, position):
         if self.entity.physics_node is not None:
