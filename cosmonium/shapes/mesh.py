@@ -111,7 +111,8 @@ class MeshShape(Shape):
         else:
             self.radius = max(*self.scale_factor)
         if self.flatten:
-            self.mesh.flattenStrong()
+            self.mesh.clear_model_nodes()
+            self.mesh.flatten_strong()
         self.update_shape()
         self.apply_owner()
         self.mesh.reparent_to(self.instance)
