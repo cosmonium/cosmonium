@@ -213,7 +213,7 @@ class YamlModuleParser(YamlParser):
 
 class TypedYamlParser(YamlParser):
 
-    parsers = {}
+    parsers = None
     default_type = None
     detect_trivial = False
 

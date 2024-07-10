@@ -23,4 +23,5 @@ from .yamlparser import TypedYamlParser
 
 class ScatteringYamlParser(TypedYamlParser):
 
+    parsers = {}
     detect_trivial = True
