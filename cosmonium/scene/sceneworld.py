@@ -310,6 +310,8 @@ class SimpleWorld(SceneWorld):
         self.visible = False
 
     def add_component(self, component):
+        if component is None:
+            return
         self.components.add_component(component)
         component.set_owner(self)
         component.set_body(self)
