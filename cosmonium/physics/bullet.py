@@ -112,7 +112,8 @@ class BulletPhysics(PhysicsBase):
         for nodepath in model.findAllMatches('**/+GeomNode'):
             node = BulletRigidBodyNode(nodepath.name)
             mesh = BulletTriangleMesh()
-            mesh.addGeom(nodepath.node().get_geom(0))
+            for geom in nodepath.node().get_geoms():
+                mesh.add_geom(geom)
             shape = BulletTriangleMeshShape(mesh, dynamic=dynamic, compress=compress)
             node.add_shape(shape)
             physics_nodepath = NodePath(node)
