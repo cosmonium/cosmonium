@@ -1,0 +1,84 @@
+hud:
+
+  - anchor: top-left
+    id: title
+    type: text-list
+    size: 1
+    entries:
+      - condition: 'engine.selected'
+        text: '{{selected.list_of_names}}'
+
+  - anchor: top-left
+    type: text-list
+    entries:
+      - condition: 'engine.selected'
+        entries:
+          - title: 'Distance'
+            condition: 'selected.is_virtual_object or selected.distance_to_obs > 10 * selected.apparent_radius'
+            text: '{{scales.length(selected.distance_to_obs)}}'
+          - condition: 'not selected.is_virtual_object and selected.distance_to_obs <= 10 * selected.apparent_radius'
+            entries:
+              - condition: 'selected.has_not_flat_surface'
+                title: 'Altitude'
+                text: '{{scales.length(selected.altitude)}} (Ground: {{scales.length(selected.ground_distance)}}'
+              - condition: 'not selected.has_not_flat_surface'
+                title: 'Altitude'
+                text: '{{scales.length(selected.altitude)}}'
+          - condition: 'not selected.is_virtual_object and selected.is_stellar'
+            entries:
+              - title: 'Radius'
+                text: '{{scales.length(selected.apparent_radius)}} ({{scales.radius(selected.apparent_radius, "x")}})'
+              - title: 'Abs (app) magnitude'
+                text: '{{"%g"|format(selected.abs_magnitude)}} ({{"%g"|format(selected.app_magnitude)}})'
+              - condition: 'selected.is_emissive'
+                entries:
+                  - title: 'Luminosity'
+                    text: '{{"%g" % (selected.intrinsic_luminosity / units.L0)}}x Sun'
+                  - condition: 'selected.is_star'
+                    entries:
+                      - title: 'Spectral type'
+                        text: '{{selected.spectral_type}}'
+                      - title: 'Temperature'
+                        text: '{{selected.temperature}} K'
+              - condition: 'not selected.is_emissive'
+                entries:
+                  - title: 'Phase'
+                    text: '{{"%g"|format(selected.phase)}}°'
+          - condition: 'selected.is_virtual_object and selected.is_stellar'
+            entries:
+              - title: 'Abs (app) magnitude'
+                text: '{{"%g"|format(selected.abs_magnitude)}} ({{"%g"|format(selected.app_magnitude)}})'
+
+  - anchor: top-right
+    type: text-list
+    entries:
+      - condition: 'settings.display_render_info == "fps"'
+        text: '{{"%.1f" % clock.average_frame_rate}} fps'
+      - condition: 'settings.display_render_info == "ms"'
+        text: '{{"%.1f" % (clock.frame_duration * 1000)}} ms'
+
+  - anchor: bottom-left
+    type: text-list
+    entries:
+      - text: '{{scales.speed(nav.speed)}}'
+      - condition: 'false' #settings.mouse_over and mouse.over is not None'
+        text: '{{mouse.over.get_friendly_name()}}'
+
+  - anchor: bottom-right
+    type: text-list
+    entries:
+      - condition: 'time.is_running'
+        text: '{{time.date}} ({{time.multiplier}}x)'
+      - condition: 'not time.is_running'
+        text: '{{time.date}} (paused)'
+      - text: 'FoV: {{scales.degrees(camera.vfov)}} ({{camera.zoom}}x)'
+      - condition: 'engine.sync'
+        text: 'Sync orbit {{engine.sync.get_name()}}'
+      - condition: 'engine.follow'
+        text: 'Follow {{engine.follow.get_name()}}'
+      - condition: 'engine.fly'
+        text: 'Fly over {{engine.selected.get_name()}}'
+      - condition: 'engine.track'
+        text: 'Track {{engine.track.get_name()}}'
+      - condition: 'autopilot.running'
+        text: 'Travelling ({{autopilot.time_to_destination|int}})'

@@ -31,7 +31,7 @@ from .hud_object import HUDObject
 
 class Query(HUDObject):
     def __init__(self, id_, anchor, offset, query_delay, owner=None):
-        HUDObject.__init__(self, id_, anchor, offset, owner)
+        HUDObject.__init__(self, id_, owner)
         self.query_delay = query_delay
         self.background = None
         self.prefix = None
@@ -43,6 +43,8 @@ class Query(HUDObject):
         self.max_columns = 4
         self.max_lines = 3
         self.max_elems = self.max_columns * self.max_lines
+        self.set_anchor(anchor)
+        self.offset = offset
 
     def do_query(self, text):
         body = None

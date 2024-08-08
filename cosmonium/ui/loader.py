@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+#Copyright (C) 2018-2024 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -19,15 +19,17 @@
 
 
 import os
+from panda3d.core import LColor, TextNode, LVector4
 from typing import NamedTuple
 
 from ..parsers.yamlparser import YamlParser
-from .skin import ParentSelector, Selector, UISkinEntry, UISkin
-from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
+
 from .dock.button import ButtonDockWidget
 from .dock.layouts import LayoutDockWidget, SpaceDockWidget
 from .dock.text import TextDockWidget
-from panda3d.core import LColor, TextNode, LVector4
+from .hud.dynamictextblock import DynamicTextBlockEntries, DynamicTextBlockEntry, DynamicTextBlock
+from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
+from .skin import ParentSelector, Selector, UISkinEntry, UISkin
 
 
 class UIConfig(NamedTuple):
@@ -37,6 +39,7 @@ class UIConfig(NamedTuple):
     menubar: list
     popup: list
     dock: list
+    hud: list
     skin: UISkin
 
 
@@ -78,6 +81,13 @@ class UIConfigLoader:
             dock = self.load_dock_file(dock_file)
         else:
             dock = None
+        hud_file = data.get('hud')
+        if hud_file is not None:
+            if not os.path.isabs(hud_file):
+                hud_file = os.path.join(basedir, hud_file)
+            hud = self.load_hud_file(hud_file)
+        else:
+            hud = {}
         skin_file = data.get('skin')
         if skin_file is not None:
             if not os.path.isabs(skin_file):
@@ -91,6 +101,7 @@ class UIConfigLoader:
                         menubar=menubar,
                         popup=popup,
                         dock=dock,
+                        hud=hud,
                         skin=skin)
 
     def load_shortcuts(self, shortcuts_file):
@@ -117,7 +128,7 @@ class UIConfigLoader:
                 menu = data.get("menu")
                 menu = SubMenuEntry(text=text, entries=menu, enabled=enabled, visible=visible)
             elif 'title' in data:
-                entries = self.load_submenu( data.get("entries", []))
+                entries = self.load_submenu(data.get("entries", []))
                 menu = SubMenuEntry(text=text, entries=entries, enabled=enabled, visible=visible)
             else:
                 menu = MenuSeparator(visible=visible)
@@ -283,6 +294,61 @@ class UIConfigLoader:
         data = parser.load_and_parse(dock_file)
         dock = self.load_dock(data.get('dock'))
         return dock
+
+    def load_hud_entry(self, data):
+        condition = data.get('condition')
+        text = data.get('text')
+        if text:
+            title = data.get('title')
+            entry = DynamicTextBlockEntry(condition, title, text)
+        else:
+            entries_data = data.get('entries', [])
+            entries = []
+            for entry_data in entries_data:
+                entry = self.load_hud_entry(entry_data)
+                entries.append(entry)
+            entry = DynamicTextBlockEntries(condition, entries)
+        return entry
+
+    def load_hud_entries(self, data):
+        entries = []
+        for entry_data in data:
+            entry = self.load_hud_entry(entry_data)
+            entries.append(entry)
+        return entries
+
+    def load_hud_widget(self, data):
+        id_ = data.get('id')
+        anchor_name = data.get('anchor')
+        size = data.get('size', 5)
+        if anchor_name == 'top-left':
+            align = TextNode.A_left
+            down = True
+        elif anchor_name == 'top-right':
+            align = TextNode.A_right
+            down = True
+        elif anchor_name == 'bottom-left':
+            align = TextNode.A_left
+            down = False
+        elif anchor_name == 'bottom-right':
+            align = TextNode.A_right
+            down = False
+        entries = self.load_hud_entries(data.get('entries'))
+        widget = DynamicTextBlock(id_, align=align, down=down, count=size, entries=entries)
+        return widget, anchor_name
+
+    def load_hud(self, data):
+        hud = {}
+        for widget_data in data:
+            widget, anchor_name = self.load_hud_widget(widget_data)
+            hud.setdefault(anchor_name, []).append(widget)
+        return hud
+
+    def load_hud_file(self, hud_file):
+        parser = YamlParser()
+        data = parser.load_and_parse(hud_file)
+        hud = self.load_hud(data.get('hud', []))
+        return hud
 
     @staticmethod
     def parse_color(data):

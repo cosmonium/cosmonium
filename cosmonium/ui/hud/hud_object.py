@@ -19,14 +19,29 @@
 
 
 class HUDObject(object):
-    def __init__(self, id_, anchor, offset, owner):
+    def __init__(self, id_, owner):
         self.id_ = id_
-        self.anchor = anchor
-        self.offset = offset
+        self.anchor = None
+        self.offset = (0, 0)
         self.owner = owner
-        self.skin = owner.skin
+        if owner is not None:
+            self.skin = owner.skin
+        else:
+            self.skin = None
         self.shown = True
         self.instance = None
+
+    def set_anchor(self, anchor):
+        self.anchor = anchor
+        if self.instance is not None:
+            self.instance.reparent_to(self.anchor)
+
+    def set_owner(self, owner):
+        self.owner = owner
+        if owner is not None:
+            self.skin = owner.skin
+        else:
+            self.skin = None
 
     def hide(self):
         self.instance.stash()

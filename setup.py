@@ -30,9 +30,14 @@ sys.path.insert(0, 'third-party/gltf')
 
 from cosmonium.version import version_str
 
+
 log_filename = '$USER_APPDATA/cosmonium/output.log'
 requirements_path = None
-include_modules = ['numpy.core._multiarray_tests']
+
+include_modules = [
+    'jinja2.compiler',
+    'numpy.core._multiarray_tests',
+    ]
 
 if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')

@@ -115,7 +115,7 @@ class Gui(object):
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
 
-        self.hud = Huds(self, ui_config.dock, self.skin)
+        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.skin)
         self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
         self.opened_windows = []
         self.browser = Browser(owner=self)

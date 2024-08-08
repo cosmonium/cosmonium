@@ -26,14 +26,12 @@ from .hud_object import HUDObject
 
 
 class TextLine(HUDObject):
-    def __init__(self, id_, anchor, offset, align, pos, owner=None):
-        HUDObject.__init__(self, id_, anchor, offset, owner)
+    def __init__(self, id_, align, pos, owner=None):
+        HUDObject.__init__(self, id_, owner)
         self.align = align
         self.text = ""
         self.pos = LVector2(pos[0], -pos[1])
         self.scale = None
-        self.instance = self.create()
-        self.update_instance()
 
     def get_height(self):
         return self.scale[1]
@@ -59,13 +57,14 @@ class TextLine(HUDObject):
         text_line_element = UIElement('onscreen-text', parent=self.owner.element, id_=self.id_)
         style = self.skin.get_style(text_line_element)
         self.scale = style['scale']
-        return OnscreenText(
+        self.instance = OnscreenText(
             text="",
             style=Plain,
             parent=self.anchor,
             align=self.align,
             mayChange=True,
             **style)
+        self.update_instance()
 
     def set_text(self, text):
         self.instance.setText(text)

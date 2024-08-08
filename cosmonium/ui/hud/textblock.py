@@ -26,17 +26,15 @@ from .hud_object import HUDObject
 
 
 class TextBlock(HUDObject):
-    def __init__(self, id_, anchor, offset, align, down, count, owner=None):
-        HUDObject.__init__(self, id_, anchor, offset, owner)
+    def __init__(self, id_, align, down, count, owner=None):
+        HUDObject.__init__(self, id_, owner)
         self.align = align
         self.down = down
         self.count = count
         self.text = []
-        self.instance = anchor.attach_new_node("anchor")
         self.instances = []
+        self.instance = None
         self.scale = None
-        self.create()
-        self.update_instance()
 
     def get_height(self):
         return self.scale[1] * self.count
@@ -45,6 +43,8 @@ class TextBlock(HUDObject):
         self.font = font
 
     def update_instance(self):
+        if not self.instances:
+            return
         x_offset = self.offset[0]
         y_offset = self.offset[1]
         height_scale = self.scale[1]
@@ -72,9 +72,11 @@ class TextBlock(HUDObject):
             **style)
 
     def create(self):
+        self.instance = self.anchor.attach_new_node("anchor")
         for i in range(self.count):
             self.instances.append(self.create_line(i))
             self.text.append("")
+        self.update_instance()
 
     def set(self, pos, text):
         if self.text[pos] != text:
