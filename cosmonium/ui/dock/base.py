@@ -43,7 +43,7 @@ class DockWidgetBase:
             self.index)
 
     def update(self):
-        pass
+        return False
 
 
 class DGuiDockWidget(DockWidgetBase):

@@ -76,8 +76,12 @@ class TextDockWidget(DGuiDockWidget):
         return label
 
     def update(self):
+        has_changed = False
         if self.data is not None:
             text = base.data_provider.get_data(self.data)
             if text != self.text:
                 self.widget.dgui_obj['text'] = text
+                self.widget.reset_frame_size()
                 self.text = text
+                has_changed = True
+        return has_changed

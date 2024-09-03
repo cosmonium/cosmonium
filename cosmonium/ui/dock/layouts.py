@@ -98,6 +98,10 @@ class LayoutDockWidget(DockWidgetBase):
         self.sizer.update((width, height))
 
     def update(self):
+        has_changed = False
         for widget in self.widgets:
             if widget.update_needed:
-                widget.update()
+                has_changed = widget.update() or has_changed
+        if has_changed:
+            self.update_layout()
+        return has_changed
