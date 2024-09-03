@@ -24,14 +24,11 @@ from direct.gui.DirectGuiBase import DirectGuiWidget
 
 from panda3d.core import LVector3, TextNode
 
-from ...fonts import fontsManager, Font
 from ..skin import UIElement
 from .base import DGuiDockWidget
 
 
 class ButtonDockWidget(DGuiDockWidget):
-
-    font = None
 
     def __init__(
             self,
@@ -47,21 +44,18 @@ class ButtonDockWidget(DGuiDockWidget):
         self.text = text
         self.event = event
         self.size = size
-        if self.font is None:
-            font = fontsManager.get_font("Material Design Icons", Font.STYLE_NORMAL)
-            ButtonDockWidget.font = font.load()
-            ButtonDockWidget.font.set_pixels_per_unit(64)
         self.rescale = rescale
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        button_element = UIElement('button', parent=parent.element)
+        button_element = UIElement('button', class_='dock-button', parent=parent.element)
+        style = skin.get(button_element)
         size = self.size or parent.size
-        scale = LVector3(size)
+        font_size = style.font_size(button_element, True, skin)
+        scale = LVector3(size / font_size)
         button = DirectButton(
             **skin.get_style(button_element),
             relief=None,
             pressEffect=1,
-            text_font=self.font,
             text=self.text,
             textMayChange=True,
             text_align=TextNode.A_boxed_center,
@@ -73,5 +67,5 @@ class ButtonDockWidget(DGuiDockWidget):
             width = bounds[1] - bounds[0]
             height = bounds[3] - bounds[2]
             max_size = max(width, height)
-            button.set_scale(scale / max_size)
+            button.set_scale(scale * font_size / max_size)
         return button

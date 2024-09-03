@@ -28,8 +28,8 @@ from ..skin import UIElement
 
 class Dock(HUDObject):
 
-    def __init__(self, gui, parent, direction, location, layout, scale, offset, skin):
-        HUDObject.__init__(self, parent, scale, offset)
+    def __init__(self, id_, gui, direction, location, layout, owner=None):
+        HUDObject.__init__(self, id_, owner)
         self.gui = gui
         self.direction = direction
         self.location = location
@@ -40,13 +40,11 @@ class Dock(HUDObject):
         else:
             self.center = False
         self.pos = LVector3(0)
-        self.create(parent, skin)
-        self.update_instance()
 
-    def create(self, parent, skin):
-        self.element = UIElement('frame', class_='dock')
-        self.instance = DirectFrame(parent=parent, **skin.get_style(self.element))
-        self.layout.create(self, self.instance, skin)
+    def create(self):
+        self.element = UIElement('frame', class_='dock', id_=self.id_)
+        self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
+        self.layout.create(self, self, self.skin)
 
     def update_instance(self):
         if self.instance is None:

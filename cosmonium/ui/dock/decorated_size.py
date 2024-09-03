@@ -38,11 +38,11 @@ class DecoratedSizer(Sizer):
         self.border_color = None
         self.element = None
 
-    def create(self, parent, skin):
-        self.element = UIElement('frame', class_='sizer')
+    def create(self, dock, parent, skin):
+        self.element = UIElement('frame', class_='sizer', parent=parent.element)
         self.frame = DirectFrame(
             **skin.get_style(self.element),
-            parent=parent,
+            parent=parent.instance,
             state=DGG.NORMAL,
             )
         self.border_color = skin.get(self.element).border_color

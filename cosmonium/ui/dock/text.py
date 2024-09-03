@@ -21,23 +21,18 @@ from __future__ import annotations
 
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
-from panda3d.core import LVector3
 
-from ...fonts import fontsManager, Font
 from ..skin import UIElement
 from .base import DGuiDockWidget
 
 
 class TextDockWidget(DGuiDockWidget):
 
-    font = None
-
     def __init__(
             self,
             text: str,
             data: str,
             align,
-            size: float=None,
             proportions=None,
             alignments=None,
             borders=None,
@@ -47,32 +42,19 @@ class TextDockWidget(DGuiDockWidget):
             self.data = data
             # TODO: A non empty text is needed to retrieve a valid frameSize
             self.text = "M"
-            self.frame_size = None
             self.update_needed = True
         else:
             self.data = None
             self.text = text
-            self.frame_size = None
-        self.size = size
         self.align = align
-        if self.font is None:
-            font = fontsManager.get_font("DejaVuSans", Font.STYLE_NORMAL)
-            TextDockWidget.font = font.load()
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         label_element = UIElement('label', parent=parent.element)
-        scale = LVector3(self.size or parent.size)
         label = DirectLabel(
             **skin.get_style(label_element),
             text=self.text,
-            text_font=self.font,
-            scale=scale,
             text_align=self.align,
-            frameSize=self.frame_size,
             textMayChange=True)
-        if self.data is not None:
-            bounds = label.getBounds()
-            label['frameSize'] = (0, 15, bounds[2], bounds[3])
         return label
 
     def update(self):

@@ -2,3 +2,8 @@
   background-color: "#00000d"
   text-color: "#36D1DC"
   border-color: "#00004D"
+  font-family: DejaVuSans
+  font-size: 12px
+- class: dock-button
+  font-family: Material Design Icons
+  font-size: 12px

@@ -63,7 +63,10 @@ class Huds():
         # TODO: Temporary broken way to instanciate a dock
         if dock is not None:
             layout, orientation, location = dock
-            self.bottom_dock = Dock(gui, base.pixel2d, orientation, location, layout, LVector2(1, 1), LVector2(0, 0), skin)
+            self.bottom_dock = Dock('hud', gui, orientation, location, layout)
+            self.bottom_dock.set_owner(self)
+            self.bottom_dock.set_anchor(base.pixel2d)
+            self.bottom_dock.create()
         else:
             self.bottom_dock = None
         self.shown = True

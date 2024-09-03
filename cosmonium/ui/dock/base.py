@@ -52,8 +52,9 @@ class DGuiDockWidget(DockWidgetBase):
         raise NotImplementedError()
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
-        self.widget = SizerWidget(self.create(dock, parent, base.messenger, skin))
-        self.widget.dgui_obj.reparent_to(dock.instance)
+        instance = self.create(dock, parent, base.messenger, skin)
+        instance.reparent_to(dock.instance)
+        self.widget = SizerWidget(instance)
         DockWidgetBase.add_to(self, dock, parent, borders, skin)
 
 
