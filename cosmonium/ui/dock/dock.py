@@ -41,6 +41,9 @@ class Dock(HUDObject):
             self.center = False
         self.pos = LVector3(0)
 
+    def compile(self, env):
+        self.layout.compile(env)
+
     def create(self):
         self.element = UIElement('frame', class_='dock', id_=self.id_)
         self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
@@ -79,5 +82,4 @@ class Dock(HUDObject):
         self.update_instance()
 
     def update(self):
-        if self.layout.update_needed:
-            self.layout.update()
+        self.layout.update()

@@ -66,6 +66,7 @@ class Huds():
             self.bottom_dock = Dock('hud', gui, orientation, location, layout)
             self.bottom_dock.set_owner(self)
             self.bottom_dock.set_anchor(base.pixel2d)
+            self.bottom_dock.compile(self.env)
             self.bottom_dock.create()
         else:
             self.bottom_dock = None

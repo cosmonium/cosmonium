@@ -54,7 +54,10 @@ class LayoutDockWidget(DockWidgetBase):
         self.sizer = self.widget
         self.frame = None
         self.widgets = widgets
-        self.update_needed = False
+
+    def compile(self, env):
+        for widget in self.widgets:
+            widget.compile(env)
 
     def create(self, dock: Dock, parent, skin) -> None:
         self.widget.create(dock, parent, skin)
@@ -85,8 +88,6 @@ class LayoutDockWidget(DockWidgetBase):
                 else:
                     borders = LVector4(self.decoration_size[0], self.decoration_size[0], 0, 0)
             widget.add_to(dock, self, borders, skin)
-            if widget.update_needed:
-                self.update_needed = True
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
         DockWidgetBase.add_to(self, dock, parent, borders, skin)
@@ -101,8 +102,7 @@ class LayoutDockWidget(DockWidgetBase):
     def update(self):
         has_changed = False
         for widget in self.widgets:
-            if widget.update_needed:
-                has_changed = widget.update() or has_changed
+            has_changed = widget.update() or has_changed
         if has_changed:
             self.update_layout()
         return has_changed

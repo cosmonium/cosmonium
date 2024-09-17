@@ -31,25 +31,23 @@ class TextDockWidget(DGuiDockWidget):
     def __init__(
             self,
             text: str,
-            data: str,
             align,
             proportions=None,
             alignments=None,
             borders=None,
             index=None):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
-        if data is not None:
-            self.data = data
-            # TODO: A non empty text is needed to retrieve a valid frameSize
-            self.text = "M"
-            self.update_needed = True
-        else:
-            self.data = None
-            self.text = text
+        self.text_source = text
         self.align = align
+        self.template = None
+        self.text = None
+
+    def compile(self, env):
+        self.template = env.create_template(self.text_source)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         label_element = UIElement('label', parent=parent.element)
+        self.text = self.template.render()
         label = DirectLabel(
             **skin.get_style(label_element),
             text=self.text,
@@ -59,11 +57,10 @@ class TextDockWidget(DGuiDockWidget):
 
     def update(self):
         has_changed = False
-        if self.data is not None:
-            text = base.data_provider.get_data(self.data)
-            if text != self.text:
-                self.widget.dgui_obj['text'] = text
-                self.widget.reset_frame_size()
-                self.text = text
-                has_changed = True
+        text = self.template.render()
+        if text != self.text:
+            self.widget.dgui_obj['text'] = text
+            self.widget.reset_frame_size()
+            self.text = text
+            has_changed = True
         return has_changed

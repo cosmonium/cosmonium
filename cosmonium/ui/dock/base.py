@@ -32,7 +32,6 @@ class DockWidgetBase:
         self.alignments = alignments
         self.borders = borders
         self.index = index
-        self.update_needed = False
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
         parent.sizer.add(
@@ -41,6 +40,9 @@ class DockWidgetBase:
             self.alignments,
             (self.borders + borders) if self.borders else borders,
             self.index)
+
+    def compile(self, env):
+        pass
 
     def update(self):
         return False

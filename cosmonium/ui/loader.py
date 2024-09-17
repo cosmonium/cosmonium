@@ -239,9 +239,8 @@ class UIConfigLoader:
         alignments = self.parse_alignments(data.get('align'))
         borders = self.parse_borders(data.get('borders'))
         text = data.get('text')
-        data_id = data.get('data')
         align = self.parse_text_align(data.get('align'))
-        text = TextDockWidget(text, data_id, align=align, alignments=alignments, borders=borders)
+        text = TextDockWidget(text, align=align, alignments=alignments, borders=borders)
         return text
 
     def load_widget_spacer(self, data):
