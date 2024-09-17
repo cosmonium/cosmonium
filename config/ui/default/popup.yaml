@@ -1,36 +1,36 @@
 popup:
 - title: '@select-name'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'center-selected'
 -
 - title: '_Info'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'gui-show-info'
 - title: '_Goto'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'goto-selected'
 - title: '_Follow'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'follow-selected'
 - title: 'S_ync'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'sync-selected'
 - title: "Surfaces"
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   menu: surfaces
 - title: "Orbiting bodies"
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   menu: orbiting-bodies
 - title: "Orbits"
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   menu: orbits
 - title: '_Edit'
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   event: 'gui-show-editor'
 - title: "More info"
-  visible: 'has-object-selected'
+  visible: 'engine.selected'
   menu: extra-info
-- visible: 'gui-menubar-hidden'
+- visible: 'not gui.menubar_shown'
 - title: "Show _menubar"
   event: 'gui-show-menubar'
-  visible: 'gui-menubar-hidden'
+  visible: 'not gui.menubar_shown'

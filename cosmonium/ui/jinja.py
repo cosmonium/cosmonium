@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 import jinja2
 
 from ..astro import bayer, units
+from ..bodyclass import bodyClasses
 from ..objects.star import Star
 from .. import settings
 from .. import utils
@@ -126,6 +127,12 @@ class AutopilotProvider:
         return self.engine.autopilot.current_interval.get_duration() - self.engine.autopilot.current_interval.get_t()
 
 
+class BodiesProvider:
+
+    def is_shown(self, body_class):
+        return bodyClasses.get_show(body_class)
+
+
 class CameraProvider:
     def __init__(self, engine):
         self.engine = engine
@@ -181,12 +188,31 @@ class EngineProvider:
         return self.engine.selected
 
     @property
+    def ship(self):
+        return self.engine.ship
+
+    @property
     def sync(self):
         return self.engine.sync
 
     @property
     def track(self):
         return self.engine.track
+
+
+class GuiProvider:
+    def __init__(self, gui):
+        self.gui = gui
+
+    @property
+    def menubar_shown(self):
+        return self.gui.menubar_shown
+
+
+class LabelsProvider:
+
+    def is_shown(self, body_class):
+        return bodyClasses.get_show_label(body_class)
 
 
 class NavProvider:
@@ -196,6 +222,12 @@ class NavProvider:
     @property
     def speed(self):
         return self.engine.nav.speed
+
+
+class OrbitsProvider:
+
+    def is_shown(self, body_class):
+        return bodyClasses.get_show_orbit(body_class)
 
 
 class ScalesProvider:
@@ -257,14 +289,18 @@ class TimeProvider:
 
 
 class JinjaEnv:
-    def __init__(self, engine):
+    def __init__(self, engine, gui):
         self.env = jinja2.Environment()
         self.env.globals = {
             'autopilot': AutopilotProvider(engine),
+            'bodies': BodiesProvider(),
             'camera': CameraProvider(engine),
             'clock': ClockProvider(),
             'engine': EngineProvider(engine),
+            'gui': GuiProvider(gui),
+            'labels': LabelsProvider(),
             'nav': NavProvider(engine),
+            'orbits': OrbitsProvider(),
             'scales': ScalesProvider(),
             'selected': SelectedProvider(engine),
             'settings': SettingsProvider(),

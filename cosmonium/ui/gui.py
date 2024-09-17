@@ -28,6 +28,7 @@ from .. import version
 #TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
+from .jinja import JinjaEnv
 from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .huds import Huds
@@ -109,13 +110,15 @@ class Gui(object):
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(base, base.messenger, self)
 
+        self.env = JinjaEnv(base, self)
+
         ui_config = self.load(config_file)
         self.skin = ui_config.skin
         self.translation = self.cosmonium.load_lang("ui", ui_config.locale)
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
 
-        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.skin)
+        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.env, self.skin)
         self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
         self.opened_windows = []
         self.browser = Browser(owner=self)
@@ -131,7 +134,7 @@ class Gui(object):
         self.about.set_text(about_text)
         self.filewindow = FileWindow('Select', owner=self)
 
-        self.menu_builder = MenuBuilder(self.translation, self.messenger, self.shortcuts, self.cosmonium.states_provider, self.cosmonium, self.mouse, self.browser)
+        self.menu_builder = MenuBuilder(self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser)
         self.menu_builder.add_named_menus(ui_config.named_menus)
         self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar))
         self.menubar.create(self.font, self.scale)
@@ -151,7 +154,7 @@ class Gui(object):
         return self
 
     def load(self, ui_config_file):
-        loader = UIConfigLoader()
+        loader = UIConfigLoader(self.env)
         return loader.load(ui_config_file)
 
     def set_nav(self, nav):

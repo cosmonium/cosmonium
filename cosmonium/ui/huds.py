@@ -26,8 +26,6 @@ from .dock.dock import Dock
 from .hud.fadetextline import FadeTextLine
 from .skin import UIElement
 
-from .jinja import JinjaEnv
-
 
 @dataclass
 class HudEntry:
@@ -36,10 +34,9 @@ class HudEntry:
 
 
 class Huds():
-    def __init__(self, gui, widgets, dock, skin):
+    def __init__(self, gui, widgets, dock, env, skin):
         self.owner = gui
         self.skin = skin
-        self.env = JinjaEnv(base)
         self.element = UIElement(None, class_='hud', id_='hud')
         self.widgets = widgets
         for anchor_name in self.widgets.keys():
@@ -54,7 +51,7 @@ class Huds():
             for widget in self.widgets[anchor_name]:
                 widget.set_owner(self)
                 widget.set_anchor(anchor)
-                widget.compile(self.env)
+                widget.compile(env)
                 widget.create()
         #TODO: Info should be moved out of HUD
         self.info = FadeTextLine('info', TextNode.ALeft, LVector2(0, -3), owner=self)
@@ -66,7 +63,7 @@ class Huds():
             self.bottom_dock = Dock('hud', gui, orientation, location, layout)
             self.bottom_dock.set_owner(self)
             self.bottom_dock.set_anchor(base.pixel2d)
-            self.bottom_dock.compile(self.env)
+            self.bottom_dock.compile(env)
             self.bottom_dock.create()
         else:
             self.bottom_dock = None

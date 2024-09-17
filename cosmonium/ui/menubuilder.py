@@ -57,11 +57,10 @@ class SubMenuEntry(NamedTuple):
 
 
 class MenuBuilder:
-    def __init__(self, translation, messenger, shortcuts, states_provider, engine, mouse, browser):
+    def __init__(self, translation, messenger, shortcuts, engine, mouse, browser):
         self.translation = translation
         self.messenger = messenger
         self.shortcuts = shortcuts
-        self.states_provider = states_provider
         self.engine = engine
         self.mouse = mouse
         self.browser = browser
@@ -108,7 +107,7 @@ class MenuBuilder:
             print(f"Text {text} not found")
         return text
 
-    def menu_event(self, text, state, event, condition=None, args=[]):
+    def menu_event(self, text, state, event, condition, args=[]):
         if text[0] == '@':
             text = self.get_auto_text(text[1:])
         shortcut = None #self.shortcuts.get_shortcut_for(event)
@@ -117,12 +116,12 @@ class MenuBuilder:
         else:
             full_text = text
         action = self.messenger.send
-        if event == 0 or (condition is not None and not condition):
+        if event == 0 or not condition:
             action = 0
         return (full_text, state, action, event, args)
 
-    def menu_submenu(self, text, submenu, condition=None):
-        if condition is None or condition:
+    def menu_submenu(self, text, submenu, condition):
+        if condition:
             if isinstance(submenu, str):
                 entries = self.get_auto_menu(submenu)
             else:
@@ -132,30 +131,17 @@ class MenuBuilder:
         return (text, 0, entries)
 
     def create_separator_entry(self, entry):
-        if entry.visible is not None:
-            visible = self.states_provider.get_state(entry.visible)
-        else:
-            visible = True
-        if visible:
+        if entry.visible():
             return 0
         else:
             return None
 
     def create_menu_entry(self, entry):
-        if entry.enabled is not None:
-            enabled = self.states_provider.get_state(entry.enabled)
-        else:
-            enabled = None
-        if entry.visible is not None:
-            visible = self.states_provider.get_state(entry.visible)
-        else:
-            visible = True
+        enabled = entry.enabled()
+        visible = entry.visible()
         if visible:
             if isinstance(entry, EventMenuEntry):
-                if entry.state is not None:
-                    state = self.states_provider.get_state(entry.state)
-                else:
-                    state = 0
+                state = entry.state()
                 return self.menu_event(self.translation.gettext(entry.text), state, entry.event, condition=enabled)
             else:
                 return self.menu_submenu(self.translation.gettext(entry.text), entry.entries, condition=enabled)

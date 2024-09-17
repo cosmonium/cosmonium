@@ -65,7 +65,6 @@ from .controllers.controllers import CartesianBodyMover
 from .camera import CameraHolder, CameraController, FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
 from .timecal import Time
 from .events import EventsDispatcher
-from .states import StatesProvider
 from .debug import Debug
 from .appstate import AppState
 from .ui.gui import Gui
@@ -501,13 +500,9 @@ class Cosmonium(CosmoniumBase):
         base.graphicsEngine.renderFrame()
         self.splash.close()
 
-        #TODO: Temporarily until state registration is split up between each class
-        self.states_provider = StatesProvider(self, self.time, self.observer, self.autopilot, self.debug)
-
         if self.gui is None:
             self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)
             self.mouse.set_ui(self.gui)
-        self.states_provider.gui = self.gui
 
         #TODO: Temporarily until event registration is split up between each class
         self.events_dispatcher = EventsDispatcher(self, self.time, self.observer, self.autopilot, self.gui, self.debug)

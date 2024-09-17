@@ -45,7 +45,8 @@ class UIConfig(NamedTuple):
 
 class UIConfigLoader:
 
-    def __init__(self):
+    def __init__(self, env):
+        self.env = env
         self.named_menus = {}
 
     def load(self, ui_config_file):
@@ -118,10 +119,22 @@ class UIConfigLoader:
     def load_menu_entry(self, data):
         if data is not None:
             text = data.get("title")
-            enabled = data.get('enabled')
-            visible = data.get('visible')
+            enabled_source = data.get('enabled')
+            if enabled_source is not None:
+                enabled = self.env.compile_expression(enabled_source)
+            else:
+                enabled = lambda: True
+            visible_source = data.get('visible')
+            if visible_source is not None:
+                visible = self.env.compile_expression(visible_source)
+            else:
+                visible = lambda: True
             if 'event' in data:
-                state = data.get('state')
+                state_source = data.get('state')
+                if state_source is not None:
+                    state = self.env.compile_expression(state_source)
+                else:
+                    state = lambda: 0
                 event = data.get("event")
                 menu = EventMenuEntry(text=text, state=state, event=event, enabled=enabled, visible=visible)
             elif 'menu' in data:
@@ -133,7 +146,7 @@ class UIConfigLoader:
             else:
                 menu = MenuSeparator(visible=visible)
         else:
-            menu = MenuSeparator(visible=None)
+            menu = MenuSeparator(visible=lambda: True)
         return menu
 
     def load_submenu(self, data):
