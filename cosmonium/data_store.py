@@ -1,28 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import Texture
-from .shaders.data_source.data_store import DataStoreManagerShaderDataSource, ParametersDataStoreShaderDataSource
 
 from collections import deque
+from panda3d.core import Texture
 import struct
+
+from .shaders.data_source.data_store import DataStoreManagerShaderDataSource, ParametersDataStoreShaderDataSource
 
 
 class PatchDataStoreManager:
@@ -80,6 +80,7 @@ class PatchDataStoreManager:
         for data_store in self.data_stores:
             data_store.update_patch(patch)
 
+
 class PatchParametersDataStore:
     def __init__(self):
         self.texture_data = None
@@ -101,20 +102,23 @@ class PatchParametersDataStore:
         self.pack_format = 'f' * self.data_size
 
     def init(self):
-        if self.texture_size == 0: return
+        if self.texture_size == 0:
+            return
         self.texture_data = Texture()
         self.texture_data.setup_1d_texture(self.texture_size, Texture.T_float, Texture.F_rgba32)
         self.texture_data.set_clear_color(0.0)
 
     def apply(self, instance):
-        if self.texture_size == 0: return
+        if self.texture_size == 0:
+            return
         instance.set_shader_input("data_store", self.texture_data)
 
     def clear(self):
         self.texture_data = None
 
     def update_patch(self, patch):
-        if self.texture_size == 0: return
+        if self.texture_size == 0:
+            return
         data = []
         for data_source in self.data_sources:
             data_source.collect_shader_data(data, patch)

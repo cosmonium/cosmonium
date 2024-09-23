@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -75,6 +75,7 @@ class PatchNoNeighbours(PatchNeighboursBase):
     def calc_outer_tessellation_level(self, update):
         pass
 
+
 class PatchNeighbours(PatchNeighboursBase):
     def __init__(self, patch):
         self.patch = patch
@@ -90,7 +91,7 @@ class PatchNeighbours(PatchNeighboursBase):
     def get_neighbours(self, face):
         return set(self.neighbours[face])
 
-    #TODO: This should be moved to QuadTreeNode
+    # TODO: This should be moved to QuadTreeNode
     def _collect_side_patches(self, result, side):
         if len(self.patch.children) != 0:
             (bl, br, tr, tl) = self.patch.children
@@ -155,7 +156,7 @@ class PatchNeighbours(PatchNeighboursBase):
     def get_neighbour_lower_lod(self, face):
         lower_lod = self.patch.lod
         for neighbour in self.neighbours[face]:
-            #print(neighbour.lod)
+            # print(neighbour.lod)
             lower_lod = min(lower_lod, neighbour.lod)
         return lower_lod
 
@@ -186,20 +187,20 @@ class PatchNeighbours(PatchNeighboursBase):
         opposite = self.opposite_face[face]
         for neighbour_patch in self.neighbours[face]:
             neighbours = neighbour_patch.neighbours.neighbours[opposite]
-            #print(f"Replace {self.patch} with {news} in {neighbours} of {neighbour_patch}")
+            # print(f"Replace {self.patch} with {news} in {neighbours} of {neighbour_patch}")
             try:
                 neighbours.remove(self.patch)
                 for new in news:
                     neighbours.add(new)
             except KeyError:
                 pass
-            #print("Result", neighbours)
+            # print("Result", neighbours)
 
     def merge_opposite_neighbours(self, face, olds):
         opposite = self.opposite_face[face]
         for neighbour_patch in self.neighbours[face]:
-            neighbours= neighbour_patch.neighbours.neighbours[opposite]
-            #print(f"Replace {olds} with {self.patch} in {neighbours} of {neighbour_patch}")
+            neighbours = neighbour_patch.neighbours.neighbours[opposite]
+            # print(f"Replace {olds} with {self.patch} in {neighbours} of {neighbour_patch}")
             found = False
             for old in olds:
                 try:
@@ -207,11 +208,11 @@ class PatchNeighbours(PatchNeighboursBase):
                     found = True
                 except KeyError:
                     pass
-            if found and not self.patch in neighbours:
-                    neighbours.add(self.patch)
-            #print("Result", neighbours)
+            if found and self.patch not in neighbours:
+                neighbours.add(self.patch)
+            # print("Result", neighbours)
 
-    #TODO: This should be moved to QuadTreeNode
+    # TODO: This should be moved to QuadTreeNode
     def _do_collect_children(self, result, side):
         if len(self.patch.children) != 0:
             (bl, br, tr, tl) = self.patch.children
@@ -252,12 +253,12 @@ class PatchNeighbours(PatchNeighboursBase):
         self.split_opposite_neighbours(self.EAST, [tr, br])
         self.split_opposite_neighbours(self.SOUTH, [bl, br])
         self.split_opposite_neighbours(self.WEST, [tl, bl])
-        for (i, new) in enumerate((tl, tr, br, bl)):
-            #text = ['tl', 'tr', 'br', 'bl']
-            #print("*** Child", text[i], '***')
+        for i, new in enumerate((tl, tr, br, bl)):
+            # text = ['tl', 'tr', 'br', 'bl']
+            # print("*** Child", text[i], '***')
             new.remove_detached_neighbours()
             new.calc_outer_tessellation_level(update)
-        #print("Neighbours")
+        # print("Neighbours")
         for neighbour in neighbours:
             neighbour.remove_detached_neighbours()
             neighbour.calc_outer_tessellation_level(update)
@@ -266,7 +267,7 @@ class PatchNeighbours(PatchNeighboursBase):
     def merge_neighbours(self, update):
         north = self.collect_neighbours(self.NORTH)
         north_children = self.collect_children(self.NORTH)
-        east =  self.collect_neighbours(self.EAST)
+        east = self.collect_neighbours(self.EAST)
         east_children = self.collect_children(self.EAST)
         south = self.collect_neighbours(self.SOUTH)
         south_children = self.collect_children(self.SOUTH)
@@ -276,22 +277,22 @@ class PatchNeighbours(PatchNeighboursBase):
         self.merge_opposite_neighbours(self.NORTH, north_children)
         self.merge_opposite_neighbours(self.EAST, east_children)
         self.merge_opposite_neighbours(self.SOUTH, south_children)
-        self.merge_opposite_neighbours(self.WEST,  west_children)
+        self.merge_opposite_neighbours(self.WEST, west_children)
         self.calc_outer_tessellation_level(update)
         for neighbour in chain(north, east, south, west):
             neighbour.calc_outer_tessellation_level(update)
 
     def calc_outer_tessellation_level(self, update):
         for face in range(4):
-            #print("Check face", self.text[face])
+            # print("Check face", self.text[face])
             lod = self.get_neighbour_lower_lod(face)
             delta = self.patch.lod - lod
             outer_level = max(0, self.patch.max_level - delta)
             new_level = 1 << outer_level
             dest = self.conv[face]
             if self.patch.tessellation_outer_level[dest] != new_level:
-                #print("Change from", self.tessellation_outer_level[dest], "to", new_level)
-                if not self.patch in update:
+                # print("Change from", self.tessellation_outer_level[dest], "to", new_level)
+                if self.patch not in update:
                     update.append(self.patch)
             self.patch.tessellation_outer_level[dest] = new_level
-            #print("Level", self.text[face], ":", delta, 1 << outer_level)
+            # print("Level", self.text[face], ":", delta, 1 << outer_level)

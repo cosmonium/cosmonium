@@ -1,31 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
-from .patchedshapes import CullingFrustum, QuadTreeNode, PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer, PatchFactory
+from .geometry import geometry
+from .patchedshapes import CullingFrustum, QuadTreeNode
+from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer, PatchFactory
 from .patchneighbours import PatchNeighboursBase
 from .textures import TexCoord
-from .geometry import geometry
-from .opengl import OpenGLConfig
 from . import settings
 
 
@@ -44,10 +43,9 @@ class Tile(PatchBase):
         self.y0 = y
         self.x1 = x + self.size
         self.y1 = y + self.size
-        self.flat_coord = LVector4(self.x0 * surface_scale,
-                                    self.y1 * surface_scale,
-                                    self.size * surface_scale,
-                                    -self.size * surface_scale)
+        self.flat_coord = LVector4(
+            self.x0 * surface_scale, self.y1 * surface_scale, self.size * surface_scale, -self.size * surface_scale
+        )
         self.create_quadtree_node(min_height, max_height)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
@@ -70,6 +68,7 @@ class Tile(PatchBase):
     def get_scale(self):
         return LVector3(self.size, self.size, 1.0)
 
+
 class GpuPatchTerrainLayer(PatchLayer):
     template = None
 
@@ -82,16 +81,28 @@ class GpuPatchTerrainLayer(PatchLayer):
         self.instance.set_pos(patch.x0, patch.y0, 0.0)
         self.instance.set_scale(*patch.get_scale())
 
+
 class MeshTerrainLayer(PatchLayer):
     template = {}
+
     def create_instance(self, patch):
-        tile_id = str(patch.size) + '-' + str(patch.tessellation_inner_level) + '-' + '-'.join(map(str, patch.tessellation_outer_level))
-        #print(tile_id)
+        tile_id = (
+            str(patch.size)
+            + '-'
+            + str(patch.tessellation_inner_level)
+            + '-'
+            + '-'.join(map(str, patch.tessellation_outer_level))
+        )
+        # print(tile_id)
         if tile_id not in self.template:
-            self.template[tile_id] = geometry.Tile(1.0,
-                                                   geometry.TessellationInfo(patch.tessellation_inner_level, patch.tessellation_outer_level),
-                                                   use_patch_adaptation=settings.use_patch_adaptation, use_patch_skirts=settings.use_patch_skirts,
-                                                   skirt_size=patch.size / 33, skirt_uv=1 / 33)
+            self.template[tile_id] = geometry.Tile(
+                1.0,
+                geometry.TessellationInfo(patch.tessellation_inner_level, patch.tessellation_outer_level),
+                use_patch_adaptation=settings.use_patch_adaptation,
+                use_patch_skirts=settings.use_patch_skirts,
+                skirt_size=patch.size / 33,
+                skirt_uv=1 / 33,
+            )
         template = self.template[tile_id]
         self.instance = NodePath('tile')
         template.instanceTo(self.instance)
@@ -105,21 +116,25 @@ class MeshTerrainLayer(PatchLayer):
 
 
 class TerrainLayerFactoryInterface:
+
     def create_layer(self, patch):
         raise NotImplementedError()
 
 
 class MeshTerrainLayerFactory(TerrainLayerFactoryInterface):
+
     def create_layer(self, patch):
         return MeshTerrainLayer()
 
 
 class GpuPatchTerrainLayerFactory(TerrainLayerFactoryInterface):
+
     def create_layer(self, patch):
         return GpuPatchTerrainLayer()
 
 
 class TileFactory(PatchFactory):
+
     def __init__(self, heightmap, tile_density, size, terrain_layer_factory):
         self.heightmap = heightmap
         self.tile_density = tile_density
@@ -140,7 +155,7 @@ class TileFactory(PatchFactory):
             if patch is not None:
                 patch_data = self.heightmap.get_patch_data(patch, strict=False)
                 if patch_data is not None:
-                    #TODO: This should be done inside the heightmap patch
+                    # TODO: This should be done inside the heightmap patch
                     min_height = patch_data.min_height * height_scale + height_offset
                     max_height = patch_data.max_height * height_scale + height_offset
                     mean_height = patch_data.mean_height * height_scale + height_offset
@@ -153,13 +168,17 @@ class TileFactory(PatchFactory):
     def create_patch(self, parent, lod, face, x, y):
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
-        #print("Create tile", patch.lod, patch.x, patch.y, patch.size, patch.scale, min_height, max_height, patch.flat_coord)
+        # print(
+        #     "Create tile", patch.lod, patch.x, patch.y, patch.size,
+        #     patch.scale, min_height, max_height, patch.flat_coord)
         for layer_factory in self.layers_factories:
             layer = layer_factory.create_layer(patch)
             patch.add_layer(layer)
         return patch
 
+
 class TiledShape(PatchedShapeBase):
+
     def __init__(self, factory, scale, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.scale = scale
@@ -173,7 +192,15 @@ class TiledShape(PatchedShapeBase):
         transform_mat = cam_transform_mat * transform_mat
         near = camera.lens.get_near()
         far = camera.lens.get_far()
-        self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.owner.model_body_center_offset, settings.shift_patch_origin)
+        self.culling_frustum = CullingFrustum(
+            camera.lens,
+            transform_mat,
+            near,
+            far,
+            settings.offset_body_center,
+            self.owner.model_body_center_offset,
+            settings.shift_patch_origin,
+        )
 
     def parametric_to_shape_coord(self, x, y):
         return (x / self.scale, y / self.scale)
@@ -240,7 +267,7 @@ class TiledShape(PatchedShapeBase):
         pass
 
     def add_root_patches(self, patch, update):
-        #print("Create root patches", patch.centre, self.scale)
+        # print("Create root patches", patch.centre, self.scale)
         self.add_root_patch(patch.x - 1, patch.y - 1)
         self.add_root_patch(patch.x, patch.y - 1)
         self.add_root_patch(patch.x + 1, patch.y - 1)

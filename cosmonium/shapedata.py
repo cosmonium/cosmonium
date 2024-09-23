@@ -1,27 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LVector2
 
-from .textures import TextureBase
 from .dircontext import defaultDirContext
+from .textures import TextureBase
+
 
 class ShapeData:
     def __init__(self, name):
@@ -42,6 +43,7 @@ class ShapeData:
 
     def clear(self):
         pass
+
 
 class TextureShapeDataBase(ShapeData):
     def __init__(self, name, width, height):
@@ -84,6 +86,7 @@ class TextureShapeDataBase(ShapeData):
     def clear(self):
         self.texture = None
         self.data_ready = False
+
 
 class TextureShapeData(TextureShapeDataBase):
     def __init__(self, name, width, height, data_source):

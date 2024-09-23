@@ -1,29 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from direct.task.Task import gather
+from direct.task.TaskManagerGlobal import taskMgr
 
 from ..foundation import VisibleObject
 
 
 class CompositeShapeObject(VisibleObject):
+
     def __init__(self, name):
         VisibleObject.__init__(self, name)
         self.components = []
@@ -60,7 +61,7 @@ class CompositeShapeObject(VisibleObject):
     def task_done(self, task):
         self.task = None
 
-    #TODO: Temporarily stolen from foundation to be able to spawn task
+    # TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.task:
             self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
@@ -70,7 +71,7 @@ class CompositeShapeObject(VisibleObject):
         for component in self.components:
             tasks.append(component.create_instance(scene_anchor))
         await gather(*tasks)
-        #TODO: Needed for VisibleObject methods
+        # TODO: Needed for VisibleObject methods
         self.instance = scene_anchor.instance.attach_new_node("dummy")
         self.instance_ready = True
 

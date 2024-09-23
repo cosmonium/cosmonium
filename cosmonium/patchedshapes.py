@@ -1,68 +1,76 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from direct.showbase.ShowBaseGlobal import globalClock
+from math import cos, sin, pi, sqrt, copysign, log
 from panda3d.core import OmniBoundingVolume, GeomNode
-from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d, LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
+from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d
+from panda3d.core import LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
 from panda3d.core import NodePath
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
 
-from .shapes.base import Shape
-from .patchneighbours import PatchNeighbours
 from .data_store import PatchDataStoreManager
 from .datasource import DataSource
-from .textures import TexCoord
-from .pstats import pstat
 from .geometry import geometry
+from .mathutil.ellipse import EllipseCircumRamanujan2ndApprox
+from .patchneighbours import PatchNeighbours
+from .pstats import pstat
+from .shapes.base import Shape
+from .textures import TexCoord
 from . import settings
 
-from .mathutil.ellipse import EllipseCircumRamanujan2ndApprox
-
-from math import cos, sin, pi, sqrt, copysign, log
 
 try:
     from cosmonium_engine import QuadTreeNode
     from cosmonium_engine import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
     from cosmonium_engine import LodResult
-    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
+    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl
+    from cosmonium_engine import VertexSizeLodControl, VertexSizeMaxDistanceLodControl
 except ImportError as e:
     print("WARNING: Could not load Patch C implementation, fallback on python implementation")
     print("\t", e)
     from .pyrendering.quadtree import QuadTreeNode
-    from .pyrendering.cullingfrustum import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum
+    from .pyrendering.cullingfrustum import CullingFrustumBase, CullingFrustum, HorizonCullingFrustum  # noqa: F401
     from .pyrendering.lodresult import LodResult
-    from .pyrendering.lodcontrol import LodControl, TextureLodControl, TextureOrVertexSizeLodControl, VertexSizeLodControl, VertexSizeMaxDistanceLodControl
+    from .pyrendering.lodcontrol import LodControl, TextureLodControl, TextureOrVertexSizeLodControl  # noqa: F401
+    from .pyrendering.lodcontrol import VertexSizeLodControl, VertexSizeMaxDistanceLodControl  # noqa: F401
 
-class BoundingBoxShape():
+
+class BoundingBoxShape:
     state = None
+
     def __init__(self, box):
         self.box = box
         self.instance = None
 
     def create_instance(self):
-        if self.instance is not None: return
+        if self.instance is not None:
+            return
         self.instance = geometry.BoundingBoxGeom(self.box)
         if BoundingBoxShape.state is None:
-            BoundingBoxShape.state = RenderState.make(ColorAttrib.make_flat(LColor(0.3, 1.0, 0.5, 1.0)),
-                                                      RenderModeAttrib.make(RenderModeAttrib.M_wireframe),
-                                                      CullFaceAttrib.make(CullFaceAttrib.M_cull_clockwise),
-                                                      ShaderAttrib.make().set_shader_auto(True))
+            BoundingBoxShape.state = RenderState.make(
+                ColorAttrib.make_flat(LColor(0.3, 1.0, 0.5, 1.0)),
+                RenderModeAttrib.make(RenderModeAttrib.M_wireframe),
+                CullFaceAttrib.make(CullFaceAttrib.M_cull_clockwise),
+                ShaderAttrib.make().set_shader_auto(True),
+            )
         self.instance.set_state(self.state)
         self.instance.set_light_off(True)
         return self.instance
@@ -71,6 +79,7 @@ class BoundingBoxShape():
         if self.instance is not None:
             self.instance.remove_node()
             self.instance = None
+
 
 class PatchLayer:
     def __init__(self):
@@ -93,6 +102,7 @@ class PatchLayer:
             self.instance.removeNode()
             self.instance = None
 
+
 class PatchFactory:
     def __init__(self):
         self.heightmap = None
@@ -112,7 +122,7 @@ class PatchFactory:
     def set_owner(self, owner):
         self.owner = owner
 
-    #TODO: To move to proper class
+    # TODO: To move to proper class
     def get_patch_limits(self, patch):
         min_height = 0.0
         max_height = 0.0
@@ -120,7 +130,7 @@ class PatchFactory:
         if self.heightmap is not None and patch is not None:
             patch_data = self.heightmap.get_patch_data(patch, strict=False)
             if patch_data is not None:
-                #TODO: This should be done inside the heightmap patch
+                # TODO: This should be done inside the heightmap patch
                 height_scale = self.heightmap.height_scale
                 height_offset = self.heightmap.height_offset
                 min_height = patch_data.min_height * height_scale + height_offset
@@ -132,6 +142,7 @@ class PatchFactory:
 
     def create_patch(self, parent, lod, x, y):
         pass
+
 
 class PatchBase(Shape):
     coord = None
@@ -148,7 +159,7 @@ class PatchBase(Shape):
         self.tessellation_outer_level = LVecBase4i(density, density, density, density)
         self.neighbours = PatchNeighbours(self)
         self.layers = []
-        self.max_level = int(log(density, 2)) #TODO: should be done properly with checks
+        self.max_level = int(log(density, 2))  # TODO: should be done properly with checks
         self.flat_coord = None
         self.bounds_shape = None
         self.children = []
@@ -164,7 +175,7 @@ class PatchBase(Shape):
             if settings.debug_lod_show_bb:
                 if self.bounds_shape.instance is None:
                     self.bounds_shape.create_instance()
-                    #TODO: This is more that ugly...
+                    # TODO: This is more that ugly...
                     self.bounds_shape.instance.reparent_to(self.owner.instance)
             else:
                 self.bounds_shape.remove_instance()
@@ -226,8 +237,9 @@ class PatchBase(Shape):
         self.quadtree_node.set_shown(True)
 
     def update_instance(self, shape):
-        if self.instance is None: return
-        #print("Update", self.str_id())
+        if self.instance is None:
+            return
+        # print("Update", self.str_id())
         for layer in self.layers:
             layer.update_instance(self)
 
@@ -259,6 +271,7 @@ class PatchBase(Shape):
     def __repr__(self):
         return f"{id(self):x} {self.str_id()}"
 
+
 class SpherePatch(PatchBase):
     coord = TexCoord.Cylindrical
 
@@ -283,10 +296,7 @@ class SpherePatch(PatchBase):
         long1 = self.x1 * long_scale
         lat0 = self.y1 * lat_scale
         lat1 = self.y0 * lat_scale
-        self.flat_coord = LVector4((long0 % 1000.0),
-                                    (lat0 % 1000.0),
-                                    (long1 - long0),
-                                    (lat1 - lat0))
+        self.flat_coord = LVector4((long0 % 1000.0), (lat0 % 1000.0), (long1 - long0), (lat1 - lat0))
         self.create_quadtree_node(min_height, max_height, mean_height, axes)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
@@ -298,23 +308,27 @@ class SpherePatch(PatchBase):
         scale = max(*axes)
         offset_vector = geometry.UVPatchOffsetVector(axes / scale, self.x0, self.y0, self.x1, self.y1)
         if self.lod > 0:
-            bounds = geometry.UVPatchAABB(axes / scale,
-                                          min_height, max_height,
-                                          self.x0, self.y0, self.x1, self.y1,
-                                          offset=self.offset)
+            bounds = geometry.UVPatchAABB(
+                axes / scale, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
+            )
         else:
             bounds = geometry.halfSphereAABB(mean_height, self.x == 1, self.offset)
-        centre =  geometry.UVPatchPoint(axes / scale,
-                                        0.5, 0.5,
-                                        self.x0, self.y0,
-                                        self.x1, self.y1)
+        centre = geometry.UVPatchPoint(axes / scale, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
         centre += centre.normalized() * mean_height
-        v_perimeter = EllipseCircumRamanujan2ndApprox(sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale) / nb_rings / 2
-        h_perimeter = EllipseCircumRamanujan2ndApprox(axes[0] * cos(theta) / scale, axes[1] * cos(theta) / scale) / nb_sectors
-        #print("L", length, v_perimeter, h_perimeter)
-        #print("V", centre, sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale)
+        v_perimeter = (
+            EllipseCircumRamanujan2ndApprox(sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale)
+            / nb_rings
+            / 2
+        )
+        h_perimeter = (
+            EllipseCircumRamanujan2ndApprox(axes[0] * cos(theta) / scale, axes[1] * cos(theta) / scale) / nb_sectors
+        )
+        # print("L", length, v_perimeter, h_perimeter)
+        # print("V", centre, sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale)
         length = min(v_perimeter, h_perimeter)
-        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, offset_vector, self.offset, bounds)
+        self.quadtree_node = QuadTreeNode(
+            self, self.lod, self.density, centre, length, offset_vector, self.offset, bounds
+        )
 
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.x, self.y)
@@ -349,18 +363,26 @@ class SpherePatch(PatchBase):
         v = (y - self.y0) / dy
         return (u, v)
 
+
 class SpherePatchLayer(PatchLayer):
     def create_instance(self, patch):
-        self.instance = geometry.UVPatch(patch.owner.axes / patch.owner.radius,
-                                         patch.density, patch.density,
-                                         patch.x0, patch.y0, patch.x1, patch.y1,
-                                         offset=patch.offset)
+        self.instance = geometry.UVPatch(
+            patch.owner.axes / patch.owner.radius,
+            patch.density,
+            patch.density,
+            patch.x0,
+            patch.y0,
+            patch.x1,
+            patch.y1,
+            offset=patch.offset,
+        )
         self.instance.reparent_to(patch.instance)
 
     def update_instance(self, patch):
         if self.instance is not None and patch.shown:
-                self.remove_instance()
-                self.create_instance(patch)
+            self.remove_instance()
+            self.create_instance(patch)
+
 
 class SquarePatchBase(PatchBase):
 
@@ -376,13 +398,13 @@ class SquarePatchBase(PatchBase):
         return ['Right', 'Left', 'Back', 'Front', 'Top', 'Bottom'][face]
 
     rotations = [LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond()]
-    rotations_mat = [LMatrix4(), LMatrix4(),LMatrix4(), LMatrix4(), LMatrix4(), LMatrix4()]
-    rotations[0].setHpr(LVector3d(0, 0, 90)) #right
-    rotations[1].setHpr(LVector3d(0, 0, -90)) #left
-    rotations[2].setHpr(LVector3d(0, 90, 0)) #back
-    rotations[3].setHpr(LVector3d(0, -90, 0)) #face
-    rotations[4].setHpr(LVector3d(180, 0, 0)) #top
-    rotations[5].setHpr(LVector3d(180, 180, 0)) #bottom
+    rotations_mat = [LMatrix4(), LMatrix4(), LMatrix4(), LMatrix4(), LMatrix4(), LMatrix4()]
+    rotations[0].setHpr(LVector3d(0, 0, 90))  # right
+    rotations[1].setHpr(LVector3d(0, 0, -90))  # left
+    rotations[2].setHpr(LVector3d(0, 90, 0))  # back
+    rotations[3].setHpr(LVector3d(0, -90, 0))  # face
+    rotations[4].setHpr(LVector3d(180, 0, 0))  # top
+    rotations[5].setHpr(LVector3d(180, 180, 0))  # bottom
     for i in range(6):
         LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
 
@@ -404,30 +426,34 @@ class SquarePatchBase(PatchBase):
         long1 = self.x1 * long_scale / 4
         lat0 = self.y1 * lat_scale / 4
         lat1 = self.y0 * lat_scale / 4
-        self.flat_coord = LVector4((long0 % 1000.0),
-                                    (lat0 % 1000.0),
-                                    (long1 - long0),
-                                    (lat1 - lat0))
+        self.flat_coord = LVector4((long0 % 1000.0), (lat0 % 1000.0), (long1 - long0), (lat1 - lat0))
         self.create_quadtree_node(min_height, max_height, mean_height, axes)
         self.bounds_shape = BoundingBoxShape(self.quadtree_node.bounds)
 
     def create_quadtree_node(self, min_height, max_height, mean_height, axes):
         nb_sectors = 4 << self.lod
-        length = (1.0 + mean_height)  * 2 * pi / nb_sectors
+        length = (1.0 + mean_height) * 2 * pi / nb_sectors
         scale = max(*axes)
         orientation = self.rotations[self.face]
         orientation_mat = self.rotations_mat[self.face]
         rotated_axes = orientation.conjugate().xform(axes)
-        rotated_axes = LVector3d(abs(rotated_axes[0]),
-                                 abs(rotated_axes[1]),
-                                 abs(rotated_axes[2]))
+        rotated_axes = LVector3d(abs(rotated_axes[0]), abs(rotated_axes[1]), abs(rotated_axes[2]))
         bounds = self.create_bounding_volume(rotated_axes / scale, min_height, max_height)
         bounds.xform(orientation_mat)
         centre = self.create_centre(rotated_axes / scale)
         centre = orientation.xform(centre)
         face_offset_vector = self.face_offset_vector(rotated_axes / scale)
         offset_vector = orientation.xform(face_offset_vector)
-        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, length, offset_vector, self.offset if self.offset is not None else 0.0, bounds)
+        self.quadtree_node = QuadTreeNode(
+            self,
+            self.lod,
+            self.density,
+            centre,
+            length,
+            offset_vector,
+            self.offset if self.offset is not None else 0.0,
+            bounds,
+        )
 
     def face_offset_vector(self, x, y):
         return None
@@ -445,7 +471,7 @@ class SquarePatchBase(PatchBase):
         return "%d - %d %d %d" % (self.lod, self.face, self.x, self.y)
 
     def set_texture_to_lod(self, texture, texture_stage, texture_lod, patched):
-        #TODO: Refactor into Patch
+        # TODO: Refactor into Patch
         if texture_lod == self.lod and patched:
             return
         delta = self.lod - texture_lod
@@ -473,6 +499,7 @@ class SquarePatchBase(PatchBase):
         v = (y - self.y0) / dy
         return (u, v)
 
+
 class NormalizedSquarePatch(SquarePatchBase):
     coord = TexCoord.NormalizedCube
 
@@ -480,36 +507,39 @@ class NormalizedSquarePatch(SquarePatchBase):
         return geometry.NormalizedSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
     def create_bounding_volume(self, axes, min_height, max_height):
-        return geometry.NormalizedSquarePatchAABB(axes, min_height, max_height,
-                                                  self.x0, self.y0, self.x1, self.y1,
-                                                  offset=self.offset)
+        return geometry.NormalizedSquarePatchAABB(
+            axes, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
+        )
 
     def create_centre(self, axes):
-        return geometry.NormalizedSquarePatchPoint(axes,
-                                                  0.5, 0.5,
-                                                  self.x0, self.y0, self.x1, self.y1)
+        return geometry.NormalizedSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
+
 
 class NormalizedSquarePatchLayer(PatchLayer):
     def create_instance(self, patch):
         orientation = patch.rotations[patch.face]
         rotated_axes = orientation.conjugate().xform(patch.owner.axes)
-        rotated_axes = LVector3d(abs(rotated_axes[0]),
-                                 abs(rotated_axes[1]),
-                                 abs(rotated_axes[2]))
-        self.instance = geometry.NormalizedSquarePatch(rotated_axes / patch.owner.radius,
-                                                       geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
-                                                       patch.x0, patch.y0, patch.x1, patch.y1,
-                                                       has_offset=patch.offset is not None,
-                                                       offset=patch.offset if patch.offset is not None else 0.0,
-                                                       use_patch_adaptation=settings.use_patch_adaptation,
-                                                       use_patch_skirts=settings.use_patch_skirts)
+        rotated_axes = LVector3d(abs(rotated_axes[0]), abs(rotated_axes[1]), abs(rotated_axes[2]))
+        self.instance = geometry.NormalizedSquarePatch(
+            rotated_axes / patch.owner.radius,
+            geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
+            patch.x0,
+            patch.y0,
+            patch.x1,
+            patch.y1,
+            has_offset=patch.offset is not None,
+            offset=patch.offset if patch.offset is not None else 0.0,
+            use_patch_adaptation=settings.use_patch_adaptation,
+            use_patch_skirts=settings.use_patch_skirts,
+        )
         self.instance.reparent_to(patch.instance)
         self.instance.set_quat(LQuaternion(*orientation))
 
     def update_instance(self, patch):
         if self.instance is not None and patch.shown:
-                self.remove_instance()
-                self.create_instance(patch)
+            self.remove_instance()
+            self.create_instance(patch)
+
 
 class SquaredDistanceSquarePatch(SquarePatchBase):
     coord = TexCoord.SqrtCube
@@ -518,29 +548,31 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         return geometry.SquaredDistanceSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
     def create_bounding_volume(self, axes, min_height, max_height):
-        return geometry.SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
-                                                       self.x0, self.y0, self.x1, self.y1,
-                                                       offset=self.offset)
+        return geometry.SquaredDistanceSquarePatchAABB(
+            axes, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
+        )
 
     def create_centre(self, axes):
-        return geometry.SquaredDistanceSquarePatchPoint(axes,
-                                                       0.5, 0.5,
-                                                       self.x0, self.y0, self.x1, self.y1)
+        return geometry.SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
+
 
 class SquaredDistanceSquarePatchLayer(PatchLayer):
     def create_instance(self, patch):
         orientation = patch.rotations[patch.face]
         rotated_axes = orientation.conjugate().xform(patch.owner.axes)
-        rotated_axes = LVector3d(abs(rotated_axes[0]),
-                                 abs(rotated_axes[1]),
-                                 abs(rotated_axes[2]))
-        self.instance = geometry.SquaredDistanceSquarePatch(rotated_axes / patch.owner.radius,
-                                                            geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
-                                                            patch.x0, patch.y0, patch.x1, patch.y1,
-                                                            has_offset=patch.offset is not None,
-                                                            offset=patch.offset,
-                                                            use_patch_adaptation=settings.use_patch_adaptation,
-                                                            use_patch_skirts=settings.use_patch_skirts)
+        rotated_axes = LVector3d(abs(rotated_axes[0]), abs(rotated_axes[1]), abs(rotated_axes[2]))
+        self.instance = geometry.SquaredDistanceSquarePatch(
+            rotated_axes / patch.owner.radius,
+            geometry.TessellationInfo(patch.density, patch.tessellation_outer_level),
+            patch.x0,
+            patch.y0,
+            patch.x1,
+            patch.y1,
+            has_offset=patch.offset is not None,
+            offset=patch.offset,
+            use_patch_adaptation=settings.use_patch_adaptation,
+            use_patch_skirts=settings.use_patch_skirts,
+        )
 
         self.instance.reparent_to(patch.instance)
         orientation = patch.rotations[patch.face]
@@ -548,13 +580,14 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
 
     def update_instance(self, patch):
         if self.instance is not None and patch.shown:
-                self.remove_instance()
-                self.create_instance(patch)
+            self.remove_instance()
+            self.create_instance(patch)
 
 
 class PatchedShapeBase(Shape):
     patchable = True
     no_bounds = False
+
     def __init__(self, factory=None, heightmap=None, lod_control=None):
         Shape.__init__(self)
         if factory is not None:
@@ -579,12 +612,12 @@ class PatchedShapeBase(Shape):
 
     def set_factory(self, factory, heightmap, lod_control):
         self.factory = factory
-        #TODO: Should not be done here
+        # TODO: Should not be done here
         self.factory.set_lod_control(lod_control)
         self.factory.set_heightmap(heightmap)
         self.factory.set_owner(self)
 
-    #TODO: Ugly workaround until we get rid of surface in PatchFactory
+    # TODO: Ugly workaround until we get rid of surface in PatchFactory
     def set_owner(self, owner):
         Shape.set_owner(self, owner)
         self.factory.set_surface(self.parent)
@@ -707,7 +740,12 @@ class PatchedShapeBase(Shape):
 
     def update_model_body_center_offset(self):
         if self.parent.body.support_offset_body_center and settings.offset_body_center:
-            self.model_body_center_offset = self.parent.body.anchor.get_absolute_orientation().conjugate().xform(-self.parent.body.anchor.vector_to_obs) * self.parent.body.anchor._height_under
+            self.model_body_center_offset = (
+                self.parent.body.anchor.get_absolute_orientation()
+                .conjugate()
+                .xform(-self.parent.body.anchor.vector_to_obs)
+                * self.parent.body.anchor._height_under
+            )
             self.model_body_center_offset /= self.parent.radius
         else:
             self.model_body_center_offset = LVector3d()
@@ -726,9 +764,9 @@ class PatchedShapeBase(Shape):
 
     def place_patches(self, owner):
         if self.frustum_node is not None:
-            #Position the frustum relative to the body
-            #If lod checking is enabled, the position should be 0, the position of the camera
-            #If lod checking is frozen, we use the old relative position
+            # Position the frustum relative to the body
+            # If lod checking is enabled, the position should be 0, the position of the camera
+            # If lod checking is frozen, we use the old relative position
             self.frustum_node.set_pos(*self.frustum_rel_position)
             # The cullling frustum is scaled with the scene_scale_factor, the generated geometry is then too small
             # we must undo this scaling
@@ -753,25 +791,25 @@ class PatchedShapeBase(Shape):
             self.frustum_node.set_quat(LQuaternion(*self.owner.context.observer.get_absolute_orientation()))
             self.frustum_node.set_color(LColor(1, 0, 0, 1))
             self.frustum_node.set_light_off(True)
-            #The frustum position is updated in place_patches()
+            # The frustum position is updated in place_patches()
 
     @pstat
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         if settings.debug_lod_freeze:
             return [], []
         if self.instance is None:
-            return  [], []
+            return [], []
         min_radius = self.parent.body.surface.get_min_radius()
         if distance_to_obs < min_radius:
             print("Too low !")
-            return  [], []
+            return [], []
         self.update_model_body_center_offset()
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         (tangent, binormal, normal) = self.parent.body.get_tangent_plane_under(camera_pos)
         surface_point = self.parent.body.get_point_under(camera_pos)
         direction = camera_pos - surface_point
-        #print(direction.dot(normal), direction.length())
-        #print(direction.dot(normal), direction.dot(normal) / self.parent.height_scale)
+        # print(direction.dot(normal), direction.length())
+        # print(direction.dot(normal), direction.dot(normal) / self.parent.height_scale)
         altitude_to_ground = direction.dot(normal) / self.parent.height_scale
         self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
         self.create_frustum_node(self.owner.scene_anchor)
@@ -781,33 +819,46 @@ class PatchedShapeBase(Shape):
         self.to_remove = []
         process_nb = 0
         self.new_max_lod = 0
-        frame = globalClock.getFrameCount()
+        frame = globalClock.get_frame_count()
         if appearance is not None and appearance.texture is not None:
             self.lod_control.set_texture_size(appearance.texture.source.texture_size)
         else:
             self.lod_control.set_texture_size(0)
         lod_result = LodResult()
         for patch in self.root_patches:
-            patch.quadtree_node.check_lod(lod_result, self.culling_frustum, LPoint2d(*coord), LPoint3d(model_camera_pos), LVector3d(model_camera_vector), altitude_to_ground, pixel_size, self.lod_control)
+            patch.quadtree_node.check_lod(
+                lod_result,
+                self.culling_frustum,
+                LPoint2d(*coord),
+                LPoint3d(model_camera_pos),
+                LVector3d(model_camera_vector),
+                altitude_to_ground,
+                pixel_size,
+                self.lod_control,
+            )
         lod_result.sort_by_distance()
         to_show = []
         update = []
         for node in lod_result.to_split:
             patch = node.patch
             process_nb += 1
-            if settings.debug_lod_split_merge: print(frame, "Split", patch.str_id())
+            if settings.debug_lod_split_merge:
+                print(frame, "Split", patch.str_id())
             self.split_patch(patch)
             patch.split_neighbours(update)
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
                 linked_object.remove_patch_instance(patch)
             for child in patch.children:
-                child.quadtree_node.check_visibility(self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size)
-                #print(child.str_id(), child.visible)
+                child.quadtree_node.check_visibility(
+                    self.culling_frustum, coord, model_camera_pos, model_camera_vector, altitude_to_ground, pixel_size
+                )
+                # print(child.str_id(), child.visible)
                 if self.lod_control.should_instanciate(child.quadtree_node, 0, 0):
                     to_show.append(child)
                     self.create_patch_instance(child)
-                    if settings.debug_lod_split_merge: print(frame, "Show child", child.str_id(), child.instance_ready)
+                    if settings.debug_lod_split_merge:
+                        print(frame, "Show child", child.str_id(), child.instance_ready)
                     for linked_object in self.linked_objects:
                         linked_object.create_patch_instance(child)
             self.remove_patch_instance(patch)
@@ -817,7 +868,8 @@ class PatchedShapeBase(Shape):
         for node in lod_result.to_show:
             patch = node.patch
             to_show.append(patch)
-            if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
+            if settings.debug_lod_split_merge:
+                print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
             if patch.lod == 0:
                 self.add_root_patches(patch, update)
             self.create_patch_instance(patch)
@@ -825,19 +877,23 @@ class PatchedShapeBase(Shape):
                 linked_object.create_patch_instance(patch)
         for node in lod_result.to_remove:
             patch = node.patch
-            if settings.debug_lod_split_merge: print(frame, "Remove", patch.str_id(), patch.quadtree_node.patch_in_view)
+            if settings.debug_lod_split_merge:
+                print(frame, "Remove", patch.str_id(), patch.quadtree_node.patch_in_view)
             for linked_object in self.linked_objects:
                 linked_object.remove_patch_instance(patch)
             self.remove_patch_instance(patch)
         for node in lod_result.to_merge:
             patch = node.patch
-            #Dampen high frequency split-merge anomaly
-            if frame - patch.last_split < 5: continue
-            if settings.debug_lod_split_merge: print(frame, "Merge", patch.str_id(), patch.quadtree_node.visible)
+            # Dampen high frequency split-merge anomaly
+            if frame - patch.last_split < 5:
+                continue
+            if settings.debug_lod_split_merge:
+                print(frame, "Merge", patch.str_id(), patch.quadtree_node.visible)
             self.merge_patch(patch)
             patch.merge_neighbours(update)
             if patch.quadtree_node.visible:
-                if settings.debug_lod_split_merge: print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
+                if settings.debug_lod_split_merge:
+                    print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
                 to_show.append(patch)
                 self.create_patch_instance(patch)
                 for linked_object in self.linked_objects:
@@ -851,17 +907,18 @@ class PatchedShapeBase(Shape):
             patch.remove_children()
         self.max_lod = self.new_max_lod
         self.update_patch_instances(update)
-        #Return True when new instances have been created
+        # Return True when new instances have been created
         return to_show, update
 
     def _find_patch_at(self, patch, x, y):
         if x >= patch.x0 and x <= patch.x1 and y >= patch.y0 and y <= patch.y1:
-            #print("In", patch, patch.x0, patch.x1, patch.y0, patch.y1)
+            # print("In", patch, patch.x0, patch.x1, patch.y0, patch.y1)
             if len(patch.children) == 0:
                 return patch
             for child in patch.children:
                 result = self._find_patch_at(child, x, y)
-                if result is not None: return result
+                if result is not None:
+                    return result
             return patch
         return None
 
@@ -875,13 +932,18 @@ class PatchedShapeBase(Shape):
             pad = ''
         print(pad, patch.str_id(), hex(id(patch)))
         print(pad, '  Visible' if patch.quadtree_node.visible else '  Not visible', patch.quadtree_node.patch_in_view)
-        if patch.shown: print(pad, '  Shown')
-        if not patch.instance_ready: print(pad, '  Instance not ready')
-        if patch.task is not None: print(pad, '  Task running')
-        #print(pad, '  Distance', patch.distance)
+        if patch.shown:
+            print(pad, '  Shown')
+        if not patch.instance_ready:
+            print(pad, '  Instance not ready')
+        if patch.task is not None:
+            print(pad, '  Task running')
+        # print(pad, '  Distance', patch.distance)
         print(pad, "  Tessellation", '-'.join(map(str, patch.tessellation_outer_level)))
         for i in range(4):
-            print(pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours.neighbours[i])))
+            print(
+                pad, "  Neighbours", list(map(lambda x: hex(id(x)) + ' ' + x.str_id(), patch.neighbours.neighbours[i]))
+            )
 
     def _dump_tree(self, patch):
         self.dump_patch(patch)
@@ -899,8 +961,9 @@ class PatchedShapeBase(Shape):
     def _dump_stats(self, stats_array, patch):
         stats_array[0] += patch.quadtree_node.visible
         stats_array[1] += patch.shown
-        stats_array[7] += (patch.quadtree_node.visible and not patch.instance_ready)
-        if patch.task is not None: stats_array[8] += 1
+        stats_array[7] += patch.quadtree_node.visible and not patch.instance_ready
+        if patch.task is not None:
+            stats_array[8] += 1
         stats_array[9] += 1
         for child in patch.children:
             self._dump_stats(stats_array, child)
@@ -916,6 +979,7 @@ class PatchedShapeBase(Shape):
         print("Instance not ready:  ", stats_array[7])
         print("Tasks running:       ", stats_array[8])
 
+
 class EllipsoidPatchedShape(PatchedShapeBase):
     offset = True
     no_bounds = True
@@ -927,20 +991,41 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     def create_culling_frustum(self, scene_manager, camera):
         min_radius = self.parent.body.surface.get_min_radius()
         max_radius = self.parent.body.surface.get_max_radius()
-        altitude_to_min_radius = (self.parent.body.anchor.distance_to_obs - min_radius)
+        altitude_to_min_radius = self.parent.body.anchor.distance_to_obs - min_radius
         cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
         transform_mat = LMatrix4()
         transform = self.instance.get_net_transform()
         transform_mat.invert_from(transform.get_mat())
         transform_mat = cam_transform_mat * transform_mat
-        near = 1.e-6
+        near = 1.0e-6
         if settings.use_horizon_culling:
-            self.culling_frustum = HorizonCullingFrustum(camera.lens, transform_mat, near, max_radius, altitude_to_min_radius, self.parent.body.scene_anchor.scene_scale_factor,
-                                                         self.max_lod, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin,
-                                                         settings.cull_far_patches, settings.cull_far_patches_threshold)
+            self.culling_frustum = HorizonCullingFrustum(
+                camera.lens,
+                transform_mat,
+                near,
+                max_radius,
+                altitude_to_min_radius,
+                self.parent.body.scene_anchor.scene_scale_factor,
+                self.max_lod,
+                settings.offset_body_center,
+                self.model_body_center_offset,
+                settings.shift_patch_origin,
+                settings.cull_far_patches,
+                settings.cull_far_patches_threshold,
+            )
         else:
-            far = (self.parent.body.anchor.distance_to_obs + max_radius) * self.parent.body.scene_anchor.scene_scale_factor
-            self.culling_frustum = CullingFrustum(camera.lens, transform_mat, near, far, settings.offset_body_center, self.model_body_center_offset, settings.shift_patch_origin)
+            far = (
+                self.parent.body.anchor.distance_to_obs + max_radius
+            ) * self.parent.body.scene_anchor.scene_scale_factor
+            self.culling_frustum = CullingFrustum(
+                camera.lens,
+                transform_mat,
+                near,
+                far,
+                settings.offset_body_center,
+                self.model_body_center_offset,
+                settings.shift_patch_origin,
+            )
 
     def place_patches(self, owner):
         PatchedShapeBase.place_patches(self, owner)
@@ -958,33 +1043,36 @@ class EllipsoidPatchedShape(PatchedShapeBase):
     def xform_cam_to_model(self, camera_pos):
         position = self.parent.body.anchor.get_local_position()
         orientation = self.parent.body.anchor.get_absolute_orientation()
-        #TODO: Should receive as parameter !
+        # TODO: Should receive as parameter !
         camera_vector = self.owner.context.observer.get_camera_vector()
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.parent.height_scale)
         # TODO: Retrieve parametric coordinates here
         (x, y, distance) = (0, 0, 0)
+        distance
         return (model_camera_pos, model_camera_vector, (x, y))
 
     def local_to_model(self, point, position, orientation, scale):
         model_point = orientation.conjugate().xform(point - position) / scale
         return model_point
 
+
 class PatchedSpherePatchFactory(PatchFactory):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
-        patch = SpherePatch(parent, lod, density, x, y, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
+        patch = SpherePatch(
+            parent, lod, density, x, y, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes
+        )
         patch.add_layer(SpherePatchLayer())
-        #TODO: Temporary or make right
+        # TODO: Temporary or make right
         patch.owner = self.owner
         return patch
 
+
 class PatchedSphereShape(EllipsoidPatchedShape):
     def create_root_patches(self):
-        self.root_patches = [self.create_patch(None, 0, -1, 0, 0),
-                             self.create_patch(None, 0, -1, 1, 0)
-                            ]
+        self.root_patches = [self.create_patch(None, 0, -1, 0, 0), self.create_patch(None, 0, -1, 1, 0)]
         for patch in self.root_patches:
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
@@ -994,7 +1082,7 @@ class PatchedSphereShape(EllipsoidPatchedShape):
         return child
 
     def split_patch(self, patch):
-        #bl, br, tr, tl
+        # bl, br, tr, tl
         self.create_child_patch(patch, 0, 0)
         self.create_child_patch(patch, 1, 0)
         self.create_child_patch(patch, 1, 1)
@@ -1011,6 +1099,7 @@ class PatchedSphereShape(EllipsoidPatchedShape):
                 return result
         return None
 
+
 class PatchedSquareShapeBase(EllipsoidPatchedShape):
     def __init__(self, factory, heightmap=None, lod_control=None):
         EllipsoidPatchedShape.__init__(self, factory, heightmap, lod_control)
@@ -1023,14 +1112,14 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         front = self.create_patch(None, 0, SquarePatchBase.FRONT, 0, 0)
         top = self.create_patch(None, 0, SquarePatchBase.TOP, 0, 0)
         bottom = self.create_patch(None, 0, SquarePatchBase.BOTTOM, 0, 0)
-        self.root_patches = [ right, left, back, front, top, bottom ]
-        #north, east, south, west
-#         right.set_all_neighbours([front], [bottom], [back], [top])
-#         left.set_all_neighbours([], [], [], [])
-#         back.set_all_neighbours([], [], [top], [])
-#         front.set_all_neighbours([bottom], [right], [top], [left])
-#         top.set_all_neighbours([back], [left], [front], [right])
-#         bottom.set_all_neighbours([front], [right], [back], [left])
+        self.root_patches = [right, left, back, front, top, bottom]
+        # north, east, south, west
+        #         right.set_all_neighbours([front], [bottom], [back], [top])
+        #         left.set_all_neighbours([], [], [], [])
+        #         back.set_all_neighbours([], [], [top], [])
+        #         front.set_all_neighbours([bottom], [right], [top], [left])
+        #         top.set_all_neighbours([back], [left], [front], [right])
+        #         bottom.set_all_neighbours([front], [right], [back], [left])
         for patch in self.root_patches:
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
@@ -1040,7 +1129,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         return child
 
     def split_patch(self, patch):
-        #bl, br, tr, tl
+        # bl, br, tr, tl
         self.create_child_patch(patch, 0, 0)
         self.create_child_patch(patch, 1, 0)
         self.create_child_patch(patch, 1, 1)
@@ -1059,38 +1148,38 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         ax = abs(x)
         ay = abs(y)
         az = abs(z)
-        p = LPoint3d(x, y, z)
+        # p = LPoint3d(x, y, z)
         if ax >= ay and ax >= az:
             if x >= 0.0:
                 face = SquarePatchBase.RIGHT
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(-z, y, x)
                 (u, v) = (u, v)
             else:
                 face = SquarePatchBase.LEFT
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(z, y, -x)
                 (u, v) = (u, v)
         elif ay >= x and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, z, -y)
                 (u, v) = (u, 1.0 - v)
             else:
                 face = SquarePatchBase.BACK
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -z, y)
                 (u, v) = (u, 1.0 - v)
         elif az >= ax and az >= ay:
             if z >= 0.0:
                 face = SquarePatchBase.TOP
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, y, z)
                 (u, v) = (1.0 - u, 1.0 - v)
             else:
                 face = SquarePatchBase.BOTTOM
-                #(u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
+                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -y, -z)
                 (u, v) = (1.0 - u, 1.0 - v)
         return (face, u, v)
@@ -1105,7 +1194,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         # yp = sin(theta) * sin(phi)
         # zp = -cos(theta)
         (face, x, y) = self.xyz_to_face_xy(xp, yp, zp)
-        #print(face, x, y)
+        # print(face, x, y)
         return (face, x, y)
 
     def find_patch_at(self, coord):
@@ -1118,16 +1207,30 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
             print("Unknown face", face)
             return None
 
+
 class NormalizedSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
-        patch = NormalizedSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
+        patch = NormalizedSquarePatch(
+            face,
+            x,
+            y,
+            parent,
+            lod,
+            density,
+            self.surface.height_scale,
+            min_height,
+            max_height,
+            mean_height,
+            self.owner.axes,
+        )
         patch.add_layer(NormalizedSquarePatchLayer())
-        #TODO: Temporary or make right
+        # TODO: Temporary or make right
         patch.owner = self.owner
         return patch
+
 
 class NormalizedSquareShape(PatchedSquareShapeBase):
     def xyz_to_xy(self, x, y, z):
@@ -1136,16 +1239,30 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
+
 class SquaredDistanceSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         (min_height, max_height, mean_height) = self.get_patch_limits(parent)
-        patch = SquaredDistanceSquarePatch(face, x, y, parent, lod, density, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes)
+        patch = SquaredDistanceSquarePatch(
+            face,
+            x,
+            y,
+            parent,
+            lod,
+            density,
+            self.surface.height_scale,
+            min_height,
+            max_height,
+            mean_height,
+            self.owner.axes,
+        )
         patch.add_layer(SquaredDistanceSquarePatchLayer())
-        #TODO: Temporary or make right
+        # TODO: Temporary or make right
         patch.owner = self.owner
         return patch
+
 
 class SquaredDistanceSquareShape(PatchedSquareShapeBase):
     def xyz_to_xy(self, x, y, z):
@@ -1164,6 +1281,7 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
+
 class PatchedShapeDataSource(DataSource):
     def __init__(self, shape):
         DataSource.__init__(self, 'shape')
@@ -1172,7 +1290,8 @@ class PatchedShapeDataSource(DataSource):
     def apply(self, shape, instance):
         if self.shape.data_store is not None:
             self.shape.data_store.apply(instance)
-    
+
+
 class PatchedShapePatchDataSource(DataSource):
     def __init__(self, shape):
         DataSource.__init__(self, 'patch')

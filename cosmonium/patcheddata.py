@@ -1,27 +1,29 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import LVector2, AsyncFuture
 
 from .datasource import DataSource
 from .textures import TexCoord
+
 
 class PatchData:
     def __init__(self, parent, patch, width, height, overlap):
@@ -54,7 +56,7 @@ class PatchData:
     def calc_scale_and_offset(self, shape_patch):
         delta = shape_patch.lod - self.data_lod
         scale = 1 << delta
-        #TODO: This should be moved into the patch
+        # TODO: This should be moved into the patch
         if shape_patch.coord == TexCoord.Cylindrical:
             x_tex = (shape_patch.x // scale) * scale
             y_tex = (shape_patch.y // scale) * scale
@@ -70,7 +72,10 @@ class PatchData:
             y_delta = (shape_patch.y - self.data_patch.y) / self.data_patch.size
         r_scale_x = self.r_width / self.width
         r_scale_y = self.r_height / self.height
-        texture_offset = LVector2((self.overlap + 0.5) / self.width + x_delta * r_scale_x, (self.overlap + 0.5) / self.height + y_delta * r_scale_y)
+        texture_offset = LVector2(
+            (self.overlap + 0.5) / self.width + x_delta * r_scale_x,
+            (self.overlap + 0.5) / self.height + y_delta * r_scale_y,
+        )
         texture_scale = LVector2(r_scale_x / scale, r_scale_y / scale)
         return texture_offset, texture_scale
 
@@ -89,7 +94,7 @@ class PatchData:
 
     def load(self, tasks_tree, patch):
         if len(self.awaitables) == 0:
-            task = taskMgr.add(self.load_wrapper(tasks_tree, patch))
+            taskMgr.add(self.load_wrapper(tasks_tree, patch))
         future = AsyncFuture()
         self.awaitables.append(future)
         return future
@@ -127,6 +132,7 @@ class PatchData:
         self.texture_scale = LVector2(self.r_width / self.width, self.r_height / self.height)
         self.loaded = True
 
+
 class PatchedData(DataSource):
     def __init__(self, name, size, overlap, max_lod=100):
         DataSource.__init__(self, name)
@@ -145,7 +151,8 @@ class PatchedData(DataSource):
         if not strict:
             while patch is not None:
                 patch_data = self.map_patch_data.get(patch.str_id(), None)
-                if patch_data is not None: break
+                if patch_data is not None:
+                    break
                 patch = patch.parent
         else:
             patch_data = self.map_patch_data.get(patch.str_id(), None)
@@ -155,7 +162,8 @@ class PatchedData(DataSource):
         pass
 
     def create(self, patch):
-        if patch.str_id() in self.map_patch_data: return
+        if patch.str_id() in self.map_patch_data:
+            return
         patch_data = self.do_create_patch_data(patch)
         self.map_patch_data[patch.str_id()] = patch_data
 

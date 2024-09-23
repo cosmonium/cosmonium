@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from panda3d.core import LQuaternion, LQuaterniond
 from panda3d.core import LPoint3d, LVector3d
@@ -24,7 +23,8 @@ from panda3d.core import NodePath, ModelPool, Filename
 
 from ..dircontext import defaultDirContext
 from ..parameters import ParametersGroup, AutoUserParameter, UserParameter
-#TODO: There shouldn't be a dependency towards astro
+
+# TODO: There shouldn't be a dependency towards astro
 from ..astro import units
 
 from .base import Shape
@@ -32,7 +32,19 @@ from .base import Shape
 
 class MeshShape(Shape):
     deferred_instance = True
-    def __init__(self, model, offset=None, rotation=None, scale=None, auto_scale_mesh=True, flatten=True, panda=False, attribution=None, context=defaultDirContext):
+
+    def __init__(
+        self,
+        model,
+        offset=None,
+        rotation=None,
+        scale=None,
+        auto_scale_mesh=True,
+        flatten=True,
+        panda=False,
+        attribution=None,
+        context=defaultDirContext,
+    ):
         Shape.__init__(self)
         self.model = model
         self.attribution = attribution
@@ -74,10 +86,23 @@ class MeshShape(Shape):
 
     def get_user_parameters(self):
         group = ParametersGroup("Mesh")
-        group.add_parameter(AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3))
-        group.add_parameter( UserParameter('Rotation', self.set_rotation, self.get_rotation, AutoUserParameter.TYPE_VEC, [-180, 180], nb_components=3))
+        group.add_parameter(
+            AutoUserParameter('Offset', 'offset', self, AutoUserParameter.TYPE_VEC, [-10, 10], nb_components=3)
+        )
+        group.add_parameter(
+            UserParameter(
+                'Rotation',
+                self.set_rotation,
+                self.get_rotation,
+                AutoUserParameter.TYPE_VEC,
+                [-180, 180],
+                nb_components=3,
+            )
+        )
         if not self.auto_scale_mesh:
-            group.add_parameter(AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3))
+            group.add_parameter(
+                AutoUserParameter('Scale', 'scale', self, AutoUserParameter.TYPE_VEC, [0.001, 10], nb_components=3)
+            )
         return group
 
     def is_spherical(self):
@@ -99,9 +124,11 @@ class MeshShape(Shape):
     async def create_instance(self):
         self.instance = NodePath('mesh-holder')
         mesh = await self.load()
-        if mesh is None: return None
-        #The shape has been removed from the view while the mesh was loaded
-        if self.instance is None: return
+        if mesh is None:
+            return None
+        # The shape has been removed from the view while the mesh was loaded
+        if self.instance is None:
+            return
         self.mesh = mesh
         if self.auto_scale_mesh:
             (l, r) = mesh.getTightBounds()

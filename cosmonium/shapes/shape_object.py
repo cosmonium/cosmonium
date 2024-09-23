@@ -1,39 +1,42 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
+from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.Task import shield
+from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import NodePath
 from panda3d.core import OmniBoundingVolume
 
-from ..foundation import VisibleObject
 from ..datasource import DataSourcesHandler
-from ..shaders.base import AutoShader
-from ..shadows import MultiShadows
+from ..foundation import VisibleObject
 from ..parameters import ParametersGroup
-
+from ..shaders.base import AutoShader
+from ..shaders.lighting.scattering import NoScattering
+from ..shadows import MultiShadows
 from .. import settings
-from cosmonium.shaders.lighting.scattering import NoScattering
 
 
 class ShapeObject(VisibleObject):
-    default_camera_mask = VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
+    default_camera_mask = (
+        VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
+    )
+
     def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
         VisibleObject.__init__(self, name)
         self.sources = DataSourcesHandler("shape")
@@ -71,7 +74,7 @@ class ShapeObject(VisibleObject):
             group.add_parameters(self.shape.get_user_parameters())
         if self.appearance is not None:
             group.add_parameters(self.appearance.get_user_parameters())
-        #TODO: DataSourcesHandler should have an iterator interface
+        # TODO: DataSourcesHandler should have an iterator interface
         for source in self.sources.sources:
             group.add_parameters(source.get_user_parameters())
         return group
@@ -95,7 +98,7 @@ class ShapeObject(VisibleObject):
             self.sources.add_source(self.shape.get_data_source())
             if shape.patchable:
                 self.patch_sources.add_source(self.shape.get_patch_data_source())
-            #Not using add source as some dependencies of the appearance can also be sources
+            # Not using add source as some dependencies of the appearance can also be sources
             if shape.patchable:
                 self.appearance.add_as_source(self.patch_sources)
             else:
@@ -159,7 +162,7 @@ class ShapeObject(VisibleObject):
         self.update_shader()
         self.sources.remove_source_by_name('scattering')
         if self.instance is not None:
-            #scattering_source.un_apply(self.instance)
+            # scattering_source.un_apply(self.instance)
             pass
 
     def is_flat(self):
@@ -171,13 +174,17 @@ class ShapeObject(VisibleObject):
     def task_done(self, task):
         self.task = None
 
-    #TODO: Temporarily stolen from foundation to be able to spawn task
+    # TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
-            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), sort=settings.shape_jobs_task_sort, uponDeath=self.task_done)
+            self.task = taskMgr.add(
+                self.create_instance(self.owner.scene_anchor),
+                sort=settings.shape_jobs_task_sort,
+                uponDeath=self.task_done,
+            )
 
     async def create_instance(self, scene_anchor):
-        #TODO: Temporarily here until foundation.show() is corrected
+        # TODO: Temporarily here until foundation.show() is corrected
         if scene_anchor.instance is None:
             print("NO INSTANCE FOR", self, self.owner.get_name())
             return
@@ -190,9 +197,9 @@ class ShapeObject(VisibleObject):
         if shape_instance is None:
             print("ERROR: Could not create the shape instance")
             return
-        #The shape has been removed from the view while the mesh was loaded
+        # The shape has been removed from the view while the mesh was loaded
         if self.instance is None:
-            #TODO: We should probably call shape.remove_instance() here
+            # TODO: We should probably call shape.remove_instance() here
             return
         shape_instance.reparent_to(self.instance)
         self.shape.set_clickable(self.clickable)
@@ -200,9 +207,9 @@ class ShapeObject(VisibleObject):
         self.instance.hide(self.AllCamerasMask)
         self.instance.show(self.default_camera_mask)
         if self.appearance is not None:
-            #TODO: should be done somewhere else
+            # TODO: should be done somewhere else
             self.appearance.bake()
-        #TODO: Should be moved to shape_task
+        # TODO: Should be moved to shape_task
         if self.context.observer.has_scattering:
             self.context.observer.scattering.add_attenuated_object(self)
         self.instance.set_scale(self.get_scale())
@@ -219,7 +226,7 @@ class ShapeObject(VisibleObject):
         if self.physics is not None and self.context.physics:
             if self.physics == 'mesh':
                 physics_instances = self.context.physics.build_from_geom(shape_instance, dynamic=False, compress=False)
-                #physics_instance.set_scale(self.get_scale())
+                # physics_instance.set_scale(self.get_scale())
             self.context.physics.add_objects(self, physics_instances)
 
     def configure_render_order(self):
@@ -229,7 +236,7 @@ class ShapeObject(VisibleObject):
         pass
 
     def create_shadow_caster_for(self, light_source):
-        if not light_source.source in self.shadow_casters:
+        if light_source.source not in self.shadow_casters:
             shadow_caster = self.do_create_shadow_caster_for(light_source)
             self.shadow_casters[light_source.source] = shadow_caster
             if not shadow_caster.is_analytic():
@@ -257,7 +264,7 @@ class ShapeObject(VisibleObject):
 
     async def patch_task(self, patch):
         if settings.debug_shape_task:
-            print(globalClock.getFrameCount(), "START", patch.str_id(), patch.instance_ready)
+            print(globalClock.get_frame_count(), "START", patch.str_id(), patch.instance_ready)
         if self.shape.task is not None:
             await shield(self.shape.task)
         await self.patch_sources.load(patch)
@@ -272,11 +279,11 @@ class ShapeObject(VisibleObject):
             patch.patch_done(early=False)
             self.shape.patch_done(patch, early=False)
         if settings.debug_shape_task:
-            print(globalClock.getFrameCount(), "DONE", patch.str_id())
+            print(globalClock.get_frame_count(), "DONE", patch.str_id())
 
     async def shape_task(self, shape):
         if settings.debug_shape_task:
-            print(globalClock.getFrameCount(), "START", shape.str_id(), shape.instance_ready)
+            print(globalClock.get_frame_count(), "START", shape.str_id(), shape.instance_ready)
         await self.sources.load(shape)
         if shape.instance is not None:
             self.sources.apply(shape)
@@ -287,7 +294,7 @@ class ShapeObject(VisibleObject):
                 self.shader.apply(self.shape.instance)
             shape.shape_done()
         if settings.debug_shape_task:
-            print(globalClock.getFrameCount(), "DONE", shape.str_id())
+            print(globalClock.get_frame_count(), "DONE", shape.str_id())
 
     def schedule_jobs(self, patches):
         if self.shape.patchable:
@@ -296,14 +303,18 @@ class ShapeObject(VisibleObject):
                     self.patch_sources.create(patch)
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
-                    patch.task = taskMgr.add(self.patch_task(patch), sort=settings.shape_jobs_task_sort, uponDeath=patch.task_done)
+                    patch.task = taskMgr.add(
+                        self.patch_task(patch), sort=settings.shape_jobs_task_sort, uponDeath=patch.task_done
+                    )
         if not self.shape.instance_ready and self.shape.task is None:
-            self.shape.task = taskMgr.add(self.shape_task(self.shape), sort=settings.shape_jobs_task_sort, uponDeath=self.shape.task_done)
+            self.shape.task = taskMgr.add(
+                self.shape_task(self.shape), sort=settings.shape_jobs_task_sort, uponDeath=self.shape.task_done
+            )
 
     def early_apply_patch(self, patch):
         if patch.lod > 0:
             if settings.debug_shape_task:
-                print(globalClock.getFrameCount(), "EARLY", patch.str_id(), patch.instance_ready)
+                print(globalClock.get_frame_count(), "EARLY", patch.str_id(), patch.instance_ready)
             patch.instance_ready = True
             self.patch_sources.early_apply(patch)
             patch.patch_done(early=True)
@@ -320,21 +331,33 @@ class ShapeObject(VisibleObject):
             self.sources.apply(self.shape)
 
     def update_lod(self, camera_pos, camera_rot):
-        if not self.instance_ready: return
-        to_show, to_update = self.shape.update_lod(self.context.observer.get_local_position(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size, self.appearance)
+        if not self.instance_ready:
+            return
+        to_show, to_update = self.shape.update_lod(
+            self.context.observer.get_local_position(),
+            self.owner.anchor.distance_to_obs,
+            self.context.observer.pixel_size,
+            self.appearance,
+        )
         self.schedule_jobs(to_show)
         for patch in to_update:
             if patch.instance is not None:
                 self.patch_sources.apply(patch)
         if self.appearance is not None:
-            self.appearance.update_lod(self.shape, self.owner.get_apparent_radius(), self.owner.anchor.distance_to_obs, self.context.observer.pixel_size)
+            self.appearance.update_lod(
+                self.shape,
+                self.owner.get_apparent_radius(),
+                self.owner.anchor.distance_to_obs,
+                self.context.observer.pixel_size,
+            )
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.context.observer.apply_scattering > 0:
             self.context.observer.scattering.add_attenuated_object(self)
         if self.shape.instance is not None:
             self.sources.update(self.shape, camera_pos, camera_rot)
-        if not self.instance_ready: return
+        if not self.instance_ready:
+            return
         self.shape.update_instance(scene_manager, camera_pos, camera_rot)
         if self.shape.patchable:
             self.shape.place_patches(self.owner)
@@ -346,7 +369,8 @@ class ShapeObject(VisibleObject):
 
     def remove_instance(self):
         # This method could be called even if the instance does not exist
-        if self.instance is None: return
+        if self.instance is None:
+            return
         # Remove the shadows data sources as shadows won't be checked anymore
         self.shadows.clear_shadows()
         self.sources.clear(self.shape, self.shape.instance)
@@ -362,6 +386,6 @@ class ShapeObject(VisibleObject):
         self.first_patch = True
 
     def remove_patch(self, patch):
-        #TODO: This should be reworked and moved into a dedicated class
-        #print("CLEAR", patch.str_id())
+        # TODO: This should be reworked and moved into a dedicated class
+        # print("CLEAR", patch.str_id())
         self.patch_sources.clear(patch, patch.instance)

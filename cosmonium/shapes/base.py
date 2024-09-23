@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from panda3d.core import LVecBase3, LVector3
 from panda3d.core import BitMask32
@@ -25,7 +24,7 @@ from panda3d.core import CollisionSphere, CollisionNode
 from .. import settings
 
 
-#TODO: Should inherit from VisibleObject !
+# TODO: Should inherit from VisibleObject !
 class Shape:
     patchable = False
     has_lights = False
@@ -41,7 +40,7 @@ class Shape:
         self.task = None
         self.clickable = False
         self.attribution = None
-        #TODO: Used to fix ring textures
+        # TODO: Used to fix ring textures
         self.vanish_borders = False
 
     def get_name(self):
@@ -80,7 +79,7 @@ class Shape:
             self.instance = None
         self.instance_ready = False
         if self.task is not None:
-            #print("KILL TASK", self.str_id())
+            # print("KILL TASK", self.str_id())
             self.task.cancel()
             self.task = None
 
@@ -88,7 +87,7 @@ class Shape:
         cs = CollisionSphere(0, 0, 0, radius)
         self.collision_solid = self.instance.attachNewNode(CollisionNode('cnode'))
         self.collision_solid.node().addSolid(cs)
-        #self.collision_solid.show()
+        # self.collision_solid.show()
 
     def show(self):
         if self.instance:
@@ -139,7 +138,7 @@ class Shape:
                 self.collision_solid.node().set_into_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
             else:
                 self.collision_solid.node().set_into_collide_mask(BitMask32.all_off())
-            #The instance itself is not clickable
+            # The instance itself is not clickable
             self.instance.set_collide_mask(BitMask32.all_off())
         else:
             if clickable:
