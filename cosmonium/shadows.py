@@ -1,23 +1,24 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
+from direct.showbase.ShowBaseGlobal import globalClock
+from math import asin, pi
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput, Camera
 from panda3d.core import Texture, OrthographicLens
 from panda3d.core import LVector3, LPoint3, LVector3d, LPoint4, Mat4
@@ -34,10 +35,12 @@ from .shaders.shadows.ellipsoid import ShaderSphereShadow
 
 from . import settings
 
-from math import asin, pi
-
 
 class ShadowMapBase:
+
+    def __init__(self):
+        self.base = base
+
     def create_render_buffer(self, size_x, size_y, depth_bits, depth_tex):
         # Boilerplate code to create a render buffer producing only a depth texture
         window_props = WindowProperties.size(size_x, size_y)
@@ -62,8 +65,8 @@ class ShadowMapBase:
         buffer_props.set_stereo(False)
         buffer_props.set_stencil_bits(0)
 
-        self.win = base.win
-        self.graphics_engine = base.graphics_engine
+        self.win = self.base.win
+        self.graphics_engine = self.base.graphics_engine
         buffer = self.graphics_engine.make_output(
             self.win.get_pipe(), "pssm_buffer", 1,
             buffer_props, window_props, GraphicsPipe.BF_refuse_window,
@@ -86,15 +89,18 @@ class ShadowMapBase:
             buffer.setClearColorActive(True)
 
         buffer.set_sort(-1000)
-        #buffer.disable_clears()
+        # buffer.disable_clears()
         buffer.get_display_region(0).disable_clears()
         buffer.get_overlay_display_region().disable_clears()
         buffer.get_overlay_display_region().set_active(False)
 
         return buffer
 
+
 class ShadowMap(ShadowMapBase):
+
     def __init__(self, size):
+        ShadowMapBase.__init__(self)
         self.size = size
         self.buffer = None
         self.depthmap = None
@@ -107,8 +113,8 @@ class ShadowMap(ShadowMapBase):
         props.set_rgb_color(0)
         props.set_alpha_bits(0)
         props.set_depth_bits(1)
-        win = base.win
-        self.buffer = base.graphics_engine.make_output(
+        win = self.base.win
+        self.buffer = self.base.graphics_engine.make_output(
             win.get_pipe(), "shadows-buffer", -2,
             props, winprops,
             GraphicsPipe.BF_refuse_window,
@@ -118,8 +124,8 @@ class ShadowMap(ShadowMapBase):
             print("Video driver cannot create an offscreen buffer.")
             return
         self.depthmap = Texture()
-        self.buffer.add_render_texture(self.depthmap, GraphicsOutput.RTM_bind_or_copy,
-                                       GraphicsOutput.RTP_depth_stencil)
+        self.buffer.add_render_texture(
+            self.depthmap, GraphicsOutput.RTM_bind_or_copy,  GraphicsOutput.RTP_depth_stencil)
 
         self.depthmap.set_minfilter(Texture.FT_shadow)
         self.depthmap.set_magfilter(Texture.FT_shadow)
@@ -138,14 +144,15 @@ class ShadowMap(ShadowMapBase):
         # and will be automatically updated
 
         self.node = self.cam.node()
-        self.node.setInitialState(RenderState.make(CullFaceAttrib.make_reverse(),
-                                                   ColorWriteAttrib.make(ColorWriteAttrib.M_none),
-                                                   ))
+        self.node.setInitialState(RenderState.make(
+            CullFaceAttrib.make_reverse(),
+            ColorWriteAttrib.make(ColorWriteAttrib.M_none),
+            ))
         if settings.debug_shadow_frustum:
             self.node.show_frustum()
 
     def align_cam(self):
-        mvp = Mat4(base.render.get_transform(self.cam).get_mat() * self.get_lens().get_projection_mat())
+        mvp = Mat4(self.base.render.get_transform(self.cam).get_mat() * self.get_lens().get_projection_mat())
         center = mvp.xform(LPoint4(0, 0, 0, 1)) * 0.5 + 0.5
         texel_size = 1.0 / self.size
         offset_x = center.x % texel_size
@@ -184,11 +191,14 @@ class ShadowMap(ShadowMapBase):
         self.cam = None
         self.depthmap = None
         self.buffer.set_active(False)
-        base.graphics_engine.remove_window(self.buffer)
+        self.base.graphics_engine.remove_window(self.buffer)
         self.buffer = None
 
+
 class PSSMShadowMap(ShadowMapBase):
+
     def __init__(self, size):
+        ShadowMapBase.__init__(self)
         self.size = size
         self.buffer = None
         self.depthmap = None
@@ -223,8 +233,8 @@ class PSSMShadowMap(ShadowMapBase):
         # Set the resolution of each split shadow map
         self.camera_rig.set_resolution(self.size)
         # Attach the camera rig to the root of the current scene
-        #TODO: This does not work with RegionSceneManager
-        self.camera_rig.reparent_to(base.scene_manager.root)
+        # TODO: This does not work with RegionSceneManager
+        self.camera_rig.reparent_to(self.base.scene_manager.root)
 
     def attach_pssm_camera_rig(self):
         # Attach the cameras to the shadow stage
@@ -248,7 +258,7 @@ class PSSMShadowMap(ShadowMapBase):
         # Remove all unused display regions
         self.buffer.remove_all_display_regions()
         self.buffer.get_display_region(0).set_active(False)
-        #self.buffer.disable_clears()
+        # self.buffer.disable_clears()
 
         # Set a clear on the buffer instead on all regions
         self.buffer.set_clear_depth(1)
@@ -266,7 +276,8 @@ class PSSMShadowMap(ShadowMapBase):
             self.split_regions.append(region)
 
     def update(self, camera_np, light_dir):
-        if settings.debug_lod_freeze: return
+        if settings.debug_lod_freeze:
+            return
         self.camera_rig.update(camera_np, -light_dir)
         cache_diff = globalClock.get_frame_time() - self.last_cache_reset
         if cache_diff > 5.0:
@@ -274,10 +285,12 @@ class PSSMShadowMap(ShadowMapBase):
             self.camera_rig.reset_film_size_cache()
 
     def remove(self):
-        #TODO
+        # TODO
         pass
 
+
 class ShadowCasterBase(object):
+
     def __init__(self, light):
         self.light = light
 
@@ -302,7 +315,9 @@ class ShadowCasterBase(object):
     def update(self, scene_manager):
         pass
 
+
 class ShadowMapShadowCaster(ShadowCasterBase):
+
     def __init__(self, light, occluder, shape_object):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
@@ -318,8 +333,10 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         pass
 
     def create(self):
-        if self.shadow_map is not None: return
-        if not self.shape_object.instance_ready: return
+        if self.shadow_map is not None:
+            return
+        if not self.shape_object.instance_ready:
+            return
         self.create_camera()
         self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraFlag)
         self.check_settings()
@@ -331,7 +348,8 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         self.remove_camera()
 
     def check_settings(self):
-        if self.shadow_map is None: return
+        if self.shadow_map is None:
+            return
         if settings.debug_shadow_frustum:
             self.shadow_camera.show_frustum()
         else:
@@ -341,16 +359,19 @@ class ShadowMapShadowCaster(ShadowCasterBase):
         return self.shadow_map is not None
 
     def update(self, scene_manager):
-        if self.shadow_map is None: return
+        if self.shadow_map is None:
+            return
         radius = self.occluder.get_bounding_radius()
         self.shadow_camera.get_lens().set_film_size(radius * 2.1, radius * 2.1)
-        #The shadow frustum origin is at the light center which is one radius away from the object
-        #So the near plane is 0 to coincide with the boundary of the object
+        # The shadow frustum origin is at the light center which is one radius away from the object
+        # So the near plane is 0 to coincide with the boundary of the object
         self.shadow_camera.get_lens().set_near(0)
-        self.shadow_camera.get_lens().set_far(radius*2)
+        self.shadow_camera.get_lens().set_far(radius * 2)
         self.shadow_camera.get_lens().set_view_vector(LVector3(*self.light.light_direction), LVector3.up())
 
+
 class ShadowMapDataSource(DataSource):
+
     def __init__(self, name, caster, use_bias, calculate_shadow_coef):
         DataSource.__init__(self, 'shadowmap-' + name)
         self.name = name
@@ -365,13 +386,16 @@ class ShadowMapDataSource(DataSource):
             shape.instance.set_shader_input('%s_shadow_coef' % self.name, 1.0)
 
     def update(self, shape, instance, camera_pos, camera_rot):
-        #TODO: Shadow parameters should not be retrieved like that
+        # TODO: Shadow parameters should not be retrieved like that
         appearance = shape.parent.appearance
         if self.use_bias:
-            normal_bias = appearance.shadow_normal_bias / 100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            slope_bias = appearance.shadow_slope_bias /100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            depth_bias = appearance.shadow_depth_bias / 100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
-            #print(normal_bias, slope_bias, depth_bias, shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
+            scale = 1.0 / 100.0 * shape.owner.scene_anchor.scene_scale_factor * shape.owner.get_apparent_radius()
+            normal_bias = appearance.shadow_normal_bias * scale
+            slope_bias = appearance.shadow_slope_bias * scale
+            depth_bias = appearance.shadow_depth_bias * scale
+            # print(
+            #     normal_bias, slope_bias, depth_bias,
+            #     shape.owner.anchor.scene_scale_factor, shape.owner.get_apparent_radius())
             instance.set_shader_input('%s_shadow_normal_bias' % self.name, normal_bias)
             instance.set_shader_input('%s_shadow_slope_bias' % self.name, slope_bias)
             instance.set_shader_input('%s_shadow_depth_bias' % self.name, depth_bias)
@@ -387,8 +411,10 @@ class ShadowMapDataSource(DataSource):
             distance = abs(pa.length() - body_radius)
             if distance != 0:
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
-                star_ar = asin(light.source.get_apparent_radius() / ((light.source.anchor.get_local_position() - body_position).length() - body_radius))
-                ar_ratio = self_ar /star_ar
+                star_ar = asin(
+                    light.source.get_apparent_radius()
+                    / ((light.source.anchor.get_local_position() - body_position).length() - body_radius))
+                ar_ratio = self_ar / star_ar
             else:
                 ar_ratio = 1.0
         else:
@@ -399,7 +425,9 @@ class ShadowMapDataSource(DataSource):
         instance.clearShaderInput('%s_depthmap' % self.name)
         instance.clearShaderInput("%sLightSource" % self.name)
 
+
 class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
+
     def create_camera(self):
         print("Create Panda3D shadow camera for", self.occluder.get_name())
         self.light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)
@@ -412,7 +440,9 @@ class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
         self.shadow_map = None
         self.shadow_camera = None
 
+
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
+
     def __init__(self, light, occluder, shape_object):
         ShadowMapShadowCaster.__init__(self, light, occluder, shape_object)
         self.targets = {}
@@ -437,7 +467,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def update(self, scene_manager):
         ShadowMapShadowCaster.update(self, scene_manager)
         if self.shadow_map is not None:
-            pos = - self.light.light_direction * self.light.target.get_bounding_radius()
+            pos = -self.light.light_direction * self.light.target.get_bounding_radius()
             self.shadow_map.set_pos(pos)
 
     def create_shader_component(self, self_shadow):
@@ -451,6 +481,7 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
 
 class PSSMShadowMapShadowCaster(ShadowCasterBase):
+
     def __init__(self, light, occluder):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
@@ -461,7 +492,8 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
         return False
 
     def create(self):
-        if self.shadow_map is not None: return
+        if self.shadow_map is not None:
+            return
         self.shadow_map = PSSMShadowMap(settings.shadow_size)
         self.shadow_map.create(self.occluder.scene_anchor)
         for i in range(self.shadow_map.num_splits):
@@ -496,6 +528,7 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
 
 
 class PSSMShadowMapDataSource(DataSource):
+
     def __init__(self, name, caster):
         DataSource.__init__(self, 'pssmshadowmap-' + name)
         self.name = name
@@ -524,6 +557,7 @@ class PSSMShadowMapDataSource(DataSource):
 
 
 class RingShadowCaster(ShadowCasterBase):
+
     def __init__(self, light, ring):
         ShadowCasterBase.__init__(self, light)
         self.ring = ring
@@ -538,6 +572,7 @@ class RingShadowCaster(ShadowCasterBase):
 
 
 class RingShadowDataSource(DataSource):
+
     def __init__(self, ring):
         DataSource.__init__(self, 'ring-shadow')
         self.ring = ring
@@ -545,11 +580,13 @@ class RingShadowDataSource(DataSource):
     def update(self, shape, instance, camera_pos, camera_rot):
         (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is not None:
-            instance.set_shader_input('shadow_ring_tex',texture)
+            instance.set_shader_input('shadow_ring_tex', texture)
         normal = shape.owner.anchor.get_absolute_orientation().xform(LVector3d.up())
         instance.set_shader_input('ring_normal', normal)
-        instance.set_shader_input('ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor)
-        instance.set_shader_input('ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor)
+        instance.set_shader_input(
+            'ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor)
+        instance.set_shader_input(
+            'ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor)
         if shape.owner.support_offset_body_center and settings.offset_body_center:
             body_center = shape.owner.scene_anchor.scene_position + shape.owner.scene_anchor.world_body_center_offset
         else:
@@ -558,6 +595,7 @@ class RingShadowDataSource(DataSource):
 
 
 class SphereShadowCaster(ShadowCasterBase):
+
     def __init__(self, light, occluder):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
@@ -570,6 +608,7 @@ class SphereShadowCaster(ShadowCasterBase):
 
 
 class SphereShadowDataSource(DataSource):
+
     def __init__(self, shadow_casters, max_occluders, far_sun, oblate_occluder):
         DataSource.__init__(self, 'sphere-shadows')
         self.shadow_casters = shadow_casters
@@ -586,7 +625,8 @@ class SphereShadowDataSource(DataSource):
         if self.far_sun:
             vector = shape.owner.anchor.get_local_position() - self.light.source.anchor.get_local_position()
             distance_to_light_source = vector.length()
-            instance.set_shader_input('star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source))
+            instance.set_shader_input(
+                'star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source))
         star_center = (self.light.source.anchor.get_local_position() - camera_pos) * scale
         star_radius = self.light.source.get_apparent_radius() * scale
         instance.set_shader_input('star_center', star_center)
@@ -598,7 +638,7 @@ class SphereShadowDataSource(DataSource):
             print("Too many occluders")
         nb_of_occluders = 0
         for shadow_caster in self.shadow_casters.shadow_casters:
-            #TODO: The selection should be done on the angular radius of the shadow.
+            # TODO: The selection should be done on the angular radius of the shadow.
             if nb_of_occluders >= self.max_occluders:
                 break
             nb_of_occluders += 1
@@ -607,7 +647,7 @@ class SphereShadowDataSource(DataSource):
             radius = occluder.get_apparent_radius()
             radii.append(radius * scale)
             if self.oblate_occluder:
-                #TODO: This should refactored with the code in oneil and moved to the body class
+                # TODO: This should refactored with the code in oneil and moved to the body class
                 body_scale = occluder.surface.get_shape_axes()
                 descale = LMatrix4.scale_mat(radius / body_scale[0], radius / body_scale[1], radius / body_scale[2])
                 rotation_mat = LMatrix4()
@@ -627,7 +667,9 @@ class SphereShadowDataSource(DataSource):
 class ShadowBase(object):
     pass
 
+
 class SphereShadows(ShadowBase):
+
     def __init__(self, target):
         self.target = target
         self.shadow_casters = []
@@ -639,7 +681,7 @@ class SphereShadows(ShadowBase):
         self.nb_updates = 0
 
     def add_shadow_caster(self, shadow_caster):
-        if not shadow_caster in self.shadow_casters:
+        if shadow_caster not in self.shadow_casters:
             self.shadow_casters.append(shadow_caster)
 
     def empty(self):
@@ -672,7 +714,9 @@ class SphereShadows(ShadowBase):
                 self.rebuild_needed = True
         return self.rebuild_needed
 
+
 class ShadowMapShadows(ShadowBase):
+
     def __init__(self, target):
         self.target = target
         self.casters = []
@@ -683,11 +727,12 @@ class ShadowMapShadows(ShadowBase):
         self.nb_updates = 0
 
     def add_shadow_caster(self, caster, self_shadow):
-        if not caster.is_valid(): return
+        if not caster.is_valid():
+            return
         self.casters.append(caster)
-        if not caster in self.old_casters:
+        if caster not in self.old_casters:
             print("Add shadow caster", caster.name, "on", self.target.owner.get_friendly_name())
-            shadow_shader =  caster.create_shader_component(self_shadow)
+            shadow_shader = caster.create_shader_component(self_shadow)
             self.shader_components[caster] = shadow_shader
             data_source = caster.create_data_source(self_shadow)
             self.target.sources.add_source(data_source)
@@ -716,7 +761,9 @@ class ShadowMapShadows(ShadowBase):
         self.nb_updates -= 1
         if self.nb_updates == 0:
             for caster in self.old_casters:
-                print("Remove shadow caster", caster.name, "on", self.target.owner.get_name(), self.target.get_name() or '')
+                print(
+                    "Remove shadow caster", caster.name,
+                    "on", self.target.owner.get_name(), self.target.get_name() or '')
                 shadow_shader = self.shader_components[caster]
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
                 del self.shader_components[caster]
@@ -727,7 +774,9 @@ class ShadowMapShadows(ShadowBase):
             self.old_casters = []
         return self.rebuild_needed
 
+
 class MultiShadows(ShadowBase):
+
     def __init__(self, target):
         self.target = target
         self.ring_shadow = None
