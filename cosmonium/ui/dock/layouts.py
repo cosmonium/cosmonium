@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,18 +34,19 @@ class SpaceDockWidget(DockWidgetBase):
 class LayoutDockWidget(DockWidgetBase):
 
     def __init__(
-            self,
-            size: int,
-            direction: str,
-            widgets: list[DockWidgetBase],
-            decoration_size: tuple[int],
-            image=None,
-            geom=None,
-            proportions=None,
-            alignments=None,
-            borders=None,
-            index=None,
-            gaps=(0, 0)):
+        self,
+        size: int,
+        direction: str,
+        widgets: list[DockWidgetBase],
+        decoration_size: tuple[int],
+        image=None,
+        geom=None,
+        proportions=None,
+        alignments=None,
+        borders=None,
+        index=None,
+        gaps=(0, 0),
+    ):
         DockWidgetBase.__init__(self, proportions, alignments, borders, index)
         self.size = size
         self.direction = direction
@@ -68,8 +69,11 @@ class LayoutDockWidget(DockWidgetBase):
             if self.direction == 'horizontal':
                 if len(self.widgets) == 1:
                     borders = LVector4(
-                        self.decoration_size[0], self.decoration_size[0],
-                        self.decoration_size[1], self.decoration_size[1])
+                        self.decoration_size[0],
+                        self.decoration_size[0],
+                        self.decoration_size[1],
+                        self.decoration_size[1],
+                    )
                 elif i == 0:
                     borders = LVector4(self.decoration_size[0], 0, self.decoration_size[1], self.decoration_size[1])
                 elif i == len(self.widgets) - 1:
@@ -79,8 +83,11 @@ class LayoutDockWidget(DockWidgetBase):
             else:
                 if len(self.widgets) == 1:
                     borders = LVector4(
-                        self.decoration_size[0], self.decoration_size[0],
-                        self.decoration_size[1], self.decoration_size[1])
+                        self.decoration_size[0],
+                        self.decoration_size[0],
+                        self.decoration_size[1],
+                        self.decoration_size[1],
+                    )
                 elif i == 0:
                     borders = LVector4(self.decoration_size[0], self.decoration_size[0], 0, self.decoration_size[1])
                 elif i == len(self.widgets) - 1:

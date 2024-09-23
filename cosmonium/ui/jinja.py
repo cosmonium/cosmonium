@@ -1,24 +1,25 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from abc import ABC, abstractmethod
+from direct.showbase.ShowBaseGlobal import globalClock
 import jinja2
 
 from ..astro import bayer, units
@@ -31,8 +32,7 @@ from .. import utils
 class ObjectProvider(ABC):
 
     @abstractmethod
-    def _object(self):
-        ...
+    def _object(self): ...
 
     @property
     def abs_magnitude(self):
@@ -156,18 +156,18 @@ class ClockProvider:
 
     @property
     def average_frame_rate(self):
-        current_time = globalClock.getRealTime()
+        current_time = globalClock.get_real_time()
         if current_time - self.last_average_frame_time >= 1.0:
             self.last_average_frame_time = current_time
-            self.last_average_frame = globalClock.getAverageFrameRate()
+            self.last_average_frame = globalClock.get_average_frame_rate()
         return self.last_average_frame
 
     @property
     def frame_duration(self):
-        current_time = globalClock.getRealTime()
+        current_time = globalClock.get_real_time()
         if current_time - self.last_frame_duration_time >= 1.0:
             self.last_frame_duration_time = current_time
-            self.last_frame_duration = globalClock.getDt()
+            self.last_frame_duration = globalClock.get_dt()
         return self.last_frame_duration
 
 
@@ -306,7 +306,7 @@ class JinjaEnv:
             'settings': SettingsProvider(),
             'time': TimeProvider(engine),
             'units': UnitsProvider(),
-            }
+        }
 
     def compile_expression(self, source: str):
         try:

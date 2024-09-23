@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 from functools import partial
@@ -57,6 +57,7 @@ class SubMenuEntry(NamedTuple):
 
 
 class MenuBuilder:
+
     def __init__(self, translation, messenger, shortcuts, engine, mouse, browser):
         self.translation = translation
         self.messenger = messenger
@@ -74,14 +75,15 @@ class MenuBuilder:
             'over-extra-info': lambda: create_extra_info_menu(self.browser, self.mouse.over),
             'surfaces': lambda: create_surfaces_menu(self.engine.selected),
             'over-surfaces': lambda: create_surfaces_menu(self.mouse.over),
-            'over-extra-info': lambda: create_extra_info_menu(self.browser, self.mouse.over),
             'select-camera-controller': lambda: create_select_camera_controller_menu(self.engine),
             'select-ship': lambda: create_select_ship_menu(self.engine),
-            }
+        }
         self.text_generators = {
-            'select-name': lambda: (self.engine.selected.get_friendly_name() if self.engine.selected is not None else ''),
+            'select-name': lambda: (
+                self.engine.selected.get_friendly_name() if self.engine.selected is not None else ''
+            ),
             'over-name': lambda: (self.mouse.over.get_friendly_name() if self.mouse.over is not None else ''),
-            }
+        }
 
     def add_named_menu(self, name, entries):
         self.menu_generators[name] = lambda: self.create_submenu(entries)
@@ -110,7 +112,7 @@ class MenuBuilder:
     def menu_event(self, text, state, event, condition, args=[]):
         if text[0] == '@':
             text = self.get_auto_text(text[1:])
-        shortcut = None #self.shortcuts.get_shortcut_for(event)
+        shortcut = None  # self.shortcuts.get_shortcut_for(event)
         if shortcut is not None:
             full_text = text + '>' + shortcut.title()
         else:

@@ -31,15 +31,16 @@ from .base import DGuiDockWidget
 class ButtonDockWidget(DGuiDockWidget):
 
     def __init__(
-            self,
-            text: str,
-            event: str,
-            size: float=None,
-            rescale: bool=False,
-            proportions=None,
-            alignments=None,
-            borders=None,
-            index=None):
+        self,
+        text: str,
+        event: str,
+        size: float = None,
+        rescale: bool = False,
+        proportions=None,
+        alignments=None,
+        borders=None,
+        index=None,
+    ):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
         self.text = text
         self.event = event
@@ -61,7 +62,8 @@ class ButtonDockWidget(DGuiDockWidget):
             text_align=TextNode.A_boxed_center,
             scale=scale,
             command=messenger.send,
-            extraArgs=[self.event])
+            extraArgs=[self.event],
+        )
         bounds = button.getBounds()
         if self.rescale and bounds is not None:
             width = bounds[1] - bounds[0]

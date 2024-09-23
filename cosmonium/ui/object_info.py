@@ -1,39 +1,38 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from math import pi
 
-from ..objects.stellarobject import StellarObject
-from ..objects.stellarbody import StellarBody
-from ..objects.star import Star
-from ..dataattribution import dataAttributionDB
-from ..components.elements.surfaces import Surface
+from ..astro import bayer
+from ..astro import units
+from ..astro.astro import orientation_to_equatorial
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FunctionOrbit
 from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
-from ..astro.astro import orientation_to_equatorial
-from ..astro import bayer
-from ..astro import units
-
+from ..components.elements.surfaces import Surface
+from ..dataattribution import dataAttributionDB
+from ..objects.star import Star
+from ..objects.stellarbody import StellarBody
+from ..objects.stellarobject import StellarObject
 from .. import utils
 
-from math import pi
 
 class ObjectInfo(object):
     infos = []
@@ -50,7 +49,8 @@ class ObjectInfo(object):
         if info_method is None:
             for entry in cls.infos:
                 (info_class, info_method) = entry
-                if isinstance(body, info_class): break
+                if isinstance(body, info_class):
+                    break
         if info_method is not None:
             result = info_method(body)
         else:
@@ -58,11 +58,14 @@ class ObjectInfo(object):
             result = None
         return result
 
+
 def default_info(body):
     return ["Unknown", [(_('Unknown class'), body.__class__.__name__)]]
 
+
 def orbit_info(orbit):
     return None
+
 
 def fixed_orbit_info(orbit):
     texts = []
@@ -72,10 +75,12 @@ def fixed_orbit_info(orbit):
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
     return [_("Position"), texts]
 
+
 def func_orbit_info(orbit):
     texts = []
     texts.append([_("Type"), orbit.__class__.__name__])
     return [_("Orbit"), texts]
+
 
 def elliptic_orbit_info(orbit):
     texts = []
@@ -91,18 +96,21 @@ def elliptic_orbit_info(orbit):
     texts.append([_("Epoch"), "%s" % date])
     return [_("Orbit"), texts]
 
+
 def rotation_info(rotation):
     texts = []
     texts.append([_("Type"), rotation.__class__.__name__])
     return [_("Rotation"), texts]
 
+
 def unknown_rotation_info(rotation):
     texts = [[_("Unknown rotation"), ""]]
     return [_("Rotation"), texts]
 
+
 def uniform_rotation_info(rotation):
     texts = []
-    #TODO: should give simulation time !
+    # TODO: should give simulation time !
     orientation = rotation.get_equatorial_orientation_at(0)
     (ra, de) = orientation_to_equatorial(orientation)
     texts.append([_("Period"), toUnit(abs(rotation.get_period()), units.times_scale)])
@@ -113,9 +121,10 @@ def uniform_rotation_info(rotation):
     texts.append([_("Epoch"), "%s" % date])
     return [_("Rotation"), texts]
 
+
 def synchronous_rotation_info(rotation):
     texts = []
-    #TODO: should give simulation time !
+    # TODO: should give simulation time !
     orientation = rotation.get_equatorial_orientation_at(0)
     (ra, de) = orientation_to_equatorial(orientation)
     texts.append([_("Period"), _("Synchronous")])
@@ -125,6 +134,7 @@ def synchronous_rotation_info(rotation):
     date = "%02d:%02d:%02d %d:%02d:%02d UTC" % time_to_values(rotation.epoch)
     texts.append([_("Epoch"), "%s" % date])
     return [_("Rotation"), texts]
+
 
 def surface(surface):
     texts = []
@@ -149,8 +159,9 @@ def surface(surface):
                 attributions.append((_('Textures'), surface.appearance.attribution))
             elif surface.appearance.texture is not None and surface.appearance.texture.source.attribution is not None:
                 attributions.append((_('Texture'), surface.appearance.texture.source.attribution))
-    for (name, attribution) in attributions:
-        if attribution is None: continue
+    for name, attribution in attributions:
+        if attribution is None:
+            continue
         texts.append([name, None])
         if not isinstance(attribution, list):
             attribution = [attribution]
@@ -171,6 +182,7 @@ def surface(surface):
     else:
         return None
 
+
 def stellar_object(body):
     texts = []
     general = []
@@ -184,6 +196,7 @@ def stellar_object(body):
     texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     return texts
 
+
 def stellar_body(body):
     texts = []
     general = []
@@ -193,12 +206,24 @@ def stellar_body(body):
     general.append([_("Category"), body.body_class])
     if body.oblateness is None or body.oblateness == 0.0:
         radius = body.get_apparent_radius()
-        general.append([_("Radius"), "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale))])
+        general.append(
+            [_("Radius"), "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale))]
+        )
     else:
         radius = body.get_apparent_radius()
         polar_radius = radius * (1 - body.oblateness)
-        general.append([_("Polar radius"), "%s (%s)" % (toUnit(polar_radius, units.lengths_scale), toUnit(polar_radius, units.diameter_scale))])
-        general.append([_("Equatorial radius"), "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale))])
+        general.append(
+            [
+                _("Polar radius"),
+                "%s (%s)" % (toUnit(polar_radius, units.lengths_scale), toUnit(polar_radius, units.diameter_scale)),
+            ]
+        )
+        general.append(
+            [
+                _("Equatorial radius"),
+                "%s (%s)" % (toUnit(radius, units.lengths_scale), toUnit(radius, units.diameter_scale)),
+            ]
+        )
         general.append([_("Ellipticity"), "%g" % body.oblateness])
     general.append([_("Atmosphere"), _("Yes") if body.atmosphere is not None else _("No")])
     general.append([_("Clouds"), _("Yes") if body.clouds is not None else _("No")])
@@ -214,6 +239,7 @@ def stellar_body(body):
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
 
+
 def star(body):
     texts = []
     general = []
@@ -221,10 +247,26 @@ def star(body):
     names = utils.join_names(bayer.decode_names(body.names))
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
-    general.append([_("Radius"), "%s (%s)" % (toUnit(body.get_apparent_radius(), units.lengths_scale), toUnit(body.get_apparent_radius(), units.diameter_scale))])
-    general.append([_("Spectral type"), body.spectral_type.get_text() if body.spectral_type is not None else _('Unknown')])
+    general.append(
+        [
+            _("Radius"),
+            "%s (%s)"
+            % (
+                toUnit(body.get_apparent_radius(), units.lengths_scale),
+                toUnit(body.get_apparent_radius(), units.diameter_scale),
+            ),
+        ]
+    )
+    general.append(
+        [_("Spectral type"), body.spectral_type.get_text() if body.spectral_type is not None else _('Unknown')]
+    )
     general.append([_("Abs magnitude"), "%g" % body.get_abs_magnitude()])
-    general.append([_("Luminosity"), "%g W (%gx Sun)" % (body.anchor.get_radiant_flux(),  body.anchor.get_radiant_flux() / units.L0)])
+    general.append(
+        [
+            _("Luminosity"),
+            "%g W (%gx Sun)" % (body.anchor.get_radiant_flux(), body.anchor.get_radiant_flux() / units.L0),
+        ]
+    )
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.description != '':
         general.append([_("Description"), body.description])
@@ -236,6 +278,7 @@ def star(body):
     if body.surface is not None:
         texts.append(ObjectInfo.get_info_for(body.surface))
     return texts
+
 
 ObjectInfo.register(object, default_info)
 ObjectInfo.register(Orbit, orbit_info)

@@ -1,22 +1,21 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from dataclasses import dataclass
 from itertools import chain
@@ -33,36 +32,38 @@ class HudEntry:
     text: str
 
 
-class Huds():
+class Huds:
+
     def __init__(self, gui, widgets, dock, env, skin):
+        self.base = base
         self.owner = gui
         self.skin = skin
         self.element = UIElement(None, class_='hud', id_='hud')
         self.widgets = widgets
         for anchor_name in self.widgets.keys():
             if anchor_name == 'top-left':
-                anchor = base.p2dTopLeft
+                anchor = self.base.p2dTopLeft
             elif anchor_name == 'top-right':
-                anchor = base.p2dTopRight
+                anchor = self.base.p2dTopRight
             elif anchor_name == 'bottom-left':
-                anchor = base.p2dBottomLeft
+                anchor = self.base.p2dBottomLeft
             elif anchor_name == 'bottom-right':
-                anchor = base.p2dBottomRight
+                anchor = self.base.p2dBottomRight
             for widget in self.widgets[anchor_name]:
                 widget.set_owner(self)
                 widget.set_anchor(anchor)
                 widget.compile(env)
                 widget.create()
-        #TODO: Info should be moved out of HUD
+        # TODO: Info should be moved out of HUD
         self.info = FadeTextLine('info', TextNode.ALeft, LVector2(0, -3), owner=self)
-        self.info.set_anchor(base.p2dBottomLeft)
+        self.info.set_anchor(self.base.p2dBottomLeft)
         self.info.create()
         # TODO: Temporary broken way to instanciate a dock
         if dock is not None:
             layout, orientation, location = dock
             self.bottom_dock = Dock('hud', gui, orientation, location, layout)
             self.bottom_dock.set_owner(self)
-            self.bottom_dock.set_anchor(base.pixel2d)
+            self.bottom_dock.set_anchor(self.base.pixel2d)
             self.bottom_dock.compile(env)
             self.bottom_dock.create()
         else:

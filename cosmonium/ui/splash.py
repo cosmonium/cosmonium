@@ -1,41 +1,43 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import TextNode, LColor, LVector3, WindowProperties, Texture, TransparencyAttrib
-
-from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenImage import OnscreenImage
+from panda3d.core import TextNode, WindowProperties, Texture, TransparencyAttrib
 
 from .. import settings
 
-class NoSplash():
+
+class NoSplash:
+
     def set_text(self, text):
         pass
 
     def close(self):
         pass
 
+
 class Splash:
+
     def __init__(self):
-        props = WindowProperties(base.win.getProperties())
+        self.base = base
+        props = WindowProperties(self.base.win.getProperties())
         screen_width = props.getXSize()
         screen_height = props.getYSize()
         self.ratio = float(screen_width) / float(screen_height)
@@ -43,13 +45,13 @@ class Splash:
         self.text_offset = self.text_scale / 4
         self.text_height = self.text_scale + self.text_offset
         self.image_scale = 0.3
-        self.bg_texture = loader.loadTexture("textures/splash-background.jpg")
+        self.bg_texture = self.base.loader.loadTexture("textures/splash-background.jpg")
         if settings.use_srgb:
             self.bg_texture.set_format(Texture.F_srgb)
         self.bg_texture.setWrapU(Texture.WM_clamp)
         self.bg_texture.setWrapV(Texture.WM_clamp)
         self.bg_texture_ratio = float(self.bg_texture.get_x_size()) / self.bg_texture.get_y_size()
-        self.texture = loader.loadTexture("textures/cosmonium-name-tp.png")
+        self.texture = self.base.loader.loadTexture("textures/cosmonium-name-tp.png")
         self.texture_ratio = float(self.texture.get_x_size()) / self.texture.get_y_size()
         if self.ratio >= 1.0:
             sx = self.ratio
@@ -57,25 +59,27 @@ class Splash:
         else:
             sx = 1.0 / self.ratio
             sy = 1.0 / (self.ratio * self.bg_texture_ratio)
-        self.bg_image = OnscreenImage(self.bg_texture,
-                                   color=(1, 1, 1, 1),
-                                   pos=(0, 0, 0),
-                                   scale=(sx, 1, sy),
-                                   parent=base.aspect2d)
-        self.image = OnscreenImage(self.texture,
-                                   color=(1, 1, 1, 1),
-                                   scale=(self.image_scale * self.texture_ratio, 1, self.image_scale),
-                                   parent=base.aspect2d)
+        self.bg_image = OnscreenImage(
+            self.bg_texture, color=(1, 1, 1, 1), pos=(0, 0, 0), scale=(sx, 1, sy), parent=self.base.aspect2d
+        )
+        self.image = OnscreenImage(
+            self.texture,
+            color=(1, 1, 1, 1),
+            scale=(self.image_scale * self.texture_ratio, 1, self.image_scale),
+            parent=self.base.aspect2d,
+        )
         self.image.setTransparency(TransparencyAttrib.MAlpha)
-        self.text = DirectLabel(text="",
-                                text_align=TextNode.ACenter,
-                                text_scale=self.text_scale,
-                                #text_font=self.font_normal,
-                                text_fg=(0.5, 0.5, 0.5, 1),
-                                text_bg=(0, 0, 0, 0),
-                                text_pos=(0, -self.image_scale - self.text_height))
-                                #frameSize = (-0.75, 0.75, self.text_height, 0))
-        self.text.reparent_to(base.aspect2d)
+        self.text = DirectLabel(
+            text="",
+            text_align=TextNode.ACenter,
+            text_scale=self.text_scale,
+            # text_font=self.font_normal,
+            text_fg=(0.5, 0.5, 0.5, 1),
+            text_bg=(0, 0, 0, 0),
+            text_pos=(0, -self.image_scale - self.text_height),
+            # frameSize = (-0.75, 0.75, self.text_height, 0),
+        )
+        self.text.reparent_to(self.base.aspect2d)
 
     def set_text(self, text):
         self.text.setText(text)

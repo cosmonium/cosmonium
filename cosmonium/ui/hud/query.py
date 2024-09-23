@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -103,7 +103,8 @@ class Query(HUDObject):
         if self.completion_task is not None:
             taskMgr.remove(self.completion_task)
         self.completion_task = taskMgr.doMethodLater(
-            self.query_delay, self.update_suggestions, 'completion task', extraArgs=[])
+            self.query_delay, self.update_suggestions, 'completion task', extraArgs=[]
+        )
 
     def select(self, event):
         modifiers = event.getModifierButtons()
@@ -137,13 +138,15 @@ class Query(HUDObject):
         self.background = DirectFrame(
             frameSize=(0, self.owner.width, query_height + suggestion_height, 0.0),
             parent=self.anchor,
-            **self.skin.get_style(background_element))
+            **self.skin.get_style(background_element)
+        )
         self.prefix = OnscreenText(
             text=_("Target name: "),
             align=TextNode.ALeft,
             parent=self.anchor,
             pos=(0, suggestion_height),
-            **self.skin.get_style(text_element))
+            **self.skin.get_style(text_element)
+        )
         bounds = self.prefix.getTightBounds()
         length = bounds[1][0] - bounds[0][0]
         self.query = DirectEntry(
@@ -156,7 +159,8 @@ class Query(HUDObject):
             width=200,
             focus=1,
             suppressKeys=1,
-            **query_style)
+            **query_style
+        )
         self.query.bind("press-escape-", self.escape)
         self.query.bind("press-tab-", self.select)
         self.query.accept(self.query.guiItem.getTypeEvent(), self.completion)
@@ -168,4 +172,5 @@ class Query(HUDObject):
             mayChange=True,
             parent=self.anchor,
             pos=(0, suggestion_offset),
-            **suggestion_style)
+            **suggestion_style
+        )

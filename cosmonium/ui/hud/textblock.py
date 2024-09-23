@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -56,20 +56,14 @@ class TextBlock(HUDObject):
             else:
                 pos_y = i + 0.1
             pos = LVector3(x_offset, 0, pos_y * height_scale + y_offset)
-            #self.instance.setScale(*self.scale)
+            # self.instance.setScale(*self.scale)
             self.instances[i].set_pos(pos)
 
     def create_line(self, i):
         text_line_element = UIElement('onscreen-text', parent=self.owner.element, id_=self.id_)
         style = self.skin.get_style(text_line_element)
         self.scale = style['scale']
-        return OnscreenText(
-            text="",
-            style=Plain,
-            parent=self.instance,
-            align=self.align,
-            mayChange=True,
-            **style)
+        return OnscreenText(text="", style=Plain, parent=self.instance, align=self.align, mayChange=True, **style)
 
     def create(self):
         self.instance = self.anchor.attach_new_node("anchor")

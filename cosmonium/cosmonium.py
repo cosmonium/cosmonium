@@ -198,6 +198,7 @@ class CosmoniumBase(ShowBase):
         data.append("paste-emit-keystrokes #f")
         #TODO: Still needed ?
         data.append("bounds-type box")
+        data.append("sleep-precision 0.001")
         data.append("screenshot-extension {}".format(settings.screenshot_format))
         data.append("screenshot-filename %~p/{}".format(settings.screenshot_filename))
         if settings.win_fullscreen and settings.win_fs_width != 0 and settings.win_fs_height != 0:

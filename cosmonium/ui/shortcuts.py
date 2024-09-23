@@ -1,29 +1,30 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from direct.showbase.DirectObject import DirectObject
 from collections import defaultdict
+from direct.showbase.DirectObject import DirectObject
 import sys
 
 
 class Shortcuts(DirectObject):
+
     def __init__(self, base, messenger, gui):
         DirectObject.__init__(self)
         self.messenger = messenger
@@ -44,15 +45,16 @@ class Shortcuts(DirectObject):
             self.accept(shortcut, self.messenger.send, [event])
 
     def set_shortcuts(self, shortcuts_items):
-        for (event, shortcuts) in shortcuts_items:
+        for event, shortcuts in shortcuts_items:
             self.add(event, shortcuts)
 
     def get_shortcut_for(self, event):
         return self.eventmap.get(event, None)
 
     def keystroke_event(self, keyname):
-        #TODO: The menu widget should use suppressKey
-        if self.gui is not None and self.gui.popup_menu_shown: return
+        # TODO: The menu widget should use suppressKey
+        if self.gui is not None and self.gui.popup_menu_shown:
+            return
         callback_data = self.keystrokes.get(keyname, None)
         if callback_data is not None:
             (method, extraArgs) = callback_data

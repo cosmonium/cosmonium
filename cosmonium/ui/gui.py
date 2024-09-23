@@ -1,31 +1,32 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
+import os
 from panda3d.core import LVector2
 
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
 from .. import settings
 from .. import version
-#TODO: should only be used by Cosmonium main class
+
+# TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
 from .jinja import JinjaEnv
@@ -45,12 +46,12 @@ from .menubuilder import MenuBuilder
 from .menubar import Menubar
 from .popup import Popup
 
-import os
 
-about_text = """# Cosmonium
+about_text = (
+    """# Cosmonium
 
 **Version**: V%s
-Copyright 2018-2022 Laurent Deru
+Copyright 2018-2024 Laurent Deru
 
 
 **Website**: http://github.com/cosmonium/cosmonium
@@ -64,10 +65,15 @@ version.
 
 This program uses several third-party libraries which are subject to their own
 licenses, see Third-Party.md for the complete list.
-""" % version.version_str
+"""
+    % version.version_str
+)
+
 
 class Gui(object):
+
     def __init__(self, config_file, cosmonium, time, camera, mouse, autopilot):
+        self.base = cosmonium
         self.cosmonium = cosmonium
         self.time = time
         self.camera = camera
@@ -77,9 +83,9 @@ class Gui(object):
         self.messenger = self.cosmonium.messenger
         self.over = None
         self.hud = None
-        if base.pipe is not None:
-            self.screen_width = base.pipe.getDisplayWidth()
-            self.screen_height = base.pipe.getDisplayHeight()
+        if self.base.pipe is not None:
+            self.screen_width = self.base.pipe.getDisplayWidth()
+            self.screen_height = self.base.pipe.getDisplayHeight()
         else:
             self.screen_width = 1
             self.screen_height = 1
@@ -108,9 +114,9 @@ class Gui(object):
         else:
             self.font = None
         self.clipboard = create_clipboard()
-        self.shortcuts = Shortcuts(base, base.messenger, self)
+        self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
 
-        self.env = JinjaEnv(base, self)
+        self.env = JinjaEnv(self.base, self)
 
         ui_config = self.load(config_file)
         self.skin = ui_config.skin
@@ -134,7 +140,9 @@ class Gui(object):
         self.about.set_text(about_text)
         self.filewindow = FileWindow('Select', owner=self)
 
-        self.menu_builder = MenuBuilder(self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser)
+        self.menu_builder = MenuBuilder(
+            self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser
+        )
         self.menu_builder.add_named_menus(ui_config.named_menus)
         self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar))
         self.menubar.create(self.font, self.scale)
@@ -161,7 +169,9 @@ class Gui(object):
         self.nav = nav
 
     def calc_scale(self):
-        self.scale = LVector2(settings.ui_scale / self.screen_width * 2.0,  settings.ui_scale / self.screen_height * 2.0)
+        self.scale = LVector2(
+            settings.ui_scale / self.screen_width * 2.0, settings.ui_scale / self.screen_height * 2.0
+        )
 
     def register_events(self, event_ctrl):
         pass
@@ -182,7 +192,7 @@ class Gui(object):
 
     def left_click(self):
         body = self.mouse.get_over()
-        if body != None and self.cosmonium.selected == body:
+        if body is not None and self.cosmonium.selected == body:
             self.cosmonium.center_on_object(body)
             return
         self.cosmonium.select_body(body)
@@ -236,8 +246,8 @@ class Gui(object):
             return
         self.width = width
         self.height = height
-        #TODO: This is an ugly hack, should use the proper anchors or define new ones
-        #Update aspect2d scale and anchors
+        # TODO: This is an ugly hack, should use the proper anchors or define new ones
+        # Update aspect2d scale and anchors
         arx = 1.0 * self.screen_width / self.width
         ary = 1.0 * self.screen_height / self.height
         self.cosmonium.aspect2d.setScale(arx, 1.0, ary)
@@ -290,7 +300,7 @@ class Gui(object):
         return state
 
     def show_with_state(self, state):
-        (hud_shown, menubar_shown) =state
+        (hud_shown, menubar_shown) = state
         if hud_shown:
             self.hud.show()
         if menubar_shown:
@@ -336,22 +346,22 @@ class Gui(object):
 
     def show_help(self):
         self.help.show()
-        if not self.help in self.opened_windows:
+        if self.help not in self.opened_windows:
             self.opened_windows.append(self.help)
 
     def show_license(self):
         self.license.show()
-        if not self.license in self.opened_windows:
+        if self.license not in self.opened_windows:
             self.opened_windows.append(self.license)
 
     def show_about(self):
         self.about.show()
-        if not self.about in self.opened_windows:
+        if self.about not in self.opened_windows:
             self.opened_windows.append(self.about)
 
     def show_time_editor(self):
         self.time_editor.show()
-        if not self.time_editor in self.opened_windows:
+        if self.time_editor not in self.opened_windows:
             self.opened_windows.append(self.time_editor)
 
     def show_info(self):
@@ -359,7 +369,7 @@ class Gui(object):
             if self.info.shown():
                 self.info.hide()
             self.info.show(self.cosmonium.selected)
-            if not self.info in self.opened_windows:
+            if self.info not in self.opened_windows:
                 self.opened_windows.append(self.info)
 
     def show_editor(self):
@@ -367,7 +377,7 @@ class Gui(object):
             if self.editor.shown():
                 self.editor.hide()
             self.editor.show(self.cosmonium.selected)
-            if not self.editor in self.opened_windows:
+            if self.editor not in self.opened_windows:
                 self.opened_windows.append(self.editor)
 
     def show_ship_editor(self):
@@ -375,24 +385,24 @@ class Gui(object):
             if self.editor.shown():
                 self.editor.hide()
             self.editor.show(self.cosmonium.ship)
-            if not self.editor in self.opened_windows:
+            if self.editor not in self.opened_windows:
                 self.opened_windows.append(self.editor)
 
     def show_preferences(self):
         self.preferences.show()
-        if not self.preferences in self.opened_windows:
+        if self.preferences not in self.opened_windows:
             self.opened_windows.append(self.preferences)
 
     def show_select_screenshots(self):
         if self.filewindow.shown():
             self.filewindow.hide()
         self.filewindow.show(settings.screenshot_path, self.cosmonium.set_screenshots_path, show_files=False)
-        if not self.filewindow in self.opened_windows:
+        if self.filewindow not in self.opened_windows:
             self.opened_windows.append(self.filewindow)
 
     def show_open_script(self):
         if self.filewindow.shown():
             self.filewindow.hide()
         self.filewindow.show(settings.last_script_path, self.load_cel_script, extensions=['.cel', '.CEL'])
-        if not self.filewindow in self.opened_windows:
+        if self.filewindow not in self.opened_windows:
             self.opened_windows.append(self.filewindow)

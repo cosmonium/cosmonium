@@ -1,33 +1,34 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import LPoint2, LColor
 from direct.showbase.DirectObject import DirectObject
-
 from direct.task.Task import Task
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import LPoint2, LColor
 
 from .. import settings
-from cosmonium.utils import color_to_int
-from cosmonium.catalogs import objectsDB
+from ..catalogs import objectsDB
+from ..utils import color_to_int
+
 
 class Mouse(DirectObject):
+
     def __init__(self, base, oid_texture):
         self.base = base
         self.picking_texture = oid_texture
@@ -52,7 +53,11 @@ class Mouse(DirectObject):
     def mouse1_release(self):
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.get_mouse()
-            if self.mouse1_pos is not None and self.mouse1_pos.get_x() == mpos.get_x() and self.mouse1_pos.get_y() == mpos.get_y():
+            if (
+                self.mouse1_pos is not None
+                and self.mouse1_pos.get_x() == mpos.get_x()
+                and self.mouse1_pos.get_y() == mpos.get_y()
+            ):
                 self.ui.left_click()
         self.mouse1_pos = None
 
@@ -63,7 +68,11 @@ class Mouse(DirectObject):
     def mouse3_release(self):
         if self.base.mouseWatcherNode.hasMouse():
             mpos = self.base.mouseWatcherNode.get_mouse()
-            if self.mouse3_pos is not None and self.mouse3_pos.get_x() == mpos.get_x() and self.mouse3_pos.get_y() == mpos.get_y():
+            if (
+                self.mouse3_pos is not None
+                and self.mouse3_pos.get_x() == mpos.get_x()
+                and self.mouse3_pos.get_y() == mpos.get_y()
+            ):
                 self.ui.right_click()
         self.mouse3_pos = None
 
@@ -79,7 +88,7 @@ class Mouse(DirectObject):
                 np = pq.get_entry(0).get_into_node_path().find_net_python_tag('patch')
                 if np is not None:
                     self.patch = np.get_python_tag('patch')
-                    #print("PATCH", self.patch.str_id())
+                    # print("PATCH", self.patch.str_id())
                 else:
                     self.patch = None
         return over
@@ -128,4 +137,3 @@ class Mouse(DirectObject):
         if self.base.mouseWatcherNode.hasMouse():
             self.over = self.find_over()
         return Task.cont
-

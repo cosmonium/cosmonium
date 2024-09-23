@@ -1,37 +1,36 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from direct.gui.DirectGui import DirectFrame, DGG
-from direct.gui.DirectSlider import DirectSlider
 from direct.gui.DirectScrollBar import DirectScrollBar
+from direct.gui.DirectSlider import DirectSlider
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.DirectObject import DirectObject
 from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import Point3, TextNode, PGSliderBar
 
+from ...geometry.geometry import FrameGeom
 from ..skin import UIElement
 
-from ...geometry.geometry import FrameGeom
 
-
-class Window():
+class Window:
 
     def __init__(self, title_text, scale, parent=None, child=None, owner=None):
         self.title_text = title_text
@@ -42,12 +41,13 @@ class Window():
         self.last_pos = None
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
+        self.base = base
         if parent is None:
-            parent = base.pixel2d
+            parent = self.base.pixel2d
         self.parent = parent
         self.border = (1, 1)
         self.event_handler = DirectObject()
-        self.button_thrower = base.buttonThrowers[0].node()
+        self.button_thrower = self.base.buttonThrowers[0].node()
         self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs=[-1])
         self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs=[1])
         self.scrollers = []
@@ -59,37 +59,43 @@ class Window():
         else:
             self.decorator_frame = None
         title_frame_element = UIElement('frame', class_='title-frame')
-        self.title_frame = DirectFrame(
-            parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(title_frame_element))
+        self.title_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(title_frame_element))
         title_element = UIElement('onscreen-text', class_='title-text')
-        self.title = OnscreenText(text=self.title_text,
-                                  style=Plain,
-                                  parent=self.title_frame,
-                                  pos=(0, 0),
-                                  align=TextNode.ALeft,
-                                  mayChange=True,
-                                  **self.skin.get_style(title_element))
+        self.title = OnscreenText(
+            text=self.title_text,
+            style=Plain,
+            parent=self.title_frame,
+            pos=(0, 0),
+            align=TextNode.ALeft,
+            mayChange=True,
+            **self.skin.get_style(title_element)
+        )
         bounds = self.title.get_tight_bounds()
         size = bounds[1] - bounds[0]
         bottom_left = bounds[0]
-        self.title_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
-                                         -size[2] - self.title_pad[1] * 2, 0]
+        self.title_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2, -size[2] - self.title_pad[1] * 2, 0]
         self.title.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
         close_frame_element = UIElement('frame', class_='close-frame')
         self.close_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(close_frame_element))
         close_element = UIElement('onscreen-text', class_='close-text')
-        self.close = OnscreenText(text='X',
-                                  style=Plain,
-                                  parent=self.close_frame,
-                                  pos=(0, 0),
-                                  align=TextNode.ACenter,
-                                  mayChange=True,
-                                  **self.skin.get_style(close_element))
+        self.close = OnscreenText(
+            text='X',
+            style=Plain,
+            parent=self.close_frame,
+            pos=(0, 0),
+            align=TextNode.ACenter,
+            mayChange=True,
+            **self.skin.get_style(close_element)
+        )
         bounds = self.close.get_tight_bounds()
         size = bounds[1] - bounds[0]
         bottom_left = bounds[0]
-        self.close_frame['frameSize'] = [0, size[0] + self.title_pad[0] * 2,
-                                         self.title_frame['frameSize'][2], self.title_frame['frameSize'][3]]
+        self.close_frame['frameSize'] = [
+            0,
+            size[0] + self.title_pad[0] * 2,
+            self.title_frame['frameSize'][2],
+            self.title_frame['frameSize'][3],
+        ]
         self.close.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
         self.frame.set_pos(0, 0, 0)
         self.title_frame.bind(DGG.B1PRESS, self.start_drag)
@@ -141,23 +147,26 @@ class Window():
 
     def mouse_wheel_event(self, dir):
         # If the user is scrolling a scroll-bar, don't try to scroll the scrolled-frame too.
-        region = base.mouseWatcherNode.getOverRegion()
+        region = self.base.mouseWatcherNode.getOverRegion()
         if region is not None:
-            widget = base.render2d.find("**/*{0}".format(region.name))
-            if (widget.is_empty() or
-                    isinstance(widget.node(), PGSliderBar) or isinstance(widget.getParent().node(), PGSliderBar)):
+            widget = self.base.render2d.find("**/*{0}".format(region.name))
+            if (
+                widget.is_empty()
+                or isinstance(widget.node(), PGSliderBar)
+                or isinstance(widget.getParent().node(), PGSliderBar)
+            ):
                 return
 
         # Get the mouse-position
-        if not base.mouseWatcherNode.hasMouse():
+        if not self.base.mouseWatcherNode.hasMouse():
             return
-        mouse_pos = base.mouseWatcherNode.getMouse()
+        mouse_pos = self.base.mouseWatcherNode.getMouse()
 
         found_scroller = None
         # Determine whether any of the scrolled-frames are under the mouse-pointer
         for scroller in self.scrollers:
             bounds = scroller['frameSize']
-            pos = scroller.get_relative_point(base.render2d, Point3(mouse_pos.get_x(), 0, mouse_pos.get_y()))
+            pos = scroller.get_relative_point(self.base.render2d, Point3(mouse_pos.get_x(), 0, mouse_pos.get_y()))
             if pos.x > bounds[0] and pos.x < bounds[1] and pos.z > bounds[2] and pos.z < bounds[3]:
                 found_scroller = scroller
                 break
@@ -174,16 +183,20 @@ class Window():
             obj.setValue(obj.getValue() + dir * obj["pageSize"])
 
     def start_drag(self, event):
-        if base.mouseWatcherNode.has_mouse():
-            mpos = base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(base.render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
+        if self.base.mouseWatcherNode.has_mouse():
+            mpos = self.base.mouseWatcherNode.get_mouse()
+            current_pos = self.frame.parent.get_relative_point(
+                self.base.render2d, Point3(mpos.get_x(), 0, mpos.get_y())
+            )
             self.drag_start = current_pos - self.frame.get_pos()
             taskMgr.add(self.drag, "drag", -1)
 
     def drag(self, task):
-        if base.mouseWatcherNode.has_mouse():
-            mpos = base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(base.render2d, Point3(mpos.get_x(), 0, mpos.get_y()))
+        if self.base.mouseWatcherNode.has_mouse():
+            mpos = self.base.mouseWatcherNode.get_mouse()
+            current_pos = self.frame.parent.get_relative_point(
+                self.base.render2d, Point3(mpos.get_x(), 0, mpos.get_y())
+            )
             # Don't let the top left corner go out of the UI limits
             limits = self.get_ui().get_limits()
             pos = current_pos - self.drag_start

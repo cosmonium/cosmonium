@@ -44,7 +44,7 @@ class DecoratedSizer(Sizer):
             **skin.get_style(self.element),
             parent=parent.instance,
             state=DGG.NORMAL,
-            )
+        )
         self.border_color = skin.get(self.element).border_color
 
     def update_frame(self):

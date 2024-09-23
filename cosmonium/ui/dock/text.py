@@ -28,14 +28,7 @@ from .base import DGuiDockWidget
 
 class TextDockWidget(DGuiDockWidget):
 
-    def __init__(
-            self,
-            text: str,
-            align,
-            proportions=None,
-            alignments=None,
-            borders=None,
-            index=None):
+    def __init__(self, text: str, align, proportions=None, alignments=None, borders=None, index=None):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
         self.text_source = text
         self.align = align
@@ -48,11 +41,7 @@ class TextDockWidget(DGuiDockWidget):
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         label_element = UIElement('label', parent=parent.element)
         self.text = self.template.render()
-        label = DirectLabel(
-            **skin.get_style(label_element),
-            text=self.text,
-            text_align=self.align,
-            textMayChange=True)
+        label = DirectLabel(**skin.get_style(label_element), text=self.text, text_align=self.align, textMayChange=True)
         return label
 
     def update(self):

@@ -1,8 +1,29 @@
-from __future__ import annotations
-from dataclasses import dataclass
-from typing import Optional
+# -*- coding: utf-8 -*-
+#
+# This file is part of Cosmonium.
+#
+# Copyright (C) 2018-2024 Laurent Deru.
+#
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
 
+
+from __future__ import annotations
+
+from dataclasses import dataclass
 from panda3d.core import LColor
+from typing import Optional
 
 from ..fonts import fontsManager, Font
 from .. import settings
@@ -24,11 +45,12 @@ class Selector:
         self.id_ = id_
 
     def applicable(self, element, state):
-        return ((self.type_ is None or self.type_ == element.type_) and
-                (self.state is None or self.state == state) and
-                (self.class_ is None or self.class_ == element.class_) and
-                (self.id_ is None or self.id_ == element.id_)
-                )
+        return (
+            (self.type_ is None or self.type_ == element.type_)
+            and (self.state is None or self.state == state)
+            and (self.class_ is None or self.class_ == element.class_)
+            and (self.id_ is None or self.id_ == element.id_)
+        )
 
 
 class ParentSelector:
@@ -46,7 +68,7 @@ class ParentSelector:
         return False
 
 
-class UISkinEntry():
+class UISkinEntry:
     def __init__(self, selector, config):
         self.__dict__['_selector'] = selector
         self.__dict__['_config'] = config
@@ -88,7 +110,7 @@ class UISkinEntry():
         parameters = {
             'scale': scale,
             'font': fontsManager.load_font(font_family, font_style),
-            }
+        }
         if prefix is not None:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
         return parameters
@@ -109,7 +131,7 @@ class UISkinEntry():
             scale = (width, height)
         parameters = {
             'scale': scale,
-            }
+        }
         if prefix is not None:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
         return parameters
@@ -122,16 +144,16 @@ class UISkinEntry():
                 'frameColor': self.background_color,
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
-                }
+            }
         elif dgui_type == 'borders':
             parameters = {
                 'background_color': self.background_color,
                 'border_color': self.border_color,
-                }
+            }
         elif dgui_type == 'check-button':
             parameters = {
                 'frameColor': self.background_color,
-                }
+            }
             button = UIElement(parent=element, type_='button', class_='indicator')
             parameters.update(skin.get_style(button, prefix='indicator_'))
         elif dgui_type == 'entry':
@@ -139,26 +161,22 @@ class UISkinEntry():
                 'text_fg': self.text_color,
                 'frameColor': self.background_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
-                }
+            }
         elif dgui_type == 'frame':
-            parameters = {
-                'frameColor': self.background_color
-                }
+            parameters = {'frameColor': self.background_color}
         elif dgui_type == 'label':
             parameters = {
                 'frameColor': self.background_color,
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
-                }
+            }
         elif dgui_type == 'onscreen-text':
             parameters = {
                 'fg': self.text_color,
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
-                }
+            }
         elif dgui_type == 'scroll-bar':
-            parameters = {
-                'frameColor': self.background_color
-                }
+            parameters = {'frameColor': self.background_color}
             thumb = UIElement(parent=element, type_='button', class_='thumb')
             parameters.update(skin.get_style(thumb, prefix='thumb_'))
             inc_button = UIElement(parent=element, type_='button', class_='inc-button')
@@ -169,7 +187,7 @@ class UISkinEntry():
             parameters = {
                 'frameColor': self.background_color,
                 'scrollBarWidth': self.width(element, False, skin) if self.width else font_size,
-                }
+            }
             horizontal_scroll = UIElement(parent=element, type_='scroll-bar', class_='horizontal-scroll')
             parameters.update(skin.get_style(horizontal_scroll, prefix='horizontalScroll_'))
             vertical_scroll = UIElement(parent=element, type_='scroll-bar', class_='vertical-scroll')
@@ -182,7 +200,7 @@ class UISkinEntry():
                     borders = None
                 parameters = {
                     'borders': borders,
-                    }
+                }
             else:
                 if self.margin is not None:
                     gaps = [margin(element, False, skin) for margin in (self.margin[0], self.margin[2])]
@@ -190,12 +208,12 @@ class UISkinEntry():
                     gaps = (0, 0)
                 parameters = {
                     'gaps': gaps,
-                    }
+                }
         elif dgui_type == 'spin-box':
             parameters = {
                 'frameColor': self.background_color,
                 'scale': (font_size, 1, font_size),
-                }
+            }
             entry = UIElement(parent=element, type_='entry', class_='value-entry')
             parameters.update(skin.get_style(entry, 'valueEntry_'))
             inc_button = UIElement(parent=element, type_='button', class_='inc-button')
@@ -205,8 +223,8 @@ class UISkinEntry():
         elif dgui_type == 'slider':
             parameters = {
                 'frameColor': self.text_color,
-                **self.get_scale_from_width_height(element, skin, scale3=True)
-                }
+                **self.get_scale_from_width_height(element, skin, scale3=True),
+            }
             thumb = UIElement(parent=element, type_='button', class_='thumb')
             parameters.update(skin.get_style(thumb, prefix='thumb_'))
         elif dgui_type == 'tabbed-frame':
@@ -222,17 +240,17 @@ class UISkinEntry():
                 'tabUnselectedColor': unselected.background_color,
                 'tabInactiveColor': inactive.background_color,
                 'tabRolloverOffsetColor': LColor(hover.background_color.xyz - unselected.background_color.xyz, 0.0),
-                'tabClickOffsetColor':  LColor(clicked.background_color.xyz - unselected.background_color.xyz, 0.0),
+                'tabClickOffsetColor': LColor(clicked.background_color.xyz - unselected.background_color.xyz, 0.0),
                 'tab_scale': (font_size, 1, font_size),
                 'tab_text_fg': self.text_color,
-                }
+            }
             scrolled_frame = UIElement(parent=element, type_='scrolled-frame')
             parameters.update(skin.get_style(scrolled_frame, prefix='scroll_', skip_font=True))
         elif dgui_type == 'text':
             parameters = {
                 'fg': self.text_color,
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
-                }
+            }
         else:
             print("Unknown widget", dgui_type)
             parameters = {}
@@ -254,7 +272,8 @@ class UISkin:
     def get_style(self, element, state=None, prefix=None, skip_font=False, usage=None, dgui=None):
         style = self.collect_entries_for(element, state)
         return style.get_dgui_parameters_for(
-            element, skin=self, prefix=prefix, skip_font=skip_font, usage=usage, dgui=dgui)
+            element, skin=self, prefix=prefix, skip_font=skip_font, usage=usage, dgui=dgui
+        )
 
     def collect_entries_for(self, element, state):
         result = UISkinEntry(None, {})

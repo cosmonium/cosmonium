@@ -1,27 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-import sys
 import os
+import sys
 
-class Clipboard():
+
+class Clipboard:
+
     def update(self):
         pass
 
@@ -31,12 +32,15 @@ class Clipboard():
     def copy_from(self):
         return ''
 
+
 class TkClipboard(Clipboard):
+
     def __init__(self):
         has_tk = False
         self.r = None
         try:
             from tkinter import Tk, TclError
+
             has_tk = True
             print("Using Tk clipboard")
         except ImportError:
@@ -66,15 +70,18 @@ class TkClipboard(Clipboard):
         if self.r is not None:
             try:
                 text = self.r.clipboard_get()
-            except:
+            except Exception:
                 pass
         return text
 
+
 class WinClipboard(Clipboard):
+
     def __init__(self):
         try:
             import win32clipboard
             import win32con
+
             self.w = win32clipboard
             self.type = win32con.CF_UNICODETEXT
             print("Using win32 clipboard")
@@ -97,7 +104,9 @@ class WinClipboard(Clipboard):
             self.w.CloseClipboard()
         return result
 
+
 class DarwinClipboard(Clipboard):
+
     def copy_to(self, text):
         pbcopy = os.popen('pbcopy', 'w')
         pbcopy.write(text)
@@ -109,7 +118,9 @@ class DarwinClipboard(Clipboard):
         pbpaste.close()
         return result
 
+
 class XClipboard(Clipboard):
+
     def __init__(self):
         self.cmd_read = None
         self.cmd_write = None
@@ -138,6 +149,7 @@ class XClipboard(Clipboard):
         result = cmd.read()
         cmd.close()
         return result
+
 
 def create_clipboard():
     if sys.platform == 'darwin':
