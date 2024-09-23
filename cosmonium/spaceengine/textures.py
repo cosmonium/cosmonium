@@ -1,41 +1,41 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import os
 
 from ..textures import VirtualTextureSource, TextureSourceFactory, AutoTextureSource
 from ..dircontext import defaultDirContext
 
-import os
 
 class SpaceEngineVirtualTextureSource(VirtualTextureSource):
     face_str = [
-                #SE Axis :
-                # X : Right -> X
-                # Y : Up -> Z
-                # Z : Forward -> -Y
-                'pos_x',
-                'neg_x',
-                'pos_z',
-                'neg_z',
-                'pos_y',
-                'neg_y',
-                ]
+        # SE Axis :
+        # X : Right -> X
+        # Y : Up -> Z
+        # Z : Forward -> -Y
+        'pos_x',
+        'neg_x',
+        'pos_z',
+        'neg_z',
+        'pos_y',
+        'neg_y',
+    ]
 
     def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=defaultDirContext):
         VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
@@ -54,7 +54,9 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
         dir_name = self.face_str[patch.face]
         x = patch.x
         y = (1 << patch.lod) - patch.y - 1
-        return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, y * 2, x * 2, self.channel_text, self.ext)
+        return (
+            self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod + 1, y * 2, x * 2, self.channel_text, self.ext)
+        )
 
     def texture_name(self, patch):
         dir_name = self.face_str[patch.face]
@@ -72,10 +74,13 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
     def get_recommended_shape(self):
         return 'se-sphere'
 
+
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
+
     def create_source(self, filename, context=defaultDirContext):
         filename = context.find_texture(filename)
-        if filename is None: return None
+        if filename is None:
+            return None
         if os.path.isdir(filename):
             all_faces = True
             for face in SpaceEngineVirtualTextureSource.face_str:
@@ -94,5 +99,6 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
                 return SpaceEngineVirtualTextureSource(filename, 'jpg', 258, channel, alpha_channel)
         return None
 
-#TODO: Should be done in Cosmonium main class
+
+# TODO: Should be done in Cosmonium main class
 AutoTextureSource.register_source_factory(SpaceEngineTextureSourceFactory(), [], 1)
