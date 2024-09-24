@@ -1,28 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from .vertex_input import VertexInput
 from .component import ShaderComponent
+from .vertex_input import VertexInput
 
 
 class QuadTessellationVertexInput(VertexInput):
+
     def __init__(self, invert_v=False):
         VertexInput.__init__(self)
         self.invert_v = invert_v
@@ -33,27 +33,31 @@ class QuadTessellationVertexInput(VertexInput):
             code.append("#extension GL_ARB_tessellation_shader : enable")
 
     def interpolate(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 {
     vec4 a = mix(v0, v1, gl_TessCoord.x);
     vec4 b = mix(v3, v2, gl_TessCoord.x);
     return mix(a, b, gl_TessCoord.y);
 }
-''']
+'''
+        ]
 
     def vertex_extra(self, code):
         self.interpolate(code)
 
     def vertex_shader(self, code):
-        code += ['''
+        code += [
+            '''
             model_vertex4 = interpolate(
                               gl_in[0].gl_Position,
                               gl_in[1].gl_Position,
                               gl_in[2].gl_Position,
                               gl_in[3].gl_Position);
-''']
-        #TODO: Retrieve normals from tesselator
+'''
+        ]
+        # TODO: Retrieve normals from tesselator
         if 'model_normal' in self.config.vertex_requires:
             code.append("model_normal4 = vec4(0.0, 0.0, 1.0, 0.0);")
         if 'tangent' in self.config.vertex_requires:
@@ -71,10 +75,11 @@ class TessellationControl(ShaderComponent):
 
 
 class ConstantTessellationControl(TessellationControl):
+
     def __init__(self, invert_v=False):
         TessellationControl.__init__(self)
-        #invert_v is not used in TessellationControl but in QuadTessellationVertexInput
-        #It is configured here as this is the user class
+        # invert_v is not used in TessellationControl but in QuadTessellationVertexInput
+        # It is configured here as this is the user class
         self.invert_v = invert_v
 
     def get_id(self):
@@ -90,7 +95,8 @@ class ConstantTessellationControl(TessellationControl):
         code.append("uniform vec4 TessLevelOuter;")
 
     def vertex_shader(self, code):
-        code += ['''
+        code += [
+            '''
         gl_TessLevelOuter[0] = TessLevelOuter[0];
         gl_TessLevelOuter[1] = TessLevelOuter[1];
         gl_TessLevelOuter[2] = TessLevelOuter[2];
@@ -98,4 +104,5 @@ class ConstantTessellationControl(TessellationControl):
 
         gl_TessLevelInner[0] = TessLevelInner;
         gl_TessLevelInner[1] = TessLevelInner;
-''']
+'''
+        ]

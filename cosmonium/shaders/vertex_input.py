@@ -1,27 +1,27 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from .component import ShaderComponent
 
 
 class VertexInput(ShaderComponent):
+
     def __init__(self):
         ShaderComponent.__init__(self)
         self.config = None
@@ -29,6 +29,7 @@ class VertexInput(ShaderComponent):
     def set_shader(self, shader):
         ShaderComponent.set_shader(self, shader)
         self.config = shader
+
 
 class DirectVertexInput(VertexInput):
 
@@ -49,7 +50,7 @@ class DirectVertexInput(VertexInput):
         if 'tangent' in self.config.vertex_requires:
             code.append("model_tangent4 = vec4(p3d_Tangent.xyz, 0.0);")
             if 'generate_binormal' in self.config.vertex_requires:
-                #TODO: Should be done here ?
+                # TODO: Should be done here ?
                 code.append("model_binormal4 = vec4(cross(p3d_Normal.xyz, p3d_Tangent.xyz) * p3d_Tangent.w, 0.0);")
             else:
                 code.append("model_binormal4 = vec4(p3d_Binormal.xyz, 0.0);")
@@ -57,7 +58,7 @@ class DirectVertexInput(VertexInput):
             for i in range(self.config.nb_textures_coord):
                 code.append("model_texcoord%i = p3d_MultiTexCoord%i;" % (i, i))
         else:
-            #TODO: Should be done here ?
+            # TODO: Should be done here ?
             code.append("vec3 tmp = model_vertex4.xyz / model_vertex4.w;")
             code.append("float tmp_len = length(tmp);")
             code.append("float u = atan(tmp.y, tmp.x) / pi / 2 + 0.5;")

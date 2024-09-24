@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -27,6 +27,7 @@ from .. import settings
 import hashlib
 import os
 import re
+
 
 class ShaderBase(object):
     shaders_cache = {}
@@ -62,11 +63,13 @@ class ShaderBase(object):
         self.create_and_register_shader(shape, appearance, force)
 
     def apply(self, instance):
-        if instance is None: return
+        if instance is None:
+            return
         if self.shader is not None:
             instance.set_shader(self.shader)
         else:
             print("ERROR: Applying a non created shader")
+
 
 class AutoShader(ShaderBase):
     def set_instance_control(self, instance_control):
@@ -90,6 +93,7 @@ class AutoShader(ShaderBase):
     def apply(self, shape, appearance):
         pass
 
+
 class FileShader(ShaderBase):
     def __init__(self, vertex='', fragment='', tess_control='', tess_evaluation=''):
         ShaderBase.__init__(self)
@@ -104,12 +108,15 @@ class FileShader(ShaderBase):
 
     def create_shader(self):
         print("Loading shader", self.get_shader_id())
-        return Shader.load(Shader.SL_GLSL,
-                           vertex=self.vertex,
-                           tess_control=self.tess_control,
-                           tess_evaluation=self.tess_evaluation,
-                           geometry=self.geometry,
-                           fragment=self.fragment)
+        return Shader.load(
+            Shader.SL_GLSL,
+            vertex=self.vertex,
+            tess_control=self.tess_control,
+            tess_evaluation=self.tess_evaluation,
+            geometry=self.geometry,
+            fragment=self.fragment,
+        )
+
 
 class ShaderProgram(object):
     def __init__(self, shader_type):
@@ -125,12 +132,12 @@ class ShaderProgram(object):
         self.functions = {}
 
     def add_function(self, code, name, func):
-        if not name in self.functions:
+        if name not in self.functions:
             func(code)
             self.functions[name] = True
 
     def include(self, code, name, filename):
-        if not name in self.functions:
+        if name not in self.functions:
             data = open(filename)
             code += data.readlines()
             self.functions[name] = True
@@ -139,15 +146,17 @@ class ShaderProgram(object):
         code.append("const float pi  = 3.14159265358;")
 
     def to_srgb(self, code):
-        #See https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_framebuffer_sRGB.txt
-        code.append('''
+        # See https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_framebuffer_sRGB.txt
+        code.append(
+            '''
 float to_srgb(float value) {
     if(value < 0.0031308) {
         return 12.92 * value;
     } else {
         return 1.055 * pow(value, 0.41666) - 0.055;
     }
-}''')
+}'''
+        )
 
     def create_shader_version(self, code):
         if self.version is not None:
@@ -155,7 +164,9 @@ float to_srgb(float value) {
                 code.append(f"#version {self.version}")
                 code.append("vec4 texture(sampler2D sampler, vec2 p) { return texture2D(sampler, p); }")
                 code.append("vec4 texture(sampler3D sampler, vec3 p) { return texture3D(sampler, p); }")
-                code.append("float textureProj(sampler2DShadow sampler, vec4 p) { return shadow2D(sampler, p.xyz / p.w).r; }")
+                code.append(
+                    "float textureProj(sampler2DShadow sampler, vec4 p) { return shadow2D(sampler, p.xyz / p.w).r; }"
+                )
             else:
                 profile = 'core' if OpenGLConfig.core_profile else 'compatibility'
                 code.append(f"#version {self.version} {profile}")
@@ -184,7 +195,7 @@ float to_srgb(float value) {
             new_out = "attribute "
         else:
             new_out = "varying "
-        regex = re.compile("^\s*(centroid\s+)?in\s+")
+        regex = re.compile(r"^\s*(centroid\s+)?in\s+")
         for line in code:
             new_line = regex.sub(new_out, line)
             new_code.append(new_line)
@@ -194,7 +205,7 @@ float to_srgb(float value) {
         if self.shader_type != 'vertex':
             return code
         new_code = []
-        regex = re.compile("^\s*(centroid\s+)?out\s+")
+        regex = re.compile(r"^\s*(centroid\s+)?out\s+")
         for line in code:
             new_line = regex.sub("varying ", line)
             new_code.append(new_line)
@@ -233,6 +244,7 @@ float to_srgb(float value) {
         else:
             self.file_id = shader_id
         return shader
+
 
 class StructuredShader(ShaderBase):
     def __init__(self):
@@ -273,12 +285,14 @@ class StructuredShader(ShaderBase):
             fragment = self.fragment_shader.generate_shader(dump, shader_id)
         else:
             fragment = ''
-        shader = Shader.make(Shader.SL_GLSL,
-                             vertex=vertex,
-                             tess_control=tess_control,
-                             tess_evaluation=tess_evaluation,
-                             geometry=geometry,
-                             fragment=fragment)
+        shader = Shader.make(
+            Shader.SL_GLSL,
+            vertex=vertex,
+            tess_control=tess_control,
+            tess_evaluation=tess_evaluation,
+            geometry=geometry,
+            fragment=fragment,
+        )
         shader.set_filename(-1, f"{shaders_path}/{dump}")
         if vertex:
             shader.set_filename(Shader.ST_vertex, self.vertex_shader.file_id)

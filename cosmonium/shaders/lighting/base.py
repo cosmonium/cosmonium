@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -77,7 +77,9 @@ class BacklitEmission(ShaderComponent, EmissionModelInterface):
 
     def light_contribution(self, code, light_direction, light_color, cos_light_angle):
         code.append(f"if ({cos_light_angle} < 0.0) {{")
-        code.append(f"  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-{cos_light_angle}) * global_shadow;")
+        code.append(
+            f"  total_emission_color.rgb += surface_color.rgb * backlit * sqrt(-{cos_light_angle}) * global_shadow;"
+        )
         code.append("}")
 
     def global_emission(self, code):
@@ -144,7 +146,8 @@ class ShadingLightingModel(CompositeShaderComponent):
 
     def vertex_uniforms(self, code):
         CompositeShaderComponent.vertex_uniforms(self, code)
-        code.append("""
+        code.append(
+            """
 uniform struct p3d_LightSourceParameters {
     vec4 position;
     vec4 diffuse;
@@ -155,11 +158,13 @@ uniform struct p3d_LightSourceParameters {
     sampler2DShadow shadowMap;
     mat4 shadowViewMatrix;
 } p3d_LightSource[8];
-""")
+"""
+        )
 
     def fragment_uniforms(self, code):
         CompositeShaderComponent.fragment_uniforms(self, code)
-        code.append("""
+        code.append(
+            """
 uniform struct p3d_LightSourceParameters {
     vec4 position;
     vec4 diffuse;
@@ -175,7 +180,8 @@ uniform struct p3d_LightModelParameters {
     vec4 ambient;
 } p3d_LightModel;
 
-""")
+"""
+        )
         code.append("const float LIGHT_CUTOFF = 0.001;")
         code.append("const float SPOTSMOOTH = 0.001;")
         code.append("uniform float ambient_coef;")
@@ -202,15 +208,23 @@ uniform struct p3d_LightModelParameters {
         code.append("        continue;")
         code.append("    }")
         code.append("    float shadow = 1.0;")
-        code.append("    vec3 light_position = p3d_LightSource[i].position.xyz - eye_vertex * p3d_LightSource[i].position.w;")
+        code.append(
+            "    vec3 light_position = p3d_LightSource[i].position.xyz - eye_vertex * p3d_LightSource[i].position.w;"
+        )
         code.append("    vec3 light_direction = normalize(light_position);")
         code.append("    float light_distance = length(light_position);")
         code.append("    vec3 attenuation_params = p3d_LightSource[i].attenuation;")
-        code.append("    float attenuation_factor = 1.0 / (attenuation_params.x + attenuation_params.y * light_distance + attenuation_params.z * light_distance * light_distance);")
+        code.append(
+            "    float attenuation_factor = "
+            "1.0 / (attenuation_params.x + attenuation_params.y * light_distance"
+            " + attenuation_params.z * light_distance * light_distance);"
+        )
         code.append("    shadow *= attenuation_factor;")
         code.append("    float spot_cos = dot(normalize(p3d_LightSource[i].spotDirection), -light_direction);")
         code.append("    float spot_cutoff = p3d_LightSource[i].spotCosCutoff;")
-        code.append("    float shadow_spot = smoothstep(spot_cutoff - SPOTSMOOTH, spot_cutoff + SPOTSMOOTH, spot_cos);")
+        code.append(
+            "    float shadow_spot = smoothstep(spot_cutoff - SPOTSMOOTH, spot_cutoff + SPOTSMOOTH, spot_cos);"
+        )
         code.append("    shadow *= shadow_spot;")
         self.local_shadows.shadow_for(code, "i")
         code.append("    vec3 contribution = vec3(0);")
@@ -230,11 +244,25 @@ uniform struct p3d_LightModelParameters {
             shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
         self.scattering.incoming_light_for(code, global_lights + "eye_direction", global_lights + "color")
         code.append("    vec3 direct_contribution;")
-        self.brdf.light_contribution(code, "direct_contribution", global_lights + "eye_direction", "incoming_light_color")
+        self.brdf.light_contribution(
+            code,
+            "direct_contribution",
+            global_lights + "eye_direction",
+            "incoming_light_color",
+        )
         code.append("    vec3 indirect_contribution;")
         self.brdf.ambient_contribution(code, "indirect_contribution", "ambient_diffuse")
-        code.append("    total_diffuse_color.rgb += ((direct_contribution * local_shadow + indirect_contribution ) * transmittance + in_scatter) * global_shadow;")
-        self.emission.light_contribution(code, global_lights + "direction", global_lights + "eye_direction", self.brdf.cos_light_normal())
+        code.append(
+            "    total_diffuse_color.rgb += "
+            "((direct_contribution * local_shadow + indirect_contribution ) * transmittance + in_scatter) "
+            "* global_shadow;"
+        )
+        self.emission.light_contribution(
+            code,
+            global_lights + "direction",
+            global_lights + "eye_direction",
+            self.brdf.cos_light_normal(),
+        )
         code.append("}")
         code.append("vec3 ambient = surface_color.rgb * (ambient_color * ambient_coef + p3d_LightModel.ambient.rgb);")
         if self.appearance.has_occlusion:

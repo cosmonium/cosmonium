@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -92,7 +92,7 @@ class TextureAppearance(ShaderAppearance):
         return config
 
     def create_shader_configuration(self, appearance):
-        #TODO: This should use the shader data source iso appearance!
+        # TODO: This should use the shader data source iso appearance!
         self.has_surface = True
         self.has_occlusion = self.data.has_source_for('occlusion')
         self.has_normal = appearance.normal_map is not None or self.data.has_source_for('normal')
@@ -122,7 +122,7 @@ class TextureAppearance(ShaderAppearance):
         if self.has_emission:
             code.append("emission_color = %s;" % self.data.get_source_for('emission'))
         if self.has_transparency:
-            #TODO: technically binary transparency is alpha strictly lower than .5
+            # TODO: technically binary transparency is alpha strictly lower than .5
             code.append("if (surface_color.a <= transparency_level) discard;")
             if self.transparency_blend == TransparencyBlend.TB_None:
                 code.append("surface_color.a = 1.0;")

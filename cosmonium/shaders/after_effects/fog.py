@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -45,19 +45,29 @@ class Fog(ShaderComponent):
         code.append("uniform vec4 sunColor;")
 
     def applyFog(self, code):
-        code.append('''
+        code.append(
+            '''
 vec3 applyFog(in vec3  pixelColor, in vec3 position)
 {
     float cam_distance = abs(distance(camera, position));
     vec3 cam_to_point = normalize(position - camera);
     //float fogAmount = 1.0 - exp(-cam_distance * fogFallOff);
-    float fogAmount = fogDensity / fogFallOff * exp(-(camera.z - fogGround) * fogFallOff) * (1.0 - exp(-cam_distance * cam_to_point.z * fogFallOff )) / cam_to_point.z;
-    //float fogAmount = fogDensity / fogFallOff * (exp(-(camera.z - fogGround) * fogFallOff) - exp(-(camera.z - fogGround + cam_distance * cam_to_point.z) * fogFallOff )) / cam_to_point.z;
+    float fogAmount =
+        fogDensity / fogFallOff
+        * exp(-(camera.z - fogGround) * fogFallOff)
+        * (1.0 - exp(-cam_distance * cam_to_point.z * fogFallOff ))
+        / cam_to_point.z;
+    //float fogAmount =
+        fogDensity / fogFallOff
+        * (exp(-(camera.z - fogGround) * fogFallOff)
+            - exp(-(camera.z - fogGround + cam_distance * cam_to_point.z) * fogFallOff ))
+        / cam_to_point.z;
     float sunAmount = max( dot( cam_to_point, light_dir ), 0.0 );
     vec3  mixColor = mix( fogColor.xyz, sunColor.xyz, pow(sunAmount, 8.0));
     return mix(pixelColor, mixColor, clamp(fogAmount, 0, 1));
 }
-''')
+'''
+        )
 
     def fragment_extra(self, code):
         self.applyFog(code)

@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -74,7 +74,13 @@ class OrenNayarPhongLightingModel(ShaderComponent, BRDFInterface):
         code.append("}")
 
     def oren_nayar_brdf(self, code):
-        code.append("vec3 oren_nayar_brdf(in OrenNayarMaterial material, in OrenNayarVectors vectors, in vec3 light_direction, in vec3 light_color) {")
+        code.append(
+            "vec3 oren_nayar_brdf("
+            "in OrenNayarMaterial material, "
+            "in OrenNayarVectors vectors, "
+            "in vec3 light_direction, "
+            "in vec3 light_color) {"
+        )
         code.append("  vec3 contribution = vec3(0);")
         code.append("  if (vectors.n_dot_l > 0.0) {")
         if self.appearance.has_specular:
@@ -84,7 +90,11 @@ class OrenNayarPhongLightingModel(ShaderComponent, BRDFInterface):
         code.append("    float theta_i = acos(vectors.n_dot_l);")
         code.append("    float alpha = max(theta_r, theta_i);")
         code.append("    float beta = min(theta_r, theta_i);")
-        code.append("    float delta = dot(normalize(vectors.obs_dir - vectors.normal * vectors.n_dot_v), normalize(vectors.light_dir - vectors.normal * vectors.n_dot_l));")
+        code.append(
+            "    float delta = "
+            "dot(normalize(vectors.obs_dir - vectors.normal * vectors.n_dot_v),"
+            " normalize(vectors.light_dir - vectors.normal * vectors.n_dot_l));"
+        )
         code.append("    float a = 1.0 - 0.5 * material.roughness_squared / (material.roughness_squared + 0.33);")
         code.append("    float b = 0.45 * material.roughness_squared / (material.roughness_squared + 0.09);")
         code.append("    float c = sin(alpha) * tan(beta);")

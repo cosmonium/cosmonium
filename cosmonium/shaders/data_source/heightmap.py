@@ -1,25 +1,24 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from .base import ShaderDataSource
-from ... import settings
 
 
 class HeightmapShaderDataSource(ShaderDataSource):
@@ -55,22 +54,32 @@ class HeightmapShaderDataSource(ShaderDataSource):
             code.append("uniform vec2 heightmap_%s_scale;" % self.name)
 
     def decode_height(self, code):
-        code += ['''
+        code += [
+            '''
 float decode_height(vec4 encoded) {
     return encoded.x;
 }
-''']
+'''
+        ]
 
     def get_terrain_height(self, code):
-        code += ['''
+        code += [
+            '''
 float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
     vec2 pos = texcoord * params.scale + params.offset;
     return decode_height(%s) * params.height_scale + %g;
 }
-''' % (self.name, self.filtering.apply('heightmap', 'pos'), self.heightmap.height_offset)]
+'''
+            % (
+                self.name,
+                self.filtering.apply('heightmap', 'pos'),
+                self.heightmap.height_offset,
+            )
+        ]
 
     def get_terrain_normal(self, code):
-        code += ['''
+        code += [
+            '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
     vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap, 0).xxx;
     float u0 = get_terrain_height_%s(heightmap, texcoord + pixel_size.yz, params);
@@ -85,7 +94,9 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
     vec3 binormal = normalize(vec3(0, 2.0 * params.v_scale, deltay));
     return normalize(cross(tangent, binormal));
 }
-''' % (self.name, self.name, self.name, self.name, self.name)]
+'''
+            % (self.name, self.name, self.name, self.name, self.name)
+        ]
 
     def has_source_for(self, source):
         if source == 'height':
@@ -97,17 +108,28 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
 
     def get_source_for(self, source, param, error=True):
         if source == 'height_%s' % self.name:
-            return "get_terrain_height_%s(heightmap_%s, %s, heightmap_%s_params)" % (self.name, self.name, param, self.name)
+            return "get_terrain_height_%s(heightmap_%s, %s, heightmap_%s_params)" % (
+                self.name,
+                self.name,
+                param,
+                self.name,
+            )
         if source == 'normal_%s' % self.name or (self.has_normal and source == 'normal'):
-            return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_params)" \
-                    % (self.name, self.name, "texcoord0.xy", self.name)
+            return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_params)" % (
+                self.name,
+                self.name,
+                "texcoord0.xy",
+                self.name,
+            )
         if source == 'range_%s' % self.name:
             return str(1.0 / (self.heightmap.max_height - self.heightmap.min_height))
-        if error: print("Unknown source '%s' requested" % source)
+        if error:
+            print("Unknown source '%s' requested" % source)
         return ''
 
     def heightmap_struct(self, code):
-        code.append("""
+        code.append(
+            """
 struct HeightmapParameters {
     float height_scale;
     float u_scale;
@@ -115,7 +137,8 @@ struct HeightmapParameters {
     vec2 offset;
     vec2 scale;
 };
-""")
+"""
+        )
 
     def vertex_extra(self, code):
         self.shader.vertex_shader.add_function(code, 'heightmap_struct', self.heightmap_struct)

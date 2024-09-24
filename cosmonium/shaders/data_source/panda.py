@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -114,22 +114,28 @@ class PandaShaderDataSource(ShaderDataSource):
         code = []
         if self.shader.use_model_texcoord:
             if self.tex_transform:
-                code.append("vec4 texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord%d;" % (texture_id, texture_id, texture_coord))
+                code.append(
+                    "vec4 texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord%d;"
+                    % (texture_id, texture_id, texture_coord)
+                )
             else:
                 code.append("vec4 texcoord_tex%d = texcoord%d;" % (texture_id, texture_coord))
         else:
-            #Using algo from http://vcg.isti.cnr.it/~tarini/no-seams/jgt_tarini.pdf (http://vcg.isti.cnr.it/~tarini/no-seams/)
+            # Using algo from http://vcg.isti.cnr.it/~tarini/no-seams/jgt_tarini.pdf
+            # (http://vcg.isti.cnr.it/~tarini/no-seams/)
             code.append("float du1 = fwidth(texcoord0.x);")
             code.append("float du2 = fwidth(texcoord0p.x);")
             code.append("vec4 texcoord_tex%d;" % (texture_id))
-            #-0.001 is needed to avaoid noise artifacts
+            # -0.001 is needed to avaoid noise artifacts
             code.append("if (du1 < du2 - 0.001) {")
             code.append("  texcoord_tex%d = texcoord%d;" % (texture_id, texture_coord))
             code.append("} else {")
             code.append("  texcoord_tex%d =  texcoord0p;" % (texture_id))
             code.append("}")
             if self.tex_transform:
-                code.append("  texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord_tex%d;" % (texture_id, texture_id, texture_id))
+                code.append(
+                    "  texcoord_tex%d = p3d_TextureMatrix[%d] * texcoord_tex%d;" % (texture_id, texture_id, texture_id)
+                )
             code.append("texcoord_tex%d.xyz /= texcoord_tex%d.w;" % (texture_id, texture_id))
         return code
 
@@ -152,7 +158,8 @@ class PandaShaderDataSource(ShaderDataSource):
         if self.has_attribute_color:
             code.append("uniform vec4 p3d_Color;")
         if self.has_material:
-            code.append("""uniform struct {
+            code.append(
+                """uniform struct {
   vec4 ambient;
   vec4 diffuse;
   vec4 emission;
@@ -164,7 +171,8 @@ class PandaShaderDataSource(ShaderDataSource):
   float metallic;
   float refractiveIndex;
 } p3d_Material;
-""")
+"""
+            )
 
     def fragment_inputs(self, code):
         if self.has_vertex_color:
@@ -198,7 +206,7 @@ class PandaShaderDataSource(ShaderDataSource):
     def get_source_for(self, source, params=None, error=True):
         if source == 'surface':
             if self.has_attribute_color:
-                #TODO: Should the texture be modulated ?
+                # TODO: Should the texture be modulated ?
                 return "p3d_Color * p3d_ColorScale"
             elif self.has_alpha_mask:
                 return "vec4(1.0)"
@@ -234,7 +242,7 @@ class PandaShaderDataSource(ShaderDataSource):
             else:
                 return "vec3(0, 0, 1.0)"
         if source == 'shininess':
-                return "shape_shininess"
+            return "shape_shininess"
         if source == 'specular-color':
             if self.has_specular_texture:
                 return "tex%i.rgb * shape_specular_color" % self.specular_map_index
@@ -273,7 +281,8 @@ class PandaShaderDataSource(ShaderDataSource):
                 return "tex%i.r" % self.occlusion_map_texture_index
             if self.has_occlusion_channel:
                 return "tex%i.r" % self.metalroughness_map_texture_index
-        if error: print("Unknown source '%s' requested" % source)
+        if error:
+            print("Unknown source '%s' requested" % source)
         return ''
 
     def fragment_shader(self, code):

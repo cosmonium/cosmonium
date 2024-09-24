@@ -1,27 +1,27 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from ..base import ShaderProgram
 
 
 class DefaultPassThroughVertexShader(ShaderProgram):
+
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -34,6 +34,7 @@ class DefaultPassThroughVertexShader(ShaderProgram):
 
 
 class TexturePassThroughVertexShader(ShaderProgram):
+
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -53,6 +54,7 @@ class TexturePassThroughVertexShader(ShaderProgram):
 
 
 class GeomPassThroughVertexShader(ShaderProgram):
+
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -70,6 +72,7 @@ class GeomPassThroughVertexShader(ShaderProgram):
 
 
 class ColorPassThroughFragmentShader(ShaderProgram):
+
     def __init__(self, config):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -86,13 +89,16 @@ class ColorPassThroughFragmentShader(ShaderProgram):
     def create_body(self, code):
         code.append("vec4 final_color = pixel_color;")
         if self.config.gamma_correction:
-            #code.append("color = vec4(pow(final_color.xyz, vec3(1.0/2.2)), final_color.a);")
-            code.append("color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);")
+            # code.append("color = vec4(pow(final_color.xyz, vec3(1.0/2.2)), final_color.a);")
+            code.append(
+                "color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);"
+            )
         else:
             code.append("color = final_color;")
 
 
 class TexturePassThroughFragmentShader(ShaderProgram):
+
     def __init__(self, config):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -116,7 +122,9 @@ class TexturePassThroughFragmentShader(ShaderProgram):
         if self.config.hdr:
             code.append("final_color = 1.0 - exp(final_color * -exposure);")
         if self.config.gamma_correction:
-            #code.append("color = vec4(pow(final_color.xyz, vec3(1.0/2.2)), final_color.a);")
-            code.append("color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);")
+            # code.append("color = vec4(pow(final_color.xyz, vec3(1.0/2.2)), final_color.a);")
+            code.append(
+                "color = vec4(to_srgb(final_color.x), to_srgb(final_color.y), to_srgb(final_color.z), final_color.a);"
+            )
         else:
             code.append("color = final_color;")

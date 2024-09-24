@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -41,12 +41,15 @@ class TextureNearestFilter(TextureFilter):
         return '-n'
 
     def texture_nearest_filter(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 texture_nearest_filter( sampler2D sam, vec2 p )
 {
     return %s;
 }
-''' % self.interpolator.apply('sam', 'p')]
+'''
+            % self.interpolator.apply('sam', 'p')
+        ]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_nearest_filter', self.texture_nearest_filter)
@@ -59,12 +62,15 @@ class TextureBilinearFilter(TextureFilter):
         return '-l'
 
     def texture_bilinear_filter(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 texture_bilinear_filter( sampler2D sam, vec2 p )
 {
     return %s;
 }
-''' % self.interpolator.apply('sam', 'p')]
+'''
+            % self.interpolator.apply('sam', 'p')
+        ]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_bilinear_filter', self.texture_bilinear_filter)
@@ -77,7 +83,8 @@ class TextureSmoothstepFilter(TextureFilter):
         return '-s'
 
     def texture_smoothstep_filter(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 texture_smoothstep_filter( sampler2D sam, vec2 p )
 {
     vec2 res = textureSize( sam, 0 );
@@ -91,7 +98,9 @@ vec4 texture_smoothstep_filter( sampler2D sam, vec2 p )
     p = (p - 0.5)/res;
     return %s;
 }
-''' % self.interpolator.apply('sam', 'p')]
+'''
+            % self.interpolator.apply('sam', 'p')
+        ]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_smoothstep_filter', self.texture_smoothstep_filter)
@@ -104,7 +113,8 @@ class TextureQuinticFilter(TextureFilter):
         return '-q'
 
     def texture_quintic_filter(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 texture_quintic_filter( sampler2D sam, vec2 p )
 {
     vec2 res = textureSize( sam, 0 );
@@ -118,7 +128,9 @@ vec4 texture_quintic_filter( sampler2D sam, vec2 p )
     p = (p - 0.5)/res;
     return %s;
 }
-''' % self.interpolator.apply('sam', 'p')]
+'''
+            % self.interpolator.apply('sam', 'p')
+        ]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_quintic_filter', self.texture_quintic_filter)
@@ -131,7 +143,8 @@ class TextureBSplineFilter(TextureFilter):
         return '-b'
 
     def texture_bspline_filter(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 cubic(float alpha) {
     float alpha2 = alpha*alpha;
     float alpha3 = alpha2*alpha;
@@ -170,14 +183,18 @@ vec4 texture_bspline_filter(sampler2D sam, vec2 pos)
     float a = mix(p01, p00, sx);
     float b = mix(p11, p10, sx);
     return vec4(mix(b, a, sy));
-}''' % (self.interpolator.apply('sam', 'offset.xz'),
-        self.interpolator.apply('sam', 'offset.yz'),
-        self.interpolator.apply('sam', 'offset.xw'),
-        self.interpolator.apply('sam', 'offset.yw'),
-       )]
+}'''
+            % (
+                self.interpolator.apply('sam', 'offset.xz'),
+                self.interpolator.apply('sam', 'offset.yz'),
+                self.interpolator.apply('sam', 'offset.xw'),
+                self.interpolator.apply('sam', 'offset.yw'),
+            )
+        ]
 
     def textureBSplineDelta(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 cubic_deriv(float alpha) {
     float alpha2 = alpha * alpha;
     float w0 = -0.5 * alpha2 + alpha -0.5;
@@ -245,7 +262,8 @@ float textureBSplineDerivY(sampler2D sam, vec2 pos)
     float b = (p11 - p10) * sx;
     return mix(b, a, sy);
 }
-''']
+'''
+        ]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_bspline_filter', self.texture_bspline_filter)

@@ -1,26 +1,25 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from .base import ShaderDataSource
 from ...textures import DataTexture
-from ... import settings
 
 
 class StackedHeightmapShaderDataSource(ShaderDataSource):
@@ -52,18 +51,22 @@ class StackedHeightmapShaderDataSource(ShaderDataSource):
             return "get_terrain_height_%s(%s)" % (self.name, param)
         if source == 'normal_%s' % self.name:
             return "get_terrain_normal_%s(%s)" % (self.name, param)
-        if error: print("Unknown source '%s' requested" % source)
+        if error:
+            print("Unknown source '%s' requested" % source)
         return ''
 
     def decode_height(self, code):
-        code += ['''
+        code += [
+            '''
 float decode_height(vec4 encoded) {
     return encoded[0];
 }
-''']
+'''
+        ]
 
     def textureGood(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 textureGood( sampler2D sam, vec2 uv )
 {
     vec2 res = textureSize( sam, 0 );
@@ -81,20 +84,27 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
 }
-''']
+'''
+        ]
 
     def get_terrain_height_named(self, code):
         code.append('float get_terrain_height_%s(vec2 texcoord) {' % self.name)
         code.append('float height = 0.0;')
         for heightmap in self.heightmap.heightmaps:
-            code.append("height += decode_height(texture(heightmap_%s, texcoord)) * heightmap_%s_height_scale;" % (heightmap.name, heightmap.name))
+            code.append(
+                "height += decode_height(texture(heightmap_%s, texcoord)) * heightmap_%s_height_scale;"
+                % (heightmap.name, heightmap.name)
+            )
         code.append('return height;')
         code.append('}')
 
     def get_terrain_normal_named(self, code):
         code.append('vec3 get_terrain_normal_%s(vec2 texcoord) {' % self.name)
-        #TODO: Should fetch textureSize properly
-        code.append('vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap_%s, 0).xxx;' % self.heightmap.heightmaps[0].name)
+        # TODO: Should fetch textureSize properly
+        code.append(
+            'vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap_%s, 0).xxx;'
+            % self.heightmap.heightmaps[0].name
+        )
         code.append('float u0 = get_terrain_height_%s(texcoord + pixel_size.yz);' % self.name)
         code.append('float u1 = get_terrain_height_%s(texcoord + pixel_size.xz);' % self.name)
         code.append('float v0 = get_terrain_height_%s(texcoord + pixel_size.zy);' % self.name)

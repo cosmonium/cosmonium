@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -61,7 +61,13 @@ class LambertPhongLightingModel(ShaderComponent, BRDFInterface):
         code.append("}")
 
     def lambert_phong_brdf(self, code):
-        code.append("vec3 lambert_phong_brdf(in LambertPhongMaterial material, in LambertPhongVectors vectors, in vec3 light_direction, in vec3 light_color) {")
+        code.append(
+            "vec3 lambert_phong_brdf("
+            "in LambertPhongMaterial material, "
+            "in LambertPhongVectors vectors, "
+            "in vec3 light_direction, "
+            "in vec3 light_color) {"
+        )
         code.append("  vec3 contribution = vec3(0);")
         code.append("  if (vectors.n_dot_l > 0.0) {")
         if self.appearance.has_specular:
@@ -90,7 +96,9 @@ class LambertPhongLightingModel(ShaderComponent, BRDFInterface):
             code.append("  vec3 obs_dir = vec3(0);")
 
     def light_contribution(self, code, result, light_direction, light_color):
-        code.append(f"    LambertPhongVectors vectors = calc_lambert_phong_vectors(eye_normal, obs_dir, {light_direction});")
+        code.append(
+            f"    LambertPhongVectors vectors = calc_lambert_phong_vectors(eye_normal, obs_dir, {light_direction});"
+        )
         code.append(f"    {result} = lambert_phong_brdf(material, vectors, {light_direction}, {light_color}.rgb);")
 
     def ambient_contribution(self, code, result, ambient_diffuse):
