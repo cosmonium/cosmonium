@@ -1,24 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from direct.task.Task import gather, shield
+from direct.task.TaskManagerGlobal import taskMgr
+from math import pi
 
 from ..appearances import AppearanceBase, TexturesBlock
 from ..textures import TextureArray
@@ -28,11 +30,18 @@ from .. import settings
 
 from .shaders import TextureDictionaryShaderDataSource, DetailMap
 
-from math import pi
 
-#TODO: TexturesDictionary should be a DataSource, not an Appearance
+# TODO: TexturesDictionary should be a DataSource, not an Appearance
 class TexturesDictionary(AppearanceBase):
-    def __init__(self, textures, scale_factor=(1.0, 1.0), tiling=None, srgb=None, array=True, context=defaultDirContext):
+    def __init__(
+        self,
+        textures,
+        scale_factor=(1.0, 1.0),
+        tiling=None,
+        srgb=None,
+        array=True,
+        context=defaultDirContext,
+    ):
         AppearanceBase.__init__(self)
         self.name = 'tex-dict'
         self.scale_factor = scale_factor
@@ -55,7 +64,7 @@ class TexturesDictionary(AppearanceBase):
             self.texture_array = True
         self.textures = []
         self.texture_categories = {}
-        for (name, entry) in textures.items():
+        for name, entry in textures.items():
             if not isinstance(entry, TexturesBlock):
                 albedo = entry
                 entry = TexturesBlock()
@@ -96,7 +105,12 @@ class TexturesDictionary(AppearanceBase):
         tasks = []
         for entry in self.blocks.values():
             for texture in entry.textures:
-                tasks.append(taskMgr.add(texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
+                tasks.append(
+                    taskMgr.add(
+                        texture.load(tasks_tree, shape),
+                        sort=settings.shape_jobs_task_sort,
+                    )
+                )
         return gather(*tasks)
 
     def load_texture_array(self, tasks_tree, shape, owner):
@@ -107,7 +121,7 @@ class TexturesDictionary(AppearanceBase):
 
     def task_done(self, task):
         self.task = None
-        #TODO: loaded should be protected by a lock to avoid race condition with clear()
+        # TODO: loaded should be protected by a lock to avoid race condition with clear()
         self.loaded = True
 
     def create_load_task(self, tasks_tree, shape, owner):
@@ -158,9 +172,10 @@ class TexturesDictionary(AppearanceBase):
             resolved = size > 1.0
             if resolved != self.resolved:
                 self.resolved = resolved
-                #TODO: this should be done properly
+                # TODO: this should be done properly
                 shape.parent.shader.appearance.set_resolved(resolved)
                 shape.parent.update_shader()
+
 
 class ProceduralAppearance(AppearanceBase):
     def __init__(self, texture_control, texture_source, heightmap):

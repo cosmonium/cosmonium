@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -33,6 +33,7 @@ from .. import settings
 from .textures import NoiseTextureGenerator, PatchedProceduralVirtualTextureSource
 from .shadernoise import GrayTarget
 
+
 class ProceduralStarSurfaceFactory(SurfaceFactory):
     def __init__(self, noise, size=256):
         SurfaceFactory.__init__(self)
@@ -42,8 +43,10 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
 
     def create(self, body):
         factory = SquaredDistanceSquarePatchFactory()
-        lod_control = VertexSizeLodControl(max_vertex_size=settings.patch_max_vertex_size,
-                                           density=settings.patch_constant_density)
+        lod_control = VertexSizeLodControl(
+            max_vertex_size=settings.patch_max_vertex_size,
+            density=settings.patch_constant_density,
+        )
         shape = SquaredDistanceSquareShape(factory, lod_control=lod_control)
         shader = RenderingShader(lighting_model=PureEmissionLightingModel())
         tex_generator = NoiseTextureGenerator(self.size, self.noise, self.target, alpha=False, srgb=False)
@@ -51,14 +54,22 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
             radiance = body.anchor.get_radiant_flux() / (4 * pi * pi * body.radius * body.radius / units.m / units.m)
         else:
             radiance = 1.0
-        surface = EllipsoidFlatSurface(radius=body.radius, oblateness=body.oblateness, scale=body.scale,
-                              appearance=Appearance(colorScale=body.anchor.point_color * radiance,
-                                                    texture=SurfaceTexture(PatchedProceduralVirtualTextureSource(tex_generator,
-                                                                                                                 self.size),
-                                                                           srgb=False)),
-                              shape=shape,
-                              shader=shader)
+        surface = EllipsoidFlatSurface(
+            radius=body.radius,
+            oblateness=body.oblateness,
+            scale=body.scale,
+            appearance=Appearance(
+                colorScale=body.anchor.point_color * radiance,
+                texture=SurfaceTexture(
+                    PatchedProceduralVirtualTextureSource(tex_generator, self.size),
+                    srgb=False,
+                ),
+            ),
+            shape=shape,
+            shader=shader,
+        )
         return surface
+
 
 class ProceduralStarSurfaceFactoryDB(object):
     def __init__(self):
@@ -69,5 +80,6 @@ class ProceduralStarSurfaceFactoryDB(object):
 
     def get(self, name):
         return self.factories.get(name)
+
 
 proceduralStarSurfaceFactoryDB = ProceduralStarSurfaceFactoryDB()

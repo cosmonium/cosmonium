@@ -1,35 +1,35 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from array import array
+from direct.task.TaskManagerGlobal import taskMgr
+from itertools import chain
 from panda3d.core import OmniBoundingVolume
 from panda3d.core import PTAVecBase4f
 from panda3d.core import Texture, GeomEnums
+from random import random, uniform
 
 from ..shaders.instancing import OffsetScaleInstanceControl
 from ..datasource import DataSource
 from ..foundation import VisibleObject
 from .. import settings
-
-from random import random, uniform
-from array import array
-from itertools import chain
 
 
 class TerrainObjectFactory(object):
@@ -128,7 +128,7 @@ class TerrainPopulatorBase(VisibleObject):
     def end_shadows_update(self):
         self.object_template.end_shadows_update()
 
-    #TODO: Temporarily stolen from foundation to be able to spawn task
+    # TODO: Temporarily stolen from foundation to be able to spawn task
     def check_and_create_instance(self):
         if not self.instance and not self.task:
             self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
@@ -144,8 +144,10 @@ class TerrainPopulatorBase(VisibleObject):
         if self.object_template.instance is not None and self.object_template.instance_ready:
             self.object_template.update_shader()
 
+
 class ShapeTerrainPopulatorBase(TerrainPopulatorBase):
     pass
+
 
 class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
     def __init__(self, object_template, count, placer, min_lod=0):
@@ -183,7 +185,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             self.create_patch_for(terrain_patch)
 
     def split_patch(self, terrain_patch):
-        if not terrain_patch in self.patch_map: return
+        if terrain_patch not in self.patch_map:
+            return
         if settings.debug_lod_split_merge:
             print("Populator split patch", terrain_patch.str_id())
         patch = self.patch_map[terrain_patch]
@@ -193,7 +196,7 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         br = []
         tr = []
         tl = []
-        #TODO: Terrain scale should be retrieved properly...
+        # TODO: Terrain scale should be retrieved properly...
         size = self.terrain.size
         for data in patch.data:
             (x, y, height, scale) = data
@@ -208,14 +211,15 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
                     br.append(data)
                 else:
                     tr.append(data)
-        #print(len(bl), len(br), len(tr), len(tl))
+        # print(len(bl), len(br), len(tr), len(tl))
         self.patch_map[terrain_patch.children[0]] = TerrainPopulatorPatch(bl)
         self.patch_map[terrain_patch.children[1]] = TerrainPopulatorPatch(br)
         self.patch_map[terrain_patch.children[2]] = TerrainPopulatorPatch(tr)
         self.patch_map[terrain_patch.children[3]] = TerrainPopulatorPatch(tl)
 
     def merge_patch(self, terrain_patch):
-        if not terrain_patch in self.patch_map: return
+        if terrain_patch not in self.patch_map:
+            return
         if settings.debug_lod_split_merge:
             print("Populator merge patch", terrain_patch.str_id())
         patch = self.patch_map[terrain_patch]
@@ -237,7 +241,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
                 self.create_object_instances(scene_anchor, patch, terrain_patch)
 
     def create_patch_instance(self, terrain_patch):
-        if not self.patch_valid(terrain_patch): return
+        if not self.patch_valid(terrain_patch):
+            return
         if settings.debug_lod_split_merge:
             print("Populator create patch instance", terrain_patch.str_id())
         patch = self.create_patch_for(terrain_patch)
@@ -258,17 +263,18 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
             self.remove_object_instances(scene_anchor, patch, terrain_patch)
             del self.visible_patches[terrain_patch]
 
+
 class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
         PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
 
     def configure_object_template(self):
-        #Hide the main instance
+        # Hide the main instance
         self.object_template.instance.stash()
 
     def create_object_instances(self, scene_anchor, patch, terrain_patch):
         instances = []
-        for (i, offset) in enumerate(patch.data):
+        for i, offset in enumerate(patch.data):
             (x, y, height, scale) = offset
             child = scene_anchor.unshifted_instance.attach_new_node('instance_%d' % i)
             self.object_template.instance.instance_to(child)
@@ -282,6 +288,7 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
             instance.remove_node()
         patch.instances = []
 
+
 class OffsetsDataSource(DataSource):
     def __init__(self):
         DataSource.__init__(self, "offsets")
@@ -292,6 +299,7 @@ class OffsetsDataSource(DataSource):
 
     def apply(self, shape, instance):
         instance.set_shader_input('instances_offset', self.offsets)
+
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
@@ -325,7 +333,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         else:
             offsets = PTAVecBase4f.emptyArray(offsets_nb)
             for offset in data:
-                    offsets[offsets_nb] = offset
+                offsets[offsets_nb] = offset
         if settings.instancing_use_tex:
             texture = Texture()
             texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
@@ -346,6 +354,7 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
             if self.rebuild:
                 self.generate_table()
 
+
 class TerrainPopulatorPatch(object):
     def __init__(self, data=None):
         self.data = data
@@ -353,12 +362,14 @@ class TerrainPopulatorPatch(object):
     def set_data(self, data):
         self.data = data
 
+
 class ObjectPlacer(object):
     def __init__(self):
         pass
 
     def place_new(self, count):
         return None
+
 
 class RandomObjectPlacer(ObjectPlacer):
     def place_new(self, terrain, count, patch=None):
@@ -373,8 +384,8 @@ class RandomObjectPlacer(ObjectPlacer):
             x = uniform(-terrain.size, terrain.size)
             y = uniform(-terrain.size, terrain.size)
             height = terrain.get_height((x, y))
-        #TODO: Should not have such explicit dependency
-        #TODO: Disabled for now
+        # TODO: Should not have such explicit dependency
+        # TODO: Disabled for now
         if True or height > terrain.water.level:
             scale = uniform(0.1, 0.5)
             return (x, y, height, scale)

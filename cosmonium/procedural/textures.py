@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -45,7 +45,12 @@ class TextureGenerationStage(ProcessStage):
         return {'texture': 'color'}
 
     def create_shader(self):
-        shader = NoiseShader(self.size, coord=self.coord, noise_source=self.noise_source, noise_target=self.noise_target)
+        shader = NoiseShader(
+            self.size,
+            coord=self.coord,
+            noise_source=self.noise_source,
+            noise_target=self.noise_target,
+        )
         shader.create_and_register_shader(None, None)
         return shader
 
@@ -64,17 +69,20 @@ class TextureGenerationStage(ProcessStage):
 
     def configure_data(self, data, shape, patch):
         if patch is not None:
-            data['shader'][self.name] = {'offset': (patch.x0, patch.y0, 0.0),
-                                         'scale': (patch.x1 - patch.x0, patch.y1 - patch.y0, 1.0),
-                                         'face': patch.face,
-                                         'lod': patch.lod
-                                         }
+            data['shader'][self.name] = {
+                'offset': (patch.x0, patch.y0, 0.0),
+                'scale': (patch.x1 - patch.x0, patch.y1 - patch.y0, 1.0),
+                'face': patch.face,
+                'lod': patch.lod,
+            }
         else:
-            data['shader'][self.name] = {'offset': (0.0, 0.0, 0.0),
-                                         'scale': (1.0, 1.0, 1.0),
-                                         'face': -1,
-                                         'lod': 0
-                                         }
+            data['shader'][self.name] = {
+                'offset': (0.0, 0.0, 0.0),
+                'scale': (1.0, 1.0, 1.0),
+                'face': -1,
+                'lod': 0,
+            }
+
 
 class DetailTextureGenerationStage(ProcessStage):
     def __init__(self, width, height, heightmap, texture_control, texture_source):
@@ -98,18 +106,20 @@ class DetailTextureGenerationStage(ProcessStage):
         target.set_fixed_size(self.size)
         target.add_color_target((8, 8, 8, 0), srgb_colors=False, to_ram=False, config=None)
         target.create(pipeline)
-        #TODO: Link is missing
+        # TODO: Link is missing
         self.texture_control.create_shader_configuration(self.texture_source)
         target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
-        data['shader'][self.name] = {'shape': shape,
-                                     'patch': patch,
-                                     'appearance': None,
-                                     'lod': patch.lod
-                                     }
+        data['shader'][self.name] = {
+            'shape': shape,
+            'patch': patch,
+            'appearance': None,
+            'lod': patch.lod,
+        }
 
-class NoiseTextureGenerator():
+
+class NoiseTextureGenerator:
     def __init__(self, size, noise, target, alpha=False, srgb=False):
         self.texture_size = size
         self.noise = noise
@@ -122,9 +132,16 @@ class NoiseTextureGenerator():
         pass
 
     def create(self, coord):
-        self.tex_generator =  PipelineFactory.instance().create_process_pipeline()
-        self.texture_stage = TextureGenerationStage(coord, self.texture_size, self.texture_size,
-                                                    self.noise, self.target, alpha=self.alpha, srgb=self.srgb)
+        self.tex_generator = PipelineFactory.instance().create_process_pipeline()
+        self.texture_stage = TextureGenerationStage(
+            coord,
+            self.texture_size,
+            self.texture_size,
+            self.noise,
+            self.target,
+            alpha=self.alpha,
+            srgb=self.srgb,
+        )
         self.tex_generator.add_stage(self.texture_stage)
         self.tex_generator.create()
 
@@ -135,16 +152,17 @@ class NoiseTextureGenerator():
 
     async def generate(self, tasks_tree, shape, patch, texture_config):
         if self.tex_generator is None:
-            #TODO: This condition is needed for unpatched procedural ring, to be corrected
+            # TODO: This condition is needed for unpatched procedural ring, to be corrected
             self.create(patch.coord if patch else shape.coord)
         data = {'prepare': {'texture': {'color': texture_config}}, 'shader': {}}
         self.texture_stage.configure_data(data, shape, patch)
-        #print("GEN", patch.str_id())
+        # print("GEN", patch.str_id())
         result = await self.tex_generator.generate(tasks_tree, data)
         texture = result[self.texture_stage.name].get('color')
         return texture
 
-class DetailMapTextureGenerator():
+
+class DetailMapTextureGenerator:
     def __init__(self, size, heightmap, texture_control, texture_source):
         self.texture_size = size
         self.heightmap = heightmap
@@ -160,7 +178,13 @@ class DetailMapTextureGenerator():
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
             chain = PipelineFactory.instance().create_process_pipeline()
-            self.texture_stage = DetailTextureGenerationStage(self.texture_size, self.texture_size, self.heightmap, self.texture_control, self.texture_source)
+            self.texture_stage = DetailTextureGenerationStage(
+                self.texture_size,
+                self.texture_size,
+                self.heightmap,
+                self.texture_control,
+                self.texture_source,
+            )
             chain.add_stage(self.texture_stage)
             self.tex_generator.add_chain(chain)
         self.tex_generator.create()
@@ -180,16 +204,18 @@ class DetailMapTextureGenerator():
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
         self.texture_stage.configure_data(data, shape, patch)
-        #print(globalClock.get_frame_count(), "*** GEN TEX", patch.str_id())
+        # print(globalClock.get_frame_count(), "*** GEN TEX", patch.str_id())
         result = await self.tex_generator.generate("tex - " + patch.str_id(), data)
         texture = result[self.texture_stage.name].get('color')
         texture.set_name("tex - " + patch.str_id())
-        #print(globalClock.get_frame_count(), "*** DONE TEX", patch.str_id())
+        # print(globalClock.get_frame_count(), "*** DONE TEX", patch.str_id())
         return texture
+
 
 class ProceduralVirtualTextureSource(TextureSource):
     cached = True
     procedural = True
+
     def __init__(self, tex_generator, size):
         TextureSource.__init__(self)
         self.texture_size = size
@@ -207,8 +233,10 @@ class ProceduralVirtualTextureSource(TextureSource):
         self.texture = None
         self.tex_generator.clear_all()
 
+
 class PatchedProceduralVirtualTextureSource(TextureSource):
     cached = False
+
     def __init__(self, tex_generator, size):
         TextureSource.__init__(self)
         self.texture_size = size
@@ -232,11 +260,11 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         return True
 
     async def load(self, tasks_tree, patch, texture_config):
-        #print("LOAD TEX", patch.str_id())
+        # print("LOAD TEX", patch.str_id())
         texture_info = None
         if not patch.str_id() in self.map_patch:
             texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch, texture_config)
-            #print("READY TEX", patch.str_id())
+            # print("READY TEX", patch.str_id())
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info
         else:
@@ -261,10 +289,10 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
             while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
                 parent_patch = parent_patch.parent
             if parent_patch is not None:
-                #print(globalClock.getFrameCount(), "USE PARENT", patch.str_id(), parent_patch.str_id())
+                # print(globalClock.getFrameCount(), "USE PARENT", patch.str_id(), parent_patch.str_id())
                 return self.map_patch[parent_patch.str_id()]
             else:
-                #print(globalClock.getFrameCount(), "NONE")
+                # print(globalClock.getFrameCount(), "NONE")
                 return (None, self.texture_size, patch.lod)
         else:
             return (None, self.texture_size, patch.lod)

@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -44,7 +44,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
             for texture in self.dictionary.texture_arrays.values():
                 code.append("uniform sampler2DArray %s;" % texture.input_name)
         else:
-            for (name, entry) in self.dictionary.blocks.items():
+            for name, entry in self.dictionary.blocks.items():
                 for texture in entry.textures:
                     code.append("uniform sampler2D tex_%s_%s;" % (name, texture.category))
         code.append("uniform vec2 detail_factor;")
@@ -54,7 +54,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
         self.tiling.extra(code)
 
     def get_source_for(self, source, param, error=True):
-        for (block_id, entry) in self.dictionary.blocks.items():
+        for block_id, entry in self.dictionary.blocks.items():
             for texture in entry.textures:
                 if source == '{}_{}'.format(block_id, texture.category):
                     position = "{} * detail_factor".format(param)
@@ -62,7 +62,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
                         tex_id = self.dictionary.get_tex_id_for(block_id, texture.category)
                         dict_name = 'array_%s' % texture.category
                         texture_sample = self.tiling.sample_array('tex_{}'.format(dict_name), position, tex_id)
-                        #TODO: There should not be a link like that
+                        # TODO: There should not be a link like that
                         if self.shader.appearance.resolved:
                             if texture.category == 'normal':
                                 return "(%s.xyz * 2 - 1)" % (texture_sample)
@@ -70,19 +70,28 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
                                 return "%s.xyz" % (texture_sample)
                         else:
                             if texture.category == 'normal':
-                                return "(textureLod(tex_%s, vec3(%s, %d), 1000).xyz * 2 - 1)" % (dict_name, position, tex_id)
+                                return "(textureLod(tex_%s, vec3(%s, %d), 1000).xyz * 2 - 1)" % (
+                                    dict_name,
+                                    position,
+                                    tex_id,
+                                )
                             else:
-                                return "textureLod(tex_%s, vec3(%s, %d), 1000).xyz" % (dict_name, position, tex_id)
+                                return "textureLod(tex_%s, vec3(%s, %d), 1000).xyz" % (
+                                    dict_name,
+                                    position,
+                                    tex_id,
+                                )
                     else:
                         texture_sample = self.tiling.sample('tex_{}_{}'.format(dict_name, texture.category), position)
                         if texture.category == 'normal':
                             return "(%s.xyz * 2 - 1)" % (texture_sample)
                         else:
                             return "%s.xyz" % (texture_sample)
-        for (name, index) in self.dictionary.blocks_index.items():
+        for name, index in self.dictionary.blocks_index.items():
             if source == name + '_index':
                 return (index, self.dictionary.nb_blocks)
-        if error: print("Unknown source '%s' requested" % source)
+        if error:
+            print("Unknown source '%s' requested" % source)
         return ''
 
 
@@ -98,7 +107,7 @@ class ProceduralMap(ShaderAppearance):
         self.has_surface_texture = True
         self.has_normal_texture = create_normals
         self.normal_texture_tangent_space = True
-        #self.textures_control.set_heightmap(self.heightmap)
+        # self.textures_control.set_heightmap(self.heightmap)
         self.has_attribute_color = False
         self.has_vertex_color = False
         self.has_material = False
@@ -110,13 +119,19 @@ class ProceduralMap(ShaderAppearance):
         return config
 
     def fragment_shader(self, code):
-        code.append('vec3 surface_normal = %s;' % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord0.xy'))
-        code.append("float height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord0.xy'))
+        code.append(
+            'vec3 surface_normal = %s;'
+            % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord0.xy')
+        )
+        code.append(
+            "float height = %s;"
+            % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord0.xy')
+        )
         code.append('vec2 uv = texcoord0.xy;')
         code.append('float angle = surface_normal.z;')
         if True:
-            #self.textures_control.color_func_call(code)
-            #code.append("surface_color = vec4(%s_color, 1.0);" % self.textures_control.name)
+            # self.textures_control.color_func_call(code)
+            # code.append("surface_color = vec4(%s_color, 1.0);" % self.textures_control.name)
             code.append("surface_color = vec4(height, height, height, 1.0);")
         else:
             code += ['surface_color = vec4(surface_normal, 1.0);']
@@ -194,8 +209,14 @@ class DetailMap(ShaderAppearance):
         code.append('vec2 position = flat_position;')
 
     def fragment_shader(self, code):
-        code.append('vec3 surface_normal = %s;' % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord0.xy'))
-        code.append("float height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord0.xy'))
+        code.append(
+            'vec3 surface_normal = %s;'
+            % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord0.xy')
+        )
+        code.append(
+            "float height = %s;"
+            % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord0.xy')
+        )
         code.append('vec2 uv = texcoord0.xy;')
         code.append('float angle = surface_normal.z;')
         self.textures_control.color_func_call(code)
@@ -214,6 +235,7 @@ class DetailMap(ShaderAppearance):
             self.textures_control.get_value(code, 'occlusion')
             code.append("surface_occlusion = %s_occlusion.x;" % self.textures_control.name)
 
+
 class DeferredDetailMapFragmentShader(ShaderProgram):
     def __init__(self, data_source, textures_control, heightmap):
         ShaderProgram.__init__(self, 'fragment')
@@ -224,7 +246,7 @@ class DeferredDetailMapFragmentShader(ShaderProgram):
     def set_shader(self, shader):
         self.shader = shader
         self.textures_control.set_shader(self)
-        #self.heightmap.set_shader(self)
+        # self.heightmap.set_shader(self)
 
     def create_uniforms(self, code):
         self.data_source.fragment_uniforms(code)
@@ -253,8 +275,14 @@ class DeferredDetailMapFragmentShader(ShaderProgram):
         code.append("flat_position.x = flat_coord.x + flat_coord.z * texcoord.x;")
         code.append("flat_position.y = flat_coord.y + flat_coord.w * (1.0 - texcoord.y);")
         code.append('vec2 position = flat_position;')
-        code.append('vec3 surface_normal = %s;' % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord.xy'))
-        code.append("float height = %s;" % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord.xy'))
+        code.append(
+            'vec3 surface_normal = %s;'
+            % self.shader.data_source.get_source_for('normal_%s' % self.heightmap.name, 'texcoord.xy')
+        )
+        code.append(
+            "float height = %s;"
+            % self.shader.data_source.get_source_for('height_%s' % self.heightmap.name, 'texcoord.xy')
+        )
         code.append('vec2 uv = texcoord.xy;')
         code.append('float angle = surface_normal.z;')
         self.textures_control.color_func_call(code)
@@ -264,10 +292,12 @@ class DeferredDetailMapFragmentShader(ShaderProgram):
         if self.version < 130:
             code.append('gl_FragColor = frag_output;')
 
+
 class FakeAppearance:
     # Workaround class to have a shader appearance for the TextureDictionaryShaderDataSource
     def __init__(self):
         self.resolved = True
+
 
 class DeferredDetailMapShader(StructuredShader):
     def __init__(self, heightmap, textures_control, texture_source):
@@ -288,6 +318,6 @@ class DeferredDetailMapShader(StructuredShader):
     def update(self, instance, shape, patch, appearance, lod):
         shape.get_data_source().apply(shape, instance)
         shape.get_patch_data_source().apply(patch, instance)
-        #instance.set_shader_input("flat_coord", patch.flat_coord)
+        # instance.set_shader_input("flat_coord", patch.flat_coord)
         self.texture_source.apply(shape, instance)
         self.heightmap.apply(patch, instance)

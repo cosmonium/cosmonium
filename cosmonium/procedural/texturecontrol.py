@@ -1,26 +1,27 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+from math import cos, pi
 
 from ..shaders.component import ShaderComponent
 
-from math import cos, pi
 
 class TextureControl(ShaderComponent):
     def __init__(self, name):
@@ -36,11 +37,13 @@ class TextureControl(ShaderComponent):
     def color_func_call(self, code):
         pass
 
+
 class ColormapLayer(object):
     def __init__(self, height, bottom=None, top=None):
         self.height = height
         self.bottom = bottom
         self.top = top
+
 
 class HeightColorMap(TextureControl):
     def __init__(self, name, colormap):
@@ -89,6 +92,7 @@ class HeightColorMap(TextureControl):
     def get_value(self, code, category):
         code.append("    vec4 %s_%s = vec4(detail_%s(params), 1.0);" % (self.name, category, self.name))
 
+
 class SimpleTextureControl(TextureControl):
     def color_func_call(self, code):
         (index, nb_coefs) = self.shader.data_source.get_source_for("%s_index" % self.name)
@@ -98,11 +102,13 @@ class SimpleTextureControl(TextureControl):
         code.append("    vec4 %s_coefs[NB_COEFS_VEC] = vec4[](%s);" % (self.name, initializer))
         code.append("    %s_coefs[%d][%d] = 1.0;" % (self.name, major, minor))
 
+
 class HeightTextureControlEntry(object):
     def __init__(self, texture_control, height, blend):
         self.texture_control = texture_control
         self.height = height
         self.blend = blend
+
 
 class HeightTextureControl(TextureControl):
     def __init__(self, name, entries):
@@ -147,9 +153,15 @@ class HeightTextureControl(TextureControl):
                 code.append("      coefs = %s_coefs;" % entry.texture_control.name)
             elif entry.blend != 0.0:
                 code.append("    } else if (params.heightmap_height <= %g) {" % (entry.height - entry.blend / 2.0))
-                code.append("        height_weight = clamp((params.heightmap_height - %g) / %g, 0, 1);" % (previous.height - previous.blend / 2.0, previous.blend))
+                code.append(
+                    "        height_weight = clamp((params.heightmap_height - %g) / %g, 0, 1);"
+                    % (previous.height - previous.blend / 2.0, previous.blend)
+                )
                 code.append("        for (int i = 0; i < coefs.length(); ++i) {")
-                code.append("            coefs[i] = mix(%s_coefs[i], %s_coefs[i], height_weight);" % (previous.texture_control.name, entry.texture_control.name))
+                code.append(
+                    "            coefs[i] = mix(%s_coefs[i], %s_coefs[i], height_weight);"
+                    % (previous.texture_control.name, entry.texture_control.name)
+                )
                 code.append("        }")
             else:
                 code.append("    } else if (params.heightmap_height <= %g) {" % (entry.height - entry.blend / 2.0))
@@ -164,6 +176,7 @@ class HeightTextureControl(TextureControl):
     def color_func_call(self, code):
         code.append("    vec4 %s_coefs[NB_COEFS_VEC] = detail_%s(params);" % (self.name, self.name))
 
+
 class SlopeTextureControlEntry(object):
     def __init__(self, texture_control, slope, blend):
         self.texture_control = texture_control
@@ -171,6 +184,7 @@ class SlopeTextureControlEntry(object):
         a = cos((slope + blend / 2.0) * pi / 180)
         b = cos((slope - blend / 2.0) * pi / 180)
         self.blend = (b - a) / 2
+
 
 class SlopeTextureControl(TextureControl):
     def __init__(self, name, entries):
@@ -213,9 +227,14 @@ class SlopeTextureControl(TextureControl):
             if previous is None:
                 code.append("    coefs = %s_coefs;" % entry.texture_control.name)
             else:
-                code.append("    slope_weight = clamp((params.heightmap_angle - %g) / %g, 0, 1);" % (entry.slope - entry.blend / 2.0, entry.blend))
+                code.append(
+                    "    slope_weight = clamp((params.heightmap_angle - %g) / %g, 0, 1);"
+                    % (entry.slope - entry.blend / 2.0, entry.blend)
+                )
                 code.append("    for (int i = 0; i < coefs.length(); ++i) {")
-                code.append("        coefs[i] = mix(%s_coefs[i], coefs[i], slope_weight);" % entry.texture_control.name)
+                code.append(
+                    "        coefs[i] = mix(%s_coefs[i], coefs[i], slope_weight);" % entry.texture_control.name
+                )
                 code.append("    }")
             previous = entry
         code.append("    return coefs;")
@@ -224,11 +243,13 @@ class SlopeTextureControl(TextureControl):
     def color_func_call(self, code):
         code.append("    vec4 %s_coefs[NB_COEFS_VEC] = detail_%s(params);" % (self.name, self.name))
 
+
 class BiomeTextureControlEntry(object):
     def __init__(self, texture_control, value, blend):
         self.texture_control = texture_control
         self.value = value
         self.blend = blend
+
 
 class BiomeControl(TextureControl):
     def __init__(self, name, biome_name, entries):
@@ -254,7 +275,7 @@ class BiomeControl(TextureControl):
 
     def fragment_uniforms(self, code):
         TextureControl.fragment_uniforms(self, code)
-        #self.biome.fragment_uniforms(code)
+        # self.biome.fragment_uniforms(code)
         for entry in self.entries:
             entry.texture_control.fragment_uniforms(code)
 
@@ -274,9 +295,14 @@ class BiomeControl(TextureControl):
             if previous is None:
                 code.append("    coefs = %s_coefs;" % entry.texture_control.name)
             else:
-                code.append("    biome_weight = clamp((biome_value - %g) / %g, 0, 1);" % (entry.value - entry.blend / 2.0, entry.blend))
+                code.append(
+                    "    biome_weight = clamp((biome_value - %g) / %g, 0, 1);"
+                    % (entry.value - entry.blend / 2.0, entry.blend)
+                )
                 code.append("    for (int i = 0; i < coefs.length(); ++i) {")
-                code.append("        coefs[i] = mix(%s_coefs[i], coefs[i], biome_weight);" % entry.texture_control.name)
+                code.append(
+                    "        coefs[i] = mix(%s_coefs[i], coefs[i], biome_weight);" % entry.texture_control.name
+                )
                 code.append("    }")
             previous = entry
         code.append("    return coefs;")
@@ -284,6 +310,7 @@ class BiomeControl(TextureControl):
 
     def color_func_call(self, code):
         code.append("    vec4[NB_COEFS_VEC] %s_coefs = detail_%s(params);" % (self.name, self.name))
+
 
 class MixTextureControl(TextureControl):
     def __init__(self, name, textures_control):
@@ -311,11 +338,11 @@ class MixTextureControl(TextureControl):
         TextureControl.fragment_extra(self, code)
         code.append("struct TextureControlParams {")
         for source_name, data in self.required_data.items():
-            #TODO: Nested structs not allowed in GLSL 1.20
-            #code.append("    struct {")
+            # TODO: Nested structs not allowed in GLSL 1.20
+            # code.append("    struct {")
             for entry in data:
                 code.append("        float %s_%s;" % (source_name, entry))
-            #code.append("    } %s;" % source_name)
+            # code.append("    } %s;" % source_name)
         code.append("};")
         self.textures_control.fragment_extra(code)
         for category in self.dictionary.texture_categories.keys():
@@ -331,7 +358,13 @@ class MixTextureControl(TextureControl):
             minor = index % 4
             code.append("    coef = coefs[%d][%d];" % (major, minor))
             code.append("    if (coef > 0) {")
-            code.append("      vec3 tex_%s = %s;" % (block_id, self.shader.data_source.get_source_for('{}_{}'.format(block_id, category), 'position')))
+            code.append(
+                "      vec3 tex_%s = %s;"
+                % (
+                    block_id,
+                    self.shader.data_source.get_source_for('{}_{}'.format(block_id, category), 'position'),
+                )
+            )
             code.append("      result.rgb = mix(result.rgb, tex_%s, coef);" % (block_id))
             code.append("    }")
         code.append("    result.w = 1.0;")
@@ -339,9 +372,9 @@ class MixTextureControl(TextureControl):
         code.append("}")
 
     def create_shader_configuration(self, appearance):
-        #TODO: This hack should be removed
-        #self.nb_coefs = appearance.texture_source.nb_blocks
-        #self.dictionary = appearance.texture_source
+        # TODO: This hack should be removed
+        # self.nb_coefs = appearance.texture_source.nb_blocks
+        # self.dictionary = appearance.texture_source
         self.nb_coefs = appearance.nb_blocks
         self.dictionary = appearance
 
@@ -349,7 +382,7 @@ class MixTextureControl(TextureControl):
         code.append("TextureControlParams params;")
         for source_name, data in self.required_data.items():
             for entry in data:
-                #TODO: heightmap data is already calculated by detailmap, we should do this for all the sources.
+                # TODO: heightmap data is already calculated by detailmap, we should do this for all the sources.
                 if source_name == 'heightmap':
                     source_value = entry
                 else:

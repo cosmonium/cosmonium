@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -28,6 +28,7 @@ from ..heightmap import TextureHeightmapBase, HeightmapPatch, PatchedHeightmapBa
 from ..textures import TexCoord
 from .. import settings
 
+
 class HeightmapGenerationStage(ProcessStage):
     def __init__(self, coord, width, height, noise_source):
         ProcessStage.__init__(self, "heightmap")
@@ -39,7 +40,12 @@ class HeightmapGenerationStage(ProcessStage):
         return {'heightmap': 'color'}
 
     def create_shader(self):
-        shader = NoiseShader(self.size, coord=self.coord, noise_source=self.noise_source, noise_target=FloatTarget())
+        shader = NoiseShader(
+            self.size,
+            coord=self.coord,
+            noise_source=self.noise_source,
+            noise_target=FloatTarget(),
+        )
         shader.create_and_register_shader(None, None)
         return shader
 
@@ -52,10 +58,22 @@ class HeightmapGenerationStage(ProcessStage):
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
+
 class ShaderHeightmap(TextureHeightmapBase):
     tex_generators = {}
 
-    def __init__(self, name, width, height, height_scale, noise, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None):
+    def __init__(
+        self,
+        name,
+        width,
+        height,
+        height_scale,
+        noise,
+        offset=None,
+        scale=None,
+        coord=TexCoord.Cylindrical,
+        interpolator=None,
+    ):
         TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, interpolator)
         self.noise = noise
         self.offset = offset
@@ -89,7 +107,7 @@ class ShaderHeightmap(TextureHeightmapBase):
         self.configure_data(data)
 
     def do_load(self, shape):
-        if not self.tex_id in ShaderHeightmap.tex_generators:
+        if self.tex_id not in ShaderHeightmap.tex_generators:
             chain = PipelineFactory.instance().create_process_pipeline()
             stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
             chain.add_stage(stage)
@@ -97,15 +115,18 @@ class ShaderHeightmap(TextureHeightmapBase):
             ShaderHeightmapPatch.tex_generators[self.tex_id] = chain
         tex_generator = ShaderHeightmap.tex_generators[self.tex_id]
         if self.shader is None:
-            self.shader = NoiseShader(noise_source=self.noise,
-                                      noise_target=FloatTarget(),
-                                      coord = self.coord,
-                                      offset = self.offset,
-                                      scale = self.scale)
+            self.shader = NoiseShader(
+                noise_source=self.noise,
+                noise_target=FloatTarget(),
+                coord=self.coord,
+                offset=self.offset,
+                scale=self.scale,
+            )
             self.shader.create_and_register_shader(None, None)
         return tex_generator.generate(self.shader, 0, self.texture)
 
-class HeightmapPatchGenerator():
+
+class HeightmapPatchGenerator:
     def __init__(self, width, height, function, coord_scale):
         self.width = width
         self.height = height
@@ -131,26 +152,62 @@ class HeightmapPatchGenerator():
     async def generate(self, tid, heightmap_patch, texture_config):
         if self.generator is None:
             self.create(heightmap_patch.patch.coord)
-        shader_data = {'heightmap': {'offset': (heightmap_patch.r_x0, heightmap_patch.r_y0, 0.0),
-                                     'scale': (heightmap_patch.r_x1 - heightmap_patch.r_x0, heightmap_patch.r_y1 - heightmap_patch.r_y0, 1.0),
-                                     'global_coord_scale': self.coord_scale,
-                                     'face': heightmap_patch.patch.face
-                                    }}
-        data = {'prepare': {'heightmap': {'color': texture_config}}, 'shader': shader_data}
-        #print(globalClock.get_frame_count(), "GEN HM", heightmap_patch.patch.str_id())
+        shader_data = {
+            'heightmap': {
+                'offset': (heightmap_patch.r_x0, heightmap_patch.r_y0, 0.0),
+                'scale': (
+                    heightmap_patch.r_x1 - heightmap_patch.r_x0,
+                    heightmap_patch.r_y1 - heightmap_patch.r_y0,
+                    1.0,
+                ),
+                'global_coord_scale': self.coord_scale,
+                'face': heightmap_patch.patch.face,
+            }
+        }
+        data = {
+            'prepare': {'heightmap': {'color': texture_config}},
+            'shader': shader_data,
+        }
+        # print(globalClock.get_frame_count(), "GEN HM", heightmap_patch.patch.str_id())
         result = await self.generator.generate(tid, data, controller=heightmap_patch)
         if result is not None:
             data = result['heightmap'].get('color')
             data.set_name("hm - " + heightmap_patch.patch.str_id())
-            #print(globalClock.get_frame_count(), "DONE HM", heightmap_patch.patch.str_id())
+            # print(globalClock.get_frame_count(), "DONE HM", heightmap_patch.patch.str_id())
         else:
-            #print(globalClock.get_frame_count(), "CANCELLED HM", heightmap_patch.patch.str_id())
+            # print(globalClock.get_frame_count(), "CANCELLED HM", heightmap_patch.patch.str_id())
             data = None
         return data
 
+
 class ShaderPatchedHeightmap(PatchedHeightmapBase):
-    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
-        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator, filter, max_lod)
+    def __init__(
+        self,
+        name,
+        data_source,
+        size,
+        min_height,
+        max_height,
+        height_scale,
+        height_offset,
+        overlap,
+        interpolator=None,
+        filter=None,
+        max_lod=100,
+    ):
+        PatchedHeightmapBase.__init__(
+            self,
+            name,
+            size,
+            min_height,
+            max_height,
+            height_scale,
+            height_offset,
+            overlap,
+            interpolator,
+            filter,
+            max_lod,
+        )
         self.data_source = data_source
 
     def do_create_patch_data(self, patch):
@@ -159,6 +216,7 @@ class ShaderPatchedHeightmap(PatchedHeightmapBase):
     def clear_all(self):
         PatchedHeightmapBase.clear_all(self)
         self.data_source.clear_all()
+
 
 class ShaderHeightmapPatch(HeightmapPatch):
     async def do_load(self, tasks_tree, patch):
