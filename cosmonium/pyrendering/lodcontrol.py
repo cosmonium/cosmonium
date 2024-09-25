@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -44,10 +44,12 @@ class LodControl(object):
     def should_remove(self, patch, apparent_patch_size, distance):
         return not patch.visible
 
-#The lod control classes uses hysteresis to avoid cycle of split/merge due to
-#precision errors.
-#When splitting the resulting patch will be 1.1 bigger than the merge limit
-#When merging, the resulting patch will be  1.1 smaller than the slit limit
+
+# The lod control classes uses hysteresis to avoid cycle of split/merge due to
+# precision errors.
+# When splitting the resulting patch will be 1.1 bigger than the merge limit
+# When merging, the resulting patch will be  1.1 smaller than the slit limit
+
 
 class TextureLodControl(LodControl):
     def __init__(self, min_density, density, max_lod=100):
@@ -70,12 +72,15 @@ class TextureLodControl(LodControl):
 
     def should_split(self, patch, apparent_patch_size, distance):
         if patch.lod < self.max_lod:
-            return self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1 #and self.appearance.texture.can_split(patch)
+            return (
+                self.texture_size > 0 and apparent_patch_size > self.texture_size * 1.1
+            )  # and self.appearance.texture.can_split(patch)
         else:
             return False
 
     def should_merge(self, patch, apparent_patch_size, distance):
         return apparent_patch_size < self.texture_size / 1.1
+
 
 class TextureOrVertexSizeLodControl(TextureLodControl):
     def __init__(self, max_vertex_size, min_density, density, max_lod=100):
@@ -83,7 +88,8 @@ class TextureOrVertexSizeLodControl(TextureLodControl):
         self.max_vertex_size = max_vertex_size
 
     def should_split(self, patch, apparent_patch_size, distance):
-        if patch.lod >= self.max_lod: return False
+        if patch.lod >= self.max_lod:
+            return False
         if self.texture_size > 0:
             if apparent_patch_size > self.texture_size * 1.1:
                 return True
@@ -97,6 +103,7 @@ class TextureOrVertexSizeLodControl(TextureLodControl):
         else:
             apparent_vertex_size = apparent_patch_size / patch.density
             return apparent_vertex_size < self.max_vertex_size / 1.1
+
 
 class VertexSizeLodControl(LodControl):
     def __init__(self, max_vertex_size, density, max_lod=100):
@@ -114,6 +121,7 @@ class VertexSizeLodControl(LodControl):
         apparent_vertex_size = apparent_patch_size / patch.density
         return apparent_vertex_size < self.max_vertex_size / 1.1
 
+
 class VertexSizeMaxDistanceLodControl(VertexSizeLodControl):
     def __init__(self, max_distance, max_vertex_size, density, max_lod=100):
         VertexSizeLodControl.__init__(self, max_vertex_size, density, max_lod)
@@ -124,4 +132,3 @@ class VertexSizeMaxDistanceLodControl(VertexSizeLodControl):
 
     def should_remove(self, patch, apparent_patch_size, distance):
         return not patch.visible
-

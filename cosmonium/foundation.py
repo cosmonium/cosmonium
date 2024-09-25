@@ -1,36 +1,36 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LVecBase3, NodePath, LColor, DrawMask, OmniBoundingVolume
 from panda3d.core import GeomNode, TextNode, CardMaker
 
+from .appearances import ModelAppearance
+from .astro import bayer
 from .bodyclass import bodyClasses
 from .fonts import fontsManager, Font
 from .parameters import ParametersGroup
-from .utils import srgb_to_linear
-from .astro import bayer
-from .appearances import ModelAppearance
 from .shaders.rendering import RenderingShader
 from .shaders.lighting.flat import FlatLightingModel
-from .utils import TransparencyBlend
+from .utils import srgb_to_linear, TransparencyBlend
 from . import settings
+
 
 class BaseObject(object):
     context = None
@@ -45,7 +45,7 @@ class BaseObject(object):
     concrete_object = True
 
     def __init__(self, name):
-        self.name =name
+        self.name = name
         self.shown = self.default_shown
         self.visible = False
         self.parent = None
@@ -142,7 +142,7 @@ class VisibleObject(BaseObject):
     def __init__(self, name):
         BaseObject.__init__(self, name)
         self.instance = None
-        #TODO: Should be handled properly
+        # TODO: Should be handled properly
         self.instance_ready = False
 
     def check_and_create_instance(self):
@@ -171,7 +171,7 @@ class VisibleObject(BaseObject):
             self.instance.stash()
 
     def check_visibility(self, frustum, pixel_size):
-        if self.parent != None:
+        if self.parent is not None:
             self.visible = self.parent.shown and self.parent.visible
 
     def get_scale(self):
@@ -192,6 +192,7 @@ class VisibleObject(BaseObject):
 
     def get_oid_color(self):
         return LColor()
+
 
 class CompositeObject(BaseObject):
     def __init__(self, name):
@@ -222,7 +223,8 @@ class CompositeObject(BaseObject):
             component.set_scene_anchor(self.scene_anchor)
 
     def remove_component(self, component):
-        if component is None: return
+        if component is None:
+            return
         self.components.remove(component)
         if component.instance is not None:
             component.remove_instance()
@@ -265,7 +267,7 @@ class CompositeObject(BaseObject):
             component.update_obs(observer)
 
     def check_visibility(self, frustum, pixel_size):
-        if self.parent != None:
+        if self.parent is not None:
             self.visible = self.parent.shown and self.parent.visible
         for component in self.components:
             component.check_visibility(frustum, pixel_size)
@@ -289,6 +291,7 @@ class CompositeObject(BaseObject):
     def remove_instance(self):
         for component in self.components:
             component.remove_instance()
+
 
 class ObjectLabel(VisibleObject):
     default_shown = False
@@ -336,7 +339,7 @@ class ObjectLabel(VisibleObject):
         cls.font_init = True
 
     def create_instance(self):
-        #print("Create label for", self.get_name())
+        # print("Create label for", self.get_name())
         self.label = TextNode(self.label_source.get_ascii_name() + '-label')
         if not self.font_init:
             self.load_font()
@@ -345,21 +348,21 @@ class ObjectLabel(VisibleObject):
         name = bayer.decode_name(self.label_source.get_label_text())
         self.label.setText(name)
         self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
-        #node=label.generate()
-        #self.instance.setBillboardPointEye()
-        #node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
-        #node.setPythonTag('owner', self.label_source)
+        # node=label.generate()
+        # self.instance.setBillboardPointEye()
+        # node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
+        # node.setPythonTag('owner', self.label_source)
         cardMaker = CardMaker(self.label_source.get_ascii_name() + '-labelcard')
         cardMaker.setFrame(self.label.getFrameActual())
         cardMaker.setColor(0, 0, 0, 0)
         card_node = cardMaker.generate()
         self.label_instance = NodePath(card_node)
-        tnp = self.label_instance.attachNewNode(self.label)
-        #self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
-        #card.setEffect(DecalEffect.make())
-        #Using look_at() instead of billboard effect to also rotate the collision solid
-        #card.setBillboardPointEye()
-        #Using a card holder as look_at() is changing the hpr parameters
+        self.label_instance.attachNewNode(self.label)
+        # self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
+        # card.setEffect(DecalEffect.make())
+        # Using look_at() instead of billboard effect to also rotate the collision solid
+        # card.setBillboardPointEye()
+        # Using a card holder as look_at() is changing the hpr parameters
         self.instance = NodePath('label-holder')
         self.label_instance.reparentTo(self.instance)
         self.instance.reparent_to(self.scene_anchor.unshifted_instance)
@@ -381,6 +384,7 @@ class ObjectLabel(VisibleObject):
         card_node.setPythonTag('owner', self.label_source)
         self.look_at = self.instance.attachNewNode("dummy")
 
+
 class LabelledObject(CompositeObject):
     def __init__(self, name):
         CompositeObject.__init__(self, name)
@@ -388,7 +392,8 @@ class LabelledObject(CompositeObject):
 
     def check_settings(self):
         CompositeObject.check_settings(self)
-        if self.label is not None: self.label.check_settings()
+        if self.label is not None:
+            self.label.check_settings()
 
     def get_ascii_name(self):
         return self.name.encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
@@ -399,12 +404,12 @@ class LabelledObject(CompositeObject):
     def create_label(self):
         if self.label is None:
             self.label = self.create_label_instance()
-            #self.add_component(self.label)
+            # self.add_component(self.label)
 
     def remove_label(self):
         if self.label is not None:
             self.label.remove_instance()
-            #self.remove_component(self.label)
+            # self.remove_component(self.label)
             self.label = None
 
     def show_label(self):

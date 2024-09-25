@@ -1,29 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import LColor, Texture
-
-from .shaders.filters import TextureNearestFilter, TextureBilinearFilter, TextureSmoothstepFilter, TextureQuinticFilter, TextureBSplineFilter
-from . import settings
 
 from math import floor
+from panda3d.core import LColor, Texture
+
+from .shaders.filters import TextureNearestFilter, TextureBilinearFilter, TextureSmoothstepFilter
+from .shaders.filters import TextureQuinticFilter, TextureBSplineFilter
 
 
 class TexFilter(object):
@@ -97,8 +96,8 @@ class SmoothstepFilter(TexFilter):
         f_x = x - i_x
         f_y = y - i_y
 
-        f_x = f_x*f_x*(3.0-2.0*f_x)
-        f_y = f_y*f_y*(3.0-2.0*f_y)
+        f_x = f_x * f_x * (3.0 - 2.0 * f_x)
+        f_y = f_y * f_y * (3.0 - 2.0 * f_y)
 
         return self.get_bilinear_value(peeker, i_x + f_x - 0.5, i_y + f_y - 0.5)
 
@@ -120,8 +119,8 @@ class QuinticFilter(TexFilter):
         f_x = x - i_x
         f_y = y - i_y
 
-        f_x = f_x*f_x*f_x*(f_x*(f_x*6.0-15.0)+10.0)
-        f_y = f_y*f_y*f_y*(f_y*(f_y*6.0-15.0)+10.0)
+        f_x = f_x * f_x * f_x * (f_x * (f_x * 6.0 - 15.0) + 10.0)
+        f_y = f_y * f_y * f_y * (f_y * (f_y * 6.0 - 15.0) + 10.0)
 
         return self.get_bilinear_value(peeker, i_x + f_x - 0.5, i_y + f_y - 0.5)
 
@@ -144,10 +143,10 @@ class BSplineFilter(TexFilter):
     def cubic(self, alpha):
         alpha2 = alpha * alpha
         alpha3 = alpha2 * alpha
-        w0 = 1./6. * (-alpha3 + 3.*alpha2 - 3.*alpha + 1.)
-        w1 = 1./6. * (3.*alpha3 - 6.*alpha2 + 4.)
-        w2 = 1./6. * (-3.*alpha3 + 3.*alpha2 + 3.*alpha + 1.)
-        w3 = 1./6. * alpha3
+        w0 = 1.0 / 6.0 * (-alpha3 + 3.0 * alpha2 - 3.0 * alpha + 1.0)
+        w1 = 1.0 / 6.0 * (3.0 * alpha3 - 6.0 * alpha2 + 4.0)
+        w2 = 1.0 / 6.0 * (-3.0 * alpha3 + 3.0 * alpha2 + 3.0 * alpha + 1.0)
+        w3 = 1.0 / 6.0 * alpha3
         return (w0, w1, w2, w3)
 
     def get_value(self, peeker, x, y):
@@ -158,7 +157,7 @@ class BSplineFilter(TexFilter):
         alpha_y = y - tc_y
         cubic_x = self.cubic(alpha_x)
         cubic_y = self.cubic(alpha_y)
-    
+
         s_x = cubic_x[0] + cubic_x[1]
         s_y = cubic_x[2] + cubic_x[3]
         s_z = cubic_y[0] + cubic_y[1]

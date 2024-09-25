@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -72,28 +72,40 @@ class QuadTreeNode:
         return x >= self.x0 and x <= self.x1 and y >= self.y0 and y <= self.y1
 
     def check_visibility(self, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size):
-        #Testing if we are inside the patch create visual artifacts
-        #The change of lod between patches is too noticeable
+        # Testing if we are inside the patch create visual artifacts
+        # The change of lod between patches is too noticeable
         if False and self.in_patch(*local):
             within_patch = True
             self.distance = altitude
         else:
             within_patch = False
-            self.distance = max(abs(altitude), (self.centre - model_camera_pos).length() - self.length * 0.7071067811865476)
+            self.distance = max(
+                abs(altitude), (self.centre - model_camera_pos).length() - self.length * 0.7071067811865476
+            )
         self.patch_in_view = culling_frustum.is_patch_in_view(self)
         self.visible = within_patch or self.patch_in_view
         self.apparent_size = self.length / (self.distance * pixel_size)
 
     def are_children_visibles(self, culling_frustum):
         children_visible = len(self.children_bb) == 0
-        for (i, child_bb) in enumerate(self.children_bb):
+        for i, child_bb in enumerate(self.children_bb):
             if culling_frustum.is_bb_in_view(child_bb, self.children_offset_vector[i], self.children_offset[i]):
                 children_visible = True
                 break
         return children_visible
 
     @pstat
-    def check_lod(self, lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control):
+    def check_lod(
+        self,
+        lod_result,
+        culling_frustum,
+        local,
+        model_camera_pos,
+        model_camera_vector,
+        altitude,
+        pixel_size,
+        lod_control,
+    ):
         self.check_visibility(culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size)
         lod_result.check_max_lod(self)
         if len(self.children) != 0:
@@ -101,10 +113,21 @@ class QuadTreeNode:
                 lod_result.add_to_merge(self)
             else:
                 for child in self.children:
-                    child.check_lod(lod_result, culling_frustum, local, model_camera_pos, model_camera_vector, altitude, pixel_size, lod_control)
+                    child.check_lod(
+                        lod_result,
+                        culling_frustum,
+                        local,
+                        model_camera_pos,
+                        model_camera_vector,
+                        altitude,
+                        pixel_size,
+                        lod_control,
+                    )
         else:
             if self.visible:
-                if lod_control.should_split(self, self.apparent_size, self.distance) and (self.lod > 0 or self.instance_ready):
+                if lod_control.should_split(self, self.apparent_size, self.distance) and (
+                    self.lod > 0 or self.instance_ready
+                ):
                     if self.are_children_visibles(culling_frustum):
                         lod_result.add_to_split(self)
                 else:

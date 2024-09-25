@@ -1,24 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+import numpy
 from panda3d.core import Texture, LColor
+import traceback
 
 from .patcheddata import PatchData, PatchedData
 from .shapedata import TextureShapeDataBase
@@ -29,11 +31,10 @@ from .interpolators import HardwareInterpolator
 from .filters import BilinearFilter
 from .dircontext import defaultDirContext
 
-import traceback
-import numpy
 
-#TODO: HeightmapPatch has common code with Heightmap and TextureHeightmapBase, this should be refactored
-#TODO: Texture data should be refactored like appearance to be fully independent from the source
+# TODO: HeightmapPatch has common code with Heightmap and TextureHeightmapBase, this should be refactored
+# TODO: Texture data should be refactored like appearance to be fully independent from the source
+
 
 class HeightmapPatch(PatchData):
     def __init__(self, parent, patch, width, height, overlap):
@@ -68,7 +69,7 @@ class HeightmapPatch(PatchData):
         new_x = min(new_x, self.width - 1)
         new_y = min(new_y, self.height - 1)
         height = self.parent.filter.get_value(self.texture_peeker, new_x, new_y)
-        #TODO: This should be done in PatchedHeightmap.get_height()
+        # TODO: This should be done in PatchedHeightmap.get_height()
         return height * self.parent.height_scale + self.parent.height_offset
 
     def get_height_uv(self, u, v, shape_patch=None):
@@ -77,7 +78,7 @@ class HeightmapPatch(PatchData):
     def apply(self, instance):
         name = self.parent.name
         instance.set_shader_input('heightmap_%s' % name, self.texture)
-        #TODO: replace this by a vec3
+        # TODO: replace this by a vec3
         instance.set_shader_input("heightmap_%s_height_scale" % name, self.parent.get_height_scale(self.patch))
         instance.set_shader_input("heightmap_%s_u_scale" % name, self.parent.get_u_scale(self.patch))
         instance.set_shader_input("heightmap_%s_v_scale" % name, self.parent.get_v_scale(self.patch))
@@ -90,27 +91,28 @@ class HeightmapPatch(PatchData):
 
     def collect_shader_data(self, data):
         # Data is set as RGBA, but stored as BGRA
-        data += [self.parent.get_v_scale(self.patch),
-                 self.parent.get_u_scale(self.patch),
-                 self.parent.get_height_scale(self.patch),
-                 0.0,
-                 self.texture_scale[0],
-                 self.texture_offset[1],
-                 self.texture_offset[0],
-                 self.texture_scale[1]]
+        data += [
+            self.parent.get_v_scale(self.patch),
+            self.parent.get_u_scale(self.patch),
+            self.parent.get_height_scale(self.patch),
+            0.0,
+            self.texture_scale[0],
+            self.texture_offset[1],
+            self.texture_offset[0],
+            self.texture_scale[1],
+        ]
 
     def create_texture_config(self):
-        texture_config = TextureConfiguration(wrap_u=Texture.WMClamp,
-                                              wrap_v=Texture.WMClamp)
+        texture_config = TextureConfiguration(wrap_u=Texture.WMClamp, wrap_v=Texture.WMClamp)
         self.parent.filter.update_texture_config(texture_config)
         return texture_config
 
     def retrieve_texture_data(self):
         self.texture_peeker = self.texture.peek()
-#       if self.texture_peeker is None:
-#           print("NOT READY !!!")
+        #       if self.texture_peeker is None:
+        #           print("NOT READY !!!")
         data = self.texture.getRamImage()
-        #TODO: should be completed and refactored
+        # TODO: should be completed and refactored
         signed = False
         component_type = self.texture.getComponentType()
         if component_type == Texture.T_float:
@@ -143,6 +145,7 @@ class HeightmapPatch(PatchData):
         texture.make_ram_image()
         return texture
 
+
 class TextureHeightmapPatch(HeightmapPatch):
     def __init__(self, data_source, parent, patch, width, height, overlap):
         HeightmapPatch.__init__(self, parent, patch, width, height, overlap)
@@ -164,8 +167,10 @@ class TextureHeightmapPatch(HeightmapPatch):
         self.data_source.clear(self.patch, instance)
 
 
-class HeightmapBase():
-    def __init__(self, width, height, min_height, max_height, height_scale, height_offset, interpolator=None, filter=None):
+class HeightmapBase:
+    def __init__(
+        self, width, height, min_height, max_height, height_scale, height_offset, interpolator=None, filter=None
+    ):
         self.width = width
         self.height = height
         self.min_height = min_height
@@ -216,9 +221,12 @@ class HeightmapBase():
     def get_height_uv(self, u, v):
         return self.get_height(u * self.width, v * self.height)
 
+
 class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
     def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter):
-        HeightmapBase.__init__(self, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter)
+        HeightmapBase.__init__(
+            self, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter
+        )
         TextureShapeDataBase.__init__(self, name, width, height)
         self.texture_peeker = None
 
@@ -251,8 +259,25 @@ class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
 
 
 class TextureHeightmap(TextureHeightmapBase):
-    def __init__(self, name, width, height, min_height, max_height, height_scale, height_offset, data_source, offset=None, scale=None, coord = TexCoord.Cylindrical, interpolator=None, filter=None):
-        TextureHeightmapBase.__init__(self, name, width, height, min_height, max_height, height_scale,  height_offset, interpolator, filter)
+    def __init__(
+        self,
+        name,
+        width,
+        height,
+        min_height,
+        max_height,
+        height_scale,
+        height_offset,
+        data_source,
+        offset=None,
+        scale=None,
+        coord=TexCoord.Cylindrical,
+        interpolator=None,
+        filter=None,
+    ):
+        TextureHeightmapBase.__init__(
+            self, name, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter
+        )
         self.data_source = data_source
 
     def set_data_source(self, data_source, context=defaultDirContext):
@@ -267,8 +292,22 @@ class TextureHeightmap(TextureHeightmapBase):
 
 
 class PatchedHeightmapBase(HeightmapBase, PatchedData):
-    def __init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
-        HeightmapBase.__init__(self, size, size, min_height, max_height, height_scale, height_offset, interpolator, filter)
+    def __init__(
+        self,
+        name,
+        size,
+        min_height,
+        max_height,
+        height_scale,
+        height_offset,
+        overlap,
+        interpolator=None,
+        filter=None,
+        max_lod=100,
+    ):
+        HeightmapBase.__init__(
+            self, size, size, min_height, max_height, height_scale, height_offset, interpolator, filter
+        )
         PatchedData.__init__(self, name, size, overlap, max_lod)
         self.normal_scale_lod = True
 
@@ -292,9 +331,35 @@ class PatchedHeightmapBase(HeightmapBase, PatchedData):
     def get_nb_shader_data(self):
         return 8
 
+
 class TexturePatchedHeightmap(PatchedHeightmapBase):
-    def __init__(self, name, data_source, size, min_height, max_height, height_scale, height_offset, overlap, interpolator=None, filter=None, max_lod=100):
-        PatchedHeightmapBase.__init__(self, name, size, min_height, max_height, height_scale, height_offset, overlap, interpolator, filter, max_lod)
+    def __init__(
+        self,
+        name,
+        data_source,
+        size,
+        min_height,
+        max_height,
+        height_scale,
+        height_offset,
+        overlap,
+        interpolator=None,
+        filter=None,
+        max_lod=100,
+    ):
+        PatchedHeightmapBase.__init__(
+            self,
+            name,
+            size,
+            min_height,
+            max_height,
+            height_scale,
+            height_offset,
+            overlap,
+            interpolator,
+            filter,
+            max_lod,
+        )
         self.data_source = data_source
 
     def use(self, count=1):
@@ -333,7 +398,8 @@ class StackedHeightmapPatch(HeightmapPatch):
         return height
 
     def load(self):
-        if self.count != None: return
+        if self.count is not None:
+            return
         for patch in self.patches:
             patch.load()
 
@@ -350,7 +416,7 @@ class StackedPatchedHeightmap(PatchedHeightmapBase):
         return StackedHeightmapPatch(patches, self, patch, self.size, self.size, self.overlap)
 
 
-class HeightmapRegistry():
+class HeightmapRegistry:
     def __init__(self):
         self.db_map = {}
 
@@ -359,5 +425,6 @@ class HeightmapRegistry():
 
     def get(self, name):
         return self.db_map.get(name, None)
+
 
 heightmapRegistry = HeightmapRegistry()

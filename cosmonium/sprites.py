@@ -1,45 +1,49 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
+from math import pi, log, exp, sqrt
 from panda3d.core import PNMImage
 from panda3d.core import Texture, TexGenAttrib, TransparencyAttrib, TextureStage
 
 from .utils import linear_to_srgb_channel
 from . import settings
 
-from math import pi, log, exp, sqrt
 
 class PointObject(object):
+
     def apply(self, instance):
         pass
 
+
 class SimplePoint(PointObject):
+
     def __init__(self, point_size=1):
         self.point_size = point_size
 
     def apply(self, instance):
         instance.setRenderModeThickness(self.point_size)
 
+
 class TexturePointSprite(PointObject):
+
     def __init__(self, filename):
-        self.filename = file
+        self.filename = filename
         self.texture = None
 
     def apply(self, instance):
@@ -49,7 +53,9 @@ class TexturePointSprite(PointObject):
         instance.setTransparency(TransparencyAttrib.MAlpha)
         instance.setTexture(self.texture, 1)
 
+
 class GenPointSprite(PointObject):
+
     def __init__(self, size=64):
         self.size = size
         self.half_size = size / 2.0
@@ -79,7 +85,9 @@ class GenPointSprite(PointObject):
         instance.setTransparency(TransparencyAttrib.MAlpha, 1)
         instance.setTexture(TextureStage('ts'), self.texture, 1)
 
+
 class RoundDiskPointSprite(GenPointSprite):
+
     def __init__(self, size=64, max_value=1.0):
         GenPointSprite.__init__(self, size)
         self.max_value = max_value
@@ -91,7 +99,7 @@ class RoundDiskPointSprite(GenPointSprite):
             ry = (y - self.half_size + 0.5) / (self.half_size - 1)
             for x in range(self.size):
                 rx = (x - self.half_size + 0.5) / (self.half_size - 1)
-                r = sqrt(rx*rx + ry*ry)
+                r = sqrt(rx * rx + ry * ry)
                 if r > 1.0:
                     r = 0.0
                 elif r > 0.5:
@@ -107,7 +115,9 @@ class RoundDiskPointSprite(GenPointSprite):
                 p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
+
 class GaussianPointSprite(GenPointSprite):
+
     def __init__(self, size=64, fwhm=None, max_value=1.0):
         GenPointSprite.__init__(self, size)
         if fwhm is None:
@@ -125,8 +135,8 @@ class GaussianPointSprite(GenPointSprite):
             ry = y - self.half_size + 0.5
             for x in range(self.size):
                 rx = x - self.half_size + 0.5
-                dist2 = rx*rx + ry*ry
-                value = min(1.0, exp(- dist2 * inv_sig2) * inv_factor * self.fwhm)
+                dist2 = rx * rx + ry * ry
+                value = min(1.0, exp(-dist2 * inv_sig2) * inv_factor * self.fwhm)
                 va = value * self.max_value
                 if srgb:
                     vc = linear_to_srgb_channel(va)
@@ -135,9 +145,11 @@ class GaussianPointSprite(GenPointSprite):
                 p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
+
 class ExpPointSprite(GenPointSprite):
+
     # Factor must be 1/256 squared as the value at the border is factor^0.5
-    def __init__(self, size=64, factor=1.0/(256*256), max_value=1.0):
+    def __init__(self, size=64, factor=1.0 / (256 * 256), max_value=1.0):
         GenPointSprite.__init__(self, size)
         self.factor = factor
         self.max_value = max_value
@@ -152,7 +164,7 @@ class ExpPointSprite(GenPointSprite):
             ry = (y - self.half_size + 0.5) / self.size
             for x in range(self.size):
                 rx = (x - self.half_size + 0.5) / self.size
-                dist = sqrt(rx*rx + ry*ry)
+                dist = sqrt(rx * rx + ry * ry)
                 value = min(1.0, pow(self.factor, dist))
                 va = value * self.max_value
                 if srgb:
@@ -162,7 +174,9 @@ class ExpPointSprite(GenPointSprite):
                 p.set_xel_a(x, y, vc, vc, vc, va)
         return p
 
+
 class MergeSprite(GenPointSprite):
+
     def __init__(self, size, top, bottom):
         GenPointSprite.__init__(self, size)
         self.top = top
@@ -189,4 +203,3 @@ class MergeSprite(GenPointSprite):
                     c[3] = ct[3] + cb[3] * (1 - ct[3])
                 p.set_xel_a(x, y, c)
         return p
-

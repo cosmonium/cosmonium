@@ -1,26 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, LColor
+from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, LPoint3
+from panda3d.core import NodePath, LPoint3, LColor
 
 from ..astro.astro import radiance_to_mag
 from ..utils import mag_to_scale
@@ -108,7 +108,10 @@ class ScaledEmissivePointsSetShape(PointsSetShape):
             scale = mag_to_scale(app_magnitude)
             if scale > 0:
                 color = point_color * scale
-                size = max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale) * self.screen_scale
+                size = (
+                    max(settings.min_point_size, settings.min_point_size + scale * settings.mag_pixel_scale)
+                    * self.screen_scale
+                )
                 self.add_point(scene_anchor.scene_position, color, size, scene_anchor.oid_color)
 
 
@@ -117,7 +120,9 @@ class EmissivePointsSetShape(PointsSetShape):
         anchor = scene_anchor.anchor
         if anchor.visible_size < settings.min_body_size * 2 and scene_anchor.instance is not None:
             r = anchor.get_point_radiance(anchor.distance_to_obs)
-            color = LColor(anchor.point_color.x * r, anchor.point_color.y * r, anchor.point_color.z * r, anchor.point_color.w)
+            color = LColor(
+                anchor.point_color.x * r, anchor.point_color.y * r, anchor.point_color.z * r, anchor.point_color.w
+            )
             size = settings.min_point_size + settings.mag_pixel_scale
             self.add_point(scene_anchor.scene_position, color, size * self.screen_scale, scene_anchor.oid_color)
 
@@ -126,12 +131,18 @@ class HaloPointsSetShape(PointsSetShape):
     def add_object(self, scene_anchor):
         anchor = scene_anchor.anchor
         app_magnitude = radiance_to_mag(anchor._point_radiance)
-        if settings.show_halo and anchor.visible_size < settings.min_body_size * 2 and app_magnitude < settings.smallest_glare_mag:
+        if (
+            settings.show_halo
+            and anchor.visible_size < settings.min_body_size * 2
+            and app_magnitude < settings.smallest_glare_mag
+        ):
             point_color = anchor.point_color
             coef = settings.smallest_glare_mag - app_magnitude + 6.0
             radius = max(1.0, anchor.visible_size)
             size = radius * coef * 4.0
-            self.add_point(LPoint3(*scene_anchor.scene_position), point_color, size * self.screen_scale, scene_anchor.oid_color)
+            self.add_point(
+                LPoint3(*scene_anchor.scene_position), point_color, size * self.screen_scale, scene_anchor.oid_color
+            )
 
 
 class PassthroughPointsSetShape:
@@ -149,7 +160,8 @@ class PassthroughPointsSetShape:
         pass
 
     def add_objects(self, scene_manager, scene_anchors):
-        if not settings.render_sprite_points: return
+        if not settings.render_sprite_points:
+            return
         self.shape.add_objects(scene_manager, scene_anchors)
 
 
@@ -174,7 +186,8 @@ class RegionsPointsSetShape:
             sub_shape.instance.reparent_to(region.root)
 
     def add_objects(self, scene_manager, scene_anchors):
-        if not settings.render_sprite_points: return
+        if not settings.render_sprite_points:
+            return
         for region in scene_manager.get_regions():
             current_shape = self.shape_class(self.has_size, self.has_oid, self.screen_scale)
             current_shape.reset()
