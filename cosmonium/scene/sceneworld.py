@@ -1,31 +1,33 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LColor, LVector3d
 
-from ..foundation import CompositeObject
+from ..astro.frame import AbsoluteReferenceFrame
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from ..foundation import CompositeObject
+from ..namedobject import NamedObject
+
 from .sceneanchor import SceneAnchorCollection
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
-from ..astro.frame import AbsoluteReferenceFrame
-from ..namedobject import NamedObject
+
 
 class Worlds:
     stellar_object = False
@@ -68,7 +70,7 @@ class Worlds:
     def update_specials(self, time, update_id):
         for world in self.specials:
             if world.controller is not None:
-                pass #world.controller.update(time, 0)
+                pass  # world.controller.update(time, 0)
             world.anchor.update(time, update_id)
 
     def update_specials_after_physics(self, time, update_id):
@@ -95,7 +97,7 @@ class Worlds:
 
     def update_scene_anchor(self, scene_manager):
         for world in self.worlds:
-            #TODO: This is a hack
+            # TODO: This is a hack
             world.scene_anchor.create_instance(scene_manager)
             world.scene_anchor.update(scene_manager)
 
@@ -138,7 +140,7 @@ class Worlds:
                     self.no_longer_visibles.append(anchor)
             anchor.visible = visible
         for anchor in self.old_visibles:
-            if not anchor in self.visibles:
+            if anchor not in self.visibles:
                 self.no_longer_visibles.append(anchor)
                 anchor.was_visible = anchor.visible
                 anchor.visible = False
@@ -148,7 +150,7 @@ class Worlds:
             if not anchor.was_resolved:
                 self.becoming_resolved.append(anchor)
         for anchor in self.old_resolved:
-            if not anchor in self.resolved:
+            if anchor not in self.resolved:
                 self.no_longer_resolved.append(anchor)
 
     def find_shadows(self):
@@ -177,7 +179,7 @@ class Worlds:
             old_visible.body.scene_anchor.remove_instance()
 
     def update_instances_state(self, scene_manager):
-        #for occluder in self.shadow_casters:
+        # for occluder in self.shadow_casters:
         #    occluder.update_scene(self.c_observer)
         #    occluder.body.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
@@ -192,7 +194,7 @@ class Worlds:
             old_resolved.body.on_point(scene_manager)
         for old_visible in self.no_longer_visibles:
             # print("OLD VISIBLE", old_visible.body.get_name())
-            #self.labels.remove_label(old_visible.body)
+            # self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
 
@@ -203,7 +205,7 @@ class Worlds:
         pixel_size = observer.anchor.pixel_size
         for resolved in self.resolved:
             world = resolved.body
-            #TODO: this will update the body's components
+            # TODO: this will update the body's components
             world.update_obs(observer)
             world.check_visibility(frustum, pixel_size)
             world.update_lod(camera_pos, camera_rot)
@@ -245,6 +247,7 @@ class SceneWorld(NamedObject):
     def set_parent(self, parent):
         self.parent = parent
 
+
 class SimpleWorld(SceneWorld):
     def __init__(self, name):
         SceneWorld.__init__(self, name)
@@ -257,7 +260,7 @@ class SimpleWorld(SceneWorld):
         self.components = CompositeObject('<root>')
         self.components.set_scene_anchor(self.scene_anchor)
 
-        #TODO: To remove, needed by cam controller
+        # TODO: To remove, needed by cam controller
         self.apparent_radius = 0.0
 
     def init(self):
@@ -289,12 +292,13 @@ class SimpleWorld(SceneWorld):
         return 0.0
 
     def set_visibility_override(self, override):
-        if override == self.anchor.visibility_override: return
+        if override == self.anchor.visibility_override:
+            return
         if override:
             self.anchor.visibility_override = True
         else:
             self.anchor.visibility_override = False
-            #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
+            # Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 
     def on_visible(self, scene_manager):
@@ -327,11 +331,11 @@ class SimpleWorld(SceneWorld):
         self.components.check_settings()
 
     def on_resolved(self, scene_manager):
-        #TODO!
+        # TODO!
         self.on_visible(scene_manager)
 
     def on_point(self, scene_manager):
-        #TODO!
+        # TODO!
         self.on_hidden(scene_manager)
 
     def update(self, time, dt):
@@ -347,7 +351,7 @@ class SimpleWorld(SceneWorld):
         return self.components.components
 
     def start_shadows_update(self):
-        #TODO: Add method in CompositeObject
+        # TODO: Add method in CompositeObject
         for component in self.components.components:
             if component.concrete_object:
                 component.start_shadows_update()
@@ -371,7 +375,7 @@ class SimpleWorld(SceneWorld):
             self.lights.update_instances(camera_pos)
         self.components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
-    #TODO: To remove
+    # TODO: To remove
     def get_apparent_radius(self):
         return self.apparent_radius
 
@@ -395,6 +399,7 @@ class CartesianWorld(SimpleWorld):
 
     def get_bounding_radius(self):
         return 100
+
 
 class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):

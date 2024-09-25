@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -184,7 +184,7 @@ class DynamicSceneManager(SceneManagerBase):
         self.auto_infinite_plane = settings.auto_infinite_plane
         self.lens_far_limit = settings.lens_far_limit
         self.auto_scale = settings.auto_scale
-        self.min_scale= settings.min_scale
+        self.min_scale = settings.min_scale
         self.max_scale = settings.max_scale
         self.set_frustum = settings.set_frustum
         self.mid_plane_ratio = settings.mid_plane_ratio
@@ -217,7 +217,7 @@ class DynamicSceneManager(SceneManagerBase):
         picker_ray = CollisionRay()
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
-        #picker.show_collisions(self.root)
+        # picker.show_collisions(self.root)
         picker_ray.set_from_lens(camera.node(), mpos.get_x(), mpos.get_y())
         picker.traverse(self.root)
         pq.sort_entries()
@@ -256,7 +256,7 @@ class DynamicSceneManager(SceneManagerBase):
             else:
                 self.scale = self.max_scale
             if self.set_frustum:
-                #near_plane = min(distance_to_nearest / settings.scale / 2.0, settings.near_plane)
+                # near_plane = min(distance_to_nearest / settings.scale / 2.0, settings.near_plane)
                 if self.scale < 1.0:
                     self.near_plane = self.scale
                 else:
@@ -281,6 +281,7 @@ class DynamicSceneManager(SceneManagerBase):
     def ls(self):
         self.root.ls()
 
+
 class CollisionEntriesCollection:
     def __init__(self):
         self.entries = []
@@ -294,9 +295,11 @@ class CollisionEntriesCollection:
     def get_entry(self, i):
         return self.entries[i]
 
+
 class RegionSceneManager(SceneManagerBase):
     min_near = 1e-6
     max_near_reagion = 1e5
+
     def __init__(self):
         SceneManagerBase.__init__(self)
         self.rendering_passes = []
@@ -364,7 +367,8 @@ class RegionSceneManager(SceneManagerBase):
         spread_bodies = []
         for scene_anchor in resolveds:
             anchor = scene_anchor.anchor
-            if not anchor.visible: continue
+            if not anchor.visible:
+                continue
             if not scene_anchor.virtual_object and scene_anchor.instance is not None:
                 if scene_anchor.background:
                     background_resolved.append(scene_anchor)
@@ -373,9 +377,15 @@ class RegionSceneManager(SceneManagerBase):
                 else:
                     if anchor.distance_to_obs > anchor.get_bounding_radius():
                         coef = -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
-                        near = (anchor.distance_to_obs  - anchor.get_bounding_radius()) * coef  * camera_holder.cos_fov2 / self.scale
+                        near = (
+                            (anchor.distance_to_obs - anchor.get_bounding_radius())
+                            * coef
+                            * camera_holder.cos_fov2
+                            / self.scale
+                        )
                         far = (anchor.distance_to_obs + anchor.get_bounding_radius()) * coef / self.scale
-                        # TODO: Some object that are not visible are in this list due to visibility_override, we should better filter the list
+                        # TODO: Some object that are not visible are in this list due to visibility_override
+                        # we should better filter the list
                         if near < 0 and far < 0:
                             continue
                         near = max(near, self.min_near)
@@ -409,15 +419,16 @@ class RegionSceneManager(SceneManagerBase):
                     nearest_region = SceneRegion(self, self.min_near, self.regions[0].near)
                     self.regions.insert(0, nearest_region)
             self.background_region = farthest_region
-            #print("R", list(map(lambda r: (r.bodies[0].get_name() if len(r.bodies) > 0 else "empty") + f" : {r.near}:{r.far}", self.regions)))
+            # print("R", list(map(lambda r: (r.bodies[0].get_name() if len(r.bodies) > 0 else "empty")
+            #     + f" : {r.near}:{r.far}", self.regions)))
         else:
             region = SceneRegion(self, self.min_near, float('inf'))
             self.regions.append(region)
             self.background_region = region
         for scene_anchor in spread_bodies:
             anchor = scene_anchor.anchor
-            coef = 1 # -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
-            near_distance = (anchor.distance_to_obs  - anchor.get_bounding_radius()) * coef / self.scale
+            coef = 1  # -anchor.vector_to_obs.dot(camera_holder.anchor.camera_vector)
+            near_distance = (anchor.distance_to_obs - anchor.get_bounding_radius()) * coef / self.scale
             far_distance = (anchor.distance_to_obs + anchor.get_bounding_radius()) * coef / self.scale
             for region in self.regions:
                 if region.overlap_range(near_distance, far_distance):
@@ -429,11 +440,13 @@ class RegionSceneManager(SceneManagerBase):
         current_region = self.regions[0]
         for visible in visibles:
             anchor = visible.anchor
-            if anchor.resolved: continue
-            while anchor.z_distance  / self.scale > current_region.far and current_region_index + 1 < len(self.regions):
+            if anchor.resolved:
+                continue
+            while anchor.z_distance / self.scale > current_region.far and current_region_index + 1 < len(self.regions):
                 current_region_index += 1
                 current_region = self.regions[current_region_index]
-            #print("ADD", visible.body.get_name(), visible.z_distance, "TO", current_region_index, current_region.near, current_region.far)
+            # print("ADD", visible.body.get_name(), visible.z_distance,
+            #     "TO", current_region_index, current_region.near, current_region.far)
             current_region.add_point(visible)
         if len(self.regions) > 0:
             region_size = 1.0 / len(self.regions)
@@ -445,7 +458,15 @@ class RegionSceneManager(SceneManagerBase):
                 region_size = -region_size
             for i, region in enumerate(self.regions):
                 sort_index = len(self.regions) - i
-                region.create(self.rendering_passes, state, camera_holder, self.inverse_z, base, min(base + region_size, 1 - 1e-6), sort_index)
+                region.create(
+                    self.rendering_passes,
+                    state,
+                    camera_holder,
+                    self.inverse_z,
+                    base,
+                    min(base + region_size, 1 - 1e-6),
+                    sort_index,
+                )
                 base += region_size
         self.attach_spread_objects()
         self.spread_objects = []
@@ -454,6 +475,7 @@ class RegionSceneManager(SceneManagerBase):
         for i, region in enumerate(self.regions):
             print("REGION", i)
             region.ls()
+
 
 class SceneRegion:
     def __init__(self, scene_manager, near, far):
@@ -480,12 +502,20 @@ class SceneRegion:
         return self.points
 
     def overlap(self, other):
-        return self.near <= other.near < self.far or other.near <= self.near < other.far or \
-               self.far >= other.far > self.near or other.far >= self.far > other.near
+        return (
+            self.near <= other.near < self.far
+            or other.near <= self.near < other.far
+            or self.far >= other.far > self.near
+            or other.far >= self.far > other.near
+        )
 
     def overlap_range(self, near_distance, far_distance):
-        return self.near <= near_distance < self.far or near_distance <= self.near < far_distance or \
-               self.far >= far_distance > self.near or far_distance >= self.far > near_distance
+        return (
+            self.near <= near_distance < self.far
+            or near_distance <= self.near < far_distance
+            or self.far >= far_distance > self.near
+            or far_distance >= self.far > near_distance
+        )
 
     def merge(self, other):
         self.bodies += other.bodies
@@ -541,7 +571,7 @@ class SceneRegion:
         picker_node.add_solid(picker_ray)
         picker.add_collider(picker_np, pq)
         picker_ray.set_from_lens(self.rendering_passes[0].camera.node(), mpos.get_x(), mpos.get_y())
-        #picker.show_collisions(self.root)
+        # picker.show_collisions(self.root)
         picker.traverse(self.root)
         picker_np.remove_node()
         pq.sort_entries()
