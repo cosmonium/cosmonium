@@ -1,32 +1,34 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from ..bodyclass import bodyClasses
-
-from .yamlparser import YamlParser
-from .. import settings
 
 import os
 
+from ..bodyclass import bodyClasses
+from .. import settings
+
+from .yamlparser import YamlParser
+
+
 class ConfigParser(YamlParser):
     data_version = 1
+
     def __init__(self, config_file):
         YamlParser.__init__(self)
         self.config_file = config_file
@@ -43,7 +45,7 @@ class ConfigParser(YamlParser):
         self.encode_and_store(self.config_file)
 
     def decode_body_class(self, data):
-        for (name, body_class) in bodyClasses.classes.items():
+        for name, body_class in bodyClasses.classes.items():
             entry = data.get(name, {})
             body_class.show = entry.get('show', True)
             body_class.show_orbit = entry.get('orbit', True)
@@ -51,7 +53,7 @@ class ConfigParser(YamlParser):
 
     def encode_body_class(self):
         data = {}
-        for (name, body_class) in bodyClasses.classes.items():
+        for name, body_class in bodyClasses.classes.items():
             entry = {}
             entry['show'] = body_class.show
             entry['orbit'] = body_class.show_orbit
@@ -241,8 +243,9 @@ class ConfigParser(YamlParser):
 
     def decode_screenshots(self, data):
         settings.screenshot_path = data.get('path', settings.screenshot_path)
-        #TODO: improve data validation...
-        if settings.screenshot_path == '': settings.screenshot_path = '.'
+        # TODO: improve data validation...
+        if settings.screenshot_path == '':
+            settings.screenshot_path = '.'
         settings.screenshot_filename = data.get('filename', settings.screenshot_filename)
         settings.screenshot_format = data.get('format', settings.screenshot_format)
 
@@ -256,7 +259,9 @@ class ConfigParser(YamlParser):
 
     def decode_patches(self, data):
         settings.cull_far_patches = data.get('cull-far-patches', settings.cull_far_patches)
-        settings.cull_far_patches_threshold = data.get('cull-far-patches-threshold', settings.cull_far_patches_threshold)
+        settings.cull_far_patches_threshold = data.get(
+            'cull-far-patches-threshold', settings.cull_far_patches_threshold
+        )
 
     def encode_patches(self):
         data = {}
@@ -265,7 +270,8 @@ class ConfigParser(YamlParser):
         return data
 
     def decode(self, data):
-        if data is None: return
+        if data is None:
+            return
         if data.get('version', 0) != self.data_version:
             print("Incompatible configuration file", data.get('version', 0))
             return
@@ -282,7 +288,7 @@ class ConfigParser(YamlParser):
     def encode(self):
         data = {}
         data['version'] = self.data_version
-        data['render'] =  self.encode_render()
+        data['render'] = self.encode_render()
         data['body-class'] = self.encode_body_class()
         data['ui'] = self.encode_ui()
         data['win'] = self.encode_win()
@@ -291,5 +297,6 @@ class ConfigParser(YamlParser):
         data['patches'] = self.encode_patches()
         data['debug'] = self.encode_debug()
         return data
+
 
 configParser = ConfigParser(settings.config_file)

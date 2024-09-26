@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -22,13 +22,14 @@ from panda3d.core import LColor
 
 from ..objects.rings import StellarRings
 
-from .yamlparser import YamlModuleParser
+from .elementsparser import RingsYamlParser
+from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
-from .elementsparser import RingsYamlParser
-from .framesparser import FrameYamlParser
 from .utilsparser import check_parent
+from .yamlparser import YamlModuleParser
+
 
 class StellarRingsYamlParser(YamlModuleParser):
     def __init__(self, body_class):
@@ -38,8 +39,9 @@ class StellarRingsYamlParser(YamlModuleParser):
         name = data.get('name')
         (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
-        parent, explicit_parent = check_parent(name, parent, parent_name)
-        if parent is None: return None
+        parent, _explicit_parent = check_parent(name, parent, parent_name)
+        if parent is None:
+            return None
         actual_parent = parent.primary or parent
         body_class = data.get('body-class', self.body_class)
         rings_object = RingsYamlParser.decode(data)
@@ -48,15 +50,18 @@ class StellarRingsYamlParser(YamlModuleParser):
         frame = FrameYamlParser.decode(data.get('frame'), actual_parent, default="mean-equatorial")
         orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
         rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent, default="fixed")
-        body = StellarRings(names=translated_names,
-                              source_names=source_names,
-                              body_class=body_class,
-                              rings_object=rings_object,
-                              orbit=orbit,
-                              rotation=rotation,
-                              frame=None,
-                              point_color=point_color)
+        body = StellarRings(
+            names=translated_names,
+            source_names=source_names,
+            body_class=body_class,
+            rings_object=rings_object,
+            orbit=orbit,
+            rotation=rotation,
+            frame=None,
+            point_color=point_color,
+        )
         parent.add_child_fast(body)
         return body
+
 
 ObjectYamlParser.register_object_parser('rings', StellarRingsYamlParser('rings'))

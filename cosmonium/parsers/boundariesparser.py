@@ -1,29 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from ..components.annotations.boundary import Boundary
-from ..astro.projection import InfinitePosition
-from ..astro import units
-from ..dircontext import defaultDirContext
 
 import re
+
+from ..astro.projection import InfinitePosition
+from ..astro import units
+from ..components.annotations.boundary import Boundary
+from ..dircontext import defaultDirContext
+
 
 def create_line(points, prev_ra, prev_decl, ra, decl):
     if prev_ra is not None:
@@ -44,6 +45,7 @@ def create_line(points, prev_ra, prev_decl, ra, decl):
     position = InfinitePosition(ra * units.Deg, decl * units.Deg)
     points.append(position)
 
+
 def do_load(filepath):
     boundaries = {}
     data = open(filepath)
@@ -55,11 +57,11 @@ def do_load(filepath):
     first_decl = None
     for line in data.readlines():
         line = line.rstrip(' \r\n').lstrip(' ')
-        data = re.split('\|', line)
+        data = re.split(r'\|', line)
         if len(data) == 3:
             (ra, decl, const) = data
             if const != prev_const and prev_const is not None:
-                #print("Adding constellation", prev_const, const)
+                # print("Adding constellation", prev_const, const)
                 create_line(points, prev_ra, prev_decl, first_ra, first_decl)
                 boundary = Boundary(prev_const, points)
                 boundaries[prev_const] = boundary
@@ -82,6 +84,7 @@ def do_load(filepath):
     boundary = Boundary(const, points)
     boundaries[const] = boundary
     return boundaries
+
 
 def load(filename, context=defaultDirContext):
     filepath = context.find_data(filename)

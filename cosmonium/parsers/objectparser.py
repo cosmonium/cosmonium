@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -22,6 +22,7 @@ from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceC
 from ..dataattribution import DataAttribution, dataAttributionDB
 
 from .yamlparser import YamlModuleParser
+
 
 class ObjectYamlParser(YamlModuleParser):
     parsers = {}
@@ -71,6 +72,7 @@ class ObjectYamlParser(YamlModuleParser):
         else:
             return cls.decode_object_dict(data, parent)
 
+
 class UniverseYamlParser(YamlModuleParser):
     def __init__(self, universe=None):
         YamlModuleParser.__init__(self)
@@ -80,7 +82,8 @@ class UniverseYamlParser(YamlModuleParser):
         self.universe = universe
 
     def decode(self, data, parent=None):
-        children = ObjectYamlParser.decode(data.get('children', []), self.universe)
+        ObjectYamlParser.decode(data.get('children', []), self.universe)
+
 
 class IncludeYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
@@ -91,6 +94,7 @@ class IncludeYamlParser(YamlModuleParser):
         parser = ObjectYamlParser()
         body = parser.load_and_parse(filename, parent)
         return body
+
 
 class DataAttributionYamlParser(YamlModuleParser):
     @classmethod
@@ -105,12 +109,14 @@ class DataAttributionYamlParser(YamlModuleParser):
         dataAttributionDB.add_attribution(attribution_id, attribution)
         return None
 
+
 class DataAttributionsListYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, parent=None):
-        for (attribution_id, attribution_data) in data.items():
+        for attribution_id, attribution_data in data.items():
             DataAttributionYamlParser.decode(attribution_data, attribution_id)
         return None
+
 
 class SurfaceCategoryYamlParser(YamlModuleParser):
     @classmethod
@@ -119,6 +125,7 @@ class SurfaceCategoryYamlParser(YamlModuleParser):
         category = SurfaceCategory(name)
         surfaceCategoryDB.add(category)
         return None
+
 
 universeYamlParser = UniverseYamlParser()
 ObjectYamlParser.register_object_parser('universe', universeYamlParser)

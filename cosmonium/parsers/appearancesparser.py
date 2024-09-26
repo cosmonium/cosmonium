@@ -1,29 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LColor
 
 from ..appearances import Appearance, ModelAppearance
-from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture
+from ..textures import TransparentTexture, SurfaceTexture, EmissionTexture
+from ..textures import NormalMapTexture, SpecularMapTexture, BumpMapTexture
 from ..procedural.appearances import ProceduralAppearance
-from ..procedural.textures import PatchedProceduralVirtualTextureSource, DetailTextureGenerationStage, DetailMapTextureGenerator
+from ..procedural.textures import PatchedProceduralVirtualTextureSource, DetailMapTextureGenerator
 from ..utils import TransparencyBlend
 
 from .yamlparser import YamlModuleParser
@@ -31,10 +32,12 @@ from .texturesourceparser import TextureSourceYamlParser
 from .textureparser import TextureDictionaryYamlParser
 from .texturecontrolparser import TextureControlYamlParser
 
+
 def decode_bias(data, appearance):
     appearance.shadow_normal_bias = data.get('normal-bias', appearance.shadow_normal_bias)
     appearance.shadow_slope_bias = data.get('slope-bias', appearance.shadow_slope_bias)
     appearance.shadow_depth_bias = data.get('depth-bias', appearance.shadow_depth_bias)
+
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -51,17 +54,25 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         if texture is not None:
             texture_source, texture_offset = source_parser.decode(texture, patched_shape)
             if transparency:
-                texture = TransparentTexture(texture_source, tint=tint, level=transparency_level, blend=transparency_blend)
+                texture = TransparentTexture(
+                    texture_source, tint=tint, level=transparency_level, blend=transparency_blend
+                )
             else:
                 texture = SurfaceTexture(texture_source)
             if texture_offset is not None:
                 texture.offset = texture_offset
-            appearance.set_texture(texture, tint=tint, transparency=transparency, transparency_level=transparency_level, transparency_blend=transparency_blend)
+            appearance.set_texture(
+                texture,
+                tint=tint,
+                transparency=transparency,
+                transparency_level=transparency_level,
+                transparency_blend=transparency_blend,
+            )
         emission_texture = data.get('night-texture')
         if emission_texture is not None:
             texture_source, texture_offset = source_parser.decode(emission_texture, patched_shape)
             emission_texture = EmissionTexture(texture_source)
-            #TODO: missing texture offset
+            # TODO: missing texture offset
             appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
             nightscale = data.get('nightscale', 0.02)
             appearance.set_nightscale(nightscale)
@@ -70,13 +81,13 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             if emission_texture is not None:
                 texture_source, texture_offset = source_parser.decode(emission_texture, patched_shape)
                 emission_texture = EmissionTexture(texture_source)
-                #TODO: missing texture offset
+                # TODO: missing texture offset
                 appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         normal_map = data.get('normalmap')
         if normal_map is not None:
             texture_source, texture_offset = source_parser.decode(normal_map, patched_shape)
             normal_map = NormalMapTexture(texture_source)
-            #TODO: missing texture offset
+            # TODO: missing texture offset
             appearance.set_normal_map(normal_map, context=YamlModuleParser.context)
         specular_color = data.get('specular-color')
         if specular_color is not None:
@@ -86,14 +97,14 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             if specular_map is not None:
                 texture_source, texture_offset = source_parser.decode(specular_map, patched_shape)
                 specular_map = SpecularMapTexture(texture_source)
-                #TODO: missing texture offset
+                # TODO: missing texture offset
                 appearance.set_specular_map(specular_map, context=YamlModuleParser.context)
         bump_map = data.get('bumpmap')
         if bump_map is not None:
             texture_source, texture_offset = source_parser.decode(bump_map, patched_shape)
             bump_map = BumpMapTexture(texture_source)
             bump_height = data.get('bump-height', 0)
-            #TODO: missing texture offset
+            # TODO: missing texture offset
             appearance.set_bump_map(bump_map, bump_height, context=YamlModuleParser.context)
         diffuse_color = data.get('diffuse-color')
         if diffuse_color is not None:
@@ -112,6 +123,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         decode_bias(data, appearance)
         return appearance
 
+
 class ModelAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, heightmap, radius, patched_shape):
@@ -121,6 +133,7 @@ class ModelAppearanceYamlParser(YamlModuleParser):
         appearance = ModelAppearance(vertex_color=vertex_color, material=material, occlusion_channel=occlusion_channel)
         decode_bias(data, appearance)
         return appearance
+
 
 class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
@@ -133,6 +146,7 @@ class ProceduralAppearanceYamlParser(YamlModuleParser):
         appearance = ProceduralAppearance(texture_control, textures_source, heightmap)
         return appearance
 
+
 class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, heightmap, radius, patched_shape):
@@ -144,15 +158,17 @@ class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
         texture_control = control_parser.decode(control, heightmap, radius)
         tex_generator = DetailMapTextureGenerator(size, heightmap, texture_control, textures_source)
         texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
-        #TODO: procedural is used to configure the lod control
+        # TODO: procedural is used to configure the lod control
         texture_source.procedural = False
         texture = SurfaceTexture(texture_source)
         appearance = Appearance()
         appearance.set_texture(texture, None, False, 0.0, TransparencyBlend.TB_None, 0)
         return appearance
 
+
 class AppearanceYamlParser(YamlModuleParser):
     parsers = {}
+
     @classmethod
     def register(cls, name, parser):
         cls.parsers[name] = parser
@@ -168,6 +184,7 @@ class AppearanceYamlParser(YamlModuleParser):
             print("Unknown appearance type '%s'" % object_type, data)
             appearance = None
         return appearance
+
 
 AppearanceYamlParser.register('textures', TexturesAppearanceYamlParser)
 AppearanceYamlParser.register('model', ModelAppearanceYamlParser)

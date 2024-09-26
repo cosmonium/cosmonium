@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -22,17 +22,18 @@ from panda3d.core import LColor
 
 from ..objects.reflective import ReflectiveBody
 
-from .yamlparser import YamlModuleParser
+from .atmospheresparser import AtmosphereYamlParser
+from .controllersparser import ControllerYamlParser
+from .elementsparser import CloudsYamlParser
+from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
-from .rotationsparser import RotationYamlParser
-from .atmospheresparser import AtmosphereYamlParser
-from .elementsparser import CloudsYamlParser
-from .surfacesparser import SurfaceYamlParser
 from .ringsparser import StellarRingsYamlParser
-from .framesparser import FrameYamlParser
-from .controllersparser import ControllerYamlParser
+from .rotationsparser import RotationYamlParser
+from .surfacesparser import SurfaceYamlParser
 from .utilsparser import check_parent, get_radius_scale
+from .yamlparser import YamlModuleParser
+
 
 class ReflectiveYamlParser(YamlModuleParser):
     def __init__(self, body_class):
@@ -43,7 +44,8 @@ class ReflectiveYamlParser(YamlModuleParser):
         (translated_names, source_names) = self.translate_names(name)
         parent_name = data.get('parent')
         parent, explicit_parent = check_parent(name, parent, parent_name)
-        if parent is None: return None
+        if parent is None:
+            return None
         actual_parent = parent.primary or parent
         body_class = data.get('body-class', self.body_class)
         radius, ellipticity, scale = get_radius_scale(data, None)
@@ -60,19 +62,21 @@ class ReflectiveYamlParser(YamlModuleParser):
         else:
             orbit = None
             rotation = None
-        body = ReflectiveBody(names=translated_names,
-                              source_names=source_names,
-                              body_class=body_class,
-                              radius=radius,
-                              oblateness=ellipticity,
-                              scale=scale,
-                              orbit=orbit,
-                              rotation=rotation,
-                              frame=frame,
-                              atmosphere=atmosphere,
-                              clouds=clouds,
-                              point_color=point_color,
-                              albedo=albedo)
+        body = ReflectiveBody(
+            names=translated_names,
+            source_names=source_names,
+            body_class=body_class,
+            radius=radius,
+            oblateness=ellipticity,
+            scale=scale,
+            orbit=orbit,
+            rotation=rotation,
+            frame=frame,
+            atmosphere=atmosphere,
+            clouds=clouds,
+            point_color=point_color,
+            albedo=albedo,
+        )
         if data.get('surfaces') is None:
             surfaces = []
             surfaces.append(SurfaceYamlParser.decode_surface(data, {}, body))
@@ -96,6 +100,7 @@ class ReflectiveYamlParser(YamlModuleParser):
                 system = parent
             rings_parser.decode(rings, system)
         return body
+
 
 ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))
 ObjectYamlParser.register_object_parser('planet', ReflectiveYamlParser('planet'))

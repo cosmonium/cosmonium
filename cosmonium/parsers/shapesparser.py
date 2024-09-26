@@ -1,34 +1,35 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LVector3d, LQuaterniond
 
-from ..shapes.spheres import SphereShape, IcoSphereShape
-from ..shapes.mesh import MeshShape
 from ..patchedshapes import PatchedSpherePatchFactory, SquaredDistanceSquarePatchFactory, NormalizedSquarePatchFactory
 from ..patchedshapes import PatchedSphereShape, NormalizedSquareShape, SquaredDistanceSquareShape
-from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 from ..procedural.raymarching import RayMarchingShape
+from ..shapes.mesh import MeshShape
+from ..shapes.spheres import SphereShape, IcoSphereShape
+from ..spaceengine.shapes import SpaceEnginePatchedSquareShape
 from ..tiles import TiledShape
 
 from .yamlparser import YamlModuleParser
+
 
 class MeshYamlParser(YamlModuleParser):
     @classmethod
@@ -62,7 +63,17 @@ class MeshYamlParser(YamlModuleParser):
             rotation = None
         flatten = data.get('flatten', True)
         attribution = data.get('attribution', None)
-        shape = MeshShape(model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context=YamlModuleParser.context)
+        shape = MeshShape(
+            model,
+            offset,
+            rotation,
+            scale,
+            auto_scale_mesh,
+            flatten,
+            panda,
+            attribution,
+            context=YamlModuleParser.context,
+        )
         return (shape, {'create-uv': create_uv})
 
 

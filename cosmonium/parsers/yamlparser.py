@@ -1,48 +1,35 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import io
+import hashlib
+import os
+import pickle
+import ruamel.yaml
 
 from ..dircontext import defaultDirContext, DirContext
 from ..cache import create_path_for
-from ..import settings
+from .. import settings
 
-import os
-import hashlib
-import pickle
-import io
 
-import ruamel.yaml
-
-def yaml_include(loader, node):
-    print("Loading", node.value)
-    filepath = node.value
-    if filepath is not None:
-        with io.open(filepath, encoding='utf8') as inputfile:
-            data = yaml.load(inputfile)
-            return data
-    else:
-        print("File", node.value, "not found")
-        return None
-
-#yaml.add_constructor("!include", yaml_include)
-
-class YamlParser(object):
+class YamlParser:
     def __init__(self):
         pass
 
@@ -106,6 +93,7 @@ class YamlParser(object):
                 object_type = data.get('type', default)
                 object_data = data
         return (object_type, object_data)
+
 
 class YamlModuleParser(YamlParser):
     context = defaultDirContext
@@ -204,7 +192,7 @@ class YamlModuleParser(YamlParser):
                 if parent is not None:
                     data = self.decode(data, parent)
                 else:
-                    data =self.decode(data)
+                    data = self.decode(data)
             YamlModuleParser.context = saved_context
         else:
             print("Could not find", filename)

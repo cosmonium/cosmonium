@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -39,7 +39,8 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(self, data):
-        if data is None: return None
+        if data is None:
+            return None
         name = data.get('name')
         position = data.get('position', (0, 0, 0))
         position = LPoint3(*position)
@@ -55,7 +56,12 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
         shadows_data = data.get("shadows")
         if shadows_data is not None:
             cast_shadows = True
-            lens = ShadowsLens(shadows_data.get('near', 0), shadows_data.get('far', 100), shadows_data.get('width', 10), shadows_data.get('height', 10))
+            lens = ShadowsLens(
+                shadows_data.get('near', 0),
+                shadows_data.get('far', 100),
+                shadows_data.get('width', 10),
+                shadows_data.get('height', 10),
+            )
         else:
             cast_shadows = False
             lens = None
@@ -67,7 +73,8 @@ class LocalPointLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(self, data):
-        if data is None: return None
+        if data is None:
+            return None
         name = data.get('name')
         position = data.get('position', (0, 0, 0))
         position = LPoint3(*position)
@@ -80,7 +87,7 @@ class LocalPointLightYamlParser(YamlModuleParser):
         attenuation = data.get('attenuation', (1, 0, 1))
         attenuation = LVector3(*attenuation)
         max_distance = data.get('max-distance', 1)
-        shadows_data = data.get("shadows")
+        # shadows_data = data.get("shadows")
         cast_shadows = False
         light = LocalPointLight(name, position, color, power, attenuation, max_distance, cast_shadows=cast_shadows)
         return light
@@ -90,7 +97,8 @@ class LocalSpotLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(self, data):
-        if data is None: return None
+        if data is None:
+            return None
         name = data.get('name')
         position = data.get('position', (0, 0, 0))
         position = LPoint3(*position)
@@ -116,7 +124,19 @@ class LocalSpotLightYamlParser(YamlModuleParser):
         else:
             cast_shadows = False
             lens = None
-        light = LocalSpotLight(name, position, color, power, attenuation, max_distance, (inner_cone_angle, outer_cone_angle), exponent, direction, cast_shadows=cast_shadows, lens=lens)
+        light = LocalSpotLight(
+            name,
+            position,
+            color,
+            power,
+            attenuation,
+            max_distance,
+            (inner_cone_angle, outer_cone_angle),
+            exponent,
+            direction,
+            cast_shadows=cast_shadows,
+            lens=lens,
+        )
         return light
 
 
@@ -138,6 +158,7 @@ class LocalLightYamlParser(YamlModuleParser):
             print("Unknown light type type '%s'" % object_type, data)
             light = None
         return light
+
 
 LocalLightYamlParser.register('directional', LocalDirectionalLightYamlParser)
 LocalLightYamlParser.register('point', LocalPointLightYamlParser)

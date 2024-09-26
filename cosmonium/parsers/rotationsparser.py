@@ -1,38 +1,38 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2019 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import pi
 from panda3d.core import LQuaterniond, LVector3d
 
-from ..astro.elementsdb import rotation_elements_db
-from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro.frame import BodyReferenceFrames
 from ..astro.astro import calc_orientation, calc_orientation_from_incl_an
+from ..astro.elementsdb import rotation_elements_db
+from ..astro.frame import BodyReferenceFrames
+from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro import units
 from .. import utils
 
-from .yamlparser import YamlModuleParser
+from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import TimeUnitsYamlParser, AngleUnitsYamlParser
-from .framesparser import FrameYamlParser
+from .yamlparser import YamlModuleParser
 
-from math import pi
 
 class OrientationYamlParser(YamlModuleParser):
     @classmethod
@@ -46,14 +46,15 @@ class OrientationYamlParser(YamlModuleParser):
         declination = data.get('de', 0.0)
         declination_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
         if right_ascension is not None:
-            orientation = calc_orientation(right_ascension * right_ascension_units,
-                                           declination * declination_units,
-                                           flipped)
+            orientation = calc_orientation(
+                right_ascension * right_ascension_units, declination * declination_units, flipped
+            )
         else:
-            orientation = calc_orientation_from_incl_an(inclination * inclination_units,
-                                                        ascending_node * ascending_node_units,
-                                                        flipped)
+            orientation = calc_orientation_from_incl_an(
+                inclination * inclination_units, ascending_node * ascending_node_units, flipped
+            )
         return orientation
+
 
 class UniformYamlParser(YamlModuleParser):
     @classmethod
@@ -87,6 +88,7 @@ class UniformYamlParser(YamlModuleParser):
             rotation = UniformRotation(orientation, mean_motion, meridian_angle * meridian_units, epoch, frame)
         return rotation
 
+
 class FixedRotationYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, frame, parent):
@@ -102,6 +104,7 @@ class FixedRotationYamlParser(YamlModuleParser):
             frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'), parent)
         rotation = FixedRotation(orientation, frame)
         return rotation
+
 
 class RotationYamlParser(YamlModuleParser):
     @classmethod
@@ -119,9 +122,9 @@ class RotationYamlParser(YamlModuleParser):
         else:
             rotation = rotation_elements_db.get(data)
             if rotation is None:
-                #TODO: An error should be raised instead
+                # TODO: An error should be raised instead
                 rotation = UnknownRotation()
-            #TODO: this should not be done arbitrarily
+            # TODO: this should not be done arbitrarily
             if isinstance(rotation.frame, BodyReferenceFrames) and rotation.frame.anchor is None:
                 rotation.frame.set_anchor(parent.anchor)
             if isinstance(rotation, SynchronousRotation) and rotation.parent_body is None:
@@ -131,14 +134,17 @@ class RotationYamlParser(YamlModuleParser):
                     rotation.set_parent_body(parent.anchor)
         return rotation
 
+
 class NamedRotationYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, parent=None):
         name = data.get('name')
         category = data.get('category')
-        if name is None or category is None: return None
+        if name is None or category is None:
+            return None
         rotation = RotationYamlParser.decode(data)
         rotation_elements_db.register_element(category, name, rotation)
         return None
+
 
 ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser())

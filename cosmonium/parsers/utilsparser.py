@@ -1,34 +1,36 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2019 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+from panda3d.core import LVector3
+import re
 
 from ..astro import units
 from ..catalogs import objectsDB
 
 from .yamlparser import YamlModuleParser
 
-import re
-from panda3d.core import LVector3
 
-hour_angle_regex= re.compile('^(\d+)\:(\d+)\'(\d+\.?\d*)\"$')
-degree_angle_regex= re.compile(u'^([-+]?\d+)[d°](\d+)\'(\d+\.?\d*)\"$')
+hour_angle_regex = re.compile(r'^(\d+)\:(\d+)\'(\d+\.?\d*)\"$')
+degree_angle_regex = re.compile(r'^([-+]?\d+)[d°](\d+)\'(\d+\.?\d*)\"$')
+
 
 def check_parent(name, parent, parent_name):
     explicit_parent = False
@@ -47,8 +49,10 @@ def check_parent(name, parent, parent_name):
         print("Object %s has no parent" % name)
     return (parent, explicit_parent)
 
+
 def hour_angle_decoder(text):
-    if text is None: return None
+    if text is None:
+        return None
     angle = None
     m = hour_angle_regex.search(text)
     if m is not None:
@@ -58,8 +62,10 @@ def hour_angle_decoder(text):
         angle = units.hourMinSec(hours, mins, secs)
     return angle
 
+
 def degree_angle_decoder(text):
-    if text is None: return None
+    if text is None:
+        return None
     angle = None
     m = degree_angle_regex.search(text)
     if m is not None:
@@ -69,16 +75,19 @@ def degree_angle_decoder(text):
         angle = units.degMinSec(degrees, mins, secs)
     return angle
 
+
 class DistanceUnitsYamlParser(YamlModuleParser):
-    translation = { 'm': units.m,
-                    'km': units.Km,
-                    'au': units.AU,
-                    'ly': units.Ly,
-                    'pc': units.Parsec,
-                    'kpc': units.KParsec,
-                    'mpc': units.MParsec,
-                    'gpc': units.GParsec,
-                   }
+    translation = {
+        'm': units.m,
+        'km': units.Km,
+        'au': units.AU,
+        'ly': units.Ly,
+        'pc': units.Parsec,
+        'kpc': units.KParsec,
+        'mpc': units.MParsec,
+        'gpc': units.GParsec,
+    }
+
     @classmethod
     def decode(self, data, default=None):
         if data is None:
@@ -86,13 +95,16 @@ class DistanceUnitsYamlParser(YamlModuleParser):
         else:
             return DistanceUnitsYamlParser.translation.get(data.lower(), default)
 
+
 class TimeUnitsYamlParser(YamlModuleParser):
-    translation = { 'sec': units.Sec,
-                    'min': units.Min,
-                    'hour': units.Hour,
-                    'day': units.Day,
-                    'year': units.JYear,
-                   }
+    translation = {
+        'sec': units.Sec,
+        'min': units.Min,
+        'hour': units.Hour,
+        'day': units.Day,
+        'year': units.JYear,
+    }
+
     @classmethod
     def decode(self, data, default=None):
         if data is None:
@@ -100,11 +112,10 @@ class TimeUnitsYamlParser(YamlModuleParser):
         else:
             return TimeUnitsYamlParser.translation.get(data.lower(), default)
 
+
 class AngleUnitsYamlParser(YamlModuleParser):
-    translation = { 'deg': units.Deg,
-                    'hour': units.HourAngle,
-                    'rad': units.Rad
-                   }
+    translation = {'deg': units.Deg, 'hour': units.HourAngle, 'rad': units.Rad}
+
     @classmethod
     def decode(self, data, default=None):
         if data is None:
@@ -112,15 +123,17 @@ class AngleUnitsYamlParser(YamlModuleParser):
         else:
             return AngleUnitsYamlParser.translation.get(data.lower(), default)
 
+
 class AngleSpeedUnitsYamlParser(YamlModuleParser):
-    translation = { 'deg/day': units.Deg_Per_Day
-                   }
+    translation = {'deg/day': units.Deg_Per_Day}
+
     @classmethod
     def decode(self, data, default=None):
         if data is None:
             return default
         else:
             return AngleSpeedUnitsYamlParser.translation.get(data.lower(), default)
+
 
 def get_radius_scale(data, parent):
     radius = data.get('radius', None)

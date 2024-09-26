@@ -1,43 +1,44 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+from math import pi
 
 from ..astro import units
+from ..filters import NearestFilter, BilinearFilter, SmoothstepFilter, QuinticFilter, BSplineFilter
 from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
 from ..interpolators import HardwareInterpolator, SoftwareInterpolator
-from ..filters import NearestFilter, BilinearFilter, SmoothstepFilter, QuinticFilter, BSplineFilter
 from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderPatchedHeightmap
 from ..textures import HeightMapTexture
 
-from .yamlparser import YamlModuleParser
-from .objectparser import ObjectYamlParser
-from .utilsparser import DistanceUnitsYamlParser
 from .noiseparser import NoiseYamlParser
+from .objectparser import ObjectYamlParser
 from .texturesourceparser import TextureSourceYamlParser
+from .utilsparser import DistanceUnitsYamlParser
+from .yamlparser import YamlModuleParser
 
-from math import pi
 
 class InterpolatorYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
         interpolator = None
-        (object_type, parameters) = self.get_type_and_data(data, 'hardware')
+        (object_type, _parameters) = self.get_type_and_data(data, 'hardware')
         if object_type == 'hardware':
             interpolator = HardwareInterpolator()
         elif object_type == 'software':
@@ -46,11 +47,12 @@ class InterpolatorYamlParser(YamlModuleParser):
             print("Unknown interpolator", object_type)
         return interpolator
 
+
 class FilterYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, interpolator):
         filter = None
-        (object_type, parameters) = self.get_type_and_data(data, 'bilinear')
+        (object_type, _parameters) = self.get_type_and_data(data, 'bilinear')
         if object_type == 'nearest':
             filter = NearestFilter(interpolator)
         elif object_type == 'bilinear':
@@ -64,6 +66,7 @@ class FilterYamlParser(YamlModuleParser):
         else:
             print("Unknown filter", object_type)
         return filter
+
 
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
@@ -88,7 +91,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 min_height = -(height_scale + height_offset)
                 max_height = height_scale + height_offset
             else:
-                min_height = - max_height
+                min_height = -max_height
         else:
             if max_height is None:
                 max_height = -min_height
@@ -123,7 +126,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 print("Warning: 'noise' entry is deprecated, use 'func' instead'")
             heightmap_function = noise_parser.decode(func)
             heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, coord_scale)
-            #TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures 
+            # TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures
             heightmap_class = ShaderPatchedHeightmap
         else:
             heightmap_data = data.get('data')
@@ -131,7 +134,7 @@ class HeightmapYamlParser(YamlModuleParser):
             if heightmap_data is not None:
                 texture_source, texture_offset = TextureSourceYamlParser.decode(heightmap_data)
                 heightmap_data_source = HeightMapTexture(texture_source)
-                #TODO: missing texture offset
+                # TODO: missing texture offset
                 if patched:
                     heightmap_class = TexturePatchedHeightmap
                     size = heightmap_data_source.source.texture_size
@@ -139,25 +142,46 @@ class HeightmapYamlParser(YamlModuleParser):
                     size = 1.0
         if patched:
             max_lod = data.get('max-lod', 100)
-            heightmap = heightmap_class(name, heightmap_data_source, size,
-                                        min_height, max_height, height_scale, height_offset,
-                                        overlap,
-                                        interpolator, filter, max_lod)
+            heightmap = heightmap_class(
+                name,
+                heightmap_data_source,
+                size,
+                min_height,
+                max_height,
+                height_scale,
+                height_offset,
+                overlap,
+                interpolator,
+                filter,
+                max_lod,
+            )
         else:
-            heightmap = TextureHeightmap(name, size, size / 2,
-                                         min_height, max_height, height_scale, height_offset,
-                                         heightmap_data_source, interpolator, filter)
+            heightmap = TextureHeightmap(
+                name,
+                size,
+                size / 2,
+                min_height,
+                max_height,
+                height_scale,
+                height_offset,
+                heightmap_data_source,
+                interpolator,
+                filter,
+            )
         return heightmap
+
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data):
         name = data.get('name')
-        if name is None: return None
+        if name is None:
+            return None
         heightmap = HeightmapYamlParser.decode(data, name, False, None)
         patched_heightmap = HeightmapYamlParser.decode(data, name, True, None)
         heightmapRegistry.register(name, heightmap)
         heightmapRegistry.register(name + '-patched', patched_heightmap)
         return None
+
 
 ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser())

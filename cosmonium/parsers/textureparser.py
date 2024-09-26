@@ -1,31 +1,31 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from ..appearances import TexturesBlock
 from ..procedural.appearances import TexturesDictionary
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
+from ..textures import SurfaceTexture, NormalMapTexture, OcclusionMapTexture
 
-from ..textures import TransparentTexture, SurfaceTexture,  EmissionTexture, NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
-from ..appearances import TexturesBlock
-
-from .yamlparser import YamlModuleParser
 from .texturesourceparser import TextureSourceYamlParser
+from .yamlparser import YamlModuleParser
+
 
 class TextureTilingYamlParser(YamlModuleParser):
     @classmethod
@@ -38,6 +38,7 @@ class TextureTilingYamlParser(YamlModuleParser):
         else:
             print("Unknown tiling type '%s'" % object_type)
             return DefaultSampler()
+
 
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
@@ -93,7 +94,7 @@ class TextureDictionaryYamlParser(YamlModuleParser):
     def decode(cls, data):
         entries = {}
         srgb = data.get('srgb')
-        for (name, entry) in data.get('entries', {}).items():
+        for name, entry in data.get('entries', {}).items():
             entries[name] = cls.decode_textures_dictionary_entry(entry, srgb)
         scale = data.get('scale')
         tiling = TextureTilingYamlParser.decode(data.get('tiling'))

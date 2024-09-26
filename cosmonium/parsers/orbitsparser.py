@@ -1,37 +1,37 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import LPoint3d
-
-from ..astro.elementsdb import orbit_elements_db
-from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit
-from ..astro.frame import AbsoluteReferenceFrame, BodyReferenceFrames, J2000EclipticReferenceFrame
-from ..astro import units
-from ..astro.astro import calc_orientation
-
-from .yamlparser import YamlModuleParser
-from .objectparser import ObjectYamlParser
-from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser, AngleSpeedUnitsYamlParser
-from .framesparser import FrameYamlParser
 
 from math import pi
+from panda3d.core import LPoint3d
+
+from ..astro.astro import calc_orientation
+from ..astro.elementsdb import orbit_elements_db
+from ..astro.frame import AbsoluteReferenceFrame, BodyReferenceFrames, J2000EclipticReferenceFrame
+from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition, EllipticalOrbit
+from ..astro import units
+
+from .framesparser import FrameYamlParser
+from .objectparser import ObjectYamlParser
+from .utilsparser import DistanceUnitsYamlParser, TimeUnitsYamlParser, AngleUnitsYamlParser, AngleSpeedUnitsYamlParser
+from .yamlparser import YamlModuleParser
+
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod
@@ -58,16 +58,16 @@ class EllipticOrbitYamlParser(YamlModuleParser):
 
         if pericenter_distance is None:
             if semi_major_axis is None:
-                #TODO: raise error
+                # TODO: raise error
                 pericenter_distance = 1
             else:
-                pericenter_distance = semi_major_axis  * semi_major_axis_units * (1.0 - eccentricity)
+                pericenter_distance = semi_major_axis * semi_major_axis_units * (1.0 - eccentricity)
         else:
             pericenter_distance = pericenter_distance * pericenter_distance_units
 
         if period is None:
             if mean_motion is None:
-                #TODO: raise error
+                # TODO: raise error
                 period = 1.0
             else:
                 period = 2 * pi / (mean_motion * mean_motion_units)
@@ -85,16 +85,18 @@ class EllipticOrbitYamlParser(YamlModuleParser):
             else:
                 mean_anomaly = (mean_longitude - (arg_of_periapsis + ascending_node)) % 360
 
-        return EllipticalOrbit(frame,
-                               epoch,
-                               2 * pi / period,
-                               mean_anomaly * units.Deg,
-                               pericenter_distance,
-                               eccentricity,
-                               arg_of_periapsis * units.Deg,
-                               inclination * units.Deg,
-                               ascending_node * units.Deg
-                               )
+        return EllipticalOrbit(
+            frame,
+            epoch,
+            2 * pi / period,
+            mean_anomaly * units.Deg,
+            pericenter_distance,
+            eccentricity,
+            arg_of_periapsis * units.Deg,
+            inclination * units.Deg,
+            ascending_node * units.Deg,
+        )
+
 
 class FixedPositionYamlParser(YamlModuleParser):
     @classmethod
@@ -111,7 +113,7 @@ class FixedPositionYamlParser(YamlModuleParser):
             global_pos = True
             orientation = calc_orientation(ra * ra_units, decl * decl_units) * units.J2000_Orientation
             position = orientation.xform(LPoint3d(0, 0, distance * distance_units))
-            frame = AbsoluteReferenceFrame() #TDODO: This should be J2000BarycentricEclipticReferenceFrame
+            frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
         else:
             position = LPoint3d(*position)
             global_pos = data.get("global", True)
@@ -122,6 +124,7 @@ class FixedPositionYamlParser(YamlModuleParser):
         else:
             return LocalFixedPosition(frame_position=position, frame=frame)
 
+
 class GlobalPositionYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, frame=None, parent=None):
@@ -130,6 +133,7 @@ class GlobalPositionYamlParser(YamlModuleParser):
         if data.get('frame') is not None or frame is None:
             frame = FrameYamlParser.decode(data.get('frame', 'J2000Ecliptic'), parent)
         return AbsoluteFixedPosition(absolute_reference_point=position * position_units, frame=frame)
+
 
 class OrbitYamlParser(YamlModuleParser):
     @classmethod
@@ -146,12 +150,13 @@ class OrbitYamlParser(YamlModuleParser):
         else:
             orbit = orbit_elements_db.get(data)
             if orbit is None:
-                #TODO: An error should be raised instead !
-                orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
-            #TODO: this should not be done arbitrarily
+                # TODO: An error should be raised instead !
+                orbit = AbsoluteFixedPosition(frame=J2000EclipticReferenceFrame())
+            # TODO: this should not be done arbitrarily
             if isinstance(orbit.frame, BodyReferenceFrames) and orbit.frame.anchor is None:
                 orbit.frame.set_anchor(parent.anchor)
         return orbit
+
 
 class OrbitCategoryYamlParser(YamlModuleParser):
     @classmethod
@@ -161,15 +166,18 @@ class OrbitCategoryYamlParser(YamlModuleParser):
         orbit_elements_db.register_category(name, priority)
         return None
 
+
 class NamedOrbitYamlParser(YamlModuleParser):
     @classmethod
     def decode(self, data, parent=None):
         name = data.get('name')
         category = data.get('category')
-        if name is None or category is None: return None
+        if name is None or category is None:
+            return None
         orbit = OrbitYamlParser.decode(data)
         orbit_elements_db.register_element(category, name, orbit)
         return None
+
 
 ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser())
 ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser())

@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -45,7 +45,7 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
         atm_hdr = data.get('atm-hdr', True)
         atm_exposure = data.get('atm-exposure', 0.8)
         scattering = ONeilSimpleScattering(
-            wavelength = [0.650, 0.570, 0.465],
+            wavelength=[0.650, 0.570, 0.465],
             mie_phase_asymmetry=mie_phase_asymmetry,
             mie_coef=mie_coef,
             rayleigh_coef=rayleigh_coef,
@@ -58,7 +58,8 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
             hdr=hdr,
             exposure=exposure,
             atm_hdr=atm_hdr,
-            atm_exposure=atm_exposure)
+            atm_exposure=atm_exposure,
+        )
         return scattering
 
 
@@ -87,7 +88,7 @@ class ONeilScatteringYamlParser(YamlParser):
         mie_scale_depth /= height
         scattering = ONeilScattering(
             height=height,
-            wavelength = [0.650, 0.570, 0.465],
+            wavelength=[0.650, 0.570, 0.465],
             mie_phase_asymmetry=mie_phase_asymmetry,
             rayleigh_scale_depth=rayleigh_scale_depth,
             rayleigh_coef=rayleigh_coef,
@@ -106,7 +107,8 @@ class ONeilScatteringYamlParser(YamlParser):
             atm_hdr=atm_hdr,
             atm_exposure=atm_exposure,
             lookup_size=256,
-            lookup_samples=50)
+            lookup_samples=50,
+        )
         return scattering
 
 

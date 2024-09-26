@@ -1,33 +1,34 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LColor
 
-from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl,\
-    SlopeTextureControl, SlopeTextureControlEntry,\
-    BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
-from ..procedural.texturecontrol import MixTextureControl
 from ..astro import units
+from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl
+from ..procedural.texturecontrol import SlopeTextureControl, SlopeTextureControlEntry
+from ..procedural.texturecontrol import BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
+from ..procedural.texturecontrol import MixTextureControl
 
 from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import YamlParser, YamlModuleParser
+
 
 class HeightColorControlYamlParser(YamlParser):
     def __init__(self):
@@ -75,6 +76,7 @@ class HeightColorControlYamlParser(YamlParser):
             self.height_offset = 0.0
         return self.decode_height_control(entries)
 
+
 class MixTextureControlYamlParser(YamlParser):
     def __init__(self):
         YamlParser.__init__(self)
@@ -121,7 +123,7 @@ class MixTextureControlYamlParser(YamlParser):
         entries = []
         for entry in data:
             entries.append(self.decode_biome_entry(entry))
-        return BiomeControl('dummy', 'biome', entries) #TODO: make biome source configurable
+        return BiomeControl('dummy', 'biome', entries)  # TODO: make biome source configurable
 
     def decode_entry(self, data):
         if isinstance(data, str):
@@ -141,12 +143,14 @@ class MixTextureControlYamlParser(YamlParser):
     def decode(self, data, heightmap, radius=1.0):
         self.height_scale = 1.0 / radius
         entry = self.decode_entry(data)
-        #TODO: get or generate name
+        # TODO: get or generate name
         return MixTextureControl("control", entry)
+
 
 class TextureControlYamlParser(YamlModuleParser):
     def decode(self, data, heightmap, radius=1.0):
-        if data is None: return None
+        if data is None:
+            return None
         control_type = data.get('type', 'textures')
         if control_type == 'textures':
             control_parser = MixTextureControlYamlParser()

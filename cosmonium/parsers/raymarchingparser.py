@@ -1,27 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from ..procedural.raymarching import SDFRayMarchingAppearance, BulgeRayMarchingAppearance, VolumetricDensityRayMarchingAppearance, VolumetricDensityEmissiveRayMarchingAppearance
+from ..procedural.raymarching import SDFRayMarchingAppearance, BulgeRayMarchingAppearance
+from ..procedural.raymarching import VolumetricDensityRayMarchingAppearance
+from ..procedural.raymarching import VolumetricDensityEmissiveRayMarchingAppearance
 from ..procedural.raymarching import SDFPointShape, SDFSphereShape
-from .noiseparser import NoiseYamlParser
+
 from .appearancesparser import AppearanceYamlParser
+from .noiseparser import NoiseYamlParser
 from .yamlparser import YamlModuleParser
 
 
@@ -36,8 +39,7 @@ def create_sphere_sdf(parser, data, length_scale):
     position = data.get('position', [0, 0, 0])
     radius = data.get('radius', 1.0)
     radius_range = data.get('radius-range', [0.0, 1.0])
-    ranges = {
-        'radius': radius_range}
+    ranges = {'radius': radius_range}
     return SDFSphereShape(position, radius, dynamic=name is not None, name=name, ranges=ranges)
 
 
@@ -61,12 +63,20 @@ class VolumetricDensityRayMarchingYamlParser(YamlModuleParser):
         max_steps = data.get('max-steps', 16)
         hdr = data.get('hdr', False)
         exposure = data.get('exposure', 4.0)
-        appearance = VolumetricDensityRayMarchingAppearance(density,
-                                                            absorption_factor, absorption_coef,
-                                                            mie_coef, phase_coef,
-                                                            source_color, source_power,
-                                                            emission_color, emission_power,
-                                                            max_steps, hdr, exposure)
+        appearance = VolumetricDensityRayMarchingAppearance(
+            density,
+            absorption_factor,
+            absorption_coef,
+            mie_coef,
+            phase_coef,
+            source_color,
+            source_power,
+            emission_color,
+            emission_power,
+            max_steps,
+            hdr,
+            exposure,
+        )
         return appearance
 
 
@@ -80,9 +90,9 @@ class VolumetricDensityEmissiveRayMarchingYamlParser(YamlModuleParser):
         max_steps = data.get('max-steps', 16)
         hdr = data.get('hdr', False)
         exposure = data.get('exposure', 4.0)
-        appearance = VolumetricDensityEmissiveRayMarchingAppearance(density,
-                                                                    emission_color, emission_power,
-                                                                    max_steps, hdr, exposure)
+        appearance = VolumetricDensityEmissiveRayMarchingAppearance(
+            density, emission_color, emission_power, max_steps, hdr, exposure
+        )
         return appearance
 
 
@@ -94,7 +104,9 @@ class BulgeRayMarchingYamlParser(YamlModuleParser):
         max_steps = data.get('max-steps', 16)
         hdr = data.get('hdr', False)
         exposure = data.get('exposure', 4.0)
-        appearance = BulgeRayMarchingAppearance(effective_intensity, effective_radius, emissive_color, emissive_scale, max_steps, hdr, exposure)
+        appearance = BulgeRayMarchingAppearance(
+            effective_intensity, effective_radius, emissive_color, emissive_scale, max_steps, hdr, exposure
+        )
         return appearance
 
 

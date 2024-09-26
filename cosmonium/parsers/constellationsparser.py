@@ -1,40 +1,39 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from ..components.annotations.constellation import Constellation
 from ..astro.projection import InfinitePosition
 from ..astro import units
+from ..components.annotations.constellation import Constellation
 
-from .yamlparser import YamlModuleParser
 from .objectparser import ObjectYamlParser
 from .utilsparser import hour_angle_decoder, degree_angle_decoder
+from .yamlparser import YamlModuleParser
 from . import boundariesparser
 
-import re
 
 class ConstellationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
         constellation = None
         name = cls.translate_name(data.get('name'), context='constellation')
-        genitive = data.get('genitive')
+        # genitive = data.get('genitive')
         abbr = data.get('abbreviation')
         ra = hour_angle_decoder(data.get('ra'))
         if ra is None:
@@ -54,5 +53,6 @@ class ConstellationYamlParser(YamlModuleParser):
             return None
         else:
             return constellation
+
 
 ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser())
