@@ -1,43 +1,43 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import sqrt, pi
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LColor
+from time import time
 
-from ..octree import OctreeNode
 from ...astro import units
 from ...astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
 from ...astro.frame import AbsoluteReferenceFrame
 from ... import utils
-
 from ... import settings
 
-from math import sqrt, asin, pi
-from time import time
+from ..octree import OctreeNode
 
-class AnchorBase():
+
+class AnchorBase:
     def __init__(self, anchor_class, body):
         self.content = anchor_class
         self.body = body
         self.parent = None
         self.rebuild_needed = False
-        #Flags
+        # Flags
         self.was_visible = False
         self.visible = False
         self.visibility_override = False
@@ -46,14 +46,14 @@ class AnchorBase():
         self.update_id = -1
         self.update_frozen = False
         self.force_update = False
-        #Cached values
+        # Cached values
         self._position = LPoint3d()
         self._global_position = LPoint3d()
         self._local_position = LPoint3d()
         self._orientation = LQuaterniond()
         self.bounding_radius = 0.0
         self._height_under = 0.0
-        #Scene parameters
+        # Scene parameters
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
         self.vector_to_obs = LVector3d()
@@ -110,7 +110,8 @@ class AnchorBase():
         pass
 
     def update_observer(self, observer, update_id):
-        if self.update_id == update_id: return
+        if self.update_id == update_id:
+            return
         global_delta = self._global_position - observer._global_position
         local_delta = self._local_position - observer._local_position
         self.rel_position = global_delta + local_delta
@@ -130,9 +131,9 @@ class AnchorBase():
         if self.distance_to_obs > self.bounding_radius:
             in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
             resolved = self.visible_size > settings.min_body_size
-            visible = in_view# and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
+            visible = in_view  # and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
         else:
-            #We are in the object
+            # We are in the object
             resolved = True
             visible = True
         self.was_visible = self.visible
@@ -173,17 +174,17 @@ class CartesianAnchor(AnchorBase):
         return self.frame
 
     def set_frame(self, frame):
-        #Get position and rotation in the absolute reference frame
+        # Get position and rotation in the absolute reference frame
         pos = self.get_local_position()
         rot = self.get_absolute_orientation()
-        #Update reference frame
+        # Update reference frame
         self.frame = frame
-        #Set back the position to calculate the position in the new reference frame
+        # Set back the position to calculate the position in the new reference frame
         self.set_local_position(pos)
         self.set_absolute_orientation(rot)
 
     def do_update(self):
-        #TODO: _position should be global + local !
+        # TODO: _position should be global + local !
         self._position = self.get_local_position()
         self._local_position = self.get_local_position()
         self._orientation = self.get_absolute_orientation()
@@ -202,7 +203,8 @@ class CartesianAnchor(AnchorBase):
 
     def get_point_radiance(self, distance):
         """
-        Returns the anchor radiance. This method assume the source is a point-like light source aligned with the normal of the receiver.
+        Returns the anchor radiance.
+        This method assume the source is a point-like light source aligned with the normal of the receiver.
         """
         return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
 
@@ -281,8 +283,8 @@ class CartesianAnchor(AnchorBase):
         axis = LVector3d.forward().cross(local_direction)
         if axis.length() > 0.0:
             new_rot = utils.relative_rotation(self.get_absolute_orientation(), axis, angle)
-#         new_rot=LQuaterniond()
-#         lookAt(new_rot, direction, LVector3d.up())
+        #         new_rot=LQuaterniond()
+        #         lookAt(new_rot, direction, LVector3d.up())
         else:
             new_rot = self.get_absolute_orientation()
         return new_rot, angle
@@ -305,6 +307,7 @@ class OriginAnchor(CartesianAnchor):
     def __init__(self, anchor_class, body, point_color=None):
         CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
 
+
 class FlatSurfaceAnchor(OriginAnchor):
     def __init__(self, anchor_class, body, surface, point_color=None):
         OriginAnchor.__init__(self, anchor_class, body, point_color)
@@ -314,7 +317,8 @@ class FlatSurfaceAnchor(OriginAnchor):
         self.surface = surface
 
     def update_observer(self, observer, update_id):
-        if self.update_id == update_id: return
+        if self.update_id == update_id:
+            return
         self.vector_to_obs = LPoint3d(observer.get_local_position())
         self.vector_to_obs.normalize()
         observer_local_position = observer.get_local_position()
@@ -335,11 +339,12 @@ class ObserverAnchor(CartesianAnchor):
         CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
 
     def update(self, time, update_id):
-        #TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
+        # TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
         pass
 
     def update_observer(self, observer, update_id):
-        if self.update_id == update_id: return
+        if self.update_id == update_id:
+            return
         self.copy(observer)
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
@@ -360,14 +365,14 @@ class ControlledCartesianAnchor(CartesianAnchor):
 
 
 class StellarAnchor(AnchorBase):
-    Emissive     = 1
-    Reflective   = 2
-    System       = 4
+    Emissive = 1
+    Reflective = 2
+    System = 4
     OctreeAnchor = 8
 
     def __init__(self, anchor_class, body, orbit, rotation, point_color):
         AnchorBase.__init__(self, anchor_class, body)
-        #TODO: To remove
+        # TODO: To remove
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = point_color
@@ -378,9 +383,9 @@ class StellarAnchor(AnchorBase):
         self._point_radiance = 0.0
         self._equatorial = LQuaterniond()
         self._albedo = 0.5
-        #TODO: Should be done properly
-        #orbit.body = body
-        #rotation.body = body
+        # TODO: Should be done properly
+        # orbit.body = body
+        # rotation.body = body
 
     def has_orbit(self):
         return True
@@ -426,12 +431,14 @@ class StellarAnchor(AnchorBase):
 
     def get_point_radiance(self, distance):
         """
-        Returns the anchor radiance. This method assume the source is a point-like light source aligned with the normal of the receiver.
+        Returns the anchor radiance.
+        This method assume the source is a point-like light source aligned with the normal of the receiver.
         """
         return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
 
     def update(self, time, update_id):
-        if self.update_id == update_id: return
+        if self.update_id == update_id:
+            return
         self._orientation = self.rotation.get_absolute_rotation_at(time)
         self._equatorial = self.rotation.get_equatorial_orientation_at(time)
         self._local_position = self.orbit.get_local_position_at(time)
@@ -444,7 +451,7 @@ class StellarAnchor(AnchorBase):
         vector_to_star /= distance_to_star
         if distance_to_star > 0.0:
             irradiance = star.get_point_radiance(distance_to_star)
-            surface = pi * self.bounding_radius * self.bounding_radius * 1000 * 1000 # Units are in km
+            surface = pi * self.bounding_radius * self.bounding_radius * 1000 * 1000  # Units are in km
             received_power = irradiance * surface
             reflected_power = received_power * self._albedo
             phase_angle = self.vector_to_obs.dot(vector_to_star)
@@ -466,14 +473,17 @@ class StellarAnchor(AnchorBase):
         else:
             self._point_radiance = 0.0
 
+
 class FixedStellarAnchor(StellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):
         StellarAnchor.__init__(self, body, orbit, rotation, point_color)
-        #self.update_frozen = True
-        #self.update(0)
+        # self.update_frozen = True
+        # self.update(0)
+
 
 class DynamicStellarAnchor(StellarAnchor):
     pass
+
 
 class SystemAnchor(DynamicStellarAnchor):
     def __init__(self, body, orbit, rotation, point_color):
@@ -485,7 +495,7 @@ class SystemAnchor(DynamicStellarAnchor):
         self.primary = primary
 
     def add_child(self, child):
-        #Primary is still managed by StellarSystem
+        # Primary is still managed by StellarSystem
         self.children.append(child)
         child.parent = self
         if not self.rebuild_needed:
@@ -534,21 +544,21 @@ class SystemAnchor(DynamicStellarAnchor):
         else:
             StellarAnchor.update_luminosity(self, star)
 
+
 class OctreeAnchor(SystemAnchor):
     def __init__(self, body, orbit, rotation, radius, point_color):
         SystemAnchor.__init__(self, body, orbit, rotation, point_color)
         self.bounding_radius = radius
-        #TODO: Should be configurable
+        # TODO: Should be configurable
         abs_magnitude = app_to_abs_mag(6.0, radius * sqrt(3))
         luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
-        #TODO: position should be extracted from orbit
-        self.octree = OctreeNode(0, self,
-                             LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly),
-                             radius * 2,
-                             luminosity)
+        # TODO: position should be extracted from orbit
+        self.octree = OctreeNode(
+            0, self, LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly), radius * 2, luminosity
+        )
         # TODO: Should be done during rebuild
         self._intrinsic_luminosity = luminosity
-        #TODO: Right now an octree contains anything
+        # TODO: Right now an octree contains anything
         self.content = ~0
         self.recreate_octree = True
 
@@ -567,7 +577,7 @@ class OctreeAnchor(SystemAnchor):
         print("Creating octree...")
         start = time()
         for child in self.children:
-            #TODO: this should be done properly at anchor creation
+            # TODO: this should be done properly at anchor creation
             child.update(0, None)
             child.rebuild()
             self.octree.add(child)

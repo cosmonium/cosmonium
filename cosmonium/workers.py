@@ -1,27 +1,25 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import AsyncFuture, Texture, Filename
 from direct.stdpy import threading
 from direct.task.Task import Task
-
+from panda3d.core import AsyncFuture, Texture, Filename
 from queue import Queue, Empty
 
 from . import settings
@@ -31,16 +29,18 @@ asyncTextureLoader = None
 syncTextureLoader = None
 
 
-class AsyncMethod():
+class AsyncMethod:
+
     def __init__(self, name, base, method, callback):
         self.base = base
         self.method = method
         self.callback = callback
         self.done = False
         self.error = None
-        self.process_thread = threading.Thread(target=self.processTask, name= name + 'ProcessThead')
+        self.process_thread = threading.Thread(target=self.processTask, name=name + 'ProcessThead')
         self.callback_task = self.base.taskMgr.add(
-            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort)
+            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort
+        )
         self.process_thread.start()
 
     def processTask(self):
@@ -60,7 +60,8 @@ class AsyncMethod():
             return task.done
 
 
-class AsyncLoader():
+class AsyncLoader:
+
     def __init__(self, base, name):
         self.base = base
         self.in_queue = Queue()
@@ -68,18 +69,20 @@ class AsyncLoader():
         if settings.workers_use_task_chain:
             self.base.taskMgr.setupTaskChain(
                 name,
-                numThreads = 1,
-                tickClock = False,
-                threadPriority = None,
-                frameBudget = -1,
-                frameSync = False,
-                timeslicePriority = True)
+                numThreads=1,
+                tickClock=False,
+                threadPriority=None,
+                frameBudget=-1,
+                frameSync=False,
+                timeslicePriority=True,
+            )
             self.process_task = self.base.taskMgr.add(self.processTask, name + 'ProcessTask', taskChain=name)
         else:
-            self.process_thread = threading.Thread(target=self.processThread, name= name + 'ProcessThead', daemon=True)
+            self.process_thread = threading.Thread(target=self.processThread, name=name + 'ProcessThead', daemon=True)
             self.process_thread.start()
         self.callback_task = self.base.taskMgr.add(
-            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort)
+            self.callbackTask, name + 'CallbackTask', sort=settings.worker_callback_task_sort
+        )
 
     def add_job(self, func, fargs):
         future = AsyncFuture()
@@ -95,7 +98,7 @@ class AsyncLoader():
                 result = func(*fargs)
                 self.cb_queue.put([future, result])
             else:
-                #print("job cancelled")
+                # print("job cancelled")
                 pass
         except Empty:
             pass
@@ -117,7 +120,7 @@ class AsyncLoader():
                 if not future.cancelled():
                     future.set_result(result)
                 else:
-                    #print("Result cancelled")
+                    # print("Result cancelled")
                     pass
         except Empty:
             pass
@@ -125,6 +128,7 @@ class AsyncLoader():
 
 
 class AsyncTextureLoader(AsyncLoader):
+
     def __init__(self, base):
         AsyncLoader.__init__(self, base, 'TextureLoader')
 
@@ -141,14 +145,18 @@ class AsyncTextureLoader(AsyncLoader):
             panda_alpha_filename = Filename.from_os_specific(alpha_filename)
         else:
             panda_alpha_filename = Filename('')
-        tex.read(fullpath=panda_filename, alpha_fullpath=panda_alpha_filename,
-                 primary_file_num_channels=0, alpha_file_channel=0)
+        tex.read(
+            fullpath=panda_filename,
+            alpha_fullpath=panda_alpha_filename,
+            primary_file_num_channels=0,
+            alpha_file_channel=0,
+        )
         return tex
 
     def do_load_texture_array(self, textures):
         tex = Texture()
         tex.setup_2d_texture_array(len(textures))
-        for (page, texture) in enumerate(textures):
+        for page, texture in enumerate(textures):
             filename = texture.source.texture_filename(None)
             if filename is not None:
                 panda_filename = Filename.from_os_specific(filename)
@@ -160,7 +168,8 @@ class AsyncTextureLoader(AsyncLoader):
         return tex
 
 
-class SyncTextureLoader():
+class SyncTextureLoader:
+
     def load_texture(self, filename, alpha_filename=None):
         texture = None
         try:
@@ -177,7 +186,7 @@ class SyncTextureLoader():
     def load_texture_array(self, textures):
         tex = Texture()
         tex.setup_2d_texture_array(len(textures))
-        for (page, texture) in enumerate(textures):
+        for page, texture in enumerate(textures):
             filename = texture.source.texture_filename(None)
             if filename is not None:
                 panda_filename = Filename.from_os_specific(filename)

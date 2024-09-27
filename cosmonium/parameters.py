@@ -1,12 +1,45 @@
-from math import log, exp
+#
+# This file is part of Cosmonium.
+#
+# Copyright (C) 2018-2024 Laurent Deru.
+#
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-from panda3d.core import LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d
+
 from collections.abc import Iterable
+from math import log, exp
+from panda3d.core import LVecBase2, LVecBase3, LVecBase4
+from panda3d.core import LVecBase2f, LVecBase3f, LVecBase4f
+from panda3d.core import LVecBase2d, LVecBase3d, LVecBase4d
 
 from .utils import isclose
 from . import settings
 
-vector_types = (Iterable, LVecBase2, LVecBase3, LVecBase4, LVecBase2f, LVecBase3f, LVecBase4f, LVecBase2d, LVecBase3d, LVecBase4d)
+vector_types = (
+    Iterable,
+    LVecBase2,
+    LVecBase3,
+    LVecBase4,
+    LVecBase2f,
+    LVecBase3f,
+    LVecBase4f,
+    LVecBase2d,
+    LVecBase3d,
+    LVecBase4d,
+)
+
 
 class ParametersList(object):
     def __init__(self, *parameters):
@@ -43,6 +76,7 @@ class ParametersList(object):
     def is_group(self):
         return True
 
+
 class ParametersGroup(ParametersList):
     def __init__(self, name=None, *parameters):
         ParametersList.__init__(self, *parameters)
@@ -50,6 +84,7 @@ class ParametersGroup(ParametersList):
 
     def is_group(self):
         return True
+
 
 class UserParameterBase(object):
     TYPE_STRING = 0
@@ -83,7 +118,8 @@ class UserParameterBase(object):
             return [log(self.value_range_0), log(self.value_range[1])]
 
     def get_step(self):
-        if self.value_range is None: return None
+        if self.value_range is None:
+            return None
         if self.param_type == self.TYPE_INT:
             return 1
         else:
@@ -127,9 +163,12 @@ class UserParameterBase(object):
         pass
 
     def scale_value(self, value, scale):
-        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
-        if self.scale == self.SCALE_LINEAR: return value
-        if not scale: return value
+        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):
+            return value
+        if self.scale == self.SCALE_LINEAR:
+            return value
+        if not scale:
+            return value
         if self.scale == self.SCALE_LOG:
             value = log(value)
         elif self.scale == self.SCALE_LOG_0:
@@ -140,9 +179,12 @@ class UserParameterBase(object):
         return value
 
     def unscale_value(self, value, scale):
-        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING): return value
-        if self.scale == self.SCALE_LINEAR: return value
-        if not scale: return value
+        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):
+            return value
+        if self.scale == self.SCALE_LINEAR:
+            return value
+        if not scale:
+            return value
         if self.scale == self.SCALE_LOG:
             value = exp(value)
         elif self.scale == self.SCALE_LOG_0:
@@ -179,8 +221,20 @@ class UserParameterBase(object):
         param[component] = value
         self.do_set_param(param)
 
+
 class UserParameter(UserParameterBase):
-    def __init__(self, name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
+    def __init__(
+        self,
+        name,
+        setter,
+        getter,
+        param_type=None,
+        value_range=None,
+        scale=UserParameterBase.SCALE_LINEAR,
+        units=None,
+        nb_components=1,
+        value_range_0=None,
+    ):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.setter = setter
         self.getter = getter
@@ -191,8 +245,20 @@ class UserParameter(UserParameterBase):
     def do_set_param(self, value):
         self.setter(value)
 
+
 class AutoUserParameter(UserParameterBase):
-    def __init__(self, name, attribute, instance, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
+    def __init__(
+        self,
+        name,
+        attribute,
+        instance,
+        param_type=None,
+        value_range=None,
+        scale=UserParameterBase.SCALE_LINEAR,
+        units=None,
+        nb_components=1,
+        value_range_0=None,
+    ):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.attribute = attribute
         self.instance = instance
@@ -203,8 +269,19 @@ class AutoUserParameter(UserParameterBase):
     def do_set_param(self, value):
         setattr(self.instance, self.attribute, value)
 
+
 class SettingParameter(UserParameter):
-    def __init__(self, name, attribute, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
+    def __init__(
+        self,
+        name,
+        attribute,
+        param_type=None,
+        value_range=None,
+        scale=UserParameterBase.SCALE_LINEAR,
+        units=None,
+        nb_components=1,
+        value_range_0=None,
+    ):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.attribute = attribute
 
@@ -214,8 +291,21 @@ class SettingParameter(UserParameter):
     def do_set_param(self, value):
         setattr(settings, self.attribute, value)
 
+
 class ParametricFunctionParameter(UserParameter):
-    def __init__(self, name, param_name, setter, getter, param_type=None, value_range=None, scale=UserParameterBase.SCALE_LINEAR, units=None, nb_components=1, value_range_0=None):
+    def __init__(
+        self,
+        name,
+        param_name,
+        setter,
+        getter,
+        param_type=None,
+        value_range=None,
+        scale=UserParameterBase.SCALE_LINEAR,
+        units=None,
+        nb_components=1,
+        value_range_0=None,
+    ):
         UserParameterBase.__init__(self, name, param_type, value_range, scale, units, nb_components, value_range_0)
         self.setter = setter
         self.getter = getter

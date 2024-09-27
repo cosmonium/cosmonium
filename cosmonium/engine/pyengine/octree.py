@@ -1,26 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import LPoint3d
 
 from math import sqrt
+from panda3d.core import LPoint3d
+
 
 class OctreeNode(object):
 
@@ -32,7 +32,7 @@ class OctreeNode(object):
     nb_leaves = 0
     child_factor = 0.25
 
-    def __init__(self, level, parent, center, width, threshold, index = -1):
+    def __init__(self, level, parent, center, width, threshold, index=-1):
         self.level = level
         self.parent = parent
         self.width = width
@@ -45,7 +45,7 @@ class OctreeNode(object):
         self.leaves = []
         self.max_luminosity = 0.0
         self.rebuild_needed = False
-        #TODO: Right now an octree contains anything
+        # TODO: Right now an octree contains anything
         self.content = ~0
         OctreeNode.nb_cells += 1
 
@@ -93,9 +93,12 @@ class OctreeNode(object):
 
     def _add_in_child(self, obj, position, luminosity):
         index = 0
-        if position.x >= self.center.x: index |= 1
-        if position.y >= self.center.y: index |= 2
-        if position.z >= self.center.z: index |= 4
+        if position.x >= self.center.x:
+            index |= 1
+        if position.y >= self.center.y:
+            index |= 2
+        if position.z >= self.center.z:
+            index |= 4
         if self.children[index] is None:
             child_offset = self.width / 4.0
             child_center = LPoint3d(self.center)
@@ -111,7 +114,9 @@ class OctreeNode(object):
                 child_center.z += child_offset
             else:
                 child_center.z -= child_offset
-            child = OctreeNode(self.level + 1, self, child_center, self.width / 2.0, self.threshold * self.child_factor, index)
+            child = OctreeNode(
+                self.level + 1, self, child_center, self.width / 2.0, self.threshold * self.child_factor, index
+            )
             self.children[index] = child
         self.children[index]._add(obj, position, luminosity)
 
@@ -148,8 +153,16 @@ class OctreeNode(object):
 
     def dump_octree(self):
         if len(self.leaves) > 0:
-            print('  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children)
-            print('  ' * self.level, '->', self.max_luminosity, ":", ', '.join(map(lambda x: x.body.get_name(), self.leaves)))
+            print(
+                '  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children
+            )
+            print(
+                '  ' * self.level,
+                '->',
+                self.max_luminosity,
+                ":",
+                ', '.join(map(lambda x: x.body.get_name(), self.leaves)),
+            )
         for i in range(8):
             if self.children[i] is not None:
                 self.children[i].dump_octree()

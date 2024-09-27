@@ -1,45 +1,45 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import ExecutionEnvironment
-
+from copy import deepcopy
 import glob
 import os
-from copy import deepcopy
+from panda3d.core import ExecutionEnvironment
+
 
 class DirContext(object):
     def __init__(self, context=None):
         if context is not None:
             self.category_paths = deepcopy(context.category_paths)
         else:
-            self.category_paths={
-                                'textures': [],
-                                'models': [],
-                                'data': [],
-                                'scripts': [],
-                                'modules': [],
-                                'fonts': [],
-                                'shaders': [],
-                                'doc': [],
-                                'main': [],
-                                }
+            self.category_paths = {
+                'textures': [],
+                'models': [],
+                'data': [],
+                'scripts': [],
+                'modules': [],
+                'fonts': [],
+                'shaders': [],
+                'doc': [],
+                'main': [],
+            }
 
     def add_path(self, category, path):
         if category not in self.category_paths:
@@ -59,15 +59,16 @@ class DirContext(object):
             self.category_paths[category].remove(path)
 
     def find_file(self, category, pattern):
-        if pattern is None: return None
+        if pattern is None:
+            return None
         if os.path.isabs(pattern):
             files = glob.glob(pattern)
             if len(files) > 0:
                 return files[0]
         else:
             for res in self.category_paths[category]:
-                #print("Looking for", pattern, "in", res)
-                full_pattern =  os.path.join(res, pattern)
+                # print("Looking for", pattern, "in", res)
+                full_pattern = os.path.join(res, pattern)
                 files = glob.glob(full_pattern)
                 if len(files) > 0:
                     return files[0]
@@ -96,6 +97,7 @@ class DirContext(object):
 
     def find_doc(self, pattern):
         return self.find_file('doc', pattern)
+
 
 defaultDirContext = DirContext()
 main_dir = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
