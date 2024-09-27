@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -131,22 +131,22 @@ def PointToGeodetic(ax: float, ay: float, xi: float, yi: float) -> tuple[float, 
         sx = 0.0
         sy = 0.0
         m = 0.0
-        Mm = 0.0
+        # Mm = 0.0
     elif False and ay2 * x2 + ax2 * y2 < ax2 * ay2:
         sx = x
         sy = y
         m = 0.0
-        Mm = 0.0
+        # Mm = 0.0
     elif x == 0.0:
         sx = 0.0
         sy = ay
         m = 0.0
-        Mm = 0.0
+        # Mm = 0.0
     elif y == 0.0:
         sx = ax
         sy = 0.0
         m = 0.0
-        Mm = 0.0
+        # Mm = 0.0
     else:
         x0 = x / ax
         y0 = y / ay
@@ -238,8 +238,8 @@ def sign(t):
 
 def EllipseCircumRamanujan2ndApprox(a: float, b: float) -> float:
     try:
-        h = pow(a-b, 2.0) / pow(a+b, 2.0)
+        h = pow(a - b, 2.0) / pow(a + b, 2.0)
     except ZeroDivisionError:
         return 0.0
 
-    return pi * (a+b) * (1.0 + 3.0 * h / (10.0 + pow(4.0 - 3.0 * h, 0.5)))
+    return pi * (a + b) * (1.0 + 3.0 * h / (10.0 + pow(4.0 - 3.0 * h, 0.5)))

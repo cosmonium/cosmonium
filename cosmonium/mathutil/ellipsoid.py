@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,8 @@ def GetRoot(r0, r1, z0, z1, z2, g):
 
 
 def DistancePointEllipsoid(
-        e0: float, e1: float, e2: float, y0i: float, y1i: float, y2i: float) -> tuple[float, float, float, float]:
+    e0: float, e1: float, e2: float, y0i: float, y1i: float, y2i: float
+) -> tuple[float, float, float, float]:
     """
     returns the closest point on the surface of the ellipsoid to the given point and the distance between them.
     Note: It is required that e0 >= e1 >= e2
@@ -169,15 +170,13 @@ def TriaxialGeodeticToCartesian(axes: LVector3d, long: float, lat: float, h: flo
     D = 1.0 - lex2 * ps * ps - lee2 * pc * pc * ls * ls
     N = axes[0] / sqrt(D)
 
-    pos = LVector3d(
-        (N + h) * pc * lc,
-        (N * mee + h) * pc * ls,
-        (N * mex + h) * ps)
+    pos = LVector3d((N + h) * pc * lc, (N * mee + h) * pc * ls, (N * mex + h) * ps)
     return pos
 
 
 def PointToTriaxialGeodetic(
-        ax: float, ay: float, b: float, xi: float, yi: float, zi: float) -> tuple[float, float, float]:
+    ax: float, ay: float, b: float, xi: float, yi: float, zi: float
+) -> tuple[float, float, float]:
     """
     Calculate the geodetic longitude, latitude and height of the given point wrt to the given ellipsoid
     Note: It is required that e0 >= e1 >= e2
@@ -312,7 +311,7 @@ def xyz2fl(ax, ay, b, x, y, z):
             latitude = pi / 2.0 - atan(den / nom)
         if y <= xme:
             den = xme + rot
-            longitude = 2.*atan(y / den)
+            longitude = 2.0 * atan(y / den)
         else:
             den = y + rot
             longitude = pi / 2.0 - 2.0 * atan(xme / den)
@@ -373,7 +372,7 @@ def bisect3(x0, y0, z0, tol, cx, cy):
     # Implements the bisection method in 3D space
 
     n = 0
-    m = -2.
+    m = -2.0
     d1 = z0 - 1.0
     g2 = cx * cx * x0 * x0
     g3 = cy * cy * y0 * y0
