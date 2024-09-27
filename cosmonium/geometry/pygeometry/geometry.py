@@ -18,7 +18,6 @@
 #
 
 from math import sin, cos, pi, atan2, sqrt, asin
-
 from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomVertexData, GeomVertexArrayFormat, InternalName
 from panda3d.core import LVector3d, GlobPattern, BoundingBox, LPoint3
 from panda3d.core import GeomVertexFormat, GeomTriangles, GeomVertexWriter, ColorAttrib
@@ -86,8 +85,7 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
 
 def BoundingBoxGeom(box):
     (path, node) = empty_node('bb')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'bb', 8, 12, normal=False, texture=False, tanbin=False)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
     node.add_geom(geom)
     for i in range(8):
         gvw.set_data3(box.get_point(i))
@@ -112,7 +110,8 @@ def BoundingBoxGeom(box):
 def CubeGeom():
     (path, node) = empty_node('cube')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', 8, 12, normal=False, texture=False, tanbin=False)
+        'cube', 8, 12, normal=False, texture=False, tanbin=False
+    )
     node.add_geom(geom)
     gvw.add_data3(-1, -1, -1)
     gvw.add_data3(-1, -1, 1)
@@ -143,11 +142,12 @@ def CubeGeom():
 def UVSphere(axes, rings=5, sectors=5, inv_texture_u=False, inv_texture_v=False):
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
+        'uv', rings * sectors, (rings - 1) * sectors, tanbin=True
+    )
     node.add_geom(geom)
 
-    R = 1. / (rings - 1)
-    S = 1. / (sectors - 1)
+    R = 1.0 / (rings - 1)
+    S = 1.0 / (sectors - 1)
 
     u = 1.0
     v = 1.0
@@ -222,8 +222,8 @@ def DisplacementUVSphere(radius, heightmap, scale, rings=5, sectors=5, inv_textu
     pool = EggVertexPool('pool')
     vertices = []
     data.addChild(pool)
-    R = 1. / (rings)
-    S = 1. / (sectors)
+    R = 1.0 / (rings)
+    S = 1.0 / (sectors)
     for r in range(0, rings + 1):
         for s in range(0, sectors + 1):
             cos_s = cos(2 * pi * s * S + pi)
@@ -278,10 +278,7 @@ def UVPatchPoint(axes, r, s, x0, y0, x1, y1, offset=0.0):
     sin_s = sin(2 * pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
-    point = LPoint3d(
-        cos_s * sin_r,
-        sin_s * sin_r,
-        -cos_r)
+    point = LPoint3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
     point.componentwise_mult(axes)
 
     if offset != 0.0:
@@ -299,10 +296,7 @@ def UVPatchNormal(axes, r, s, x0, y0, x1, y1):
     sin_s = sin(2 * pi * (x0 + s * dx) + pi)
     sin_r = sin(pi * (y0 + r * dy))
     cos_r = cos(pi * (y0 + r * dy))
-    normal = LPoint3d(
-        axes[1] * axes[2] * cos_s * sin_r,
-        axes[0] * axes[2] * sin_s * sin_r,
-        -axes[0] * axes[1] * cos_r)
+    normal = LPoint3d(axes[1] * axes[2] * cos_s * sin_r, axes[0] * axes[2] * sin_s * sin_r, -axes[0] * axes[1] * cos_r)
     normal.normalize()
     return normal
 
@@ -313,20 +307,23 @@ def UVPatchOffsetVector(axes, x0, y0, x1, y1):
     v = LVector3d(
         cos(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2)),
         sin(2 * pi * (x0 + dx / 2) + pi) * sin(pi * (y0 + dy / 2)),
-        -cos(pi * (y0 + dy / 2)))
+        -cos(pi * (y0 + dy / 2)),
+    )
     v.componentwise_mult(axes)
     return v
 
 
 @named_pstat("geom")
-def UVPatch(axes, rings, sectors, x0, y0, x1, y1,
-            global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=0.0):
+def UVPatch(
+    axes, rings, sectors, x0, y0, x1, y1, global_texture=False, inv_texture_u=False, inv_texture_v=False, offset=0.0
+):
     r_sectors = sectors + 1
     r_rings = rings + 1
 
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'uv', (r_rings * r_sectors), rings * sectors, tanbin=True)
+        'uv', (r_rings * r_sectors), rings * sectors, tanbin=True
+    )
 
     dx = x1 - x0
     dy = y1 - y0
@@ -450,7 +447,7 @@ def IcoSphere(radius=1, subdivisions=1):
 
     verts = []
 
-    phi = .5 * (1. + sqrt(5.))
+    phi = 0.5 * (1.0 + sqrt(5.0))
     invnorm = 1 / sqrt(phi * phi + 1)
 
     verts.append(Vec3(-1, phi, 0) * invnorm)  # 0
@@ -467,26 +464,66 @@ def IcoSphere(radius=1, subdivisions=1):
     verts.append(Vec3(1, -phi, 0) * invnorm)  # 11
 
     faces = [
-        0, 1, 2,
-        0, 3, 1,
-        0, 4, 5,
-        1, 7, 6,
-        1, 6, 2,
-        1, 3, 7,
-        0, 2, 4,
-        0, 5, 3,
-        2, 6, 8,
-        2, 8, 4,
-        3, 5, 9,
-        3, 9, 7,
-        11, 6, 7,
-        10, 5, 4,
-        10, 4, 8,
-        10, 9, 5,
-        11, 8, 6,
-        11, 7, 9,
-        10, 8, 11,
-        10, 11, 9
+        0,
+        1,
+        2,
+        0,
+        3,
+        1,
+        0,
+        4,
+        5,
+        1,
+        7,
+        6,
+        1,
+        6,
+        2,
+        1,
+        3,
+        7,
+        0,
+        2,
+        4,
+        0,
+        5,
+        3,
+        2,
+        6,
+        8,
+        2,
+        8,
+        4,
+        3,
+        5,
+        9,
+        3,
+        9,
+        7,
+        11,
+        6,
+        7,
+        10,
+        5,
+        4,
+        10,
+        4,
+        8,
+        10,
+        9,
+        5,
+        11,
+        8,
+        6,
+        11,
+        7,
+        9,
+        10,
+        8,
+        11,
+        10,
+        11,
+        9,
     ]
 
     size = 60
@@ -588,7 +625,7 @@ def IcoSphere(radius=1, subdivisions=1):
     return path
 
 
-class TessellationInfo():
+class TessellationInfo:
 
     def __init__(self, inner, outer):
         self.inner = inner
@@ -765,11 +802,17 @@ def make_primitives_skirt(prim, inner, nb_vertices):
 
 
 @named_pstat("geom")
-def Tile(size, tessellation,
-         inv_u=False, inv_v=False, swap_uv=False,
-         use_patch_adaptation=True,
-         use_patch_skirts=True,
-         skirt_size=0.1, skirt_uv=0.1):
+def Tile(
+    size,
+    tessellation,
+    inv_u=False,
+    inv_v=False,
+    swap_uv=False,
+    use_patch_adaptation=True,
+    use_patch_skirts=True,
+    skirt_size=0.1,
+    skirt_uv=0.1,
+):
     inner = tessellation.inner
     nb_vertices = inner + 1
     (path, node) = empty_node('uv')
@@ -778,8 +821,7 @@ def Tile(size, tessellation,
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', nb_points, nb_primitives, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     for i in range(0, nb_vertices):
@@ -881,8 +923,9 @@ def Patch(size=1.0):
 
 
 def PatchAABB(x=0.0, y=0.0, size=1.0, scale=1.0, min_height=-1.0, max_height=1.0):
-    return BoundingBox(LPoint3(x * scale, y * scale, min_height),
-                       LPoint3((x + size) * scale, (y + size) * scale, max_height))
+    return BoundingBox(
+        LPoint3(x * scale, y * scale, min_height), LPoint3((x + size) * scale, (y + size) * scale, max_height)
+    )
 
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
@@ -900,8 +943,7 @@ def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False
     return (x0, y0, x1, y1, dx, dy)
 
 
-def QuadPatch(x0, y0, x1, y1,
-              x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
+def QuadPatch(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
@@ -934,15 +976,28 @@ def QuadPatch(x0, y0, x1, y1,
 
 
 @named_pstat("geom")
-def SquarePatch(height, inner, outer,
-                x0, y0, x1, y1,
-                inv_u=False, inv_v=False, swap_uv=False,
-                x_inverted=False, y_inverted=False, xy_swap=False, offset=None):
+def SquarePatch(
+    height,
+    inner,
+    outer,
+    x0,
+    y0,
+    x1,
+    y1,
+    inv_u=False,
+    inv_v=False,
+    swap_uv=False,
+    x_inverted=False,
+    y_inverted=False,
+    xy_swap=False,
+    offset=None,
+):
     (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
 
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', nb_vertices * nb_vertices, inner * inner, tanbin=True)
+        'cube', nb_vertices * nb_vertices, inner * inner, tanbin=True
+    )
     node.add_geom(geom)
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -983,13 +1038,25 @@ def SquarePatch(height, inner, outer,
 
 @named_pstat("geom")
 def SquaredDistanceSquarePatch(
-        axes, tessellation,
-        x0, y0, x1, y1,
-        inv_u=False, inv_v=False, swap_uv=False,
-        x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
-        use_patch_adaptation=True,
-        use_patch_skirts=True,
-        skirt_size=0.001, skirt_uv=0.001):
+    axes,
+    tessellation,
+    x0,
+    y0,
+    x1,
+    y1,
+    inv_u=False,
+    inv_v=False,
+    swap_uv=False,
+    x_inverted=False,
+    y_inverted=False,
+    xy_swap=False,
+    has_offset=False,
+    offset=None,
+    use_patch_adaptation=True,
+    use_patch_skirts=True,
+    skirt_size=0.001,
+    skirt_uv=0.001,
+):
     (path, node) = empty_node('uv')
     inner = tessellation.inner
     nb_vertices = inner + 1
@@ -998,13 +1065,13 @@ def SquaredDistanceSquarePatch(
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', nb_points, nb_primitives, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if offset is not None:
-        offset_vector = SquaredDistanceSquarePatchOffsetVector(
-            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        offset_vector = (
+            SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        )
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
@@ -1127,11 +1194,9 @@ def SquaredDistanceSquarePatch(
     return path
 
 
-def SquaredDistanceSquarePatchPoint(axes,
-                                    u, v,
-                                    x0, y0, x1, y1,
-                                    offset=None,
-                                    x_inverted=False, y_inverted=False, xy_swap=False):
+def SquaredDistanceSquarePatchPoint(
+    axes, u, v, x0, y0, x1, y1, offset=None, x_inverted=False, y_inverted=False, xy_swap=False
+):
 
     if offset is not None:
         offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
@@ -1161,10 +1226,7 @@ def SquaredDistanceSquarePatchPoint(axes,
     return point
 
 
-def SquaredDistanceSquarePatchNormal(axes,
-                                     u, v,
-                                     x0, y0, x1, y1,
-                                     x_inverted=False, y_inverted=False, xy_swap=False):
+def SquaredDistanceSquarePatchNormal(axes, u, v, x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
@@ -1190,31 +1252,33 @@ def SquaredDistanceSquarePatchNormal(axes,
     return normal
 
 
-def SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1,
-                                           x_inverted=False, y_inverted=False, xy_swap=False):
+def SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
 
     return SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
 
-def SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
-                                   x0, y0, x1, y1, offset=None,
-                                   x_inverted=False, y_inverted=False, xy_swap=False):
+def SquaredDistanceSquarePatchAABB(
+    axes, min_height, max_height, x0, y0, x1, y1, offset=None, x_inverted=False, y_inverted=False, xy_swap=False
+):
     points = []
     if min_height != max_height:
         heights = (min_height, max_height)
     else:
         heights = (min_height,)
     if offset is not None:
-        offset_vector = SquaredDistanceSquarePatchOffsetVector(
-            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        offset_vector = (
+            SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        )
     for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
                 point = SquaredDistanceSquarePatchPoint(
-                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap
+                )
                 if height != 0:
                     normal = SquaredDistanceSquarePatchNormal(
-                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap
+                    )
                     point += normal * height
                 if offset is not None:
                     point -= offset_vector
@@ -1230,15 +1294,28 @@ def SquaredDistanceSquarePatchAABB(axes, min_height, max_height,
 
 
 @named_pstat("geom")
-def NormalizedSquarePatch(axes, tessellation,
-                          x0, y0, x1, y1,
-                          inv_u=False, inv_v=False, swap_uv=False,
-                          x_inverted=False, y_inverted=False, xy_swap=False, has_offset=False, offset=None,
-                          use_patch_adaptation=True,
-                          use_patch_skirts=True,
-                          skirt_size=0.001, skirt_uv=0.001):
+def NormalizedSquarePatch(
+    axes,
+    tessellation,
+    x0,
+    y0,
+    x1,
+    y1,
+    inv_u=False,
+    inv_v=False,
+    swap_uv=False,
+    x_inverted=False,
+    y_inverted=False,
+    xy_swap=False,
+    has_offset=False,
+    offset=None,
+    use_patch_adaptation=True,
+    use_patch_skirts=True,
+    skirt_size=0.001,
+    skirt_uv=0.001,
+):
     (path, node) = empty_node('uv')
-    #use_patch_skirts = False
+    # use_patch_skirts = False
     inner = tessellation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
@@ -1250,8 +1327,9 @@ def NormalizedSquarePatch(axes, tessellation,
     node.add_geom(geom)
 
     if has_offset:
-        offset_vector = NormalizedSquarePatchOffsetVector(
-            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        offset_vector = (
+            NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        )
 
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
@@ -1362,11 +1440,9 @@ def NormalizedSquarePatch(axes, tessellation,
     return path
 
 
-def NormalizedSquarePatchPoint(axes,
-                               u, v,
-                               x0, y0, x1, y1,
-                               offset=None,
-                               x_inverted=False, y_inverted=False, xy_swap=False):
+def NormalizedSquarePatchPoint(
+    axes, u, v, x0, y0, x1, y1, offset=None, x_inverted=False, y_inverted=False, xy_swap=False
+):
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     x = x0 + u * dx
@@ -1382,10 +1458,7 @@ def NormalizedSquarePatchPoint(axes,
     return vec
 
 
-def NormalizedSquarePatchNormal(axes,
-                                u, v,
-                                x0, y0, x1, y1,
-                                x_inverted=False, y_inverted=False, xy_swap=False):
+def NormalizedSquarePatchNormal(axes, u, v, x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     x = x0 + u * dx
@@ -1399,30 +1472,28 @@ def NormalizedSquarePatchNormal(axes,
     return normal
 
 
-def NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1,
-                                      x_inverted=False, y_inverted=False, xy_swap=False):
+def NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
     return NormalizedSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
 
 
-def NormalizedSquarePatchAABB(axes, min_height, max_height,
-                              x0, y0, x1, y1, offset=None,
-                              x_inverted=False, y_inverted=False, xy_swap=False):
+def NormalizedSquarePatchAABB(
+    axes, min_height, max_height, x0, y0, x1, y1, offset=None, x_inverted=False, y_inverted=False, xy_swap=False
+):
     points = []
     if min_height != max_height:
         heights = (min_height, max_height)
     else:
         heights = (min_height,)
     if offset is not None:
-        offset_vector = NormalizedSquarePatchOffsetVector(
-            axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        offset_vector = (
+            NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
+        )
     for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                point = NormalizedSquarePatchPoint(
-                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+                point = NormalizedSquarePatchPoint(axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
                 if height != 0:
-                    normal = NormalizedSquarePatchNormal(
-                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+                    normal = NormalizedSquarePatchNormal(axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
                     point += normal * height
                 if offset is not None:
                     point -= offset_vector

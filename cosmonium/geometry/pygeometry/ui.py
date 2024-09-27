@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ from .geometry import empty_geom, empty_node
 def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
     (path, node) = empty_node('frame')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'frame', 8 * 4, 8 * 2, normal=False, texture=texture, tanbin=False)
+        'frame', 8 * 4, 8 * 2, normal=False, texture=texture, tanbin=False
+    )
     node.add_geom(geom)
 
     frame_size = LVector2(*frame_size)
@@ -63,7 +64,7 @@ def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
     gvw.add_data3(left, 0, top - border_size[1])
     gvw.add_data3(left + border_size[0], 0, top - border_size[1])
     gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
-    gvw.add_data3(left, 0, bottom+ border_size[1])
+    gvw.add_data3(left, 0, bottom + border_size[1])
 
     # bottom left corner
     gvw.add_data3(left, 0, bottom + border_size[1])
