@@ -1,32 +1,35 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from ..engine.anchors import StellarAnchor
+
 from .stellarobject import StellarObject
 
 
 class StellarRings(StellarObject):
     anchor_class = StellarAnchor.Reflective
     spread_object = True
-    def __init__(self, names, source_names, rings_object, orbit, rotation, frame, body_class, point_color,
-                 description=''):
+
+    def __init__(
+        self, names, source_names, rings_object, orbit, rotation, frame, body_class, point_color, description=''
+    ):
         StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.rings_object = rings_object
         self.rings_object.set_body(self)

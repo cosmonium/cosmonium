@@ -1,46 +1,49 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+from ..engine.anchors import StellarAnchor
 
 from .stellarbody import StellarBody
-from ..engine.anchors import StellarAnchor
 
 
 class ReflectiveBody(StellarBody):
     anchor_class = StellarAnchor.Reflective
     allow_scattering = True
+
     def __init__(self, *args, **kwargs):
         self.albedo = kwargs.pop('albedo', 0.5)
         StellarBody.__init__(self, *args, **kwargs)
-        #TODO: This should be done in create_anchor
+        # TODO: This should be done in create_anchor
         self.anchor._albedo = self.albedo
 
     def is_emissive(self):
         return False
 
     def get_phase(self):
-        #TODO: This should not be managed here
+        # TODO: This should not be managed here
         if self.lights is None or len(self.lights.lights) == 0:
             print("No light source for phase")
             return 0.0
         light_source = self.lights.lights[0]
-        if self.anchor.vector_to_obs is None or light_source.light_direction is None: return 0.0
+        if self.anchor.vector_to_obs is None or light_source.light_direction is None:
+            return 0.0
         angle = self.anchor.vector_to_obs.dot(-light_source.light_direction)
         phase = (1.0 + angle) / 2.0
         return phase
@@ -66,17 +69,17 @@ class ReflectiveBody(StellarBody):
 
     def create_components(self):
         StellarBody.create_components(self)
-        #if self.light_source is None:
-            #self.create_light()
+        # if self.light_source is None:
+        # self.create_light()
         self.components.update_shader()
 
     def update_components(self, camera_pos):
-        #if self.light_source is not None:
+        # if self.light_source is not None:
         #    self.update_light(camera_pos)
         pass
 
     def remove_components(self):
-        #if self.light_source is not None:
-            #self.remove_light()
+        # if self.light_source is not None:
+        # self.remove_light()
         self.components.update_shader()
         StellarBody.remove_components(self)

@@ -1,26 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from .emissive import EmissiveBody
 
 from ..astro import units
+
+from .emissive import EmissiveBody
 
 
 class DeepSpaceObject(EmissiveBody):
@@ -30,19 +30,36 @@ class DeepSpaceObject(EmissiveBody):
     has_resolved_halo = False
     support_offset_body_center = False
 
-    def __init__(self, names, source_names, radius, radius_units=units.Ly,
-                 abs_magnitude=None,
-                 surface=None,
-                 orbit=None, rotation=None, frame=None,
-                 body_class=None, point_color=None,
-                 description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        radius,
+        radius_units=units.Ly,
+        abs_magnitude=None,
+        surface=None,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class=None,
+        point_color=None,
+        description='',
+    ):
         radius = radius * radius_units
-        EmissiveBody.__init__(self, names, source_names, radius=radius,
-                              surface=surface,
-                              orbit=orbit, rotation=rotation, frame=frame,
-                              abs_magnitude=abs_magnitude,
-                              body_class=body_class, point_color=point_color,
-                              description=description)
+        EmissiveBody.__init__(
+            self,
+            names,
+            source_names,
+            radius=radius,
+            surface=surface,
+            orbit=orbit,
+            rotation=rotation,
+            frame=frame,
+            abs_magnitude=abs_magnitude,
+            body_class=body_class,
+            point_color=point_color,
+            description=description,
+        )
 
     def get_height_under(self, position):
         return 0.0

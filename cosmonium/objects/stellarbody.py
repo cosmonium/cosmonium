@@ -1,43 +1,55 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LVector3d, LQuaterniond, LPoint3d
 
-from .stellarobject import StellarObject
-from .systems import SimpleSystem
-
 from ..astro.frame import OrbitReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from ..astro.orbits import LocalFixedPosition
 from ..astro.rotations import FixedRotation
+
+from .stellarobject import StellarObject
+from .systems import SimpleSystem
 
 
 class StellarBody(StellarObject):
     has_rotation_axis = True
     has_reference_axis = True
 
-    def __init__(self, names, source_names, radius, oblateness=None, scale=None,
-                 surface=None, surface_factory=None,
-                 orbit=None, rotation=None, frame=None,
-                 atmosphere=None, clouds=None,
-                 body_class=None, point_color=None,
-                 description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        radius,
+        oblateness=None,
+        scale=None,
+        surface=None,
+        surface_factory=None,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        atmosphere=None,
+        clouds=None,
+        body_class=None,
+        point_color=None,
+        description='',
+    ):
         StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.surface = None
         self.clouds = clouds
@@ -47,7 +59,7 @@ class StellarBody(StellarObject):
         self.surfaces = []
         self.auto_surface = surface is None
         if surface is not None:
-            #TODO: Should not be done explicitly
+            # TODO: Should not be done explicitly
             surface.set_body(self)
             surface.set_owner(self)
             self.surfaces.append(surface)
@@ -79,11 +91,17 @@ class StellarBody(StellarObject):
             print("Creating system for", self.get_name())
             system_orbit = self.anchor.orbit
             system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
-            #TODO: The system name should be translated correctly
-            self.system = SimpleSystem(self.get_name() + " System", source_names=[], primary=self, orbit=system_orbit, rotation=system_rotation)
+            # TODO: The system name should be translated correctly
+            self.system = SimpleSystem(
+                self.get_name() + " System",
+                source_names=[],
+                primary=self,
+                orbit=system_orbit,
+                rotation=system_rotation,
+            )
             if self.parent is not None:
                 self.parent.add_child_fast(self.system)
-            #system_orbit.set_body(self.system)
+            # system_orbit.set_body(self.system)
             orbit = LocalFixedPosition(frame=OrbitReferenceFrame(self.system.anchor), frame_position=LPoint3d())
             self.set_orbit(orbit)
             self.system.add_child_fast(self)
@@ -108,8 +126,10 @@ class StellarBody(StellarObject):
         surface.set_owner(self)
 
     def set_surface(self, surface):
-        if not surface in self.surfaces: return
-        if self.auto_surface: return
+        if surface not in self.surfaces:
+            return
+        if self.auto_surface:
+            return
         if self.init_components:
             self.unconfigure_shape()
             self.components.remove_component(self.surface)
@@ -166,7 +186,7 @@ class StellarBody(StellarObject):
         self.components.remove_component(self.atmosphere)
 
     def get_components(self):
-        #TODO: This is a hack to be fixed in v0.3.0
+        # TODO: This is a hack to be fixed in v0.3.0
         components = []
         if self.surface is not None:
             components.append(self.surface)
@@ -234,7 +254,7 @@ class StellarBody(StellarObject):
         if self.surface is not None:
             point = self.surface.get_point_under(surface_position)
         else:
-            #print("No surface")
+            # print("No surface")
             point = surface_position.normalized() * self.radius
         return self.surface_to_local_position(point)
 
@@ -242,21 +262,21 @@ class StellarBody(StellarObject):
         if self.surface is not None:
             return self.surface.get_radius_under(self.local_to_surface_position(position))
         else:
-            #print("No surface")
+            # print("No surface")
             return self.radius
 
     def get_height_under(self, position):
         if self.surface is not None:
             return self.surface.get_height_under(self.local_to_surface_position(position))
         else:
-            #print("No surface")
+            # print("No surface")
             return self.radius
 
     def get_alt_under(self, position):
         if self.surface is not None:
             return self.surface.get_alt_under(self.local_to_surface_position(position))
         else:
-            #print("No surface")
+            # print("No surface")
             return self.radius
 
     def get_tangent_plane_under(self, position):
@@ -265,9 +285,7 @@ class StellarBody(StellarObject):
         else:
             vectors = (LVector3d.right(), LVector3d.forward(), LVector3d.up())
         orientation = self.anchor._orientation
-        return (orientation.xform(vectors[0]),
-                orientation.xform(vectors[1]),
-                orientation.xform(vectors[2]))
+        return (orientation.xform(vectors[0]), orientation.xform(vectors[1]), orientation.xform(vectors[2]))
 
     def show_clouds(self):
         if self.clouds:

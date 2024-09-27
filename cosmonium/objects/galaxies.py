@@ -1,51 +1,51 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from panda3d.core import TextureStage, Texture, TexGenAttrib, GeomVertexRewriter
-from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter, OmniBoundingVolume
-from panda3d.core import GeomPoints, Geom, GeomNode
+from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
+from panda3d.core import GeomPoints, Geom, GeomNode, OmniBoundingVolume
 from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
 from panda3d.core import ShaderAttrib
+from random import random, gauss, choice, seed
 
-from .systems import OctreeSystem
 
 from ..appearances import AppearanceBase
-from ..datasource import DataSource
-from ..shapes.base import Shape
 from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..datasource import DataSource
+from ..parameters import AutoUserParameter, UserParameter
 from ..sprites import ExpPointSprite
-from ..textures import TransparentTexture, DirectTextureSource
 from ..shaders.point_control import PointControl
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.emission import PureEmissionLightingModel
+from ..shapes.base import Shape
+from ..textures import TransparentTexture, DirectTextureSource
 from ..utils import TransparencyBlend
 from ..utils import srgb_to_linear
-from ..parameters import AutoUserParameter, UserParameter
 
 from ..astro import units
 from ..astro.astro import abs_mag_to_lum
 from .. import settings
 
-from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
-from random import random, gauss, choice, seed
+from .systems import OctreeSystem
 
 
 class Galaxy(OctreeSystem):
@@ -57,17 +57,26 @@ class Galaxy(OctreeSystem):
     support_offset_body_center = False
     virtual_object = False
 
-    def __init__(self, names, source_names, radius=None, radius_units=units.Ly,
-                 abs_magnitude=None,
-                 shape_type=None,
-                 shape=None,
-                 appearance=None,
-                 orbit=None, rotation=None, frame=None,
-                 body_class='galaxy', point_color=None,
-                 description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        radius=None,
+        radius_units=units.Ly,
+        abs_magnitude=None,
+        shape_type=None,
+        shape=None,
+        appearance=None,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class='galaxy',
+        point_color=None,
+        description='',
+    ):
         radius = radius * radius_units
         super().__init__(names, source_names, orbit, rotation, frame, body_class, radius, point_color, description)
-        #TODO: This should be done in create_anchor
+        # TODO: This should be done in create_anchor
         self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         self.shape_type = shape_type
         shader = None
@@ -77,7 +86,7 @@ class Galaxy(OctreeSystem):
             else:
                 point_control = None
             shader = RenderingShader(lighting_model=PureEmissionLightingModel(), point_control=point_control)
-        #Disable color picking as it has huge impact on performance
+        # Disable color picking as it has huge impact on performance
         shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
@@ -105,7 +114,7 @@ class Galaxy(OctreeSystem):
         self.components.remove_component(self.surface)
 
     def get_components(self):
-        #TODO: This is a hack to be fixed in v0.3.0
+        # TODO: This is a hack to be fixed in v0.3.0
         components = []
         if self.surface is not None:
             components.append(self.surface)
@@ -125,6 +134,7 @@ class GalaxyAppearance(AppearanceBase):
     image = None
     texture = None
     sprite = None
+
     def __init__(self, sprite=None, color_scale=1.0):
         AppearanceBase.__init__(self)
         if sprite is None:
@@ -133,7 +143,7 @@ class GalaxyAppearance(AppearanceBase):
         self.color_scale = color_scale
         self.has_vertex_color = True
         self.nb_textures = 1
-        #TODO: Texture should be an actual VisibleTexture object
+        # TODO: Texture should be an actual VisibleTexture object
         self.texture = True
         self.texture_index = 0
         self.transparency = True
@@ -152,20 +162,22 @@ class GalaxyAppearance(AppearanceBase):
             scale = self.color_scale / 255.0 * coef
             size = owner.get_apparent_radius() / owner.anchor.distance_to_obs
             if size > 1.0:
-                scale = max(1.0/255, scale / size)
+                scale = max(1.0 / 255, scale / size)
             shape.instance.set_color_scale(LColor(scale, scale, scale, scale))
 
     def create_load_task(self, tasks_tree, shape, owner):
         tasks_tree.add_task_for(self, self.load(tasks_tree, shape, owner))
 
     async def load(self, tasks_tree, shape, owner):
-        #TODO: This stupid test is needed until the texture field contains an actual texture object
+        # TODO: This stupid test is needed until the texture field contains an actual texture object
         if self.texture is None or self.texture is True:
             if self.image is None:
                 self.image = self.sprite.generate()
             texture = Texture()
             texture.load(self.image)
-            self.texture = TransparentTexture(DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha)
+            self.texture = TransparentTexture(
+                DirectTextureSource(texture), blend=TransparencyBlend.TB_PremultipliedAlpha
+            )
             self.texture.set_tex_matrix(False)
 
     def apply(self, shape, instance):
@@ -183,11 +195,13 @@ class GalaxyAppearance(AppearanceBase):
 
     def get_user_parameters(self):
         return [
-                AutoUserParameter("Color scale", "color_scale", self, UserParameter.TYPE_FLOAT, [0, 255]),
-                ]
+            AutoUserParameter("Color scale", "color_scale", self, UserParameter.TYPE_FLOAT, [0, 255]),
+        ]
+
 
 class GalaxyShapeBase(Shape):
     templates = {}
+
     def __init__(self, radius=1.0, scale=None):
         Shape.__init__(self)
         self.radius = radius
@@ -234,7 +248,7 @@ class GalaxyShapeBase(Shape):
     async def create_instance(self):
         shape_id = self.shape_id()
         if shape_id in GalaxyShapeBase.templates:
-            template =  GalaxyShapeBase.templates[shape_id]
+            template = GalaxyShapeBase.templates[shape_id]
         else:
             seed(self.seed)
             self.gnode = GeomNode('galaxy')
@@ -242,7 +256,7 @@ class GalaxyShapeBase(Shape):
             self.gnode.addGeom(self.geom)
             template = NodePath(self.gnode)
             # Disable caching
-            #GalaxyShapeBase.templates[shape_id] = template
+            # GalaxyShapeBase.templates[shape_id] = template
         self.instance = NodePath('galaxy')
         template.instanceTo(self.instance)
         self.apply()
@@ -254,7 +268,7 @@ class GalaxyShapeBase(Shape):
         self.update_geom(*self.create_points())
 
     def makeGeom(self, points, colors, sizes):
-        #format = GeomVertexFormat.getV3c4()
+        # format = GeomVertexFormat.getV3c4()
         array = GeomVertexArrayFormat()
         array.addColumn(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
         array.addColumn(InternalName.get_color(), 4, Geom.NTFloat32, Geom.CColor)
@@ -270,12 +284,12 @@ class GalaxyShapeBase(Shape):
         geompoints = GeomPoints(Geom.UH_static)
         geompoints.reserve_num_vertices(len(points))
         index = 0
-        for (point, color, size) in zip(points, colors, sizes):
+        for point, color, size in zip(points, colors, sizes):
             self.vwriter.addData3f(*point)
             self.colorwriter.addData4f(*color)
             self.sizewriter.addData1f(size)
             geompoints.addVertex(index)
-            #geompoints.closePrimitive()
+            # geompoints.closePrimitive()
             index += 1
         geom = Geom(vdata)
         geom.addPrimitive(geompoints)
@@ -288,13 +302,16 @@ class GalaxyShapeBase(Shape):
         vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
         colorwriter = GeomVertexWriter(vdata, InternalName.get_color())
         sizewriter = GeomVertexWriter(vdata, InternalName.get_size())
-        for (point, color, size) in zip(points, colors, sizes):
+        for point, color, size in zip(points, colors, sizes):
             vwriter.addData3f(*point)
             colorwriter.addData4f(*color)
             sizewriter.addData1f(size)
 
+
 class EllipticalGalaxyShape(GalaxyShapeBase):
-    def __init__(self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
+    def __init__(
+        self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0
+    ):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.factor = factor
         self.nb_points = nb_points
@@ -318,7 +335,7 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
         spread = self.spread
         spreadf = self.spread * self.factor
         zspreadf = self.zspread * self.factor
-        sersic_inv = 1. / self.sersic
+        sersic_inv = 1.0 / self.sersic
         for i in range(nb_points):
             x = gauss(0.0, spread)
             y = gauss(0.0, spreadf)
@@ -332,15 +349,17 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
 
     def get_user_parameters(self):
         return [
-                AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
-                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
-                AutoUserParameter("Color", "color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
-                ]
+            AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
+            AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+            AutoUserParameter("Color", "color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+        ]
+
 
 class IrregularGalaxyShape(GalaxyShapeBase):
     noise = None
+
     def __init__(self, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.nb_points = nb_points
@@ -365,7 +384,7 @@ class IrregularGalaxyShape(GalaxyShapeBase):
         colors_list = [self.color1, self.color2]
         spread = self.spread
         zspread = self.zspread
-        sersic_inv = 1. / self.sersic
+        sersic_inv = 1.0 / self.sersic
         count = 0
         while count < nb_points:
             p = LPoint3(gauss(0.0, spread), gauss(0.0, spread), gauss(0.0, zspread))
@@ -383,16 +402,29 @@ class IrregularGalaxyShape(GalaxyShapeBase):
 
     def get_user_parameters(self):
         return [
-                AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
-                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
-                AutoUserParameter("Color 1", "color1", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                AutoUserParameter("Color 2", "color2", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
-                ]
+            AutoUserParameter("Sersic index", "sersic", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
+            AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+            AutoUserParameter("Color 1", "color1", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+            AutoUserParameter("Color 2", "color2", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+        ]
+
 
 class SpiralGalaxyShapeBase(GalaxyShapeBase):
-    def __init__(self, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.01, sprite_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
+    def __init__(
+        self,
+        radius=1.0,
+        scale=None,
+        nb_points_bulge=200,
+        nb_points_arms=1000,
+        spread=0.4,
+        zspread=0.01,
+        sprite_size=400,
+        max_angle=2 * pi,
+        sersic_bulge=4.0,
+        sersic_disk=1.0,
+    ):
         GalaxyShapeBase.__init__(self, radius, scale)
         self.nb_points_bulge = nb_points_bulge
         self.nb_points_arms = nb_points_arms
@@ -411,7 +443,7 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
     def create_bulge(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
         bulge_color = self.bulge_color
-        sersic_inv = 1. / self.sersic_bulge
+        sersic_inv = 1.0 / self.sersic_bulge
         for i in range(count):
             x = gauss(0.0, spread)
             y = gauss(0.0, spread)
@@ -424,11 +456,11 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
-    def create_spiral(self, count,radius, spread, zspread, points, colors, sizes):
+    def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         func = self.shape_func
         sprite_size = self.sprite_size
         arm_color = self.arms_color
-        sersic_inv = 1. / self.sersic_disk
+        sersic_inv = 1.0 / self.sersic_disk
         distance = 0
         for i in (-1.0, 1.0):
             for c in range(count):
@@ -453,21 +485,23 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
         arm_color = self.arms_color
         disk_color = self.bulge_color
         bulge_size = self.bulge_size()
-        sersic_inv = 1. / self.sersic_disk
+        sersic_inv = 1.0 / self.sersic_disk
         distance = 0
         for c in range(count * 2):
-            r = sqrt(random() + bulge_size*bulge_size)
+            r = sqrt(random() + bulge_size * bulge_size)
             theta = random() * 2 * pi
             x = r * cos(theta)
             y = r * sin(theta)
             z = gauss(0.0, zspread)
             coef = 0.0
-            for c in (0, 1.):
+            for c in (0, 1.0):
                 arm_angle = self.inv_shape_func(r) * max(self.max_angle, 0.001) / (2 * pi)
                 mtheta = c * pi + theta
                 delta = abs(mtheta - arm_angle)
                 for i in range(int(self.max_angle / (2 * pi)) + 1):
-                    delta = min(delta, abs(mtheta - arm_angle - (i + 1) * 2 * pi), abs(mtheta - arm_angle + (i  + 1) * 2 * pi))
+                    delta = min(
+                        delta, abs(mtheta - arm_angle - (i + 1) * 2 * pi), abs(mtheta - arm_angle + (i + 1) * 2 * pi)
+                    )
                 coef = max(pow(max(1 - delta / pi, 0.0), self.arm_spread), coef)
             point = LPoint3d(x * radius, y * radius, z * radius)
             points.append(point)
@@ -498,18 +532,45 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
 
     def get_user_parameters(self):
         return [
-                AutoUserParameter("Bulge sersic index", "sersic_bulge", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
-                AutoUserParameter("Sersic index", "sersic_disk", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
-                AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
-                AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
-                AutoUserParameter("Bulge color", "bulge_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
-                AutoUserParameter("Arms color", "arms_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3)
-                ]
+            AutoUserParameter("Bulge sersic index", "sersic_bulge", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
+            AutoUserParameter("Sersic index", "sersic_disk", self, UserParameter.TYPE_FLOAT, [0.1, 10]),
+            AutoUserParameter("Spread", "spread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Z-spread", "zspread", self, UserParameter.TYPE_FLOAT, [0.001, 1]),
+            AutoUserParameter("Sprite size", "sprite_size", self, UserParameter.TYPE_FLOAT, [1, 1000]),
+            AutoUserParameter("Bulge color", "bulge_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+            AutoUserParameter("Arms color", "arms_color", self, UserParameter.TYPE_VEC, [0, 1], nb_components=3),
+        ]
+
 
 class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
+    def __init__(
+        self,
+        N,
+        B,
+        radius=1.0,
+        scale=None,
+        nb_points_bulge=200,
+        nb_points_arms=1000,
+        spread=0.4,
+        zspread=0.2,
+        point_size=400,
+        max_angle=2 * pi,
+        sersic_bulge=4.0,
+        sersic_disk=1.0,
+    ):
+        SpiralGalaxyShapeBase.__init__(
+            self,
+            radius,
+            scale,
+            nb_points_bulge,
+            nb_points_arms,
+            spread,
+            zspread,
+            point_size,
+            max_angle,
+            sersic_bulge,
+            sersic_disk,
+        )
         self.N = N
         self.B = B
 
@@ -527,14 +588,42 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
 
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
-        params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
-                   AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
-                   ]
+        params += [
+            AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
+            AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
+        ]
         return params
 
+
 class FullRingGalaxyShape(SpiralGalaxyShapeBase):
-    def __init__(self, N, B, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
+    def __init__(
+        self,
+        N,
+        B,
+        radius=1.0,
+        scale=None,
+        nb_points_bulge=200,
+        nb_points_arms=1000,
+        spread=0.4,
+        zspread=0.2,
+        point_size=400,
+        max_angle=2 * pi,
+        sersic_bulge=4.0,
+        sersic_disk=1.0,
+    ):
+        SpiralGalaxyShapeBase.__init__(
+            self,
+            radius,
+            scale,
+            nb_points_bulge,
+            nb_points_arms,
+            spread,
+            zspread,
+            point_size,
+            max_angle,
+            sersic_bulge,
+            sersic_disk,
+        )
         self.N = N
         self.B = B
 
@@ -552,15 +641,43 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
 
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
-        params += [AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
-                   AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
-                   ]
+        params += [
+            AutoUserParameter("N", "N", self, UserParameter.TYPE_FLOAT, [0, 10]),
+            AutoUserParameter("B", "B", self, UserParameter.TYPE_FLOAT, [0, 10]),
+        ]
         return params
+
 
 class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     bar_radius = 0.5
-    def __init__(self, pitch, radius=1.0, scale=None, nb_points_bulge=200, nb_points_arms=1000, spread=0.4, zspread=0.2, point_size=400, max_angle=2 * pi, sersic_bulge=4.0, sersic_disk=1.0):
-        SpiralGalaxyShapeBase.__init__(self, radius, scale, nb_points_bulge, nb_points_arms, spread, zspread, point_size, max_angle, sersic_bulge, sersic_disk)
+
+    def __init__(
+        self,
+        pitch,
+        radius=1.0,
+        scale=None,
+        nb_points_bulge=200,
+        nb_points_arms=1000,
+        spread=0.4,
+        zspread=0.2,
+        point_size=400,
+        max_angle=2 * pi,
+        sersic_bulge=4.0,
+        sersic_disk=1.0,
+    ):
+        SpiralGalaxyShapeBase.__init__(
+            self,
+            radius,
+            scale,
+            nb_points_bulge,
+            nb_points_arms,
+            spread,
+            zspread,
+            point_size,
+            max_angle,
+            sersic_bulge,
+            sersic_disk,
+        )
         self.pitch = pitch
         self.arm_spread = 5
 
@@ -592,11 +709,13 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
 
     def get_user_parameters(self):
         params = SpiralGalaxyShapeBase.get_user_parameters(self)
-        params += [UserParameter("Pitch", self.set_pitch, self.get_pitch, UserParameter.TYPE_FLOAT, [20, 35]),
-                   UserParameter("Winding", self.set_max_angle, self.get_max_angle, UserParameter.TYPE_FLOAT, [0, 720]),
-                   AutoUserParameter("Spread", 'arm_spread', self, UserParameter.TYPE_FLOAT, [0, 20]),
-                   ]
+        params += [
+            UserParameter("Pitch", self.set_pitch, self.get_pitch, UserParameter.TYPE_FLOAT, [20, 35]),
+            UserParameter("Winding", self.set_max_angle, self.get_max_angle, UserParameter.TYPE_FLOAT, [0, 720]),
+            AutoUserParameter("Spread", 'arm_spread', self, UserParameter.TYPE_FLOAT, [0, 20]),
+        ]
         return params
+
 
 class LenticularGalaxyShape(SpiralGalaxyShapeBase):
     bulge_radius = 0.2
@@ -610,7 +729,7 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
     def create_spiral(self, count, radius, spread, zspread, points, colors, sizes):
         sprite_size = self.sprite_size
         disk_color = self.yellow_color
-        sersic_inv = 1. / self.sersic_disk
+        sersic_inv = 1.0 / self.sersic_disk
         for r in range(count * 2):
             distance = self.bulge_radius + abs(gauss(0, (1 - self.bulge_radius)))
             angle = random() * 2.0 * pi
@@ -625,6 +744,7 @@ class LenticularGalaxyShape(SpiralGalaxyShapeBase):
             size = sprite_size + gauss(0, sprite_size)
             sizes.append(size)
 
+
 class GalaxyDataSource(DataSource):
     def __init__(self):
         DataSource.__init__(self, 'galaxy')
@@ -635,6 +755,7 @@ class GalaxyDataSource(DataSource):
 
     def update(self, shape, instance, camera_pos, camera_rot):
         instance.setShaderInput("scale_factor", shape.owner.scene_anchor.scene_scale_factor)
+
 
 class GalaxyPointControl(PointControl):
 

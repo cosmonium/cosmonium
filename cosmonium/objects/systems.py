@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -33,11 +33,21 @@ class StellarSystem(StellarObject):
     virtual_object = True
     support_offset_body_center = False
 
-    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class=None,
+        point_color=None,
+        description='',
+    ):
         StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.children = []
         self.children_map = ObjectsDB()
-        #Not used by StellarSystem, but used to detect SimpleSystem
+        # Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
 
@@ -63,7 +73,7 @@ class StellarSystem(StellarObject):
 
     def find_by_name(self, name, name_up=None):
         if name_up is None:
-            name_up=name.upper()
+            name_up = name.upper()
         if self.is_named(name, name_up):
             return self
         else:
@@ -80,7 +90,7 @@ class StellarSystem(StellarObject):
         for child in self.children:
             if child.is_named(name):
                 return child
-            elif isinstance(child, SimpleSystem) and child.primary != None and child.primary.is_named(name):
+            elif isinstance(child, SimpleSystem) and child.primary is not None and child.primary.is_named(name):
                 if return_system:
                     return child
                 else:
@@ -89,14 +99,14 @@ class StellarSystem(StellarObject):
 
     def find_by_path(self, path, return_system=False, first=True, separator='/'):
         if not isinstance(path, list):
-            path=path.split(separator)
+            path = path.split(separator)
         if len(path) > 0:
-            #print("Looking for", path, "in '" + self.get_name() + "'", "RS:", return_system)
+            # print("Looking for", path, "in '" + self.get_name() + "'", "RS:", return_system)
             name = path[0]
             sub_path = path[1:]
             child = None
             if first:
-                #TODO: should be done in Universe class, not here...
+                # TODO: should be done in Universe class, not here...
                 child = objectsDB.get(name)
                 if child is not None and return_system and not isinstance(child, StellarSystem):
                     child = child.system
@@ -105,14 +115,14 @@ class StellarSystem(StellarObject):
             if child is not None:
                 if len(sub_path) == 0:
                     if not return_system or isinstance(child, StellarSystem):
-                        #print("Found child", child.get_name())
+                        # print("Found child", child.get_name())
                         return child
                 else:
                     if isinstance(child, StellarSystem):
-                        #print("Found child, rec into", child.get_name())
+                        # print("Found child, rec into", child.get_name())
                         return child.find_by_path(sub_path, return_system, first=False)
                     elif child.system is not None:
-                        #print("Found child, rec into system", child.parent.get_name(), sub_path)
+                        # print("Found child, rec into system", child.parent.get_name(), sub_path)
                         return child.system.find_by_path(sub_path, return_system, first=False)
                     else:
                         return None
@@ -128,12 +138,12 @@ class StellarSystem(StellarObject):
         if child.parent is not None:
             child.parent.anchor.remove_child(child.anchor)
             child.parent.remove_child_fast(child)
-        #print("Add child", child.get_name(), "to", self.get_name())
+        # print("Add child", child.get_name(), "to", self.get_name())
         self.children_map.add(child)
         self.children.append(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
-        #TODO: This is a quick workaround until stars of a system are properly managed
+        # TODO: This is a quick workaround until stars of a system are properly managed
         if child.is_emissive():
             self.has_halo = True
 
@@ -143,7 +153,7 @@ class StellarSystem(StellarObject):
         self.add_child_fast(child)
 
     def remove_child_fast(self, child):
-        #print("Remove child", child.get_name(), "from", self.get_name())
+        # print("Remove child", child.get_name(), "from", self.get_name())
         self.children.remove(child)
         child.set_parent(None)
         self.children_map.remove(child)
@@ -167,7 +177,8 @@ class StellarSystem(StellarObject):
 
     def check_visibility(self, frustum, pixel_size):
         StellarObject.check_visibility(self, frustum, pixel_size)
-        if not self.anchor.resolved: return
+        if not self.anchor.resolved:
+            return
         for child in self.children:
             if child.orbit_object is not None:
                 child.orbit_object.check_visibility(frustum, pixel_size)
@@ -180,8 +191,20 @@ class StellarSystem(StellarObject):
                 if child.orbit_object.instance is not None:
                     scene_manager.add_spread_object(child.orbit_object.instance)
 
+
 class OctreeSystem(StellarSystem):
-    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, radius=None, point_color=None, description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class=None,
+        radius=None,
+        point_color=None,
+        description='',
+    ):
         self.radius = radius
         StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
 
@@ -205,7 +228,19 @@ class OctreeSystem(StellarSystem):
 
 
 class SimpleSystem(StellarSystem):
-    def __init__(self, names, source_names, primary=None, star_system=False, orbit=None, rotation=None, frame=None, body_class='system', point_color=None, description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        primary=None,
+        star_system=False,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class='system',
+        point_color=None,
+        description='',
+    ):
         StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
         self.star_system = star_system
         self.set_primary(primary)
@@ -263,6 +298,7 @@ class SimpleSystem(StellarSystem):
 
     def add_shadow_target(self, target):
         self.primary.add_shadow_target(target)
+
 
 class Barycenter(StellarSystem):
     def __init__(self, *args, **kwargs):

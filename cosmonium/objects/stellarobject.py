@@ -1,41 +1,41 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LColor, LVector3d
 
-from ..engine.anchors import CartesianAnchor
-from ..foundation import CompositeObject
-from ..namedobject import NamedObject
+from ..astro.orbits import FixedPosition
+from ..bodyclass import bodyClasses
+from ..catalogs import objectsDB
 from ..components.annotations.body_label import StellarBodyLabel, FixedOrbitLabel
 from ..components.annotations.reference_axes import ReferenceAxes
 from ..components.annotations.rotation_axis import RotationAxis
 from ..components.annotations.orbit import Orbit
 from ..components.elements.halo import Halo
+from ..engine.anchors import CartesianAnchor
 from ..engine.anchors import DynamicStellarAnchor
-from ..scene.sceneanchor import SceneAnchor
-from ..astro.orbits import FixedPosition
-from ..bodyclass import bodyClasses
-from ..catalogs import objectsDB
+from ..foundation import CompositeObject
+from ..namedobject import NamedObject
 from ..parameters import ParametersGroup
-from .. import settings
+from ..scene.sceneanchor import SceneAnchor
 from ..utils import srgb_to_linear
+from .. import settings
 
 
 class StellarObject(NamedObject):
@@ -57,35 +57,50 @@ class StellarObject(NamedObject):
     nb_visibility = 0
     nb_instance = 0
 
-    def __init__(self, names, source_names, orbit=None, rotation=None, frame=None, body_class=None, point_color=None, description=''):
+    def __init__(
+        self,
+        names,
+        source_names,
+        orbit=None,
+        rotation=None,
+        frame=None,
+        body_class=None,
+        point_color=None,
+        description='',
+    ):
         NamedObject.__init__(self, names, source_names, description)
         self.system = None
         self.body_class = body_class
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         point_color = srgb_to_linear(point_color)
-        #if not (orbit.dynamic or rotation.dynamic):
+        # if not (orbit.dynamic or rotation.dynamic):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
-        #else:
+        # else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, frame, point_color)
-        self.scene_anchor = SceneAnchor(self.anchor, self.support_offset_body_center, LColor(),
-                                        background=self.background, virtual_object=self.virtual_object,
-                                        spread_object=self.spread_object)
+        self.scene_anchor = SceneAnchor(
+            self.anchor,
+            self.support_offset_body_center,
+            LColor(),
+            background=self.background,
+            virtual_object=self.virtual_object,
+            spread_object=self.spread_object,
+        )
         self.oid = None
         self.oid_color = None
-        #Flags
+        # Flags
         self.selected = False
         self.focused = False
-        #Scene parameters
+        # Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
-        #Components
+        # Components
         self.orbit_object = None
         self.rotation_axis = None
         self.reference_axes = None
         self.resolved_halo = None
         self.init_components = False
         objectsDB.add(self)
-        #TODO: Should be done properly
+        # TODO: Should be done properly
         self.scene_anchor.oid_color = self.oid_color
 
         self.shown = True
@@ -136,7 +151,6 @@ class StellarObject(NamedObject):
 
     def get_user_parameters(self):
         group = ParametersGroup(self.get_name())
-        parameters = []
         if isinstance(self.orbit, FixedPosition) and self.system is not None:
             orbit = self.system.orbit
         else:
@@ -316,7 +330,8 @@ class StellarObject(NamedObject):
         return vectors
 
     def set_visibility_override(self, override):
-        if override == self.anchor.visibility_override: return
+        if override == self.anchor.visibility_override:
+            return
         if override:
             self.anchor.visibility_override = True
             if self.system is not None:
@@ -325,7 +340,7 @@ class StellarObject(NamedObject):
             self.anchor.visibility_override = False
             if self.system is not None:
                 self.system.set_visibility_override(override)
-            #Force recheck of visibility or the object will be instanciated in create_or_update_instance()
+            # Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 
     def update_obs(self, observer):
