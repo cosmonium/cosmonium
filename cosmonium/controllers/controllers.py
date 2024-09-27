@@ -1,36 +1,38 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from math import pi
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at, LPoint3
+from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
 
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation
 from .. import utils
 
 
-class BodyController():
+class BodyController:
     """
     Base class to control an existing anchor in Cosmonium.
     """
+
     context = None
+
     def __init__(self, anchor):
         self.anchor = anchor
         self.mover = None
@@ -49,7 +51,9 @@ class BodyController():
         if not isinstance(self.anchor.rotation, FixedRotation):
             print("Can not create a mover with dynamic rotation", self.anchor.rotation)
             return
-        if isinstance(self.anchor.orbit.frame, SurfaceReferenceFrame) and isinstance(self.anchor.rotation.frame, SurfaceReferenceFrame):
+        if isinstance(self.anchor.orbit.frame, SurfaceReferenceFrame) and isinstance(
+            self.anchor.rotation.frame, SurfaceReferenceFrame
+        ):
             self.mover = SurfaceBodyMover(self.anchor)
         else:
             self.mover = CartesianBodyMover(self.anchor)
@@ -111,8 +115,7 @@ class SurfaceBodyController(BodyController):
         self.lat = lat
 
     def create_mover(self):
-        """
-        """
+        """ """
         self.mover = CartesianBodyMover(self.anchor)
         self.update(0, 0)
 
@@ -147,8 +150,7 @@ class FlatSurfaceBodyController(BodyController):
         super().init()
 
     def create_mover(self):
-        """
-        """
+        """ """
         self.mover = FlatSurfaceBodyMover(self.anchor, self.terrain)
         self.mover.update()
 
@@ -156,9 +158,10 @@ class FlatSurfaceBodyController(BodyController):
         self.mover.update()
 
 
-class BodyMover():
+class BodyMover:
     """
-    Base class for the mover helper. A mover hides to the controller how to update the position and rotation of the anchor.
+    Base class for the mover helper. A mover hides to the controller how to update the position
+    and rotation of the anchor.
     It also provides helper method to do basic movements.
     """
 
@@ -222,7 +225,8 @@ class BodyMover():
 
     def step_relative(self, distance):
         """
-        Move the anchor with the given distance in the forward direction of the rotation reference frame, in the orbit reference frame.
+        Move the anchor with the given distance in the forward direction of the rotation reference frame,
+        in the orbit reference frame.
         :param distance: The amplitude of the step.
         """
         pass
@@ -244,10 +248,12 @@ class BodyMover():
     def set_state(self, new_state):
         self.anchor.body.set_state(new_state)
 
-#Temporary class until a common interface between object and stellar bodies is implemented
+
+# Temporary class until a common interface between object and stellar bodies is implemented
+
 
 class CartesianBodyMover(BodyMover):
-    #TODO: Temporary
+    # TODO: Temporary
     @property
     def orbit_rot_camera(self):
         return self.anchor.body.orbit_rot_camera
@@ -321,6 +327,7 @@ class CartesianBodyMover(BodyMover):
         new_rot = utils.relative_rotation(self.anchor.get_absolute_orientation(), LVector3d.up(), pi)
         self.anchor.set_absolute_orientation(new_rot)
 
+
 class SurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor):
         CartesianBodyMover.__init__(self, anchor)
@@ -328,7 +335,7 @@ class SurfaceBodyMover(CartesianBodyMover):
         self.altitude = 0.0
 
     def update(self):
-        #Refresh altitude in case the anchor has changed shape (often due to change of LOD)
+        # Refresh altitude in case the anchor has changed shape (often due to change of LOD)
         self.set_altitude(self.altitude)
         # Force internal update of the controlled anchor
         self.anchor.update(0, 0)
@@ -365,6 +372,7 @@ class SurfaceBodyMover(CartesianBodyMover):
     def step_altitude(self, step):
         self.set_altitude(self.get_altitude() + step)
 
+
 class FlatSurfaceBodyMover(CartesianBodyMover):
     def __init__(self, anchor, surface):
         CartesianBodyMover.__init__(self, anchor)
@@ -372,7 +380,7 @@ class FlatSurfaceBodyMover(CartesianBodyMover):
         self.altitude = 0.0
 
     def update(self):
-        #Refresh altitude in case the anchor has changed shape (often due to change of LOD)
+        # Refresh altitude in case the anchor has changed shape (often due to change of LOD)
         self.set_altitude(self.altitude)
         # Force internal update of the controlled anchor
         self.anchor.update(0, 0)
