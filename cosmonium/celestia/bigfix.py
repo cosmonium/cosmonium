@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 # This code is imported from Celesta bigfix.cpp to be used for cel:// url
@@ -34,6 +34,7 @@
 
 
 from math import floor
+
 
 class Bigfix:
 
@@ -70,41 +71,41 @@ class Bigfix:
             bits += cls.decoder[oc]
             char_count += 1
             if char_count == 4:
-                n[i//2] >>= 8
-                n[i//2] += (bits >> 8) & 0xff00
+                n[i // 2] >>= 8
+                n[i // 2] += (bits >> 8) & 0xFF00
                 i += 1
-                n[i//2] >>= 8
-                n[i//2] += bits & 0xff00
+                n[i // 2] >>= 8
+                n[i // 2] += bits & 0xFF00
                 i += 1
-                n[i//2] >>= 8
-                n[i//2] += (bits << 8) & 0xff00
+                n[i // 2] >>= 8
+                n[i // 2] += (bits << 8) & 0xFF00
                 i += 1
                 bits = 0
                 char_count = 0
             else:
                 bits <<= 6
         if char_count == 2:
-            n[i//2] >>= 8
-            n[i//2] += (bits >> 2) & 0xff00
+            n[i // 2] >>= 8
+            n[i // 2] += (bits >> 2) & 0xFF00
             i += 1
         elif char_count == 3:
-            n[i//2] >>= 8
-            n[i//2] += (bits >> 8) & 0xff00
+            n[i // 2] >>= 8
+            n[i // 2] += (bits >> 8) & 0xFF00
             i += 1
-            n[i//2] >>= 8
-            n[i//2] += bits & 0xff00
+            n[i // 2] >>= 8
+            n[i // 2] += bits & 0xFF00
             i += 1
 
         if (i & 1) != 0:
-            n[i//2] >>= 8
+            n[i // 2] >>= 8
 
         # Now, convert the 8 16-bit values to a 2 64-bit values
-        lo = (n[0] | (n[1] << 16) | (n[2] << 32) | (n[3] << 48)) & 0xffffffffffffffff
-        hi = (n[4] | (n[5] << 16) | (n[6] << 32) | (n[7] << 48)) & 0xffffffffffffffff
+        lo = (n[0] | (n[1] << 16) | (n[2] << 32) | (n[3] << 48)) & 0xFFFFFFFFFFFFFFFF
+        hi = (n[4] | (n[5] << 16) | (n[6] << 32) | (n[7] << 48)) & 0xFFFFFFFFFFFFFFFF
 
         if hi > cls.INT64_MAX:
-            hi = (~hi) & 0xffffffffffffffff
-            lo = (~lo) & 0xffffffffffffffff
+            hi = (~hi) & 0xFFFFFFFFFFFFFFFF
+            lo = (~lo) & 0xFFFFFFFFFFFFFFFF
             lo += 1
             if lo == 0:
                 hi += 1
@@ -112,14 +113,11 @@ class Bigfix:
         else:
             sign = 1
 
-        w0 = lo & 0xffffffff
+        w0 = lo & 0xFFFFFFFF
         w1 = lo >> 32
-        w2 = hi & 0xffffffff
+        w2 = hi & 0xFFFFFFFF
         w3 = hi >> 32
-        d = (w0 * cls.WORD0_FACTOR +
-             w1 * cls.WORD1_FACTOR +
-             w2 * cls.WORD2_FACTOR +
-             w3 * cls.WORD3_FACTOR) * sign
+        d = (w0 * cls.WORD0_FACTOR + w1 * cls.WORD1_FACTOR + w2 * cls.WORD2_FACTOR + w3 * cls.WORD3_FACTOR) * sign
         return d
 
     @classmethod
@@ -136,35 +134,35 @@ class Bigfix:
         # integer has more bits of precision than a double.
         e = floor(value * (1.0 / cls.WORD3_FACTOR))
         if e < cls.POW2_31:
-            w3 = int(e) & 0xffffffff
+            w3 = int(e) & 0xFFFFFFFF
             value -= w3 * cls.WORD3_FACTOR
-            w2 = int(value * (1.0 / cls.WORD2_FACTOR)) & 0xffffffff
+            w2 = int(value * (1.0 / cls.WORD2_FACTOR)) & 0xFFFFFFFF
             value -= w2 * cls.WORD2_FACTOR
-            w1 = int(value * (1.0 / cls.WORD1_FACTOR)) & 0xffffffff
+            w1 = int(value * (1.0 / cls.WORD1_FACTOR)) & 0xFFFFFFFF
             value -= w1 * cls.WORD1_FACTOR
-            w0 = int(value * (1.0 / cls.WORD0_FACTOR)) & 0xffffffff
+            w0 = int(value * (1.0 / cls.WORD0_FACTOR)) & 0xFFFFFFFF
 
             hi = (w3 << 32) | w2
             lo = (w1 << 32) | w0
 
         if isNegative:
             # For a twos-complement number, -n = ~n + 1
-            hi = (~hi) & 0xffffffffffffffff
-            lo = (~lo) & 0xffffffffffffffff
+            hi = (~hi) & 0xFFFFFFFFFFFFFFFF
+            lo = (~lo) & 0xFFFFFFFFFFFFFFFF
             lo += 1
             if lo == 0:
                 hi += 1
 
         n = [0, 0, 0, 0, 0, 0, 0, 0]
-        n[0] = lo & 0xffff
-        n[1] = (lo >> 16) & 0xffff
-        n[2] = (lo >> 32) & 0xffff
-        n[3] = (lo >> 48) & 0xffff
+        n[0] = lo & 0xFFFF
+        n[1] = (lo >> 16) & 0xFFFF
+        n[2] = (lo >> 32) & 0xFFFF
+        n[3] = (lo >> 48) & 0xFFFF
 
-        n[4] = hi & 0xffff
-        n[5] = (hi >> 16) & 0xffff
-        n[6] = (hi >> 32) & 0xffff
-        n[7] = (hi >> 48) & 0xffff
+        n[4] = hi & 0xFFFF
+        n[5] = (hi >> 16) & 0xFFFF
+        n[6] = (hi >> 32) & 0xFFFF
+        n[7] = (hi >> 48) & 0xFFFF
 
         encoded = ""
 
@@ -176,9 +174,11 @@ class Bigfix:
         while True:
             i -= 1
             c = n[i // 2]
-            if (i & 1) != 0: c >>= 8
-            c &= 0xff
-            if not ((c == 0) and (i != 0)): break
+            if (i & 1) != 0:
+                c >>= 8
+            c &= 0xFF
+            if not ((c == 0) and (i != 0)):
+                break
 
         if i == 0:
             return encoded
@@ -187,16 +187,17 @@ class Bigfix:
         j = 0
         while j <= i:
             c = n[j // 2]
-            if (j & 1) != 0: c >>= 8
-            c &= 0xff
+            if (j & 1) != 0:
+                c >>= 8
+            c &= 0xFF
             j += 1
             bits += c
             char_count += 1
             if char_count == 3:
                 encoded += cls.alphabet[bits >> 18]
-                encoded += cls.alphabet[(bits >> 12) & 0x3f]
-                encoded += cls.alphabet[(bits >> 6) & 0x3f]
-                encoded += cls.alphabet[bits & 0x3f]
+                encoded += cls.alphabet[(bits >> 12) & 0x3F]
+                encoded += cls.alphabet[(bits >> 6) & 0x3F]
+                encoded += cls.alphabet[bits & 0x3F]
                 bits = 0
                 char_count = 0
             else:
@@ -204,7 +205,7 @@ class Bigfix:
         if char_count != 0:
             bits <<= 16 - (8 * char_count)
             encoded += cls.alphabet[bits >> 18]
-            encoded += cls.alphabet[(bits >> 12) & 0x3f]
+            encoded += cls.alphabet[(bits >> 12) & 0x3F]
             if char_count != 1:
-                encoded += cls.alphabet[(bits >> 6) & 0x3f]
+                encoded += cls.alphabet[(bits >> 6) & 0x3F]
         return encoded

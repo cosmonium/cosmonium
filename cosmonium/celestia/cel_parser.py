@@ -1,36 +1,36 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+import io
 from ply import lex, yacc
 from ply.lex import Token
- 
-from ..dircontext import defaultDirContext
-
 import sys
-import io
+
+from ..dircontext import defaultDirContext
 
 
 def Rule(r):
     def set_rule(f):
         f.__doc__ = r
         return f
+
     return set_rule
 
 
@@ -96,7 +96,7 @@ def t_error(t):
 lexer = lex.lex()
 
 
-precedence=()
+precedence = ()
 
 
 @Rule('''program : '{' commands_list '}' ''')
@@ -112,7 +112,7 @@ def p_commands_list(p):
 
 @Rule('''commands_list : command''')
 def p_definition_list_1(p):
-    p[0]=[p[1]]
+    p[0] = [p[1]]
 
 
 @Rule('''command : NAME '{' entry_list '}' ''')
@@ -139,31 +139,37 @@ def p_entry_list_2(p):
     p[0] = {}
 
 
-@Rule('''entry : NAME INT
+@Rule(
+    '''entry : NAME INT
              | NAME FLOAT
              | NAME STRING
              | NAME BOOL
              | NAME vector
-             | NAME hash''')
+             | NAME hash'''
+)
 def p_entry(p):
     p[0] = [p[1], p[2]]
 
 
 @Rule('''vector : '[' float_list ']' ''')
 def p_vector(p):
-    
+
     p[0] = p[2]
 
 
-@Rule('''float_list : float_list FLOAT
-                  | float_list INT''')
+@Rule(
+    '''float_list : float_list FLOAT
+                  | float_list INT'''
+)
 def p_float_list(p):
     p[0] = p[1]
     p[0].append(p[2])
 
 
-@Rule('''float_list : FLOAT
-                  | INT''')
+@Rule(
+    '''float_list : FLOAT
+                  | INT'''
+)
 def p_float_list_1(p):
     p[0] = [p[1]]
 
@@ -184,6 +190,7 @@ def p_empty(p):
 
 
 # Catastrophic error handler
+
 
 def p_error(p):
     if p:

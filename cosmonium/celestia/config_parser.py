@@ -1,33 +1,33 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-import sys
 
 from ply import lex, yacc
 from ply.lex import Token
+import sys
 
 
 def Rule(r):
     def set_rule(f):
         f.__doc__ = r
         return f
+
     return set_rule
 
 
@@ -92,7 +92,7 @@ def t_error(t):
 lexer = lex.lex()
 
 
-precedence=()
+precedence = ()
 
 
 @Rule('''definition_list : definition_list definition''')
@@ -103,13 +103,15 @@ def p_definition_list(p):
 
 @Rule('''definition_list : definition''')
 def p_definition_list_1(p):
-    p[0]=[p[1]]
+    p[0] = [p[1]]
 
 
-@Rule(''' definition : NAME NAME INT '{' entry_list '}'
+@Rule(
+    ''' definition : NAME NAME INT '{' entry_list '}'
                    | NAME INT '{' entry_list '}'
                    | INT '{' entry_list '}'
-    ''')
+    '''
+)
 def p_definition_without_alias(p):
     item_parent = None
     item_alias = None
@@ -128,15 +130,17 @@ def p_definition_without_alias(p):
         item_type = 'Body'
         item_name = p[1]
         item_data = p[3]
-    #print("Got definition of ", item_type, item_name, "of", item_parent)
-    #print(item_data)
+    # print("Got definition of ", item_type, item_name, "of", item_parent)
+    # print(item_data)
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(''' definition : NAME NAME INT STRING '{' entry_list '}'
+@Rule(
+    ''' definition : NAME NAME INT STRING '{' entry_list '}'
                    | NAME INT STRING '{' entry_list '}'
                    | INT STRING '{' entry_list '}'
-    ''')
+    '''
+)
 def p_definition_with_alias(p):
     item_parent = None
     if len(p) == 8:
@@ -157,16 +161,17 @@ def p_definition_with_alias(p):
         item_name = p[1]
         item_alias = p[2]
         item_data = p[4]
-    #print("Got definition of ", item_type, item_name, "of", item_parent)
-    #print(item_data)
+    # print("Got definition of ", item_type, item_name, "of", item_parent)
+    # print(item_data)
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-
-@Rule(''' definition : NAME NAME STRING '{' entry_list '}'
+@Rule(
+    ''' definition : NAME NAME STRING '{' entry_list '}'
                    | NAME STRING '{' entry_list '}'
                    | STRING '{' entry_list '}'
-    ''')
+    '''
+)
 def p_definition_without_parent(p):
     item_parent = None
     item_alias = None
@@ -185,15 +190,17 @@ def p_definition_without_parent(p):
         item_type = 'Body'
         item_name = p[1]
         item_data = p[3]
-    #print("Got definition of ", item_type, item_name, "of", item_parent)
-    #print(item_data)
+    # print("Got definition of ", item_type, item_name, "of", item_parent)
+    # print(item_data)
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(''' definition : NAME NAME STRING STRING '{' entry_list '}'
+@Rule(
+    ''' definition : NAME NAME STRING STRING '{' entry_list '}'
                    | NAME STRING STRING '{' entry_list '}'
                    | STRING STRING '{' entry_list '}'
-    ''')
+    '''
+)
 def p_definition_with_parent(p):
     item_alias = None
     if len(p) == 8:
@@ -214,13 +221,15 @@ def p_definition_with_parent(p):
         item_name = p[1]
         item_parent = p[2]
         item_data = p[4]
-    #print("Got definition of ", item_type, item_name, "of", item_parent)
-    #print(item_data)
+    # print("Got definition of ", item_type, item_name, "of", item_parent)
+    # print(item_data)
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(''' definition : NAME '{' entry_list '}'
-    ''')
+@Rule(
+    ''' definition : NAME '{' entry_list '}'
+    '''
+)
 def p_definition_without_name(p):
     item_parent = None
     item_alias = None
@@ -228,8 +237,8 @@ def p_definition_without_name(p):
     item_type = p[1]
     item_name = None
     item_data = p[3]
-    #print("Got definition of ", item_type, item_name, "of", item_parent)
-    #print(item_data)
+    # print("Got definition of ", item_type, item_name, "of", item_parent)
+    # print(item_data)
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
@@ -252,12 +261,14 @@ def p_entry_list_2(p):
     p[0] = {}
 
 
-@Rule('''entry : NAME INT
+@Rule(
+    '''entry : NAME INT
              | NAME FLOAT
              | NAME STRING
              | NAME BOOL
              | NAME vector
-             | NAME hash''')
+             | NAME hash'''
+)
 def p_entry(p):
     p[0] = [p[1], p[2]]
 
@@ -267,15 +278,19 @@ def p_vector(p):
     p[0] = p[2]
 
 
-@Rule( '''float_list : float_list FLOAT
-                  | float_list INT''')
+@Rule(
+    '''float_list : float_list FLOAT
+                  | float_list INT'''
+)
 def p_float_list(p):
     p[0] = p[1]
     p[0].append(p[2])
 
 
-@Rule('''float_list : FLOAT
-                  | INT''')
+@Rule(
+    '''float_list : FLOAT
+                  | INT'''
+)
 def p_float_list_1(p):
     p[0] = [p[1]]
 
@@ -296,6 +311,7 @@ def p_empty(p):
 
 
 # Catastrophic error handler
+
 
 def p_error(p):
     if p:

@@ -1,33 +1,32 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-import sys
 import io
-
 from ply import lex, yacc
 from ply.lex import Token
+import sys
 
-from ..components.annotations.asterism import NamedAsterism
 from ..catalogs import objectsDB
 from ..astro.orbits import FixedPosition
 from ..astro import bayer
+from ..components.annotations.asterism import NamedAsterism
 from ..dircontext import defaultDirContext
 
 
@@ -35,6 +34,7 @@ def Rule(r):
     def set_rule(f):
         f.__doc__ = r
         return f
+
     return set_rule
 
 
@@ -99,7 +99,7 @@ def t_error(t):
 lexer = lex.lex()
 
 
-precedence=()
+precedence = ()
 
 
 @Rule('''asterisms : asterisms_list''')
@@ -115,7 +115,7 @@ def p_asterisms_list(p):
 
 @Rule('''asterisms_list : asterism''')
 def p_asterisms_list_1(p):
-    p[0]=[p[1]]
+    p[0] = [p[1]]
 
 
 @Rule('''asterism : STRING '[' segments_list ']' ''')
@@ -167,6 +167,7 @@ def p_empty(p):
 
 # Catastrophic error handler
 
+
 def p_error(p):
     if p:
         print("Syntax error at token", p.type, "line", p.lineno, ":", p.value)
@@ -190,7 +191,7 @@ def create_asterism(universe, name, text_segments):
     for text_segment in text_segments:
         segment = []
         for star_name in text_segment:
-            #star = universe.find_by_name(star_name)
+            # star = universe.find_by_name(star_name)
             star = objectsDB.get(bayer.encode_name(star_name))
             if star is not None:
                 if not isinstance(star.anchor.orbit, FixedPosition):

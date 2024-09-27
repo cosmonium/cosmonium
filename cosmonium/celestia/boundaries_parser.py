@@ -1,33 +1,33 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from ..objects.universe import Universe
-from ..components.annotations.boundary import Boundary
+import re
+import sys
+from time import time
+
 from ..astro.projection import InfinitePosition
 from ..astro import units
+from ..components.annotations.boundary import Boundary
 from ..dircontext import defaultDirContext
+from ..objects.universe import Universe
 
-import sys
-import re
-import struct
-from time import time
 
 def do_load(filepath, universe):
     start = time()
@@ -41,7 +41,7 @@ def do_load(filepath, universe):
         if len(data) == 4:
             (ra, decl, const, ignore) = data
             if const != prev_const and prev_const is not None:
-                #print("Adding constellation", prev_const)
+                # print("Adding constellation", prev_const)
                 boundary = Boundary(prev_const, points)
                 universe.add_component(boundary)
                 points = []
@@ -53,6 +53,7 @@ def do_load(filepath, universe):
     end = time()
     print("Load time:", end - start)
 
+
 def load(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is not None:
@@ -60,7 +61,8 @@ def load(filename, universe, context=defaultDirContext):
     else:
         print("File not found", filename)
 
+
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        universe=Universe(None)
-        struct = load(sys.argv[1], universe)
+        universe = Universe(None)
+        load(sys.argv[1], universe)

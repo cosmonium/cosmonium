@@ -1,37 +1,38 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
+from math import pi
 from panda3d.core import LVector3d, LQuaterniond
-
-from .celestia_utils import body_path
-from .bigfix import Bigfix
+import re
 
 from ..astro import units
-from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame, J2000EquatorialReferenceFrame, SynchroneReferenceFrame
-from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
+from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from ..astro.frame import J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..bodyclass import bodyClasses
+from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
 from .. import settings
 
-from math import pi
-import re
+from .bigfix import Bigfix
+from .celestia_utils import body_path
+
 
 def create_frame(coordsys, ref_name):
     ref = None
@@ -53,56 +54,63 @@ def create_frame(coordsys, ref_name):
         return J2000BarycentricEclipticReferenceFrame()
     elif coordsys == "lock":
         return None
-    elif coordsys ==  "chase":
+    elif coordsys == "chase":
         return None
     else:
         return None
 
+
 def ignore(command_name, sequence, base, parameters):
     pass
+
 
 def not_implemented(command_name, sequence, base, parameters):
     print("Command not implemented", command_name)
 
+
 def cancel(command_name, sequence, base, parameters):
     """Description:
-Stop a currently running goto command . . . like pressing the ESC key.
-"""
+    Stop a currently running goto command . . . like pressing the ESC key.
+    """
     sequence.append(Func(base.reset_nav))
+
 
 def capture(command_name, sequence, base, parameters):
     """Parameters:
-string type
-string filename
-Description:
-Take a screenshot of the current window
-"""
-    file_type = parameters.get('type')
+    string type
+    string filename
+    Description:
+    Take a screenshot of the current window
+    """
+    # TODO: file_type = parameters.get('type')
     filename = parameters.get('filename')
     sequence.append(Func(base.save_screenshot, filename))
 
+
 def center(command_name, sequence, base, parameters):
     """Parameters:
-float time = 1.0
-Description:
-Center the currently selected object in the field of view.
-Time specifies how many seconds it should take to slew the camera.
-"""
-    duration=float(parameters.get('time', '1.0'))
+    float time = 1.0
+    Description:
+    Center the currently selected object in the field of view.
+    Time specifies how many seconds it should take to slew the camera.
+    """
+    duration = float(parameters.get('time', '1.0'))
     sequence.append(Func(base.center_on_object, duration=duration, proportional=False))
+
 
 def changedistance(command_name, sequence, base, parameters):
     """Parameters:
-float rate = 0.0
-float duration = 1.0
-Description:
-Exponentially change the distance between the camera and the selected object over some duration.
-A negative rate will move closer to the object, a positive rate moves farther out.
-"""
+    float rate = 0.0
+    float duration = 1.0
+    Description:
+    Exponentially change the distance between the camera and the selected object over some duration.
+    A negative rate will move closer to the object, a positive rate moves farther out.
+    """
     rate = float(parameters.get('rate', '0.0'))
     duration = float(parameters.get('duration', '0.0'))
     sequence.append(Func(base.autopilot.change_distance, rate, duration))
     sequence.append(Wait(duration))
+
 
 def cls(command_name, sequence, base, parameters):
     pass
@@ -110,10 +118,10 @@ def cls(command_name, sequence, base, parameters):
 
 def display(command_name, sequence, base, parameters):
     """Parameters:
-string text = ""
-Description:
-Show a line of text on the screen.
-"""
+    string text = ""
+    Description:
+    Show a line of text on the screen.
+    """
     origin_map = {
         'bottomleft': base.a2dBottomLeft,
         'bottom': base.a2dBottomCenter,
@@ -123,7 +131,7 @@ Show a line of text on the screen.
         'right': base.a2dRightCenter,
         'topleft': base.a2dTopLeft,
         'top': base.a2dTopCenter,
-        'topright': base.a2dTopRight
+        'topright': base.a2dTopRight,
     }
     text = parameters.get('text', '')
     text = text.replace('\\n', '\n')
@@ -136,52 +144,58 @@ Show a line of text on the screen.
     fade = 1.0
     sequence.append(Func(base.gui.update_info, text, (column, row), color, anchor, duration, fade))
 
+
 def exit(command_name, sequence, base, parameters):
     """Description:
-Exit the application
-"""
+    Exit the application
+    """
     sequence.append(Func(base.userExit))
+
 
 def follow(command_name, sequence, base, parameters):
     """Description:
-Follow the currently selected object.
-This causes the camera to stay in the same place relative to the center of an object.
-"""
+    Follow the currently selected object.
+    This causes the camera to stay in the same place relative to the center of an object.
+    """
     sequence.append(Func(base.follow_selected))
+
 
 def goto(command_name, sequence, base, parameters):
     """Parameters:
-float time = 1.0
-float distance = 5.0
-string upframe = "observer"
-vector up = [ 0 1 0 ]
-Description:
-Go to the currently selected object.
-Trip duration is controlled with the time parameter.
-The distance parameter specifies how far away from the object to stop in units of the object's radius.
-The goto command executes instantaneously so that you can use other commands such as print while the camera is moving toward the destination.
-In order for goto to complete, there should be wait commands with a combined duration equal to the value of the time parameter.
-"""
-    duration=float(parameters.get('time', '1.0'))
-    distance=float(parameters.get('distance', '5.0'))
-    upframe=parameters.get('upframe', 'observer')
-    up=parameters.get('up', [0, 1, 0])
-    up=LVector3d(up[0], -up[2], up[1])
+    float time = 1.0
+    float distance = 5.0
+    string upframe = "observer"
+    vector up = [ 0 1 0 ]
+    Description:
+    Go to the currently selected object.
+    Trip duration is controlled with the time parameter.
+    The distance parameter specifies how far away from the object to stop in units of the object's radius.
+    The goto command executes instantaneously so that you can use other commands
+    such as print while the camera is moving toward the destination.
+    In order for goto to complete, there should be wait commands with a combined duration equal
+    to the value of the time parameter.
+    """
+    duration = float(parameters.get('time', '1.0'))
+    distance = float(parameters.get('distance', '5.0'))
+    # TODO: upframe = parameters.get('upframe', 'observer')
+    up = parameters.get('up', [0, 1, 0])
+    up = LVector3d(up[0], -up[2], up[1])
     up.normalize()
     sequence.append(Func(base.autopilot.go_to_object, duration, distance, up, 0.25, 0.75))
 
+
 def gotoloc(command_name, sequence, base, parameters):
     """Parameters:
-float time = 1.0
-vector position = [ 0 1 0 ]
-float xrot = 0
-float yrot = 0
-float zrot = 0
-or
-float x, y, z
-string ox, oy, oz, ow
-Description:
-"""
+    float time = 1.0
+    vector position = [ 0 1 0 ]
+    float xrot = 0
+    float yrot = 0
+    float zrot = 0
+    or
+    float x, y, z
+    string ox, oy, oz, ow
+    Description:
+    """
     duration = float(parameters.get('time', '1.0'))
     if 'position' in parameters:
         position = parameters.get('position', [0, 1, 0])
@@ -207,28 +221,42 @@ Description:
         orientation = LQuaterniond(-ow, ox, -oz, oy)
     sequence.append(Func(base.autopilot.move_and_rotate_to, position, orientation, False, duration))
 
+
 def gotolonglat(command_name, sequence, base, parameters):
     """Parameters:
-float time = 1.0
-float distance = 5.0
-vector up = [ 0 1 0 ]
-float longitude = 0
-float latitude = 0
-Description:
-gotolonglat works exactly the same as goto except that you can specify coordinates on the surface of the object as well as a distance.
-Since the distance is in object radii, a distance of 1.0 will put you right on the surface.
-Typically, you want to be just above the surface, so giving a radius of 1.001 is a better idea.
-Latitude is negative for the southern hemisphere and positive for the northern hemisphere.
-Longitude is negative for the western hemisphere and position for the eastern hemisphere.
-"""
-    duration=float(parameters.get('time', '1.0'))
-    distance=float(parameters.get('distance', '5.0'))
-    up=parameters.get('up', [0, 1, 0])
-    up=LVector3d(up[0], -up[2], up[1])
+    float time = 1.0
+    float distance = 5.0
+    vector up = [ 0 1 0 ]
+    float longitude = 0
+    float latitude = 0
+    Description:
+    gotolonglat works exactly the same as goto except that you can specify coordinates on the surface
+    of the object as well as a distance.
+    Since the distance is in object radii, a distance of 1.0 will put you right on the surface.
+    Typically, you want to be just above the surface, so giving a radius of 1.001 is a better idea.
+    Latitude is negative for the southern hemisphere and positive for the northern hemisphere.
+    Longitude is negative for the western hemisphere and position for the eastern hemisphere.
+    """
+    duration = float(parameters.get('time', '1.0'))
+    distance = float(parameters.get('distance', '5.0'))
+    up = parameters.get('up', [0, 1, 0])
+    up = LVector3d(up[0], -up[2], up[1])
     up.normalize()
-    longitude=float(parameters.get('longitude', '0.0'))
-    latitude=float(parameters.get('latitude', '0.0'))
-    sequence.append(Func(base.autopilot.go_to_object_long_lat, longitude * pi / 180, latitude * pi / 180, duration, distance, up, 0.25, 0.75))
+    longitude = float(parameters.get('longitude', '0.0'))
+    latitude = float(parameters.get('latitude', '0.0'))
+    sequence.append(
+        Func(
+            base.autopilot.go_to_object_long_lat,
+            longitude * pi / 180,
+            latitude * pi / 180,
+            duration,
+            distance,
+            up,
+            0.25,
+            0.75,
+        )
+    )
+
 
 def do_labels(base, set_flags, clear_flags):
     for name in set_flags:
@@ -236,15 +264,16 @@ def do_labels(base, set_flags, clear_flags):
     for name in clear_flags:
         base.hide_label(name)
 
+
 def labels(command_name, sequence, base, parameters):
     """Parameters:
-string set = ""
-string clear = ""
-Description:
-Change labeling options.
-This command works in a manner similar to renderflags.
-Options are: planets, moons, spacecraft, asteroids, constellations, stars, galaxies.
-"""
+    string set = ""
+    string clear = ""
+    Description:
+    Change labeling options.
+    This command works in a manner similar to renderflags.
+    Options are: planets, moons, spacecraft, asteroids, constellations, stars, galaxies.
+    """
     set_flags = parameters.get('set', '')
     if set_flags != '':
         set_flags = set_flags.split('|')
@@ -257,30 +286,33 @@ Options are: planets, moons, spacecraft, asteroids, constellations, stars, galax
         clear_flags = []
     sequence.append(Func(do_labels, base, set_flags, clear_flags))
 
+
 def move(command_name, sequence, base, parameters):
     """Parameters:
-float duration = 0.0
-vector velocity = [ 0 0 0 ]
-Description:
-Move at a constant velocity for an amount of time.
-The velocity is given in units of kilometers per second.
-"""
-    duration = float(parameters.get('duration', '0.0'))
-    velocity = parameters.get('velocity', '[0 0 0]')
+    float duration = 0.0
+    vector velocity = [ 0 0 0 ]
+    Description:
+    Move at a constant velocity for an amount of time.
+    The velocity is given in units of kilometers per second.
+    """
+    # TODO: duration = float(parameters.get('duration', '0.0'))
+    # TODO: velocity = parameters.get('velocity', '[0 0 0]')
     not_implemented(command_name, sequence, base, parameters)
+
 
 def lookback(command_name, sequence, base, parameters):
     sequence.append(Func(base.camera.camera_look_back))
 
+
 def orbit(command_name, sequence, base, parameters):
     """Parameters:
-float rate = 0.0
-float duration = 1.0
-vector axis = [ 0 0 0 ]
-Description:
-Orbit the selected object around a given axis.
-The rate is in units of degrees per second. (Still need to specify which coordinate system the axis is defined in.)
-"""
+    float rate = 0.0
+    float duration = 1.0
+    vector axis = [ 0 0 0 ]
+    Description:
+    Orbit the selected object around a given axis.
+    The rate is in units of degrees per second. (Still need to specify which coordinate system the axis is defined in.)
+    """
     rate = float(parameters.get('rate', '0.0')) * pi / 180
     duration = float(parameters.get('duration', '1.0'))
     axis = parameters.get('axis', [0, 0, 0])
@@ -290,19 +322,21 @@ The rate is in units of degrees per second. (Still need to specify which coordin
     sequence.append(Func(base.autopilot.orbit, axis, rate * length, duration))
     sequence.append(Wait(duration))
 
+
 def do_orbitflags(base, set_flags, clear_flags):
     for name in set_flags:
         base.show_orbit(name)
     for name in clear_flags:
         base.hide_orbit(name)
 
+
 def orbitflags(command_name, sequence, base, parameters):
     """Parameters:
-string set = ""
-string clear = ""
-Description:
-Change orbit rendering options.
-"""
+    string set = ""
+    string clear = ""
+    Description:
+    Change orbit rendering options.
+    """
     set_flags = parameters.get('set', '')
     if set_flags != '':
         set_flags = set_flags.split('|')
@@ -314,6 +348,7 @@ Change orbit rendering options.
     else:
         clear_flags = []
     sequence.append(Func(do_orbitflags, base, set_flags, clear_flags))
+
 
 def do_renderflags(base, set_flags, clear_flags):
     def apply_setting(name, value):
@@ -384,15 +419,16 @@ def do_renderflags(base, set_flags, clear_flags):
         apply_setting(setting, False)
     base.update_settings()
 
+
 def renderflags(command_name, sequence, base, parameters):
     """Parameters:
-string set = ""
-string clear = ""
-Description:
-Change rendering options.
-Possible options include: orbits, cloudmaps, constellations, galaxies, planets, stars, nightmaps.
-Multiple options can be enabled in a single command by listing several names separated by the | character.
-"""
+    string set = ""
+    string clear = ""
+    Description:
+    Change rendering options.
+    Possible options include: orbits, cloudmaps, constellations, galaxies, planets, stars, nightmaps.
+    Multiple options can be enabled in a single command by listing several names separated by the | character.
+    """
     set_flags = parameters.get('set', '')
     if set_flags != '':
         set_flags = set_flags.split('|')
@@ -405,15 +441,16 @@ Multiple options can be enabled in a single command by listing several names sep
         clear_flags = []
     sequence.append(Func(do_renderflags, base, set_flags, clear_flags))
 
+
 def rotate(command_name, sequence, base, parameters):
     """Parameters:
-float rate = 0.0
-float duration = 1.0
-vector axis = [ 0 0 0 ]
-Description:
-Rotate the observer about its center.
-The rate is in units of degrees per second. (Still need to specify which coordinate system the axis is defined in.)
-"""
+    float rate = 0.0
+    float duration = 1.0
+    vector axis = [ 0 0 0 ]
+    Description:
+    Rotate the observer about its center.
+    The rate is in units of degrees per second. (Still need to specify which coordinate system the axis is defined in.)
+    """
     rate = float(parameters.get('rate', '0.0')) * pi / 180
     duration = float(parameters.get('duration', '1.0'))
     axis = parameters.get('axis', [0, 0, 0])
@@ -423,14 +460,16 @@ The rate is in units of degrees per second. (Still need to specify which coordin
     sequence.append(Func(base.autopilot.rotate, axis, -rate * length, duration))
     sequence.append(Wait(duration))
 
+
 def select(command_name, sequence, base, parameters):
     """Parameters:
-string object = ""
-Description:
-Set the selection to the specified object.
-Names can be in 'path' form, e.g. "Sol/Earth/Moon" Otherwise, the object selected may depend on the location of the camera.
-Just using "Moon" works fine within our solar system, but the full path form is favored.
-"""
+    string object = ""
+    Description:
+    Set the selection to the specified object.
+    Names can be in 'path' form, e.g. "Sol/Earth/Moon" Otherwise, the object selected may depend
+    on the location of the camera.
+    Just using "Moon" works fine within our solar system, but the full path form is favored.
+    """
     path_name = str(parameters.get('object', ''))
     path = body_path(path_name)
     body = base.universe.find_by_path(path)
@@ -439,26 +478,28 @@ Just using "Moon" works fine within our solar system, but the full path form is 
     else:
         print(f"Path '{path_name}' not found")
 
+
 def set_cmd(command_name, sequence, base, parameters):
     """Parameters:
-string name = ""
-float value = 0.0
-Set the configuration parameter 'name' to 'value'. Valid parameters and values are :
-    name "string"
-        "MinOrbitSize"
-        "AmbientLightLevel"
-        "FOV"
-        "StarDistanceLimit" value number (default=0.0)
-    or
-    name "StarStyle"
-    value string
-        "fuzzypoints"
-        "points"
-        "scaleddiscs"
-"""
+    string name = ""
+    float value = 0.0
+    Set the configuration parameter 'name' to 'value'. Valid parameters and values are :
+        name "string"
+            "MinOrbitSize"
+            "AmbientLightLevel"
+            "FOV"
+            "StarDistanceLimit" value number (default=0.0)
+        or
+        name "StarStyle"
+        value string
+            "fuzzypoints"
+            "points"
+            "scaleddiscs"
+    """
     name = parameters.get('name', '').lower()
     if name == 'StarStyle':
-        style = parameters.get('value', '')
+        # TODO: style = parameters.get('value', '')
+        pass
     elif name == 'nav':
         nav_name = parameters.get('value', '')
         nav = base.get_nav(nav_name)
@@ -489,42 +530,45 @@ Set the configuration parameter 'name' to 'value'. Valid parameters and values a
         else:
             print("Parameter", name, "not supported")
 
+
 def setambientlight(command_name, sequence, base, parameters):
     """Parameters:
-float brightness = 0.0
-Description:
-Set the amount of additional light used when rendering planets.
-For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of a planet facing away from the sun to appear as bright as the lit side.
-"""
+    float brightness = 0.0
+    Description:
+    Set the amount of additional light used when rendering planets.
+    For realism, this should be set to 0.0. Setting it to 1.0 will cause the side of a planet facing away
+    from the sun to appear as bright as the lit side.
+    """
     magnitude = float(parameters.get('brightness', '0.0'))
     sequence.append(Func(base.set_ambient, magnitude))
 
+
 def setframe(command_name, sequence, base, parameters):
     """Parameters:
-string ref = ""
-string target = ""
-string coordsys = "universal"
-Description:
-"""
+    string ref = ""
+    string target = ""
+    string coordsys = "universal"
+    Description:
+    """
     ref = parameters.get('ref', "")
-    target = parameters.get('target', "")
+    # TODO: target = parameters.get('target', "")
     coordsys = parameters.get('coordsys', "universal")
     frame = create_frame(coordsys, ref)
     if frame is not None:
         sequence.append(Func(base.ship.anchor.set_frame, frame))
 
+
 def setorientation(command_name, sequence, base, parameters):
     """Parameters:
-float angle = 0
-vector axis = [0 0 0]
-or
-float ox, oy, oz, ow
-Description:
-"""
+    float angle = 0
+    vector axis = [0 0 0]
+    or
+    float ox, oy, oz, ow
+    Description:
+    """
     if 'angle' in parameters:
         angle = float(parameters.get('angle', '0.0'))
         axis = float(parameters.get('axis', [0, 0, 0]))
-        offset = LVector3d(axis[0], -axis[2], axis[1])
         orientation = LQuaternionromAxisAngle(angle, axis)
     else:
         ox = parameters.get('ox', 0.0)
@@ -534,14 +578,15 @@ Description:
         orientation = LQuaterniond(-ow, ox, -oz, oy)
     sequence.append(Func(base.ship.anchor.set_frame_position, orientation))
 
+
 def setposition(command_name, sequence, base, parameters):
     """Parameters:
-vector position = [ 0 0 0 ]
-vector position = [ 0 0 0 ]
-or
-string x, y, z
-Description:
-"""
+    vector position = [ 0 0 0 ]
+    vector position = [ 0 0 0 ]
+    or
+    string x, y, z
+    Description:
+    """
     if 'base' in parameters:
         base = parameters.get('base', [0, 0, 0])
         offset = parameters.get('offset', [0, 0, 0])
@@ -559,55 +604,63 @@ Description:
         position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
     sequence.append(Func(base.ship.anchor.set_frame_position, position))
 
+
 def setsurface(command_name, sequence, base, parameters):
     """Parameters:
-string name = ""
-Description:
-Set the surface of the selected body.
-"""
+    string name = ""
+    Description:
+    Set the surface of the selected body.
+    """
     name = parameters.get('name', '')
     sequence.append(Func(base.set_surface, None, name))
 
+
 def seturl(command_name, sequence, base, parameters):
     """Parameters:
-string url = ""
-Description:
-Reconfigure the engine with the given configuration URL.
-"""
+    string url = ""
+    Description:
+    Reconfigure the engine with the given configuration URL.
+    """
     url = parameters.get('url', '')
     sequence.append(Func(base.load_cel_url, url))
 
+
 def setvisibilitylimit(command_name, sequence, base, parameters):
     """Parameters:
-float magnitude = 6.0
-Description:
-Display only stars brighter than the specified magnitude.
-"""
+    float magnitude = 6.0
+    Description:
+    Display only stars brighter than the specified magnitude.
+    """
     magnitude = float(parameters.get('magnitude', '6.0'))
     sequence.append(Func(base.set_limit_magnitude, magnitude))
 
+
 def synchronous(command_name, sequence, base, parameters):
     """Description:
-Sync orbit the currently selected object.
-This causes the camera to stay in the same position and orientation relative to a location on the object's surface.
-"""
+    Sync orbit the currently selected object.
+    This causes the camera to stay in the same position and orientation relative to a location on the object's surface.
+    """
     sequence.append(Func(base.sync_selected))
 
-time_regex = re.compile('^(-?\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+(?:\.\d*)?)$')
+
+time_regex = re.compile(r'^(-?\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+(?:\.\d*)?)$')
+
+
 def time(command_name, sequence, base, parameters):
     """Parameters:
-float jd = 2451545.0
-Description:
-Set the time to the specified Julian day.
-"""
+    float jd = 2451545.0
+    Description:
+    Set the time to the specified Julian day.
+    """
     if 'jd' in parameters:
         jd = float(parameters.get('jd', '2451545.0'))
     elif 'utc' in parameters:
         utc = parameters.get('utc', '')
         try:
             m = time_regex.match(utc)
-            jd = units.values_to_time(int(m.group(1)), int(m.group(2)), int(m.group(3)),
-                                      int(m.group(4)), int(m.group(5)), int(m.group(6)))
+            jd = units.values_to_time(
+                int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))
+            )
         except ValueError:
             print("ERROR: Invalid time '{}'".format(utc))
             return
@@ -615,33 +668,38 @@ Set the time to the specified Julian day.
         jd = 2451545.0
     sequence.append(Func(base.time.set_time_jd, jd))
 
+
 def timerate(command_name, sequence, base, parameters):
     """Parameters:
-float rate = 1.0
-Description:
-Set the rate at which simulation time advances relative to real time.
-A negative value for rate will cause time to go backwards (but only in the simulation.)
-"""
+    float rate = 1.0
+    Description:
+    Set the rate at which simulation time advances relative to real time.
+    A negative value for rate will cause time to go backwards (but only in the simulation.)
+    """
     rate = float(parameters.get('rate', '1.0'))
     sequence.append(Func(base.time.set_timerate, rate))
 
+
 def track(command_name, sequence, base, parameters):
     """Description:
-.
-"""
+    .
+    """
     sequence.append(Func(base.track_selected))
+
 
 def wait(command_name, sequence, base, parameters):
     """Parameters:
-float duration = 1.0
-Description:
-Pause for a number of seconds specified by the duration parameter.
-"""
-    duration=float(parameters.get('duration', '1.0'))
+    float duration = 1.0
+    Description:
+    Pause for a number of seconds specified by the duration parameter.
+    """
+    duration = float(parameters.get('duration', '1.0'))
     sequence.append(Wait(duration))
+
 
 def done(base):
     base.sequence = None
+
 
 commands = {
     "cancel": cancel,
@@ -695,8 +753,9 @@ commands = {
     "track": track,
     "unmark": not_implemented,
     "unmarkall": not_implemented,
-    "wait": wait
-    }
+    "wait": wait,
+}
+
 
 def build_sequence(base, script):
     if script is None:

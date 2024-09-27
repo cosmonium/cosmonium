@@ -1,39 +1,39 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import LQuaterniond, LVector3d, LPoint3d
+from panda3d.core import LQuaterniond, LVector3d
+import re
+import sys
+from urllib import parse as urlparse
+from urllib import parse as urlquote
 
 from ..appstate import AppState
 from ..astro import units
 
 from .bigfix import Bigfix
 
-import sys
-import re
-
-from urllib import parse as urlparse
-from urllib import parse as urlquote
 
 class CelUrl(object):
     valid_modes = ["Follow", "SyncOrbit", "Chase", "PhaseLock", "Freeflight"]
     modes_without_target = ["Freeflight"]
+
     def __init__(self):
         self.reset()
 
@@ -54,22 +54,22 @@ class CelUrl(object):
         self.time_source = None
 
     def parse_render_flags(self, flags):
-        render= {}
+        render = {}
         # ShowStars           =   0x0001
         # ShowPlanets         =   0x0002
-        render['galaxy']         = (flags & 0x0004) != 0
-        render['asterisms']      = (flags & 0x0008) != 0
-        render['clouds']         = (flags & 0x0010) != 0
-        render['orbits']         = (flags & 0x0020) != 0
+        render['galaxy'] = (flags & 0x0004) != 0
+        render['asterisms'] = (flags & 0x0008) != 0
+        render['clouds'] = (flags & 0x0010) != 0
+        render['orbits'] = (flags & 0x0020) != 0
         render['equatorialgrid'] = (flags & 0x0040) != 0
         # ShowNightMaps       =   0x0080
-        render['atmospheres']    = (flags & 0x0100) != 0
+        render['atmospheres'] = (flags & 0x0100) != 0
         # ShowSmoothLines     =   0x0200
         # ShowEclipseShadows  =   0x0400
         # ShowStarsAsPoints   =   0x0800
         # ShowRingShadows     =   0x1000
         # ShowBoundaries      =   0x2000
-        render['boundaries']     = (flags & 0x2000) != 0
+        render['boundaries'] = (flags & 0x2000) != 0
         # ShowAutoMag         =   0x4000
         # ShowCometTails      =   0x8000
         # ShowMarkers         =  0x10000
@@ -79,7 +79,7 @@ class CelUrl(object):
         # ShowGlobulars       =  0x100000
         # ShowCloudShadows    =  0x200000
         # ShowGalacticGrid    =  0x400000
-        render['eclipticgrid']   = (flags & 0x800000) != 0
+        render['eclipticgrid'] = (flags & 0x800000) != 0
         # ShowHorizonGrid     = 0x1000000
         # ShowEcliptic        = 0x2000000
         # ShowTintedIllumination = 0x4000000
@@ -87,20 +87,20 @@ class CelUrl(object):
 
     def parse_label_flags(self, flags):
         labels = {}
-        labels['star']       = (flags & 0x001) != 0
-        labels['planet']     = (flags & 0x002) != 0
-        labels['moon']       = (flags & 0x004) != 0
+        labels['star'] = (flags & 0x001) != 0
+        labels['planet'] = (flags & 0x002) != 0
+        labels['moon'] = (flags & 0x004) != 0
         labels['constellation'] = ((flags & 0x008) != 0) or ((flags & 0x800) != 0)
-        labels['galaxy']     = (flags & 0x010) != 0
-        labels['asteroid']   = (flags & 0x020) != 0
+        labels['galaxy'] = (flags & 0x010) != 0
+        labels['asteroid'] = (flags & 0x020) != 0
         labels['spacecraft'] = (flags & 0x040) != 0
-        labels['location']   = (flags & 0x080) != 0
-        labels['comet']      = (flags & 0x100) != 0
-        labels['nebula']     = (flags & 0x200) != 0
-        #TODO: OpenClusterLabels   = 0x400
+        labels['location'] = (flags & 0x080) != 0
+        labels['comet'] = (flags & 0x100) != 0
+        labels['nebula'] = (flags & 0x200) != 0
+        # TODO: OpenClusterLabels   = 0x400
         labels['dwarplanet'] = (flags & 0x1000) != 0
-        labels['minormoon']  = (flags & 0x2000) != 0
-        labels['globular']   = (flags & 0x4000) != 0
+        labels['minormoon'] = (flags & 0x2000) != 0
+        labels['globular'] = (flags & 0x4000) != 0
         return labels
 
     def parse(self, url):
@@ -119,7 +119,7 @@ class CelUrl(object):
         if result.scheme != 'cel':
             print("Not a cel:// url")
             return False
-        if not result.netloc in self.valid_modes:
+        if result.netloc not in self.valid_modes:
             print("Unsupported flight mode", result.netloc)
             return False
         self.flight_mode = result.netloc
@@ -129,17 +129,17 @@ class CelUrl(object):
             return False
         elements.pop(0)
         target = None
-        if not result.netloc in self.modes_without_target:
+        if result.netloc not in self.modes_without_target:
             if len(elements) == 0:
                 print("Missing target")
                 return False
             target = elements.pop(0)
         self.target = target
         if len(elements) == 0:
-                print("Missing date/time")
-                return False
+            print("Missing date/time")
+            return False
         time = elements.pop(0)
-        m = re.search('^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d\.\d{5})$', time)
+        m = re.search(r'^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d\.\d{5})$', time)
         if m is not None:
             (year, month, day, hours, mins, secs) = m.groups()
             year = int(year)
@@ -204,7 +204,8 @@ class CelUrl(object):
         return self.valid
 
     def convert_to_state(self, engine):
-        if not self.valid: return None
+        if not self.valid:
+            return None
         target = None
         select = None
         track = None
@@ -262,7 +263,7 @@ class CelUrl(object):
             self.flight_mode = 'Freeflight'
             self.target = None
         if state.selected is not None:
-            self.select= state.selected.get_fullname(':')
+            self.select = state.selected.get_fullname(':')
         if state.track is not None:
             self.track = state.track.get_fullname(':')
         self.time = state.time_full
@@ -277,7 +278,7 @@ class CelUrl(object):
         self.render_flags = state.render
         self.label_flags = state.labels
 
-        #TODO: Fetch also those values
+        # TODO: Fetch also those values
         self.light_time = False
         self.time_source = 0
 
@@ -311,7 +312,7 @@ class CelUrl(object):
         flags |= 0x1000
         # ShowBoundaries      =   0x2000
         if render.get('boundaries', False):
-            flags |=  0x2000
+            flags |= 0x2000
         # ShowAutoMag         =   0x4000
         # ShowCometTails      =   0x8000
         flags |= 0x8000
@@ -342,7 +343,7 @@ class CelUrl(object):
         if labels.get('moon', False):
             flags |= 0x004
         if labels.get('constellation', False):
-            flags |= (0x008 | 0x800)
+            flags |= 0x008 | 0x800
         if labels.get('galaxy', False):
             flags |= 0x010
         if labels.get('asteroid', False):
@@ -355,7 +356,7 @@ class CelUrl(object):
             flags |= 0x100
         if labels.get('nebula', False):
             flags |= 0x200
-        #TODO: OpenClusterLabels   = 0x400
+        # TODO: OpenClusterLabels   = 0x400
         if labels.get('dwarplanet', False):
             flags |= 0x1000
         if labels.get('minormoon', False):
@@ -398,15 +399,16 @@ class CelUrl(object):
             query.append(('lm', self.encode_label_flags(self.label_flags)))
         query.append(('tsrc', self.time_source))
         query.append(('ver', 3))
-        l = []
+        params = []
         for k, v in query:
             k = urlquote.quote(str(k), '/:+')
             v = urlquote.quote(str(v), '/:+')
-            l.append(k + '=' + v)
-        query = '&'.join(l)
+            params.append(k + '=' + v)
+        query = '&'.join(params)
         fragment = ''
         url = urlparse.urlunparse((scheme, netloc, path, parameters, query, fragment))
         return url
+
 
 if __name__ == '__main__':
     cel_url = CelUrl()

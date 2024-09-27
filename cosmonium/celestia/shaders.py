@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -57,12 +57,14 @@ class LunarLambertLightingModel(ShaderComponent, BRDFInterface):
         code.append(
             "vec3 lunar_lambert_brdf("
             "in LunarLambertMaterial material, in LunarLambertVectors vectors, "
-            "in vec3 light_direction, in vec3 light_color) {")
+            "in vec3 light_direction, in vec3 light_color) {"
+        )
         code.append("  vec3 contribution = vec3(0);")
         code.append("  if (vectors.n_dot_l > 0.0) {")
         code.append(
             "  float diffuse_coef = "
-            "clamp(vectors.n_dot_l / (max(vectors.n_dot_v, 0.001) + vectors.n_dot_l), 0.0, 1.0);")
+            "clamp(vectors.n_dot_l / (max(vectors.n_dot_v, 0.001) + vectors.n_dot_l), 0.0, 1.0);"
+        )
         code.append("    contribution += light_color * diffuse_coef * material.diffuse_color;")
         code.append("  }")
         code.append("  return contribution;")
@@ -81,8 +83,8 @@ class LunarLambertLightingModel(ShaderComponent, BRDFInterface):
 
     def light_contribution(self, code, result, light_direction, light_color):
         code.append(
-            "    LunarLambertVectors vectors = "
-            f"calc_lunar_lambert_vectors(eye_normal, obs_dir, {light_direction});")
+            "    LunarLambertVectors vectors = " f"calc_lunar_lambert_vectors(eye_normal, obs_dir, {light_direction});"
+        )
         code.append(f"    {result} = lunar_lambert_brdf(material, vectors, {light_direction}, {light_color}.rgb);")
 
     def ambient_contribution(self, code, result, ambient_diffuse):

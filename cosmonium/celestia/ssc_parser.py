@@ -1,56 +1,54 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+import io
+from math import pi
 from panda3d.core import LColor, LQuaterniond, LPoint3d
+from time import time
 
-from . import config_parser
-from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit, \
-    instanciate_uniform_rotation, instanciate_precessing_rotation, instanciate_custom_rotation, \
-    instanciate_reference_frame, \
-    names_list, body_path
-from .shaders import LunarLambertLightingModel
-
-from ..celestia.scattering import CelestiaScattering
-from ..objects.reflective import ReflectiveBody
-from ..objects.systems import ReferencePoint
-from ..objects.rings import StellarRings
-from ..components.elements.atmosphere import Atmosphere
-from ..components.elements.surfaces import EllipsoidFlatSurface
-from ..components.elements.rings import Rings
-from ..components.elements.clouds import Clouds
 from ..appearances import Appearance
-from ..shapes.mesh import MeshShape
-from ..shapes.spheres import SphereShape
-from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.base import AtmosphereLightingModel, ShadingLightingModel
-from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
 from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
 from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
+from ..components.elements.atmosphere import Atmosphere
+from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..components.elements.rings import Rings
+from ..components.elements.clouds import Clouds
 from ..dircontext import defaultDirContext
+from ..objects.reflective import ReflectiveBody
+from ..objects.rings import StellarRings
+from ..objects.systems import ReferencePoint
+from ..shapes.mesh import MeshShape
+from ..shapes.spheres import SphereShape
+from ..shaders.rendering import RenderingShader
+from ..shaders.lighting.base import AtmosphereLightingModel, ShadingLightingModel
+from ..shaders.lighting.lambert import LambertPhongLightingModel
 
-from time import time
-from math import pi
-import io
+from . import config_parser
+from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit
+from .celestia_utils import instanciate_uniform_rotation, instanciate_precessing_rotation, instanciate_custom_rotation
+from .celestia_utils import instanciate_reference_frame, names_list, body_path
+from .scattering import CelestiaScattering
+from .shaders import LunarLambertLightingModel
 
 
 def get_color(value):
@@ -64,9 +62,7 @@ def get_color(value):
 
 def instanciate_legacy_rotation(period, obliquity, ascending_node, offset, epoch, parent_anchor, frame):
     flipped = period is not None and period < 0
-    orientation = calc_orientation_from_incl_an(obliquity * units.Deg,
-                                                ascending_node * units.Deg,
-                                                flipped)
+    orientation = calc_orientation_from_incl_an(obliquity * units.Deg, ascending_node * units.Deg, flipped)
     if period is None:
         rotation = SynchronousRotation(orientation, offset * units.Deg, epoch, frame)
         rotation.set_parent_body(parent_anchor)
@@ -88,21 +84,21 @@ def instanciate_atmosphere(data):
     rayleigh_coef = None
     rayleigh_scale_height = 0.0
     absorption_coef = None
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'CloudHeight':
             clouds_height = value
         elif key == 'CloudMap':
             clouds_appearance.set_texture(value, transparency=True)
         elif key == 'CloudSpeed':
-            pass #= value
+            pass  # = value
         elif key == 'CloudShadowDepth':
-            pass #= value
+            pass  # = value
         elif key == 'Upper':
-            pass #= value
+            pass  # = value
         elif key == 'Lower':
-            pass #= value
+            pass  # = value
         elif key == 'Sky':
-            pass #= value
+            pass  # = value
         elif key == 'Height':
             atmosphere_height = value
         elif key == 'Rayleigh':
@@ -116,34 +112,36 @@ def instanciate_atmosphere(data):
         elif key == 'Absorption':
             absorption_coef = value
         elif key == 'Sunset':
-            pass #= value
+            pass  # = value
         else:
             print("Key of Atmosphere", key, "not supported")
     clouds_appearance.bake()
     if mie_phase_asymmetry != 0.0:
         scattering = CelestiaScattering(
-            height = atmosphere_height,
-            mie_scale_height = mie_scale_height,
-            mie_coef = mie_coef,
-            mie_phase_asymmetry = mie_phase_asymmetry,
-            rayleigh_coef = rayleigh_coef,
-            rayleigh_scale_height = rayleigh_scale_height,
-            absorption_coef = absorption_coef)
+            height=atmosphere_height,
+            mie_scale_height=mie_scale_height,
+            mie_coef=mie_coef,
+            mie_phase_asymmetry=mie_phase_asymmetry,
+            rayleigh_coef=rayleigh_coef,
+            rayleigh_scale_height=rayleigh_scale_height,
+            absorption_coef=absorption_coef,
+        )
         shape = SphereShape()
         appearance = Appearance()
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
     if clouds_height != 0:
         lighting_model = ShadingLightingModel(LambertPhongLightingModel())
-        shader=RenderingShader(lighting_model=lighting_model)
+        shader = RenderingShader(lighting_model=lighting_model)
         clouds = Clouds(clouds_height, clouds_appearance, shader)
     return (atmosphere, clouds)
+
 
 def instanciate_rings(name, data, parent):
     inner_radius = 0
     outer_radius = 0
     appearance = Appearance()
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'Inner':
             inner_radius = value
         elif key == 'Outer':
@@ -155,36 +153,36 @@ def instanciate_rings(name, data, parent):
         else:
             print("Key of Ring", key, "not supported")
     appearance.bake()
-    rings_object = Rings(inner_radius,
-                         outer_radius,
-                         appearance=appearance,
-                         shader=RenderingShader())
+    rings_object = Rings(inner_radius, outer_radius, appearance=appearance, shader=RenderingShader())
     actual_parent = parent.primary or parent
     frame = EquatorialReferenceFrame(actual_parent.anchor)
     orbit = LocalFixedPosition(frame_position=LPoint3d(), frame=frame)
     rotation = FixedRotation(LQuaterniond(), frame)
     name = actual_parent.names[0] + "'s rings"
-    body = StellarRings(names=[name],
-                          source_names=[],
-                          body_class="rings",
-                          rings_object=rings_object,
-                          orbit=orbit,
-                          rotation=rotation,
-                          frame=None,
-                          point_color=appearance.diffuseColor)
+    body = StellarRings(
+        names=[name],
+        source_names=[],
+        body_class="rings",
+        rings_object=rings_object,
+        orbit=orbit,
+        rotation=rotation,
+        frame=None,
+        point_color=appearance.diffuseColor,
+    )
     return body
 
+
 def instanciate_body(universe, names, is_planet, data, parent_anchor):
-    appearance=Appearance()
-    point_color=None
-    radius=1.0
-    oblateness=None
-    scale=None
+    appearance = Appearance()
+    point_color = None
+    radius = 1.0
+    oblateness = None
+    # TODO: scale = None
     lunar_lambert = 0.0
     atmosphere = None
-    clouds=None
-    rings_data=None
-    orbit=None
+    clouds = None
+    rings_data = None
+    orbit = None
     legacy_rotation = False
     rotation_period = None
     rotation_obliquity = 0.0
@@ -202,16 +200,16 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
     body_frame = None
     custom_rotation = False
     if is_planet:
-        body_class="planet"
-        orbit_global_coord=True
-        rotation_global_coord=True
+        body_class = "planet"
+        orbit_global_coord = True
+        rotation_global_coord = True
         rotation_period_units = units.Day
     else:
-        body_class="moon"
-        orbit_global_coord=False
-        rotation_global_coord=False
+        body_class = "moon"
+        orbit_global_coord = False
+        rotation_global_coord = False
         rotation_period_units = units.Hour
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'Radius':
             radius = value
         elif key == 'Texture':
@@ -229,9 +227,9 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'Color':
             point_color = get_color(value)
         elif key == 'BlendTexture':
-            pass #= value
+            pass  # = value
         elif key == 'SpecularPower':
-            #Multiply by 4 as we use Blinn-Phong and not Phong specular
+            # Multiply by 4 as we use Blinn-Phong and not Phong specular
             appearance.shininess = value * 4.0
         elif key == 'Albedo':
             albedo = value
@@ -248,15 +246,16 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'Oblateness':
             oblateness = value
         elif key == 'SemiAxes':
-            scale = value
+            # TODO: scale = value
+            pass
         elif key == 'Mass':
-            pass #= value
+            pass  # = value
         elif key == 'Orientation':
-            pass #= value
+            pass  # = value
         elif key == 'HazeColor':
-            pass #= value
+            pass  # = value
         elif key == 'HazeDensity':
-            pass #= value
+            pass  # = value
         elif key == 'Rings':
             rings_data = value
         elif key == 'Atmosphere':
@@ -282,9 +281,13 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
             legacy_rotation = True
             rotation_ascending_node = value
         elif key == 'OrbitFrame':
-            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, parent_anchor, orbit_global_coord)
+            orbit_frame, orbit_global_coord = instanciate_reference_frame(
+                universe, value, parent_anchor, orbit_global_coord
+            )
         elif key == 'BodyFrame':
-            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, parent_anchor, rotation_global_coord)
+            body_frame, rotation_global_coord = instanciate_reference_frame(
+                universe, value, parent_anchor, rotation_global_coord
+            )
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, parent_anchor, rotation_global_coord)
         elif key == 'PrecessingRotation':
@@ -295,7 +298,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'Class':
             body_class = value
         elif key == 'InfoURL':
-            pass #= value
+            pass  # = value
         else:
             print("Key of body", key, "not supported")
     if orbit_frame is None and not custom_orbit:
@@ -309,23 +312,28 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         else:
             body_frame = EquatorialReferenceFrame(parent_anchor)
     if orbit is None:
-        #TODO: Raise an error instead !
-        orbit=AbsoluteFixedPosition(frame=orbit_frame)
+        # TODO: Raise an error instead !
+        orbit = AbsoluteFixedPosition(frame=orbit_frame)
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = instanciate_legacy_rotation(rotation_period,
-                                               rotation_obliquity, rotation_ascending_node,
-                                               rotation_offset, rotation_epoch,
-                                               parent_anchor, body_frame)
+        rotation = instanciate_legacy_rotation(
+            rotation_period,
+            rotation_obliquity,
+            rotation_ascending_node,
+            rotation_offset,
+            rotation_epoch,
+            parent_anchor,
+            body_frame,
+        )
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    if model != None and not (model.endswith('.cmod') or model.endswith('.cms')):
-        shape=MeshShape(model=model, radius=radius, offset=shape_offset)
+    if model is not None and not (model.endswith('.cmod') or model.endswith('.cms')):
+        shape = MeshShape(model=model, radius=radius, offset=shape_offset)
     else:
-        shape=SphereShape()
+        shape = SphereShape()
     if bump_map is not None:
         appearance.set_bump_map(bump_map, bump_height)
     lighting_model = None
@@ -335,20 +343,24 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         lighting_model = LambertPhongLightingModel()
     lighting_model = ShadingLightingModel(lighting_model)
     surface = EllipsoidFlatSurface(
-                          shape=shape,
-                          radius=radius,
-                          oblateness=oblateness,
-                          appearance=appearance,
-                          shader=RenderingShader(lighting_model=lighting_model))
-    body = ReflectiveBody(names=names, source_names=[],
-                          radius=radius,
-                          #surface=surface,
-                          oblateness=oblateness,
-                          orbit=orbit,
-                          rotation=rotation,
-                          atmosphere=atmosphere,
-                          clouds=clouds,
-                          point_color=point_color)
+        shape=shape,
+        radius=radius,
+        oblateness=oblateness,
+        appearance=appearance,
+        shader=RenderingShader(lighting_model=lighting_model),
+    )
+    body = ReflectiveBody(
+        names=names,
+        source_names=[],
+        radius=radius,
+        # surface=surface,
+        oblateness=oblateness,
+        orbit=orbit,
+        rotation=rotation,
+        atmosphere=atmosphere,
+        clouds=clouds,
+        point_color=point_color,
+    )
     body.add_surface(surface)
     body.albedo = albedo
     body.body_class = body_class
@@ -358,8 +370,9 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         body.add_child_fast(rings)
     return body
 
+
 def instanciate_reference_point(universe, names, is_planet, data, parent_anchor):
-    orbit=None
+    orbit = None
     legacy_rotation = False
     rotation_period = None
     rotation_obliquity = 0.0
@@ -381,7 +394,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
         orbit_global_coord = False
         rotation_global_coord = False
         rotation_period_units = units.Hour
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':
@@ -403,9 +416,13 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
             legacy_rotation = True
             rotation_ascending_node = value
         elif key == 'OrbitFrame':
-            orbit_frame, orbit_global_coord = instanciate_reference_frame(universe, value, orbit_global_coord, parent_anchor)
+            orbit_frame, orbit_global_coord = instanciate_reference_frame(
+                universe, value, orbit_global_coord, parent_anchor
+            )
         elif key == 'BodyFrame':
-            body_frame, rotation_global_coord = instanciate_reference_frame(universe, value, rotation_global_coord, parent_anchor)
+            body_frame, rotation_global_coord = instanciate_reference_frame(
+                universe, value, rotation_global_coord, parent_anchor
+            )
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, parent_anchor, rotation_global_coord)
         elif key == 'PrecessingRotation':
@@ -430,19 +447,22 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
     elif not custom_orbit:
         orbit.set_frame(orbit_frame)
     if legacy_rotation:
-        rotation = instanciate_legacy_rotation(rotation_period,
-                                               rotation_obliquity, rotation_ascending_node,
-                                               rotation_offset, rotation_epoch,
-                                               parent_anchor, body_frame)
+        rotation = instanciate_legacy_rotation(
+            rotation_period,
+            rotation_obliquity,
+            rotation_ascending_node,
+            rotation_offset,
+            rotation_epoch,
+            parent_anchor,
+            body_frame,
+        )
     elif rotation is None:
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    ref = ReferencePoint(names=names, source_names=[],
-                         orbit=orbit,
-                         rotation=rotation,
-                         body_class=body_class)
+    ref = ReferencePoint(names=names, source_names=[], orbit=orbit, rotation=rotation, body_class=body_class)
     return ref
+
 
 def find_parent(universe, path, item_parent):
     body = universe.find_by_path(path, return_system=True)
@@ -453,6 +473,7 @@ def find_parent(universe, path, item_parent):
             body = body.get_or_create_system()
     return body
 
+
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
         print("Disposition", disposition, "not supported")
@@ -462,7 +483,7 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
         return
     if item_type == 'AltSurface':
         return
-    names=names_list(item_name)
+    names = names_list(item_name)
     path = body_path(item_parent)
     is_planet = len(path) == 1
     parent = find_parent(universe, path, item_parent)
@@ -478,10 +499,12 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
     elif item_type == 'ReferencePoint':
         body = instanciate_reference_point(universe, names, is_planet, item_data, parent_anchor)
     parent.add_child_fast(body)
-    
+
+
 def instanciate(items_list, universe):
     for item in items_list:
         instanciate_item(universe, *item)
+
 
 def parse_file(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
@@ -497,6 +520,7 @@ def parse_file(filename, universe, context=defaultDirContext):
         print("Load time:", end - start)
     else:
         print("File not found", filename)
+
 
 def load(config_parser, universe):
     if isinstance(config_parser, list):

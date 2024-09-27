@@ -1,23 +1,24 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import log
 from panda3d.core import LVector3d
 
 from ..datasource import DataSource
@@ -25,14 +26,18 @@ from ..scattering.scattering import ScatteringBase
 from ..shaders.scattering import AtmosphericScattering
 from ..shapes.shape_object import ShapeObject
 
-from math import log
-
 
 class CelestiaScattering(ScatteringBase):
-    def __init__(self, height,
-                 mie_coef=0.0, mie_scale_height=0.0, mie_phase_asymmetry=0.0,
-                 rayleigh_coef=None, rayleigh_scale_height=0.0,
-                 absorption_coef=None):
+    def __init__(
+        self,
+        height,
+        mie_coef=0.0,
+        mie_scale_height=0.0,
+        mie_phase_asymmetry=0.0,
+        rayleigh_coef=None,
+        rayleigh_scale_height=0.0,
+        absorption_coef=None,
+    ):
         super().__init__()
         self.height = height
         self.mie_coef = mie_coef
@@ -86,7 +91,8 @@ class CelestiaScatteringShader(AtmosphericScattering):
         return name
 
     def uniforms_scattering(self, code):
-        code += ['''
+        code += [
+            '''
 uniform vec3 atmosphereRadius;
 uniform float mieCoeff;
 uniform float mieH;
@@ -102,17 +108,20 @@ uniform vec3 v3LightDir;
 uniform vec3 v3CameraPos;
 
 uniform float model_scale;
-''']
+'''
+        ]
 
     def uniforms_colors(self, code):
-        code += ['''
+        code += [
+            '''
 uniform float mieK;
 uniform float mieCoeff;
 uniform vec3  rayleighCoeff;
 uniform vec3  invScatterCoeffSum;
 
 uniform vec3 v3LightDir;
-''']
+'''
+        ]
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -141,7 +150,8 @@ uniform vec3 v3LightDir;
             code.append("in vec3 eyeDir_obj;")
 
     def celestia_calc_scattering(self, code):
-        code += ['''void celestia_calc_scattering(
+        code += [
+            '''void celestia_calc_scattering(
     in vec3 world_vertex,
     out vec3 scatteredColor,
     out vec3 scatterEx,
@@ -196,10 +206,12 @@ uniform vec3 v3LightDir;
 
     eyeDir_obj = eyeDir;
 }
-''']
+'''
+        ]
 
     def celestia_incoming_light_for(self, code):
-        code += ['''
+        code += [
+            '''
 void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in vec3 eyeDir_obj,
         in vec3 v3LightDir, in vec3 light_color,
         out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {
@@ -217,7 +229,8 @@ void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in v
     in_scatter = scatteredComponent;
     incoming_light_color = light_color;
     transmittance = scatterEx;
-''']
+'''
+        ]
         if self.atmosphere:
             code.append('in_scatter = in_scatter * dot(scatterEx, vec3(0.333, 0.333, 0.333));')
         code.append('}')
@@ -238,7 +251,8 @@ void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in v
         code.append(
             "celestia_incoming_light_for("
             f"scatteredColor, scatterEx, eyeDir_obj, {light_direction}, {light_color}.rgb, "
-            "incoming_light_color, in_scatter, transmittance);")
+            "incoming_light_color, in_scatter, transmittance);"
+        )
         if not self.atmosphere:
             code.append("ambient_diffuse = vec3(0);")
 
@@ -257,19 +271,19 @@ class CelestiaScatteringDataSource(DataSource):
         body_radius = parameters.body_radius
 
         if self.atmosphere:
-            #render.cpp 7193
+            # render.cpp 7193
             radius = parameters.radius
-            #renderglsl.cpp 557
+            # renderglsl.cpp 557
             atmosphereRadius = radius + -parameters.mie_scale_height * log(self.AtmosphereExtinctionThreshold)
             atmPlanetRadius = radius
             objRadius = atmosphereRadius
         else:
             radius = body_radius
-            #rendercontext.cpp 785
+            # rendercontext.cpp 785
             atmPlanetRadius = radius
             objRadius = radius
 
-        #shadermanager.cpp 3446
+        # shadermanager.cpp 3446
         skySphereRadius = atmPlanetRadius + -parameters.mie_scale_height * log(self.AtmosphereExtinctionThreshold)
         mieCoeff = parameters.mie_coef * objRadius
         rayleighCoeff = parameters.rayleigh_coef * objRadius
@@ -313,7 +327,7 @@ class CelestiaScatteringDataSource(DataSource):
         light_source = body.lights.lights[0].source
         body_radius = self.parameters.body_radius
         if self.atmosphere:
-            #render.cpp 7193
+            # render.cpp 7193
             radius = self.parameters.radius
         else:
             radius = body_radius
@@ -323,7 +337,8 @@ class CelestiaScatteringDataSource(DataSource):
         light_dir.normalize()
 
         instance.setShaderInput(
-            "v3OriginPos", shape.owner.anchor.rel_position * shape.owner.scene_anchor.scene_scale_factor)
+            "v3OriginPos", shape.owner.anchor.rel_position * shape.owner.scene_anchor.scene_scale_factor
+        )
         instance.setShaderInput("v3CameraPos", -shape.owner.anchor.rel_position / radius)
 
         instance.setShaderInput("v3LightDir", *light_dir)

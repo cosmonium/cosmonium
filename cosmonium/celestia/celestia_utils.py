@@ -1,35 +1,37 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from ..astro import bayer
-from ..astro import units
-from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
-from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-from ..astro.astro import calc_orientation_from_incl_an
-from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 
 from math import pi
 
+from ..astro import bayer
+from ..astro import units
+from ..astro.astro import calc_orientation_from_incl_an
+from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
+from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
+from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
+
+
 def names_list(name):
     return name.split(':')
+
 
 def body_path(parent):
     path = list(map(lambda x: bayer.canonize_name(x), parent.split('/')))
@@ -44,12 +46,13 @@ def instanciate_custom_orbit(data, parent_anchor):
         element_name = "celestia:" + data
     orbit = orbit_elements_db.get(element_name)
     if orbit is None:
-        #TODO: An error should be raised instead !
-        orbit = AbsoluteFixedPosition(frame = J2000EclipticReferenceFrame())
-    #TODO: this should not be done arbitrarily
+        # TODO: An error should be raised instead !
+        orbit = AbsoluteFixedPosition(frame=J2000EclipticReferenceFrame())
+    # TODO: this should not be done arbitrarily
     if isinstance(orbit.frame, BodyReferenceFrames) and orbit.frame.anchor is None:
         orbit.frame.set_anchor(parent_anchor)
     return orbit
+
 
 def instanciate_elliptical_orbit(data, global_coord):
     semi_major_axis = None
@@ -72,7 +75,7 @@ def instanciate_elliptical_orbit(data, global_coord):
     mean_longitude = 0.0
     epoch = units.J2000
 
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'SemiMajorAxis':
             semi_major_axis = value
         elif key == '':
@@ -80,7 +83,7 @@ def instanciate_elliptical_orbit(data, global_coord):
         elif key == 'Period':
             period = value
         elif key == 'Epoch':
-            pass #= value
+            pass  # = value
         elif key == 'Eccentricity':
             eccentricity = value
         elif key == 'Inclination':
@@ -99,15 +102,15 @@ def instanciate_elliptical_orbit(data, global_coord):
             print("Key of EllipticalOrbit", key, "not supported")
     if pericenter_distance is None:
         if semi_major_axis is None:
-            #TODO: raise error
+            # TODO: raise error
             pericenter_distance = 1
         else:
-            pericenter_distance = semi_major_axis  * semi_major_axis_units * (1.0 - eccentricity)
+            pericenter_distance = semi_major_axis * semi_major_axis_units * (1.0 - eccentricity)
     else:
         pericenter_distance = pericenter_distance * pericenter_distance_units
 
     if period is None:
-        #TODO: raise error
+        # TODO: raise error
         period = 1.0
     period = period * period_units
 
@@ -119,26 +122,28 @@ def instanciate_elliptical_orbit(data, global_coord):
     if mean_anomaly is None:
         mean_anomaly = (mean_longitude - (arg_of_periapsis + ascending_node)) % 360
 
-    #TODO: The real frame should be given in parameter
+    # TODO: The real frame should be given in parameter
     frame = J2000EquatorialReferenceFrame()
-    return EllipticalOrbit(frame,
-                           epoch,
-                           2 * pi / period,
-                           mean_anomaly * units.Deg,
-                           pericenter_distance,
-                           eccentricity,
-                           arg_of_periapsis * units.Deg,
-                           inclination * units.Deg,
-                           ascending_node * units.Deg
-                           )
+    return EllipticalOrbit(
+        frame,
+        epoch,
+        2 * pi / period,
+        mean_anomaly * units.Deg,
+        pericenter_distance,
+        eccentricity,
+        arg_of_periapsis * units.Deg,
+        inclination * units.Deg,
+        ascending_node * units.Deg,
+    )
+
 
 def instanciate_frame(universe, data, parent_anchor, global_coord):
     frame_center = parent_anchor
     if data is not None:
-        for (key, value) in data.items():
+        for key, value in data.items():
             if key == 'Center':
                 name = str(value)
-                #print("Looking for center", value)
+                # print("Looking for center", value)
                 if '/' in name:
                     global_coord = False
                 else:
@@ -153,10 +158,11 @@ def instanciate_frame(universe, data, parent_anchor, global_coord):
                 print(f"Frame parameter '{key}' not supported")
     return frame_center, global_coord
 
+
 def instanciate_reference_frame(universe, data, parent_anchor, global_coord):
     frame_type = J2000EclipticReferenceFrame
     frame_center = None
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'EquatorJ2000':
             frame_type = J2000EquatorialReferenceFrame
             frame_center, global_coord = instanciate_frame(universe, value, parent_anchor, global_coord)
@@ -165,9 +171,10 @@ def instanciate_reference_frame(universe, data, parent_anchor, global_coord):
             frame_center, global_coord = instanciate_frame(universe, value, parent_anchor, global_coord)
         else:
             print("Reference frame type", key, "not supported")
-#     if frame_center:
-#         print("Found center", frame_center.get_name())
+    #     if frame_center:
+    #         print("Found center", frame_center.get_name())
     return frame_type(frame_center), global_coord
+
 
 def instanciate_custom_rotation(data, parent_anchor):
     if '-' in data:
@@ -180,7 +187,7 @@ def instanciate_custom_rotation(data, parent_anchor):
     rotation = rotation_elements_db.get(element_name)
     if rotation is None:
         rotation = UnknownRotation()
-    #TODO: this should not be done arbitrarily
+    # TODO: this should not be done arbitrarily
     if isinstance(rotation.frame, BodyReferenceFrames) and rotation.frame.anchor is None:
         rotation.frame.set_anchor(parent_anchor)
     return rotation
@@ -196,12 +203,12 @@ def instanciate_uniform_rotation(data, parent_anchor, global_coord):
     inclination = 0.0
     ascending_node = 0.0
     meridian_angle = 0.0
-    epoch  = units.J2000
+    epoch = units.J2000
 
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key == 'Period':
             period = value
-            sync=False
+            sync = False
         elif key == 'Epoch':
             epoch = epoch
         elif key == 'Inclination':
@@ -213,9 +220,7 @@ def instanciate_uniform_rotation(data, parent_anchor, global_coord):
         else:
             print("Key of UniformRotation", key, "not supported")
     flipped = period is not None and period < 0
-    orientation = calc_orientation_from_incl_an(inclination * units.Deg,
-                                                ascending_node * units.Deg,
-                                                flipped)
+    orientation = calc_orientation_from_incl_an(inclination * units.Deg, ascending_node * units.Deg, flipped)
     frame = J2000EquatorialReferenceFrame()
     if sync:
         rotation = SynchronousRotation(orientation, meridian_angle * units.Deg, epoch, frame)
