@@ -1,43 +1,43 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import LPoint3d,OmniBoundingVolume
+from math import sin, cos, atan2
+
+from panda3d.core import LPoint3d, OmniBoundingVolume
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
-from ...foundation import VisibleObject, LabelledObject
-from ...scene.sceneanchor import SceneAnchor
-from ...astro.projection import InfinitePosition
+from ...appearances import ModelAppearance
 from ...astro.astro import position_to_equatorial
+from ...astro.projection import InfinitePosition
 from ...astro import units
 from ...bodyclass import bodyClasses
+from ...foundation import VisibleObject, LabelledObject
+from ...scene.sceneanchor import SceneAnchor
 from ...shaders.rendering import RenderingShader
 from ...shaders.lighting.flat import FlatLightingModel
-from ...appearances import ModelAppearance
 from ...utils import srgb_to_linear
 from ... import settings
 
 from .background_label import BackgroundLabel
-
-from math import sin, cos, atan2
 
 
 class Asterism(VisibleObject):
@@ -81,19 +81,26 @@ class Asterism(VisibleObject):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
         self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
-        #TODO: Ugly hack to calculate star position from the sun...
+        # TODO: Ugly hack to calculate star position from the sun...
         old_global_position = self.context.observer.anchor.get_absolute_reference_point()
         old_local_position = self.context.observer.anchor.get_local_position()
         self.context.observer.anchor.set_absolute_reference_point(LPoint3d())
         self.context.observer.anchor.set_local_position(LPoint3d())
         self.context.update_id += 1
         for segment in self.segments:
-            if len(segment) < 2: continue
+            if len(segment) < 2:
+                continue
             for star in segment:
-                #TODO: Temporary workaround to have star pos
+                # TODO: Temporary workaround to have star pos
                 star.anchor.update(0, self.context.update_id)
                 star.anchor.update_observer(self.context.observer.anchor, self.context.update_id)
-                position = SceneAnchor.calc_scene_position(self.context.scene_manager, star.anchor.rel_position, star.anchor._position, star.anchor.distance_to_obs, star.anchor.vector_to_obs)
+                position = SceneAnchor.calc_scene_position(
+                    self.context.scene_manager,
+                    star.anchor.rel_position,
+                    star.anchor._position,
+                    star.anchor.distance_to_obs,
+                    star.anchor.vector_to_obs,
+                )
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
         self.context.observer.anchor.set_absolute_reference_point(old_global_position)
@@ -101,10 +108,11 @@ class Asterism(VisibleObject):
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for segment in self.segments:
-            if len(segment) < 2: continue
-            for i in range(len(segment)-1):
+            if len(segment) < 2:
+                continue
+            for i in range(len(segment) - 1):
                 self.lines.addVertex(index)
-                self.lines.addVertex(index+1)
+                self.lines.addVertex(index + 1)
                 self.lines.closePrimitive()
                 index += 1
             index += 1
@@ -123,6 +131,7 @@ class Asterism(VisibleObject):
         self.instance.set_depth_write(False)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
+
 
 class NamedAsterism(LabelledObject):
     ignore_light = True

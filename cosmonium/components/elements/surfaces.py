@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -29,8 +29,17 @@ from ...mathutil.surface_models import SphereModel, SpheroidModel, EllipsoidMode
 
 
 class Surface(ShapeObject):
-    def __init__(self, name=None, category=None, resolution=None, attribution=None,
-                 shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(
+        self,
+        name=None,
+        category=None,
+        resolution=None,
+        attribution=None,
+        shape=None,
+        appearance=None,
+        shader=None,
+        clickable=True,
+    ):
         ShapeObject.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
@@ -72,9 +81,20 @@ class Surface(ShapeObject):
 
 
 class EllipsoidSurface(Surface):
-    def __init__(self, name=None, category=None, resolution=None, attribution=None,
-                 radius=None, oblateness=None, scale=None,
-                 shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(
+        self,
+        name=None,
+        category=None,
+        resolution=None,
+        attribution=None,
+        radius=None,
+        oblateness=None,
+        scale=None,
+        shape=None,
+        appearance=None,
+        shader=None,
+        clickable=True,
+    ):
         Surface.__init__(self, name, category, resolution, attribution, shape, appearance, shader, clickable)
         self.radius = radius
         self.oblateness = oblateness
@@ -84,14 +104,14 @@ class EllipsoidSurface(Surface):
         if scale is not None:
             self.model = EllipsoidModel(scale)
         elif self.oblateness is not None:
-            #self.model = EllipsoidModel(LVector3d(radius, radius, radius * (1 - oblateness)))
+            # self.model = EllipsoidModel(LVector3d(radius, radius, radius * (1 - oblateness)))
             self.model = SpheroidModel(radius, oblateness)
         elif self.radius is not None:
-            #self.model = EllipsoidModel(LVector3d(radius))
+            # self.model = EllipsoidModel(LVector3d(radius))
             self.model = SphereModel(radius)
         else:
             self.model = None
-        #TODO: This is a workaround for patchedshape scale, this should be fixed
+        # TODO: This is a workaround for patchedshape scale, this should be fixed
         self.height_scale = self.radius
 
     def configure_shape(self):
@@ -108,7 +128,7 @@ class EllipsoidSurface(Surface):
     def add_self_shadow(self, light_source):
         if self.body.atmosphere is None and light_source.source not in self.shadow_casters:
             self.create_shadow_caster_for(light_source)
-            #TODO: A proper shadow caster should be added
+            # TODO: A proper shadow caster should be added
             self.shader.add_shadows(ShaderSphereSelfShadow())
 
     def get_average_radius(self):
@@ -168,7 +188,7 @@ class MeshSurface(Surface):
         return shadow_caster
 
     def add_self_shadow(self, light_source):
-        #Add self-shadowing for non-spherical objects
+        # Add self-shadowing for non-spherical objects
         if self.instance_ready:
             self.create_shadow_caster_for(light_source)
             self.shadow_casters[light_source.source].add_target(self, self_shadow=True)
@@ -200,19 +220,38 @@ class MeshSurface(Surface):
 
 
 class HeightmapSurface(EllipsoidSurface):
-    def __init__(self, name,
-                 radius, oblateness, scale,
-                 height_scale,
-                 shape, heightmap, biome, appearance, shader, clickable=True):
-        EllipsoidSurface.__init__(self, name, radius=radius, oblateness=oblateness, scale=scale,
-                                  shape=shape, appearance=appearance, shader=shader, clickable=clickable)
+    def __init__(
+        self,
+        name,
+        radius,
+        oblateness,
+        scale,
+        height_scale,
+        shape,
+        heightmap,
+        biome,
+        appearance,
+        shader,
+        clickable=True,
+    ):
+        EllipsoidSurface.__init__(
+            self,
+            name,
+            radius=radius,
+            oblateness=oblateness,
+            scale=scale,
+            shape=shape,
+            appearance=appearance,
+            shader=shader,
+            clickable=clickable,
+        )
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
         self.patch_sources.add_source(self.heightmap)
         if biome is not None:
             self.patch_sources.add_source(biome)
-        #TODO: Make a proper method for this...
+        # TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
 
@@ -240,7 +279,7 @@ class HeightmapSurface(EllipsoidSurface):
         elif strict:
             point_under = None
         else:
-            #print("Patch not found for", x, y)
+            # print("Patch not found for", x, y)
             pass
         return point_under
 
@@ -252,7 +291,7 @@ class HeightmapSurface(EllipsoidSurface):
         elif strict:
             height = None
         else:
-            #print("Patch not found for", x, y)
+            # print("Patch not found for", x, y)
             height = radius_under
         return height
 
@@ -266,11 +305,11 @@ class HeightmapSurface(EllipsoidSurface):
         elif strict:
             height = None
         else:
-            #print("Patch not found for", x, y)
+            # print("Patch not found for", x, y)
             height = 0
         return height
 
-    #TODO: Should be based on how the patch is tesselated !
+    # TODO: Should be based on how the patch is tesselated !
     def get_mesh_height_uv(self, heightmap, u, v, patch):
         density = patch.density
         x = u * density
@@ -299,14 +338,14 @@ class HeightmapSurface(EllipsoidSurface):
         elif strict:
             height = None
         else:
-            #print("Patch data not found for", patch.str_id())
+            # print("Patch data not found for", patch.str_id())
             height = 0
         return height
 
 
 class FlatSurface(Surface):
     def __init__(self, name, shape, appearance, shader, clickable=True):
-        Surface.__init__(self, name,  shape=shape, appearance=appearance, shader=shader, clickable=clickable)
+        Surface.__init__(self, name, shape=shape, appearance=appearance, shader=shader, clickable=clickable)
         self.height_scale = 1.0
 
     @property
@@ -330,18 +369,15 @@ class FlatSurface(Surface):
 
 
 class HeightmapFlatSurface(FlatSurface):
-    def __init__(self, name,
-                 height_scale,
-                 shape, heightmap, biome, appearance, shader, clickable=True):
-        FlatSurface.__init__(self, name,
-                             shape=shape, appearance=appearance, shader=shader, clickable=clickable)
+    def __init__(self, name, height_scale, shape, heightmap, biome, appearance, shader, clickable=True):
+        FlatSurface.__init__(self, name, shape=shape, appearance=appearance, shader=shader, clickable=clickable)
         self.height_scale = height_scale
         self.heightmap = heightmap
         self.biome = biome
         self.patch_sources.add_source(self.heightmap)
         if biome is not None:
             self.patch_sources.add_source(biome)
-        #TODO: Make a proper method for this...
+        # TODO: Make a proper method for this...
         shape.face_unique = True
         shape.set_heightmap(heightmap)
 
@@ -354,7 +390,7 @@ class HeightmapFlatSurface(FlatSurface):
     def get_min_radius(self):
         return self.height_scale * self.heightmap.min_height
 
-    #TODO: Should be based on how the patch is tesselated !
+    # TODO: Should be based on how the patch is tesselated !
     def get_mesh_height_uv(self, heightmap, u, v, density):
         x = u * density
         y = v * density
@@ -382,12 +418,12 @@ class HeightmapFlatSurface(FlatSurface):
         elif strict:
             height = None
         else:
-            #print("Patch data not found for", patch.str_id())
+            # print("Patch data not found for", patch.str_id())
             height = 0
         return height
 
     def get_alt_under(self, position, strict=False):
-        #print("get_height_at", x, y)
+        # print("get_height_at", x, y)
         coord = self.shape.parametric_to_shape_coord(position[0], position[1])
         patch = self.shape.find_patch_at(coord)
         if patch is not None:
@@ -396,7 +432,7 @@ class HeightmapFlatSurface(FlatSurface):
         elif strict:
             height = None
         else:
-            #print("Patch not found for", x, y)
+            # print("Patch not found for", x, y)
             height = 0
         return height
 

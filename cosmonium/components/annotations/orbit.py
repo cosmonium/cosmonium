@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -23,14 +23,14 @@ from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, Geo
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
-from ...foundation import VisibleObject
+from ...appearances import ModelAppearance
 from ...astro.orbits import FixedPosition
 from ...bodyclass import bodyClasses
-from ...shaders.rendering import RenderingShader
+from ...foundation import VisibleObject
 from ...shaders.lighting.flat import FlatLightingModel
 from ...shaders.lighting.smoothline import SmoothLineLightingModel
+from ...shaders.rendering import RenderingShader
 from ...shaders.vertex_control.spread_object import LargeObjectVertexControl
-from ...appearances import ModelAppearance
 from ...utils import TransparencyBlend, srgb_to_linear
 from ... import settings
 
@@ -71,7 +71,7 @@ class Orbit(VisibleObject):
         else:
             vertex_control = None
         if settings.use_smooth_lines:
-            lighting_model=SmoothLineLightingModel()
+            lighting_model = SmoothLineLightingModel()
         else:
             lighting_model = FlatLightingModel()
         cls.shader = RenderingShader(lighting_model=lighting_model, vertex_control=vertex_control)
@@ -84,7 +84,7 @@ class Orbit(VisibleObject):
         self.set_shown(settings.show_orbits and bodyClasses.get_show_orbit(self.body.body_class))
 
     def find_orbit(self, body):
-        if body != None:
+        if body is not None:
             if not isinstance(body.anchor.orbit, FixedPosition):
                 return body.anchor.orbit
             else:
@@ -108,7 +108,7 @@ class Orbit(VisibleObject):
             epoch = self.context.time.time_full - self.orbit.period / 2
             step = self.orbit.period / (self.nbOfPoints - 1)
         else:
-            #TODO: Properly calculate orbit start and end time
+            # TODO: Properly calculate orbit start and end time
             epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
@@ -116,11 +116,11 @@ class Orbit(VisibleObject):
             pos = self.orbit.get_local_position_at(time) - delta
             self.vertexWriter.addData3f(*pos)
         self.lines = GeomLines(Geom.UHStatic)
-        for i in range(self.nbOfPoints-1):
+        for i in range(self.nbOfPoints - 1):
             self.lines.addVertex(i)
-            self.lines.addVertex(i+1)
+            self.lines.addVertex(i + 1)
         if self.orbit.is_periodic() and self.orbit.is_closed():
-            self.lines.addVertex(self.nbOfPoints-1)
+            self.lines.addVertex(self.nbOfPoints - 1)
             self.lines.addVertex(0)
         self.geom = Geom(self.vertexData)
         self.geom.addPrimitive(self.lines)
@@ -130,7 +130,9 @@ class Orbit(VisibleObject):
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
         if settings.use_smooth_lines:
             self.instance.setRenderModeThickness(settings.orbit_smooth_thickness)
-            self.instance.set_shader_input("line_parameters", (settings.orbit_smooth_width, settings.orbit_smooth_blend))
+            self.instance.set_shader_input(
+                "line_parameters", (settings.orbit_smooth_width, settings.orbit_smooth_blend)
+            )
             self.instance.set_depth_write(False)
             self.instance.set_transparency(True)
         else:
@@ -157,13 +159,13 @@ class Orbit(VisibleObject):
         geom = self.node.modify_geom(0)
         vdata = geom.modify_vertex_data()
         vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
-        #TODO: refactor with above code !!!
+        # TODO: refactor with above code !!!
         delta = self.body.parent.get_local_position()
         if self.orbit.is_periodic():
             epoch = self.context.time.time_full - self.orbit.period
             step = self.orbit.period / (self.nbOfPoints - 1)
         else:
-            #TODO: Properly calculate orbit start and end time
+            # TODO: Properly calculate orbit start and end time
             epoch = self.orbit.get_time_of_perihelion() - self.orbit.period * 5.0
             step = self.orbit.period * 10.0 / (self.nbOfPoints - 1)
         for i in range(self.nbOfPoints):
@@ -172,7 +174,12 @@ class Orbit(VisibleObject):
             vwriter.setData3f(*pos)
 
     def check_visibility(self, frustum, pixel_size):
-        if self.body.parent.anchor.visible and self.body.parent.scene_anchor.instance is not None and self.body.shown and self.orbit:
+        if (
+            self.body.parent.anchor.visible
+            and self.body.parent.scene_anchor.instance is not None
+            and self.body.shown
+            and self.orbit
+        ):
             distance_to_obs = self.body.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_bounding_radius() / (distance_to_obs * pixel_size)

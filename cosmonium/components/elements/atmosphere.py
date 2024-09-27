@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -70,7 +70,7 @@ class Atmosphere(ShapeObject):
             self.visible = False
 
     async def create_instance(self, scene_anchor):
-        #TODO: Find a better way to retrieve ellipticity
+        # TODO: Find a better way to retrieve ellipticity
         scale = self.body.surface.get_scale() / self.body_radius
         self.set_scale(scale * self.radius)
         await ShapeObject.create_instance(self, scene_anchor)
@@ -91,7 +91,7 @@ class Atmosphere(ShapeObject):
                 print("Entering atmosphere")
                 observer.has_scattering = True
                 observer.scattering = self.scattering
-                #TODO: To replace with a flag once update_id is merged in
+                # TODO: To replace with a flag once update_id is merged in
                 observer.apply_scattering = 5
             else:
                 print("Leaving atmosphere")
@@ -113,7 +113,8 @@ class Atmosphere(ShapeObject):
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
-        if not self.instance_ready: return
+        if not self.instance_ready:
+            return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
     def remove_instance(self):

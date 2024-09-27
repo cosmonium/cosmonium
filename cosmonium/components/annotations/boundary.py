@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -23,11 +23,11 @@ from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import Geom, GeomNode, GeomLines
 from panda3d.core import NodePath
 
-from ...foundation import VisibleObject
-from ...bodyclass import bodyClasses
-from ...shaders.rendering import RenderingShader
-from ...shaders.lighting.flat import FlatLightingModel
 from ...appearances import ModelAppearance
+from ...bodyclass import bodyClasses
+from ...foundation import VisibleObject
+from ...shaders.lighting.flat import FlatLightingModel
+from ...shaders.rendering import RenderingShader
 from ...utils import srgb_to_linear
 from ... import settings
 
@@ -37,7 +37,7 @@ class Boundary(VisibleObject):
     default_shown = True
     shader = None
 
-    def __init__(self, name, points = [], color = None):
+    def __init__(self, name, points=[], color=None):
         VisibleObject.__init__(self, name)
         if color is None:
             color = bodyClasses.get_orbit_color('boundary')
@@ -70,9 +70,9 @@ class Boundary(VisibleObject):
             self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
-        for i in range(len(self.points)-1):
+        for i in range(len(self.points) - 1):
             self.lines.addVertex(index)
-            self.lines.addVertex(index+1)
+            self.lines.addVertex(index + 1)
             self.lines.closePrimitive()
             index += 1
         self.geom = Geom(self.vertexData)

@@ -1,28 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LQuaternion
 
-from ...shapes.shape_object import ShapeObject
-from ...shapes.rings import RingsShape
 from ...shadows import RingShadowCaster
+from ...shapes.rings import RingsShape
+from ...shapes.shape_object import ShapeObject
 
 
 class Rings(ShapeObject):
@@ -45,5 +45,6 @@ class Rings(ShapeObject):
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
-        if not self.instance_ready: return
+        if not self.instance_ready:
+            return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))

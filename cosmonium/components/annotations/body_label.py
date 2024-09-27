@@ -1,23 +1,24 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from direct.showbase.PythonUtil import clamp
 from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
 
 from ...astro.astro import radiance_to_mag
@@ -53,10 +54,12 @@ class StellarBodyLabel(ObjectLabel):
         body = self.label_source
         if body.is_emissive() and (not body.anchor.resolved or body.background):
             self.instance.set_pos(LPoint3())
-            scale = abs(self.context.observer.pixel_size * body.get_label_size() * body.anchor.z_distance * settings.ui_scale)
+            scale = abs(
+                self.context.observer.pixel_size * body.get_label_size() * body.anchor.z_distance * settings.ui_scale
+            )
         else:
             offset = body.get_bounding_radius()
-            position = - camera_rot.xform(LPoint3d(0, offset, 0))
+            position = -camera_rot.xform(LPoint3d(0, offset, 0))
             z_coef = -body.anchor.vector_to_obs.dot(body.context.observer.anchor.camera_vector)
             z_distance = (body.anchor.distance_to_obs - offset) * z_coef
             self.instance.set_pos(*position)
@@ -77,5 +80,7 @@ class FixedOrbitLabel(StellarBodyLabel):
             return
         app_magnitude = radiance_to_mag(self.label_source.anchor._point_radiance)
         self.visible = app_magnitude < settings.label_lowest_app_magnitude
-        self.fade = 0.2 + (settings.label_lowest_app_magnitude - app_magnitude) / (settings.label_lowest_app_magnitude - settings.max_app_magnitude)
+        self.fade = 0.2 + (settings.label_lowest_app_magnitude - app_magnitude) / (
+            settings.label_lowest_app_magnitude - settings.max_app_magnitude
+        )
         self.fade = clamp(self.fade, 0.0, 1.0)
