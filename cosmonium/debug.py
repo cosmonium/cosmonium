@@ -1,30 +1,31 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from direct.task.TaskManagerGlobal import taskMgr
 from math import pi
 
+from .astro import units
 from .components.elements.surfaces import EllipsoidSurface
 from .objects.stellarbody import StellarBody
 from .objects.reflective import ReflectiveBody
-from .astro import units
 from . import settings
 from . import utils
 
@@ -76,8 +77,10 @@ class Debug:
 
     def dump_object_stats(self):
         selected = self.engine.selected
-        if selected is None: return
-        if not isinstance(selected, StellarBody): return
+        if selected is None:
+            return
+        if not isinstance(selected, StellarBody):
+            return
         if selected.surface is not None:
             shape = selected.surface.shape
             if shape.patchable:
@@ -91,8 +94,10 @@ class Debug:
 
     def dump_object_info(self):
         selected = self.engine.selected
-        if selected is None: return
-        if not isinstance(selected, StellarBody): return
+        if selected is None:
+            return
+        if not isinstance(selected, StellarBody):
+            return
         if selected.surface is not None:
             shape = selected.surface.shape
             if shape.patchable:
@@ -106,8 +111,10 @@ class Debug:
 
     def dump_object_info_2(self):
         selected = self.engine.selected
-        if selected is None: return
-        if not isinstance(selected, StellarBody): return
+        if selected is None:
+            return
+        if not isinstance(selected, StellarBody):
+            return
         if selected.surface is not None:
             shape = selected.surface.shape
             if shape.patchable:
@@ -156,16 +163,42 @@ class Debug:
             print("Selected:", utils.join_names(selected.names))
             print("\tType:", selected.__class__.__name__)
             print("\tDistance:", selected.anchor.distance_to_obs / units.Km, 'Km')
-            print("\tRadius", selected.get_apparent_radius(), "Km", "Extend:", selected.get_bounding_radius(), "Km", "Visible:", selected.anchor.visible, selected.anchor.visible_size, "px")
+            print(
+                "\tRadius",
+                selected.get_apparent_radius(),
+                "Km",
+                "Extend:",
+                selected.get_bounding_radius(),
+                "Km",
+                "Visible:",
+                selected.anchor.visible,
+                selected.anchor.visible_size,
+                "px",
+            )
             if selected.anchor.is_stellar():
                 print("\tApp magnitude:", selected.get_app_magnitude(), '(', selected.get_abs_magnitude(), ')')
                 if isinstance(selected, StellarBody):
                     print("\tPhase:", selected.get_phase())
             print("\tGlobal position", selected.anchor.get_absolute_reference_point())
-            print("\tLocal position", selected.anchor.get_local_position(), '(Frame:', selected.anchor.get_frame_position(), ')')
+            print(
+                "\tLocal position",
+                selected.anchor.get_local_position(),
+                '(Frame:',
+                selected.anchor.get_frame_position(),
+                ')',
+            )
             print("\tOrientation", selected.anchor.get_absolute_orientation())
             print("\tVector to obs", selected.anchor.vector_to_obs)
-            print("\tVisible:", selected.anchor.visible, "Resolved:", selected.anchor.resolved, '(', selected.anchor.visible_size, ') Override:', selected.anchor.visibility_override)
+            print(
+                "\tVisible:",
+                selected.anchor.visible,
+                "Resolved:",
+                selected.anchor.resolved,
+                '(',
+                selected.anchor.visible_size,
+                ') Override:',
+                selected.anchor.visibility_override,
+            )
             print("\tUpdate frozen:", selected.anchor.update_frozen)
             if selected.anchor.is_stellar():
                 print("\tOrbit:", selected.anchor.orbit.__class__.__name__, selected.anchor.orbit.frame)
@@ -174,11 +207,18 @@ class Debug:
                 print("\tLabel visible:", selected.label.visible)
             if isinstance(selected, ReflectiveBody) and selected.surface is not None:
                 print("\tRing shadow:", selected.surface.shadows.ring_shadow is not None)
-                #print("\tSphere shadow:", [x.body.get_friendly_name() for x in selected.surface.shadows.sphere_shadows.occluders])
+                # print("\tSphere shadow:",
+                #     [x.body.get_friendly_name() for x in selected.surface.shadows.sphere_shadows.occluders])
             if isinstance(selected, StellarBody):
                 if selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene")
-                    print("\tPosition", selected.scene_anchor.scene_position, '(Offset:', selected.scene_anchor.world_body_center_offset, ')')
+                    print(
+                        "\tPosition",
+                        selected.scene_anchor.scene_position,
+                        '(Offset:',
+                        selected.scene_anchor.world_body_center_offset,
+                        ')',
+                    )
                     print("\tScale", selected.scene_anchor.scene_scale_factor)
                     print("\tZ distance", selected.anchor.z_distance)
                 if selected.surface is not None and selected.surface.instance is not None:
@@ -188,19 +228,23 @@ class Debug:
                     print("\tScale", selected.surface.get_scale() * selected.scene_anchor.scene_scale_factor)
                     print("\tInstance Ready:", selected.surface.instance_ready)
                     if selected.atmosphere is not None:
-                        pass#print("\tAtm size", selected.atmosphere.get_pixel_height())
+                        pass  # print("\tAtm size", selected.atmosphere.get_pixel_height())
                     if selected.surface.shape.patchable:
                         print("Patches:", len(selected.surface.shape.patches))
                 else:
                     print("\tPoint")
                 if selected.surface is not None and isinstance(selected.surface, EllipsoidSurface):
-                    lon, lat, h = selected.surface.cartesian_to_geodetic(selected.local_to_surface_position(observer.get_local_position()))
+                    lon, lat, h = selected.surface.cartesian_to_geodetic(
+                        selected.local_to_surface_position(observer.get_local_position())
+                    )
                     print("\tLongLat:", lon * 180 / pi, lat * 180 / pi)
                     height = selected.anchor._height_under
                     radius_under = selected.anchor._height_under  # TODO
                     print("\tHeight:", height, "Delta:", height - radius_under, "Alt:", h)
                 if selected.surface is not None and selected.surface.shape.patchable:
-                    relative_position = selected.anchor._orientation.conjugate().xform(observer.get_local_position() - selected.anchor.get_local_position())
+                    relative_position = selected.anchor._orientation.conjugate().xform(
+                        observer.get_local_position() - selected.anchor.get_local_position()
+                    )
                     (x, y, h) = selected.surface.cartesian_to_parametric(relative_position)
                     coord = selected.surface.parametric_to_shape_coord(x, y)
                     patch = selected.surface.shape.find_patch_at(coord)
@@ -216,7 +260,11 @@ class Debug:
                             print("\tDistance:", patch.instance.get_pos(self.engine.render).length())
                             print("\tScale:", patch.instance.get_scale())
                             if patch.quadtree_node.offset is not None:
-                                print("\tOffset:", patch.quadtree_node.offset, patch.quadtree_node.offset * selected.get_apparent_radius())
+                                print(
+                                    "\tOffset:",
+                                    patch.quadtree_node.offset,
+                                    patch.quadtree_node.offset * selected.get_apparent_radius(),
+                                )
             else:
                 if selected.scene_anchor.scene_scale_factor is not None:
                     print("Scene:")

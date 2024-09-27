@@ -1,32 +1,33 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
 
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
-from .scene.sceneworld import CartesianWorld
 from .camera import CameraController
 from .parameters import ParametersGroup
+from .scene.sceneworld import CartesianWorld
+
 
 class ShipBase(CartesianWorld):
     editable = False
     orbit_rot_camera = True
+
     def __init__(self, name):
         CartesianWorld.__init__(self, name)
         self.camera_modes = [CameraController.FIXED, CameraController.TRACK]
@@ -36,16 +37,14 @@ class ShipBase(CartesianWorld):
         self.camera_rot = LQuaterniond()
 
     def add_camera_mode(self, mode):
-        if not mode in self.camera_modes:
+        if mode not in self.camera_modes:
             self.camera_modes.append(mode)
 
     def supports_camera_mode(self, mode):
         return mode in self.camera_modes
 
     def get_camera_hints(self):
-        return {'distance': self.camera_distance,
-                'position': self.camera_pos,
-                'rotation': self.camera_rot}
+        return {'distance': self.camera_distance, 'position': self.camera_pos, 'rotation': self.camera_rot}
 
     def set_camera_hints(self, camera_distance, camera_pos, camera_rot):
         self.camera_distance = camera_distance
@@ -55,8 +54,10 @@ class ShipBase(CartesianWorld):
     def set_state(self, new_state):
         pass
 
+
 class NoShip(ShipBase):
     virtual_object = True
+
     def __init__(self):
         ShipBase.__init__(self, "No ship")
 
@@ -68,6 +69,7 @@ class NoShip(ShipBase):
     def get_apparent_radius(self):
         return 0.0
 
+
 class VisibleShip(ShipBase):
 
     anchor_class = 2
@@ -78,7 +80,7 @@ class VisibleShip(ShipBase):
         self.radius = radius
         ShipBase.__init__(self, name)
         self.ship_object = ship_object
-        #TODO: Remove this
+        # TODO: Remove this
         self.ship_object.color_picking = False
         self.ship_object.shader.color_picking = False
         self.add_component(ship_object)

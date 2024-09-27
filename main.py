@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-import sys
 import os
+import sys
+
 # Disable stdout block buffering
 sys.stdout.flush()
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
@@ -33,30 +34,28 @@ sys.path.insert(1, 'third-party')
 sys.path.insert(1, 'third-party/cefpanda')
 sys.path.insert(1, 'third-party/gltf')
 
-from panda3d.core import ExecutionEnvironment
+import argparse  # noqa: E402
+from panda3d.core import ExecutionEnvironment  # noqa: E402
 
-from cosmonium.cosmonium import Cosmonium
+from cosmonium.celestia import ssc_parser  # noqa: E402
+from cosmonium.celestia import stc_parser  # noqa: E402
+from cosmonium.celestia import star_parser  # noqa: E402
+from cosmonium.celestia import dsc_parser  # noqa: E402
+from cosmonium.celestia import asterisms_parser  # noqa: E402
+from cosmonium.celestia import boundaries_parser  # noqa: E402
+from cosmonium.cosmonium import Cosmonium  # noqa: E402
+from cosmonium.dircontext import defaultDirContext  # noqa: E402
+from cosmonium.parsers.yamlparser import YamlParser  # noqa: E402
+from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser  # noqa: E402
+from cosmonium import settings  # noqa: E402
 
-from cosmonium.parsers.yamlparser import YamlParser
-from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser
-from cosmonium.celestia import ssc_parser
-from cosmonium.celestia import stc_parser
-from cosmonium.celestia import star_parser
-from cosmonium.celestia import dsc_parser
-from cosmonium.celestia import asterisms_parser
-from cosmonium.celestia import boundaries_parser
-from cosmonium.dircontext import defaultDirContext
+# import textures to register celestia texture parser
+from cosmonium.celestia import textures  # noqa: E402
+from cosmonium.spaceengine import textures  # noqa: E402, F811, F401
 
-#import textures to register celestia texture parser
-from cosmonium.celestia import textures
-from cosmonium.spaceengine import textures
-from cosmonium import settings
-
-#import orbits and rotations elements to add them to the DB
-from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87
-from cosmonium.astro.tables import uniform, wgccre
-
-import argparse
+# import orbits and rotations elements to add them to the DB
+from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87  # noqa: E402, F401
+from cosmonium.astro.tables import uniform, wgccre  # noqa: E402, F401
 
 
 class CosmoniumConfig(object):
@@ -82,7 +81,7 @@ class CosmoniumConfig(object):
             'data/solar-system/ssd.yaml',
             'data/solar-system/manual-orbits.yaml',
             'data/solar-system/celestia.yaml',
-            ]
+        ]
         self.celestia_ssc = [
             "solarsys.ssc",
             "minormoons.ssc",
@@ -90,7 +89,7 @@ class CosmoniumConfig(object):
             "asteroids.ssc",
             "outersys.ssc",
             # "extrasolar.ssc",
-            ]
+        ]
         self.celestia_stc = ["nearstars.stc", "revised.stc", "spectbins.stc", "visualbins.stc", "extrasolar.stc"]
         self.celestia_dsc = ["galaxies.dsc"]
         self.celestia_stars_catalog = 'stars.dat'
@@ -102,7 +101,7 @@ class CosmoniumConfig(object):
         self.test_start = False
 
     def update_from_args(self, args):
-        #TODO: add input checking here
+        # TODO: add input checking here
         if args.common is not None:
             self.common = args.common
         if args.main is not None:
@@ -218,7 +217,7 @@ class CosmoniumApp(Cosmonium):
         ssc_parser.load(self.app_config.celestia_ssc, self.universe)
         asterisms_parser.load(self.app_config.celestia_asterisms, self.background)
         boundaries_parser.load(self.app_config.celestia_boundaries, self.background)
-        #dsc_parser.load(self.celestia_dsc, self.universe)
+        # dsc_parser.load(self.celestia_dsc, self.universe)
 
     def load_file(self, parser, path):
         lower = path.lower()
@@ -279,40 +278,17 @@ class CosmoniumApp(Cosmonium):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("script",
-                    help="CEL script to run at start up",
-                    nargs='?',
-                    default=None)
-parser.add_argument("--celestia",
-                    help="Load data from Celestia",
-                    nargs='?',
-                    const='',
-                    default=None)
-parser.add_argument("--common",
-                    help="Path to the file with the basic common configuration",
-                    default=None)
-parser.add_argument("--main",
-                    help="Path to the file with the universe configuration",
-                    default=None)
-parser.add_argument("--ui",
-                    help="Path to the file with the UI configuration",
-                    default=None)
-parser.add_argument("--home",
-                    help="Default home system of body",
-                    default=None)
-parser.add_argument("--default",
-                    help="Default body to show when there is no start up script",
-                    default=None)
-parser.add_argument("--extra",
-                    help="Extra configuration files or directories to load",
-                    nargs='+',
-                    default=None)
-parser.add_argument("--test-start",
-                    help=argparse.SUPPRESS,
-                    action='store_true',
-                    default=False)
+parser.add_argument("script", help="CEL script to run at start up", nargs='?', default=None)
+parser.add_argument("--celestia", help="Load data from Celestia", nargs='?', const='', default=None)
+parser.add_argument("--common", help="Path to the file with the basic common configuration", default=None)
+parser.add_argument("--main", help="Path to the file with the universe configuration", default=None)
+parser.add_argument("--ui", help="Path to the file with the UI configuration", default=None)
+parser.add_argument("--home", help="Default home system of body", default=None)
+parser.add_argument("--default", help="Default body to show when there is no start up script", default=None)
+parser.add_argument("--extra", help="Extra configuration files or directories to load", nargs='+', default=None)
+parser.add_argument("--test-start", help=argparse.SUPPRESS, action='store_true', default=False)
 if sys.platform == "darwin":
-    #Ignore -psn_<app_id> from MacOS
+    # Ignore -psn_<app_id> from MacOS
     parser.add_argument('-p', help=argparse.SUPPRESS)
 args = parser.parse_args()
 

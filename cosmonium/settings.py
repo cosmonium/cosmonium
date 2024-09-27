@@ -1,32 +1,31 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from appdirs.appdirs import AppDirs
+import os
 from panda3d.core import LColor
 from panda3d.core import LPoint3, LPoint3d
-from panda3d.core import PandaSystem
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
-from appdirs.appdirs import AppDirs
 
-import os
 
 app_name = 'cosmonium'
 
@@ -34,7 +33,7 @@ use_double = LPoint3 == LPoint3d
 cache_yaml = True
 prc_file = 'config.prc'
 
-#OpenGL user configuration
+# OpenGL user configuration
 use_core_profile_mac = True
 use_gl_version = None
 use_hardware_srgb = True
@@ -57,15 +56,15 @@ red_blue_stereo = False
 side_by_side_stereo = False
 stereo_swap_eyes = False
 
-#Settings
+# Settings
 use_pbr = False
 use_srgb = True
 use_assimp = True
 use_smooth_lines = True
 
-deferred=False
-deferred_split=False
-deferred_load=True
+deferred = False
+deferred_split = False
+deferred_load = True
 patch_pool_size = 4
 
 mouse_over = False
@@ -121,17 +120,17 @@ last_script_path = None
 scene_manager = 'region'
 c_scene_manager = True
 
-use_inv_scaling=True
-use_log_scaling=False
+use_inv_scaling = True
+use_log_scaling = False
 use_depth_scaling = scene_manager == 'dynamic' and (use_inv_scaling or use_log_scaling)
-auto_scale=True
+auto_scale = True
 lens_far_limit = 1e-12
-scale=1000.0
+scale = 1000.0
 min_scale = 0.02
-max_scale=1000.0
-set_frustum=True
-near_plane=1.0
-far_plane=30000.0
+max_scale = 1000.0
+set_frustum = True
+near_plane = 1.0
+far_plane = 30000.0
 infinite_far_plane = True
 infinite_plane = 100000.0
 auto_infinite_plane = False
@@ -150,8 +149,8 @@ camera_at_origin = True
 
 min_altitude = 2 * units.m
 
-shader_noise=True
-c_noise=True
+shader_noise = True
+c_noise = True
 
 debug_vt = False
 debug_lod_show_bb = False
@@ -212,7 +211,7 @@ grid_thickness = 0.5
 asterism_thickness = 0.9
 boundary_thickness = 0.9
 
-wireframe_fill_color = LColor(1, 0., 0., 1.0)
+wireframe_fill_color = LColor(1, 0.0, 0.0, 1.0)
 
 fast_move = 2.0
 slow_move = 5.0
@@ -232,7 +231,7 @@ query_delay = 0.333
 default_window_width = 800
 default_window_height = 600
 
-#These are the fake depth value used for sorting background bin objects
+# These are the fake depth value used for sorting background bin objects
 skysphere_depth = 0
 grid_depth = 5
 asterisms_depth = 10
@@ -268,69 +267,88 @@ config_dir = appdirs.user_config_dir
 data_dir = appdirs.user_data_dir
 config_file = os.path.join(config_dir, 'config.yaml')
 
-#Debug flags
+# Debug flags
 shader_debug_fragment_shader = 'default'
 shader_debug_coord = False
 shader_debug_coord_line_width = 0.005
 shader_debug_raymarching_canvas = False
 shader_debug_raymarching_slice = False
 
-bodyClasses.register_class("galaxy", "galaxies",
-                           BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1),
-                                     orbit_color=LColor(1, 1, 1, 1),
-                                     show_label=False))
-bodyClasses.register_class("globular", "globulars",
-                           BodyClass(label_color=LColor(0.8, 0.45, 0.5, 1),
-                                     orbit_color=LColor(1, 1, 1, 1),
-                                     show_label=False))
-bodyClasses.register_class("nebula", "nebulae",
-                           BodyClass(label_color=LColor(0.541, 0.764, 0.278, 1),
-                                     orbit_color=LColor(1, 1, 1, 1),
-                                     show_label=False))
-bodyClasses.register_class("star", "stars",
-                           BodyClass(label_color=LColor(0.471, 0.356, 0.682, 1),
-                                     orbit_color=LColor(0.5, 0.5, 0.8, 1),
-                                     show_label=False))
-bodyClasses.register_class("planet", "planets",
-                           BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1),
-                                     orbit_color=LColor(0.3, 0.323, 0.833, 1),
-                                     show_label=False))
-bodyClasses.register_class("dwarfplanet", "dwarfplanets",
-                           BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1),
-                                     orbit_color=LColor(0.3, 0.323, 0.833, 1),
-                                     show_label=False))
-bodyClasses.register_class("moon", "moons",
-                           BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
-                                     orbit_color=LColor(0.08, 0.407, 0.392, 1),
-                                     show_label=False))
-bodyClasses.register_class("minormoon", "minormoons",
-                           BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
-                                     orbit_color=LColor(0.08, 0.407, 0.392, 1),
-                                     show_label=False))
-bodyClasses.register_class("lostmoon", "lostmoons",
-                           BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1),
-                                     orbit_color=LColor(0.08, 0.407, 0.392, 1),
-                                     show=False,
-                                     show_label=False))
-bodyClasses.register_class("comet", "comets",
-                           BodyClass(label_color=LColor(0.768, 0.607, 0.227, 1),
-                                     orbit_color=LColor(0.639, 0.487, 0.168, 1),
-                                     show_label=False))
-bodyClasses.register_class("asteroid", "asteroids",
-                           BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
-                                     orbit_color=LColor(0.58, 0.152, 0.08, 1),
-                                     show_label=False))
-bodyClasses.register_class("interstellar", "interstellars",
-                           BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1),
-                                     orbit_color=LColor(0.58, 0.152, 0.08, 1),
-                                     show_label=False))
-bodyClasses.register_class("spacecraft", "spacecrafts",
-                           BodyClass(label_color=LColor(0.93, 0.93, 0.93, 1),
-                                     orbit_color=LColor(0.4, 0.4, 0.4, 1),
-                                     show_label=False))
-bodyClasses.register_class("constellation", "constellations",
-                           BodyClass(label_color=LColor(0.225, 0.301, 0.36, 1),
-                                     orbit_color=LColor(0.0,   0.24,  0.36, 1.0),
-                                     show_label=False))
-bodyClasses.register_class("boundary", "boundaries",
-                           BodyClass(orbit_color=LColor(0.24,  0.10,  0.12, 1.0)))
+bodyClasses.register_class(
+    "galaxy",
+    "galaxies",
+    BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "globular",
+    "globulars",
+    BodyClass(label_color=LColor(0.8, 0.45, 0.5, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "nebula",
+    "nebulae",
+    BodyClass(label_color=LColor(0.541, 0.764, 0.278, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "star",
+    "stars",
+    BodyClass(label_color=LColor(0.471, 0.356, 0.682, 1), orbit_color=LColor(0.5, 0.5, 0.8, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "planet",
+    "planets",
+    BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1), orbit_color=LColor(0.3, 0.323, 0.833, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "dwarfplanet",
+    "dwarfplanets",
+    BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1), orbit_color=LColor(0.3, 0.323, 0.833, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "moon",
+    "moons",
+    BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1), orbit_color=LColor(0.08, 0.407, 0.392, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "minormoon",
+    "minormoons",
+    BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1), orbit_color=LColor(0.08, 0.407, 0.392, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "lostmoon",
+    "lostmoons",
+    BodyClass(
+        label_color=LColor(0.231, 0.733, 0.792, 1),
+        orbit_color=LColor(0.08, 0.407, 0.392, 1),
+        show=False,
+        show_label=False,
+    ),
+)
+bodyClasses.register_class(
+    "comet",
+    "comets",
+    BodyClass(
+        label_color=LColor(0.768, 0.607, 0.227, 1), orbit_color=LColor(0.639, 0.487, 0.168, 1), show_label=False
+    ),
+)
+bodyClasses.register_class(
+    "asteroid",
+    "asteroids",
+    BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1), orbit_color=LColor(0.58, 0.152, 0.08, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "interstellar",
+    "interstellars",
+    BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1), orbit_color=LColor(0.58, 0.152, 0.08, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "spacecraft",
+    "spacecrafts",
+    BodyClass(label_color=LColor(0.93, 0.93, 0.93, 1), orbit_color=LColor(0.4, 0.4, 0.4, 1), show_label=False),
+)
+bodyClasses.register_class(
+    "constellation",
+    "constellations",
+    BodyClass(label_color=LColor(0.225, 0.301, 0.36, 1), orbit_color=LColor(0.0, 0.24, 0.36, 1.0), show_label=False),
+)
+bodyClasses.register_class("boundary", "boundaries", BodyClass(orbit_color=LColor(0.24, 0.10, 0.12, 1.0)))

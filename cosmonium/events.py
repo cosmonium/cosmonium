@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 from direct.showbase.DirectObject import DirectObject
+
 
 class EventsDispatcher(DirectObject):
     def __init__(self, engine, time, camera, autopilot, gui, debug):
@@ -35,7 +36,7 @@ class EventsDispatcher(DirectObject):
         self.accept('cancel', self.engine.reset_all)
         self.accept('toggle-fullscreen', self.engine.toggle_fullscreen)
         self.accept('zoom-in', self.camera.zoom, [1.05])
-        self.accept('zoom-out', self.camera.zoom, [1.0/1.05])
+        self.accept('zoom-out', self.camera.zoom, [1.0 / 1.05])
         self.accept('reset-zoom', self.camera.reset_zoom)
         self.accept('gui-toggle-menubar', self.gui.toggle_menu)
         self.accept('gui-show-menubar', self.gui.show_menu)
@@ -69,7 +70,11 @@ class EventsDispatcher(DirectObject):
         self.accept('debug-print-tasks', self.debug.print_tasks)
         self.accept('debug-shader-fragment-mode', self.debug.set_shader_fragment_debug)
         for shader_debug_mode in ['default', 'diffuse', 'heightmap', 'normal', 'normalmap', 'picking', 'shadows']:
-            self.accept('debug-shader-fragment-mode-' + shader_debug_mode, self.debug.set_shader_fragment_debug, [shader_debug_mode])
+            self.accept(
+                'debug-shader-fragment-mode-' + shader_debug_mode,
+                self.debug.set_shader_fragment_debug,
+                [shader_debug_mode],
+            )
         self.accept('debug-toggle-shader-raymarching-canvas', self.debug.toggle_shader_debug_raymarching_canvas)
         self.accept('debug-toggle-shader-debug-raymarching_slice', self.debug.toggle_shader_debug_raymarching_slice)
 
@@ -117,24 +122,24 @@ class EventsDispatcher(DirectObject):
         self.accept('decrease-exposure', self.engine.incr_exposure, [-0.1])
         self.accept('increase-exposure', self.engine.incr_exposure, [+0.1])
 
-        #Render
+        # Render
         self.accept('toggle-atmosphere', self.engine.toggle_atmosphere)
         self.accept('toggle-rotation-axis', self.engine.toggle_rotation_axis)
         self.accept('toggle-reference-axis', self.engine.toggle_reference_axis)
         self.accept('toggle-constellations-boundaries', self.engine.toggle_boundaries)
-        #self.accept('toggle-shadows', self.toggle_shadows)
+        # self.accept('toggle-shadows', self.toggle_shadows)
         self.accept('toggle-clouds', self.engine.toggle_clouds)
-        #self.accept('toggle-nightsides', self.engine.toggle_nightsides)
+        # self.accept('toggle-nightsides', self.engine.toggle_nightsides)
         self.accept('toggle-orbits', self.engine.toggle_orbits)
-        #self.accept('toggle-comet-tails', self.engine.toggle_comet_tails)
+        # self.accept('toggle-comet-tails', self.engine.toggle_comet_tails)
         self.accept('toggle-body-class-galaxy', self.engine.toggle_body_class, ['galaxy'])
-        #self.accept('toggle-globular', self.engine.toggle_globulars)
+        # self.accept('toggle-globular', self.engine.toggle_globulars)
         self.accept('toggle-equatorial-grid', self.engine.toggle_grid_equatorial)
         self.accept('toggle-ecliptic-grid', self.engine.toggle_grid_ecliptic)
         self.accept('toggle-asterisms', self.engine.toggle_asterisms)
-        #self.accept('toggle-nebulae', self.engine.toggle_nebulae)
+        # self.accept('toggle-nebulae', self.engine.toggle_nebulae)
 
-        #Orbits
+        # Orbits
         self.accept('toggle-orbit-star', self.engine.toggle_orbit, ['star'])
         self.accept('toggle-orbit-planet', self.engine.toggle_orbit, ['planet'])
         self.accept('toggle-orbit-dwarfplanet', self.engine.toggle_orbit, ['dwarfplanet'])
@@ -144,7 +149,7 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-orbit-asteroid', self.engine.toggle_orbit, ['asteroid'])
         self.accept('toggle-orbit-spacecraft', self.engine.toggle_orbit, ['spacecraft'])
 
-        #Labels
+        # Labels
         self.accept('toggle-label-galaxy', self.engine.toggle_label, ['galaxy'])
         self.accept('toggle-label-globular', self.engine.toggle_label, ['globular'])
         self.accept('toggle-label-star', self.engine.toggle_label, ['star'])
@@ -174,5 +179,8 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-swap-eyes', self.engine.toggle_swap_eyes)
 
         for display_render_info in ['fps', 'ms', 'none']:
-            self.accept('set-display-render-info-' + display_render_info, self.gui.set_display_render_info, [display_render_info])
-
+            self.accept(
+                'set-display-render-info-' + display_render_info,
+                self.gui.set_display_render_info,
+                [display_render_info],
+            )

@@ -148,7 +148,7 @@ update-ui-mo:
 build-version:
 ifneq ($(VERSION),)
 	@echo 'Cosmonium version $(VERSION)'
-	@echo 'version=$(VERSION)' > cosmonium/buildversion.py
+	@echo 'version = $(VERSION)' > cosmonium/buildversion.py
 else
 	@rm -f cosmonium/buildversion.py
 endif

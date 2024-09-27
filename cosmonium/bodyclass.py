@@ -1,33 +1,37 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 from panda3d.core import LColor
 
+
 class BodyClass(object):
-    def __init__(self, name=None, show=True, label_color=LColor(), orbit_color=LColor(), show_label=False, show_orbit=True):
+    def __init__(
+        self, name=None, show=True, label_color=LColor(), orbit_color=LColor(), show_label=False, show_orbit=True
+    ):
         self.label_color = label_color
         self.orbit_color = orbit_color
         self.show_label = show_label
         self.show_orbit = show_orbit
         self.show = show
         self.name = name
+
 
 class BodyClasses(object):
     def __init__(self):
@@ -77,14 +81,14 @@ class BodyClasses(object):
         if body_class is not None:
             return body_class.label_color
         else:
-            return LColor(.5, .5, .5, 1)
+            return LColor(0.5, 0.5, 0.5, 1)
 
     def get_orbit_color(self, body_class):
         body_class = self.get_class(body_class)
         if body_class is not None:
             return body_class.orbit_color
         else:
-            return LColor(.5, .5, .5, 1)
+            return LColor(0.5, 0.5, 0.5, 1)
 
     def get_show_label(self, body_class):
         body_class = self.get_class(body_class)
@@ -133,5 +137,6 @@ class BodyClasses(object):
         if body_class is not None:
             body_class.show_orbit = not body_class.show_orbit
             print("Orbit '%s' : " % body_class.name, 'visible' if body_class.show_orbit else 'hidden')
+
 
 bodyClasses = BodyClasses()
