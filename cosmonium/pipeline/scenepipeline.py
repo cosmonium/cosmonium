@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,10 +78,12 @@ class BasicScenePipeline(ScenePipelineBase):
         pass
 
     def init_window(self):
-        self.screen = Screen(base,
-                             srgb=self.framebuffer_srgb,
-                             multisamples=self.framebuffer_multisamples,
-                             stereoscopic=settings.stereoscopic_framebuffer)
+        self.screen = Screen(
+            base,
+            srgb=self.framebuffer_srgb,
+            multisamples=self.framebuffer_multisamples,
+            stereoscopic=settings.stereoscopic_framebuffer,
+        )
         self.screen.request()
         self.set_win(base.win)
 
@@ -90,9 +92,9 @@ class BasicScenePipeline(ScenePipelineBase):
 
     def build_pipeline(self):
         ldr_colors = (8, 8, 8, 8)
-        render_stage = RenderStage("render",
-                                   colors=ldr_colors,
-                                   camera_mask=BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag)
+        render_stage = RenderStage(
+            "render", colors=ldr_colors, camera_mask=BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag
+        )
         self.add_stage(render_stage)
         render_stage.set_scene_stage(True)
         render_stage.set_screen_stage(True)
@@ -126,10 +128,9 @@ class ScenePipeline(ScenePipelineBase):
         self.exposure_correction += incr
 
     def init_window(self) -> None:
-        self.screen = Screen(base,
-                             srgb=self.framebuffer_srgb,
-                             multisamples=0,
-                             stereoscopic=settings.stereoscopic_framebuffer)
+        self.screen = Screen(
+            base, srgb=self.framebuffer_srgb, multisamples=0, stereoscopic=settings.stereoscopic_framebuffer
+        )
         self.screen.request()
         self.set_win(base.win)
 
@@ -148,20 +149,24 @@ class ScenePipeline(ScenePipelineBase):
         ldr_colors_alpha = (self.ldr_color_bits, self.ldr_color_bits, self.ldr_color_bits, self.alpha_bits)
         ldr_colors = (self.ldr_color_bits, self.ldr_color_bits, self.ldr_color_bits, 0)
         if self.hdr:
-            render_stage = RenderStage("render",
-                                       camera_mask=BaseObject.DefaultCameraFlag,
-                                       colors=hdr_colors_alpha,
-                                       srgb=False,
-                                       multisamples=self.render_buffer_multisamples,
-                                       inverse_z=self.inverse_z,
-                                       create_mimap=True)
+            render_stage = RenderStage(
+                "render",
+                camera_mask=BaseObject.DefaultCameraFlag,
+                colors=hdr_colors_alpha,
+                srgb=False,
+                multisamples=self.render_buffer_multisamples,
+                inverse_z=self.inverse_z,
+                create_mimap=True,
+            )
         else:
-            render_stage = RenderStage("render",
-                                       camera_mask=BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag,
-                                       colors=ldr_colors_alpha,
-                                       srgb=self.render_buffer_srgb,
-                                       multisamples=self.render_buffer_multisamples,
-                                       inverse_z=self.inverse_z)
+            render_stage = RenderStage(
+                "render",
+                camera_mask=BaseObject.DefaultCameraFlag | BaseObject.AnnotationCameraFlag,
+                colors=ldr_colors_alpha,
+                srgb=self.render_buffer_srgb,
+                multisamples=self.render_buffer_multisamples,
+                inverse_z=self.inverse_z,
+            )
         self.add_stage(render_stage)
         if self.hdr:
             self.avg = self.add_stage(AverageLuminosityStage("average_luminosity"))
@@ -177,7 +182,8 @@ class ScenePipeline(ScenePipelineBase):
                 camera_mask=BaseObject.AnnotationCameraFlag,
                 colors=hdr_colors_alpha,
                 srgb=False,
-                inverse_z=self.inverse_z)
+                inverse_z=self.inverse_z,
+            )
             self.add_stage(annotation_render_stage)
         if settings.use_srgb and not self.framebuffer_srgb:
             self.add_stage(ColorCorrectionStage("color_correction", ldr_colors))
@@ -191,7 +197,9 @@ class ScenePipeline(ScenePipelineBase):
             if self.adaptive_exposure:
                 avg_luminosity = self.avg.extract_level()
                 if not isinf(avg_luminosity) and not isnan(avg_luminosity):
-                    self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (1 - exp(-dt * self.adaptation_rate))
+                    self.avg_luminosity += (avg_luminosity - self.avg_luminosity) * (
+                        1 - exp(-dt * self.adaptation_rate)
+                    )
                 self.ev100 = log2(max(self.avg_luminosity, 0.00000001) * 100 / 12.5)
                 self.ev100_corrected = self.ev100 - self.exposure_correction
                 self.max_luminance = 1.2 * pow(2, self.ev100_corrected)

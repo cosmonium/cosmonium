@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,11 @@ from __future__ import annotations
 
 from math import log2, ceil
 import numpy
-
 from panda3d.core import Texture
 
-from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.base import ShaderProgram
 from ...shaders.component import ShaderComponent
+from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...textures import TextureConfiguration
 
 from ..stage import SceneStage
@@ -112,7 +111,8 @@ class AverageLuminosityStage(SceneStage):
 
     def _create_luminance_shader(self):
         self.luminance_shader = PostProcessShader(
-            fragment_shader=SimplePostProcessFragmentShader(LuminanceFragmentShader(), output_type='float'))
+            fragment_shader=SimplePostProcessFragmentShader(LuminanceFragmentShader(), output_type='float')
+        )
         self.luminance_shader.create(None, None)
 
     def _create_average_shader(self):
@@ -126,14 +126,16 @@ class AverageLuminosityStage(SceneStage):
     def _create_textures_for_level(self, width, height, level):
         scale = 1 << level
         self.luminance_textures.append(
-            self.luminance_tc.create_2d(f"luminance_{level}", max(1, width // scale), max(1, height // scale)))
+            self.luminance_tc.create_2d(f"luminance_{level}", max(1, width // scale), max(1, height // scale))
+        )
 
     def _create_downscale_target_for_level(self, pipeline, level, to_ram):
         scale = 1 << level
         target = ProcessTarget(f"luminance_downscale_{level}")
         target.set_relative_size((1.0 / scale, 1.0 / scale))
         target.add_color_target(
-            (32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram)
+            (32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram
+        )
         self.add_target(target)
         target.create(pipeline)
         target.set_shader(self.downscale_shader)
@@ -147,9 +149,11 @@ class AverageLuminosityStage(SceneStage):
             self._create_average_shader()
             self.luminance_tc = TextureConfiguration(
                 format=Texture.F_r32,
-                wrap_u=Texture.WM_border_color, wrap_v=Texture.WM_border_color,
+                wrap_u=Texture.WM_border_color,
+                wrap_v=Texture.WM_border_color,
                 minfilter=Texture.FT_linear_mipmap_linear,
-                magfilter=Texture.FT_linear)
+                magfilter=Texture.FT_linear,
+            )
             self.luminance_textures.append(self.luminance_tc.create_2d("luminance", width, height))
             target = ProcessTarget("luminance")
             target.add_color_target((32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[0])
@@ -169,9 +173,11 @@ class AverageLuminosityStage(SceneStage):
             self.levels = self._calc_levels(width, height)
             self.luminance_tc = TextureConfiguration(
                 format=Texture.F_r32,
-                wrap_u=Texture.WM_border_color, wrap_v=Texture.WM_border_color,
+                wrap_u=Texture.WM_border_color,
+                wrap_v=Texture.WM_border_color,
                 minfilter=Texture.FT_linear,
-                magfilter=Texture.FT_linear)
+                magfilter=Texture.FT_linear,
+            )
             for level in range(self.levels):
                 self._create_textures_for_level(width, height, level)
             target = ProcessTarget("luminance")

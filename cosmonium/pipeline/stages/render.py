@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,8 +37,7 @@ class RenderStage(RenderSceneStage):
         self.create_mipmap = create_mimap
 
     def provides(self):
-        return {'scene': 'color',
-                'depth': 'depth'}
+        return {'scene': 'color', 'depth': 'depth'}
 
     def can_render_to_screen(self):
         return not self.inverse_z
@@ -50,8 +49,10 @@ class RenderStage(RenderSceneStage):
             target = SceneTarget("scene")
             if self.create_mipmap:
                 config = TextureConfiguration(
-                    wrap_u=Texture.WM_border_color, wrap_v=Texture.WM_border_color,
-                    minfilter=Texture.FT_linear_mipmap_linear)
+                    wrap_u=Texture.WM_border_color,
+                    wrap_v=Texture.WM_border_color,
+                    minfilter=Texture.FT_linear_mipmap_linear,
+                )
             else:
                 config = TextureConfiguration()
             target.add_color_target(self.colors, srgb_colors=self.srgb, config=config)

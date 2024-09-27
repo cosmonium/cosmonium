@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ from __future__ import annotations
 from math import ceil, log2
 from panda3d.core import Texture
 
-from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.base import ShaderProgram, ShaderBase
+from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...textures import TextureConfiguration
 
 from ..stage import SceneStage
@@ -103,7 +103,8 @@ class DownscaleBloomStage(SceneStage):
 
     def create_shaders(self):
         self.brightness_threshold_shader = PostProcessShader(
-            fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
+            fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader())
+        )
         self.brightness_threshold_shader.create(None, None)
         self.downscale_shader = PostProcessShader(fragment_shader=BloomDownscaleFragmentShader())
         self.downscale_shader.create(None, None)
@@ -112,10 +113,8 @@ class DownscaleBloomStage(SceneStage):
 
     def _create_textures_for_level(self, width, height, level):
         scale = 1 << level
-        self.bloom_textures.append(
-            self.bloom_tc.create_2d(f"bloom_{level}", width // scale, height // scale))
-        self.target_textures.append(
-            self.bloom_tc.create_2d(f"bloom_target_{level}", width // scale, height // scale))
+        self.bloom_textures.append(self.bloom_tc.create_2d(f"bloom_{level}", width // scale, height // scale))
+        self.target_textures.append(self.bloom_tc.create_2d(f"bloom_target_{level}", width // scale, height // scale))
 
     def _create_downscale_target_for_level(self, pipeline, level):
         scale = 1 << level
@@ -145,9 +144,11 @@ class DownscaleBloomStage(SceneStage):
         self.levels = int(ceil(min(log2(width), log2(height))))
         self.bloom_tc = TextureConfiguration(
             format=Texture.F_rgb32,
-            wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
+            wrap_u=Texture.WM_clamp,
+            wrap_v=Texture.WM_clamp,
             minfilter=Texture.FT_linear,
-            magfilter=Texture.FT_linear)
+            magfilter=Texture.FT_linear,
+        )
 
         for level in range(self.levels):
             self._create_textures_for_level(width, height, level)

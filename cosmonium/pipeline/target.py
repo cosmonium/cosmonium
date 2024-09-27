@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,8 +135,10 @@ class BufferMixin(TargetMixinBase):
         if self.fixed_size:
             size = self.requested_size
         else:
-            size = (max(1, int(self.win_size[0] * self.requested_size[0])),
-                    max(1, int(self.win_size[1] * self.requested_size[1])))
+            size = (
+                max(1, int(self.win_size[0] * self.requested_size[0])),
+                max(1, int(self.win_size[1] * self.requested_size[1])),
+            )
         return size
 
     def update_win_size(self, size):
@@ -152,27 +154,23 @@ class BufferMixin(TargetMixinBase):
         return self.texture_targets[name].texture
 
     def add_color_target(
-            self,
-            color_bits,
-            srgb_colors=True,
-            name='color',
-            to_ram=False,
-            config=TextureConfiguration(),
-            texture=None):
+        self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration(), texture=None
+    ):
         self.color_bits = color_bits
         self.srgb_colors = srgb_colors
         texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config, texture)
         self.texture_targets[name] = texture_target
 
     def add_depth_target(
-            self,
-            depth_bits,
-            stencil_bits=0,
-            float_depth=False,
-            name='depth',
-            to_ram=False,
-            config=TextureConfiguration(),
-            texture=None):
+        self,
+        depth_bits,
+        stencil_bits=0,
+        float_depth=False,
+        name='depth',
+        to_ram=False,
+        config=TextureConfiguration(),
+        texture=None,
+    ):
         self.depth_bits = depth_bits
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
@@ -242,8 +240,8 @@ class BufferMixin(TargetMixinBase):
         winprops = self.make_winprops()
         buffer_options = self.make_buffer_options()
         self.target = self.graphics_engine.make_output(
-            self.win.get_pipe(), self.name, -1,
-            fbprops, winprops, buffer_options, self.win.get_gsg(), self.win)
+            self.win.get_pipe(), self.name, -1, fbprops, winprops, buffer_options, self.win.get_gsg(), self.win
+        )
         print("New buffer", self.target.get_fb_properties(), winprops)
 
     def create_target(self, pipeline):
@@ -320,7 +318,7 @@ class ScreenMixin(TargetMixinBase):
         pass
 
 
-class TargetShaderMixin():
+class TargetShaderMixin:
 
     def __init__(self):
         self.root: NodePath = None

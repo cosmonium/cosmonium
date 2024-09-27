@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,9 @@ class LuminanceThresholdFragmentShader(ShaderComponent):
 
     def fragment_shader(self, code: list[str]) -> None:
         code.append('  float luminance = dot(pixel_color, vec3(0.2126, 0.7152, 0.0722));')
-        code.append('  float soft = min(max(0, luminance - bloom_threshold + bloom_threshold * bloom_knee), 2 *  bloom_threshold * bloom_knee);')
+        code.append('  float soft = min(')
+        code.append('      max(0, luminance - bloom_threshold + bloom_threshold * bloom_knee),')
+        code.append('      2 *  bloom_threshold * bloom_knee);')
         code.append('  soft = soft * soft / (4 * bloom_threshold * bloom_knee + 1e-9);')
         code.append('  float weight = max(soft, luminance - bloom_threshold) / max(luminance, 1e-9);')
         code.append('  result = pixel_color * weight;')

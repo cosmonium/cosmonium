@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,8 +35,7 @@ class AnnotationsRenderStage(RenderSceneStage):
         return ['scene', 'depth']
 
     def provides(self):
-        return {'scene': 'color',
-                'depth': 'depth'}
+        return {'scene': 'color', 'depth': 'depth'}
 
     def can_render_to_screen(self):
         return False

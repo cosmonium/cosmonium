@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ class PipelineStage:
         return 330
 
     def add_source(self, source_name, stage):
-        self.sources[source_name] = (stage)
+        self.sources[source_name] = stage
 
     def get_source(self, source_name: str) -> Texture:
         return self.sources[source_name].get_output(source_name)
@@ -131,7 +131,10 @@ class ProcessStage(PipelineStage):
 
 class SceneStage(PipelineStage):
 
-    def __init__(self, name,):
+    def __init__(
+        self,
+        name,
+    ):
         PipelineStage.__init__(self, name)
         self.scene_stage = False
         self.screen_stage = False

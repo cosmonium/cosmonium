@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,8 @@ class ToneMappingStage(SceneStage):
         self.add_target(target)
         target.create(pipeline)
         shader = PostProcessShader(
-            fragment_shader=SimplePostProcessFragmentShader(SimpleToneMappingFragmentShader('tonemap_aces', False)))
+            fragment_shader=SimplePostProcessFragmentShader(SimpleToneMappingFragmentShader('tonemap_aces', False))
+        )
         shader.create(None, None)
         target.set_shader(shader)
         target.root.set_shader_input("exposure", 1.0)
