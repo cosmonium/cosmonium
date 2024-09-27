@@ -1,27 +1,28 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond, look_at
+from math import pi
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond
+
 from ..astro import calc_orientation
 from .. import units
-from math import pi
 
 # Coordinate System
 # Panda3D Coordinate system : Z-Up Right-handed
@@ -30,7 +31,7 @@ from math import pi
 #    z : up
 # Mapped onto J2000.0 Ecliptic frame
 #    x : vernal equinox
-#    y : 
+#    y :
 #    z : North Pole
 #
 # Celestia and SpaceEngine are Y-Up Right-handed
@@ -38,6 +39,7 @@ from math import pi
 #      x    =    x
 #      y    =    z
 #      z    =   -y
+
 
 class ReferenceFrame(object):
 
@@ -68,6 +70,7 @@ class ReferenceFrame(object):
     def __str__(self):
         raise NotImplementedError()
 
+
 class J2000BarycentricEclipticReferenceFrame(ReferenceFrame):
     def get_center(self):
         return LPoint3d()
@@ -92,6 +95,7 @@ class J2000BarycentricEclipticReferenceFrame(ReferenceFrame):
 
     def __str__(self):
         return 'J2000BarycentricEclipticReferenceFrame'
+
 
 class J2000BarycentricEquatorialReferenceFrame(ReferenceFrame):
     def get_center(self):
@@ -118,8 +122,9 @@ class J2000BarycentricEquatorialReferenceFrame(ReferenceFrame):
     def __str__(self):
         return 'J2000BarycentricEquatorialReferenceFrame'
 
+
 class AnchorReferenceFrame(ReferenceFrame):
-    def __init__(self, anchor = None):
+    def __init__(self, anchor=None):
         self.anchor = anchor
 
     def set_anchor(self, anchor):
@@ -137,16 +142,21 @@ class AnchorReferenceFrame(ReferenceFrame):
     def __str__(self):
         return self.__class__.__name__ + '(' + self.anchor.body.get_name() + ')'
 
+
 class J2000EclipticReferenceFrame(AnchorReferenceFrame):
     orientation = LQuaterniond()
+
     def get_orientation(self):
         return self.orientation
+
 
 class J2000EquatorialReferenceFrame(AnchorReferenceFrame):
     orientation = LQuaterniond()
     orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
+
     def get_orientation(self):
         return self.orientation
+
 
 class RelativeReferenceFrame(ReferenceFrame):
     def __init__(self, parent_frame, position, orientation):
@@ -167,16 +177,24 @@ class RelativeReferenceFrame(ReferenceFrame):
     def __str__(self):
         return self.__class__.__name__ + '(' + str(self.parent_frame) + ')'
 
+
 class CelestialReferenceFrame(AnchorReferenceFrame):
     """
     Reference frame build using the North pole axis (ra, decl) and the
     longitude at the node, where the perpendicular plane intersect the
     equatorial plane.
     """
-    def __init__(self, body = None,
-                 right_ascension=0.0, right_ascension_unit=units.Deg,
-                 declination=0.0, declination_unit=units.Deg,
-                 longitude_at_node=0.0, longitude_at_nod_units=units.Deg):
+
+    def __init__(
+        self,
+        body=None,
+        right_ascension=0.0,
+        right_ascension_unit=units.Deg,
+        declination=0.0,
+        declination_unit=units.Deg,
+        longitude_at_node=0.0,
+        longitude_at_nod_units=units.Deg,
+    ):
         AnchorReferenceFrame.__init__(self, body)
         self.right_asc = right_ascension * right_ascension_unit
         self.declination = declination * declination_unit
@@ -184,25 +202,34 @@ class CelestialReferenceFrame(AnchorReferenceFrame):
 
         longitude_quad = LQuaterniond()
         longitude_quad.setFromAxisAngleRad(self.longitude_at_node, LVector3d.unitZ())
-        self.orientation = longitude_quad * calc_orientation(self.right_asc, self.declination, False) * J2000EquatorialReferenceFrame.orientation
+        self.orientation = (
+            longitude_quad
+            * calc_orientation(self.right_asc, self.declination, False)
+            * J2000EquatorialReferenceFrame.orientation
+        )
 
     def get_orientation(self):
         return self.orientation
 
-j2000GalacticReferenceFrame = CelestialReferenceFrame(right_ascension=units.J2000_GalacticNorthRightAscension,
-                                                      declination=units.J2000_GalacticNorthDeclination,
-                                                      longitude_at_node=units.J2000_GalacticNode
-                                                      )
+
+j2000GalacticReferenceFrame = CelestialReferenceFrame(
+    right_ascension=units.J2000_GalacticNorthRightAscension,
+    declination=units.J2000_GalacticNorthDeclination,
+    longitude_at_node=units.J2000_GalacticNode,
+)
+
 
 class OrbitReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.orbit.frame.get_orientation()
         return rot
 
+
 class EquatorialReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.get_equatorial_rotation()
         return rot
+
 
 class SynchroneReferenceFrame(AnchorReferenceFrame):
     def get_orientation(self):

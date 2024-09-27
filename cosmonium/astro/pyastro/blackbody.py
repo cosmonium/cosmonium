@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 # From http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
@@ -22,8 +22,10 @@
 # but I can't make any promises about the quality of the algorithm's estimates above 40000 K.)
 
 
+from direct.showbase.PythonUtil import clamp
 from panda3d.core import LColor
 from math import log, pow
+
 
 def temp_to_RGB(kelvin):
     temp = kelvin // 100
@@ -32,7 +34,7 @@ def temp_to_RGB(kelvin):
 
         green = temp
         green = 99.4708025861 * log(green) - 161.1195681661
-        
+
         if temp <= 19:
             blue = 0
         else:
@@ -43,10 +45,10 @@ def temp_to_RGB(kelvin):
 
         red = temp - 60
         red = 329.698727446 * pow(red, -0.1332047592)
-        
+
         green = temp - 60
-        green = 288.1221695283 * pow(green, -0.0755148492 )
+        green = 288.1221695283 * pow(green, -0.0755148492)
 
         blue = 255
 
-    return LColor(clamp(0, 1, red/255.0), clamp(0, 1, green/255.0), clamp(0, 1, blue/255.0), 1.0)
+    return LColor(clamp(0, 1, red / 255.0), clamp(0, 1, green / 255.0), clamp(0, 1, blue / 255.0), 1.0)

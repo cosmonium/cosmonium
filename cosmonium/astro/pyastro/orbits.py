@@ -1,29 +1,29 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond
-
-from ...parameters import ParametersGroup, UserParameter, AutoUserParameter
-from ..kepler import kepler_pos
 
 from math import pi
+from panda3d.core import LPoint3d, LVector3d, LQuaterniond
+
+from ...parameters import ParametersGroup
+from ..kepler import kepler_pos
+
 
 class Orbit(object):
     def __init__(self, frame):
@@ -69,6 +69,7 @@ class Orbit(object):
     def get_bounding_radius(self):
         return 0.0
 
+
 class FixedPosition(Orbit):
     def is_periodic(self):
         return False
@@ -78,6 +79,7 @@ class FixedPosition(Orbit):
 
     def is_dynamic(self):
         return False
+
 
 class AbsoluteFixedPosition(FixedPosition):
     def __init__(self, frame, absolute_reference_point):
@@ -95,6 +97,7 @@ class AbsoluteFixedPosition(FixedPosition):
 
     def get_frame_rotation_at(self, time):
         return LQuaterniond()
+
 
 class LocalFixedPosition(FixedPosition):
     def __init__(self, frame, frame_position, frame_rotation=LQuaterniond()):
@@ -117,17 +120,20 @@ class LocalFixedPosition(FixedPosition):
     def get_bounding_radius(self):
         return self.frame_position.length()
 
+
 class EllipticalOrbit(Orbit):
-    def __init__(self,
-             frame,
-             epoch,
-             mean_motion,
-             mean_anomaly,
-             pericenter_distance,
-             eccentricity,
-             argument_of_periapsis,
-             inclination,
-             ascending_node):
+    def __init__(
+        self,
+        frame,
+        epoch,
+        mean_motion,
+        mean_anomaly,
+        pericenter_distance,
+        eccentricity,
+        argument_of_periapsis,
+        inclination,
+        ascending_node,
+    ):
         Orbit.__init__(self, frame)
         self.pericenter_distance = pericenter_distance
         self.apocenter_distance = pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity)
@@ -184,6 +190,7 @@ class EllipticalOrbit(Orbit):
 
     def get_frame_rotation_at(self, time):
         return self.rotation
+
 
 class FunctionOrbit(Orbit):
     pass

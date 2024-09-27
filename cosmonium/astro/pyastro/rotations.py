@@ -1,33 +1,33 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import pi
 from panda3d.core import LQuaterniond, LVector3d
 
 from ...parameters import ParametersGroup, UserParameter, AutoUserParameter
-
 from ..frame import J2000BarycentricEclipticReferenceFrame
 
-from math import asin, atan2, pi
 
 class Rotation(object):
     dynamic = False
+
     def __init__(self, frame):
         self.frame = frame
 
@@ -56,6 +56,7 @@ class Rotation(object):
     def get_absolute_rotation_at(self, time):
         return self.frame.get_absolute_orientation(self.get_frame_rotation_at(time))
 
+
 class FixedRotation(Rotation):
     def __init__(self, rotation, frame):
         Rotation.__init__(self, frame)
@@ -78,18 +79,16 @@ class FixedRotation(Rotation):
     def set_frame_rotation(self, rotation):
         self.rotation = rotation
 
+
 class UnknownRotation(FixedRotation):
     def __init__(self):
         FixedRotation.__init__(self, LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
 
+
 class UniformRotation(Rotation):
     dynamic = True
-    def __init__(self,
-                 equatorial_orientation,
-                 mean_motion,
-                 meridian_angle,
-                 epoch,
-                 frame):
+
+    def __init__(self, equatorial_orientation, mean_motion, meridian_angle, epoch, frame):
         Rotation.__init__(self, frame)
         self.equatorial_orientation = equatorial_orientation
         self.mean_motion = mean_motion
@@ -120,12 +119,9 @@ class UniformRotation(Rotation):
         rotation = local * self.get_frame_equatorial_orientation_at(time)
         return rotation
 
+
 class SynchronousRotation(Rotation):
-    def __init__(self,
-                 equatorial_orientation,
-                 meridian_angle,
-                 epoch,
-                 frame):
+    def __init__(self, equatorial_orientation, meridian_angle, epoch, frame):
         Rotation.__init__(self, frame)
         self.equatorial_orientation = equatorial_orientation
         self.parent_body = None
@@ -140,7 +136,16 @@ class SynchronousRotation(Rotation):
 
     def get_user_parameters(self):
         group = FixedRotation.get_user_parameters(self)
-        group.add_parameter(AutoUserParameter(_("Meridian angle"), 'meridian_angle', self, UserParameter.TYPE_FLOAT, value_range=[-360, 360], units=pi / 180))
+        group.add_parameter(
+            AutoUserParameter(
+                _("Meridian angle"),
+                'meridian_angle',
+                self,
+                UserParameter.TYPE_FLOAT,
+                value_range=[-360, 360],
+                units=pi / 180,
+            )
+        )
         group.add_parameter(AutoUserParameter(_("Epoch"), 'epoch', self, UserParameter.TYPE_FLOAT))
         return group
 
