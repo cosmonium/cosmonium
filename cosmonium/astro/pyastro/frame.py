@@ -144,18 +144,18 @@ class AnchorReferenceFrame(ReferenceFrame):
 
 
 class J2000EclipticReferenceFrame(AnchorReferenceFrame):
-    orientation = LQuaterniond()
+    _orientation = LQuaterniond()
 
     def get_orientation(self):
-        return self.orientation
+        return self._orientation
 
 
 class J2000EquatorialReferenceFrame(AnchorReferenceFrame):
-    orientation = LQuaterniond()
-    orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
+    _orientation = LQuaterniond()
+    _orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
 
     def get_orientation(self):
-        return self.orientation
+        return self._orientation
 
 
 class RelativeReferenceFrame(ReferenceFrame):
@@ -205,7 +205,7 @@ class CelestialReferenceFrame(AnchorReferenceFrame):
         self.orientation = (
             longitude_quad
             * calc_orientation(self.right_asc, self.declination, False)
-            * J2000EquatorialReferenceFrame.orientation
+            * J2000EquatorialReferenceFrame().get_orientation()
         )
 
     def get_orientation(self):
