@@ -1,23 +1,24 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
+from math import pow, pi
 from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
 
 from ...datasource import DataSource
@@ -33,8 +34,6 @@ from ...pipeline.stage import ProcessStage
 from ...pipeline.factory import PipelineFactory
 from ... import settings
 from ..scattering import ScatteringBase
-
-from math import pow, pi
 
 
 class ONeilScatteringBase(ScatteringBase):
@@ -53,21 +52,23 @@ class ONeilSimpleScattering(ONeilScatteringBase):
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
 
-    def __init__(self,
-                 wavelength,
-                 mie_phase_asymmetry,
-                 rayleigh_coef,
-                 mie_coef,
-                 sun_power,
-                 samples,
-                 calc_in_fragment,
-                 atm_calc_in_fragment,
-                 normalize,
-                 atm_normalize,
-                 hdr,
-                 exposure,
-                 atm_hdr,
-                 atm_exposure):
+    def __init__(
+        self,
+        wavelength,
+        mie_phase_asymmetry,
+        rayleigh_coef,
+        mie_coef,
+        sun_power,
+        samples,
+        calc_in_fragment,
+        atm_calc_in_fragment,
+        normalize,
+        atm_normalize,
+        hdr,
+        exposure,
+        atm_hdr,
+        atm_exposure,
+    ):
         super().__init__()
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
@@ -102,9 +103,25 @@ class ONeilSimpleScattering(ONeilScatteringBase):
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
-            scattering = ONeilSimpleScatteringShader(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
+            scattering = ONeilSimpleScatteringShader(
+                self,
+                atmosphere=True,
+                extinction_only=False,
+                calc_in_fragment=self.atm_calc_in_fragment,
+                normalize=self.atm_normalize,
+                displacement=False,
+                hdr=self.atm_hdr,
+            )
         else:
-            scattering = ONeilSimpleScatteringShader(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
+            scattering = ONeilSimpleScatteringShader(
+                self,
+                atmosphere=False,
+                extinction_only=extinction,
+                calc_in_fragment=self.calc_in_fragment,
+                normalize=self.normalize,
+                displacement=displacement,
+                hdr=self.hdr,
+            )
         scattering.set_inside(self.inside)
         return scattering
 
@@ -114,39 +131,58 @@ class ONeilSimpleScattering(ONeilScatteringBase):
     def get_user_parameters(self):
         group = ScatteringBase.get_user_parameters(self)
         group.add_parameters(
-                             AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
-                             AutoUserParameter('Mie coef', 'Km', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
-                             AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
-                             AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
-                             AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
-                             AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
-                             AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
-                            )
+            AutoUserParameter(
+                'Rayleigh coef',
+                'Kr',
+                self,
+                AutoUserParameter.TYPE_FLOAT,
+                [0, 1.0],
+                AutoUserParameter.SCALE_LOG_0,
+                value_range_0=1e-6,
+            ),
+            AutoUserParameter(
+                'Mie coef',
+                'Km',
+                self,
+                AutoUserParameter.TYPE_FLOAT,
+                [0, 1.0],
+                AutoUserParameter.SCALE_LOG_0,
+                value_range_0=1e-6,
+            ),
+            AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
+            AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
+            AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+            AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+            AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
+        )
         return group
 
+
 class ONeilScattering(ONeilScatteringBase):
-    def __init__(self,
-                 height,
-                 wavelength,
-                 mie_phase_asymmetry,
-                 rayleigh_scale_depth,
-                 rayleigh_coef,
-                 rayleigh_absorption,
-                 mie_scale_depth,
-                 mie_alpha_coef,
-                 mie_beta_coef,
-                 sun_power,
-                 samples,
-                 calc_in_fragment,
-                 atm_calc_in_fragment,
-                 normalize,
-                 atm_normalize,
-                 hdr,
-                 exposure,
-                 atm_hdr,
-                 atm_exposure,
-                 lookup_size,
-                 lookup_samples):
+    def __init__(
+        self,
+        height,
+        wavelength,
+        mie_phase_asymmetry,
+        rayleigh_scale_depth,
+        rayleigh_coef,
+        rayleigh_absorption,
+        mie_scale_depth,
+        mie_alpha_coef,
+        mie_beta_coef,
+        sun_power,
+        samples,
+        calc_in_fragment,
+        atm_calc_in_fragment,
+        normalize,
+        atm_normalize,
+        hdr,
+        exposure,
+        atm_hdr,
+        atm_exposure,
+        lookup_size,
+        lookup_samples,
+    ):
         super().__init__()
         self.wavelength = wavelength
         self.G = mie_phase_asymmetry
@@ -202,9 +238,25 @@ class ONeilScattering(ONeilScatteringBase):
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         if atmosphere:
-            scattering = ONeilScatteringShader(self, atmosphere=True, extinction_only=False, calc_in_fragment=self.atm_calc_in_fragment, normalize=self.atm_normalize, displacement=False, hdr=self.atm_hdr)
+            scattering = ONeilScatteringShader(
+                self,
+                atmosphere=True,
+                extinction_only=False,
+                calc_in_fragment=self.atm_calc_in_fragment,
+                normalize=self.atm_normalize,
+                displacement=False,
+                hdr=self.atm_hdr,
+            )
         else:
-            scattering = ONeilScatteringShader(self, atmosphere=False, extinction_only=extinction, calc_in_fragment=self.calc_in_fragment, normalize=self.normalize, displacement=displacement, hdr=self.hdr)
+            scattering = ONeilScatteringShader(
+                self,
+                atmosphere=False,
+                extinction_only=extinction,
+                calc_in_fragment=self.calc_in_fragment,
+                normalize=self.normalize,
+                displacement=displacement,
+                hdr=self.hdr,
+            )
         scattering.set_inside(self.inside)
         return scattering
 
@@ -236,26 +288,73 @@ class ONeilScattering(ONeilScatteringBase):
     def get_user_parameters(self):
         group = ScatteringBase.get_user_parameters(self)
         group.add_parameters(
-                             UserParameter('Rayleigh scale depth', self.set_rayleigh_scale_depth, self.get_rayleigh_scale_depth, UserParameter.TYPE_FLOAT, [0, self.height]),
-                             AutoUserParameter('Rayleigh coef', 'Kr', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
-                             AutoUserParameter('Rayleigh absorption', 'rayleigh_absorption', self, AutoUserParameter.TYPE_VEC, [0, 100.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6, nb_components=3),
-                             UserParameter('Mie scale depth', self.set_mie_scale_depth, self.get_mie_scale_depth, UserParameter.TYPE_FLOAT, [0, self.height]),
-                             AutoUserParameter('Mie alpha coef', 'Km_alpha', self, AutoUserParameter.TYPE_FLOAT, [-4.0, 4.0]),
-                             AutoUserParameter('Mie beta coef', 'Km_beta', self, AutoUserParameter.TYPE_FLOAT, [0, 1.0], AutoUserParameter.SCALE_LOG_0, value_range_0=1e-6),
-                             AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
-                             AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
-                             AutoUserParameter('Samples', 'samples', self, AutoUserParameter.TYPE_INT, [0, 64]),
-                             AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
-                             AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
-                             AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
-                            )
+            UserParameter(
+                'Rayleigh scale depth',
+                self.set_rayleigh_scale_depth,
+                self.get_rayleigh_scale_depth,
+                UserParameter.TYPE_FLOAT,
+                [0, self.height],
+            ),
+            AutoUserParameter(
+                'Rayleigh coef',
+                'Kr',
+                self,
+                AutoUserParameter.TYPE_FLOAT,
+                [0, 1.0],
+                AutoUserParameter.SCALE_LOG_0,
+                value_range_0=1e-6,
+            ),
+            AutoUserParameter(
+                'Rayleigh absorption',
+                'rayleigh_absorption',
+                self,
+                AutoUserParameter.TYPE_VEC,
+                [0, 100.0],
+                AutoUserParameter.SCALE_LOG_0,
+                value_range_0=1e-6,
+                nb_components=3,
+            ),
+            UserParameter(
+                'Mie scale depth',
+                self.set_mie_scale_depth,
+                self.get_mie_scale_depth,
+                UserParameter.TYPE_FLOAT,
+                [0, self.height],
+            ),
+            AutoUserParameter('Mie alpha coef', 'Km_alpha', self, AutoUserParameter.TYPE_FLOAT, [-4.0, 4.0]),
+            AutoUserParameter(
+                'Mie beta coef',
+                'Km_beta',
+                self,
+                AutoUserParameter.TYPE_FLOAT,
+                [0, 1.0],
+                AutoUserParameter.SCALE_LOG_0,
+                value_range_0=1e-6,
+            ),
+            AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
+            AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
+            AutoUserParameter('Samples', 'samples', self, AutoUserParameter.TYPE_INT, [0, 64]),
+            AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+            AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+            AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
+        )
         return group
+
 
 class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface):
 
     str_id = None
 
-    def __init__(self, parameters, atmosphere=False, extinction_only=False, calc_in_fragment=False, normalize=False, displacement=False, hdr=False):
+    def __init__(
+        self,
+        parameters,
+        atmosphere=False,
+        extinction_only=False,
+        calc_in_fragment=False,
+        normalize=False,
+        displacement=False,
+        hdr=False,
+    ):
         AtmosphericScattering.__init__(self)
         self.parameters = parameters
         self.atmosphere = atmosphere
@@ -350,20 +449,28 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
                 code.append("in vec3 v3Direction;")
 
     def oneil_incoming_light_for(self, code):
-        code.append("void oneil_incoming_light_for(in vec3 world_vertex, in vec3 world_normal, in vec3 light_direction, vec3 light_color, out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {")
+        code.append(
+            "void oneil_incoming_light_for(in vec3 world_vertex, in vec3 world_normal, in vec3 light_direction, vec3 light_color, out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {"
+        )
         if self.calc_in_fragment:
             if self.atmosphere:
                 code.append("    vec3 v3Direction;")
             code.append("    vec3 rayleigh_inscattering;")
             code.append("    vec3 mie_inscattering;")
             if self.atmosphere:
-                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append(
+                    "    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);"
+                )
             else:
-                code.append("    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append(
+                    "    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, rayleigh_inscattering, mie_inscattering, transmittance);"
+                )
         if self.atmosphere:
             code.append("    float fCos = dot(light_direction, v3Direction) / length(v3Direction);")
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
-            code.append("    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);")
+            code.append(
+                "    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);"
+            )
             code.append("    in_scatter = (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
         else:
             if self.extinction_only:
@@ -381,15 +488,21 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
     def prepare_scattering_for(self, code, light_direction, light_color):
         if not self.calc_in_fragment:
             if self.atmosphere:
-                code.append(f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append(
+                    f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);"
+                )
             else:
-                code.append(f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, rayleigh_inscattering, mie_inscattering, transmittance);")
+                code.append(
+                    f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, rayleigh_inscattering, mie_inscattering, transmittance);"
+                )
 
     def calc_transmittance(self, code):
         pass
 
     def incoming_light_for(self, code, light_direction, light_color):
-        code.append(f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);")
+        code.append(
+            f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);"
+        )
         if not self.atmosphere:
             code.append("ambient_diffuse = vec3(0);")
 
@@ -398,23 +511,25 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
     str_id = 'oneil-simple'
 
     def uniforms_scattering(self, code):
-        code.append("uniform vec3 v3OriginPos;")       # Center of the planet
-        code.append("uniform vec3 v3CameraPos;")       # The camera's current position
-        code.append("uniform vec3 v3EyeLightDir;")     # The direction vector to the light source in eye reference frame
-        code.append("uniform vec3 v3InvWavelength;")   # 1 / pow(wavelength, 4) for the red, green, and blue channels
-        code.append("uniform float fCameraHeight;")    # The camera's current height
-        code.append("uniform float fCameraHeight2;")   # fCameraHeight^2
-        code.append("uniform float fOuterRadius;")     # The outer (atmosphere) radius
-        code.append("uniform float fOuterRadius2;")    # fOuterRadius^2
-        code.append("uniform float fInnerRadius; ")    # The inner (planetary) radius
-        code.append("uniform float fInnerRadius2;")    # fInnerRadius^2
-        code.append("uniform float fKrESun;")          # Kr * ESun
-        code.append("uniform float fKmESun;")          # Km * ESun
-        code.append("uniform float fKr4PI;")           # Kr * 4 * PI
-        code.append("uniform float fKm4PI;")           # Km * 4 * PI
-        code.append("uniform float fScale;")           # 1 / (fOuterRadius - fInnerRadius)
-        code.append("uniform float fScaleDepth;")      #/ The scale depth (i.e. the altitude at which the atmosphere's average density is found)
-        code.append("uniform float fScaleOverScaleDepth;") # fScale / fScaleDepth
+        code.append("uniform vec3 v3OriginPos;")  # Center of the planet
+        code.append("uniform vec3 v3CameraPos;")  # The camera's current position
+        code.append("uniform vec3 v3EyeLightDir;")  # The direction vector to the light source in eye reference frame
+        code.append("uniform vec3 v3InvWavelength;")  # 1 / pow(wavelength, 4) for the red, green, and blue channels
+        code.append("uniform float fCameraHeight;")  # The camera's current height
+        code.append("uniform float fCameraHeight2;")  # fCameraHeight^2
+        code.append("uniform float fOuterRadius;")  # The outer (atmosphere) radius
+        code.append("uniform float fOuterRadius2;")  # fOuterRadius^2
+        code.append("uniform float fInnerRadius; ")  # The inner (planetary) radius
+        code.append("uniform float fInnerRadius2;")  # fInnerRadius^2
+        code.append("uniform float fKrESun;")  # Kr * ESun
+        code.append("uniform float fKmESun;")  # Km * ESun
+        code.append("uniform float fKr4PI;")  # Kr * 4 * PI
+        code.append("uniform float fKm4PI;")  # Km * 4 * PI
+        code.append("uniform float fScale;")  # 1 / (fOuterRadius - fInnerRadius)
+        code.append(
+            "uniform float fScaleDepth;"
+        )  # / The scale depth (i.e. the altitude at which the atmosphere's average density is found)
+        code.append("uniform float fScaleOverScaleDepth;")  # fScale / fScaleDepth
 
         code.append("uniform int nSamples;")
         code.append("uniform float fSamples;")
@@ -453,9 +568,13 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
         code.append("        out vec3 transmittance) {")
         if self.normalize:
             if self.atmosphere:
-                code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;")
+                code.append(
+                    "  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;"
+                )
             else:
-                code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
+                code.append(
+                    "  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;"
+                )
                 if self.displacement:
                     code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
@@ -471,7 +590,9 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
             code.append("  // Calculate the ray's starting position, then calculate its scattering offset")
             code.append("  vec3 v3Start = v3CameraPos;")
         else:
-            code.append("  // Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere)")
+            code.append(
+                "  // Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere)"
+            )
             code.append("  float B = 2.0 * dot(v3CameraPos, v3Ray);")
             code.append("  float C = fCameraHeight2 - fOuterRadius2;")
             code.append("  float fDet = max(0.0, B*B - 4.0 * C);")
@@ -502,7 +623,7 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
             code.append("  } else {")
             code.append("    fCameraAngle = dot(v3Ray, scaled_vertex_dir);")
             code.append("  }")
-            #TODO: This is a crude workaround to avoid dark band on pixels at camera level
+            # TODO: This is a crude workaround to avoid dark band on pixels at camera level
             code.append("  fCameraAngle = clamp(fCameraAngle, 0.1, 1.0);")
             code.append("  float fLightAngle = dot(v3LightPos, scaled_vertex_dir);")
             code.append("  float fCameraScale = scale(fCameraAngle);")
@@ -534,7 +655,9 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
         code.append("    v3SamplePoint += v3SampleRay;")
         code.append("  }")
 
-        code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
+        code.append(
+            "  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader"
+        )
         code.append("  rayleigh_inscattering = v3FrontColor * (v3InvWavelength * fKrESun * v3LightColor);")
         code.append("  mie_inscattering = v3FrontColor * fKmESun * v3LightColor;")
         code.append("  transmittance = v3Attenuate;")
@@ -551,7 +674,7 @@ class ONeilScatteringDataSourceBase(DataSource):
 
     def update(self, shape, instance, camera_pos, camera_rot):
         body = self.parameters.body
-        #TODO: This should not be managed here
+        # TODO: This should not be managed here
         if body.lights is None or len(body.lights.lights) == 0:
             print("No light source for scattering")
             return
@@ -559,9 +682,11 @@ class ONeilScatteringDataSourceBase(DataSource):
         inner_radius = self.parameters.body_radius
 
         if body.stellar_object:
-            #TODO: We should get the oblateness correctly
+            # TODO: We should get the oblateness correctly
             body_scale = self.parameters.body.surface.get_shape_axes()
-            descale = LMatrix4.scale_mat(inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2])
+            descale = LMatrix4.scale_mat(
+                inner_radius / body_scale[0], inner_radius / body_scale[1], inner_radius / body_scale[2]
+            )
             rotation_mat = LMatrix4()
             orientation = LQuaternion(*shape.parent.body.anchor.get_absolute_orientation())
             orientation.extract_to_matrix(rotation_mat)
@@ -577,7 +702,7 @@ class ONeilScatteringDataSourceBase(DataSource):
             descale_mat = LMatrix4.ident_mat()
             eye_descale_mat = LMatrix4.ident_mat()
             height_scale = 1.0
-            offset =  LVector3d(0, 0, inner_radius)
+            offset = LVector3d(0, 0, inner_radius)
         pos = body.anchor.rel_position - offset
         scaled_pos = descale_mat.xform_point(LPoint3(*pos))
         camera_height = scaled_pos.length()
@@ -594,6 +719,7 @@ class ONeilScatteringDataSourceBase(DataSource):
         instance.setShaderInput("height_scale", height_scale)
         instance.setShaderInput("atm_descale", descale_mat)
         instance.setShaderInput("atm_eye_descale", eye_descale_mat)
+
 
 class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
     def apply(self, shape, instance):
@@ -614,9 +740,12 @@ class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
         # Mie Scattering -- Haze and sun halos
         shape.instance.setShaderInput("fKmESun", parameters.Km * parameters.ESun)
         # Color of sun
-        shape.instance.setShaderInput("v3InvWavelength", 1.0 / pow(parameters.wavelength[0], 4),
-                                                         1.0 / pow(parameters.wavelength[1], 4),
-                                                         1.0 / pow(parameters.wavelength[2], 4))
+        shape.instance.setShaderInput(
+            "v3InvWavelength",
+            1.0 / pow(parameters.wavelength[0], 4),
+            1.0 / pow(parameters.wavelength[1], 4),
+            1.0 / pow(parameters.wavelength[2], 4),
+        )
 
         shape.instance.setShaderInput("fg", parameters.G)
         shape.instance.setShaderInput("fg2", parameters.G * parameters.G)
@@ -635,17 +764,18 @@ class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
         shape.instance.setShaderInput("fScaleDepth", parameters.ScaleDepth)
         shape.instance.setShaderInput("fScaleOverScaleDepth", scale / parameters.ScaleDepth)
 
+
 class ONeilLookupTableFragmentShader(ShaderProgram):
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
     def create_uniforms(self, code):
-        code.append("uniform float fOuterRadius;")     # The outer (atmosphere) radius
-        code.append("uniform float fInnerRadius; ")    # The inner (planetary) radius
-        code.append("uniform float fScale;")           # 1 / (fOuterRadius - fInnerRadius)
-        code.append("uniform float fRayleighScaleHeight;")      # The Rayleigh scattering scale height
-        code.append("uniform float fMieScaleHeight;")           # The Mie scattering scale height
-        code.append("uniform int nSamples;")           # The number of samples
+        code.append("uniform float fOuterRadius;")  # The outer (atmosphere) radius
+        code.append("uniform float fInnerRadius; ")  # The inner (planetary) radius
+        code.append("uniform float fScale;")  # 1 / (fOuterRadius - fInnerRadius)
+        code.append("uniform float fRayleighScaleHeight;")  # The Rayleigh scattering scale height
+        code.append("uniform float fMieScaleHeight;")  # The Mie scattering scale height
+        code.append("uniform int nSamples;")  # The number of samples
 
         code.append("#define DELTA 1e-6")
 
@@ -664,17 +794,23 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("float fCos = 1.0 - 2 * (texcoord.y);")
         code.append("float fAngle = acos(fCos);")
         code.append("vec3 v3Ray = vec3(sin(fAngle), cos(fAngle), 0);    // Ray pointing to the viewpoint")
-        code.append("// As the x tex coord goes from 0 to 1, the height goes from the bottom of the atmosphere to the top")
+        code.append(
+            "// As the x tex coord goes from 0 to 1, the height goes from the bottom of the atmosphere to the top"
+        )
         code.append("float fHeight = DELTA + fInnerRadius + ((fOuterRadius - fInnerRadius) * texcoord.x);")
         code.append("vec3 v3Pos = vec3(0, fHeight, 0);                // The position of the camera")
 
-        code.append("// If the ray from vPos heading in the vRay direction intersects the inner radius (i.e. the planet), then this spot is not visible from the viewpoint")
+        code.append(
+            "// If the ray from vPos heading in the vRay direction intersects the inner radius (i.e. the planet), then this spot is not visible from the viewpoint"
+        )
         code.append("float B = 2.0f * dot(v3Pos, v3Ray);")
         code.append("float Bsq = B * B;")
         code.append("float Cpart = dot(v3Pos,v3Pos);")
         code.append("float C = Cpart - fInnerRadius*fInnerRadius;")
         code.append("float fDet = Bsq - 4.0f * C;")
-        code.append("bool bVisible = (fDet < 0.0 || (0.5f * (-B - sqrt(fDet)) <= 0.0) && (0.5 * (-B + sqrt(fDet)) <= 0.0));")
+        code.append(
+            "bool bVisible = (fDet < 0.0 || (0.5f * (-B - sqrt(fDet)) <= 0.0) && (0.5 * (-B + sqrt(fDet)) <= 0.0));"
+        )
         code.append("float fRayleighDensityRatio;")
         code.append("float fMieDensityRatio;")
         code.append("if(bVisible)")
@@ -694,13 +830,17 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("fDet = Bsq - 4.0 * C;")
         code.append("float fFar = 0.5 * (-B + sqrt(fDet));")
 
-        code.append("// Next determine the length of each sample, scale the sample ray, and make sure position checks are at the center of a sample ray")
+        code.append(
+            "// Next determine the length of each sample, scale the sample ray, and make sure position checks are at the center of a sample ray"
+        )
         code.append("float fSampleLength = fFar / nSamples;")
         code.append("float fScaledLength = fSampleLength * fScale;")
         code.append("vec3 v3SampleRay = v3Ray * fSampleLength;")
         code.append("v3Pos += v3SampleRay * 0.5;")
 
-        code.append("// Iterate through the samples to sum up the optical depth for the distance the ray travels through the atmosphere")
+        code.append(
+            "// Iterate through the samples to sum up the optical depth for the distance the ray travels through the atmosphere"
+        )
         code.append("float fRayleighDepth = 0;")
         code.append("float fMieDepth = 0;")
         code.append("for(int i=0; i<nSamples; i++)")
@@ -717,7 +857,9 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("fRayleighDepth *= fScaledLength;")
         code.append("fMieDepth *= fScaledLength;")
 
-        code.append("// Store the results for Rayleigh to the light source, Rayleigh to the camera, Mie to the light source, and Mie to the camera")
+        code.append(
+            "// Store the results for Rayleigh to the light source, Rayleigh to the camera, Mie to the light source, and Mie to the camera"
+        )
         code.append("frag_output = vec4(fRayleighDensityRatio, fRayleighDepth, fMieDensityRatio, fMieDepth);")
 
     def create_body(self, code):
@@ -726,6 +868,7 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         self.lookup_code(code)
         if self.version < 130:
             code.append('gl_FragColor = frag_output;')
+
 
 class ONeilLookupTableShader(StructuredShader):
     def __init__(self):
@@ -751,6 +894,7 @@ class ONeilLookupTableShader(StructuredShader):
         instance.setShaderInput("fMieScaleHeight", parameters.mie_scale_depth)
         instance.setShaderInput("fScale", scale)
 
+
 class ONeilLookupTableRenderStage(ProcessStage):
     def __init__(self, size):
         ProcessStage.__init__(self, "lookuptable")
@@ -770,30 +914,32 @@ class ONeilLookupTableRenderStage(ProcessStage):
         target.set_clear_texture(False)
         self.add_target(target)
         target.set_fixed_size(self.size)
-        texture_config = TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp,
-                                              minfilter=Texture.FT_linear, magfilter=Texture.FT_linear)
+        texture_config = TextureConfiguration(
+            wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp, minfilter=Texture.FT_linear, magfilter=Texture.FT_linear
+        )
         target.add_color_target((32, 32, 32, 0), srgb_colors=False, to_ram=False, config=texture_config)
         target.create(pipeline)
         target.set_shader(self.create_shader())
+
 
 class ONeilScatteringShader(ONeilScatteringShaderBase):
     str_id = 'oneil'
 
     def uniforms_scattering(self, code):
-        code.append("uniform vec3 v3OriginPos;")       # Center of the planet
-        code.append("uniform vec3 v3CameraPos;")       # The camera's current position
-        code.append("uniform vec3 v3Absorption;")      # Absorption coefs for the red, green, and blue channels
-        code.append("uniform float fCameraHeight;")    # The camera's current height
-        code.append("uniform float fCameraHeight2;")   # fCameraHeight^2
-        code.append("uniform float fOuterRadius;")     # The outer (atmosphere) radius
-        code.append("uniform float fOuterRadius2;")    # fOuterRadius^2
-        code.append("uniform float fInnerRadius; ")    # The inner (planetary) radius
-        code.append("uniform float fInnerRadius2;")    # fInnerRadius^2
-        code.append("uniform vec3 v3KrESun;")          # Kr * ESun
-        code.append("uniform vec3 v3KmESun;")          # Km * ESun
-        code.append("uniform vec3 v3Kr4PI;")           # Kr * 4 * PI
-        code.append("uniform vec3 v3Km4PI;")           # Km * 4 * PI
-        code.append("uniform float fScale;")           # 1 / (fOuterRadius - fInnerRadius)
+        code.append("uniform vec3 v3OriginPos;")  # Center of the planet
+        code.append("uniform vec3 v3CameraPos;")  # The camera's current position
+        code.append("uniform vec3 v3Absorption;")  # Absorption coefs for the red, green, and blue channels
+        code.append("uniform float fCameraHeight;")  # The camera's current height
+        code.append("uniform float fCameraHeight2;")  # fCameraHeight^2
+        code.append("uniform float fOuterRadius;")  # The outer (atmosphere) radius
+        code.append("uniform float fOuterRadius2;")  # fOuterRadius^2
+        code.append("uniform float fInnerRadius; ")  # The inner (planetary) radius
+        code.append("uniform float fInnerRadius2;")  # fInnerRadius^2
+        code.append("uniform vec3 v3KrESun;")  # Kr * ESun
+        code.append("uniform vec3 v3KmESun;")  # Km * ESun
+        code.append("uniform vec3 v3Kr4PI;")  # Kr * 4 * PI
+        code.append("uniform vec3 v3Km4PI;")  # Km * 4 * PI
+        code.append("uniform float fScale;")  # 1 / (fOuterRadius - fInnerRadius)
 
         code.append("uniform sampler2D pbOpticalDepth;")
         code.append("uniform int nSamples;")
@@ -816,9 +962,13 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("        out vec3 transmittance) {")
         if self.normalize:
             if self.atmosphere:
-                code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;")
+                code.append(
+                    "  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fOuterRadius;"
+                )
             else:
-                code.append("  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;")
+                code.append(
+                    "  vec3 scaled_vertex = normalize(atm_descale * (world_vertex * model_scale - v3OriginPos)) * fInnerRadius;"
+                )
                 if self.displacement:
                     code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
@@ -843,7 +993,9 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
             code.append("  float fCameraAngle = dot(bCameraAbove ? -v3Ray : v3Ray, v3CameraPos) / fCameraHeight;")
             code.append("  v4CameraDepth = texture(pbOpticalDepth, vec2(fCameraAltitude, 0.5 - fCameraAngle * 0.5));")
         else:
-            code.append("  // Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere)")
+            code.append(
+                "  // Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere)"
+            )
             code.append("  float B = 2.0 * dot(v3CameraPos, v3Ray);")
             code.append("  float C = fCameraHeight2 - fOuterRadius2;")
             code.append("  float fDet = max(0.0, B*B - 4.0 * C);")
@@ -871,7 +1023,9 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("      float fAltitude = (fHeight - fInnerRadius) * fScale;")
         code.append("      v4LightDepth = texture(pbOpticalDepth, vec2(fAltitude, 0.5 - fLightAngle * 0.5));")
 
-        code.append("      // If no light light reaches this part of the atmosphere, no light is scattered in at this point")
+        code.append(
+            "      // If no light light reaches this part of the atmosphere, no light is scattered in at this point"
+        )
         code.append("      if(v4LightDepth[0] < DELTA)")
         code.append("      {")
         code.append("          // Move the position to the center of the next sample ray")
@@ -879,13 +1033,17 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("          continue;")
         code.append("      }")
 
-        code.append("      // Get the density at this point, along with the optical depth from the light source to this point")
+        code.append(
+            "      // Get the density at this point, along with the optical depth from the light source to this point"
+        )
         code.append("      float fRayleighDensity = fScaledLength * v4LightDepth[0];")
         code.append("      float fRayleighDepth = v4LightDepth[1];")
         code.append("      float fMieDensity = fScaledLength * v4LightDepth[2];")
         code.append("      float fMieDepth = v4LightDepth[3];")
 
-        code.append("      // If the camera is above the point we're shading, we calculate the optical depth from the sample point to the camera")
+        code.append(
+            "      // If the camera is above the point we're shading, we calculate the optical depth from the sample point to the camera"
+        )
         code.append("      // Otherwise, we calculate the optical depth from the camera to the sample point")
         code.append("      if(bCameraAbove)")
         code.append("      {")
@@ -905,7 +1063,9 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("      // Now multiply the optical depth by the attenuation factor for the sample ray")
         code.append("      // Calculate the attenuation factor for the sample ray")
         code.append("      vec3 v3Attenuation;")
-        code.append("      v3Attenuation = exp(-fRayleighDepth * v3Absorption -fRayleighDepth * v3Kr4PI - fMieDepth * v3Km4PI);")
+        code.append(
+            "      v3Attenuation = exp(-fRayleighDepth * v3Absorption -fRayleighDepth * v3Kr4PI - fMieDepth * v3Km4PI);"
+        )
         code.append("      v3Attenuate = v3Attenuation;")
 
         code.append("      v3RayleighSum += fRayleighDensity * v3Attenuation;")
@@ -914,7 +1074,9 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("      // Move the position to the center of the next sample ray")
         code.append("      v3SamplePoint += v3SampleRay;")
         code.append("  }")
-        code.append("  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader")
+        code.append(
+            "  // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader"
+        )
         code.append("  rayleigh_inscattering = v3RayleighSum * v3KrESun * v3LightColor;")
         code.append("  mie_inscattering = v3MieSum * v3KmESun * v3LightColor;")
         code.append("  transmittance = v3Attenuate;")
@@ -922,28 +1084,33 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
             code.append("  v3Direction = -v3Ray;")
         code.append("}")
 
+
 class ONeilScatteringDataSource(ONeilScatteringDataSourceBase):
     def apply(self, shape, instance):
         parameters = self.parameters
         pbOpticalDepth = parameters.get_lookup_table()
         inner_radius = parameters.body_radius
-        outer_radius =  parameters.radius
+        outer_radius = parameters.radius
         scale = 1.0 / (outer_radius - inner_radius)
 
         shape.instance.setShaderInput("nSamples", int(parameters.samples))
         # These do sunsets and sky colors
         # Brightness of sun
         # Reyleight Scattering (Main sky colors)
-        Kr = LVector3d(parameters.Kr / pow(parameters.wavelength[0], 4),
-                       parameters.Kr / pow(parameters.wavelength[1], 4),
-                       parameters.Kr / pow(parameters.wavelength[2], 4))
+        Kr = LVector3d(
+            parameters.Kr / pow(parameters.wavelength[0], 4),
+            parameters.Kr / pow(parameters.wavelength[1], 4),
+            parameters.Kr / pow(parameters.wavelength[2], 4),
+        )
         shape.instance.setShaderInput("v3KrESun", Kr * parameters.ESun)
         shape.instance.setShaderInput("v3Kr4PI", Kr * 4 * pi)
         shape.instance.setShaderInput("v3Absorption", parameters.rayleigh_absorption)
         # Mie Scattering -- Haze and sun halos
-        Km = LVector3d(parameters.Km_beta / pow(parameters.wavelength[0], parameters.Km_alpha),
-                       parameters.Km_beta / pow(parameters.wavelength[1], parameters.Km_alpha),
-                       parameters.Km_beta / pow(parameters.wavelength[2], parameters.Km_alpha))
+        Km = LVector3d(
+            parameters.Km_beta / pow(parameters.wavelength[0], parameters.Km_alpha),
+            parameters.Km_beta / pow(parameters.wavelength[1], parameters.Km_alpha),
+            parameters.Km_beta / pow(parameters.wavelength[2], parameters.Km_alpha),
+        )
         shape.instance.setShaderInput("v3KmESun", Km * parameters.ESun)
         shape.instance.setShaderInput("v3Km4PI", Km * 4 * pi)
 

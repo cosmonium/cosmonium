@@ -1,20 +1,20 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
@@ -69,7 +69,8 @@ class ScatteringBase(ABC):
     def set_scattering_on(self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
         data_source = self.create_data_source(atmosphere)
         scattering_shader = self.create_scattering_shader(
-            atmosphere=atmosphere, displacement=not shape_object.is_flat(), extinction=extinction)
+            atmosphere=atmosphere, displacement=not shape_object.is_flat(), extinction=extinction
+        )
         shape_object.set_scattering(data_source, scattering_shader)
 
     def remove_scattering_on(self, shape_object: ShapeObject) -> None:
@@ -126,8 +127,7 @@ class ScatteringBase(ABC):
         self.attenuated_objects = []
 
     @abstractmethod
-    def do_update_scattering(
-            self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
+    def do_update_scattering(self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
         raise NotImplementedError()
 
     @abstractmethod
