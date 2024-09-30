@@ -333,7 +333,7 @@ class AutoPilot(object):
         ecliptic_normal = (
             self.controller.get_frame_orientation()
             .conjugate()
-            .xform(J2000EclipticReferenceFrame.orientation.xform(LVector3d.up()))
+            .xform(J2000EclipticReferenceFrame().get_orientation().xform(LVector3d.up()))
         )
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
@@ -350,7 +350,7 @@ class AutoPilot(object):
         ecliptic_normal = (
             self.controller.get_frame_orientation()
             .conjugate()
-            .xform(J2000EquatorialReferenceFrame.orientation.xform(LVector3d.up()))
+            .xform(J2000EquatorialReferenceFrame().get_orientation().xform(LVector3d.up()))
         )
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
