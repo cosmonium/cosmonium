@@ -1,26 +1,26 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.bullet import BulletWorld, BulletDebugNode, BulletRigidBodyNode,\
-    BulletTriangleMesh, BulletTriangleMeshShape, BulletCapsuleShape, ZUp,\
-    BulletCharacterControllerNode
+from panda3d.bullet import BulletWorld, BulletDebugNode, BulletRigidBodyNode
+from panda3d.bullet import BulletTriangleMesh, BulletTriangleMeshShape, BulletCapsuleShape
+from panda3d.bullet import ZUp, BulletCharacterControllerNode
 from panda3d.core import LQuaterniond, LVector3d, NodePath, LVector3, BitMask32
 
 from .base import PhysicsBase
@@ -45,7 +45,7 @@ class BulletPhysics(PhysicsBase):
         if self.enable_debug:
             self.debug = render.attach_new_node(BulletDebugNode('Debug'))
             self.debug.show()
-            #self.debug.node().showNormals(True)
+            # self.debug.node().showNormals(True)
             self.physics_world.set_debug_node(self.debug.node())
 
     def set_gravity(self, gravity):
@@ -73,7 +73,7 @@ class BulletPhysics(PhysicsBase):
 
     def add_controller(self, entity, instance, physics_node):
         physics_instance = NodePath(physics_node)
-        #physics_instance.set_z(1)
+        # physics_instance.set_z(1)
         physics_node.set_gravity(self.gravity)
         self.physics_world.attach_character(physics_node)
         physics_instance.reparent_to(self.render_world)
