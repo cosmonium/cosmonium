@@ -1,45 +1,44 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
-from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePath
-from panda3d.core import lookAt
-
+from direct.interval.FunctionInterval import Wait
 from direct.interval.LerpInterval import LerpFunc, LerpQuatInterval
 from direct.interval.MetaInterval import Parallel, Sequence
-from direct.interval.FunctionInterval import Wait
+from direct.showbase.ShowBaseGlobal import globalClock
+from math import acos, pi, exp, log
+from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePath
+from panda3d.core import lookAt
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .astro.frame import AnchorReferenceFrame, SynchroneReferenceFrame
 from .astro import units
-from .utils import isclose
 from .objects.systems import SimpleSystem
+from .utils import isclose
 from . import settings
-
-from math import acos, pi, exp, log
 
 
 class AutoPilot(object):
     def __init__(self, ui):
         self.ui = ui
         self.controller = None
-        self.camera_controller =None
+        self.camera_controller = None
         self.current_interval = None
         self.timed_interval = None
         self.last_interval_time = None
@@ -54,10 +53,10 @@ class AutoPilot(object):
         self.camera_controller = camera_controller
 
     def reset(self):
-        if self.current_interval != None:
+        if self.current_interval is not None:
             self.current_interval.pause()
             self.current_interval = None
-        if self.timed_interval != None:
+        if self.timed_interval is not None:
             self.timed_interval.pause()
             self.timed_interval = None
 
@@ -76,14 +75,15 @@ class AutoPilot(object):
             self.current_interval = None
 
     def move_to(self, new_pos, absolute=True, duration=0, ease=True):
-        if settings.debug_jump: duration = 0
+        if settings.debug_jump:
+            duration = 0
         if duration == 0:
             if absolute:
                 self.controller.set_local_position(new_pos)
             else:
                 self.controller.set_frame_position(new_pos)
         else:
-            if self.current_interval != None:
+            if self.current_interval is not None:
                 self.current_interval.pause()
             if absolute:
                 self.start_pos = self.controller.get_frame_position()
@@ -92,36 +92,31 @@ class AutoPilot(object):
                 blend_type = 'easeInOut'
             else:
                 blend_type = 'noBlend'
-            self.current_interval = LerpFunc(self.do_move,
-                fromData=0,
-                toData=1,
-                duration=duration,
-                blendType=blend_type,
-                name=None)
+            self.current_interval = LerpFunc(
+                self.do_move, fromData=0, toData=1, duration=duration, blendType=blend_type, name=None
+            )
             self.current_interval.start()
 
     def do_update_func(self, step, func, extra):
-        delta = globalClock.getRealTime() - self.last_interval_time
-        self.last_interval_time = globalClock.getRealTime()
+        delta = globalClock.get_real_time() - self.last_interval_time
+        self.last_interval_time = globalClock.get_real_time()
         if self.current_interval is None:
             func(delta, *extra)
         if step == 1.0:
             self.timed_interval = None
 
     def update_func(self, func, duration=0, extra=()):
-        if settings.debug_jump: duration = 0
+        if settings.debug_jump:
+            duration = 0
         if duration == 0:
             func(duration, *extra)
         else:
-            if self.timed_interval != None:
+            if self.timed_interval is not None:
                 self.timed_interval.pause()
-            self.last_interval_time = globalClock.getRealTime()
-            self.timed_interval = LerpFunc(self.do_update_func,
-                fromData=0,
-                toData=1,
-                duration=duration,
-                extraArgs=[func, extra],
-                name=None)
+            self.last_interval_time = globalClock.get_real_time()
+            self.timed_interval = LerpFunc(
+                self.do_update_func, fromData=0, toData=1, duration=duration, extraArgs=[func, extra], name=None
+            )
             self.timed_interval.start()
 
     def do_move_and_rot(self, step):
@@ -134,7 +129,8 @@ class AutoPilot(object):
             self.current_interval = None
 
     def move_and_rotate_to(self, new_pos, new_rot, absolute=True, duration=0, start_rotation=0.0, end_rotation=0.5):
-        if settings.debug_jump: duration = 0
+        if settings.debug_jump:
+            duration = 0
         self.camera_controller.prepare_movement()
         if duration == 0:
             if absolute:
@@ -144,7 +140,7 @@ class AutoPilot(object):
                 self.controller.set_frame_position(new_pos)
                 self.controller.set_frame_orientation(new_rot)
         else:
-            if self.current_interval != None:
+            if self.current_interval is not None:
                 self.current_interval.pause()
             self.fake = NodePath('fake')
             if absolute:
@@ -161,17 +157,17 @@ class AutoPilot(object):
             nodepath_lerp = Sequence()
             rotation_duration = duration * (end_rotation - start_rotation)
             nodepath_lerp.append(Wait(duration * start_rotation))
-            nodepath_lerp.append(LerpQuatInterval(self.fake,
-                                             duration=rotation_duration,
-                                             blendType='easeInOut',
-                                             quat = LQuaternion(*end_rot),
-                                             ))
-            func_lerp = LerpFunc(self.do_move_and_rot,
-                                 fromData=0,
-                                 toData=1,
-                                 duration=duration,
-                                 blendType='easeInOut',
-                                 name=None)
+            nodepath_lerp.append(
+                LerpQuatInterval(
+                    self.fake,
+                    duration=rotation_duration,
+                    blendType='easeInOut',
+                    quat=LQuaternion(*end_rot),
+                )
+            )
+            func_lerp = LerpFunc(
+                self.do_move_and_rot, fromData=0, toData=1, duration=duration, blendType='easeInOut', name=None
+            )
             parallel = Parallel(nodepath_lerp, func_lerp)
             self.current_interval = parallel
             self.current_interval.start()
@@ -193,8 +189,9 @@ class AutoPilot(object):
         lookAt(orientation, direction, up)
         self.move_and_rotate_to(position, orientation, duration=duration)
 
-    def go_to_front(self, duration = None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
-        if not self.ui.selected: return
+    def go_to_front(self, duration=None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if duration is None:
             duration = settings.slow_move
@@ -219,7 +216,9 @@ class AutoPilot(object):
                     position = target.parent.primary
         if position is not None:
             print("Looking from", position.get_name())
-            position = position.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+            position = position.anchor.calc_absolute_relative_position_to(
+                self.controller.get_absolute_reference_point()
+            )
         else:
             position = self.controller.get_local_position()
         direction = center - position
@@ -227,8 +226,9 @@ class AutoPilot(object):
         new_position = center - direction * distance * distance_unit
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_object(self, duration = None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
-        if not self.ui.selected: return
+    def go_to_object(self, duration=None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if duration is None:
             duration = settings.slow_move
@@ -245,8 +245,11 @@ class AutoPilot(object):
         new_position = center - direction * distance * distance_unit
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_object_long_lat(self, longitude, latitude, duration = None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
-        if not self.ui.selected: return
+    def go_to_object_long_lat(
+        self, longitude, latitude, duration=None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5
+    ):
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if duration is None:
             duration = settings.slow_move
@@ -264,8 +267,9 @@ class AutoPilot(object):
         direction.normalize()
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_surface(self, duration = None, height=1.001):
-        if not self.ui.selected: return
+    def go_to_surface(self, duration=None, height=1.001):
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if duration is None:
             duration = settings.slow_move
@@ -280,7 +284,8 @@ class AutoPilot(object):
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
     def go_pole(self, target, lat, duration, zoom):
-        if not self.ui.selected: return
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if zoom:
             distance = settings.default_distance
@@ -292,7 +297,8 @@ class AutoPilot(object):
         self.go_to_object_long_lat(0, lat, duration, distance)
 
     def go_north(self, duration=None, zoom=False):
-        if not self.ui.selected: return
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         lat = pi / 2
         if target.anchor.rotation.is_flipped():
@@ -300,7 +306,8 @@ class AutoPilot(object):
         self.go_pole(target, lat, duration, zoom)
 
     def go_south(self, duration=None, zoom=False):
-        if not self.ui.selected: return
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         lat = -pi / 2
         if target.anchor.rotation.is_flipped():
@@ -308,7 +315,8 @@ class AutoPilot(object):
         self.go_pole(target, lat, duration, zoom)
 
     def go_meridian(self, duration=None, zoom=False):
-        if not self.ui.selected: return
+        if not self.ui.selected:
+            return
         target = self.ui.selected
         if zoom:
             distance = settings.default_distance
@@ -322,25 +330,33 @@ class AutoPilot(object):
     def align_on_ecliptic(self, duration=None):
         if duration is None:
             duration = settings.fast_move
-        ecliptic_normal = self.controller.get_frame_orientation().conjugate().xform(J2000EclipticReferenceFrame.orientation.xform(LVector3d.up()))
+        ecliptic_normal = (
+            self.controller.get_frame_orientation()
+            .conjugate()
+            .xform(J2000EclipticReferenceFrame.orientation.xform(LVector3d.up()))
+        )
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
         if direction < 0:
             angle = 2 * pi - angle
-        rot=LQuaterniond()
+        rot = LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
         self.controller.step_turn_local(rot)
-        #self.move_and_rotate_to(position, orientation, duration=duration)
+        # self.move_and_rotate_to(position, orientation, duration=duration)
 
     def align_on_equatorial(self, duration=None):
         if duration is None:
             duration = settings.fast_move
-        ecliptic_normal = self.controller.get_frame_orientation().conjugate().xform(J2000EquatorialReferenceFrame.orientation.xform(LVector3d.up()))
+        ecliptic_normal = (
+            self.controller.get_frame_orientation()
+            .conjugate()
+            .xform(J2000EquatorialReferenceFrame.orientation.xform(LVector3d.up()))
+        )
         angle = acos(ecliptic_normal.dot(LVector3d.right()))
         direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
         if direction < 0:
             angle = 2 * pi - angle
-        rot=LQuaterniond()
+        rot = LQuaterniond()
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
         self.controller.step_turn_local(rot)
 
@@ -371,7 +387,7 @@ class AutoPilot(object):
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         center = self.controller.anchor.calc_frame_position_of_local(center)
         relative_pos = self.controller.get_frame_position() - center
-        rot=LQuaterniond()
+        rot = LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
         rot2 = self.controller.get_frame_orientation().conjugate() * rot * self.controller.get_frame_orientation()
         rot2.normalize()
@@ -388,7 +404,7 @@ class AutoPilot(object):
         self.update_func(self.do_orbit, duration, [axis, rate])
 
     def do_rotate(self, delta, axis, rate):
-        rot=LQuaterniond()
+        rot = LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
         self.controller.step_turn_local(rot)
 
