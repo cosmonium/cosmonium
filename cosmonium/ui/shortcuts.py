@@ -48,7 +48,7 @@ class Shortcuts(DirectObject):
         for event, shortcuts in shortcuts_items:
             self.add(event, shortcuts)
 
-    def get_shortcut_for(self, event):
+    def get_shortcuts_for(self, event):
         return self.eventmap.get(event, None)
 
     def keystroke_event(self, keyname):

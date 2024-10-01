@@ -112,9 +112,9 @@ class MenuBuilder:
     def menu_event(self, text, state, event, condition, args=[]):
         if text[0] == '@':
             text = self.get_auto_text(text[1:])
-        shortcut = None  # self.shortcuts.get_shortcut_for(event)
-        if shortcut is not None:
-            full_text = text + '>' + shortcut.title()
+        shortcuts = self.shortcuts.get_shortcuts_for(event)
+        if shortcuts:
+            full_text = text + '>' + shortcuts[0].title()
         else:
             full_text = text
         action = self.messenger.send
