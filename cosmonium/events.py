@@ -147,6 +147,7 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-orbit-minormoon', self.engine.toggle_orbit, ['minormoon'])
         self.accept('toggle-orbit-comet', self.engine.toggle_orbit, ['comet'])
         self.accept('toggle-orbit-asteroid', self.engine.toggle_orbit, ['asteroid'])
+        self.accept('toggle-orbit-interstellar', self.engine.toggle_orbit, ['interstellar'])
         self.accept('toggle-orbit-spacecraft', self.engine.toggle_orbit, ['spacecraft'])
 
         # Labels
