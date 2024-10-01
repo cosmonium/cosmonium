@@ -295,7 +295,7 @@ EllipticalOrbit::get_frame_rotation_at(double time)
 double
 EllipticalOrbit::get_bounding_radius(void)
 {
-  return pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity);
+  return abs(pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity));
 }
 
 TypeHandle FunctionOrbit::_type_handle;
