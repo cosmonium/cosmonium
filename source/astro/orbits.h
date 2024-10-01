@@ -172,6 +172,8 @@ PUBLISHED:
 
   virtual double get_bounding_radius(void);
 
+  double get_time_of_perihelion(void);
+
   INLINE double get_period(void);
   INLINE void set_period(double period);
   MAKE_PROPERTY(period, get_period, set_period);

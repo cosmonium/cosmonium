@@ -293,6 +293,12 @@ EllipticalOrbit::get_frame_rotation_at(double time)
 }
 
 double
+EllipticalOrbit::get_time_of_perihelion(void)
+{
+  return epoch - mean_anomaly / mean_motion;
+}
+
+double
 EllipticalOrbit::get_bounding_radius(void)
 {
   return abs(pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity));
