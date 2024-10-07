@@ -27,7 +27,6 @@ from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePat
 from panda3d.core import lookAt
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-from .astro.frame import AnchorReferenceFrame, SynchroneReferenceFrame
 from .astro import units
 from .objects.systems import SimpleSystem
 from .utils import isclose
@@ -174,12 +173,7 @@ class AutoPilot(object):
 
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
         if up is None:
-            up = LVector3d.up()
-        if target.anchor.has_rotation():
-            frame = SynchroneReferenceFrame(target.anchor)
-        else:
-            frame = AnchorReferenceFrame(target.anchor)
-        up = frame.get_orientation().xform(up)
+            up = self.camera_controller.get_local_orientation().xform(LVector3d.up())
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")
         else:
@@ -187,7 +181,6 @@ class AutoPilot(object):
             up = up - direction * up.dot(direction)
         orientation = LQuaterniond()
         lookAt(orientation, direction, up)
-        self.move_and_rotate_to(position, orientation, duration=duration)
 
     def go_to_front(self, duration=None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
         if not self.ui.selected:

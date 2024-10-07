@@ -181,7 +181,12 @@ def goto(command_name, sequence, base, parameters):
     up = parameters.get('up', [0, 1, 0])
     up = LVector3d(up[0], -up[2], up[1])
     up.normalize()
-    sequence.append(Func(base.autopilot.go_to_object, duration, distance, up, 0.25, 0.75))
+
+    def goto_func():
+        global_up = base.camera_controller.get_local_orientation().xform(up)
+        base.autopilot.go_to_object(duration, distance, global_up, 0.25, 0.75)
+
+    sequence.append(Func(goto_func))
 
 
 def gotoloc(command_name, sequence, base, parameters):
