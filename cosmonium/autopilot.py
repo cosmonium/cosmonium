@@ -181,6 +181,9 @@ class AutoPilot(object):
             up = up - direction * up.dot(direction)
         orientation = LQuaterniond()
         lookAt(orientation, direction, up)
+        self.move_and_rotate_to(
+            position, orientation, duration=duration, start_rotation=start_rotation, end_rotation=end_rotation
+        )
 
     def go_to_front(self, duration=None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
         if not self.ui.selected:
@@ -239,7 +242,7 @@ class AutoPilot(object):
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
     def go_to_object_long_lat(
-        self, longitude, latitude, duration=None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5
+        self, longitude, latitude, duration=None, distance=None, up=None, start_rotation=0.25, end_rotation=0.75
     ):
         if not self.ui.selected:
             return
