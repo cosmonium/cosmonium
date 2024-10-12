@@ -167,6 +167,9 @@ CartesianAnchor::get_absolute_reference_point(void) const
 void
 CartesianAnchor::set_absolute_reference_point(LPoint3d new_reference_point)
 {
+  if (new_reference_point == _global_position) {
+      return;
+  }
   LPoint3d old_local = frame->get_local_position(_frame_position);
   LPoint3d new_local = (_global_position - new_reference_point) + old_local;
   _global_position = new_reference_point;
