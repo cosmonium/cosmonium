@@ -124,7 +124,7 @@ class AutopilotProvider:
 
     @property
     def time_to_destination(self):
-        return self.engine.autopilot.current_interval.get_duration() - self.engine.autopilot.current_interval.get_t()
+        return self.engine.autopilot.current_interval.duration - self.engine.autopilot.current_interval.t
 
 
 class BodiesProvider:

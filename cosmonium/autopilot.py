@@ -18,16 +18,15 @@
 #
 
 
-from direct.interval.FunctionInterval import Wait
-from direct.interval.LerpInterval import LerpFunc, LerpQuatInterval
-from direct.interval.MetaInterval import Parallel, Sequence
+from direct.interval.LerpInterval import LerpFunc
 from direct.showbase.ShowBaseGlobal import globalClock
 from math import acos, pi, exp, log
-from panda3d.core import LQuaterniond, LQuaternion, LVector3d, LPoint3d, NodePath
+from panda3d.core import LQuaterniond, LVector3d, LPoint3d
 from panda3d.core import lookAt
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .astro import units
+from .mathutil.quaternion import slerp
 from .objects.systems import SimpleSystem
 from .utils import isclose
 from . import settings
@@ -119,8 +118,14 @@ class AutoPilot(object):
             self.timed_interval.start()
 
     def do_move_and_rot(self, step):
-        rot = LQuaterniond(*self.fake.getQuat())
-        rot.normalize()
+        rot_step = (step - self.start_rotation) / (self.end_rotation - self.start_rotation)
+        if rot_step > 0 and rot_step <= 1:
+            rot = slerp(self.start_rot, self.end_rot, rot_step)
+            rot.normalize()
+        elif rot_step < 0:
+            rot = self.start_rot
+        else:
+            rot = self.end_rot
         self.controller.set_frame_orientation(rot)
         position = self.end_pos * step + self.start_pos * (1.0 - step)
         self.controller.set_frame_position(position)
@@ -141,34 +146,22 @@ class AutoPilot(object):
         else:
             if self.current_interval is not None:
                 self.current_interval.pause()
-            self.fake = NodePath('fake')
             if absolute:
                 self.start_pos = self.controller.get_frame_position()
                 self.end_pos = self.controller.anchor.calc_frame_position_of_local(new_pos)
-                start_rot = self.controller.get_frame_orientation()
-                end_rot = self.controller.anchor.calc_frame_orientation_of(new_rot)
+                self.start_rot = self.controller.get_frame_orientation()
+                self.end_rot = self.controller.anchor.calc_frame_orientation_of(new_rot)
             else:
                 self.start_pos = self.controller.get_frame_position()
                 self.end_pos = new_pos
-                start_rot = self.controller.get_frame_orientation()
-                end_rot = new_rot
-            self.fake.set_quat(LQuaternion(*start_rot))
-            nodepath_lerp = Sequence()
-            rotation_duration = duration * (end_rotation - start_rotation)
-            nodepath_lerp.append(Wait(duration * start_rotation))
-            nodepath_lerp.append(
-                LerpQuatInterval(
-                    self.fake,
-                    duration=rotation_duration,
-                    blendType='easeInOut',
-                    quat=LQuaternion(*end_rot),
-                )
-            )
+                self.start_rot = self.controller.get_frame_orientation()
+                self.end_rot = new_rot
+            self.start_rotation = start_rotation
+            self.end_rotation = end_rotation
             func_lerp = LerpFunc(
                 self.do_move_and_rot, fromData=0, toData=1, duration=duration, blendType='easeInOut', name=None
             )
-            parallel = Parallel(nodepath_lerp, func_lerp)
-            self.current_interval = parallel
+            self.current_interval = func_lerp
             self.current_interval.start()
 
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
