@@ -95,7 +95,7 @@ class UISkinEntry:
     def calc_size_px(self, size, element, font_size, skin):
         return size * settings.ui_scale
 
-    def get_font_parameters(self, element, skin, prefix=None, scale3=False):
+    def get_font_parameters(self, element, skin, prefix=None, scale3=False, ui_scale=None):
         font_family = self.font_family
         font_style = Font.STYLE_NORMAL
         if self.font_style == 'italic':
@@ -103,10 +103,12 @@ class UISkinEntry:
         if self.font_weight == 'bold':
             font_style = Font.STYLE_BOLD
         font_size = self.font_size(element, True, skin)
+        if ui_scale is None:
+            ui_scale = (1, 1)
         if scale3:
-            scale = (font_size, 1, font_size)
+            scale = (ui_scale[0] * font_size, 1, ui_scale[1] * font_size)
         else:
-            scale = (font_size, font_size)
+            scale = (ui_scale[0] * font_size, ui_scale[1] * font_size)
         parameters = {
             'scale': scale,
             'font': fontsManager.load_font(font_family, font_style),
@@ -136,7 +138,9 @@ class UISkinEntry:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
         return parameters
 
-    def get_dgui_parameters_for(self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None):
+    def get_dgui_parameters_for(
+        self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None
+    ):
         dgui_type = dgui or element.type_
         font_size = self.font_size(element, True, skin)
         if dgui_type == 'button':
@@ -169,6 +173,22 @@ class UISkinEntry:
                 'frameColor': self.background_color,
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
+            }
+        elif dgui_type == 'menu':
+            hover = skin.get(element, 'hover')
+            clicked = skin.get(element, 'clicked')
+            disabled = skin.get(element, 'disabled')
+            parameters = {
+                'BGColor': self.background_color,
+                # 'BGBorderColor': (0.3, 0.3, 0.3, 1),
+                # 'separatorColor': (0, 0, 0, 1),
+                'frameColorHover': hover.background_color,
+                'frameColorPress': clicked.background_color,
+                'textColorReady': self.text_color,
+                'textColorHover': hover.text_color,
+                'textColorPress': clicked.text_color,
+                'textColorDisabled': disabled.text_color,
+                **(self.get_font_parameters(element, skin, scale3=True, ui_scale=ui_scale) if not skip_font else {}),
             }
         elif dgui_type == 'onscreen-text':
             parameters = {
@@ -269,10 +289,10 @@ class UISkin:
     def get(self, element, state=None):
         return self.collect_entries_for(element, state)
 
-    def get_style(self, element, state=None, prefix=None, skip_font=False, usage=None, dgui=None):
+    def get_style(self, element, state=None, prefix=None, skip_font=False, usage=None, dgui=None, ui_scale=None):
         style = self.collect_entries_for(element, state)
         return style.get_dgui_parameters_for(
-            element, skin=self, prefix=prefix, skip_font=skip_font, usage=usage, dgui=dgui
+            element, skin=self, prefix=prefix, skip_font=skip_font, usage=usage, dgui=dgui, ui_scale=ui_scale
         )
 
     def collect_entries_for(self, element, state):

@@ -17,42 +17,38 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LVector3
 from pandamenu.menu import DropDownMenu
 
-from .. import settings
+from .skin import UIElement
 
 
 class Menubar:
 
-    def __init__(self, menu_items):
+    def __init__(self, menu_items, owner):
         self.menu_items = menu_items
         self.menubar = None
+        self.owner = owner
+        if owner is not None:
+            self.skin = owner.skin
+        else:
+            self.skin = None
 
-    def create(self, font, scale):
-        scale = LVector3(scale[0], 1.0, scale[1])
-        scale[0] *= settings.menu_text_size
-        scale[2] *= settings.menu_text_size
+    def create(self, scale):
+        menubar_element = UIElement('menu', id_="menubar")
+        style = self.skin.get_style(menubar_element, ui_scale=scale)
         self.menubar = DropDownMenu(
             items=self.menu_items,
-            font=font,
             sidePad=0.75,
             align=DropDownMenu.ALeft,
             baselineOffset=-0.35,
-            scale=scale,
+            # scale=scale,
             itemHeight=1.2,
             leftPad=0.2,
             separatorHeight=0.3,
             underscoreThickness=1,
-            BGColor=(0.9, 0.9, 0.9, 0.9),
             BGBorderColor=(0.3, 0.3, 0.3, 1),
             separatorColor=(0, 0, 0, 1),
-            frameColorHover=(0.3, 0.3, 0.3, 1),
-            frameColorPress=(0.3, 0.3, 0.3, 0.1),
-            textColorReady=(0, 0, 0, 1),
-            textColorHover=(0.7, 0.7, 0.7, 1),
-            textColorPress=(0, 0, 0, 1),
-            textColorDisabled=(0.3, 0.3, 0.3, 1),
+            **style
         )
 
     def show(self):

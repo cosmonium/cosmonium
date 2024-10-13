@@ -144,9 +144,9 @@ class Gui(object):
             self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser
         )
         self.menu_builder.add_named_menus(ui_config.named_menus)
-        self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar))
-        self.menubar.create(self.font, self.scale)
-        self.popup_menu = Popup(self, self.cosmonium, self.menu_builder.create_menu(ui_config.popup))
+        self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar), owner=self)
+        self.menubar.create(self.scale)
+        self.popup_menu = Popup(self.cosmonium, self.menu_builder.create_menu(ui_config.popup), owner=self)
         self.popup_menu_shown = False
 
         if settings.show_hud:
@@ -201,7 +201,7 @@ class Gui(object):
         self.over = self.mouse.get_over()
         if self.over is None and self.menubar_shown:
             return False
-        self.popup_menu.create(self.font, self.scale, self.over, self.popup_done)
+        self.popup_menu.create(self.scale, self.over, self.popup_done)
         self.popup_menu_shown = True
         self.over = None
 

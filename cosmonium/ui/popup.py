@@ -17,48 +17,42 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LVector3
 from pandamenu.menu import PopupMenu
 
-from .. import settings
+from .skin import UIElement
 
 
 class Popup:
 
-    def __init__(self, gui, engine, menu_builder):
-        self.gui = gui
+    def __init__(self, engine, menu_builder, owner):
         self.engine = engine
         self.menu_builder = menu_builder
         self.popup_done = None
+        self.owner = owner
+        if owner is not None:
+            self.skin = owner.skin
+        else:
+            self.skin = None
 
-    def create(self, font, scale, over, popup_done=None):
+    def create(self, scale, over, popup_done=None):
         self.popup_done = popup_done
         # TODO: This should not be done here !
         if over is not None:
             self.engine.select_body(over)
         items = self.menu_builder()
-        scale = LVector3(scale[0], 1.0, scale[1])
-        scale[0] *= settings.menu_text_size
-        scale[2] *= settings.menu_text_size
+        popup_element = UIElement('menu', id_="popup")
+        style = self.skin.get_style(popup_element, ui_scale=scale)
         PopupMenu(
             items=items,
-            font=font,
             baselineOffset=-0.35,
-            scale=scale,
             itemHeight=1.2,
             leftPad=0.2,
             separatorHeight=0.3,
             underscoreThickness=1,
-            BGColor=(0.9, 0.9, 0.9, 0.9),
             BGBorderColor=(0.3, 0.3, 0.3, 1),
             separatorColor=(0, 0, 0, 1),
-            frameColorHover=(0.3, 0.3, 0.3, 1),
-            frameColorPress=(0.3, 0.3, 0.3, 0.1),
-            textColorReady=(0, 0, 0, 1),
-            textColorHover=(0.7, 0.7, 0.7, 1),
-            textColorPress=(0, 0, 0, 1),
-            textColorDisabled=(0.3, 0.3, 0.3, 1),
             onDestroy=self.on_destroy,
+            **style
         )
 
     def on_destroy(self):
