@@ -141,7 +141,7 @@ class ShapeObject(VisibleObject):
         pass
 
     def unconfigure_shape(self):
-        pass
+        self.shadows.clear_shadows()
 
     def set_scale(self, scale):
         self.shape.set_scale(scale)
