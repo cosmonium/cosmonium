@@ -63,10 +63,6 @@ class ReflectiveBody(StellarBody):
         for component in self.get_components():
             component.end_shadows_update()
 
-    def unconfigure_shape(self):
-        StellarBody.unconfigure_shape(self)
-        self.surface.remove_all_shadows()
-
     def create_components(self):
         StellarBody.create_components(self)
         # if self.light_source is None:
