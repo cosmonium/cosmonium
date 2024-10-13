@@ -26,6 +26,7 @@ from panda3d.core import lookAt
 
 from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .astro import units
+from .mathutil.easing import ExpEasing, SinEasing
 from .mathutil.quaternion import slerp
 from .objects.systems import SimpleSystem
 from .utils import isclose
@@ -43,6 +44,8 @@ class AutoPilot(object):
         self.fake = None
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
+        self.trans_easing = ExpEasing()
+        self.rot_easing = SinEasing()
 
     def set_controller(self, controller):
         self.controller = controller
@@ -119,15 +122,16 @@ class AutoPilot(object):
 
     def do_move_and_rot(self, step):
         rot_step = (step - self.start_rotation) / (self.end_rotation - self.start_rotation)
-        if rot_step > 0 and rot_step <= 1:
-            rot = slerp(self.start_rot, self.end_rot, rot_step)
+        if rot_step >= 0 and rot_step <= 1:
+            rot = slerp(self.start_rot, self.end_rot, self.rot_easing.easing(rot_step))
             rot.normalize()
         elif rot_step < 0:
             rot = self.start_rot
         else:
             rot = self.end_rot
         self.controller.set_frame_orientation(rot)
-        position = self.end_pos * step + self.start_pos * (1.0 - step)
+        pos_step = self.trans_easing.easing(step)
+        position = self.end_pos * pos_step + self.start_pos * (1.0 - pos_step)
         self.controller.set_frame_position(position)
         if step == 1.0:
             self.current_interval = None
@@ -159,7 +163,7 @@ class AutoPilot(object):
             self.start_rotation = start_rotation
             self.end_rotation = end_rotation
             func_lerp = LerpFunc(
-                self.do_move_and_rot, fromData=0, toData=1, duration=duration, blendType='easeInOut', name=None
+                self.do_move_and_rot, fromData=0, toData=1, duration=duration, name=None
             )
             self.current_interval = func_lerp
             self.current_interval.start()
