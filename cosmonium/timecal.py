@@ -17,10 +17,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import jdcal
 import time
 
 from .astro.units import time_to_values, values_to_time
-from .astro import jdcal
 
 
 class Time(object):

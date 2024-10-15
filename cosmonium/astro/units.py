@@ -18,10 +18,9 @@
 #
 
 
+import jdcal
 from math import floor, pi
 from panda3d.core import LQuaterniond, LVector3d
-
-from . import jdcal
 
 
 Km = 1.0
