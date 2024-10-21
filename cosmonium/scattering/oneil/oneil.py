@@ -473,9 +473,7 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
             )
             code.append("    in_scatter = (fRayleighPhase * rayleigh_inscattering + fMiePhase * mie_inscattering);")
         else:
-            if self.extinction_only:
-                code.append("    in_scatter = vec3(0);")
-            else:
+            if not self.extinction_only:
                 code.append("    in_scatter = rayleigh_inscattering + mie_inscattering;")
             code.append("    incoming_light_color = light_color;")
         code.append("}")
@@ -503,8 +501,6 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
         code.append(
             f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);"
         )
-        if not self.atmosphere:
-            code.append("ambient_diffuse = vec3(0);")
 
 
 class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):

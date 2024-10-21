@@ -39,9 +39,7 @@ class NoScattering(ShaderComponent, ScatteringInterface):
         pass
 
     def calc_transmittance(self, code):
-        code.append("    transmittance = vec3(1);")
+        pass
 
     def incoming_light_for(self, code, light_direction, light_color):
         code.append(f"    incoming_light_color = {light_color}.rgb;")
-        code.append("    in_scatter = vec3(0);")
-        code.append("    ambient_diffuse = vec3(0);")

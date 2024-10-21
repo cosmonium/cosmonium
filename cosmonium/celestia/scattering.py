@@ -253,8 +253,6 @@ void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in v
             f"scatteredColor, scatterEx, eyeDir_obj, {light_direction}, {light_color}.rgb, "
             "incoming_light_color, in_scatter, transmittance);"
         )
-        if not self.atmosphere:
-            code.append("ambient_diffuse = vec3(0);")
 
 
 class CelestiaScatteringDataSource(DataSource):
