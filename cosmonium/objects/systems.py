@@ -183,13 +183,19 @@ class StellarSystem(StellarObject):
             if child.orbit_object is not None:
                 child.orbit_object.check_visibility(frustum, pixel_size)
 
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        StellarObject.check_and_create_instance(self, scene_manager, camera_pos, camera_rot)
+        for child in self.children:
+            if child.orbit_object is not None:
+                child.orbit_object.check_and_create_instance(scene_manager, camera_pos, camera_rot)
+                if child.orbit_object.instance is not None:
+                    scene_manager.add_spread_object(child.orbit_object.instance)
+
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         StellarObject.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
         for child in self.children:
             if child.orbit_object is not None:
                 child.orbit_object.check_and_update_instance(scene_manager, camera_pos, camera_rot)
-                if child.orbit_object.instance is not None:
-                    scene_manager.add_spread_object(child.orbit_object.instance)
 
 
 class OctreeSystem(StellarSystem):

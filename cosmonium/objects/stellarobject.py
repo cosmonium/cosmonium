@@ -365,6 +365,9 @@ class StellarObject(NamedObject):
             self.remove_components()
             self.init_components = False
 
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        self.components.check_and_create_instance(scene_manager, camera_pos, camera_rot)
+
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         StellarObject.nb_instance += 1
         if self.lights is not None:

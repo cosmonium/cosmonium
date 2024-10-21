@@ -97,6 +97,15 @@ class BodyController:
         """
         pass
 
+    def check_and_create_instance(self, camera_pos, camera_rot):
+        """
+        Method called each cycle, if the anchor is resolved, to alter the instance of the object in the scene
+        The actual check_and_create_instance() method of the anchor will be called before this method
+        :param camera_pos: Absolute position of the camera
+        :param camera_rot: Absolute rotation of the camera.
+        """
+        pass
+
     def check_and_update_instance(self, camera_pos, camera_rot):
         """
         Method called each cycle, if the anchor is resolved, to alter the instance of the object in the scene

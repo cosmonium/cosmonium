@@ -21,8 +21,6 @@
 from direct.task.Task import gather
 from direct.task.TaskManagerGlobal import taskMgr
 
-from . import settings
-
 
 class DataSourceTasksTree:
     def __init__(self, sources):
@@ -31,7 +29,7 @@ class DataSourceTasksTree:
         self.tasks = []
 
     def add_task_for(self, source, coro):
-        task = taskMgr.add(coro, sort=settings.shape_jobs_task_sort)
+        task = taskMgr.add(coro, sort=taskMgr.getCurrentTask().sort + 1)
         self.named_tasks[source.name] = task
         self.tasks.append(task)
 

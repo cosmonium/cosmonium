@@ -69,11 +69,11 @@ class Atmosphere(ShapeObject):
         if self.get_pixel_height() < 1.0:
             self.visible = False
 
-    async def create_instance(self, scene_anchor):
+    async def create_instance_task(self, scene_anchor):
         # TODO: Find a better way to retrieve ellipticity
         scale = self.body.surface.get_scale() / self.body_radius
         self.set_scale(scale * self.radius)
-        await ShapeObject.create_instance(self, scene_anchor)
+        await ShapeObject.create_instance_task(self, scene_anchor)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)

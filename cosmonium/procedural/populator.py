@@ -102,7 +102,7 @@ class TerrainPopulatorBase(VisibleObject):
 
     async def create_object_template(self, scene_anchor):
         if self.object_template.instance is None:
-            await self.object_template.create_instance(scene_anchor)
+            await self.object_template.create_instance_task(scene_anchor)
             self.configure_object_template()
 
     def delete_object_template(self):
@@ -128,12 +128,13 @@ class TerrainPopulatorBase(VisibleObject):
     def end_shadows_update(self):
         self.object_template.end_shadows_update()
 
-    # TODO: Temporarily stolen from foundation to be able to spawn task
-    def check_and_create_instance(self):
+    def create_instance(self):
         if not self.instance and not self.task:
-            self.task = taskMgr.add(self.create_instance(), uponDeath=self.task_done)
+            self.task = taskMgr.add(
+                self.create_instance_task(), sort=taskMgr.getCurrentTask().sort + 1, uponDeath=self.task_done
+            )
 
-    async def create_instance(self):
+    async def create_instance_task(self):
         await self.create_object_template(self.scene_anchor)
         self.instance = self.object_template.instance
 

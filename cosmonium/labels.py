@@ -54,6 +54,10 @@ class Labels:
         for label in self.labels:
             label.check_visibility(frustum, pixel_size)
 
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        for label in self.labels:
+            label.check_and_create_instance(scene_manager, camera_pos, camera_rot)
+
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         for label in self.labels:
             label.check_and_update_instance(scene_manager, camera_pos, camera_rot)

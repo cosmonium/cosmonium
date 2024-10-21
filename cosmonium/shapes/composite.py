@@ -61,12 +61,15 @@ class CompositeShapeObject(VisibleObject):
     def task_done(self, task):
         self.task = None
 
-    # TODO: Temporarily stolen from foundation to be able to spawn task
-    def check_and_create_instance(self):
+    def create_instance(self):
         if not self.task:
-            self.task = taskMgr.add(self.create_instance(self.owner.scene_anchor), uponDeath=self.task_done)
+            self.task = taskMgr.add(
+                self.create_instance_task(self.owner.scene_anchor),
+                sort=taskMgr.getCurrentTask().sort + 1,
+                uponDeath=self.task_done,
+            )
 
-    async def create_instance(self, scene_anchor):
+    async def create_instance_task(self, scene_anchor):
         tasks = []
         for component in self.components:
             tasks.append(component.create_instance(scene_anchor))

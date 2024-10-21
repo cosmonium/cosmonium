@@ -45,8 +45,8 @@ class SkyBox(ShapeObject):
     def configure_render_order(self):
         self.instance.set_bin("background", 1)
 
-    async def create_instance(self, scene_anchor):
-        await ShapeObject.create_instance(self, scene_anchor)
+    async def create_instance_task(self, scene_anchor):
+        await ShapeObject.create_instance_task(self, scene_anchor)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.set_depth_write(False)
         self.instance.set_depth_test(False)

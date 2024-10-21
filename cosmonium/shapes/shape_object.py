@@ -174,17 +174,20 @@ class ShapeObject(VisibleObject):
     def task_done(self, task):
         self.task = None
 
-    # TODO: Temporarily stolen from foundation to be able to spawn task
-    def check_and_create_instance(self):
+    def create_instance(self):
         if not self.instance and not self.task:
+            if settings.debug_shape_task:
+                print(globalClock.get_frame_count(), "CREATE", self)
             self.task = taskMgr.add(
-                self.create_instance(self.owner.scene_anchor),
-                sort=settings.shape_jobs_task_sort,
+                self.create_instance_task(self.owner.scene_anchor),
+                sort=taskMgr.getCurrentTask().sort + 1,
                 uponDeath=self.task_done,
             )
 
-    async def create_instance(self, scene_anchor):
+    async def create_instance_task(self, scene_anchor):
         # TODO: Temporarily here until foundation.show() is corrected
+        if settings.debug_shape_task:
+            print(globalClock.get_frame_count(), "DO CREATE", self)
         if scene_anchor.instance is None:
             print("NO INSTANCE FOR", self, self.owner.get_name())
             return
@@ -300,15 +303,19 @@ class ShapeObject(VisibleObject):
         if self.shape.patchable:
             for patch in patches:
                 if not patch.instance_ready and patch.task is None:
+                    if settings.debug_shape_task:
+                        print(globalClock.get_frame_count(), "SCHEDULE", patch.str_id())
                     self.patch_sources.create(patch)
                     # Patch generation is ongoing, use parent data to display the patch in the meantime
                     self.early_apply_patch(patch)
                     patch.task = taskMgr.add(
-                        self.patch_task(patch), sort=settings.shape_jobs_task_sort, uponDeath=patch.task_done
+                        self.patch_task(patch), sort=taskMgr.getCurrentTask().sort + 1, uponDeath=patch.task_done
                     )
         if not self.shape.instance_ready and self.shape.task is None:
+            if settings.debug_shape_task:
+                print(globalClock.get_frame_count(), "SCHEDULE", self.shape.str_id())
             self.shape.task = taskMgr.add(
-                self.shape_task(self.shape), sort=settings.shape_jobs_task_sort, uponDeath=self.shape.task_done
+                self.shape_task(self.shape), sort=taskMgr.getCurrentTask().sort + 1, uponDeath=self.shape.task_done
             )
 
     def early_apply_patch(self, patch):

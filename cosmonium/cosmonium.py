@@ -619,7 +619,8 @@ class Cosmonium(CosmoniumBase):
         self.window_event(None)
 
         self.taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
-        self.taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
+        self.taskMgr.add(self.update_lod_task, "update_lod-task", sort=settings.update_lod_task_sort)
+        self.taskMgr.add(self.update_instances_task, "update-instances-task", sort=settings.update_instances_task_sort)
 
         self.main_update_task(None)
         self.start_universe()
@@ -1427,6 +1428,19 @@ class Cosmonium(CosmoniumBase):
             body.update_lod(camera_pos, camera_rot)
 
     @pstat
+    def create_instances(self):
+        scene_manager = self.scene_manager
+
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        for resolved in self.resolved:
+            body = resolved.body
+            body.check_and_create_instance(scene_manager, camera_pos, camera_rot)
+        self.worlds.update_scene_anchor(scene_manager)
+        for controller in self.controllers_to_update:
+            controller.check_and_create_instance(camera_pos, camera_rot)
+
+    @pstat
     def update_instances(self):
         scene_manager = self.scene_manager
 
@@ -1462,6 +1476,7 @@ class Cosmonium(CosmoniumBase):
         pixel_size = self.observer.anchor.pixel_size
         self.labels.update_obs(self.observer)
         self.labels.check_visibility(frustum, pixel_size)
+        self.labels.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
         self.labels.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
 
     @pstat
@@ -1581,13 +1596,17 @@ class Cosmonium(CosmoniumBase):
 
         self.apply_shadows()
         self.update_instances_state()
-        self.update_lod()
+        self.create_instances()
         update.set_level(StellarObject.nb_update)
         obs.set_level(StellarObject.nb_obs)
         visibility.set_level(StellarObject.nb_visibility)
         instance.set_level(StellarObject.nb_instance)
         if settings.color_picking:
             self.oid_texture.clear_image()
+        return Task.cont
+
+    def update_lod_task(self, task):
+        self.update_lod()
         return Task.cont
 
     def update_instances_task(self, task):

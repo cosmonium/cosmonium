@@ -108,7 +108,7 @@ class TexturesDictionary(AppearanceBase):
                 tasks.append(
                     taskMgr.add(
                         texture.load(tasks_tree, shape),
-                        sort=settings.shape_jobs_task_sort,
+                        sort=taskMgr.getCurrentTask().sort + 1,
                     )
                 )
         return gather(*tasks)
@@ -116,7 +116,7 @@ class TexturesDictionary(AppearanceBase):
     def load_texture_array(self, tasks_tree, shape, owner):
         tasks = []
         for texture in self.texture_arrays.values():
-            tasks.append(taskMgr.add(texture.load(tasks_tree, shape), sort=settings.shape_jobs_task_sort))
+            tasks.append(taskMgr.add(texture.load(tasks_tree, shape), sort=taskMgr.getCurrentTask().sort + 1))
         return gather(*tasks)
 
     def task_done(self, task):

@@ -243,8 +243,10 @@ halo_depth = 100
 # Tasks order
 worker_callback_task_sort = -10
 main_update_task_sort = 35
-shape_jobs_task_sort = 37
-instances_update_task_sort = 40
+# Slot 36 is used by tasks spawned within main_update_task
+update_lod_task_sort = 37
+# Slot 38 is used by tasks spawned within update_lod_task
+update_instances_task_sort = 40
 
 # Collision bits
 mouse_click_collision_bit = 0

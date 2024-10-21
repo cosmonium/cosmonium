@@ -125,6 +125,9 @@ class BaseObject(object):
     def check_settings(self):
         pass
 
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        pass
+
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
 
@@ -145,10 +148,6 @@ class VisibleObject(BaseObject):
         # TODO: Should be handled properly
         self.instance_ready = False
 
-    def check_and_create_instance(self):
-        if not self.instance:
-            self.create_instance()
-
     def create_instance(self):
         pass
 
@@ -160,7 +159,7 @@ class VisibleObject(BaseObject):
 
     def do_show(self):
         if not self.instance:
-            self.check_and_create_instance()
+            self.create_instance()
         if self.instance:
             self.instance.unstash()
             self.instance.show()
@@ -177,12 +176,15 @@ class VisibleObject(BaseObject):
     def get_scale(self):
         return LVecBase3(1.0, 1.0, 1.0)
 
-    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
         if self.shown and self.visible:
             self.do_show()
-            self.update_instance(scene_manager, camera_pos, camera_rot)
         else:
             self.do_hide()
+
+    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
+        if self.shown and self.visible and self.instance is not None:
+            self.update_instance(scene_manager, camera_pos, camera_rot)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         pass
@@ -279,6 +281,10 @@ class CompositeObject(BaseObject):
     def check_settings(self):
         for component in self.components:
             component.check_settings()
+
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        for component in self.components:
+            component.check_and_create_instance(scene_manager, camera_pos, camera_rot)
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         for component in self.components:

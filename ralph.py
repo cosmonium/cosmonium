@@ -648,8 +648,9 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.worlds.init()
 
-        taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
-        taskMgr.add(self.update_instances_task, "instances-task", sort=settings.instances_update_task_sort)
+        self.taskMgr.add(self.main_update_task, "main-update-task", sort=settings.main_update_task_sort)
+        self.taskMgr.add(self.update_lod_task, "update_lod-task", sort=settings.update_lod_task_sort)
+        self.taskMgr.add(self.update_instances_task, "update-instances-task", sort=settings.update_instances_task_sort)
 
     def main_update_task(self, task):
         dt = globalClock.get_dt()
@@ -709,8 +710,12 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.worlds.find_shadows()
         self.worlds.update_instances_state(self.scene_manager)
-        self.worlds.update_lod(self.observer)
+        self.worlds.create_instances(self.scene_manager, self.observer)
 
+        return task.cont
+
+    def update_lod_task(self, task):
+        self.worlds.update_lod(self.observer)
         return task.cont
 
     def update_instances_task(self, task):

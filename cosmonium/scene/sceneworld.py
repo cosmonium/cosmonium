@@ -198,6 +198,17 @@ class Worlds:
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
 
+    def create_instances(self, scene_manager, observer):
+        camera_pos = observer.get_local_position()
+        camera_rot = observer.get_absolute_orientation()
+
+        if self.global_shadows is not None:
+            self.global_shadows.update(scene_manager)
+
+        for resolved in self.resolved:
+            world = resolved.body
+            world.check_and_create_instance(scene_manager, camera_pos, camera_rot)
+
     def update_lod(self, observer):
         camera_pos = observer.get_local_position()
         camera_rot = observer.get_absolute_orientation()
@@ -369,6 +380,9 @@ class SimpleWorld(SceneWorld):
 
     def update_lod(self, camera_pos, camera_rot):
         self.components.update_lod(camera_pos, camera_rot)
+
+    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
+        self.components.check_and_create_instance(scene_manager, camera_pos, camera_rot)
 
     def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
         if self.lights is not None:
