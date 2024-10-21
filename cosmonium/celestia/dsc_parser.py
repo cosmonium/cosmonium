@@ -28,9 +28,9 @@ from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
 from ..astro import units
 from ..dircontext import defaultDirContext
+from ..mathutil.quaternion import quaternion_from_axis_angle
 from ..objects.galaxies import Galaxy
 from ..objects.universe import Universe
-from .. import utils
 
 from . import config_parser
 
@@ -80,7 +80,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
     position = calc_position(ra, decl, distance)
     frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
     orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
-    rot = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
+    rot = quaternion_from_axis_angle(axis, angle, units.Deg)
     rotation = FixedRotation(rot, J2000EquatorialReferenceFrame())
     if app_magnitude is not None and distance is not None:
         abs_magnitude = units.app_to_abs_mag(app_magnitude, distance)

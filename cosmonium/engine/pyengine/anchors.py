@@ -25,7 +25,7 @@ from time import time
 from ...astro import units
 from ...astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
 from ...astro.frame import AbsoluteReferenceFrame
-from ... import utils
+from ...mathutil.quaternion import relative_rotation
 from ... import settings
 
 from ..octree import OctreeNode
@@ -284,7 +284,7 @@ class CartesianAnchor(AnchorBase):
         angle = LVector3d.forward().angleRad(local_direction)
         axis = LVector3d.forward().cross(local_direction)
         if axis.length() > 0.0:
-            new_rot = utils.relative_rotation(self.get_absolute_orientation(), axis, angle)
+            new_rot = relative_rotation(self.get_absolute_orientation(), axis, angle)
         #         new_rot=LQuaterniond()
         #         lookAt(new_rot, direction, LVector3d.up())
         else:

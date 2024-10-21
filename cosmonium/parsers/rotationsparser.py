@@ -26,7 +26,7 @@ from ..astro.elementsdb import rotation_elements_db
 from ..astro.frame import BodyReferenceFrames
 from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
 from ..astro import units
-from .. import utils
+from ..mathutil.quaternion import quaternion_from_axis_angle
 
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
@@ -95,7 +95,7 @@ class FixedRotationYamlParser(YamlModuleParser):
         if 'angle' in data:
             angle = float(data['angle'])
             axis = data.get("axis", LVector3d.up())
-            orientation = utils.LQuaternionromAxisAngle(axis, angle, units.Deg)
+            orientation = quaternion_from_axis_angle(axis, angle, units.Deg)
         elif 'ra' in data:
             orientation = OrientationYamlParser.decode(data, False)
         else:

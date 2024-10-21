@@ -27,7 +27,7 @@ from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from ..astro.frame import J2000EquatorialReferenceFrame, SynchroneReferenceFrame
 from ..bodyclass import bodyClasses
-from ..utils import quaternion_from_euler, LQuaternionromAxisAngle
+from ..mathutil.quaternion import quaternion_from_euler, quaternion_from_axis_angle
 from .. import settings
 
 from .bigfix import Bigfix
@@ -574,7 +574,7 @@ def setorientation(command_name, sequence, base, parameters):
     if 'angle' in parameters:
         angle = float(parameters.get('angle', '0.0'))
         axis = float(parameters.get('axis', [0, 0, 0]))
-        orientation = LQuaternionromAxisAngle(angle, axis)
+        orientation = quaternion_from_axis_angle(angle, axis)
     else:
         ox = parameters.get('ox', 0.0)
         oy = parameters.get('oy', 0.0)

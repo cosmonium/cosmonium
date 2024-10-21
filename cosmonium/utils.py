@@ -17,32 +17,14 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LQuaterniond, LVector3d, LColor
+from panda3d.core import LColor
 from panda3d.core import ColorBlendAttrib
 
 from . import settings
-from .astro import units
 
 
 def join_names(names):
     return ' / '.join(names)
-
-
-def quaternion_from_euler(h, p, r):
-    rotation = LQuaterniond()
-    rotation.set_hpr((h, p, r))
-    return rotation
-
-
-def relative_rotation(rotation, axis, angle):
-    axis.normalize()
-    rel_axis = rotation.xform(axis)
-    delta_quat = LQuaterniond()
-    try:
-        delta_quat.setFromAxisAngleRad(angle, rel_axis)
-    except AssertionError:
-        print("invalid axis", axis, axis.length(), rel_axis, rel_axis.length())
-    return rotation * delta_quat
 
 
 def mag_to_scale(magnitude):
@@ -61,15 +43,6 @@ def mag_to_scale_nolimit(magnitude):
     if magnitude < settings.max_app_magnitude:
         return 1.0
     return (settings.lowest_app_magnitude - magnitude) / (settings.lowest_app_magnitude - settings.max_app_magnitude)
-
-
-def LQuaternionromAxisAngle(axis, angle, angle_units=units.Rad):
-    if isinstance(axis, list):
-        axis = LVector3d(*axis)
-    axis.normalize()
-    rot = LQuaterniond()
-    rot.setFromAxisAngleRad(angle * angle_units, axis)
-    return rot
 
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):

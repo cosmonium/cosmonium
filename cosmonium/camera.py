@@ -27,8 +27,8 @@ from panda3d.core import PerspectiveLens, look_at
 from .astro.frame import AbsoluteReferenceFrame
 from .engine.anchors import CameraAnchor
 from .engine.frustum import InfiniteFrustum
+from .mathutil.quaternion import relative_rotation
 from . import settings
-from . import utils
 
 
 class CameraBase(object):
@@ -463,7 +463,7 @@ class CameraController(EventsControllerBase):
         angle = LVector3d.forward().angleRad(local_direction)
         axis = LVector3d.forward().cross(local_direction)
         if axis.length() > 0.0:
-            new_rot = utils.relative_rotation(abs_rotation, axis, angle)
+            new_rot = relative_rotation(abs_rotation, axis, angle)
         else:
             new_rot = abs_rotation
         return new_rot, angle

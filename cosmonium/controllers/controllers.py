@@ -23,7 +23,7 @@ from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
 
 from ..astro.orbits import FixedPosition
 from ..astro.rotations import FixedRotation
-from .. import utils
+from ..mathutil.quaternion import relative_rotation
 
 
 class BodyController:
@@ -333,7 +333,7 @@ class CartesianBodyMover(BodyMover):
         self.anchor.set_frame_orientation(new_rotation)
 
     def turn_back(self):
-        new_rot = utils.relative_rotation(self.anchor.get_absolute_orientation(), LVector3d.up(), pi)
+        new_rot = relative_rotation(self.anchor.get_absolute_orientation(), LVector3d.up(), pi)
         self.anchor.set_absolute_orientation(new_rot)
 
 
