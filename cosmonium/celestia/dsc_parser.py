@@ -22,7 +22,7 @@ import io
 from panda3d.core import LVector3d
 import sys
 
-from ..astro.astro import calc_position
+from ..astro.astro import app_to_abs_mag, calc_position
 from ..astro.frame import J2000EquatorialReferenceFrame, AbsoluteReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
@@ -83,7 +83,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
     rot = quaternion_from_axis_angle(axis, angle, units.Deg)
     rotation = FixedRotation(rot, J2000EquatorialReferenceFrame())
     if app_magnitude is not None and distance is not None:
-        abs_magnitude = units.app_to_abs_mag(app_magnitude, distance)
+        abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     dso = Galaxy(names, abs_magnitude=abs_magnitude, radius=radius, orbit=orbit, rotation=rotation)
     return dso
 
