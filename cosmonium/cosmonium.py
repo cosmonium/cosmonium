@@ -67,6 +67,7 @@ from .objects.systems import StellarSystem, SimpleSystem
 from .objects.universe import Universe
 from .opengl import OpenGLConfig
 from .parsers.configparser import configParser
+from .parsers.parsers import register_parsers
 from .parsers.yamlparser import YamlModuleParser
 from .pgettext import patch_gettext
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
@@ -90,9 +91,6 @@ from . import settings
 from . import pstats
 from . import version
 
-# Initialiser parsers
-from .parsers import parsers
-
 
 class CosmoniumBase(ShowBase):
     def __init__(self):
@@ -104,6 +102,7 @@ class CosmoniumBase(ShowBase):
         self.request_fullscreen = False
         self.common_state = NodePath("<state>")
 
+        register_parsers()
         patch_gettext()
         self.languages = None
 

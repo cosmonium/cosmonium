@@ -179,5 +179,6 @@ class NamedOrbitYamlParser(YamlModuleParser):
         return None
 
 
-ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser())
-ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser())
+def register_orbit_parsers():
+    ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser())
+    ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser())

@@ -186,7 +186,8 @@ class AppearanceYamlParser(YamlModuleParser):
         return appearance
 
 
-AppearanceYamlParser.register('textures', TexturesAppearanceYamlParser)
-AppearanceYamlParser.register('model', ModelAppearanceYamlParser)
-AppearanceYamlParser.register('procedural', ProceduralAppearanceYamlParser)
-AppearanceYamlParser.register('deferred-procedural', DeferredProceduralAppearanceYamlParser)
+def register_appearance_parsers():
+    AppearanceYamlParser.register('textures', TexturesAppearanceYamlParser)
+    AppearanceYamlParser.register('model', ModelAppearanceYamlParser)
+    AppearanceYamlParser.register('procedural', ProceduralAppearanceYamlParser)
+    AppearanceYamlParser.register('deferred-procedural', DeferredProceduralAppearanceYamlParser)

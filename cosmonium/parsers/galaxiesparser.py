@@ -244,4 +244,5 @@ class GalaxyYamlParser(YamlModuleParser):
         return galaxy
 
 
-ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())
+def register_galaxy_parsers():
+    ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())

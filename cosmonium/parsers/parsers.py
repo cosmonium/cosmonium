@@ -18,27 +18,44 @@
 #
 
 
-from . import appearancesparser  # noqa: F401
-from . import texturesourceparser  # noqa: F401
-from . import textureparser  # noqa: F401
-from . import texturecontrolparser  # noqa: F401
-from . import shadersparser  # noqa: F401
-from . import raymarchingparser  # noqa: F401
-from . import objectparser  # noqa: F401
-from . import bodiesparser  # noqa: F401
-from . import constellationsparser  # noqa: F401
-from . import asterismsparser  # noqa: F401
-from . import galaxiesparser  # noqa: F401
-from . import heightmapsparser  # noqa: F401
-from . import orbitsparser  # noqa: F401
-from . import rotationsparser  # noqa: F401
-from . import starsparser  # noqa: F401
-from . import nebulasparser  # noqa: F401
-from . import systemsparser  # noqa: F401
-from . import shipsparser  # noqa: F401
-from . import pluginparser  # noqa: F401
+from .appearancesparser import register_appearance_parsers
+from .asterismsparser import register_asterism_parsers
+from .bodiesparser import register_body_parsers
+from .cameraparser import register_camera_parsers
+from .constellationsparser import register_constellation_parsers
+from .fogscatterparser import register_fog_parsers
+from .galaxiesparser import register_galaxy_parsers
+from .heightmapsparser import register_heightmap_parsers
+from .nebulasparser import register_nebula_parsers
+from .objectparser import register_object_parsers
+from .oneilscatteringparser import register_oneil_parsers
+from .orbitsparser import register_orbit_parsers
+from .pluginparser import register_plugin_parsers
+from .raymarchingparser import register_raymarching_parsers
+from .rotationsparser import register_rotation_parsers
+from .shipsparser import register_ship_parsers
+from .starsparser import register_star_parsers
+from .systemsparser import register_system_parsers
+from .texturesourceparser import register_texture_source_parsers
 
-from . import scatteringparser  # noqa: F401
-from . import fogscatterparser  # noqa: F401
-from . import oneilscatteringparser  # noqa: F401
-from . import cameraparser  # noqa: F401
+
+def register_parsers():
+    register_appearance_parsers()
+    register_asterism_parsers()
+    register_body_parsers()
+    register_camera_parsers()
+    register_constellation_parsers()
+    register_fog_parsers()
+    register_galaxy_parsers()
+    register_heightmap_parsers()
+    register_nebula_parsers()
+    register_object_parsers()
+    register_oneil_parsers()
+    register_orbit_parsers()
+    register_plugin_parsers()
+    register_raymarching_parsers()
+    register_rotation_parsers()
+    register_ship_parsers()
+    register_star_parsers()
+    register_system_parsers()
+    register_texture_source_parsers()

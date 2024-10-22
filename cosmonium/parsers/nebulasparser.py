@@ -61,4 +61,5 @@ class NebulaYamlParser(YamlModuleParser):
         return nebula
 
 
-ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser())
+def register_nebula_parsers():
+    ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser())

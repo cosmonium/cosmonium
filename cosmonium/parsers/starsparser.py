@@ -98,5 +98,6 @@ class StarSurfaceFactoryYamlParser(YamlModuleParser):
         return None
 
 
-ObjectYamlParser.register_object_parser('star', StarYamlParser())
-ObjectYamlParser.register_object_parser('star-surface', StarSurfaceFactoryYamlParser())
+def register_star_parsers():
+    ObjectYamlParser.register_object_parser('star', StarYamlParser())
+    ObjectYamlParser.register_object_parser('star-surface', StarSurfaceFactoryYamlParser())

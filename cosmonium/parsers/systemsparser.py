@@ -62,5 +62,6 @@ class BarycenterYamlParser(YamlModuleParser):
         return system
 
 
-ObjectYamlParser.register_object_parser('system', SystemYamlParser())
-ObjectYamlParser.register_object_parser('barycenter', BarycenterYamlParser())
+def register_system_parsers():
+    ObjectYamlParser.register_object_parser('system', SystemYamlParser())
+    ObjectYamlParser.register_object_parser('barycenter', BarycenterYamlParser())

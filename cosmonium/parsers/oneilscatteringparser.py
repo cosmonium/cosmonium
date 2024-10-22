@@ -112,5 +112,6 @@ class ONeilScatteringYamlParser(YamlParser):
         return scattering
 
 
-ScatteringYamlParser.register('oneil', ONeilScatteringYamlParser())
-ScatteringYamlParser.register('oneil:simple', ONeilSimpleScatteringYamlParser())
+def register_oneil_parsers():
+    ScatteringYamlParser.register('oneil', ONeilScatteringYamlParser())
+    ScatteringYamlParser.register('oneil:simple', ONeilSimpleScatteringYamlParser())

@@ -92,5 +92,6 @@ class ShipYamlParser(BaseShipYamlParser):
     camera_modes = [CameraController.FOLLOW]
 
 
-ObjectYamlParser.register_object_parser('cockpit', CockpitYamlParser())
-ObjectYamlParser.register_object_parser('ship', ShipYamlParser())
+def register_ship_parsers():
+    ObjectYamlParser.register_object_parser('cockpit', CockpitYamlParser())
+    ObjectYamlParser.register_object_parser('ship', ShipYamlParser())

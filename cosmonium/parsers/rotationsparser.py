@@ -147,4 +147,5 @@ class NamedRotationYamlParser(YamlModuleParser):
         return None
 
 
-ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser())
+def register_rotation_parsers():
+    ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser())

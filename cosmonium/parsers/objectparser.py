@@ -128,8 +128,11 @@ class SurfaceCategoryYamlParser(YamlModuleParser):
 
 
 universeYamlParser = UniverseYamlParser()
-ObjectYamlParser.register_object_parser('universe', universeYamlParser)
-ObjectYamlParser.register_object_parser('include', IncludeYamlParser())
-ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
-ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser())
-ObjectYamlParser.register_object_parser('surface-category', SurfaceCategoryYamlParser())
+
+
+def register_object_parsers():
+    ObjectYamlParser.register_object_parser('universe', universeYamlParser)
+    ObjectYamlParser.register_object_parser('include', IncludeYamlParser())
+    ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
+    ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser())
+    ObjectYamlParser.register_object_parser('surface-category', SurfaceCategoryYamlParser())

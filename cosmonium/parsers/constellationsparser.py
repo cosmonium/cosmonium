@@ -55,4 +55,5 @@ class ConstellationYamlParser(YamlModuleParser):
             return constellation
 
 
-ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser())
+def register_constellation_parsers():
+    ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser())

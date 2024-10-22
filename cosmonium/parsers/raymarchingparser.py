@@ -122,7 +122,8 @@ class SDFRayMarchingYamlParser(YamlModuleParser):
         return appearance
 
 
-AppearanceYamlParser.register('raymarching:density', VolumetricDensityRayMarchingYamlParser)
-AppearanceYamlParser.register('raymarching:emissive', VolumetricDensityEmissiveRayMarchingYamlParser)
-AppearanceYamlParser.register('raymarching:bulge', BulgeRayMarchingYamlParser)
-AppearanceYamlParser.register('raymarching:sdf', SDFRayMarchingYamlParser)
+def register_raymarching_parsers():
+    AppearanceYamlParser.register('raymarching:density', VolumetricDensityRayMarchingYamlParser)
+    AppearanceYamlParser.register('raymarching:emissive', VolumetricDensityEmissiveRayMarchingYamlParser)
+    AppearanceYamlParser.register('raymarching:bulge', BulgeRayMarchingYamlParser)
+    AppearanceYamlParser.register('raymarching:sdf', SDFRayMarchingYamlParser)

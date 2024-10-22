@@ -54,5 +54,6 @@ class CameraControllerYamlParser(TypedYamlParser):
     detect_trivial = True
 
 
-CameraControllerYamlParser.register('surface-follow', SurfaceFollowCameraControllerYamlParser)
-CameraControllerYamlParser.register('fixed', FixedCameraControllerYamlParser)
+def register_camera_parsers():
+    CameraControllerYamlParser.register('surface-follow', SurfaceFollowCameraControllerYamlParser)
+    CameraControllerYamlParser.register('fixed', FixedCameraControllerYamlParser)

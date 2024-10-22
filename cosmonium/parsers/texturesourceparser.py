@@ -148,8 +148,9 @@ class TextureSourceYamlParser(YamlModuleParser):
         return result
 
 
-TextureSourceYamlParser.register_parser('ref', ReferenceTextureSourceYamlParser())
-TextureSourceYamlParser.register_parser('file', TextureFileSourceYamlParser())
-TextureSourceYamlParser.register_parser('ctx', CelestiaVirtualTextureSourceYamlParser())
-TextureSourceYamlParser.register_parser('se', SpaceEngineVirtualTextureSourceYamlParser())
-TextureSourceYamlParser.register_parser('procedural', ProceduralTextureSourceYamlParser())
+def register_texture_source_parsers():
+    TextureSourceYamlParser.register_parser('ref', ReferenceTextureSourceYamlParser())
+    TextureSourceYamlParser.register_parser('file', TextureFileSourceYamlParser())
+    TextureSourceYamlParser.register_parser('ctx', CelestiaVirtualTextureSourceYamlParser())
+    TextureSourceYamlParser.register_parser('se', SpaceEngineVirtualTextureSourceYamlParser())
+    TextureSourceYamlParser.register_parser('procedural', ProceduralTextureSourceYamlParser())

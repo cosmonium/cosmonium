@@ -102,13 +102,14 @@ class ReflectiveYamlParser(YamlModuleParser):
         return body
 
 
-ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))
-ObjectYamlParser.register_object_parser('planet', ReflectiveYamlParser('planet'))
-ObjectYamlParser.register_object_parser('dwarfplanet', ReflectiveYamlParser('dwarfplanet'))
-ObjectYamlParser.register_object_parser('moon', ReflectiveYamlParser('moon'))
-ObjectYamlParser.register_object_parser('minormoon', ReflectiveYamlParser('minormoon'))
-ObjectYamlParser.register_object_parser('lostmoon', ReflectiveYamlParser('lostmoon'))
-ObjectYamlParser.register_object_parser('asteroid', ReflectiveYamlParser('asteroid'))
-ObjectYamlParser.register_object_parser('comet', ReflectiveYamlParser('comet'))
-ObjectYamlParser.register_object_parser('interstellar', ReflectiveYamlParser('interstellar'))
-ObjectYamlParser.register_object_parser('spacecraft', ReflectiveYamlParser('spacecraft'))
+def register_body_parsers():
+    ObjectYamlParser.register_object_parser('reflective', ReflectiveYamlParser(None))
+    ObjectYamlParser.register_object_parser('planet', ReflectiveYamlParser('planet'))
+    ObjectYamlParser.register_object_parser('dwarfplanet', ReflectiveYamlParser('dwarfplanet'))
+    ObjectYamlParser.register_object_parser('moon', ReflectiveYamlParser('moon'))
+    ObjectYamlParser.register_object_parser('minormoon', ReflectiveYamlParser('minormoon'))
+    ObjectYamlParser.register_object_parser('lostmoon', ReflectiveYamlParser('lostmoon'))
+    ObjectYamlParser.register_object_parser('asteroid', ReflectiveYamlParser('asteroid'))
+    ObjectYamlParser.register_object_parser('comet', ReflectiveYamlParser('comet'))
+    ObjectYamlParser.register_object_parser('interstellar', ReflectiveYamlParser('interstellar'))
+    ObjectYamlParser.register_object_parser('spacecraft', ReflectiveYamlParser('spacecraft'))

@@ -52,4 +52,5 @@ class AsterismYamlParser(YamlModuleParser):
             return asterism
 
 
-ObjectYamlParser.register_object_parser('asterism', AsterismYamlParser())
+def register_asterism_parsers():
+    ObjectYamlParser.register_object_parser('asterism', AsterismYamlParser())

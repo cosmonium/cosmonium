@@ -184,4 +184,5 @@ class StandaloneHeightmapYamlParser(YamlModuleParser):
         return None
 
 
-ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser())
+def register_heightmap_parsers():
+    ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser())

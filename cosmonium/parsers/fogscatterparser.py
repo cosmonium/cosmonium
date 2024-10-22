@@ -31,4 +31,5 @@ class FogScatterYamlParser(YamlParser):
         return scattering
 
 
-ScatteringYamlParser.register('fog', FogScatterYamlParser())
+def register_fog_parsers():
+    ScatteringYamlParser.register('fog', FogScatterYamlParser())

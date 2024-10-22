@@ -41,4 +41,5 @@ class AddonYamlParser(YamlModuleParser):
         return None
 
 
-ObjectYamlParser.register_object_parser('plugin', AddonYamlParser())
+def register_plugin_parsers():
+    ObjectYamlParser.register_object_parser('plugin', AddonYamlParser())
