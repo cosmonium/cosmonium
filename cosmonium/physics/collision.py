@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from dataclasses import dataclass
 from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.TaskManagerGlobal import taskMgr
@@ -123,7 +124,7 @@ class CollisionPhysics(PhysicsBase):
         pass
 
     def update(self, time, dt):
-        self.traverser.traverse(render)
+        self.traverser.traverse(builtins.base.render)
         for entry in self.queue.entries:
             print(entry)
 

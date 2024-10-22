@@ -17,6 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import builtins
 from panda3d.core import LQuaternion, LQuaterniond
 from panda3d.core import LPoint3d, LVector3d
 from panda3d.core import NodePath, ModelPool, Filename
@@ -111,12 +112,14 @@ class MeshShape(Shape):
     async def load(self):
         if self.panda:
             self.fullpath = self.model
-            return await loader.loadModel(self.model, blocking=False)
+            return await builtins.base.loader.loadModel(self.model, blocking=False)
         else:
             self.fullpath = self.context.find_model(self.model)
             if self.fullpath is not None:
                 print("Loading model", self.fullpath)
-                return await loader.loadModel(Filename.from_os_specific(self.fullpath).get_fullpath(), blocking=False)
+                return await builtins.base.loader.loadModel(
+                    Filename.from_os_specific(self.fullpath).get_fullpath(), blocking=False
+                )
             else:
                 print("Model not found", self.model)
                 return None

@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from direct.gui.DirectGui import DirectFrame, DGG
 from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.DirectSlider import DirectSlider
@@ -41,7 +42,7 @@ class Window:
         self.last_pos = None
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
-        self.base = base
+        self.base = builtins.base
         if parent is None:
             parent = self.base.pixel2d
         self.parent = parent

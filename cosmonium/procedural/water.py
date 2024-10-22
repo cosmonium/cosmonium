@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2014 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import CardMaker
 from panda3d.core import CullFaceAttrib
@@ -75,13 +77,13 @@ class WaterNode:
         self.waterNP.setShaderInput('reflection_tex', self.texture)
 
         # distortion texture
-        tex1 = loader.loadTexture('textures/water.png')
+        tex1 = builtins.base.loader.loadTexture('textures/water.png')
         self.waterNP.setShaderInput('distortion_tex', tex1)
 
     @classmethod
     def create_buffer(cls):
         if cls.buffer is None:
-            cls.buffer = base.win.makeTextureBuffer('waterBuffer', 512, 512)
+            cls.buffer = builtins.base.win.makeTextureBuffer('waterBuffer', 512, 512)
             cls.buffer.setClearColor(Vec4(0, 0, 0, 1))
             cls.texture = cls.buffer.getTexture()
             cls.texture.setWrapU(Texture.WMClamp)
@@ -94,15 +96,15 @@ class WaterNode:
             cfa = CullFaceAttrib.makeReverse()
             rs = RenderState.make(cfa)
 
-            cls.watercamNP = base.makeCamera(cls.buffer, camName='waterCam')
-            cls.watercamNP.reparentTo(render)
+            cls.watercamNP = builtins.base.makeCamera(cls.buffer, camName='waterCam')
+            cls.watercamNP.reparentTo(builtins.base.render)
 
             # sa = ShaderAttrib.make()
             # sa = sa.setShader(loader.loadShader('shaders/splut3Clipped.sha') )
 
             cam = cls.watercamNP.node()
             cam.set_camera_mask(BaseObject.WaterCameraFlag)
-            cam.getLens().setFov(base.camLens.getFov())
+            cam.getLens().setFov(builtins.base.camLens.getFov())
             cam.getLens().setNear(0.01)
             cam.getLens().setFar(float("inf"))
             cam.setInitialState(rs)
@@ -122,7 +124,7 @@ class WaterNode:
         waterPlane = Plane(Vec3(0, 0, camera_offset + 1), Point3(0, 0, camera_offset))
         # update matrix of the reflection camera
         if not settings.debug_lod_freeze and cls.watercamNP is not None:
-            mc = base.camera.getMat()
+            mc = builtins.base.camera.getMat()
             mf = waterPlane.getReflectionMat()
             cls.watercamNP.setMat(mc * mf)
         return task.cont

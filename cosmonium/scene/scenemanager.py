@@ -16,6 +16,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from .. import settings
 
 from .pyscene.scenemanager import SceneManagerBase  # noqa: F401
@@ -38,11 +40,11 @@ else:
 
 def remove_main_region(camera):
     region = None
-    for dr in base.win.get_display_regions():
+    for dr in builtins.base.win.get_display_regions():
         drcam = dr.get_camera()
         if drcam == camera:
             region = dr
             break
     if region is not None:
-        base.win.remove_display_region(region)
+        builtins.base.win.remove_display_region(region)
         region.set_active(False)

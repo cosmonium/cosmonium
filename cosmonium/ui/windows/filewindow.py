@@ -53,7 +53,7 @@ class FileWindow(UIWindow):
             path = "~"
         width = 800
         height = 600
-        self.layout = DirectWidgetContainer(DirectFrame(parent=pixel2d, state=DGG.NORMAL))
+        self.layout = DirectWidgetContainer(DirectFrame(parent=self.owner.root, state=DGG.NORMAL))
         self.browser = DirectFolderBrowser(
             command=self.done,
             size=(width, height),

@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 import io
 from panda3d.core import LVector3d
 import sys
@@ -111,7 +112,7 @@ def parse_file(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is not None:
         print("Loading", filepath)
-        base.splash.set_text("Loading %s" % filepath)
+        builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:

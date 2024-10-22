@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from panda3d.bullet import BulletWorld, BulletDebugNode, BulletRigidBodyNode
 from panda3d.bullet import BulletTriangleMesh, BulletTriangleMeshShape, BulletCapsuleShape
 from panda3d.bullet import ZUp, BulletCharacterControllerNode
@@ -43,7 +44,7 @@ class BulletPhysics(PhysicsBase):
         self.physics_world = BulletWorld()
         self.render_world = NodePath('physics-root')
         if self.enable_debug:
-            self.debug = render.attach_new_node(BulletDebugNode('Debug'))
+            self.debug = builtins.base.render.attach_new_node(BulletDebugNode('Debug'))
             self.debug.show()
             # self.debug.node().showNormals(True)
             self.physics_world.set_debug_node(self.debug.node())

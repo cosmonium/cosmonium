@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from panda3d.core import DepthTestAttrib
 from panda3d.core import Texture, LColor
 
@@ -68,7 +70,7 @@ class RenderStage(RenderSceneStage):
         target.dr.set_clear_depth_active(True)
         if self.inverse_z:
             target.dr.set_clear_depth(0.0)
-            base.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
+            builtins.base.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_greater))
         else:
             target.dr.set_clear_depth(1.0)
-            base.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))
+            builtins.base.common_state.set_attrib(DepthTestAttrib.make(DepthTestAttrib.M_less_equal))

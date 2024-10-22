@@ -40,6 +40,7 @@ sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
 import argparse
+import builtins
 from direct.showbase.PythonUtil import clamp
 from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.TaskManagerGlobal import taskMgr
@@ -172,11 +173,11 @@ class PhysicsBox:
         self.physics_instance = None
 
     def create_instance(self, observer):
-        self.mesh = loader.loadModel(self.model)
+        self.mesh = builtins.base.loader.loadModel(self.model)
         self.mesh.clearModelNodes()
         self.instance = NodePath("BoxHolder")
         self.mesh.reparent_to(self.instance)
-        self.instance.reparent_to(render)
+        self.instance.reparent_to(builtins.base.render)
 
         self.physics_instance = self.physics.build_from_geom(self.mesh)[0]
         self.physics.set_mass(self.physics_instance, self.mass)
@@ -329,7 +330,7 @@ class RalphWord(CartesianWorld):
                     instance = self.ship_object.instance
                 else:
                     instance = self.scene_anchor.instance
-                self.physics_instance = base.physics.add_controller(self, instance, self.physics_node)
+                self.physics_instance = builtins.base.physics.add_controller(self, instance, self.physics_node)
 
     def update(self, time, dt):
         CartesianWorld.update(self, time, dt)
@@ -488,7 +489,7 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             corrected_ambient = settings.global_ambient
         settings.corrected_global_ambient = corrected_ambient
-        render.set_shader_input("global_ambient", settings.corrected_global_ambient)
+        builtins.base.render.set_shader_input("global_ambient", settings.corrected_global_ambient)
         print("Ambient light level:  %.2f" % settings.global_ambient)
 
     def incr_ambient(self, ambient_incr):
@@ -549,7 +550,7 @@ class RoamingRalphDemo(CosmoniumBase):
         else:
             self.c_camera_holder = self.observer
         self.update_c_settings()
-        self.scene_manager = StaticSceneManager(base.render)
+        self.scene_manager = StaticSceneManager(builtins.base.render)
         self.scene_manager.init_camera(self.c_camera_holder, self.cam)
         remove_main_region(self.cam)
         self.scene_manager.scale = 1.0
@@ -560,7 +561,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.oid_color = 0
         self.oid_texture = None
 
-        base.setFrameRateMeter(True)
+        builtins.base.setFrameRateMeter(True)
 
         taskMgr.add(self.init())
 

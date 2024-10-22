@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from direct.showbase.ShowBaseGlobal import globalClock
 from math import asin, pi
 from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput, Camera
@@ -39,7 +41,7 @@ from . import settings
 class ShadowMapBase:
 
     def __init__(self):
-        self.base = base
+        self.base = builtins.base
 
     def create_render_buffer(self, size_x, size_y, depth_bits, depth_tex):
         # Boilerplate code to create a render buffer producing only a depth texture
@@ -68,23 +70,25 @@ class ShadowMapBase:
         self.win = self.base.win
         self.graphics_engine = self.base.graphics_engine
         buffer = self.graphics_engine.make_output(
-            self.win.get_pipe(), "pssm_buffer", 1,
-            buffer_props, window_props, GraphicsPipe.BF_refuse_window,
-            self.win.gsg, self.win)
+            self.win.get_pipe(),
+            "pssm_buffer",
+            1,
+            buffer_props,
+            window_props,
+            GraphicsPipe.BF_refuse_window,
+            self.win.gsg,
+            self.win,
+        )
 
         if buffer is None:
             print("Failed to create buffer")
             return
 
-        buffer.add_render_texture(
-            depth_tex, GraphicsOutput.RTM_bind_or_copy,
-            GraphicsOutput.RTP_depth)
+        buffer.add_render_texture(depth_tex, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_depth)
 
         if True:
             color = Texture()
-            buffer.add_render_texture(
-                color, GraphicsOutput.RTM_bind_or_copy,
-                GraphicsOutput.RTP_color)
+            buffer.add_render_texture(color, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_color)
             buffer.setClearColor((1, 1, 1, 1))
             buffer.setClearColorActive(True)
 
@@ -115,17 +119,16 @@ class ShadowMap(ShadowMapBase):
         props.set_depth_bits(1)
         win = self.base.win
         self.buffer = self.base.graphics_engine.make_output(
-            win.get_pipe(), "shadows-buffer", -2,
-            props, winprops,
-            GraphicsPipe.BF_refuse_window,
-            win.get_gsg(), win)
+            win.get_pipe(), "shadows-buffer", -2, props, winprops, GraphicsPipe.BF_refuse_window, win.get_gsg(), win
+        )
 
         if not self.buffer:
             print("Video driver cannot create an offscreen buffer.")
             return
         self.depthmap = Texture()
         self.buffer.add_render_texture(
-            self.depthmap, GraphicsOutput.RTM_bind_or_copy,  GraphicsOutput.RTP_depth_stencil)
+            self.depthmap, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_depth_stencil
+        )
 
         self.depthmap.set_minfilter(Texture.FT_shadow)
         self.depthmap.set_magfilter(Texture.FT_shadow)
@@ -144,10 +147,12 @@ class ShadowMap(ShadowMapBase):
         # and will be automatically updated
 
         self.node = self.cam.node()
-        self.node.setInitialState(RenderState.make(
-            CullFaceAttrib.make_reverse(),
-            ColorWriteAttrib.make(ColorWriteAttrib.M_none),
-            ))
+        self.node.setInitialState(
+            RenderState.make(
+                CullFaceAttrib.make_reverse(),
+                ColorWriteAttrib.make(ColorWriteAttrib.M_none),
+            )
+        )
         if settings.debug_shadow_frustum:
             self.node.show_frustum()
 
@@ -158,10 +163,9 @@ class ShadowMap(ShadowMapBase):
         offset_x = center.x % texel_size
         offset_y = center.y % texel_size
         mvp.invert_in_place()
-        new_center = mvp.xform(LPoint4((center.x - offset_x) * 2.0 - 1.0,
-                                       (center.y - offset_y) * 2.0 - 1.0,
-                                       (center.z) * 2.0 - 1.0,
-                                       1.0))
+        new_center = mvp.xform(
+            LPoint4((center.x - offset_x) * 2.0 - 1.0, (center.y - offset_y) * 2.0 - 1.0, (center.z) * 2.0 - 1.0, 1.0)
+        )
         self.cam.set_pos(self.cam.get_pos() - LVector3(new_center.x, new_center.y, new_center.z))
 
     def set_lens(self, size, near, far, direction):
@@ -250,10 +254,7 @@ class PSSMShadowMap(ShadowMapBase):
         # Create the depth buffer
         # The depth buffer is the concatenation of num_splits shadow maps
         self.depthmap = Texture("PSSMShadowMap")
-        self.buffer = self.create_render_buffer(
-            self.size * self.num_splits, self.size,
-            32,
-            self.depthmap)
+        self.buffer = self.create_render_buffer(self.size * self.num_splits, self.size, 32, self.depthmap)
 
         # Remove all unused display regions
         self.buffer.remove_all_display_regions()
@@ -267,8 +268,8 @@ class PSSMShadowMap(ShadowMapBase):
         # Prepare the display regions, one for each split
         for i in range(self.num_splits):
             region = self.buffer.make_display_region(
-                i / self.num_splits,
-                i / self.num_splits + 1 / self.num_splits, 0, 1)
+                i / self.num_splits, i / self.num_splits + 1 / self.num_splits, 0, 1
+            )
             region.set_sort(25 + i)
             # Clears are done on the buffer
             region.disable_clears()
@@ -413,7 +414,8 @@ class ShadowMapDataSource(DataSource):
                 self_ar = asin(self_radius / distance) if self_radius < distance else pi / 2
                 star_ar = asin(
                     light.source.get_apparent_radius()
-                    / ((light.source.anchor.get_local_position() - body_position).length() - body_radius))
+                    / ((light.source.anchor.get_local_position() - body_position).length() - body_radius)
+                )
                 ar_ratio = self_ar / star_ar
             else:
                 ar_ratio = 1.0
@@ -539,10 +541,12 @@ class PSSMShadowMapDataSource(DataSource):
         mvp_array = PTA_LMatrix4()
         for array in src_mvp_array:
             mvp_array.push_back(array)
-        instance.set_shader_inputs(PSSMShadowAtlas=self.caster.shadow_map.depthmap,
-                                   pssm_mvps=mvp_array,
-                                   border_bias=self.caster.shadow_map.border_bias,
-                                   fixed_bias=self.caster.shadow_map.fixed_bias)
+        instance.set_shader_inputs(
+            PSSMShadowAtlas=self.caster.shadow_map.depthmap,
+            pssm_mvps=mvp_array,
+            border_bias=self.caster.shadow_map.border_bias,
+            fixed_bias=self.caster.shadow_map.fixed_bias,
+        )
 
     def update(self, shape, instance, camera_pos, camera_rot):
         pssm = self.caster.shadow_map
@@ -584,9 +588,11 @@ class RingShadowDataSource(DataSource):
         normal = shape.owner.anchor.get_absolute_orientation().xform(LVector3d.up())
         instance.set_shader_input('ring_normal', normal)
         instance.set_shader_input(
-            'ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor)
+            'ring_inner_radius', self.ring.inner_radius * shape.owner.scene_anchor.scene_scale_factor
+        )
         instance.set_shader_input(
-            'ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor)
+            'ring_outer_radius', self.ring.outer_radius * shape.owner.scene_anchor.scene_scale_factor
+        )
         if shape.owner.support_offset_body_center and settings.offset_body_center:
             body_center = shape.owner.scene_anchor.scene_position + shape.owner.scene_anchor.world_body_center_offset
         else:
@@ -626,7 +632,8 @@ class SphereShadowDataSource(DataSource):
             vector = shape.owner.anchor.get_local_position() - self.light.source.anchor.get_local_position()
             distance_to_light_source = vector.length()
             instance.set_shader_input(
-                'star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source))
+                'star_ar', asin(self.light.source.get_apparent_radius() / distance_to_light_source)
+            )
         star_center = (self.light.source.anchor.get_local_position() - camera_pos) * scale
         star_radius = self.light.source.get_apparent_radius() * scale
         instance.set_shader_input('star_center', star_center)
@@ -762,8 +769,12 @@ class ShadowMapShadows(ShadowBase):
         if self.nb_updates == 0:
             for caster in self.old_casters:
                 print(
-                    "Remove shadow caster", caster.name,
-                    "on", self.target.owner.get_name(), self.target.get_name() or '')
+                    "Remove shadow caster",
+                    caster.name,
+                    "on",
+                    self.target.owner.get_name(),
+                    self.target.get_name() or '',
+                )
                 shadow_shader = self.shader_components[caster]
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, shadow_shader)
                 del self.shader_components[caster]

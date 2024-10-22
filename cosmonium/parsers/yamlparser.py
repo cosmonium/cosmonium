@@ -18,8 +18,9 @@
 #
 
 
-import io
+import builtins
 import hashlib
+import io
 import os
 import pickle
 import ruamel.yaml
@@ -149,7 +150,7 @@ class YamlModuleParser(YamlParser):
             cache_timestamp = os.path.getmtime(cache_file)
             if cache_timestamp > file_timestamp:
                 print("Loading %s (cached)" % filepath)
-                base.splash.set_text("Loading %s (cached)" % filepath)
+                builtins.base.splash.set_text("Loading %s (cached)" % filepath)
                 try:
                     with open(cache_file, "rb") as f:
                         data = pickle.load(f)
@@ -180,7 +181,7 @@ class YamlModuleParser(YamlParser):
                 data = self.load_from_cache(filename, filepath)
             if data is None:
                 print("Loading %s" % filepath)
-                base.splash.set_text("Loading %s" % filepath)
+                builtins.base.splash.set_text("Loading %s" % filepath)
                 try:
                     text = io.open(filepath, encoding='utf8').read()
                     data = self.parse(text, filepath)

@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from math import log2, pow, exp, isinf, isnan
 
 from ..foundation import BaseObject
@@ -79,13 +81,13 @@ class BasicScenePipeline(ScenePipelineBase):
 
     def init_window(self):
         self.screen = Screen(
-            base,
+            builtins.base,
             srgb=self.framebuffer_srgb,
             multisamples=self.framebuffer_multisamples,
             stereoscopic=settings.stereoscopic_framebuffer,
         )
         self.screen.request()
-        self.set_win(base.win)
+        self.set_win(builtins.base.win)
 
     def evaluate_pipeline(self):
         pass
@@ -129,10 +131,10 @@ class ScenePipeline(ScenePipelineBase):
 
     def init_window(self) -> None:
         self.screen = Screen(
-            base, srgb=self.framebuffer_srgb, multisamples=0, stereoscopic=settings.stereoscopic_framebuffer
+            builtins.base, srgb=self.framebuffer_srgb, multisamples=0, stereoscopic=settings.stereoscopic_framebuffer
         )
         self.screen.request()
-        self.set_win(base.win)
+        self.set_win(builtins.base.win)
 
     def evaluate_pipeline(self) -> None:
         if settings.use_inverse_z:

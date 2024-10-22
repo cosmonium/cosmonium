@@ -48,6 +48,6 @@ class TextWindow(UIWindow):
             self.text = self.markdown(self.text)
 
     def create_layout(self):
-        self.layout = ScrollText(parent=pixel2d, text=self.text, align=TextNode.ALeft, owner=self)
+        self.layout = ScrollText(parent=self.owner.root, text=self.text, align=TextNode.ALeft, owner=self)
         self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)

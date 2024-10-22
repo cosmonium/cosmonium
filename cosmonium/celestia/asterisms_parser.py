@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 import io
 from ply import lex, yacc
 from ply.lex import Token
@@ -209,7 +210,7 @@ def load(filename, universe, context=defaultDirContext, debug=0):
     filepath = context.find_data(filename)
     if filepath is not None:
         print("Loading", filepath)
-        base.splash.set_text("Loading %s" % filepath)
+        builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='iso8859-1').read()
         asterisms = parse(data, debug)
         for asterism in asterisms:

@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from math import pi, log, exp, sqrt
 from panda3d.core import PNMImage
 from panda3d.core import Texture, TexGenAttrib, TransparencyAttrib, TextureStage
@@ -48,7 +50,7 @@ class TexturePointSprite(PointObject):
 
     def apply(self, instance):
         if self.texture is None:
-            self.texture = loader.loadTexture(self.filename)
+            self.texture = builtins.base.loader.loadTexture(self.filename)
         instance.setTexGen(TextureStage.getDefault(), TexGenAttrib.MPointSprite)
         instance.setTransparency(TransparencyAttrib.MAlpha)
         instance.setTexture(self.texture, 1)

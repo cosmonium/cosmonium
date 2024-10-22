@@ -17,6 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import builtins
 from .generator import GeneratorChain
 from .pipeline import ProcessPipeline
 
@@ -25,8 +27,8 @@ class PipelineFactory:
     _instance = None
 
     def __init__(self):
-        self.win = base.win
-        self.graphics_engine = base.graphics_engine
+        self.win = builtins.base.win
+        self.graphics_engine = builtins.base.graphics_engine
 
     @classmethod
     def instance(cls):

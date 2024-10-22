@@ -17,8 +17,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
 from __future__ import annotations
 
+import builtins
 from panda3d.core import Filename, DynamicTextFont
 
 import os
@@ -39,7 +41,7 @@ class Font:
 
     def load(self) -> DynamicTextFont | None:
         if self.font is None:
-            self.font = loader.loadFont(Filename.from_os_specific(self.filename).get_fullpath())
+            self.font = builtins.base.loader.loadFont(Filename.from_os_specific(self.filename).get_fullpath())
         return self.font
 
 

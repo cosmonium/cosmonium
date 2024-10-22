@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from direct.interval.LerpInterval import LerpFunc
 from direct.showbase.DirectObject import DirectObject
 from math import sin, cos, acos, tan, atan, sqrt, pi
@@ -33,7 +34,7 @@ from . import settings
 
 class CameraBase(object):
     def __init__(self):
-        self.base = base
+        self.base = builtins.base
         self.camera_np = NodePath('observer')
         self.lens = PerspectiveLens()
         # Field of view (vertical)
@@ -338,7 +339,7 @@ class EventsControllerBase(DirectObject):
     wheel_event_duration = 0.1
 
     def __init__(self):
-        self.base = base
+        self.base = builtins.base
         self.keymap = {}
 
     def set_key(self, key, state, *keys):

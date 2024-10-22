@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 import io
 import sys
 from time import time
@@ -249,7 +250,7 @@ def parse_file(filename, universe, context=defaultDirContext):
     if filepath is not None:
         start = time()
         print("Loading", filepath)
-        base.splash.set_text("Loading %s" % filepath)
+        builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:

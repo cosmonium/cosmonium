@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 import re
 import sys
 from time import time
@@ -32,7 +33,7 @@ from ..objects.universe import Universe
 def do_load(filepath, universe):
     start = time()
     print("Loading", filepath)
-    base.splash.set_text("Loading %s" % filepath)
+    builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath)
     prev_const = None
     points = []

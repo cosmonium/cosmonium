@@ -17,6 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import builtins
 from dataclasses import dataclass
 from itertools import chain
 from panda3d.core import TextNode, LVector2
@@ -35,7 +36,7 @@ class HudEntry:
 class Huds:
 
     def __init__(self, gui, widgets, dock, env, skin):
-        self.base = base
+        self.base = builtins.base
         self.owner = gui
         self.skin = skin
         self.element = UIElement(None, class_='hud', id_='hud')

@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
 from math import pi
 from panda3d.core import LVector3d, LQuaterniond
@@ -38,7 +39,7 @@ def create_frame(coordsys, ref_name):
     ref = None
     if ref_name is not None and ref_name != "":
         path = body_path(ref_name)
-        body = base.universe.find_by_path(path)
+        body = builtins.base.universe.find_by_path(path)
         if body is not None:
             ref = body.anchor
     coordsys = coordsys.lower()

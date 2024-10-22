@@ -19,6 +19,7 @@
 
 
 from abc import ABC, abstractmethod
+import builtins
 from direct.showbase.ShowBaseGlobal import globalClock
 import jinja2
 
@@ -56,7 +57,7 @@ class ObjectProvider(ABC):
 
     @property
     def ground_distance(self):
-        camera_position = base.observer.get_local_position()
+        camera_position = builtins.base.observer.get_local_position()
         surface_point = self._object.get_point_under(camera_position)
         (tangent, binormal, normal) = self._object.get_tangent_plane_under(camera_position)
         direction = camera_position - surface_point
@@ -66,7 +67,7 @@ class ObjectProvider(ABC):
     @property
     def altitude(self):
         if self._object.surface is not None and not self._object.surface.is_flat():
-            camera_position = base.observer.get_local_position()
+            camera_position = builtins.base.observer.get_local_position()
             alt_under = self._object.get_alt_under(camera_position)
             altitude = self.ground_distance + alt_under
         else:

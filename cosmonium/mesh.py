@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 from gltf import GltfSettings
 from gltf._loader import GltfLoader
 import os
@@ -55,4 +56,4 @@ def init_mesh_loader():
 
 
 def load_panda_model_sync(pattern):
-    return loader.loadModel(pattern)
+    return builtins.base.loader.loadModel(pattern)

@@ -18,6 +18,7 @@
 #
 
 
+import builtins
 import io
 from panda3d.core import LVector3d
 import re
@@ -71,7 +72,7 @@ def parse_line(line, names, universe):
 def do_load_text(filepath, names, universe):
     start = time()
     print("Loading", filepath)
-    base.splash.set_text("Loading %s" % filepath)
+    builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath)
     data.readline()
     for line in data.readlines():
@@ -92,7 +93,7 @@ def load_text(filename, names, universe, context=defaultDirContext):
 def do_load_bin(filepath, names, universe):
     start = time()
     print("Loading", filepath)
-    base.splash.set_text("Loading %s" % filepath)
+    builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath, 'rb')
     field = data.read(8 + 2 + 4)
     header, version, count = struct.unpack("<8shi", field)
@@ -150,7 +151,7 @@ def parse_line_name(line):
 def do_load_names(filepath):
     start = time()
     print("Loading", filepath)
-    base.splash.set_text("Loading %s" % filepath)
+    builtins.base.splash.set_text("Loading %s" % filepath)
     names = {}
     data = io.open(filepath, encoding='latin-1')
     for line in data.readlines():

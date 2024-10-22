@@ -17,6 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import builtins
 from direct.stdpy import threading
 from direct.task.Task import Task
 from panda3d.core import AsyncFuture, Texture, Filename
@@ -178,7 +179,7 @@ class SyncTextureLoader:
                 panda_alpha_filename = Filename.from_os_specific(filename).get_fullpath()
             else:
                 panda_alpha_filename = None
-            texture = loader.loadTexture(panda_filename, alphaPath=panda_alpha_filename)
+            texture = builtins.base.loader.loadTexture(panda_filename, alphaPath=panda_alpha_filename)
         except IOError:
             print("Could not load texture", filename)
         return texture

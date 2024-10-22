@@ -97,6 +97,7 @@ class Gui(object):
         self.width = 0
         self.height = 0
 
+        self.root = cosmonium.pixel2d
         self.cosmonium.p2dTopCenter = cosmonium.pixel2d.attach_new_node('p2dTopCenter')
         self.cosmonium.p2dBottomCenter = cosmonium.pixel2d.attach_new_node('p2dBottomCenter')
         self.cosmonium.p2dLeftCenter = cosmonium.pixel2d.attach_new_node('p2dLeftCenter')

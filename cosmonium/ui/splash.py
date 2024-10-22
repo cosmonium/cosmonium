@@ -17,6 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import builtins
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenImage import OnscreenImage
 from panda3d.core import TextNode, WindowProperties, Texture, TransparencyAttrib
@@ -36,7 +37,7 @@ class NoSplash:
 class Splash:
 
     def __init__(self):
-        self.base = base
+        self.base = builtins.base
         props = WindowProperties(self.base.win.getProperties())
         screen_width = props.getXSize()
         screen_height = props.getYSize()
