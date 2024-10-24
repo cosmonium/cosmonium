@@ -136,9 +136,9 @@ class AppearanceBase(DataSource):
         self.roughness = 0.0
         self.nightscale = None
         self.backlit = None
-        self.shadow_normal_bias = 0.0
-        self.shadow_slope_bias = 0.0
-        self.shadow_depth_bias = 0.0
+        self.shadow_normal_bias = 0.5
+        self.shadow_slope_bias = 0.5
+        self.shadow_depth_bias = 0.1
         self.attribution = None
 
     def add_as_source(self, shape):
