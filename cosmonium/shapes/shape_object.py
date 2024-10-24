@@ -72,8 +72,9 @@ class ShapeObject(VisibleObject):
         group = ParametersGroup(self.get_component_name())
         if self.shape is not None:
             group.add_parameters(self.shape.get_user_parameters())
-        if self.appearance is not None:
-            group.add_parameters(self.appearance.get_user_parameters())
+        # Commented out as appearance is also a source and so included below
+        # if self.appearance is not None:
+            # group.add_parameters(self.appearance.get_user_parameters())
         # TODO: DataSourcesHandler should have an iterator interface
         for source in self.sources.sources:
             group.add_parameters(source.get_user_parameters())
