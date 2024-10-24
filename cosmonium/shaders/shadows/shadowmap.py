@@ -75,7 +75,7 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
         if self.use_bias:
             code.append(
                 f"vec3 %s_offset = "
-                f"get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, eye_normal, {light_direction});"
+                f"get_bias(%s_shadow_normal_bias, %s_shadow_slope_bias, eye_normal, {eye_light_direction});"
                 % (self.name, self.name, self.name)
             )
             code.append(
