@@ -160,7 +160,7 @@ class Orbit(VisibleObject):
         vdata = geom.modify_vertex_data()
         vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
         # TODO: refactor with above code !!!
-        delta = self.body.parent.get_local_position()
+        delta = self.body.parent.anchor.get_local_position()
         if self.orbit.is_periodic():
             epoch = self.context.time.time_full - self.orbit.period
             step = self.orbit.period / (self.nbOfPoints - 1)
