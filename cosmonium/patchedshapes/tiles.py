@@ -60,6 +60,10 @@ class Tile(PatchBase):
             self, self.lod, self.density, centre, self.size, normal, 0.0, bounding_volume
         )
 
+    def update_heights(self, min_height, max_height):
+        points = geometry.PatchBoundingPoints(self.x0, self.y0, self.size, 1.0, min_height, max_height)
+        self.quadtree_node.bounds.set_points(points)
+
     def str_id(self):
         return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)
 

@@ -40,5 +40,8 @@ class PatchBoundingBox:
         box = BoundingBox(min_point, max_point)
         return box
 
+    def set_points(self, points):
+        self.points = points
+
     def xform(self, mat):
         self.points = [mat.xform(point) for point in self.points]
