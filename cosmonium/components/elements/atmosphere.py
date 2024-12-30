@@ -21,15 +21,15 @@
 from panda3d.core import CullFaceAttrib
 from panda3d.core import LQuaternion
 
-from ...entities.shape_object import ShapeObject
+from ...entities.entity import Entity
 from ...utils import TransparencyBlend
 
 from ... import settings
 
 
-class Atmosphere(ShapeObject):
+class Atmosphere(Entity):
     def __init__(self, scattering, shape, appearance, shader):
-        ShapeObject.__init__(self, 'atmosphere', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        Entity.__init__(self, 'atmosphere', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.scattering = scattering
         self.inside = None
         self.body = None
@@ -37,11 +37,11 @@ class Atmosphere(ShapeObject):
         self.blend = TransparencyBlend.TB_Additive
         scattering.add_shape_object(self, atmosphere=True)
 
-    def add_shape_object(self, shape_object):
-        self.scattering.add_shape_object(shape_object)
+    def add_shape_object(self, entity):
+        self.scattering.add_shape_object(entity)
 
-    def remove_shape_object(self, shape_object):
-        self.scattering.remove_shape_object(shape_object)
+    def remove_shape_object(self, entity):
+        self.scattering.remove_shape_object(entity)
 
     def get_component_name(self):
         return _('Atmosphere')
@@ -68,7 +68,7 @@ class Atmosphere(ShapeObject):
         return self.body.anchor.visible_size * (self.ratio - 1.0)
 
     def check_visibility(self, frustum, pixel_size):
-        ShapeObject.check_visibility(self, frustum, pixel_size)
+        Entity.check_visibility(self, frustum, pixel_size)
         if self.get_pixel_height() < 1.0:
             self.visible = False
 
@@ -76,7 +76,7 @@ class Atmosphere(ShapeObject):
         # TODO: Find a better way to retrieve ellipticity
         scale = self.body.surface.get_shape_axes() / self.body_radius
         self.set_scale(scale * self.radius)
-        await ShapeObject.create_instance_task(self, scene_anchor)
+        await Entity.create_instance_task(self, scene_anchor)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
         self.instance.set_depth_write(False)
@@ -85,7 +85,7 @@ class Atmosphere(ShapeObject):
         pass
 
     def update_obs(self, observer):
-        ShapeObject.update_obs(self, observer)
+        Entity.update_obs(self, observer)
         inside = self.body.anchor.distance_to_obs < self.radius
         if self.inside != inside:
             self.inside = inside
@@ -106,22 +106,22 @@ class Atmosphere(ShapeObject):
             observer.apply_scattering -= 1
 
     def update_user_parameters(self):
-        ShapeObject.update_user_parameters(self)
+        Entity.update_user_parameters(self)
         self.scattering.update_user_parameters()
 
     def get_user_parameters(self):
-        group = ShapeObject.get_user_parameters(self)
+        group = Entity.get_user_parameters(self)
         group.add_parameters(self.scattering.get_user_parameters())
         return group
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
+        Entity.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready:
             return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
     def remove_instance(self):
-        ShapeObject.remove_instance(self)
+        Entity.remove_instance(self)
         self.inside = None
         self.scattering.clear()
         self.context.observer.has_scattering = False

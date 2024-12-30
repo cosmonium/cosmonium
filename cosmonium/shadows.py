@@ -310,7 +310,7 @@ class ShadowCasterBase(object):
     def is_valid(self):
         return True
 
-    def add_target(self, shape_object):
+    def add_target(self, entity):
         pass
 
     def update(self, scene_manager):
@@ -319,10 +319,10 @@ class ShadowCasterBase(object):
 
 class ShadowMapShadowCaster(ShadowCasterBase):
 
-    def __init__(self, light, occluder, shape_object):
+    def __init__(self, light, occluder, entity):
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
-        self.shape_object = shape_object
+        self.entity = entity
         self.name = self.occluder.get_ascii_name()
         self.shadow_map = None
         self.shadow_camera = None
@@ -336,7 +336,7 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def create(self):
         if self.shadow_map is not None:
             return
-        if not self.shape_object.instance_ready:
+        if not self.entity.instance_ready:
             return
         self.create_camera()
         self.shadow_camera.set_camera_mask(BaseObject.ShadowCameraFlag)
@@ -445,8 +445,8 @@ class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
 
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
-    def __init__(self, light, occluder, shape_object):
-        ShadowMapShadowCaster.__init__(self, light, occluder, shape_object)
+    def __init__(self, light, occluder, entity):
+        ShadowMapShadowCaster.__init__(self, light, occluder, entity)
         self.targets = {}
 
     def create_camera(self):
@@ -478,8 +478,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def create_data_source(self, self_shadow):
         return ShadowMapDataSource(self.name, self, use_bias=self_shadow, calculate_shadow_coef=True)
 
-    def add_target(self, shape_object, self_shadow=False):
-        shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow)
+    def add_target(self, entity, self_shadow=False):
+        entity.shadows.add_shadow_map_shadow_caster(self, self_shadow)
 
 
 class PSSMShadowMapShadowCaster(ShadowCasterBase):
@@ -525,8 +525,8 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
     def create_data_source(self, self_shadow):
         return PSSMShadowMapDataSource(self.name, self)
 
-    def add_target(self, shape_object):
-        shape_object.shadows.add_shadow_map_shadow_caster(self, self_shadow=False)
+    def add_target(self, entity):
+        entity.shadows.add_shadow_map_shadow_caster(self, self_shadow=False)
 
 
 class PSSMShadowMapDataSource(DataSource):
@@ -578,8 +578,8 @@ class RingShadowCaster(ShadowCasterBase):
     def create_data_source(self):
         return RingShadowDataSource(self.ring)
 
-    def add_target(self, shape_object):
-        shape_object.shadows.add_ring_shadow_caster(self)
+    def add_target(self, entity):
+        entity.shadows.add_ring_shadow_caster(self)
 
 
 class RingShadowDataSource(DataSource):
@@ -619,8 +619,8 @@ class SphereShadowCaster(ShadowCasterBase):
     def is_analytic(self):
         return True
 
-    def add_target(self, shape_object):
-        shape_object.shadows.add_sphere_shadow_caster(self)
+    def add_target(self, entity):
+        entity.shadows.add_sphere_shadow_caster(self)
 
 
 class SphereShadowDataSource(DataSource):

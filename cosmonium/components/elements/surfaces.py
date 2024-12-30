@@ -21,14 +21,14 @@
 from math import floor, ceil
 from panda3d.core import LVector3, LQuaternion, LVector3d, LPoint3d
 
-from ...entities.shape_object import ShapeObject
+from ...entities.entity import Entity
 from ...shadows import SphereShadowCaster, CustomShadowMapShadowCaster
 from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 
 from ...mathutil.surface_models import SphereModel, SpheroidModel, EllipsoidModel
 
 
-class Surface(ShapeObject):
+class Surface(Entity):
     def __init__(
         self,
         name=None,
@@ -40,7 +40,7 @@ class Surface(ShapeObject):
         shader=None,
         clickable=True,
     ):
-        ShapeObject.__init__(self, name, shape, appearance, shader, clickable)
+        Entity.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
         self.attribution = attribution
@@ -74,7 +74,7 @@ class Surface(ShapeObject):
         return self.shape.parametric_to_shape_coord(x, y)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
+        Entity.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready:
             return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))

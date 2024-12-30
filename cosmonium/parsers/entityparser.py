@@ -18,7 +18,7 @@
 #
 
 
-from ..entities.shape_object import ShapeObject
+from ..entities.entity import Entity
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 
@@ -44,6 +44,6 @@ class EntityYamlParser(YamlModuleParser):
         appearance = AppearanceYamlParser.decode(appearance_data)
         lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
         shader = RenderingShader(lighting_model=lighting_model)
-        entity = ShapeObject(name, shape, appearance, shader)
+        entity = Entity(name, shape, appearance, shader)
         entity.physics = data.get('physics')
         return entity

@@ -21,7 +21,7 @@
 from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LVector3
 from panda3d.core import LQuaternion
 
-from ...entities.shape_object import ShapeObject
+from ...entities.entity import Entity
 from ...parameters import AutoUserParameter
 from ...shapes.spheres import SphereShape
 from ... import settings
@@ -97,7 +97,7 @@ class Clouds(EllipsoidFlatSurface):
         return self.height
 
     def get_user_parameters(self):
-        group = ShapeObject.get_user_parameters(self)
+        group = Entity.get_user_parameters(self)
         group.add_parameter(
             AutoUserParameter(
                 'Height', 'height', self, AutoUserParameter.TYPE_FLOAT, [0, self.body.get_apparent_radius() * 0.01]
@@ -106,5 +106,5 @@ class Clouds(EllipsoidFlatSurface):
         return group
 
     def update_user_parameters(self):
-        ShapeObject.update_user_parameters(self)
+        Entity.update_user_parameters(self)
         self.configure_shape()

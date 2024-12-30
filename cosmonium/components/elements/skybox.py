@@ -21,12 +21,12 @@
 from panda3d.core import LVector3d
 
 from ...appearances import Appearance
-from ...entities.shape_object import ShapeObject
+from ...entities.entity import Entity
 from ...shapes.mesh import MeshShape
 from ...utils import TransparencyBlend
 
 
-class SkyBox(ShapeObject):
+class SkyBox(Entity):
     def __init__(self, scattering, shape=None, appearance=None, shader=None):
         self.scattering = scattering
         if shape is None:
@@ -35,7 +35,7 @@ class SkyBox(ShapeObject):
             )
         if appearance is None:
             appearance = Appearance()
-        ShapeObject.__init__(self, 'skybox', shape=shape, appearance=appearance, shader=shader, clickable=False)
+        Entity.__init__(self, 'skybox', shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.blend = TransparencyBlend.TB_Additive
         scattering.add_shape_object(self, atmosphere=True)
 
@@ -46,7 +46,7 @@ class SkyBox(ShapeObject):
         self.instance.set_bin("background", 1)
 
     async def create_instance_task(self, scene_anchor):
-        await ShapeObject.create_instance_task(self, scene_anchor)
+        await Entity.create_instance_task(self, scene_anchor)
         TransparencyBlend.apply(self.blend, self.instance)
         self.instance.set_depth_write(False)
         self.instance.set_depth_test(False)
@@ -56,14 +56,14 @@ class SkyBox(ShapeObject):
         pass
 
     def update_user_parameters(self):
-        ShapeObject.update_user_parameters(self)
+        Entity.update_user_parameters(self)
         self.update_scattering()
 
     def remove_instance(self):
-        ShapeObject.remove_instance(self)
+        Entity.remove_instance(self)
         self.inside = None
-        for shape_object in self.attenuated_objects:
-            self.remove_scattering_on(shape_object)
+        for entity in self.attenuated_objects:
+            self.remove_scattering_on(entity)
         self.attenuated_objects = []
         self.context.observer.has_scattering = False
         self.context.observer.scattering = None

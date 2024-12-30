@@ -34,7 +34,7 @@ from .datasource import DataSourcesHandler
 from .tasks_tree import TasksTree
 
 
-class ShapeObject(VisibleObject):
+class Entity(VisibleObject):
     default_camera_mask = (
         VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
     )

@@ -39,13 +39,13 @@ from ..scattering import ScatteringBase
 
 class ONeilScatteringBase(ScatteringBase):
 
-    def do_update_scattering(self, shape_object, atmosphere, extinction):
-        shape_object.shader.lighting_model.scattering.set_inside(self.inside)
+    def do_update_scattering(self, entity, atmosphere, extinction):
+        entity.shader.lighting_model.scattering.set_inside(self.inside)
         if atmosphere:
-            shape_object.shader.lighting_model.scattering.set_hdr(self.atm_hdr)
+            entity.shader.lighting_model.scattering.set_hdr(self.atm_hdr)
         else:
-            shape_object.shader.lighting_model.scattering.set_hdr(self.hdr)
-        shape_object.shader.lighting_model.scattering.set_extinction_only(extinction)
+            entity.shader.lighting_model.scattering.set_hdr(self.hdr)
+        entity.shader.lighting_model.scattering.set_extinction_only(extinction)
 
 
 class ONeilSimpleScattering(ONeilScatteringBase):

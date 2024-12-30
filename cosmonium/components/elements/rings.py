@@ -20,14 +20,14 @@
 
 from panda3d.core import LQuaternion
 
-from ...entities.shape_object import ShapeObject
+from ...entities.entity import Entity
 from ...shadows import RingShadowCaster
 from ...shapes.rings import RingsShape
 
 
-class Rings(ShapeObject):
+class Rings(Entity):
     def __init__(self, inner_radius, outer_radius, appearance=None, shader=None):
-        ShapeObject.__init__(self, 'ring', appearance=appearance, shader=shader, clickable=True)
+        Entity.__init__(self, 'ring', appearance=appearance, shader=shader, clickable=True)
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.set_shape(RingsShape(inner_radius, outer_radius))
@@ -44,7 +44,7 @@ class Rings(ShapeObject):
         return RingShadowCaster(light_source, self)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        ShapeObject.update_instance(self, scene_manager, camera_pos, camera_rot)
+        Entity.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready:
             return
         self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))

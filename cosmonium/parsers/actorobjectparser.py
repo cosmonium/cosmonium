@@ -18,7 +18,7 @@
 #
 
 
-from ..entities.shape_object import ShapeObject
+from ..entities.entity import Entity
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 
@@ -45,5 +45,5 @@ class ActorObjectYamlParser(YamlModuleParser):
         appearance = AppearanceYamlParser.decode(appearance)
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader = RenderingShader(lighting_model=lighting_model, use_model_texcoord=not extra.get('create-uv', False))
-        actor_object = ShapeObject(name, shape=shape, appearance=appearance, shader=shader)
+        actor_object = Entity(name, shape=shape, appearance=appearance, shader=shader)
         return actor_object

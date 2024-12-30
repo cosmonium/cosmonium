@@ -30,7 +30,7 @@ from .. import settings
 
 class SkySphere(VisibleObject):
     def __init__(self, names, shape=None, appearance=None, shader=None, orientation=None):
-        # TODO: should be a ShapeObject instead !
+        # TODO: should be a Entity instead !
         VisibleObject.__init__(self, names)
         self.appearance = appearance
         if orientation is None:

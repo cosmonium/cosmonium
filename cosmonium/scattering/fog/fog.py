@@ -87,7 +87,7 @@ class FogScattering(ScatteringBase):
         self.sky_color = self.sky_color_base
         self.sun_color = self.sun_color_base
 
-    def do_update_scattering(self, shape_object, atmosphere, extinction):
+    def do_update_scattering(self, entity, atmosphere, extinction):
         pass
 
     def create_scattering_shader(self, atmosphere, displacement, extinction):

@@ -22,7 +22,7 @@ from math import log
 from panda3d.core import LVector3d
 
 from ..entities.datasource import DataSource
-from ..entities.shape_object import ShapeObject
+from ..entities.entity import Entity
 from ..scattering.scattering import ScatteringBase
 from ..shaders.scattering import AtmosphericScattering
 
@@ -65,7 +65,7 @@ class CelestiaScattering(ScatteringBase):
     def create_scattering_shader(self, atmosphere, displacement, extinction):
         return CelestiaScatteringShader(self, atmosphere, extinction)
 
-    def do_update_scattering(self, shape_object: ShapeObject, atmosphere: bool, extinction: bool) -> None:
+    def do_update_scattering(self, entity: Entity, atmosphere: bool, extinction: bool) -> None:
         pass
 
 

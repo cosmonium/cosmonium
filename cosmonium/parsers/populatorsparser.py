@@ -18,7 +18,7 @@
 #
 
 
-from ..entities.shape_object import ShapeObject
+from ..entities.entity import Entity
 from ..opengl import OpenGLConfig
 from ..procedural.populator import RandomObjectPlacer
 from ..procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator
@@ -70,7 +70,7 @@ class PopulatorYamlParser(YamlModuleParser):
             vertex_control=vertex_control,
             use_model_texcoord=not extra.get('create-uv', False),
         )
-        object_template = ShapeObject('template', shape=shape, appearance=appearance, shader=shader)
+        object_template = Entity('template', shape=shape, appearance=appearance, shader=shader)
         placer = PlacerYamlParser.decode(populator_data.get('placer', None))
         if populator_type == 'cpu':
             populator = CpuTerrainPopulator(object_template, density, max_instances, placer, min_lod)
