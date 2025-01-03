@@ -278,6 +278,7 @@ class ShapeObject(VisibleObject):
         tasks_tree = TasksTree(self.patch_sources.sources)
         self.patch_sources.load(tasks_tree, patch)
         patch.create_geometry_instance(tasks_tree)
+        patch.set_clickable(self.clickable)
         await tasks_tree.run_tasks()
         if patch.instance is not None:
             self.patch_sources.apply(patch)

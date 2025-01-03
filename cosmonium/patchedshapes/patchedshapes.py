@@ -716,7 +716,6 @@ class PatchedShapeBase(Shape):
                 patch.instance.stash()
         else:
             self.show_patch(patch)
-        patch.set_clickable(self.clickable)
 
     def remove_patch_instance(self, patch):
         if patch in self.patches:
