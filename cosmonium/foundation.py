@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 from panda3d.core import LVecBase3, NodePath, LColor, DrawMask, OmniBoundingVolume
-from panda3d.core import GeomNode, TextNode, CardMaker
+from panda3d.core import TextNode, CardMaker, BitMask32
 
 from .appearances import ModelAppearance
 from .astro import bayer
@@ -384,7 +384,7 @@ class ObjectLabel(VisibleObject):
         self.shader.apply(self.instance)
         TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
 
-        self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
+        self.instance.set_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
         self.instance.set_depth_write(False)
         self.instance.set_color_scale(LColor(1, 1, 1, 1))
         card_node.setPythonTag('owner', self.label_source)
