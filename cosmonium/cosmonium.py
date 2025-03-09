@@ -209,7 +209,11 @@ class CosmoniumBase(ShowBase):
         else:
             data.append("win-size %d %d" % (settings.win_width, settings.win_height))
         data.append("lens-far-limit %g" % settings.lens_far_limit)
-        data.append("transform-cache 0")
+        if sys.platform == 'darwin':
+            # Workaround for https://github.com/panda3d/panda3d/issues/1733
+            data.append("transform-cache 1")
+        else:
+            data.append("transform-cache 0")
         data.append("state-cache 0")
         loadPrcFileData("", '\n'.join(data))
         if settings.prc_file is not None:
