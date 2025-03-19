@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,8 +84,8 @@ float get_terrain_height_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamet
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
     vec2 pos = texcoord * params.scale + params.offset;
     vec2 delta = %s * params.height_scale;
-    vec3 tangent = normalize(vec3(%f * params.u_scale, 0, delta.xx));
-    vec3 binormal = normalize(vec3(0, %f * params.v_scale, delta.xy));
+    vec3 tangent = normalize(vec3(%f * params.u_scale, 0, delta.x));
+    vec3 binormal = normalize(vec3(0, %f * params.v_scale, delta.y));
     return normalize(cross(tangent, binormal));
 }
 '''
