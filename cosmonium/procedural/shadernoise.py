@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1295,17 +1295,17 @@ class NoiseFragmentShader(ShaderProgram):
             code.append('p.x = 2.0 * (noiseOffset.x + coord.x * noiseScale.x) - 1.0;')
             code.append('p.y = 2.0 * (noiseOffset.y + coord.y * noiseScale.y) - 1.0;')
             code.append('p.z = 1.0;')
-            code.append('position = normalize(cube_rot * p);')
+            code.append('position = cube_rot * normalize(p);')
         elif self.coord == TexCoord.SqrtCube:
             code.append('vec3 p;')
             code.append('p.x = 2.0 * (noiseOffset.x + coord.x * noiseScale.x) - 1.0;')
             code.append('p.y = 2.0 * (noiseOffset.y + coord.y * noiseScale.y) - 1.0;')
             code.append('p.z = 1.0;')
-            code.append('p = cube_rot * p;')
             code.append('vec3 p2 = p * p;')
             code.append("position.x = p.x * sqrt(1.0 - p2.y * 0.5 - p2.z * 0.5 + p2.y * p2.z / 3.0);")
             code.append("position.y = p.y * sqrt(1.0 - p2.z * 0.5 - p2.x * 0.5 + p2.z * p2.x / 3.0);")
             code.append("position.z = p.z * sqrt(1.0 - p2.x * 0.5 - p2.y * 0.5 + p2.x * p2.y / 3.0);")
+            code.append('position = cube_rot * position;')
         else:
             code.append('position.x = noiseOffset.x + coord.x * noiseScale.x;')
             code.append('position.y = noiseOffset.y + coord.y * noiseScale.y;')
