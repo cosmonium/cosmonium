@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -411,8 +411,8 @@ class SquarePatchBase(PatchBase):
     rotations[1].setHpr(LVector3d(0, 0, -90))  # left
     rotations[2].setHpr(LVector3d(0, 90, 0))  # back
     rotations[3].setHpr(LVector3d(0, -90, 0))  # face
-    rotations[4].setHpr(LVector3d(180, 0, 0))  # top
-    rotations[5].setHpr(LVector3d(180, 180, 0))  # bottom
+    rotations[4].setHpr(LVector3d(0, 0, 0))  # top
+    rotations[5].setHpr(LVector3d(0, 180, 0))  # bottom
     for i in range(6):
         LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
 
@@ -1214,12 +1214,12 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
                 face = SquarePatchBase.TOP
                 # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, y, z)
-                (u, v) = (1.0 - u, 1.0 - v)
+                (u, v) = (u, v)
             else:
                 face = SquarePatchBase.BOTTOM
                 # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -y, -z)
-                (u, v) = (1.0 - u, 1.0 - v)
+                (u, v) = (u, v)
         return (face, u, v)
 
     def parametric_to_shape_coord(self, x, y):

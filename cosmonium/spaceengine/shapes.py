@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
         {'x_inverted': False, 'y_inverted': True, 'xy_swap': True},  # Left   # Pacific
         {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Back   # America
         {'x_inverted': True, 'y_inverted': True, 'xy_swap': False},  # Face   # Asia
-        {'x_inverted': True, 'y_inverted': True, 'xy_swap': False},  # Top    # Arctic
-        {'x_inverted': True, 'y_inverted': True, 'xy_swap': False},  # Bottom # Antartic
+        {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Top    # Arctic
+        {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Bottom # Antartic
     ]
 
     def face_offset_vector(self, axes):
