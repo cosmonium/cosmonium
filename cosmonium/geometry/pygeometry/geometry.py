@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -352,6 +352,7 @@ def UVPatch(
                 tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
             else:
                 tangent = LVector3d(-axes[0], 0, 0)
+            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             if global_texture:
                 gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
             else:
@@ -371,7 +372,7 @@ def UVPatch(
             gnw.add_data3d(normal)
             tangent.normalize()
             gtanw.add_data3d(tangent)
-            binormal = normal.cross(tangent)
+            binormal.componentwise_mult(axes)
             binormal.normalize()
             gbiw.add_data3d(binormal)
 
