@@ -96,6 +96,8 @@ class Huds:
                 offset += widget.get_height()
 
     def update(self, cosmonium, camera, mouse, nav, autopilot, time):
+        if not self.shown:
+            return
         for widget in chain(*self.widgets.values()):
             widget.update()
         if self.bottom_dock is not None:
