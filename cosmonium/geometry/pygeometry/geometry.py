@@ -36,7 +36,9 @@ def empty_node(name, color=False):
     return (path, node)
 
 
-def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=True, color=False, tanbin=False):
+def empty_geom(
+    prefix, nb_data, nb_vertices, points=False, normal=True, texture=True, color=False, tanbin=False, jacobian=0
+):
     array = GeomVertexArrayFormat()
     array.add_column(InternalName.get_vertex(), 3, Geom.NTFloat32, Geom.CPoint)
     if color:
@@ -48,6 +50,8 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
     if tanbin:
         array.add_column(InternalName.get_tangent(), 3, Geom.NTFloat32, Geom.CVector)
         array.add_column(InternalName.get_binormal(), 3, Geom.NTFloat32, Geom.CVector)
+    if jacobian > 0:
+        array.add_column(InternalName.make("jacobian_params"), jacobian, Geom.NTFloat32, Geom.COther)
     format = GeomVertexFormat()
     format.addArray(array)
     format = GeomVertexFormat.registerFormat(format)
@@ -74,13 +78,18 @@ def empty_geom(prefix, nb_data, nb_vertices, points=False, normal=True, texture=
     else:
         gtanw = None
         gbiw = None
+    if jacobian > 0:
+        gextra = GeomVertexWriter(gvd, InternalName.make("jacobian_params"))
     if points:
         prim = GeomPoints(Geom.UHStatic)
     else:
         prim = GeomTriangles(Geom.UHStatic)
     if nb_vertices != 0:
         prim.reserve_num_vertices(nb_vertices)
-    return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom)
+    if jacobian == 0:
+        return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom)
+    else:
+        return (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, gextra)
 
 
 def BoundingBoxGeom(box):
@@ -1046,6 +1055,7 @@ def SquaredDistanceSquarePatch(
     use_patch_skirts=True,
     skirt_size=0.001,
     skirt_uv=0.001,
+    use_jacobian=True,
 ):
     (path, node) = empty_node('uv')
     inner = tessellation.inner
@@ -1055,7 +1065,12 @@ def SquaredDistanceSquarePatch(
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+    if use_jacobian:
+        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
+            'cube', nb_points, nb_primitives, tanbin=False, jacobian=4
+        )
+    else:
+        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if has_offset:
@@ -1083,7 +1098,8 @@ def SquaredDistanceSquarePatch(
             zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
             point = LPoint3d(xp, yp, zp)
             normal = LVector3d(point)
-            tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+            if not use_jacobian:
+                tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
             if inv_u:
                 u = 1.0 - u
             if inv_v:
@@ -1098,18 +1114,21 @@ def SquaredDistanceSquarePatch(
             normal.componentwise_mult(normal_coefs)
             normal.normalize()
             gnw.add_data3(normal)
-            tangent.componentwise_mult(axes)
-            tangent.normalize()
-            binormal = normal.cross(tangent)
-            binormal.normalize()
-            if inv_u:
-                tangent = -tangent
-            if inv_v:
-                binormal = -binormal
-            if swap_uv:
-                tangent, binormal = binormal, tangent
-            gtanw.add_data3d(tangent)
-            gbiw.add_data3d(binormal)
+            if use_jacobian:
+                jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
+            else:
+                tangent.componentwise_mult(axes)
+                tangent.normalize()
+                binormal = normal.cross(tangent)
+                binormal.normalize()
+                if inv_u:
+                    tangent = -tangent
+                if inv_v:
+                    binormal = -binormal
+                if swap_uv:
+                    tangent, binormal = binormal, tangent
+                gtanw.add_data3d(tangent)
+                gbiw.add_data3d(binormal)
 
     if use_patch_skirts:
         reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
@@ -1142,7 +1161,8 @@ def SquaredDistanceSquarePatch(
                 zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
                 point = LPoint3d(xp, yp, zp)
                 normal = LVector3d(point)
-                tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+                if not use_jacobian:
+                    tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
                 if inv_u:
                     u = 1.0 - u
                 if inv_v:
@@ -1157,18 +1177,21 @@ def SquaredDistanceSquarePatch(
                 normal.componentwise_mult(normal_coefs)
                 normal.normalize()
                 gnw.add_data3(normal)
-                tangent.componentwise_mult(axes)
-                tangent.normalize()
-                binormal = normal.cross(tangent)
-                binormal.normalize()
-                if inv_u:
-                    tangent = -tangent
-                if inv_v:
-                    binormal = -binormal
-                if swap_uv:
-                    tangent, binormal = binormal, tangent
-                gtanw.add_data3d(tangent)
-                gbiw.add_data3d(binormal)
+                if use_jacobian:
+                    jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
+                else:
+                    tangent.componentwise_mult(axes)
+                    tangent.normalize()
+                    binormal = normal.cross(tangent)
+                    binormal.normalize()
+                    if inv_u:
+                        tangent = -tangent
+                    if inv_v:
+                        binormal = -binormal
+                    if swap_uv:
+                        tangent, binormal = binormal, tangent
+                    gtanw.add_data3d(tangent)
+                    gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
@@ -1296,6 +1319,7 @@ def NormalizedSquarePatch(
     use_patch_skirts=True,
     skirt_size=0.001,
     skirt_uv=0.001,
+    use_jacobian=True,
 ):
     (path, node) = empty_node('uv')
     # use_patch_skirts = False
@@ -1306,7 +1330,12 @@ def NormalizedSquarePatch(
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+    if use_jacobian:
+        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
+            'cube', nb_points, nb_primitives, tanbin=False, jacobian=3
+        )
+    else:
+        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if has_offset:
@@ -1326,7 +1355,9 @@ def NormalizedSquarePatch(
             point = LVector3d(x, y, 1.0)
             point.normalize()
             normal = LVector3d(point)
-            tangent = LVector3d(1.0 + y * y, -x * y, -x)
+            if not use_jacobian:
+                tangent = LVector3d(1.0 + y * y, -x * y, -x)
+                binormal = LVector3d(-x * y, 1.0 + x * x, -y)
             u = float(i) / inner
             v = float(j) / inner
             if inv_u:
@@ -1343,18 +1374,21 @@ def NormalizedSquarePatch(
             normal.componentwise_mult(normal_coefs)
             normal.normalize()
             gnw.add_data3d(normal)
-            tangent.componentwise_mult(axes)
-            tangent.normalize()
-            binormal = normal.cross(tangent)
-            binormal.normalize()
-            if inv_u:
-                tangent = -tangent
-            if inv_v:
-                binormal = -binormal
-            if swap_uv:
-                tangent, binormal = binormal, tangent
-            gtanw.add_data3d(tangent)
-            gbiw.add_data3d(binormal)
+            if use_jacobian:
+                jacobian.add_data3d(x, y, 1 / (x * x + y * y + 1))
+            else:
+                tangent.componentwise_mult(axes)
+                tangent.normalize()
+                binormal.componentwise_mult(axes)
+                binormal.normalize()
+                if inv_u:
+                    tangent = -tangent
+                if inv_v:
+                    binormal = -binormal
+                if swap_uv:
+                    tangent, binormal = binormal, tangent
+                gtanw.add_data3d(tangent)
+                gbiw.add_data3d(binormal)
 
     if use_patch_skirts:
         reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
@@ -1379,7 +1413,8 @@ def NormalizedSquarePatch(
                 point = LVector3d(x, y, 1.0)
                 point.normalize()
                 normal = LVector3d(point)
-                tangent = LVector3d(1.0 + y * y, -x * y, -x)
+                if not use_jacobian:
+                    tangent = LVector3d(1.0 + y * y, -x * y, -x)
                 u = float(i) / inner
                 v = float(j) / inner
                 if inv_u:
@@ -1396,18 +1431,21 @@ def NormalizedSquarePatch(
                 normal.componentwise_mult(normal_coefs)
                 normal.normalize()
                 gnw.add_data3d(normal)
-                tangent.componentwise_mult(axes)
-                tangent.normalize()
-                binormal = tangent.cross(normal)
-                binormal.normalize()
-                if inv_u:
-                    tangent = -tangent
-                if inv_v:
-                    binormal = -binormal
-                if swap_uv:
-                    tangent, binormal = binormal, tangent
-                gtanw.add_data3d(tangent)
-                gbiw.add_data3d(binormal)
+                if use_jacobian:
+                    pass
+                else:
+                    tangent.componentwise_mult(axes)
+                    tangent.normalize()
+                    binormal = tangent.cross(normal)
+                    binormal.normalize()
+                    if inv_u:
+                        tangent = -tangent
+                    if inv_v:
+                        binormal = -binormal
+                    if swap_uv:
+                        tangent, binormal = binormal, tangent
+                    gtanw.add_data3d(tangent)
+                    gbiw.add_data3d(binormal)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)

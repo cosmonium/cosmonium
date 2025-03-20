@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2024 Laurent Deru.
+ * Copyright (C) 2018-2025 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,7 +103,8 @@ PUBLISHED:
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
-      double skirt_size=0.001, double skirt_uv=0.001);
+      double skirt_size=0.001, double skirt_uv=0.001,
+      bool use_jacobian=true);
 
 private:
   inline void
@@ -112,8 +113,9 @@ private:
       LVector3d normal_coefs,
       bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, LVector3d offset_vector,
+      bool use_jacobian,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
-      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
+      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw, GeomVertexWriter &gjacobianw);
 };
 
 class ImprovedQCSPatchGenerator : public CubePatchGeneratorBase
@@ -138,7 +140,8 @@ PUBLISHED:
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
-      double skirt_size=0.001, double skirt_uv=0.001);
+      double skirt_size=0.001, double skirt_uv=0.001,
+      bool use_jacobian=true);
 
 private:
   inline void
@@ -147,8 +150,9 @@ private:
       LVector3d normal_coefs,
       bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, LVector3d offset_vector,
+      bool use_jacobian,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
-      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
+      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw, GeomVertexWriter &gjacobianw);
 };
 
 class TilePatchGenerator :  public CubePatchGeneratorBase

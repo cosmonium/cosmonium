@@ -470,8 +470,9 @@ QCSPatchGenerator::make_point(LVector3d axes,
         LVector3d normal_coefs,
         bool inv_u, bool inv_v, bool swap_uv,
         bool has_offset, LVector3d offset_vector,
+        bool use_jacobian,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
-        GeomVertexWriter &gbiw)
+        GeomVertexWriter &gbiw, GeomVertexWriter &gjacobianw)
 {
     double x = x0 + u * dx;
     double y = y0 + v * dy;
@@ -480,7 +481,6 @@ QCSPatchGenerator::make_point(LVector3d axes,
     LVector3d point(x, y, 1.0);
     point.normalize();
     LVector3d normal = point;
-    LVector3d tangent(1.0 + y * y, -x * y, -x);
 
     if (inv_u) {
         u = 1.0 - u;
@@ -501,19 +501,24 @@ QCSPatchGenerator::make_point(LVector3d axes,
     normal.componentwise_mult(normal_coefs);
     normal.normalize();
     gnw.add_data3d(normal);
-    tangent.componentwise_mult(axes);
-    tangent.normalize();
-    LVector3d binormal = normal.cross(tangent);
-    binormal.normalize();
-    if (inv_u)
-        tangent = -tangent;
-    if (inv_v)
-        binormal = -binormal;
-    if (swap_uv) {
-        std::swap(tangent, binormal);
+    if (use_jacobian) {
+        gjacobianw.add_data3d(x, y, 1 / (x * x + y * y + 1));
+    } else {
+        LVector3d tangent(1.0 + y * y, -x * y, -x);
+        tangent.componentwise_mult(axes);
+        tangent.normalize();
+        LVector3d binormal = normal.cross(tangent);
+        binormal.normalize();
+        if (inv_u)
+            tangent = -tangent;
+        if (inv_v)
+            binormal = -binormal;
+        if (swap_uv) {
+            std::swap(tangent, binormal);
+        }
+        gtanw.add_data3d(tangent);
+        gbiw.add_data3d(binormal);
     }
-    gtanw.add_data3d(tangent);
-    gbiw.add_data3d(binormal);
 }
 
 NodePath
@@ -523,7 +528,8 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
-        double skirt_size, double skirt_uv)
+        double skirt_size, double skirt_uv,
+        bool use_jacobian)
 {
     _geom_collector.start();
 
@@ -543,8 +549,12 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     array->add_column(InternalName::get_vertex(), 3, Geom::NT_float32, Geom::C_point);
     array->add_column(InternalName::get_texcoord(), 2, Geom::NT_float32, Geom::C_texcoord);
     array->add_column(InternalName::get_normal(), 3, Geom::NT_float32, Geom::C_vector);
-    array->add_column(InternalName::get_tangent(), 3, Geom::NT_float32, Geom::C_vector);
-    array->add_column(InternalName::get_binormal(), 3, Geom::NT_float32, Geom::C_vector);
+    if (use_jacobian) {
+        array->add_column(InternalName::make("jacobian_params"), 3, Geom::NT_float32, Geom::C_other);
+    } else {
+        array->add_column(InternalName::get_tangent(), 3, Geom::NT_float32, Geom::C_vector);
+        array->add_column(InternalName::get_binormal(), 3, Geom::NT_float32, Geom::C_vector);
+    }
     PT(GeomVertexFormat) source_format = new GeomVertexFormat();
     source_format->add_array(array);
     CPT(GeomVertexFormat) format = GeomVertexFormat::register_format(source_format);
@@ -557,8 +567,15 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     GeomVertexWriter gvw = GeomVertexWriter(gvd, InternalName::get_vertex());
     GeomVertexWriter gtw = GeomVertexWriter(gvd, InternalName::get_texcoord());
     GeomVertexWriter gnw = GeomVertexWriter(gvd, InternalName::get_normal());
-    GeomVertexWriter gtanw = GeomVertexWriter(gvd, InternalName::get_tangent());
-    GeomVertexWriter gbiw = GeomVertexWriter(gvd, InternalName::get_binormal());
+    GeomVertexWriter gjacobianw;
+    GeomVertexWriter gtanw;
+    GeomVertexWriter gbiw;
+    if (use_jacobian) {
+        gjacobianw = GeomVertexWriter(gvd, InternalName::make("jacobian_params"));
+    } else {
+        gtanw = GeomVertexWriter(gvd, InternalName::get_tangent());
+        gbiw = GeomVertexWriter(gvd, InternalName::get_binormal());
+    }
     PT(GeomTriangles) prim = new GeomTriangles(Geom::UH_static);
 
     LVector3d offset_vector;
@@ -593,7 +610,9 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                     normal_coefs,
                     inv_u, inv_v, swap_uv,
                     has_offset, offset_vector,
-                    gvw, gtw, gnw, gtanw, gbiw);
+                    use_jacobian,
+                    gvw, gtw, gnw, gtanw, gbiw,
+                    gjacobianw);
         }
     }
 
@@ -621,7 +640,9 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                         normal_coefs,
                         inv_u, inv_v, swap_uv,
                         has_offset, offset_vector,
-                        gvw, gtw, gnw, gtanw, gbiw);
+                        use_jacobian,
+                        gvw, gtw, gnw, gtanw, gbiw,
+                        gjacobianw);
             }
         }
     }
@@ -744,8 +765,9 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
         LVector3d normal_coefs,
         bool inv_u, bool inv_v, bool swap_uv,
         bool has_offset, LVector3d offset_vector,
+        bool use_jacobian,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
-        GeomVertexWriter &gbiw)
+        GeomVertexWriter &gbiw, GeomVertexWriter &gjacobianw)
 {
     double x = x0 + u * dx;
     double y = y0 + v * dy;
@@ -761,7 +783,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
 
     LPoint3d point = LPoint3d(xp, yp, zp);
     LVector3d normal = point;
-    LVector3d tangent(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
 
     if (inv_u) {
         u = 1.0 - u;
@@ -781,19 +802,24 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
     normal.componentwise_mult(normal_coefs);
     normal.normalize();
     gnw.add_data3d(normal);
-    tangent.componentwise_mult(axes);
-    tangent.normalize();
-    LVector3d binormal = normal.cross(tangent);
-    binormal.normalize();
-    if (inv_u)
-        tangent = -tangent;
-    if (inv_v)
-        binormal = -binormal;
-    if (swap_uv) {
-        std::swap(tangent, binormal);
+    if (use_jacobian) {
+        gjacobianw.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6));;
+    } else {
+        LVector3d tangent(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5));
+        tangent.componentwise_mult(axes);
+        tangent.normalize();
+        LVector3d binormal = normal.cross(tangent);
+        binormal.normalize();
+        if (inv_u)
+            tangent = -tangent;
+        if (inv_v)
+            binormal = -binormal;
+        if (swap_uv) {
+            std::swap(tangent, binormal);
+        }
+        gtanw.add_data3d(tangent);
+        gbiw.add_data3d(binormal);
     }
-    gtanw.add_data3d(tangent);
-    gbiw.add_data3d(binormal);
 }
 
 NodePath
@@ -803,7 +829,8 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
-        double skirt_size, double skirt_uv)
+        double skirt_size, double skirt_uv,
+        bool use_jacobian)
 {
     _geom_collector.start();
 
@@ -823,8 +850,12 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     array->add_column(InternalName::get_vertex(), 3, Geom::NT_float32, Geom::C_point);
     array->add_column(InternalName::get_texcoord(), 2, Geom::NT_float32, Geom::C_texcoord);
     array->add_column(InternalName::get_normal(), 3, Geom::NT_float32, Geom::C_vector);
-    array->add_column(InternalName::get_tangent(), 3, Geom::NT_float32, Geom::C_vector);
-    array->add_column(InternalName::get_binormal(), 3, Geom::NT_float32, Geom::C_vector);
+    if (use_jacobian) {
+        array->add_column(InternalName::make("jacobian_params"), 4, Geom::NT_float32, Geom::C_other);
+    } else {
+        array->add_column(InternalName::get_tangent(), 3, Geom::NT_float32, Geom::C_vector);
+        array->add_column(InternalName::get_binormal(), 3, Geom::NT_float32, Geom::C_vector);
+    }
     PT(GeomVertexFormat) source_format = new GeomVertexFormat();
     source_format->add_array(array);
     CPT(GeomVertexFormat) format = GeomVertexFormat::register_format(source_format);
@@ -837,8 +868,15 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     GeomVertexWriter gvw = GeomVertexWriter(gvd, InternalName::get_vertex());
     GeomVertexWriter gtw = GeomVertexWriter(gvd, InternalName::get_texcoord());
     GeomVertexWriter gnw = GeomVertexWriter(gvd, InternalName::get_normal());
-    GeomVertexWriter gtanw = GeomVertexWriter(gvd, InternalName::get_tangent());
-    GeomVertexWriter gbiw = GeomVertexWriter(gvd, InternalName::get_binormal());
+    GeomVertexWriter gjacobianw;
+    GeomVertexWriter gtanw;
+    GeomVertexWriter gbiw;
+    if (use_jacobian) {
+        gjacobianw = GeomVertexWriter(gvd, InternalName::make("jacobian_params"));
+    } else {
+        gtanw = GeomVertexWriter(gvd, InternalName::get_tangent());
+        gbiw = GeomVertexWriter(gvd, InternalName::get_binormal());
+    }
     PT(GeomTriangles) prim = new GeomTriangles(Geom::UH_static);
 
     LVector3d offset_vector;
@@ -873,7 +911,8 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                     normal_coefs,
                     inv_u, inv_v, swap_uv,
                     has_offset, offset_vector,
-                    gvw, gtw, gnw, gtanw, gbiw);
+                    use_jacobian,
+                    gvw, gtw, gnw, gtanw, gbiw, gjacobianw);
         }
     }
 
@@ -905,7 +944,8 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                         reduced_normal_coefs,
                         inv_u, inv_v, swap_uv,
                         has_offset, offset_vector,
-                        gvw, gtw, gnw, gtanw, gbiw);
+                        use_jacobian,
+                        gvw, gtw, gnw, gtanw, gbiw, gjacobianw);
             }
         }
     }
