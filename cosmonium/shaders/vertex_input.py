@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,8 +38,9 @@ class DirectVertexInput(VertexInput):
         if 'model_normal' in self.config.vertex_requires:
             code.append("in vec4 p3d_Normal;")
         if 'tangent' in self.config.vertex_requires:
-            code.append("in vec4 p3d_Binormal;")
-            code.append("in vec4 p3d_Tangent;")
+            if 'jacobian' not in self.config.vertex_provides:
+                code.append("in vec4 p3d_Binormal;")
+                code.append("in vec4 p3d_Tangent;")
         for i in range(self.config.nb_textures_coord):
             code.append("in vec4 p3d_MultiTexCoord%i;" % i)
 
@@ -47,7 +48,7 @@ class DirectVertexInput(VertexInput):
         code.append("model_vertex4 = p3d_Vertex;")
         if 'model_normal' in self.config.vertex_requires:
             code.append("model_normal4 = vec4(p3d_Normal.xyz, 0.0);")
-        if 'tangent' in self.config.vertex_requires:
+        if 'tangent' in self.config.vertex_requires and 'jacobian' not in self.config.vertex_provides:
             code.append("model_tangent4 = vec4(p3d_Tangent.xyz, 0.0);")
             if 'generate_binormal' in self.config.vertex_requires:
                 # TODO: Should be done here ?

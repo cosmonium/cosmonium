@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ class VertexShader(ShaderProgram):
             code.append("centroid out vec3 v_centroid_world_normal;")
         if 'eye_normal' in self.config.fragment_requires:
             code.append("out vec3 v_eye_normal;")
-        if 'tangent' in self.config.fragment_requires:
+        if 'tangent' in self.config.fragment_requires and 'jacobian' not in self.config.vertex_provides:
             code.append("out vec3 v_binormal;")
             code.append("out vec3 v_tangent;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
@@ -152,7 +152,7 @@ class VertexShader(ShaderProgram):
         code.append("vec4 model_vertex4;")
         if 'model_normal' in self.config.vertex_requires:
             code.append("vec4 model_normal4;")
-        if 'tangent' in self.config.vertex_requires:
+        if 'tangent' in self.config.vertex_requires and 'jacobian' not in self.config.vertex_provides:
             code.append("vec4 model_binormal4;")
             code.append("vec4 model_tangent4;")
         for i in range(self.config.nb_textures_coord):
@@ -173,9 +173,11 @@ class VertexShader(ShaderProgram):
             code.append("vec3 world_normal;")
         if 'eye_normal' in self.config.vertex_requires:
             code.append("vec3 eye_normal;")
-        if 'tangent' in self.config.vertex_requires:
-            code.append("vec3 binormal;")
+        if 'tangent' in self.config.vertex_requires and 'jacobian' not in self.config.vertex_provides:
+            code.append("vec4 world_tangent4;")
             code.append("vec3 tangent;")
+            code.append("vec4 world_binormal4;")
+            code.append("vec3 binormal;")
 
         self.point_control.vertex_shader_decl(code)
         self.appearance.vertex_shader_decl(code)
@@ -208,9 +210,11 @@ class VertexShader(ShaderProgram):
             code.append("world_normal = normalize((p3d_ModelMatrixInverseTranspose * model_normal4).xyz);")
         if 'eye_normal' in self.config.vertex_requires:
             code.append("eye_normal = normalize(p3d_NormalMatrix * model_normal4.xyz);")
-        if 'tangent' in self.config.vertex_requires:
-            code.append("tangent = vec3(normalize(p3d_ModelMatrix * model_tangent4));")
-            code.append("binormal = vec3(normalize(p3d_ModelMatrix * model_binormal4));")
+        if 'tangent' in self.config.vertex_requires and 'jacobian' not in self.config.vertex_provides:
+            code.append("world_tangent4 = p3d_ModelMatrix * model_tangent4;")
+            code.append("tangent = normalize(world_tangent4.xyz);")
+            code.append("world_binormal4 = p3d_ModelMatrix * model_binormal4;")
+            code.append("binormal = normalize(world_binormal4.xyz);")
         if 'relative_vector_to_obs' in self.config.vertex_requires:
             code.append("vec3 vector_to_obs = -vertex.xyz / vertex.w;")
             code.append("vec3 relative_vector_to_obs_tmp;")
@@ -248,9 +252,9 @@ class VertexShader(ShaderProgram):
             code.append("v_centroid_world_normal = world_normal;")
         if 'eye_normal' in self.config.fragment_requires:
             code.append("v_eye_normal = eye_normal;")
-        if 'tangent' in self.config.fragment_requires:
-            code.append("v_tangent = mat3(p3d_ViewMatrix) * tangent;")
-            code.append("v_binormal = mat3(p3d_ViewMatrix) * binormal;")
+        if 'tangent' in self.config.fragment_requires and 'jacobian' not in self.config.vertex_provides:
+            code.append("v_tangent = (p3d_ViewMatrix * world_tangent4).xyz;")
+            code.append("v_binormal = (p3d_ViewMatrix * world_binormal4).xyz;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
             code.append("v_relative_vector_to_obs = relative_vector_to_obs;")
         if self.config.color_picking and self.config.vertex_oids:
@@ -320,6 +324,7 @@ class FragmentShader(ShaderProgram):
             code.append("uniform vec4 color_picking;")
         if self.config.color_picking:
             code.append("layout (binding=0, rgba8) uniform writeonly image2D oid_store;")
+        code.append("uniform mat3 p3d_NormalMatrix;")
 
     def create_inputs(self, code):
         if 'model_vertex' in self.config.fragment_requires:
@@ -336,7 +341,7 @@ class FragmentShader(ShaderProgram):
             code.append("centroid in vec3 v_centroid_world_normal;")
         if 'eye_normal' in self.config.fragment_requires:
             code.append("in vec3 v_eye_normal;")
-        if 'tangent' in self.config.fragment_requires:
+        if 'tangent' in self.config.fragment_requires and 'jacobian' not in self.config.vertex_provides:
             code.append("in vec3 v_tangent;")
             code.append("in vec3 v_binormal;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
@@ -396,7 +401,7 @@ class FragmentShader(ShaderProgram):
             code.append("vec3 eye_normal = normalize(v_eye_normal);")
             if self.appearance.has_normal:
                 code.append("vec3 shape_eye_normal = eye_normal;")
-        if 'tangent' in self.config.fragment_requires:
+        if 'tangent' in self.config.fragment_requires and 'jacobian' not in self.config.vertex_provides:
             code.append("vec3 tangent = normalize(v_tangent);")
             code.append("vec3 binormal = normalize(v_binormal);")
 
@@ -414,12 +419,12 @@ class FragmentShader(ShaderProgram):
         self.data_source.fragment_shader(code)
         self.appearance.fragment_shader(code)
         if 'eye_normal' in self.config.fragment_requires and self.appearance.has_normal:
-            if self.appearance.normal_texture_tangent_space:
+            if 'jacobian' in self.config.vertex_provides:
+                code.append("eye_normal = normalize(p3d_NormalMatrix * pixel_normal);")
+            elif self.appearance.normal_texture_tangent_space:
                 code += [
-                    "eye_normal *= pixel_normal.z;",
-                    "eye_normal += tangent * pixel_normal.x;",
-                    "eye_normal += binormal * pixel_normal.y;",
-                    "eye_normal = normalize(eye_normal);",
+                    "mat3 tbn = mat3(tangent, binormal, eye_normal);",
+                    "eye_normal = normalize(tbn * pixel_normal);",
                 ]
             else:
                 code.append("eye_normal = pixel_normal;")
@@ -656,6 +661,7 @@ class RenderingShader(StructuredShader):
 
         component: ShaderComponent
         components = (
+            self.data_source,
             self.appearance,
             *self.after_effects,
             self.vertex_control,
