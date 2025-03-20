@@ -101,14 +101,52 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
                 '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
     vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap, 0).xxx;
-    float u0 = get_terrain_height_%s(heightmap, texcoord + pixel_size.yz, params);
-    float u1 = get_terrain_height_%s(heightmap, texcoord + pixel_size.xz, params);
-    float v0 = get_terrain_height_%s(heightmap, texcoord + pixel_size.zy, params);
-    float v1 = get_terrain_height_%s(heightmap, texcoord + pixel_size.zx, params);
+    float u0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.yzz).xy, params);
+    float u1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.xzz).xy, params);
+    float v0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zyz).xy, params);
+    float v1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zxz).xy, params);
     float deltax = u1 - u0;
     float deltay = v1 - v0;
     vec3 tangent = normalize(vec3(2 * params.u_scale, 0, deltax));
     vec3 binormal = normalize(vec3(0, 2 * params.v_scale, deltay));
+    return normalize(cross(tangent, binormal));
+}
+'''
+                % (self.name, self.name, self.name, self.name, self.name)
+            ]
+
+    def get_terrain_normal_jacobian(self, code):
+        if self.filtering.has_derivatives:
+            code += [
+                '''
+vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, HeightmapParameters params) {
+    vec2 pos = texcoord * params.scale + params.offset;
+    vec2 delta = %s * params.height_scale;
+    vec3 tangent = J *vec3(%f * params.u_scale, 0, delta.x);
+    vec3 binormal = J * vec3(0, %f * params.v_scale, delta.y);
+    return normalize(cross(tangent, binormal));
+}
+'''
+                % (
+                    self.name,
+                    self.filtering.derivatives('heightmap', 'pos'),
+                    self.filtering.delta_width,
+                    self.filtering.delta_width,
+                )
+            ]
+        else:
+            code += [
+                '''
+vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, HeightmapParameters params) {
+    vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap, 0).xxx;
+    float u0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.yzz).xy, params);
+    float u1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.xzz).xy, params);
+    float v0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zyz).xy, params);
+    float v1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zxz).xy, params);
+    float deltax = u1 - u0;
+    float deltay = v1 - v0;
+    vec3 tangent = J * vec3(2 * params.u_scale, 0, deltax);
+    vec3 binormal = J * vec3(0, 2 * params.v_scale, deltay);
     return normalize(cross(tangent, binormal));
 }
 '''
@@ -132,12 +170,20 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
                 self.name,
             )
         if source == 'normal_%s' % self.name or (self.has_normal and source == 'normal'):
-            return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_params)" % (
-                self.name,
-                self.name,
-                "texcoord0.xy",
-                self.name,
-            )
+            if 'jacobian' in self.shader.vertex_provides:
+                return "get_terrain_normal_%s(heightmap_%s, %s, jacobian, heightmap_%s_params)" % (
+                    self.name,
+                    self.name,
+                    "texcoord0.xy",
+                    self.name,
+                )
+            else:
+                return "get_terrain_normal_%s(heightmap_%s, %s, heightmap_%s_params)" % (
+                    self.name,
+                    self.name,
+                    "texcoord0.xy",
+                    self.name,
+                )
         if source == 'range_%s' % self.name:
             return str(1.0 / (self.heightmap.max_height - self.heightmap.min_height))
         if error:
@@ -170,7 +216,14 @@ struct HeightmapParameters {
         self.interpolator.extra(self.shader.fragment_shader, code)
         self.filtering.extra(self.shader.fragment_shader, code)
         self.shader.fragment_shader.add_function(code, 'get_terrain_height_%s' % self.name, self.get_terrain_height)
-        self.shader.fragment_shader.add_function(code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal)
+        if 'jacobian' in self.shader.vertex_provides:
+            self.shader.fragment_shader.add_function(
+                code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal_jacobian
+            )
+        else:
+            self.shader.fragment_shader.add_function(
+                code, 'get_terrain_normal_%s' % self.name, self.get_terrain_normal
+            )
 
     def vertex_shader_decl(self, code):
         code.append("HeightmapParameters heightmap_%s_params;" % self.name)
