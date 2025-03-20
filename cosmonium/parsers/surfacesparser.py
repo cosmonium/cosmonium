@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,6 +128,9 @@ class SurfaceYamlParser(YamlModuleParser):
                 )
             else:
                 data_source = []
+                shape_data_source = shape.get_shader_data_source()
+                if shape_data_source is not None:
+                    data_source.append(shape_data_source)
                 # TODO: The configuration of the data store can not be done like that
                 if shape.data_store is not None:
                     data_source.append(shape.data_store.get_shader_data_source())
@@ -252,6 +255,9 @@ class FlatSurfaceParser(YamlModuleParser):
                 surface = FlatSurface('surface', shape, appearance, shader, clickable=False)
             else:
                 data_source = []
+                shape_data_source = shape.get_shader_data_source()
+                if shape_data_source is not None:
+                    data_source.append(shape_data_source)
                 # TODO: The configuration of the data store can not be done like that
                 if shape.data_store is not None:
                     data_source.append(shape.data_store.get_shader_data_source())

@@ -31,6 +31,8 @@ from ..entities.data_store import PatchDataStoreManager
 from ..geometry import geometry
 from ..mathutil.ellipse import EllipseCircumRamanujan2ndApprox
 from ..pstats import pstat
+from ..shaders.data_source.shape import SpherifiedCubeGeometryShaderDataSource
+from ..shaders.data_source.shape import ImprovedSpherifiedCubeGeometryShaderDataSource
 from ..shapes.base import Shape
 from ..textures import TexCoord
 from .. import settings
@@ -1277,6 +1279,9 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
 
         return (copysign(vx, x), copysign(vy, y))
 
+    def get_shader_data_source(self):
+        return SpherifiedCubeGeometryShaderDataSource()
+
 
 class SquaredDistanceSquarePatchFactory(PatchFactory):
 
@@ -1318,6 +1323,9 @@ class SquaredDistanceSquareShape(PatchedSquareShapeBase):
         vy = sqrt(abs(0.5 * (vy + isqrt)))
 
         return (copysign(vx, x), copysign(vy, y))
+
+    def get_shader_data_source(self):
+        return ImprovedSpherifiedCubeGeometryShaderDataSource()
 
 
 class PatchedShapeDataSource(DataSource):

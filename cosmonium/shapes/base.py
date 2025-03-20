@@ -55,6 +55,9 @@ class Shape:
     def get_data_source(self):
         return None
 
+    def get_shader_data_source(self):
+        return None
+
     def task_done(self, task):
         self.task = None
 
