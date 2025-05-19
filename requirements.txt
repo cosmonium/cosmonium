@@ -11,7 +11,7 @@ MarkupSafe == 3.0.3
 
 mistune == 3.3.3
 
-numpy==1.26.4
+numpy==2.2.6
 
 platformdirs == 4.11.0
 
