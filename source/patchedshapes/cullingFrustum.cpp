@@ -81,7 +81,7 @@ HorizonCullingFrustum::HorizonCullingFrustum(Lens *lens, LMatrix4 transform_mat,
   } else {
       factor = 2.0;
   }
-  double limit = sqrt(max(0.001, (factor * max_radius + altitude_to_min_radius) * altitude_to_min_radius));
+  double limit = sqrt(std::max(0.001, (factor * max_radius + altitude_to_min_radius) * altitude_to_min_radius));
   double far_distance = limit * scale;
   this->lens->set_near_far(near_distance, far_distance);
   lens_bounds = this->lens->make_bounds();

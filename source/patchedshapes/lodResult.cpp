@@ -60,7 +60,7 @@ LodResult::add_to_remove(QuadTreeNode *patch)
 void
 LodResult::check_max_lod(QuadTreeNode *patch)
 {
-  max_lod = max(max_lod, patch->lod);
+  max_lod = std::max(max_lod, patch->lod);
 }
 
 void
