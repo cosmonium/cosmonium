@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ class HudEntry:
 
 class Huds:
 
-    def __init__(self, gui, widgets, dock, env, skin):
+    def __init__(self, gui, widgets, dock, global_vars, skin):
         self.base = builtins.base
         self.owner = gui
         self.skin = skin
@@ -53,7 +53,6 @@ class Huds:
             for widget in self.widgets[anchor_name]:
                 widget.set_owner(self)
                 widget.set_anchor(anchor)
-                widget.compile(env)
                 widget.create()
         # TODO: Info should be moved out of HUD
         self.info = FadeTextLine('info', TextNode.ALeft, LVector2(0, -3), owner=self)
@@ -65,7 +64,6 @@ class Huds:
             self.bottom_dock = Dock('hud', gui, orientation, location, layout)
             self.bottom_dock.set_owner(self)
             self.bottom_dock.set_anchor(self.base.pixel2d)
-            self.bottom_dock.compile(env)
             self.bottom_dock.create()
         else:
             self.bottom_dock = None
@@ -95,13 +93,13 @@ class Huds:
                 widget.set_offset((0, offset))
                 offset += widget.get_height()
 
-    def update(self, cosmonium, camera, mouse, nav, autopilot, time):
+    def update(self, global_vars):
         if not self.shown:
             return
         for widget in chain(*self.widgets.values()):
-            widget.update()
+            widget.update(global_vars)
         if self.bottom_dock is not None:
-            self.bottom_dock.update()
+            self.bottom_dock.update(global_vars)
 
     def update_size(self):
         if self.bottom_dock is not None:

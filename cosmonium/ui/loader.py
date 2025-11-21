@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@ from .dock.text import TextDockWidget
 from .hud.dynamictextblock import DynamicTextBlockEntries, DynamicTextBlockEntry, DynamicTextBlock
 from .menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
 from .skin import ParentSelector, Selector, UISkinEntry, UISkin
+from .templates.expression import PythonExpressionParser, true_expression, zero_expression
+from .templates.fstring import FStringTemplateParser
+from .templates.simple import SimpleTemplateParser
 
 
 class UIConfig(NamedTuple):
@@ -44,14 +47,17 @@ class UIConfig(NamedTuple):
 
 class UIConfigLoader:
 
-    def __init__(self, env):
-        self.env = env
+    def __init__(self, global_vars):
+        self.global_vars = global_vars
         self.named_menus = {}
 
     def load(self, ui_config_file):
         parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
         data = parser.load_and_parse(ui_config_file)
+        self.expression_parser = PythonExpressionParser()
+        self.simple_template_parser = SimpleTemplateParser()
+        self.fstring_template_parser = FStringTemplateParser()
         localedir = data.get('locale', os.path.join(basedir, 'locale'))
         shortcuts_file = data.get('shortcuts')
         if shortcuts_file is not None:
@@ -122,20 +128,20 @@ class UIConfigLoader:
             text = data.get("title")
             enabled_source = data.get('enabled')
             if enabled_source is not None:
-                enabled = self.env.compile_expression(enabled_source)
+                enabled = self.expression_parser.compile_expression(enabled_source, self.global_vars)
             else:
-                enabled = lambda: True
+                enabled = true_expression
             visible_source = data.get('visible')
             if visible_source is not None:
-                visible = self.env.compile_expression(visible_source)
+                visible = self.expression_parser.compile_expression(visible_source, self.global_vars)
             else:
-                visible = lambda: True
+                visible = true_expression
             if 'event' in data:
                 state_source = data.get('state')
                 if state_source is not None:
-                    state = self.env.compile_expression(state_source)
+                    state = self.expression_parser.compile_expression(state_source, self.global_vars)
                 else:
-                    state = lambda: 0
+                    state = zero_expression
                 event = data.get("event")
                 menu = EventMenuEntry(text=text, state=state, event=event, enabled=enabled, visible=visible)
             elif 'menu' in data:
@@ -147,7 +153,7 @@ class UIConfigLoader:
             else:
                 menu = MenuSeparator(visible=visible)
         else:
-            menu = MenuSeparator(visible=lambda: True)
+            menu = MenuSeparator(visible=true_expression)
         return menu
 
     def load_submenu(self, data):
@@ -313,10 +319,14 @@ class UIConfigLoader:
 
     def load_hud_entry(self, data):
         condition = data.get('condition')
+        if condition is not None:
+            condition = self.expression_parser.compile_expression(condition, self.global_vars)
         text = data.get('text')
         if text:
             title = data.get('title')
-            entry = DynamicTextBlockEntry(condition, title, text)
+            # template = self.simple_template_parser.create_template(text)
+            template = self.fstring_template_parser.create_template(text)
+            entry = DynamicTextBlockEntry(condition, title, template)
         else:
             entries_data = data.get('entries', [])
             entries = []

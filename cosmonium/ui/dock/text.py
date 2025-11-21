@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
 
 from ..skin import UIElement
+from ..templates.simple import SimpleTemplateParser
 from .base import DGuiDockWidget
 
 
@@ -35,18 +36,19 @@ class TextDockWidget(DGuiDockWidget):
         self.template = None
         self.text = None
 
-    def compile(self, env):
-        self.template = env.create_template(self.text_source)
+    def compile(self):
+        parser = SimpleTemplateParser()
+        self.template = parser.create_template(self.text_source)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         label_element = UIElement('label', parent=parent.element)
-        self.text = self.template.render()
+        self.text = ""
         label = DirectLabel(**skin.get_style(label_element), text=self.text, text_align=self.align, textMayChange=True)
         return label
 
-    def update(self):
+    def update(self, global_vars):
         has_changed = False
-        text = self.template.render()
+        text = self.template.render(global_vars)
         if text != self.text:
             self.widget.dgui_obj['text'] = text
             self.widget.reset_frame_size()

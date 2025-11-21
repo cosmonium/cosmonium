@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,10 +56,6 @@ class LayoutDockWidget(DockWidgetBase):
         self.frame = None
         self.widgets = widgets
 
-    def compile(self, env):
-        for widget in self.widgets:
-            widget.compile(env)
-
     def create(self, dock: Dock, parent, skin) -> None:
         self.widget.create(dock, parent, skin)
         self.instance = parent.instance
@@ -106,10 +102,10 @@ class LayoutDockWidget(DockWidgetBase):
         (width, height) = min_size
         self.sizer.update((width, height))
 
-    def update(self):
+    def update(self, global_vars):
         has_changed = False
         for widget in self.widgets:
-            has_changed = widget.update() or has_changed
+            has_changed = widget.update(global_vars) or has_changed
         if has_changed:
             self.update_layout()
         return has_changed

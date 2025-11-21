@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,10 +42,10 @@ class DockWidgetBase:
             self.index,
         )
 
-    def compile(self, env):
+    def compile(self):
         pass
 
-    def update(self):
+    def update(self, global_vars):
         return False
 
 

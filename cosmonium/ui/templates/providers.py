@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,12 @@
 from abc import ABC, abstractmethod
 import builtins
 from direct.showbase.ShowBaseGlobal import globalClock
-import jinja2
 
-from ..astro import bayer, units
-from ..bodyclass import bodyClasses
-from ..objects.star import Star
-from .. import settings
-from .. import utils
+from ...astro import bayer, units
+from ...bodyclass import bodyClasses
+from ...objects.star import Star
+from ... import settings
+from ... import utils
 
 
 class ObjectProvider(ABC):
@@ -256,7 +255,7 @@ class SelectedProvider(ObjectProvider):
         if self.engine.selected is not None:
             return self.engine.selected
         else:
-            raise jinja2.exceptions.UndefinedError()
+            raise RuntimeError()
 
 
 class UnitsProvider:
@@ -289,10 +288,10 @@ class TimeProvider:
         return self.engine.time.running
 
 
-class JinjaEnv:
+class GlobalVars:
+
     def __init__(self, engine, gui):
-        self.env = jinja2.Environment()
-        self.env.globals = {
+        self.globals = {
             'autopilot': AutopilotProvider(engine),
             'bodies': BodiesProvider(),
             'camera': CameraProvider(engine),
@@ -308,17 +307,3 @@ class JinjaEnv:
             'time': TimeProvider(engine),
             'units': UnitsProvider(),
         }
-
-    def compile_expression(self, source: str):
-        try:
-            return self.env.compile_expression(source, undefined_to_none=False)
-        except jinja2.exceptions.TemplateError:
-            print(f"Error while compiling '{source}'")
-            raise
-
-    def create_template(self, source: str):
-        try:
-            return self.env.from_string(source)
-        except jinja2.exceptions.TemplateError:
-            print(f"Error while compiling '{source}'")
-            raise

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,9 +41,6 @@ class Dock(HUDObject):
             self.center = False
         self.pos = LVector3(0)
 
-    def compile(self, env):
-        self.layout.compile(env)
-
     def create(self):
         self.element = UIElement('frame', class_='dock', id_=self.id_)
         self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
@@ -81,5 +78,5 @@ class Dock(HUDObject):
                 self.pos[2] = -self.gui.height + size[1] + 1
         self.update_instance()
 
-    def update(self):
-        self.layout.update()
+    def update(self, global_vars):
+        self.layout.update(global_vars)

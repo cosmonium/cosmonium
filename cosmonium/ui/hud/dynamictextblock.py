@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,6 @@ from .textblock import TextBlock
 class DynamicTextBlockEntryInterface(ABC):
 
     @abstractmethod
-    def compile(self, env) -> None: ...
-
-    @abstractmethod
     def is_valid(self) -> bool: ...
 
     @abstractmethod
@@ -35,49 +32,31 @@ class DynamicTextBlockEntryInterface(ABC):
 
 
 class DynamicTextBlockEntry(DynamicTextBlockEntryInterface):
-    def __init__(self, condition_source, title, text_source):
-        self.condition_source = condition_source
+    def __init__(self, condition, title, template):
+        self.condition = condition
         self.title = title
-        self.text_source = text_source
-        self.condition = None
-        self.template = None
-
-    def compile(self, env):
-        if self.condition_source is not None:
-            self.condition = env.compile_expression(self.condition_source)
-        else:
-            self.condition = lambda: True
-        self.template = env.create_template(self.text_source)
+        self.template = template
 
     def has_entries(self) -> bool:
         return False
 
-    def is_valid(self) -> bool:
-        return self.condition()
+    def is_valid(self, global_vars) -> bool:
+        return not self.condition or self.condition.execute(global_vars)
 
-    def render(self) -> str:
-        return self.template.render()
+    def render(self, global_vars) -> str:
+        return self.template.render(global_vars)
 
 
 class DynamicTextBlockEntries(DynamicTextBlockEntryInterface):
-    def __init__(self, condition_source, entries):
-        self.condition_source = condition_source
+    def __init__(self, condition, entries):
+        self.condition = condition
         self.entries = entries
-        self.condition = None
-
-    def compile(self, env):
-        if self.condition_source is not None:
-            self.condition = env.compile_expression(self.condition_source)
-        else:
-            self.condition = lambda: True
-        for entry in self.entries:
-            entry.compile(env)
 
     def has_entries(self) -> bool:
         return True
 
-    def is_valid(self) -> bool:
-        return self.condition()
+    def is_valid(self, global_vars) -> bool:
+        return not self.condition or self.condition.execute(global_vars)
 
 
 class DynamicTextBlock(TextBlock):
@@ -86,20 +65,16 @@ class DynamicTextBlock(TextBlock):
         self.entries = entries
         self._cursor = 0
 
-    def compile(self, env):
-        for entry in self.entries:
-            entry.compile(env)
-
-    def _update(self, entries):
+    def _update(self, entries, global_vars):
         for entry in entries:
-            if entry.is_valid():
+            if entry.is_valid(global_vars):
                 if entry.has_entries():
-                    self._update(entry.entries)
+                    self._update(entry.entries, global_vars)
                 else:
                     if entry.title is None:
-                        text = entry.render()
+                        text = entry.render(global_vars)
                     else:
-                        text = entry.title + ": " + entry.render()
+                        text = entry.title + ": " + entry.render(global_vars)
                     if self._cursor == self.count:
                         line = self.create_line(self._cursor)
                         self.instances.append(line)
@@ -109,8 +84,8 @@ class DynamicTextBlock(TextBlock):
                     self.set(self._cursor, text)
                     self._cursor += 1
 
-    def update(self):
+    def update(self, global_vars):
         self._cursor = 0
-        self._update(self.entries)
+        self._update(self.entries, global_vars)
         for i in range(self._cursor, self.count):
             self.set(i, "")

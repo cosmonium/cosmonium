@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,12 +29,12 @@ from .. import version
 # TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
-from .jinja import JinjaEnv
 from .loader import UIConfigLoader
 from .shortcuts import Shortcuts
 from .huds import Huds
 from .hud.query import Query
 from .clipboard import create_clipboard
+from .templates.providers import GlobalVars
 from .windows.browser import Browser
 from .windows.filewindow import FileWindow
 from .windows.info import InfoWindow
@@ -117,7 +117,7 @@ class Gui(object):
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
 
-        self.env = JinjaEnv(self.base, self)
+        self.global_vars = GlobalVars(self.base, self)
 
         ui_config = self.load(config_file)
         self.skin = ui_config.skin
@@ -125,7 +125,7 @@ class Gui(object):
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
 
-        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.env, self.skin)
+        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.global_vars, self.skin)
         self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
         self.opened_windows = []
         self.browser = Browser(owner=self)
@@ -163,7 +163,7 @@ class Gui(object):
         return self
 
     def load(self, ui_config_file):
-        loader = UIConfigLoader(self.env)
+        loader = UIConfigLoader(self.global_vars.globals)
         return loader.load(ui_config_file)
 
     def set_nav(self, nav):
@@ -234,7 +234,7 @@ class Gui(object):
         self.query.open_query(self)
 
     def update_status(self):
-        self.hud.update(self.cosmonium, self.camera, self.mouse, self.nav, self.autopilot, self.time)
+        self.hud.update(self.global_vars.globals)
 
     def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
