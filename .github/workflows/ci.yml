@@ -47,7 +47,7 @@ jobs:
         files: dist/*
 
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
     - name: Checkout repository
       uses: actions/checkout@v5
