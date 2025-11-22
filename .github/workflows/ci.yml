@@ -36,15 +36,6 @@ jobs:
       with:
         name: linux-logs
         path: ~/.cache/cosmonium/log/output.log
-    - name: 'Upload development build'
-      if: false && github.ref == 'refs/heads/develop'
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest-linux"
-        prerelease: true
-        title: "Linux Development Build"
-        files: dist/*
 
   build-macos:
     runs-on: macos-15-intel
@@ -81,15 +72,6 @@ jobs:
       with:
         name: macos-logs
         path: ~/Library/Logs/cosmonium/output.log
-    - name: 'Upload development build'
-      if: false && github.ref == 'refs/heads/develop'
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest-macos"
-        prerelease: true
-        title: "MacOS Development Build"
-        files: dist/*
 
   build-windows:
     runs-on: windows-latest
@@ -128,12 +110,3 @@ jobs:
       with:
         name: windows-logs
         path: ~/AppData/Local/Cosmonium/Logs/output.log
-    - name: 'Upload development build'
-      if: false && github.ref == 'refs/heads/develop'
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest-windows"
-        prerelease: true
-        title: "Windows Development Build"
-        files: build/*.exe
