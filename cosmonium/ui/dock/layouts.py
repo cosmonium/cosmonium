@@ -19,9 +19,14 @@
 
 from __future__ import annotations
 
+from panda3d.core import LVector4
+from typing import TYPE_CHECKING
+
 from .base import DockWidgetBase
 from .decorated_size import DecoratedSizer
-from panda3d.core import LVector4
+
+if TYPE_CHECKING:
+    from .dock import Dock
 
 
 class SpaceDockWidget(DockWidgetBase):

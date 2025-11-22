@@ -19,9 +19,14 @@
 
 from __future__ import annotations
 
+import builtins
 from directguilayout.gui import Widget as SizerWidget
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from panda3d.core import PNMImage, Texture
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .dock import Dock
 
 
 class DockWidgetBase:
@@ -55,7 +60,7 @@ class DGuiDockWidget(DockWidgetBase):
         raise NotImplementedError()
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
-        instance = self.create(dock, parent, base.messenger, skin)
+        instance = self.create(dock, parent, builtins.base.messenger, skin)
         instance.reparent_to(dock.instance)
         self.widget = SizerWidget(instance)
         DockWidgetBase.add_to(self, dock, parent, borders, skin)

@@ -21,10 +21,14 @@ from __future__ import annotations
 
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
+from typing import TYPE_CHECKING
 
 from ..skin import UIElement
 from ..templates.simple import SimpleTemplateParser
 from .base import DGuiDockWidget
+
+if TYPE_CHECKING:
+    from .dock import Dock
 
 
 class TextDockWidget(DGuiDockWidget):
