@@ -10,11 +10,11 @@ PANDA3D_BASE_VERSION=1.11.0
 CUSTOM_PANDA3D=1
 ifeq ($(CUSTOM_PANDA3D),1)
     EXTRA_INDEX=""
-    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3368
-    PANDA3D_VERSION_LONG=$(PANDA3D_VERSION)-gd9052bae76
+    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3844
+    PANDA3D_VERSION_LONG=$(PANDA3D_VERSION)-g062e3365fd
 else
     EXTRA_INDEX="--extra-index-url https://archive.panda3d.org/simple"
-    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3368
+    PANDA3D_VERSION=$(PANDA3D_BASE_VERSION).dev3823
 endif
 
 BASE_VERSION=0.2.1.1
@@ -71,13 +71,11 @@ ifeq ($(PLATFORM),)
 endif
 
 ifeq ($(PLATFORM),win_amd64)
-    PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)-x64/python/python.exe
     OS_SDK=8.1
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
 
 ifeq ($(PLATFORM),win32)
-    PYTHON=C:/Panda3D-$(PANDA3D_BASE_VERSION)/python/python.exe
     OS_SDK=8.1
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
