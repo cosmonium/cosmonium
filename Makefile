@@ -154,6 +154,11 @@ endif
 clean:
 	@cd source && "$(MAKE)" clean
 	@rm -f cosmonium/buildversion.py
+ifeq ($(OS),Windows_NT)
+	@rm -f lib/*.pyd
+else
+	@rm -f lib/*.so
+endif
 
 BUILD_REQ:=
 
