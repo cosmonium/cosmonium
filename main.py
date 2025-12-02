@@ -37,6 +37,15 @@ sys.path.insert(1, 'third-party/gltf')
 import argparse  # noqa: E402
 from panda3d.core import ExecutionEnvironment  # noqa: E402
 
+if getattr(sys, 'frozen', False) and sys.platform == "win32":
+    # Create a fake win32com.gen_py package as Panda3D freeze tool does not set up a proper __path__
+    # for win32com to create its cache package for COM object
+    # It's not needed by Cosmonium, but still required to be able to import win32
+    import types  # noqa: E402
+    gen_py = types.ModuleType("win32com.gen_py")
+    gen_py.__path__ = [ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")]
+    sys.modules[gen_py.__name__] = gen_py
+
 from cosmonium.celestia import ssc_parser  # noqa: E402
 from cosmonium.celestia import stc_parser  # noqa: E402
 from cosmonium.celestia import star_parser  # noqa: E402

@@ -51,6 +51,10 @@ for (index, arg) in enumerate(sys.argv):
         elif platform.startswith('win'):
             log_filename = '$USER_APPDATA/Cosmonium/Logs/output.log'
             include_modules.append('win32')
+            include_modules.append('win32com.gen_py')
+            include_modules.append('win32com.shell')
+            include_modules.append('win32clipboard')
+            include_modules.append('win32con')
         else:
             log_filename = '$HOME/.cache/cosmonium/log/output.log'
         break
@@ -102,9 +106,10 @@ config = {
             ],
             'package_data_dirs':
             {
-             'win32': [('pywin32_system32/*', '', {}),
-                       ('win32/*.pyd', '', {}),
-                       ('win32/lib/win32con.py', '', {})],
+             'win32': [
+                 ('pywin32_system32/*', '', {}),
+                 ('win32/*.pyd', '', {}),
+             ],
             },
             'include_modules':
             {
