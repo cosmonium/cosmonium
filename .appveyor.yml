@@ -19,12 +19,13 @@ max_jobs: 1
 #---------------------------------#
 
 # Build worker image (VM template)
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 # scripts that are called at very beginning, before repo cloning
 init:
-- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %platform%
-- choco install make
+- call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %platform%
+- choco install -y make
+- choco install -y python --version=3.10.11 --install-arguments 'PrependPath=1'
 
 # clone directory
 clone_folder: c:\projects\cosmonium
@@ -39,13 +40,13 @@ install:
          git submodule update --init --force --recursive
   - ps: |
         $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3368-gd9052bae76/Panda3D-1.11.0.dev3368-py3.9-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
+        $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3844-g062e3365fd/Panda3D-1.11.0.dev3844-py3.10-x64.exe", "c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe")
         c:\projects\cosmonium\Panda3D-SDK-1.11.0-x64.exe /S /D="C:\Panda3D-1.11.0-x64" | Out-Null
   - ps: |
         $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.14/panda3d-1.10.14-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
+        $wc.DownloadFile("https://www.panda3d.org/download/panda3d-1.10.15/panda3d-1.10.15-tools-win64.zip", "c:\projects\cosmonium\thirdparty-tools.zip")
         Expand-Archive -Path c:\projects\cosmonium\thirdparty-tools.zip
-        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.14/thirdparty -Destination c:\Panda3D-1.11.0-x64\thirdparty
+        Move-Item -Path c:\projects\cosmonium\thirdparty-tools/panda3d-1.10.15/thirdparty -Destination c:\Panda3D-1.11.0-x64\thirdparty
 
 #---------------------------------#
 #       build configuration       #
@@ -55,7 +56,7 @@ install:
 platform: x64
 
 environment:
-  PATH: 'C:\Python39-x64;%PATH%'
+  PATH: 'C:\Python310;C:\Python310\Scripts;%PATH%'
 
 # scripts to run before build
 before_build:
@@ -63,8 +64,9 @@ before_build:
 # to run your custom scripts instead of automatic MSBuild
 build_script:
   - cmd: |
-         make build
-         make bdist
+         pip install -r requirements-dev.txt
+         make PYTHON=python build
+         make PYTHON=python bdist
 
 # scripts to run after build (working directory and environment changes are persisted from the previous steps)
 after_build:
