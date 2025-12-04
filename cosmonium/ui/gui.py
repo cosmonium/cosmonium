@@ -171,7 +171,7 @@ class Gui(object):
 
     def calc_scale(self):
         self.scale = LVector2(
-            settings.ui_scale / self.screen_width * 2.0, settings.ui_scale / self.screen_height * 2.0
+            1 / self.screen_width * 2.0, 1 / self.screen_height * 2.0
         )
 
     def register_events(self, event_ctrl):
