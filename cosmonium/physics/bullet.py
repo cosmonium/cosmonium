@@ -50,7 +50,7 @@ class BulletPhysics(PhysicsBase):
             self.physics_world.set_debug_node(self.debug.node())
 
     def set_gravity(self, gravity):
-        self.gravity = self.gravity
+        self.gravity = gravity
         self.physics_world.set_gravity(*LVector3d(0, 0, -gravity))
 
     def disable(self):
