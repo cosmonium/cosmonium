@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,20 +21,12 @@
 from math import pi
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
-from ...parameters import ParametersGroup
 from ..kepler import kepler_pos
 
 
 class Orbit(object):
     def __init__(self, frame):
         self.frame = frame
-
-    def get_user_parameters(self):
-        group = ParametersGroup(_('Orbit'))
-        return group
-
-    def update_user_parameters(self):
-        pass
 
     def set_frame(self, frame):
         self.frame = frame

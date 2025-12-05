@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 from math import pi
 from panda3d.core import LQuaterniond, LVector3d
 
-from ...parameters import ParametersGroup, UserParameter, AutoUserParameter
 from ..frame import J2000BarycentricEclipticReferenceFrame
 
 
@@ -33,13 +32,6 @@ class Rotation(object):
 
     def is_flipped(self):
         return False
-
-    def get_user_parameters(self):
-        group = ParametersGroup(_('Rotation'))
-        return group
-
-    def update_user_parameters(self):
-        pass
 
     def set_frame(self, frame):
         self.frame = frame
@@ -61,14 +53,6 @@ class FixedRotation(Rotation):
     def __init__(self, rotation, frame):
         Rotation.__init__(self, frame)
         self.rotation = rotation
-
-    def get_user_parameters(self):
-        group = Rotation.get_user_parameters(self)
-        group.add_parameters(self.reference_axes.get_user_parameters())
-        return group
-
-    def update_user_parameters(self):
-        self.reference_axes.update_user_parameters()
 
     def get_frame_equatorial_orientation_at(self, time):
         return self.rotation
@@ -133,21 +117,6 @@ class SynchronousRotation(Rotation):
 
     def get_parent_body(self):
         return self.parent_body
-
-    def get_user_parameters(self):
-        group = FixedRotation.get_user_parameters(self)
-        group.add_parameter(
-            AutoUserParameter(
-                _("Meridian angle"),
-                'meridian_angle',
-                self,
-                UserParameter.TYPE_FLOAT,
-                value_range=[-360, 360],
-                units=pi / 180,
-            )
-        )
-        group.add_parameter(AutoUserParameter(_("Epoch"), 'epoch', self, UserParameter.TYPE_FLOAT))
-        return group
 
     def get_frame_equatorial_orientation_at(self, time):
         return self.equatorial_orientation
