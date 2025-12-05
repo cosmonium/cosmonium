@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ from ..engine.anchors import CartesianAnchor
 from ..engine.anchors import DynamicStellarAnchor
 from ..foundation import CompositeObject
 from ..namedobject import NamedObject
-from ..parameters import ParametersGroup
 from ..scene.sceneanchor import SceneAnchor
 from ..utils import srgb_to_linear
 from .. import settings
@@ -149,34 +148,6 @@ class StellarObject(NamedObject):
 
     def hide(self):
         self.shown = False
-
-    def get_user_parameters(self):
-        group = ParametersGroup(self.get_name())
-        if isinstance(self.orbit, FixedPosition) and self.system is not None:
-            orbit = self.system.orbit
-        else:
-            orbit = self.orbit
-        general_group = ParametersGroup(_('General'))
-        general_group.add_parameter(orbit.get_user_parameters())
-        general_group.add_parameter(self.rotation.get_user_parameters())
-        group.add_parameter(general_group)
-        for component in self.components:
-            component_group = component.get_user_parameters()
-            if component_group is not None:
-                group.add_parameter(component_group)
-        return group
-
-    def update_user_parameters(self):
-        self.components.update_user_parameters()
-        if isinstance(self.orbit, FixedPosition) and self.system is not None:
-            self.system.orbit.update_user_parameters()
-            if self.system.orbit_object is not None:
-                self.system.orbit_object.update_user_parameters()
-        else:
-            self.orbit.update_user_parameters()
-            if self.orbit_object is not None:
-                self.orbit_object.update_user_parameters()
-        self.rotation.update_user_parameters()
 
     def get_fullname(self, separator='/'):
         if hasattr(self, "primary") and self.primary is not None:
