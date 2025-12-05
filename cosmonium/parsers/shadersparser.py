@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,12 +39,12 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         custom = CustomShaderComponent(custom_id)
         for required in data.get('vertex-requires', []):
             custom.vertex_requires.add(required)
-        for provides in data.get('vertex-provides', []):
-            custom.vertex_provides.add(required)
+        for provide in data.get('vertex-provides', []):
+            custom.vertex_provides.add(provide)
         for required in data.get('fragment-requires', []):
             custom.fragment_requires.add(required)
-        for required in data.get('fragment-provides', []):
-            custom.fragment_provides.add(provides)
+        for provide in data.get('fragment-provides', []):
+            custom.fragment_provides.add(provide)
 
         custom.vertex_uniforms_data = [data.get('vertex-uniforms', '')]
         custom.vertex_inputs_data = [data.get('vertex-inputs', '')]
