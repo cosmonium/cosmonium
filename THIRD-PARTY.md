@@ -2,16 +2,6 @@
 
 Cosmonium is using code or algorithm from third-parties, here is the list of all these dependencies with the attribution and license.
 
-## third-party/appdirs
-
-Utilities for determining application-specific dirs.
-
-Copyright: Copyright (c) 2013 Eddy Petrișor, Copyright (c) 2010 ActiveState Software Inc.
-
-License: MIT
-
-Reference: [Github](https://github.com/ActiveState/appdirs)
-
 ## third-party/cefpanda
 
 Python module for using CEFPython with Panda3D.

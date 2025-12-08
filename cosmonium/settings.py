@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
 #
 
 
-from appdirs.appdirs import AppDirs
 import os
 from panda3d.core import LColor
 from panda3d.core import LPoint3, LPoint3d
+import platformdirs
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
@@ -260,11 +260,9 @@ win_fs_width = 0
 win_fs_height = 0
 
 # Application paths and files
-# We are setting appauthor to False, with None AppDirs uses appname for it
-appdirs = AppDirs(appname=app_name, appauthor=False)
-cache_dir = appdirs.user_cache_dir
-config_dir = appdirs.user_config_dir
-data_dir = appdirs.user_data_dir
+cache_dir = platformdirs.user_cache_dir(app_name)
+config_dir = platformdirs.user_config_dir(app_name)
+data_dir = platformdirs.user_data_dir(app_name)
 config_file = os.path.join(config_dir, 'config.yaml')
 
 # Debug flags

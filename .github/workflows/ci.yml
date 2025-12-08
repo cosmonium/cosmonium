@@ -21,9 +21,9 @@ jobs:
         curl -L https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3844-g062e3365fd/panda3d1.11_1.11.0.dev3844.jammy_amd64.deb -o panda3d1.11_1.11.0.jammy_amd64.deb
         sudo dpkg -i panda3d1.11_1.11.0.jammy_amd64.deb
         curl -L https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3844-g062e3365fd/panda3d-1.11.0.dev3844+fp64-cp310-cp310-linux_x86_64.whl -o panda3d-1.11.0-cp310-cp310-linux_x86_64.whl
+        pip3.10 install -r requirements-dev.txt
     - name: Build app
       run: |
-        pip3.10 install -r requirements-dev.txt
         echo "panda3d-1.11.0-cp310-cp310-linux_x86_64.whl" > requirements-build.txt
         cat requirements.txt >> requirements-build.txt
         make build
@@ -37,7 +37,7 @@ jobs:
       uses: actions/upload-artifact@v5
       with:
         name: linux-logs
-        path: ~/.cache/cosmonium/log/output.log
+        path: ~/.local/state/cosmonium/log/output.log
 
   build-macos:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
@@ -56,10 +56,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
     - name: Install Panda3D wheel
       run: |
         curl -L https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3844-g062e3365fd/panda3d-1.11.0.dev3844+fp64-cp310-cp310-macosx_10_9_x86_64.whl -o panda3d-1.11.0-cp310-cp310-macosx_10_9_x86_64.whl
-        python -m pip install panda3d-1.11.0-cp310-cp310-macosx_10_9_x86_64.whl
+        pip install panda3d-1.11.0-cp310-cp310-macosx_10_9_x86_64.whl
     - name: Build binary
       run: |
         echo "panda3d-1.11.0-cp310-cp310-macosx_10_9_x86_64.whl" > requirements-tmp.txt
@@ -90,15 +91,16 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: '3.10'
-    - name: Install pip
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
     - name: Install Panda3D wheel
       shell: powershell
       run: |
         $wc = New-Object System.Net.WebClient
         $wc.DownloadFile("https://github.com/cosmonium/panda3d/releases/download/cosmonium-v1.11.0.dev3844-g062e3365fd/panda3d-1.11.0.dev3844+fp64-cp310-cp310-win_amd64.whl", "panda3d-1.11.0+fp64-cp310-cp310-win_amd64.whl")
-        python -m pip install panda3d-1.11.0+fp64-cp310-cp310-win_amd64.whl
+        pip install panda3d-1.11.0+fp64-cp310-cp310-win_amd64.whl
     - name: Build binary
       run: |
         echo "panda3d-1.11.0+fp64-cp310-cp310-win_amd64.whl" > requirements-tmp.txt
@@ -113,4 +115,4 @@ jobs:
       uses: actions/upload-artifact@v5
       with:
         name: windows-logs
-        path: ~/AppData/Local/Cosmonium/Logs/output.log
+        path: ~/AppData/Local/Cosmonium/Cosmonium/Logs/output.log

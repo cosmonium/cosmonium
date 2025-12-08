@@ -1,7 +1,7 @@
 #
 #This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2019 Laurent Deru.
+#Copyright (C) 2018-2025 Laurent Deru.
 #
 #Cosmonium is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -17,8 +17,14 @@
 #along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+
+import os
+import platformdirs
 from setuptools import setup
 import sys
+
+from cosmonium.version import version_str
+
 
 # Add lib/ directory to import path to be able to load the c++ libraries
 sys.path.insert(0, 'lib')
@@ -28,10 +34,9 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-from cosmonium.version import version_str
 
-
-log_filename = '$USER_APPDATA/cosmonium/output.log'
+app_name = 'cosmonium'
+log_filename = os.path.join(platformdirs.user_log_dir(app_name), 'output.log')
 requirements_path = None
 
 include_modules = [
@@ -39,25 +44,24 @@ include_modules = [
     'numpy.core._multiarray_tests',
     ]
 
-if '--cosmonium-test' in sys.argv:
-    sys.argv.remove('--cosmonium-test')
-    log_filename = None
-
 for (index, arg) in enumerate(sys.argv):
     if arg == '-p':
         platform = sys.argv[index + 1]
         if platform.startswith('macos'):
-            log_filename = '$HOME/Library/Logs/cosmonium/output.log'
+            pass
         elif platform.startswith('win'):
-            log_filename = '$USER_APPDATA/Cosmonium/Logs/output.log'
             include_modules.append('win32')
             include_modules.append('win32com.gen_py')
             include_modules.append('win32com.shell')
             include_modules.append('win32clipboard')
             include_modules.append('win32con')
         else:
-            log_filename = '$HOME/.cache/cosmonium/log/output.log'
+            pass
         break
+
+if '--cosmonium-test' in sys.argv:
+    sys.argv.remove('--cosmonium-test')
+    log_filename = None
 
 for (index, arg) in enumerate(sys.argv):
     if arg == '-r':
@@ -144,7 +148,7 @@ config = {
         'bdist_apps': {
             'installers': {
                 'manylinux1_x86_64': 'gztar',
-                 'manylinux1_i686': 'gztar',
+                'manylinux1_i686': 'gztar',
                 'macosx_10_9_x86_64': 'zip',
                 'win_amd64': 'nsis',
                 'win32': 'nsis',
