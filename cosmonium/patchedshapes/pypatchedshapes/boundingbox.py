@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 import math
-from panda3d.core import BoundingBox, LPoint3
+from panda3d.core import BoundingBox, LPoint3, LPoint3d
 
 
 class PatchBoundingBox:
@@ -28,8 +28,8 @@ class PatchBoundingBox:
         self.points = points
 
     def create_bounding_volume(self, rot, offset):
-        min_point = LPoint3(math.inf)
-        max_point = LPoint3(-math.inf)
+        min_point = LPoint3d(math.inf)
+        max_point = LPoint3d(-math.inf)
         for point in self.points:
             point = rot.xform(point + offset)
             for i in range(3):
@@ -37,7 +37,7 @@ class PatchBoundingBox:
                     min_point[i] = point[i]
                 if point[i] > max_point[i]:
                     max_point[i] = point[i]
-        box = BoundingBox(min_point, max_point)
+        box = BoundingBox(LPoint3(*min_point), LPoint3(*max_point))
         return box
 
     def set_points(self, points):

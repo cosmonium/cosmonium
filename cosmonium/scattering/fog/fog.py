@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 from math import sqrt
-from panda3d.core import LColor, LVector3
+from panda3d.core import LColor, LVector3d
 
 from ...entities.datasource import DataSource
 from ...shaders.lighting.scattering import ScatteringInterface as ShaderScatteringInterface
@@ -100,7 +100,7 @@ class FogScattering(ScatteringBase):
         self.light = light
 
     def update(self, time, dt):
-        cosA = self.light.light_direction.dot(-LVector3.up())
+        cosA = self.light.light_direction.dot(-LVector3d.up())
         if cosA >= 0:
             coef = sqrt(cosA)
             self.light_color = (1, coef, coef, 1)

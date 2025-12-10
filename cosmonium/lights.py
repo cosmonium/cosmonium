@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2021 Laurent Deru.
+# Copyright (C) 2018-2024 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from math import pi
 
-from panda3d.core import LVector3, LColor, LQuaterniond
+from panda3d.core import LVector3, LVector3d, LColor, LQuaterniond
 from panda3d.core import DirectionalLight
 
 from .entities.datasource import DataSource
@@ -125,8 +125,8 @@ class InfiniteSun(LightInterface):
     def set_light_angle(self, angle):
         self.light_angle = angle
         light_quat = LQuaterniond()
-        light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3.forward())
-        self.light_direction = light_quat.xform(-LVector3.up())
+        light_quat.setFromAxisAngleRad(angle * pi / 180, LVector3d.forward())
+        self.light_direction = light_quat.xform(-LVector3d.up())
 
     def update(self, shape, instance, camera_pos, camera_rot):
         light_color = LColor(self.light_color)

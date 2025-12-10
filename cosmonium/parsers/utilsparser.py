@@ -19,7 +19,7 @@
 #
 
 
-from panda3d.core import LVector3
+from panda3d.core import LVector3d
 import re
 
 from ..astro import units
@@ -148,7 +148,7 @@ def get_radius_scale(data, parent):
     if scale is not None:
         if radius is None:
             radius = max(scale) / 2.0
-        scale = LVector3(*scale) / 2.0
+        scale = LVector3d(*scale) / 2.0
     if radius is None and parent is not None:
         radius = parent.get_apparent_radius()
         ellipticity = parent.oblateness

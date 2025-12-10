@@ -34,9 +34,9 @@ PatchBoundingBox::~PatchBoundingBox(void)
 BoundingBox *
 PatchBoundingBox::create_bounding_volume(LQuaterniond rot, LVector3d offset)
 {
-    PTA_LVecBase3::const_iterator it;
-    LPoint3 min_point(std::numeric_limits<double>::infinity());
-    LPoint3 max_point(-std::numeric_limits<double>::infinity());
+    PTA_LVecBase3d::const_iterator it;
+    LPoint3d min_point(std::numeric_limits<double>::infinity());
+    LPoint3d max_point(-std::numeric_limits<double>::infinity());
 
     for (it = points.begin(); it != points.end(); ++it) {
         LPoint3d point = rot.xform(*it + offset);
@@ -45,7 +45,7 @@ PatchBoundingBox::create_bounding_volume(LQuaterniond rot, LVector3d offset)
             max_point[i] = std::max(max_point[i], point[i]);
         }
     }
-    return new BoundingBox(min_point, max_point);
+    return new BoundingBox(LCAST(PN_stdfloat, min_point), LCAST(PN_stdfloat, max_point));
 }
 
 
@@ -59,7 +59,7 @@ PatchBoundingBox::set_points(const PTA_LVecBase3d &points)
 void
 PatchBoundingBox::xform(LMatrix3d mat)
 {
-    PTA_LVecBase3::iterator it;
+    PTA_LVecBase3d::iterator it;
     for (it = points.begin(); it != points.end(); ++it) {
         *it = mat.xform(*it);
     }

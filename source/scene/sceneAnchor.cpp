@@ -161,8 +161,8 @@ SceneAnchor::update(SceneManager *scene_manager)
   if (has_instance) {
       instance.set_pos(LCAST(PN_stdfloat, scene_position));
       if (apply_orientation) {
-          scene_orientation = LQuaternion(LCAST(PN_stdfloat, anchor->_orientation));
-          instance.set_quat(scene_orientation);
+          scene_orientation = anchor->_orientation;
+          instance.set_quat(LCAST(PN_stdfloat, scene_orientation));
       }
       instance.set_scale(scene_scale_factor);
   }

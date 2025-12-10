@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix3d, LMatrix4, LQuaterniond
+from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
 from panda3d.core import NodePath
 
 from ..geometry import geometry
@@ -147,6 +147,7 @@ class GpuPatchTerrainLayerFactory(TerrainLayerFactoryInterface):
 class TileFactory(PatchFactory):
 
     def __init__(self, heightmap, tile_density, size, terrain_layer_factory):
+        super().__init__()
         self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
@@ -194,23 +195,19 @@ class TiledShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.scale = scale
 
-    def create_culling_frustum(self, scene_manager, camera, tbn):
+    def create_culling_frustum(self, scene_manager, camera):
         cam_transform = camera.camera_np.get_net_transform()
         cam_transform_mat = cam_transform.get_mat()
-        tbn_inv = LMatrix3d()
-        tbn_inv.invert_from(tbn)
-        rot = LQuaterniond()
-        rot.set_from_matrix(tbn_inv)
         transform_mat = LMatrix4()
         transform = self.instance.get_net_transform()
         transform_mat.invert_from(transform.get_mat())
-        transform_mat = cam_transform_mat * transform_mat * tbn_inv
+        transform_mat = cam_transform_mat * transform_mat * self.tbn_inv_scene
         near = camera.lens.get_near()
         far = camera.lens.get_far()
         self.culling_frustum = CullingFrustum(
             camera.lens,
             transform_mat,
-            rot,
+            self.tbn_rot_inv,
             near,
             far,
             settings.offset_body_center,

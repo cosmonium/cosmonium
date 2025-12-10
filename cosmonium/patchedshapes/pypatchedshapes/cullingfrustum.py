@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 from math import sqrt
-from panda3d.core import LVector3d, LPoint3
+from panda3d.core import LVector3d
 from panda3d.core import BoundingBox
 
 
@@ -50,7 +50,6 @@ class CullingFrustum(CullingFrustumBase):
             offset += self.model_body_center_offset
         if self.shift_patch_origin:
             offset = offset + patch_offset_vector * patch_offset
-        offset = LPoint3(*offset)
         obj_bounds = bb.create_bounding_volume(self.rot, offset)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0
@@ -94,7 +93,6 @@ class HorizonCullingFrustum(CullingFrustumBase):
             offset += self.model_body_center_offset
         if self.shift_patch_origin:
             offset = offset + patch_offset_vector * patch_offset
-        offset = LPoint3(*offset)
         obj_bounds = bb.create_bounding_volume(self.rot, offset)
         intersect = self.lens_bounds.contains(obj_bounds)
         return (intersect & BoundingBox.IF_some) != 0

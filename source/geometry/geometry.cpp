@@ -798,7 +798,7 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
     if (has_offset) {
       point -= offset_vector;
     }
-    gvw.add_data3(point);
+    gvw.add_data3d(point);
     normal.componentwise_mult(normal_coefs);
     normal.normalize();
     gnw.add_data3d(normal);

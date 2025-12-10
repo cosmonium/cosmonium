@@ -114,7 +114,7 @@ protected:
 PUBLISHED:
   const std::string name;
   LPoint3d scene_position;
-  LQuaternion scene_orientation;
+  LQuaterniond scene_orientation;
   double scene_scale_factor;
   LPoint3d scene_rel_position;
   LVector3d world_body_center_offset;

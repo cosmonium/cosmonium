@@ -219,7 +219,7 @@ class Entity(VisibleObject):
         # TODO: Should be moved to shape_task
         if self.context.observer.has_scattering:
             self.context.observer.scattering.add_attenuated_object(self)
-        self.instance.set_scale(self.get_scale())
+        self.instance.set_scale(*self.get_scale())
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
         self.configure_render_order()

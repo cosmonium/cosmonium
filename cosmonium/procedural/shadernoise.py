@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3, LMatrix4
+from panda3d.core import LVector3, LMatrix4, LQuaternion
 
 from ..dircontext import defaultDirContext
 from ..patchedshapes.patchedshapes import SquarePatchBase
@@ -1359,7 +1359,11 @@ class NoiseShader(StructuredShader):
         return name
 
     def get_rot_for_face(self, face):
-        return SquarePatchBase.rotations_mat[face]
+        rotation = SquarePatchBase.rotations[face]
+        rotation = LQuaternion(*rotation)
+        mat = LMatrix4()
+        rotation.extract_to_matrix(mat)
+        return mat
 
     def update(
         self,
@@ -1381,7 +1385,7 @@ class NoiseShader(StructuredShader):
         # instance.set_shader_input('permTexture', self.texture)
         if self.coord == TexCoord.NormalizedCube or self.coord == TexCoord.SqrtCube:
             mat = self.get_rot_for_face(face)
-            instance.set_shader_input('cube_rot', LMatrix4(mat))
+            instance.set_shader_input('cube_rot', mat)
         self.noise_source.update(instance)
 
 

@@ -21,7 +21,7 @@ from math import sin, cos, pi, atan2, sqrt, asin
 from panda3d.core import Geom, GeomNode, GeomPatches, GeomPoints, GeomTriangles
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexArrayFormat, InternalName
 from panda3d.core import GeomVertexRewriter, GeomVertexWriter
-from panda3d.core import LVector3d, GlobPattern, LPoint3, ColorAttrib
+from panda3d.core import LVector3d, GlobPattern, ColorAttrib
 from panda3d.core import NodePath, VBase3, Vec3, LPoint3d, LPoint2d
 from panda3d.egg import EggData, EggVertexPool, EggVertex, EggPolygon, loadEggData
 
@@ -898,7 +898,7 @@ def Tile(
 
 
 def TileBoundingPoints(size=1.0, height=1.0):
-    return [LPoint3(0, 0, -height), LPoint3(size, size, height)]
+    return [LPoint3d(0, 0, -height), LPoint3d(size, size, height)]
 
 
 def Patch(size=1.0):
@@ -924,7 +924,7 @@ def Patch(size=1.0):
 
 
 def PatchBoundingPoints(x=0.0, y=0.0, size=1.0, scale=1.0, min_height=-1.0, max_height=1.0):
-    return [LPoint3(x * scale, y * scale, min_height), LPoint3((x + size) * scale, (y + size) * scale, max_height)]
+    return [LPoint3d(x * scale, y * scale, min_height), LPoint3d((x + size) * scale, (y + size) * scale, max_height)]
 
 
 def convert_xy(x0, y0, x1, y1, x_inverted=False, y_inverted=False, xy_swap=False):
@@ -1110,10 +1110,10 @@ def SquaredDistanceSquarePatch(
             point.componentwise_mult(axes)
             if has_offset:
                 point -= offset_vector
-            gvw.add_data3(point)
+            gvw.add_data3d(point)
             normal.componentwise_mult(normal_coefs)
             normal.normalize()
-            gnw.add_data3(normal)
+            gnw.add_data3d(normal)
             if use_jacobian:
                 jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
             else:
@@ -1173,10 +1173,10 @@ def SquaredDistanceSquarePatch(
                 point.componentwise_mult(reduced_axes)
                 if has_offset:
                     point -= offset_vector
-                gvw.add_data3(point)
+                gvw.add_data3d(point)
                 normal.componentwise_mult(normal_coefs)
                 normal.normalize()
-                gnw.add_data3(normal)
+                gnw.add_data3d(normal)
                 if use_jacobian:
                     jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
                 else:

@@ -20,8 +20,8 @@
 
 from direct.showbase.ShowBaseGlobal import globalClock
 from math import cos, sin, pi, sqrt, copysign, log
-from panda3d.core import OmniBoundingVolume, GeomNode, LMatrix3d
-from panda3d.core import LVector3, LVector3d, LVector4, LPoint2d, LPoint3d
+from panda3d.core import OmniBoundingVolume, GeomNode, LMatrix3, LMatrix3d
+from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d
 from panda3d.core import LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
 from panda3d.core import NodePath
 from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
@@ -54,7 +54,7 @@ class BoundingBoxShape:
     def create_instance(self):
         if self.instance is not None:
             return
-        bb = self.box.create_bounding_volume(LQuaternion(), LVector3(0))
+        bb = self.box.create_bounding_volume(LQuaterniond(), LVector3d(0))
         self.instance = geometry.BoundingBoxGeom(bb)
         if BoundingBoxShape.state is None:
             BoundingBoxShape.state = RenderState.make(
@@ -68,7 +68,7 @@ class BoundingBoxShape:
         return self.instance
 
     def update_instance(self, rot):
-        bb = self.box.create_bounding_volume(rot, LVector3(0))
+        bb = self.box.create_bounding_volume(rot, LVector3d(0))
         geometry.BoundingBoxGeomUpdate(self.instance, bb)
 
     def remove_instance(self):
@@ -416,7 +416,7 @@ class SquarePatchBase(PatchBase):
     rotations[4].setHpr(LVector3d(0, 0, 0))  # top
     rotations[5].setHpr(LVector3d(0, 180, 0))  # bottom
     for i in range(6):
-        LQuaternion(*rotations[i]).extractToMatrix(rotations_mat[i])
+        rotations[i].extract_to_matrix(rotations_mat[i])
 
     def __init__(self, face, x, y, parent, lod, density, surface_scale, min_height, max_height, mean_height, axes):
         PatchBase.__init__(self, parent, lod, density, surface_scale)
@@ -622,8 +622,10 @@ class PatchedShapeBase(Shape):
         self.linked_objects = []
         self.lod_control = lod_control
         self.max_lod = 0
+        self.tbn = None
         self.tbn_rot = None
         self.tbn_rot_inv = None
+        self.tbn_scene = None
         self.culling_frustum = None
         self.frustum_node = None
         self.frustum_rel_position = None
@@ -798,7 +800,7 @@ class PatchedShapeBase(Shape):
     def xform_cam_to_model(self, camera_pos):
         pass
 
-    def create_culling_frustum(self, scene_manager, camera, tbn):
+    def create_culling_frustum(self, scene_manager, camera):
         pass
 
     def create_frustum_node(self, scene_anchor):
@@ -829,20 +831,22 @@ class PatchedShapeBase(Shape):
             return [], []
         (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
         (tangent, binormal, normal) = self.parent.get_tangent_plane_under(model_camera_pos * self.parent.height_scale)
-        tbn = LMatrix3d(tangent, -normal, binormal)
-        # tbn = LMatrix3d.ident_mat()
+        self.tbn = LMatrix3d(tangent, -normal, binormal)
+        # self.tbn = LMatrix3d.ident_mat()
         self.tbn_rot = LQuaterniond()
-        self.tbn_rot.set_from_matrix(tbn)
+        self.tbn_rot.set_from_matrix(self.tbn)
         self.tbn_rot_inv = LQuaterniond()
-        self.tbn_rot_inv.set_from_matrix(tbn)
+        self.tbn_rot_inv.set_from_matrix(self.tbn)
         self.tbn_rot_inv.conjugate_in_place()
-
+        self.tbn_inv_scene = LMatrix3()
+        tbn_rot_inv_scene = LQuaternion(*self.tbn_rot_inv)
+        tbn_rot_inv_scene.extract_to_matrix(self.tbn_inv_scene)
         surface_point = self.parent.body.get_point_under(camera_pos)
         direction = camera_pos - surface_point
         # print(direction.dot(normal), direction.length())
         # print(direction.dot(normal), direction.dot(normal) / self.parent.height_scale)
         altitude_to_ground = direction.dot(normal) / self.parent.height_scale
-        self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer, tbn)
+        self.create_culling_frustum(self.owner.context.scene_manager, self.owner.context.observer)
         self.create_frustum_node(self.owner.scene_anchor)
         self.to_split = []
         self.to_merge = []
@@ -1019,26 +1023,29 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         PatchedShapeBase.__init__(self, factory, heightmap, lod_control)
         self.model_body_center_offset = LVector3d()
 
-    def create_culling_frustum(self, scene_manager, camera, tbn):
+    def create_culling_frustum(self, scene_manager, camera):
         min_radius = self.parent.body.surface.get_min_radius()
         max_radius = self.parent.body.surface.get_max_radius()
         altitude_to_min_radius = self.parent.body.anchor.distance_to_obs - min_radius
         # print("CAM", camera.camera_np.get_net_transform())
         cam_transform_mat = camera.camera_np.get_net_transform().get_mat()
-        tbn_inv = LMatrix3d()
-        tbn_inv.invert_from(tbn)
-        rot = LQuaterniond()
-        rot.set_from_matrix(tbn_inv)
         transform_mat = LMatrix4()
         transform = self.instance.get_net_transform()
         transform_mat.invert_from(transform.get_mat())
-        transform_mat = cam_transform_mat * transform_mat * tbn_inv
-        near = 1.0e-6
+        transform_mat = cam_transform_mat * transform_mat * self.tbn_inv_scene
+        if settings.use_double:
+            near = 1e-6
+        else:
+            near = max(
+                (self.parent.body.anchor.distance_to_obs - max_radius)
+                * self.parent.body.scene_anchor.scene_scale_factor,
+                1e-6,
+            )
         if settings.use_horizon_culling:
             self.culling_frustum = HorizonCullingFrustum(
                 camera.lens,
                 transform_mat,
-                rot,
+                self.tbn_rot_inv,
                 near,
                 max_radius,
                 altitude_to_min_radius,
@@ -1057,7 +1064,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
             self.culling_frustum = CullingFrustum(
                 camera.lens,
                 transform_mat,
-                rot,
+                self.tbn_rot_inv,
                 near,
                 far,
                 settings.offset_body_center,
