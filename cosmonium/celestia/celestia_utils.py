@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ def instanciate_elliptical_orbit(data, global_coord):
         elif key == 'Period':
             period = value
         elif key == 'Epoch':
-            pass  # = value
+            epoch = value
         elif key == 'Eccentricity':
             eccentricity = value
         elif key == 'Inclination':
@@ -210,7 +210,7 @@ def instanciate_uniform_rotation(data, parent_anchor, global_coord):
             period = value
             sync = False
         elif key == 'Epoch':
-            epoch = epoch
+            epoch = value
         elif key == 'Inclination':
             inclination = value
         elif key == 'AscendingNode':
