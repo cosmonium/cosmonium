@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ class GenerateNormalsGeomShader(ShaderProgram):
 class DebugNormalsShader(StructuredShader):
 
     def __init__(self):
+        super().__init__()
         self.geometry_shader = GenerateNormalsGeomShader(self)
         self.vertex_shader = GeomPassThroughVertexShader(self)
         self.fragment_shader = ColorPassThroughFragmentShader(self)

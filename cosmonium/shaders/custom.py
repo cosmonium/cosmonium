@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from .component import ShaderComponent
 
 class CustomShaderComponent(ShaderComponent):
     def __init__(self, component_id):
+        super().__init__()
         self.component_id = component_id
 
         self.vertex_requires = set()
