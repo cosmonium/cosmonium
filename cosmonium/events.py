@@ -46,6 +46,8 @@ class EventsDispatcher(DirectObject):
 
         self.accept('gui-show-info', self.gui.show_info)
         self.accept('gui-show-help', self.gui.show_help)
+        self.accept('gui-show-license', self.gui.show_license)
+        self.accept('gui-show-about', self.gui.show_about)
         self.accept('gui-show-select-screenshots', self.gui.show_select_screenshots)
         self.accept('debug-connect-pstats', self.engine.connect_pstats)
         self.accept('debug-toggle-filled-wireframe', self.engine.toggle_filled_wireframe)
