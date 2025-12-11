@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,9 +36,9 @@ from .yamlparser import YamlModuleParser
 
 class InterpolatorYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         interpolator = None
-        (object_type, _parameters) = self.get_type_and_data(data, 'hardware')
+        (object_type, _parameters) = cls.get_type_and_data(data, 'hardware')
         if object_type == 'hardware':
             interpolator = HardwareInterpolator()
         elif object_type == 'software':
@@ -50,9 +50,9 @@ class InterpolatorYamlParser(YamlModuleParser):
 
 class FilterYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, interpolator):
+    def decode(cls, data, interpolator):
         filter = None
-        (object_type, _parameters) = self.get_type_and_data(data, 'bilinear')
+        (object_type, _parameters) = cls.get_type_and_data(data, 'bilinear')
         if object_type == 'nearest':
             filter = NearestFilter(interpolator)
         elif object_type == 'bilinear':
@@ -70,7 +70,7 @@ class FilterYamlParser(YamlModuleParser):
 
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, name, patched, radius=None, scale=1.0, coord_scale=1.0):
+    def decode(cls, data, name, patched, radius=None, scale=1.0, coord_scale=1.0):
         heightmap_type = data.get('type', 'procedural')
         min_height = data.get('min-height', None)
         max_height = data.get('max-height', None)
@@ -173,7 +173,7 @@ class HeightmapYamlParser(YamlModuleParser):
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         name = data.get('name')
         if name is None:
             return None

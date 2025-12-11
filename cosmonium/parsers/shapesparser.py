@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from .yamlparser import YamlModuleParser
 
 class MeshYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, radius):
+    def decode(cls, data, radius):
         if isinstance(data, str):
             data = {'model': data}
         model = data.get('model')
@@ -80,24 +80,24 @@ class MeshYamlParser(YamlModuleParser):
 
 class RayMarchingYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         shape = RayMarchingShape()
         return (shape, {})
 
 
 class TiledPlaneYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         shape = TiledShape(None, data.get('tile-size'), None)
         return (shape, {})
 
 
 class ShapeYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, default='patched-sphere', radius=None):
+    def decode(cls, data, default='patched-sphere', radius=None):
         shape = None
         extra = {}
-        (shape_type, shape_data) = self.get_type_and_data(data, default)
+        (shape_type, shape_data) = cls.get_type_and_data(data, default)
         if shape_type == 'patched-sphere':
             factory = PatchedSpherePatchFactory()
             shape = PatchedSphereShape(factory)

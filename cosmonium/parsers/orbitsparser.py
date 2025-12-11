@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ from .yamlparser import YamlModuleParser
 
 class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, frame=None, parent=None):
+    def decode(cls, data, frame=None, parent=None):
         semi_major_axis = data.get('semi-major-axis', None)
         semi_major_axis_units = DistanceUnitsYamlParser.decode(data.get('semi-major-axis-units', 'AU'))
         pericenter_distance = data.get('pericenter-distance', None)
@@ -100,7 +100,7 @@ class EllipticOrbitYamlParser(YamlModuleParser):
 
 class FixedPositionYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, frame=None, parent=None):
+    def decode(cls, data, frame=None, parent=None):
         position = data.get('position', None)
         if position is None:
             ra = data.get('ra', 0.0)
@@ -127,7 +127,7 @@ class FixedPositionYamlParser(YamlModuleParser):
 
 class GlobalPositionYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, frame=None, parent=None):
+    def decode(cls, data, frame=None, parent=None):
         position = LPoint3d(*data.get('position', [0, 0, 0]))
         position_units = DistanceUnitsYamlParser.decode(data.get('position-units', 'pc'))
         if data.get('frame') is not None or frame is None:
@@ -160,7 +160,7 @@ class OrbitYamlParser(YamlModuleParser):
 
 class OrbitCategoryYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(cls, data, parent=None):
         name = data.get('name')
         priority = data.get('priority')
         orbit_elements_db.register_category(name, priority)
@@ -169,7 +169,7 @@ class OrbitCategoryYamlParser(YamlModuleParser):
 
 class NamedOrbitYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(cls, data, parent=None):
         name = data.get('name')
         category = data.get('category')
         if name is None or category is None:

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ class IncludeYamlParser(YamlModuleParser):
 
 class DataAttributionYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, attribution_id=None):
+    def decode(cls, data, attribution_id=None):
         if attribution_id is None:
             attribution_id = data.get('id')
         name = data.get('name')
@@ -112,7 +112,7 @@ class DataAttributionYamlParser(YamlModuleParser):
 
 class DataAttributionsListYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(cls, data, parent=None):
         for attribution_id, attribution_data in data.items():
             DataAttributionYamlParser.decode(attribution_data, attribution_id)
         return None
@@ -120,7 +120,7 @@ class DataAttributionsListYamlParser(YamlModuleParser):
 
 class SurfaceCategoryYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         name = data.get('name')
         category = SurfaceCategory(name)
         surfaceCategoryDB.add(category)

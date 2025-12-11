@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ def decode_bias(data, appearance):
 
 class TexturesAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius, patched_shape):
+    def decode(cls, data, heightmap, radius, patched_shape):
         source_parser = TextureSourceYamlParser()
         appearance = Appearance()
         tint = data.get('tint', None)
@@ -126,7 +126,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
 
 class ModelAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius, patched_shape):
+    def decode(cls, data, heightmap, radius, patched_shape):
         material = data.get('material', True)
         vertex_color = data.get('vertex-color', True)
         occlusion_channel = data.get('occlusion-channel', False)
@@ -137,7 +137,7 @@ class ModelAppearanceYamlParser(YamlModuleParser):
 
 class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius, patched_shape):
+    def decode(cls, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         control_parser = TextureControlYamlParser()
@@ -149,7 +149,7 @@ class ProceduralAppearanceYamlParser(YamlModuleParser):
 
 class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, heightmap, radius, patched_shape):
+    def decode(cls, data, heightmap, radius, patched_shape):
         control = data.get('control', None)
         textures_source = data.get('textures', None)
         size = data.get('size', 256)

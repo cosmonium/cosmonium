@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,16 +26,16 @@ from .yamlparser import YamlModuleParser
 
 class AddonYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(cls, data, parent=None):
         if isinstance(data, str):
             data = {'file': data}
         # name = data.get('name', None)
         filename = data.get('file')
-        module_path = self.context.find_module(filename)
+        module_path = cls.context.find_module(filename)
         if module_path is not None:
             module = moduleLoader.load_module(module_path)
             plugin = module.CosmoniumPlugin()
-            plugin.init(self.app)
+            plugin.init(cls.app)
         else:
             print("ERROR: Could not find '{}'".format(filename))
         return None

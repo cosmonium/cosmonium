@@ -176,12 +176,12 @@ class SurfaceYamlParser(YamlModuleParser):
         return surface
 
     @classmethod
-    def decode(self, data, owner):
+    def decode(cls, data, owner):
         surfaces = []
         # TODO: Should do surface element cloning instead of reparsing
         previous = {}
         for entry in data:
-            surface = self.decode_surface(entry, previous, owner)
+            surface = cls.decode_surface(entry, previous, owner)
             surfaces.append(surface)
             previous = entry
         return surfaces
@@ -295,7 +295,7 @@ class FlatSurfaceParser(YamlModuleParser):
 
 class StandaloneSurfaceYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         name = data.get('name', None)
         parent_name = data.get('parent')
         parent = objectsDB.get(parent_name)

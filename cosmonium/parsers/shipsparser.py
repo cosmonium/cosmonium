@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class BaseShipYamlParser(YamlModuleParser):
     camera_modes = []
 
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         name = data.get('name')
         radius = data.get('radius', 10)
         radius_units = data.get('radius-units', units.m)
@@ -79,9 +79,9 @@ class BaseShipYamlParser(YamlModuleParser):
             camera_pos = LPoint3d(0, -camera_distance * radius, 0)
         ship = VisibleShip(name, ship_object, radius)
         ship.set_camera_hints(camera_distance, camera_pos, camera_rot)
-        for mode in self.camera_modes:
+        for mode in cls.camera_modes:
             ship.add_camera_mode(mode)
-        self.app.add_ship(ship)
+        cls.app.add_ship(ship)
 
 
 class CockpitYamlParser(BaseShipYamlParser):

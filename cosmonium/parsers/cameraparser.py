@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 class SurfaceFollowCameraControllerYamlParser(YamlModuleParser):
 
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         distance = data.get('distance', 5)
         max_ = data.get('max', 1.5)
         camera_controller = SurfaceFollowCameraController()
@@ -38,7 +38,7 @@ class SurfaceFollowCameraControllerYamlParser(YamlModuleParser):
 class FixedCameraControllerYamlParser(YamlModuleParser):
 
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         camera_controller = FixedCameraController()
         if 'position' in data:
             position = LVector3d(*data.get('position'))

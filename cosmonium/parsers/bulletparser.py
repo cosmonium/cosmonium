@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 class BulletCapsuleShapeYamlParser(YamlModuleParser):
 
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         width = data.get('width', 0.5)
         height = data.get('height', 1.8)
         shape = BulletCapsuleShape(width, height - 2 * width, Z_up)

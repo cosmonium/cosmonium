@@ -31,7 +31,7 @@ from .yamlparser import YamlModuleParser
 
 class CelestiaAtmosphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         atmosphere_height = data.get('height', None)
         mie_coef = data.get('mie', 0.0)
         mie_scale_height = data.get('mie-scale-height', 0.0)
@@ -58,7 +58,7 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
 
 class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         scattering = ScatteringYamlParser.decode(data)
         appearance = Appearance()
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
@@ -69,7 +69,7 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
 
 class ONeilAtmosphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         scattering = ScatteringYamlParser.decode(data)
         appearance = Appearance()
         shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ from .yamlparser import YamlModuleParser
 
 class ScriptControllerYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, anchor):
+    def decode(cls, data, anchor):
         filename = data.get('file')
-        module_path = self.context.find_module(filename)
+        module_path = cls.context.find_module(filename)
         module = moduleLoader.load_module(module_path)
         controller = module.ControllerClass(anchor)
         return controller
@@ -41,7 +41,7 @@ class ScriptControllerYamlParser(YamlModuleParser):
 
 class SurfaceControllerYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, anchor):
+    def decode(cls, data, anchor):
         long = data.get('long', 0.0)
         long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
         lat = data.get('lat', 0.0)
@@ -52,7 +52,7 @@ class SurfaceControllerYamlParser(YamlModuleParser):
 class FlatSurfaceControllerYamlParser(YamlModuleParser):
 
     @classmethod
-    def decode(self, data, anchor):
+    def decode(cls, data, anchor):
         position = data.get('position', [0, 0, 0])
         if len(position) == 3:
             position = LPoint3d(*position)
@@ -87,7 +87,7 @@ ControllerYamlParser.register('flat-surface', FlatSurfaceControllerYamlParser())
 
 class StandaloneControllerYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         name = data.get('name', None)
         body_name = data.get('body')
         body = objectsDB.get(body_name)
@@ -96,7 +96,7 @@ class StandaloneControllerYamlParser(YamlModuleParser):
             return None
         controller_class = ControllerYamlParser.decode(data)
         controller = controller_class(body)
-        self.app.add_controller(controller)
+        cls.app.add_controller(controller)
         return None
 
 

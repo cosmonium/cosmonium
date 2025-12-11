@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ from .yamlparser import YamlModuleParser
 
 class CloudsYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         if data is None:
             return None
         height = float(data.get('height'))
@@ -58,7 +58,7 @@ class CloudsYamlParser(YamlModuleParser):
 
 class RingsYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         if data is None:
             return None
         inner_radius = data.get('inner-radius')

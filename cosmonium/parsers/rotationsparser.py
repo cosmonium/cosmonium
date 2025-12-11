@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ class OrientationYamlParser(YamlModuleParser):
 
 class UniformYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, frame, parent):
+    def decode(cls, data, frame, parent):
         synchronous = data.get('synchronous', False)
         period = data.get('period', None)
         period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
@@ -91,7 +91,7 @@ class UniformYamlParser(YamlModuleParser):
 
 class FixedRotationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, frame, parent):
+    def decode(cls, data, frame, parent):
         if 'angle' in data:
             angle = float(data['angle'])
             axis = data.get("axis", LVector3d.up())
@@ -137,7 +137,7 @@ class RotationYamlParser(YamlModuleParser):
 
 class NamedRotationYamlParser(YamlModuleParser):
     @classmethod
-    def decode(self, data, parent=None):
+    def decode(cls, data, parent=None):
         name = data.get('name')
         category = data.get('category')
         if name is None or category is None:

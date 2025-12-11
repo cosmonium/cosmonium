@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2019 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ class DistanceUnitsYamlParser(YamlModuleParser):
     }
 
     @classmethod
-    def decode(self, data, default=None):
+    def decode(cls, data, default=None):
         if data is None:
             return default
         else:
@@ -106,7 +106,7 @@ class TimeUnitsYamlParser(YamlModuleParser):
     }
 
     @classmethod
-    def decode(self, data, default=None):
+    def decode(cls, data, default=None):
         if data is None:
             return default
         else:
@@ -117,7 +117,7 @@ class AngleUnitsYamlParser(YamlModuleParser):
     translation = {'deg': units.Deg, 'hour': units.HourAngle, 'rad': units.Rad}
 
     @classmethod
-    def decode(self, data, default=None):
+    def decode(cls, data, default=None):
         if data is None:
             return default
         else:
@@ -128,7 +128,7 @@ class AngleSpeedUnitsYamlParser(YamlModuleParser):
     translation = {'deg/day': units.Deg_Per_Day}
 
     @classmethod
-    def decode(self, data, default=None):
+    def decode(cls, data, default=None):
         if data is None:
             return default
         else:

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ from .yamlparser import YamlParser
 class ONeilSimpleScatteringYamlParser(YamlParser):
 
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         mie_phase_asymmetry = data.get('g', -0.99)
         rayleigh_coef = data.get('rayleigh', 0.0025)
         mie_coef = data.get('mie', 0.0015)
@@ -65,7 +65,7 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
 
 class ONeilScatteringYamlParser(YamlParser):
     @classmethod
-    def decode(self, data):
+    def decode(cls, data):
         height = data.get('height', 160)
         mie_phase_asymmetry = data.get('g', -0.85)
         rayleigh_scale_depth = data.get('rayleigh-scale-depth', 0.25 * height)
