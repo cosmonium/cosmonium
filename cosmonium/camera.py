@@ -122,7 +122,6 @@ class CameraBase(object):
         return self.fov
 
     def calc_pixel_size(self):
-        self.height = self.height
         self.ratio = float(self.width) / self.height
         fov2 = self.fov / 180 * pi / 2.0
         self.tan_fov2 = tan(fov2)
