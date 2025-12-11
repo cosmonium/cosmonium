@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #
 
 
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from math import log, exp
 from panda3d.core import LVecBase2, LVecBase3, LVecBase4
@@ -41,7 +42,7 @@ vector_types = (
 )
 
 
-class ParametersList(object):
+class ParametersList:
     def __init__(self, *parameters):
         if len(parameters) == 1 and isinstance(parameters[0], Iterable):
             self.parameters = parameters[0]
@@ -86,7 +87,7 @@ class ParametersGroup(ParametersList):
         return True
 
 
-class UserParameterBase(object):
+class UserParameterBase(ABC):
     TYPE_STRING = 0
     TYPE_FLOAT = 1
     TYPE_INT = 2
@@ -156,11 +157,13 @@ class UserParameterBase(object):
         else:
             return value
 
+    @abstractmethod
     def do_get_param(self):
-        return None
+        ...
 
+    @abstractmethod
     def do_set_param(self, value):
-        pass
+        ...
 
     def scale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):
@@ -270,7 +273,7 @@ class AutoUserParameter(UserParameterBase):
         setattr(self.instance, self.attribute, value)
 
 
-class SettingParameter(UserParameter):
+class SettingParameter(UserParameterBase):
     def __init__(
         self,
         name,
@@ -292,7 +295,7 @@ class SettingParameter(UserParameter):
         setattr(settings, self.attribute, value)
 
 
-class ParametricFunctionParameter(UserParameter):
+class ParametricFunctionParameter(UserParameterBase):
     def __init__(
         self,
         name,
