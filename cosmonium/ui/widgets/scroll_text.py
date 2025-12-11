@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,8 +44,14 @@ class ScrollText(DirectWidgetContainer):
             **self.skin.get_style(scrolled_frame_element)
         )
         text_element = UIElement('onscreen-text', parent=scrolled_frame_element)
+        # TODO: wordwrap width should retrieve font size from style object
+        wordwrap = (frameSize[1] - frameSize[0]) / 12
         self.text = OnscreenText(
-            parent=self.frame.getCanvas(), text=text, align=align, **self.skin.get_style(text_element)
+            parent=self.frame.getCanvas(),
+            text=text,
+            align=align,
+            wordwrap=wordwrap,
+            **self.skin.get_style(text_element)
         )
         bounds = self.text.getTightBounds()
         self.frame['canvasSize'] = [0, bounds[1][0] - bounds[0][0], -bounds[1][2] + bounds[0][2], 0]
