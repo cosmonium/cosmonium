@@ -1,49 +1,52 @@
-import sys
+import builtins
 import os
+import sys
 
 filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 
-import builtins
 
-from cosmonium.parsers.yamlparser import YamlModuleParser
-from cosmonium.dircontext import DirContext
-from cosmonium.ui.splash import NoSplash
-from cosmonium import settings
+from cosmonium.parsers.yamlparser import YamlModuleParser  # noqa: E402
+from cosmonium.dircontext import DirContext  # noqa: E402
+from cosmonium.ui.splash import NoSplash  # noqa: E402
+from cosmonium import settings  # noqa: E402
+
 
 class FakeBase:
     splash = NoSplash()
+
     def destroy(self):
         pass
 
+
 class TranslationYamlParser(YamlModuleParser):
     translation_rules = {
-        'system': {'translate-list': ['name'],
-                   'recurse': ['children']},
+        'system': {'translate-list': ['name'], 'recurse': ['children']},
         'body': {'translate-list': ['name']},
-        'constellation': {'translate': ['name'],
-                          'context': 'constellation'},
+        'constellation': {'translate': ['name'], 'context': 'constellation'},
         'custom-translate': {'translate-list': ['names']},
-        }
-    aliases = {'planet': 'body', 
-               'dwarfplanet': 'body',
-               'moon': 'body',
-               'minormoon': 'body',
-               'asteroid': 'body',
-               'lostmoon': 'body',
-               'comet': 'body',
-               'interstellar': 'body',
-               'spacecraft': 'body',
-               'star': 'body',
-               'constellation': 'constellation'
-               }
+    }
+    aliases = {
+        'planet': 'body',
+        'dwarfplanet': 'body',
+        'moon': 'body',
+        'minormoon': 'body',
+        'asteroid': 'body',
+        'lostmoon': 'body',
+        'comet': 'body',
+        'interstellar': 'body',
+        'spacecraft': 'body',
+        'star': 'body',
+        'constellation': 'constellation',
+    }
 
     output = None
 
     @classmethod
     def output_header(cls):
-        cls.output.write("""# SOME DESCRIPTIVE TITLE.
+        cls.output.write(
+            """# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
@@ -59,7 +62,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 
 
-""")
+"""
+        )
 
     @classmethod
     def output_entry(cls, entry, rule):
@@ -110,6 +114,7 @@ msgstr ""
                 cls.decode_object(entry)
         elif isinstance(data, dict):
             cls.decode_object(data)
+
 
 builtins.base = FakeBase()
 

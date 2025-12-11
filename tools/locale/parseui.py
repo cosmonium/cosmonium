@@ -6,17 +6,18 @@ filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 
-from cosmonium.parsers.yamlparser import YamlParser
+from cosmonium.parsers.yamlparser import YamlParser  # noqa: E402
 
 
-class UIPotExtractor():
+class UIPotExtractor:
 
     def __init__(self, output):
         self.output = output
         self.msgs = OrderedDict()
 
     def output_header(self):
-        self.output.write("""# SOME DESCRIPTIVE TITLE.
+        self.output.write(
+            """# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
@@ -32,7 +33,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 
 
-""")
+"""
+        )
 
     def output_entry(self, entry, rule):
         context = rule.get('context')
@@ -67,7 +69,8 @@ msgstr ""
 
     def parse_submenu(self, data):
         for entry in data:
-            if entry is None: continue
+            if entry is None:
+                continue
             title = entry.get('title')
             self.add_entry(title)
             entries = entry.get('entries')
