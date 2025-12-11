@@ -41,6 +41,17 @@ requirements_path = None
 
 include_modules = [
     'jinja2.compiler',
+    'mistune.plugins.abbr',
+    'mistune.plugins.def_list',
+    'mistune.plugins.footnotes',
+    'mistune.plugins.formatting',
+    'mistune.plugins.math',
+    'mistune.plugins.ruby',
+    'mistune.plugins.speedup',
+    'mistune.plugins.spoiler',
+    'mistune.plugins.table',
+    'mistune.plugins.task_lists',
+    'mistune.plugins.url',
     'numpy.core._multiarray_tests',
     ]
 

@@ -8,5 +8,6 @@ https://github.com/cosmonium/cefpython/releases/download/v66.1/cefpython3-66.1-p
 jdcal == 1.4.1
 jinja2 == 3.1.6
 MarkupSafe == 3.0.3
+mistune == 3.1.4
 platformdirs == 4.4.0 ; python_version < "3.10"
 platformdirs == 4.5.1 ; python_version >= "3.10"

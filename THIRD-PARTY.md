@@ -52,16 +52,6 @@ License: BSD
 
 Reference: [Github](https://github.com/Moguri/panda3d-gltf)
 
-## third-party/mistune
-
-Markdown parser library.
-
-Copyright: Copyright (c) 2014 - 2015, Hsiaoming Yang
-
-License: BSD
-
-Reference: [Github](https://github.com/lepture/mistune)
-
 ## third-party/pandamenu
 
 Dropdown and popup menu for DirectGUI.
@@ -91,14 +81,6 @@ Copyright: Copyright (c) 2019 Ian Eborn (Thaumaturge)
 License: MIT
 
 Reference: [Github](https://github.com/ArsThaumaturgis/TabbedFrame)
-
-## astro/jdcal
-
-Copyright: Prasanth Nair <prasanthhn@gmail.com>
-
-License: BSD
-
-Reference: [Github](https://github.com/phn/jdcal)
 
 ## source
 
