@@ -18,27 +18,28 @@
 #
 
 
+from abc import ABC, abstractmethod
 from math import pi
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
 from ..kepler import kepler_pos
 
 
-class Orbit(object):
+class Orbit(ABC):
     def __init__(self, frame):
         self.frame = frame
 
     def set_frame(self, frame):
         self.frame = frame
 
-    def is_periodic(self):
-        raise NotImplementedError()
+    @abstractmethod
+    def is_periodic(self): ...
 
-    def is_closed(self):
-        raise NotImplementedError()
+    @abstractmethod
+    def is_closed(self): ...
 
-    def is_dynamic(self):
-        raise NotImplementedError()
+    @abstractmethod
+    def is_dynamic(self): ...
 
     def get_absolute_reference_point_at(self, time):
         return self.frame.get_absolute_reference_point()
@@ -49,17 +50,20 @@ class Orbit(object):
     def get_local_position_at(self, time):
         return self.frame.get_local_position(self.get_frame_rotation_at(time).xform(self.get_frame_position_at(time)))
 
-    def get_frame_position_at(self, time):
-        return None
+    @abstractmethod
+    def get_frame_position_at(self, time): ...
 
     def get_absolute_rotation_at(self, time):
         return self.frame.get_absolute_orientation(self.get_frame_rotation_at(time))
 
-    def get_frame_rotation_at(self, time):
-        return None
+    @abstractmethod
+    def get_frame_rotation_at(self, time): ...
 
-    def get_bounding_radius(self):
-        return 0.0
+    @abstractmethod
+    def get_bounding_radius(self): ...
+
+    @abstractmethod
+    def get_mean_motion(self): ...
 
 
 class FixedPosition(Orbit):
@@ -71,6 +75,9 @@ class FixedPosition(Orbit):
 
     def is_dynamic(self):
         return False
+
+    def get_mean_motion(self):
+        return 0.0
 
 
 class AbsoluteFixedPosition(FixedPosition):
@@ -89,6 +96,9 @@ class AbsoluteFixedPosition(FixedPosition):
 
     def get_frame_rotation_at(self, time):
         return LQuaterniond()
+
+    def get_bounding_radius(self):
+        return 0
 
 
 class LocalFixedPosition(FixedPosition):
