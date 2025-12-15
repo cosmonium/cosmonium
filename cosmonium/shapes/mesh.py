@@ -67,7 +67,7 @@ class MeshShape(Shape):
     def update_shape(self):
         self.mesh.set_pos(*self.offset)
         self.mesh.set_quat(LQuaternion(*self.rotation))
-        self.mesh.set_scale(*self.scale_factor)
+        self.instance.set_scale(*self.scale_factor)
 
     def get_rotation(self):
         return self.rotation.get_hpr()
