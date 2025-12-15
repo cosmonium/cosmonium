@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3d
+from panda3d.core import LVector3d, LQuaterniond
 
 from ...appearances import Appearance
 from ...entities.entity import Entity
@@ -31,7 +31,15 @@ class SkyBox(Entity):
         self.scattering = scattering
         if shape is None:
             shape = MeshShape(
-                'ralph-data/models/rgbCube', panda=True, auto_scale_mesh=False, scale=LVector3d(32768, 32768, 32768)
+                'ralph-data/models/rgbCube',
+                offset=LVector3d(),
+                rotation=LQuaterniond(),
+                scale=LVector3d(32768, 32768, 32768),
+                auto_scale_mesh=False,
+                auto_center_mesh=False,
+                panda=True,
+                flatten=True,
+                attribution=None,
             )
         if appearance is None:
             appearance = Appearance()

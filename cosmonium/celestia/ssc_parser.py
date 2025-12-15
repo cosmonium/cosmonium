@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 import builtins
 import io
 from math import pi
-from panda3d.core import LColor, LQuaterniond, LPoint3d
+from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
 from time import time
 
 from ..appearances import Appearance
@@ -332,7 +332,17 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
     elif not custom_rotation:
         rotation.set_frame(body_frame)
     if model is not None and not (model.endswith('.cmod') or model.endswith('.cms')):
-        shape = MeshShape(model=model, radius=radius, offset=shape_offset)
+        shape = MeshShape(
+            model,
+            offset=shape_offset,
+            rotation=LQuaterniond(),
+            scale=LVector3d(1),
+            auto_scale_mesh=False,
+            auto_center_mesh=False,
+            flatten=True,
+            panda=False,
+            attribution=None,
+        )
     else:
         shape = SphereShape()
     if bump_map is not None:

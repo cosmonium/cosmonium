@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,21 +24,33 @@ from .mesh import MeshShape
 
 
 class ActorShape(MeshShape):
-
     def __init__(
         self,
         model,
         animations,
-        offset=None,
-        rotation=None,
-        scale=None,
-        auto_scale_mesh=True,
-        flatten=True,
-        panda=True,
-        attribution=None,
+        offset,
+        rotation,
+        scale,
+        auto_scale_mesh,
+        auto_center_mesh,
+        flatten,
+        panda,
+        attribution,
         context=defaultDirContext,
     ):
-        MeshShape.__init__(self, model, offset, rotation, scale, auto_scale_mesh, flatten, panda, attribution, context)
+        MeshShape.__init__(
+            self,
+            model,
+            offset,
+            rotation,
+            scale,
+            auto_scale_mesh,
+            auto_center_mesh,
+            flatten,
+            panda,
+            attribution,
+            context,
+        )
         self.animations = animations
 
     async def load(self):

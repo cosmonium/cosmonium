@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,15 +18,11 @@
 #
 
 import builtins
-from panda3d.core import LQuaternion, LQuaterniond
-from panda3d.core import LPoint3d, LVector3d
+from panda3d.core import LQuaternion
 from panda3d.core import NodePath, ModelPool, Filename
 
 from ..dircontext import defaultDirContext
 from ..parameters import ParametersGroup, AutoUserParameter, UserParameter
-
-# TODO: There shouldn't be a dependency towards astro
-from ..astro import units
 
 from .base import Shape
 
@@ -37,36 +33,30 @@ class MeshShape(Shape):
     def __init__(
         self,
         model,
-        offset=None,
-        rotation=None,
-        scale=None,
-        auto_scale_mesh=True,
-        flatten=True,
-        panda=False,
-        attribution=None,
+        offset,
+        rotation,
+        scale,
+        auto_scale_mesh,
+        auto_center_mesh,
+        flatten,
+        panda,
+        attribution,
         context=defaultDirContext,
     ):
         Shape.__init__(self)
         self.model = model
         self.attribution = attribution
         self.context = context
-        if offset is None:
-            offset = LPoint3d()
         self.offset = offset
-        if rotation is None:
-            rotation = LQuaterniond()
-        if scale is None:
-            scale = LVector3d(1, 1, 1)
         self.source_scale_factor = scale
         self.scale_factor = scale
         self.rotation = rotation
         self.auto_scale_mesh = auto_scale_mesh
-        if not self.auto_scale_mesh:
-            self.scale_factor *= units.m
+        self.auto_center_mesh = auto_center_mesh
         self.flatten = flatten
         self.panda = panda
         self.mesh = None
-        if auto_scale_mesh and self.source_scale_factor is not None:
+        if auto_scale_mesh:
             self.radius = max(*self.source_scale_factor)
         else:
             self.radius = 0.0
@@ -133,13 +123,15 @@ class MeshShape(Shape):
         if self.instance is None:
             return
         self.mesh = mesh
+        (l, r) = mesh.getTightBounds()
         if self.auto_scale_mesh:
-            (l, r) = mesh.getTightBounds()
             major = max(r - l) / 2
             scale_factor = 1.0 / major
             self.scale_factor = self.source_scale_factor * scale_factor
         else:
             self.radius = max(*self.scale_factor)
+        if self.auto_center_mesh:
+            self.offset = -(r + l) / 2
         if self.flatten:
             self.mesh.clear_model_nodes()
             self.mesh.flatten_strong()

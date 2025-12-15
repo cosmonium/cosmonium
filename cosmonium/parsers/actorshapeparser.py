@@ -33,7 +33,8 @@ class ActorShapeYamlParser(YamlModuleParser):
         model = data.get('model')
         animations = data.get('animations', {})
         panda = data.get('panda', True)
-        auto_scale_mesh = data.get('auto-scale', True)
+        auto_scale_mesh = data.get('auto-scale', False)
+        auto_center_mesh = data.get('auto-center', False)
         offset = data.get('offset', None)
         rotation_data = data.get('rotation', None)
         if not auto_scale_mesh:
@@ -42,6 +43,8 @@ class ActorShapeYamlParser(YamlModuleParser):
             scale = None
         if offset is not None:
             offset = LVector3d(*offset)
+        else:
+            offset = LVector3d()
         if isinstance(scale, (int, float)):
             scale = LVector3d(scale)
         elif isinstance(scale, list):
@@ -63,6 +66,7 @@ class ActorShapeYamlParser(YamlModuleParser):
             rotation,
             scale,
             auto_scale_mesh,
+            auto_center_mesh,
             flatten,
             panda,
             attribution,

@@ -18,8 +18,9 @@
 #
 
 
-from panda3d.core import LVector3d, LQuaterniond
+from panda3d.core import LPoint3d,  LVector3d, LQuaterniond
 
+from ..astro import units
 from ..patchedshapes.patchedshapes import PatchedSpherePatchFactory, PatchedSphereShape
 from ..patchedshapes.patchedshapes import SquaredDistanceSquarePatchFactory, SquaredDistanceSquareShape
 from ..patchedshapes.patchedshapes import NormalizedSquarePatchFactory, NormalizedSquareShape
@@ -29,6 +30,7 @@ from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape, IcoSphereShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape, SpaceEngineTextureSquarePatchFactory
 
+from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import YamlModuleParser
 
 
@@ -40,18 +42,25 @@ class MeshYamlParser(YamlModuleParser):
         model = data.get('model')
         create_uv = data.get('create-uv', False)
         panda = data.get('panda', False)
-        auto_scale_mesh = data.get('auto-scale', True)
+        auto_scale_mesh = data.get('auto-scale', False)
+        auto_center_mesh = data.get('auto-center', False)
         offset = data.get('offset', None)
         rotation_data = data.get('rotation', None)
-        if auto_scale_mesh and radius is not None:
-            scale = LVector3d(radius)
+        if offset is None:
+            offset = LPoint3d()
+        scale = data.get('scale', None)
+        scale_units = DistanceUnitsYamlParser.decode(data.get('scale-units'), units.m)
+        if scale is not None:
+            if isinstance(scale, list):
+                scale = LVector3d(*scale)
+            else:
+                scale = LVector3d(scale)
+            scale *= scale_units
         else:
-            scale = data.get('scale', None)
-            if scale is not None:
-                if isinstance(scale, list):
-                    scale = LVector3d(*scale)
-                else:
-                    scale = LVector3d(scale)
+            if auto_scale_mesh and radius is not None:
+                scale = LVector3d(radius)
+            else:
+                scale = LVector3d(scale_units)
         if offset is not None:
             offset = LVector3d(*offset)
         if rotation_data is not None:
@@ -61,7 +70,7 @@ class MeshYamlParser(YamlModuleParser):
             else:
                 rotation = LQuaterniond(*rotation_data)
         else:
-            rotation = None
+            rotation = LQuaterniond()
         flatten = data.get('flatten', True)
         attribution = data.get('attribution', None)
         shape = MeshShape(
@@ -70,6 +79,7 @@ class MeshYamlParser(YamlModuleParser):
             rotation,
             scale,
             auto_scale_mesh,
+            auto_center_mesh,
             flatten,
             panda,
             attribution,
