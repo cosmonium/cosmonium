@@ -1,0 +1,50 @@
+[tool.black]
+line-length = 119
+skip-string-normalization = 1
+target-version = ['py310', 'py311', 'py312', 'py313']
+extend-exclude = '''
+/(
+    third-party
+  | source
+  | tools/p3d_module_builder
+  | data
+  | build
+  | dist
+  | \..*
+  | .*_parsetab\.py
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 119
+skip_glob = [
+    "third-party/*",
+    "source/*",
+    "tools/p3d_module_builder/*",
+    "data/*",
+    "build/*",
+    "dist/*",
+    ".*",
+    "*_parsetab.py"
+]
+
+[tool.pydocstyle]
+convention = "pep257"
+add_select = ["D417"]
+match = "(?!test_).*\\.py"
+match_dir = "^(?!(third-party|source|tools|data|build|dist|\\..*)$).*"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+no_strict_optional = true
+exclude = [
+    "third-party/",
+    "source/",
+    "tools/p3d_module_builder/",
+    "data/",
+    "build/",
+    "dist/",
+    ".*_parsetab\\.py$"
+]

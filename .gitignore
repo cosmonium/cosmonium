@@ -13,6 +13,12 @@ source/requirements*
 *.mo
 cosmonium/buildversion.py
 
+# Code quality
+.mypy_cache/
+
+# Virtual environments
+.venv*/
+
 # Eclipse artifacts
 .project
 .pydevproject

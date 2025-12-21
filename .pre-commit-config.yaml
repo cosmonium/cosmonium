@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(third-party/|source/|tools/p3d_module_builder/|data/|build/|dist/|.*_parsetab\.py$)
+      - id: end-of-file-fixer
+        exclude: ^(third-party/|source/|tools/p3d_module_builder/|data/|build/|dist/|.*_parsetab\.py$)
+      - id: check-yaml
+        exclude: ^(third-party/|source/|tools/p3d_module_builder/|data/|build/|dist/)
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+        exclude: ^(third-party/|source/|data/|build/|dist/)
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
