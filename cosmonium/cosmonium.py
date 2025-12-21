@@ -44,8 +44,11 @@ from .astro.units import J2000_Orientation, J200_EclipticOrientation
 from .astro import units
 from .autopilot import AutoPilot
 from .bodyclass import bodyClasses
-from .camera import CameraHolder, CameraController
-from .camera import FixedCameraController, TrackCameraController, LookAroundCameraController, FollowCameraController
+from .camera.base import CameraHolder, CameraController
+from .camera.fixed_controller import FixedCameraController
+from .camera.follow_controller import FollowCameraController
+from .camera.lookaround_controller import LookAroundCameraController
+from .camera.track_controller import TrackCameraController
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 from .components.annotations.grid import Grid

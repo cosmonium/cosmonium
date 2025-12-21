@@ -20,7 +20,8 @@
 
 from panda3d.core import LVector3d
 
-from ..camera import FixedCameraController, SurfaceFollowCameraController
+from ..camera.fixed_controller import FixedCameraController
+from ..camera.follow_controller import SurfaceFollowCameraController
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 

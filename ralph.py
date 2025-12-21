@@ -49,7 +49,7 @@ from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePat
 from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp
 
 from cosmonium.astro import units
-from cosmonium.camera import CameraHolder, EventsControllerBase
+from cosmonium.camera.base import CameraHolder, EventsControllerBase
 from cosmonium.controllers.controllers import FlatSurfaceBodyMover, CartesianBodyMover
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.engine.c_settings import c_settings

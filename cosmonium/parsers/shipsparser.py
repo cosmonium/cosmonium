@@ -21,7 +21,7 @@
 from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from ..astro import units
-from ..camera import CameraController
+from ..camera.base import CameraController
 from ..components.elements.surfaces import MeshSurface
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
