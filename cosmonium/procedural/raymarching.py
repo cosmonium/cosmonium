@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,8 @@
 #
 
 
-from math import asin, cos
 from panda3d.core import LVecBase3
-from panda3d.core import CardMaker, NodePath, OmniBoundingVolume
 
-from ..shapes.base import Shape
 from ..shaders.appearance import ShaderAppearance
 from ..utils import TransparencyBlend, srgb_to_linear_channel
 from ..appearances import AppearanceBase
@@ -32,58 +29,16 @@ from .. import settings
 from .shadernoise import NoiseSource
 
 
-class RayMarchingShape(Shape):
-    templates = {}
-
-    def __init__(self, radius=1.0, scale=None):
-        Shape.__init__(self)
-        self.radius = radius
-        self.axes = LVecBase3(radius)
-        if scale is None:
-            self.scale = LVecBase3(1)
-        else:
-            self.scale = LVecBase3(*scale)
-        self.blend = TransparencyBlend.TB_PremultipliedAlpha
-        self.scale_factor = 1.0
-
-    def shape_id(self):
-        return ''
-
-    def get_apparent_radius(self):
-        return self.radius
-
-    def set_axes(self, axes):
-        self.axes = axes
-        self.radius = max(*axes)
-
-    async def create_instance(self):
-        self.instance = NodePath("card")
-        card_maker = CardMaker("card")
-        card_maker.set_frame(-1, 1, -1, 1)
-        node = card_maker.generate()
-        self.card_instance = self.instance.attach_new_node(node)
-        self.card_instance.setBillboardPointWorld()
-        TransparencyBlend.apply(self.blend, self.instance)
-        self.instance.node().setBounds(OmniBoundingVolume())
-        self.instance.node().setFinal(True)
-        return self.instance
-
-    def get_scale(self):
-        return Shape.get_scale(self) * self.scale_factor
-
-    def update_instance(self, scene_manager, camera_pos, orientation):
-        alpha = asin(self.radius / self.owner.anchor.distance_to_obs)
-        self.scale_factor = 1.0 / cos(alpha)
-
-
 class RayMarchingAppearanceBase(AppearanceBase):
     def __init__(self, max_steps, hdr, exposure):
         AppearanceBase.__init__(self)
         self.max_steps = max_steps
         self.hdr = hdr
         self.exposure = exposure
+        self.blend = TransparencyBlend.TB_PremultipliedAlpha
 
     def apply(self, shape, instance):
+        TransparencyBlend.apply(self.blend, instance)
         instance.setShaderInput("max_steps", int(self.max_steps))
         instance.setShaderInput("exposure", self.exposure)
 

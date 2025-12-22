@@ -25,7 +25,7 @@ from ..patchedshapes.patchedshapes import PatchedSpherePatchFactory, PatchedSphe
 from ..patchedshapes.patchedshapes import SquaredDistanceSquarePatchFactory, SquaredDistanceSquareShape
 from ..patchedshapes.patchedshapes import NormalizedSquarePatchFactory, NormalizedSquareShape
 from ..patchedshapes.tiles import TiledShape
-from ..procedural.raymarching import RayMarchingShape
+from ..shapes.billboard import BillboardShape
 from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape, IcoSphereShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape, SpaceEngineTextureSquarePatchFactory
@@ -88,10 +88,10 @@ class MeshYamlParser(YamlModuleParser):
         return (shape, {'create-uv': create_uv})
 
 
-class RayMarchingYamlParser(YamlModuleParser):
+class BillboardYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        shape = RayMarchingShape()
+        shape = BillboardShape()
         return (shape, {})
 
 
@@ -128,7 +128,7 @@ class ShapeYamlParser(YamlModuleParser):
         elif shape_type == 'mesh':
             shape, extra = MeshYamlParser.decode(shape_data, radius)
         elif shape_type == 'raymarching':
-            shape, extra = RayMarchingYamlParser.decode(shape_data)
+            shape, extra = BillboardYamlParser.decode(shape_data)
         elif shape_type == 'tiled-plane':
             shape, extra = TiledPlaneYamlParser.decode(shape_data)
         else:
