@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
 from panda3d.core import TextureStage, Texture, TexGenAttrib, GeomVertexRewriter
 from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
 from panda3d.core import GeomPoints, Geom, GeomNode, OmniBoundingVolume
-from panda3d.core import LVecBase3, LPoint3d, LPoint3, LColor, LVector3d
+from panda3d.core import LPoint3d, LPoint3, LColor, LVector3d
 from panda3d.core import NodePath, StackedPerlinNoise3
 from panda3d.core import ShaderAttrib
 from random import random, gauss, choice, seed
@@ -202,16 +202,9 @@ class GalaxyAppearance(AppearanceBase):
 class GalaxyShapeBase(Shape):
     templates = {}
 
-    def __init__(self, radius=1.0, scale=None):
+    def __init__(self):
         Shape.__init__(self)
-        self.radius = radius
         self.seed = random()
-        if scale is None:
-            self.radius = radius
-            self.scale = LVecBase3(self.radius, self.radius, self.radius)
-        else:
-            self.scale = LVecBase3(*scale) * radius
-            self.radius = max(scale) * radius
         self.nb_points = 1
         self.size = 1.0
         self.yellow_color = srgb_to_linear((255.0 / 255, 248.0 / 255, 231.0 / 255, 1.0))
@@ -219,9 +212,6 @@ class GalaxyShapeBase(Shape):
 
     def shape_id(self):
         return ''
-
-    def get_apparent_radius(self):
-        return self.radius
 
     def set_axes(self, axes):
         pass
@@ -310,9 +300,9 @@ class GalaxyShapeBase(Shape):
 
 class EllipticalGalaxyShape(GalaxyShapeBase):
     def __init__(
-        self, factor, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0
+        self, factor, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0
     ):
-        GalaxyShapeBase.__init__(self, radius, scale)
+        GalaxyShapeBase.__init__(self)
         self.factor = factor
         self.nb_points = nb_points
         self.spread = spread
@@ -360,8 +350,8 @@ class EllipticalGalaxyShape(GalaxyShapeBase):
 class IrregularGalaxyShape(GalaxyShapeBase):
     noise = None
 
-    def __init__(self, radius=1.0, scale=None, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
-        GalaxyShapeBase.__init__(self, radius, scale)
+    def __init__(self, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
+        GalaxyShapeBase.__init__(self)
         self.nb_points = nb_points
         self.spread = spread
         self.zspread = zspread
@@ -414,8 +404,6 @@ class IrregularGalaxyShape(GalaxyShapeBase):
 class SpiralGalaxyShapeBase(GalaxyShapeBase):
     def __init__(
         self,
-        radius=1.0,
-        scale=None,
         nb_points_bulge=200,
         nb_points_arms=1000,
         spread=0.4,
@@ -425,7 +413,7 @@ class SpiralGalaxyShapeBase(GalaxyShapeBase):
         sersic_bulge=4.0,
         sersic_disk=1.0,
     ):
-        GalaxyShapeBase.__init__(self, radius, scale)
+        GalaxyShapeBase.__init__(self)
         self.nb_points_bulge = nb_points_bulge
         self.nb_points_arms = nb_points_arms
         self.spread = spread
@@ -547,8 +535,6 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
         self,
         N,
         B,
-        radius=1.0,
-        scale=None,
         nb_points_bulge=200,
         nb_points_arms=1000,
         spread=0.4,
@@ -560,8 +546,6 @@ class FullSpiralGalaxyShape(SpiralGalaxyShapeBase):
     ):
         SpiralGalaxyShapeBase.__init__(
             self,
-            radius,
-            scale,
             nb_points_bulge,
             nb_points_arms,
             spread,
@@ -600,8 +584,6 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
         self,
         N,
         B,
-        radius=1.0,
-        scale=None,
         nb_points_bulge=200,
         nb_points_arms=1000,
         spread=0.4,
@@ -613,8 +595,6 @@ class FullRingGalaxyShape(SpiralGalaxyShapeBase):
     ):
         SpiralGalaxyShapeBase.__init__(
             self,
-            radius,
-            scale,
             nb_points_bulge,
             nb_points_arms,
             spread,
@@ -654,8 +634,6 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     def __init__(
         self,
         pitch,
-        radius=1.0,
-        scale=None,
         nb_points_bulge=200,
         nb_points_arms=1000,
         spread=0.4,
@@ -667,8 +645,6 @@ class SpiralGalaxyShape(SpiralGalaxyShapeBase):
     ):
         SpiralGalaxyShapeBase.__init__(
             self,
-            radius,
-            scale,
             nb_points_bulge,
             nb_points_arms,
             spread,

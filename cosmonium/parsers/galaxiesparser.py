@@ -61,7 +61,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
     @classmethod
     def decode_shape(cls, data):
         shape = data.get('shape')
-        radius = 1.0
         if shape is not None:
             if shape == 'lenticular':
                 nb_points_bulge = data.get("nb-points-bulge", 200)
@@ -73,8 +72,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                 zspread = data.get("zspread", 0.1)
                 point_size = data.get("size", 200)
                 return LenticularGalaxyShape(
-                    radius,
-                    None,
                     nb_points_bulge,
                     nb_points_arms,
                     spread,
@@ -92,14 +89,14 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                 spread = data.get("spread", 0.4)
                 zspread = data.get("zspread", 0.2)
                 point_size = data.get("size", 200)
-                return EllipticalGalaxyShape(factor, radius, None, nb_points, spread, zspread, point_size, sersic)
+                return EllipticalGalaxyShape(factor, nb_points, spread, zspread, point_size, sersic)
             elif shape == 'irregular':
                 nb_points = data.get("nb-points", 1000)
                 sersic = data.get("sersic", 4.0)
                 spread = data.get("spread", 0.2)
                 zspread = data.get("zspread", 0.1)
                 point_size = data.get("size", 200)
-                return IrregularGalaxyShape(radius, None, nb_points, spread, zspread, point_size, sersic)
+                return IrregularGalaxyShape(nb_points, spread, zspread, point_size, sersic)
             elif shape == "spiral":
                 pitch = data.get('pitch')
                 if pitch is not None:
@@ -117,8 +114,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                 if pitch is not None:
                     return SpiralGalaxyShape(
                         pitch,
-                        radius,
-                        None,
                         nb_points_bulge,
                         nb_points_arms,
                         spread,
@@ -136,8 +131,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                         return FullRingGalaxyShape(
                             N,
                             B,
-                            radius,
-                            None,
                             nb_points_bulge,
                             nb_points_arms,
                             spread,
@@ -151,8 +144,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
                         return FullSpiralGalaxyShape(
                             N,
                             B,
-                            radius,
-                            None,
                             nb_points_bulge,
                             nb_points_arms,
                             spread,
