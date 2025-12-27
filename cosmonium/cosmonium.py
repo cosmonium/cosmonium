@@ -74,9 +74,9 @@ from .parsers.parsers import register_parsers
 from .parsers.yamlparser import YamlModuleParser
 from .pgettext import patch_gettext
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
-from .pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
-from .pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .pstats import pstat
+from .rendering.pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
+from .rendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
 from .scene.scenemanager import C_CameraHolder, remove_main_region
 from .scene.sceneanchor import SceneAnchorCollection

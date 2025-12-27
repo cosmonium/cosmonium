@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,13 @@
 from panda3d.core import GeomNode
 from panda3d.core import OmniBoundingVolume, ShaderAttrib
 
-from .appearances import ModelAppearance
-from .foundation import VisibleObject
-from .shaders.lighting.flat import FlatLightingModel
-from .shaders.point_control import StaticSizePointControl
-from .shaders.rendering import RenderingShader
-from .sprites import SimplePoint, RoundDiskPointSprite
-from . import settings
+from ..appearances import ModelAppearance
+from ..foundation import VisibleObject
+from ..shaders.lighting.flat import FlatLightingModel
+from ..shaders.point_control import StaticSizePointControl
+from ..shaders.rendering import RenderingShader
+from ..sprites import SimplePoint, RoundDiskPointSprite
+from .. import settings
 
 try:
     from cosmonium_engine import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
