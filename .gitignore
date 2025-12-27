@@ -36,3 +36,7 @@ screenshots/
 
 #OS Specific
 .DS_Store
+
+# Test artifacts
+.pytest_cache/
+__pycache__/

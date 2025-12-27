@@ -6,6 +6,7 @@ panda3d_interrogate == 0.7.1
 
 setuptools == 80.9.0
 
+
 # Code quality tools
 
 black == 24.10.0
@@ -19,3 +20,8 @@ pydocstyle == 6.3.0
 mypy == 1.13.0
 
 pre-commit == 4.0.1
+
+
+# Test tools
+
+pytest == 8.3.4

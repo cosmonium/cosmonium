@@ -203,4 +203,7 @@ create-manylinux2014:
 build-manylinux2014:
 	docker run --rm -v `pwd`:/app cosmonium-manylinux2024-builder /app/tools/build-manylinux2014.sh
 
-.PHONY: build build-req build-source update-mo bapp bdist shasum
+tests:
+	pytest tests/
+
+.PHONY: build build-req build-source update-mo bapp bdist shasum tests

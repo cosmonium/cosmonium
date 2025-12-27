@@ -48,3 +48,6 @@ exclude = [
     "dist/",
     ".*_parsetab\\.py$"
 ]
+
+[tool.pytest]
+testpaths = ['tests']
