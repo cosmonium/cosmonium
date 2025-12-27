@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,7 +72,6 @@ from .opengl import OpenGLConfig
 from .parsers.configparser import configParser
 from .parsers.parsers import register_parsers
 from .parsers.yamlparser import YamlModuleParser
-from .pgettext import patch_gettext
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat
 from .rendering.pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
@@ -106,7 +105,6 @@ class CosmoniumBase(ShowBase):
         self.common_state = NodePath("<state>")
 
         register_parsers()
-        patch_gettext()
         self.languages = None
 
         configParser.load()
