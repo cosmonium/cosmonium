@@ -19,11 +19,13 @@
 
 
 import builtins
+import os
+
 from gltf import GltfSettings
 from gltf._loader import GltfLoader
-import os
 from panda3d.core import loadPrcFileData, LoaderFileTypeRegistry, Filename, get_model_path
 
+from .cmod.cmod_loader import CmodLoader
 from .dircontext import main_dir
 from . import cache
 from . import settings
@@ -45,11 +47,20 @@ def set_physics_engine(engine_name):
 def init_mesh_loader():
     if settings.use_assimp:
         loadPrcFileData("", "load-file-type p3assimp\n" "assimp-gen-normals #t\n" "assimp-smooth-normal-angle 90\n")
+
+    registry = LoaderFileTypeRegistry.get_global_ptr()
+
     # Remove any existing GLTF loaders
     _remove_loader('gltf')
     _remove_loader('glb')
-    registry = LoaderFileTypeRegistry.get_global_ptr()
+    # Register GLTF loader
     registry.register_type(GltfLoader)
+
+    # Remove any existing CMOD loaders
+    _remove_loader('cmod')
+    # Register CMOD loader
+    registry.register_type(CmodLoader())
+
     path = cache.create_path_for("models")
     loadPrcFileData("", "model-cache-dir %s\n" % path)
     get_model_path().prepend_directory(Filename.from_os_specific(os.path.join(main_dir, 'models')))

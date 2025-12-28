@@ -331,7 +331,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    if model is not None and not (model.endswith('.cmod') or model.endswith('.cms')):
+    if model is not None and not model.endswith('.cms'):
         shape = MeshShape(
             model,
             offset=shape_offset,
