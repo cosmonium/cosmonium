@@ -182,6 +182,9 @@ class MeshSurface(Surface):
     def is_flat(self):
         return False
 
+    def is_spherical(self):
+        return False
+
     def do_create_shadow_caster_for(self, light_source):
         shadow_caster = CustomShadowMapShadowCaster(light_source, self.body, self)
         shadow_caster.add_target(self, self_shadow=True)
