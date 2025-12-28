@@ -31,7 +31,7 @@ from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
 from ..components.elements.atmosphere import Atmosphere
-from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
 from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
 from ..dircontext import defaultDirContext
@@ -192,7 +192,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
     rotation_epoch = units.J2000
     rotation = None
     model = None
-    shape_offset = None
+    shape_offset = LVector3d(0)
     albedo = 0.5
     bump_map = None
     bump_height = 1.0
@@ -353,13 +353,21 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
     else:
         lighting_model = LambertPhongLightingModel()
     lighting_model = ShadingLightingModel(lighting_model)
-    surface = EllipsoidFlatSurface(
-        shape=shape,
-        radius=radius,
-        oblateness=oblateness,
-        appearance=appearance,
-        shader=RenderingShader(lighting_model=lighting_model),
-    )
+    shader = RenderingShader(lighting_model=lighting_model)
+    if model is not None:
+        surface = MeshSurface(
+            shape=shape,
+            appearance=appearance,
+            shader=shader,
+        )
+    else:
+        surface = EllipsoidFlatSurface(
+            shape=shape,
+            radius=radius,
+            oblateness=oblateness,
+            appearance=appearance,
+            shader=shader,
+        )
     body = ReflectiveBody(
         names=names,
         source_names=[],
