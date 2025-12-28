@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,17 +33,26 @@ luminosity_magnitude_factor = log(10.0) / 2.5
 # Ang diameter to arcseconds
 ang_diameter_to_arcsec = 3600 * 180 / pi
 
+# Magnitude returned in case of math error
+lowest_magnitude = 1000.0
+
 
 # m = M + 5 * (log10(d) - 1)
 def abs_to_app_mag(abs_magnitude, distance):
-    app_magnitude = abs_magnitude + 5 * (log10(distance / units.KmPerParsec) - 1)
-    return app_magnitude
+    try:
+        app_magnitude = abs_magnitude + 5 * (log10(distance / units.KmPerParsec) - 1)
+        return app_magnitude
+    except ValueError:
+        return lowest_magnitude
 
 
 # M = m - 5 * (log10(d) - 1)
 def app_to_abs_mag(app_magnitude, distance):
-    abs_magnitude = app_magnitude - 5 * (log10(distance / units.KmPerParsec) - 1)
-    return abs_magnitude
+    try:
+        abs_magnitude = app_magnitude - 5 * (log10(distance / units.KmPerParsec) - 1)
+        return abs_magnitude
+    except ValueError:
+        return lowest_magnitude
 
 
 # L* = L0 * 10^((M0 - M*) / 2.5)
@@ -53,20 +62,20 @@ def abs_mag_to_lum(abs_magnitude):
 
 # M* = M0 - 2.5 * log10(L* / L0)
 def lum_to_abs_mag(luminosity):
-    if luminosity > 0:
+    try:
         return units.sun_abs_magnitude - log(luminosity) / luminosity_magnitude_factor
-    else:
-        return 1000.0
+    except ValueError:
+        return lowest_magnitude
 
 
 radiance_coef = units.L0 / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
 
 
 def radiance_to_mag(radiance):
-    if radiance > 0:
+    try:
         return lum_to_abs_mag(radiance / radiance_coef)
-    else:
-        return 1000.0
+    except ValueError:
+        return lowest_magnitude
 
 
 def mag_to_surface_brightness(mag, distance, radius):
