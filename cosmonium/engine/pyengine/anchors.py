@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,11 +32,16 @@ from ..octree import OctreeNode
 
 
 class AnchorBase:
-    def __init__(self, anchor_class, body):
+
+    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
         self.content = anchor_class
         self.body = body
         self.parent = None
         self.rebuild_needed = False
+        # Name management
+        self.set_names(names)
+        self.source_names = source_names if source_names is not None else []
+        self.description = description
         # Flags
         self.was_visible = False
         self.visible = False
@@ -59,6 +64,32 @@ class AnchorBase:
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
         self.z_distance = 0.0
+
+    def get_names(self):
+        return self.names
+
+    def set_names(self, names):
+        if names is None:
+            self.names = ['']
+        elif isinstance(names, (list, tuple)):
+            self.names = names
+        else:
+            self.names = [names]
+
+    def get_source_names(self):
+        return self.source_names
+
+    def get_friendly_name(self):
+        return self.names[0]
+
+    def get_name(self):
+        return self.names[0]
+
+    def get_c_name(self):
+        return self.source_names[0] if self.source_names else self.names[0]
+
+    def get_description(self):
+        return self.description
 
     def set_rebuild_needed(self):
         self.rebuild_needed = True
@@ -148,8 +179,8 @@ class AnchorBase:
 
 
 class CartesianAnchor(AnchorBase):
-    def __init__(self, anchor_class, body, frame, point_color=None):
-        AnchorBase.__init__(self, anchor_class, body)
+    def __init__(self, anchor_class, body, frame, point_color=None, names=None, source_names=None, description=''):
+        AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
@@ -306,13 +337,15 @@ class CameraAnchor(CartesianAnchor):
 
 
 class OriginAnchor(CartesianAnchor):
-    def __init__(self, anchor_class, body, point_color=None):
-        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
+    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+        CartesianAnchor.__init__(
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
+        )
 
 
 class FlatSurfaceAnchor(OriginAnchor):
-    def __init__(self, anchor_class, body, surface, point_color=None):
-        OriginAnchor.__init__(self, anchor_class, body, point_color)
+    def __init__(self, anchor_class, body, surface, names=None, source_names=None, description=''):
+        OriginAnchor.__init__(self, anchor_class, body, names, source_names, description)
         self.surface = surface
 
     def set_surface(self, surface):
@@ -337,8 +370,10 @@ class FlatSurfaceAnchor(OriginAnchor):
 
 
 class ObserverAnchor(CartesianAnchor):
-    def __init__(self, anchor_class, body, point_color=None):
-        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), point_color)
+    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+        CartesianAnchor.__init__(
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
+        )
 
     def update(self, time, update_id):
         # TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
@@ -372,8 +407,10 @@ class StellarAnchor(AnchorBase):
     System = 4
     OctreeAnchor = 8
 
-    def __init__(self, anchor_class, body, orbit, rotation, point_color):
-        AnchorBase.__init__(self, anchor_class, body)
+    def __init__(
+        self, anchor_class, body, orbit, rotation, point_color, names=None, source_names=None, description=''
+    ):
+        AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
         # TODO: To remove
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
@@ -477,8 +514,8 @@ class StellarAnchor(AnchorBase):
 
 
 class FixedStellarAnchor(StellarAnchor):
-    def __init__(self, body, orbit, rotation, point_color):
-        StellarAnchor.__init__(self, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
+        StellarAnchor.__init__(self, 0, body, orbit, rotation, point_color, names, source_names, description)
         # self.update_frozen = True
         # self.update(0)
 
@@ -488,8 +525,10 @@ class DynamicStellarAnchor(StellarAnchor):
 
 
 class SystemAnchor(DynamicStellarAnchor):
-    def __init__(self, body, orbit, rotation, point_color):
-        DynamicStellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
+        DynamicStellarAnchor.__init__(
+            self, self.System, body, orbit, rotation, point_color, names, source_names, description
+        )
         self.primary = None
         self.children = []
 
@@ -548,8 +587,8 @@ class SystemAnchor(DynamicStellarAnchor):
 
 
 class OctreeAnchor(SystemAnchor):
-    def __init__(self, body, orbit, rotation, radius, point_color):
-        SystemAnchor.__init__(self, body, orbit, rotation, point_color)
+    def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+        SystemAnchor.__init__(self, body, orbit, rotation, point_color, names, source_names, description)
         self.bounding_radius = radius
         # TODO: Should be configurable
         abs_magnitude = app_to_abs_mag(6.0, radius * sqrt(3))
@@ -591,8 +630,8 @@ class OctreeAnchor(SystemAnchor):
 
 
 class UniverseAnchor(OctreeAnchor):
-    def __init__(self, body, orbit, rotation, radius, point_color):
-        OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color)
+    def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+        OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color, names, source_names, description)
         self.visible = True
         self.resolved = True
 

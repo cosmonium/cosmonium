@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,22 +18,19 @@
 #
 
 
-from .namedobject import NamedObject
-
-
 class Labels:
     def __init__(self):
         self.labeled_objects = dict()
         self.labels = []
 
-    def add_label(self, named_object: NamedObject):
+    def add_label(self, named_object):
         label = named_object.create_label()
         label.set_scene_anchor(named_object.scene_anchor)
         label.check_settings()
         self.labels.append(label)
         self.labeled_objects[named_object] = label
 
-    def remove_label(self, named_object: NamedObject):
+    def remove_label(self, named_object):
         try:
             label = self.labeled_objects[named_object]
             del self.labeled_objects[named_object]

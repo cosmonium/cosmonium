@@ -33,8 +33,26 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
-    LColor point_color) :
-    AnchorBase(anchor_class, ref_object, point_color),
+    LColor point_color,
+    const pvector<std::string> names,
+    const pvector<std::string> source_names,
+    const std::string &description) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
+    orbit(orbit),
+    rotation(rotation),
+    _equatorial(LQuaterniond::ident_quat())
+{
+}
+
+StellarAnchor::StellarAnchor(unsigned int anchor_class,
+    PyObject *ref_object,
+    OrbitBase *orbit,
+    RotationBase *rotation,
+    LColor point_color,
+    PyObject *names,
+    PyObject *source_names,
+    const std::string &description) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
     orbit(orbit),
     rotation(rotation),
     _equatorial(LQuaterniond::ident_quat())
@@ -150,6 +168,16 @@ LQuaterniond
 StellarAnchor::get_sync_rotation(void) const
 {
   return _orientation;
+}
+
+
+std::string
+StellarAnchor::get_fullname(const std::string &separator) const
+{
+  // This needs to access Python object's parent/primary for full path
+  // For now, just return the c_name (base implementation)
+  // The Python side will handle the complex parent hierarchy
+  return get_c_name();
 }
 
 

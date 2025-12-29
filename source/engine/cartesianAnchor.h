@@ -27,8 +27,26 @@ class StellarAnchor;
 
 class CartesianAnchor : public AnchorBase
 {
+public:
+  CartesianAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      ReferenceFrame *frame,
+      LColor point_color,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
-  CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color);
+  CartesianAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      ReferenceFrame *frame,
+      LColor point_color,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
+
   CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame);
   virtual ~CartesianAnchor(void);
 
@@ -110,8 +128,21 @@ protected:
 
 class OriginAnchor : public CartesianAnchor
 {
+public:
+  OriginAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
-  OriginAnchor(unsigned int anchor_class, PyObject *ref_object);
+  OriginAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
 
 protected:
   MAKE_TYPE("OriginAnchor", CartesianAnchor);
@@ -120,8 +151,23 @@ protected:
 
 class FlatSurfaceAnchor : public OriginAnchor
 {
+public:
+  FlatSurfaceAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      PyObject *ref_surface,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
-  FlatSurfaceAnchor(unsigned int anchor_class, PyObject *ref_object, PyObject *ref_surface);
+  FlatSurfaceAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      PyObject *ref_surface,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
   virtual ~FlatSurfaceAnchor(void);
 
   void set_surface(PyObject *ref_surface);
@@ -139,8 +185,21 @@ protected:
 
 class ObserverAnchor : public CartesianAnchor
 {
+public:
+  ObserverAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
-  ObserverAnchor(unsigned int anchor_class, PyObject *ref_object);
+  ObserverAnchor(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
 
   virtual void update(double time, unsigned long int update_id);
 

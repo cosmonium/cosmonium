@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,14 +24,14 @@ class ObjectsDB(object):
         self.db = {}
 
     def add(self, body):
-        for name in body.names:
+        for name in body.get_names():
             self.db[name.upper()] = body
 
     def get(self, name):
         return self.db.get(name.upper(), None)
 
     def remove(self, body):
-        for name in body.names:
+        for name in body.get_names():
             self.db.pop(name.upper(), None)
 
     def startswith(self, text):
@@ -39,7 +39,8 @@ class ObjectsDB(object):
         result = []
         for key, value in self.db.items():
             if key.startswith(text):
-                result.append((value.get_exact_name(key), value))
+                name = value.get_name_from_upper(key)
+                result.append((name, value))
         return result
 
 
@@ -52,9 +53,9 @@ class GlobalObjectsDB(object):
         body.oid = len(self.oids)
         body.oid_color = int_to_color(body.oid)
         self.oids.append(body)
-        for name in body.names:
+        for name in body.get_names():
             self.db[name.upper()] = body
-        for name in body.source_names:
+        for name in body.get_source_names():
             self.db[name.upper()] = body
 
     def get(self, name):
@@ -76,7 +77,8 @@ class GlobalObjectsDB(object):
         result = []
         for key, value in self.db.items():
             if key.startswith(text):
-                result.append((value.get_exact_name(key), value))
+                name = value.get_name_from_upper(key)
+                result.append((name, value))
         return result
 
 

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ class StellarBody(StellarObject):
             system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
             # TODO: The system name should be translated correctly
             self.system = SimpleSystem(
-                self.get_name() + " System",
+                [self.get_name() + " System"],
                 source_names=[],
                 primary=self,
                 orbit=system_orbit,

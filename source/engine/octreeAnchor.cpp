@@ -29,8 +29,39 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
     double radius,
-    LColor point_color) :
-    SystemAnchor(ref_object, orbit, rotation, point_color),
+    LColor point_color,
+    const pvector<std::string> names,
+    const pvector<std::string> source_names,
+    const std::string &description) :
+    SystemAnchor(ref_object, orbit, rotation, point_color, names, source_names, description),
+    recreate_octree(true)
+{
+    bounding_radius = radius;
+  //TODO: Should be configurable
+  double top_level_absolute_magnitude = app_to_abs_mag(6.0, radius * sqrt(3));
+  double luminosity = abs_mag_to_lum(top_level_absolute_magnitude) * L0;
+  //TODO: position should be extracted from orbit
+  octree = new OctreeNode(0, /*this,*/ 0,
+      LPoint3d(10 * Ly, 10 * Ly, 10 * Ly),
+      radius * 2,
+      luminosity);
+  octree->parent = this;
+  //TODO: Should be done during rebuild
+  _intrinsic_luminosity = luminosity;
+  //TODO: Right now an octree contains anything
+  content = ~0;
+  recreate_octree = true;
+}
+
+OctreeAnchor::OctreeAnchor(PyObject *ref_object,
+    OrbitBase *orbit,
+    RotationBase *rotation,
+    double radius,
+    LColor point_color,
+    PyObject *names,
+    PyObject *source_names,
+    const std::string &description) :
+    SystemAnchor(ref_object, orbit, rotation, point_color, names, source_names, description),
     recreate_octree(true)
 {
     bounding_radius = radius;

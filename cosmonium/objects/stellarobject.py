@@ -18,6 +18,8 @@
 #
 
 
+import re
+
 from panda3d.core import LColor, LVector3d
 
 from ..astro.orbits import FixedPosition
@@ -31,13 +33,12 @@ from ..components.elements.halo import Halo
 from ..engine.anchors import CartesianAnchor
 from ..engine.anchors import DynamicStellarAnchor
 from ..foundation import CompositeObject
-from ..namedobject import NamedObject
 from ..scene.sceneanchor import SceneAnchor
 from ..utils import srgb_to_linear
 from .. import settings
 
 
-class StellarObject(NamedObject):
+class StellarObject:
     context = None
     anchor_class = 0
     has_rotation_axis = False
@@ -55,6 +56,7 @@ class StellarObject(NamedObject):
     nb_obs = 0
     nb_visibility = 0
     nb_instance = 0
+    to_alphanum = re.compile('[^a-zA-Z0-9]')
 
     def __init__(
         self,
@@ -67,7 +69,6 @@ class StellarObject(NamedObject):
         point_color=None,
         description='',
     ):
-        NamedObject.__init__(self, names, source_names, description)
         self.system = None
         self.body_class = body_class
         if point_color is None:
@@ -76,7 +77,9 @@ class StellarObject(NamedObject):
         # if not (orbit.dynamic or rotation.dynamic):
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         # else:
-        self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, frame, point_color)
+        self.anchor = self.create_anchor(
+            self.anchor_class, orbit, rotation, frame, point_color, names, source_names, description
+        )
         self.scene_anchor = SceneAnchor(
             self.get_ascii_name() + '-scene-anchor',
             self.anchor,
@@ -94,6 +97,7 @@ class StellarObject(NamedObject):
         # Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         # Components
+        self.label = None
         self.orbit_object = None
         self.rotation_axis = None
         self.reference_axes = None
@@ -111,6 +115,64 @@ class StellarObject(NamedObject):
         self.components = CompositeObject(self.get_ascii_name())
         self.components.set_scene_anchor(self.scene_anchor)
 
+    def get_names(self):
+        return self.anchor.get_names()
+
+    def set_names(self, names):
+        self.anchor.set_names(names)
+
+    def get_source_names(self):
+        return self.anchor.get_source_names()
+
+    def get_friendly_name(self):
+        return self.anchor.get_friendly_name()
+
+    def get_name(self):
+        return self.anchor.get_name()
+
+    def get_c_name(self):
+        return self.anchor.get_c_name()
+
+    def get_ascii_name(self):
+        name = self.to_alphanum.sub('x', self.get_c_name())
+        if not name[0].isalpha():
+            name = 'x' + name
+        return name
+
+    def get_exact_name(self, text):
+        return self.anchor.get_exact_name(text)
+
+    def get_description(self):
+        return self.anchor.get_description()
+
+    def create_label_instance(self):
+        if not self.anchor.has_orbit() or isinstance(self.anchor.orbit, FixedPosition):
+            return FixedOrbitLabel(self.get_ascii_name() + '-label', self)
+        else:
+            return StellarBodyLabel(self.get_ascii_name() + '-label', self)
+
+    def create_label(self):
+        if self.label is None:
+            self.label = self.create_label_instance()
+        return self.label
+
+    def remove_label(self):
+        if self.label is not None:
+            self.label.remove_instance()
+            self.label = None
+
+    def show_label(self):
+        if self.label:
+            self.label.show()
+
+    def hide_label(self):
+        if self.label:
+            self.label.hide()
+
+    def toggle_label(self):
+        if self.label:
+            self.label.toggle_shown()
+
     def set_parent(self, parent):
         self.parent = parent
 
@@ -120,11 +182,13 @@ class StellarObject(NamedObject):
         self.lights = lights
         self.components.set_lights(lights)
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names, description):
         if rotation is None and orbit is None:
-            return CartesianAnchor(anchor_class, self, frame, point_color)
+            return CartesianAnchor(anchor_class, self, frame, point_color, names, source_names, description)
         else:
-            return DynamicStellarAnchor(anchor_class, self, orbit, rotation, point_color)
+            return DynamicStellarAnchor(
+                anchor_class, self, orbit, rotation, point_color, names, source_names, description
+            )
 
     def is_system(self):
         return False
@@ -162,15 +226,6 @@ class StellarObject(NamedObject):
             return fullname + separator + name
         else:
             return name
-
-    def create_label_instance(self):
-        if not self.anchor.has_orbit() or isinstance(self.anchor.orbit, FixedPosition):
-            return FixedOrbitLabel(self.get_ascii_name() + '-label', self)
-        else:
-            return StellarBodyLabel(self.get_ascii_name() + '-label', self)
-
-    def get_description(self):
-        return self.description
 
     def create_components(self):
         if self.has_rotation_axis:
@@ -223,22 +278,37 @@ class StellarObject(NamedObject):
     def set_rotation(self, rotation):
         self.anchor.rotation = rotation
 
-    def find_by_name(self, name, name_up=None):
-        if self.is_named(name, name_up):
+    def _find_by_name(self, name_up):
+        if self._is_named(name_up):
             return self
         else:
             return None
 
-    def is_named(self, name, name_up=None):
-        if name_up is None:
-            name_up = name.upper()
-        for name in self.names:
+    def find_by_name(self, name):
+        name_up = name.upper()
+        return self._find_by_name(name_up)
+
+    def _is_named(self, name_up):
+        for name in self.get_names():
             if name.upper() == name_up:
                 return True
-        for name in self.source_names:
+        for name in self.get_source_names():
             if name.upper() == name_up:
                 return True
         return False
+
+    def is_named(self, name):
+        name_up = name.upper()
+        return self._is_named(name_up)
+
+    def get_name_from_upper(self, name_up):
+        for name in self.get_names():
+            if name.upper() == name_up:
+                return name
+        for name in self.get_source_names():
+            if name.upper() == name_up:
+                return name
+        return None
 
     def set_focused(self, focused):
         self.focused = focused

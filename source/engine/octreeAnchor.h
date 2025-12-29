@@ -26,12 +26,25 @@ class OctreeNode;
 
 class OctreeAnchor : public SystemAnchor
 {
+public:
+  OctreeAnchor(PyObject *ref_object,
+      OrbitBase *orbit,
+      RotationBase *rotation,
+      double radius,
+      LColor point_color,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
   OctreeAnchor(PyObject *ref_object,
       OrbitBase *orbit,
       RotationBase *rotation,
       double radius,
-      LColor point_color);
+      LColor point_color,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
 
   virtual void traverse(AnchorTraverser &visitor);
   virtual void rebuild(void);

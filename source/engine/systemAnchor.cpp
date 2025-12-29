@@ -26,8 +26,23 @@ TypeHandle SystemAnchor::_type_handle;
 SystemAnchor::SystemAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
-    LColor point_color) :
-    StellarAnchor(System, ref_object, orbit, rotation, point_color),
+    LColor point_color,
+    const pvector<std::string> names,
+    const pvector<std::string> source_names,
+    const std::string &description) :
+    StellarAnchor(System, ref_object, orbit, rotation, point_color, names, source_names, description),
+    primary(nullptr)
+{
+}
+
+SystemAnchor::SystemAnchor(PyObject *ref_object,
+    OrbitBase *orbit,
+    RotationBase *rotation,
+    LColor point_color,
+    PyObject *names,
+    PyObject *source_names,
+    const std::string &description) :
+    StellarAnchor(System, ref_object, orbit, rotation, point_color, names, source_names, description),
     primary(nullptr)
 {
 }

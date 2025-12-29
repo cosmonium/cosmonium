@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,20 +20,18 @@
 
 from ...bodyclass import bodyClasses
 from ...foundation import LabelledObject
-from ...namedobject import NamedObject
 from ... import settings
 
 from .background_label import BackgroundLabel
 
 
-class Constellation(NamedObject, LabelledObject):
+class Constellation(LabelledObject):
     ignore_light = True
     default_shown = True
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
     def __init__(self, name, center, boundary):
-        NamedObject.__init__(self, name, [])
         LabelledObject.__init__(self, name)
         self.center = center
         self.boundary = boundary

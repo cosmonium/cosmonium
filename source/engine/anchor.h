@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2023 Laurent Deru.
+ * Copyright (C) 2018-2025 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,11 @@
 
 #include "referenceCount.h"
 #include "pandabase.h"
+#include "pvector.h"
 #include "luse.h"
-#include"type_utils.h"
+#include "type_utils.h"
+#include <string>
+#include <algorithm>
 
 class AnchorTraverser;
 class CameraAnchor;
@@ -66,7 +69,23 @@ PUBLISHED:
     OctreeSystem = 8
   };
 
-  AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color);
+public:
+  AnchorBase(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      LColor point_color,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
+PUBLISHED:
+  AnchorBase(
+      unsigned int anchor_class,
+      PyObject *ref_object,
+      LColor point_color,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
 
   virtual ~AnchorBase(void);
 
@@ -77,6 +96,21 @@ PUBLISHED:
   LColor get_point_color(void) const;
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
+
+  // Name management methods
+  pvector<std::string> _get_names(void) const;
+  void set_names(const pvector<std::string> names);
+  std::string get_friendly_name(void) const;
+  std::string get_name(void) const;
+  unsigned int get_num_names(void) const;
+  std::string get_name_at(unsigned int index) const;
+  unsigned int get_num_source_names(void) const;
+  std::string get_source_name_at(unsigned int index) const;
+  std::string get_c_name(void) const;
+  std::string get_description(void) const;
+
+  MAKE_SEQ(get_names, get_num_names, get_name_at);
+  MAKE_SEQ(get_source_names, get_num_source_names, get_source_name_at);
 
   virtual bool is_stellar(void) const = 0;
 
@@ -177,6 +211,10 @@ PUBLISHED:
 
 protected:
   double bounding_radius;
+  // Name management data
+  pvector<std::string> names;
+  pvector<std::string> source_names;
+  std::string description;
 
 public:
   // Temporary

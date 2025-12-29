@@ -27,12 +27,25 @@ class RotationBase;
 
 class StellarAnchor : public AnchorBase
 {
+public:
+  StellarAnchor(unsigned int anchor_class,
+      PyObject *ref_object,
+      OrbitBase *orbit,
+      RotationBase *rotation,
+      LColor point_color,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
   StellarAnchor(unsigned int anchor_class,
       PyObject *ref_object,
       OrbitBase *orbit,
       RotationBase *rotation,
-      LColor point_color);
+      LColor point_color,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
   virtual ~StellarAnchor(void);
 
   virtual bool is_stellar(void) const;
@@ -70,6 +83,8 @@ PUBLISHED:
   virtual LQuaterniond get_equatorial_rotation(void) const;
 
   virtual LQuaterniond get_sync_rotation(void) const;
+
+  virtual std::string get_fullname(const std::string &separator = "/") const;
 
   virtual double get_absolute_magnitude(void) const;
 

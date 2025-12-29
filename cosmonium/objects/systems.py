@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,8 +51,8 @@ class StellarSystem(StellarObject):
         self.primary = None
         self.has_halo = False
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
-        return SystemAnchor(self, orbit, rotation, point_color)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names, description):
+        return SystemAnchor(self, orbit, rotation, point_color, names, source_names, description)
 
     def is_system(self):
         return True
@@ -71,14 +71,12 @@ class StellarSystem(StellarObject):
         for child in self.children:
             child.apply_func(func)
 
-    def find_by_name(self, name, name_up=None):
-        if name_up is None:
-            name_up = name.upper()
-        if self.is_named(name, name_up):
+    def _find_by_name(self, name_up):
+        if self._is_named(name_up):
             return self
         else:
             for child in self.children:
-                found = child.find_by_name(name, name_up)
+                found = child._find_by_name(name_up)
                 if found is not None:
                     return found
             return None
@@ -87,10 +85,11 @@ class StellarSystem(StellarObject):
         child = self.children_map.get(name)
         if child is not None:
             return child
+        name_up = name.upper()
         for child in self.children:
-            if child.is_named(name):
+            if child._is_named(name_up):
                 return child
-            elif isinstance(child, SimpleSystem) and child.primary is not None and child.primary.is_named(name):
+            elif isinstance(child, SimpleSystem) and child.primary is not None and child.primary._is_named(name_up):
                 if return_system:
                     return child
                 else:
@@ -214,8 +213,8 @@ class OctreeSystem(StellarSystem):
         self.radius = radius
         StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color):
-        return OctreeAnchor(self, orbit, rotation, self.radius, point_color)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
+        return OctreeAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)
 
     def dumpOctree(self):
         self.anchor.dump_octree()

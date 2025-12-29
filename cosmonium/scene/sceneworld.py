@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,13 @@
 #
 
 
+import re
+
 from panda3d.core import LColor, LVector3d
 
 from ..astro.frame import AbsoluteReferenceFrame
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
 from ..foundation import CompositeObject
-from ..namedobject import NamedObject
 
 from .sceneanchor import SceneAnchorCollection
 from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
@@ -238,19 +239,60 @@ class Worlds:
             world.check_settings()
 
 
-class SceneWorld(NamedObject):
+class SceneWorld:
 
     virtual_object = False
     background = False
     support_offset_body_center = False
     stellar_object = False
+    to_alphanum = re.compile('[^a-zA-Z0-9]')
 
-    def __init__(self, name):
-        NamedObject.__init__(self, [name], None, None)
+    def __init__(self):
         self.anchor = None
         self.scene_anchor = None
         self.parent = None
         self.mover = None
+
+    # Delegate name management to anchor when it exists
+    def get_names(self):
+        if self.anchor:
+            return self.anchor.get_names()
+        return ['']
+
+    def set_names(self, names):
+        if self.anchor:
+            self.anchor.set_names(names)
+
+    def get_friendly_name(self):
+        if self.anchor:
+            return self.anchor.get_friendly_name()
+        return ''
+
+    def get_name(self):
+        if self.anchor:
+            return self.anchor.get_name()
+        return ''
+
+    def get_c_name(self):
+        if self.anchor:
+            return self.anchor.get_c_name()
+        return ''
+
+    def get_ascii_name(self):
+        name = self.to_alphanum.sub('x', self.get_c_name())
+        if not name[0].isalpha():
+            name = 'x' + name
+        return name
+
+    def get_fullname(self, separator='/'):
+        if self.anchor:
+            return self.anchor.get_fullname(separator)
+        return ''
+
+    def get_description(self):
+        if self.anchor:
+            return self.anchor.get_description()
+        return ''
 
     def init(self):
         pass
@@ -261,8 +303,8 @@ class SceneWorld(NamedObject):
 
 class SimpleWorld(SceneWorld):
     def __init__(self, name):
-        SceneWorld.__init__(self, name)
-        self.anchor = self.create_anchor()
+        SceneWorld.__init__(self)
+        self.anchor = self.create_anchor(name)
         self.anchor.body = self
         self.scene_anchor = self.create_scene_anchor()
         self.controller = None
@@ -278,7 +320,7 @@ class SimpleWorld(SceneWorld):
         if self.controller is not None:
             self.controller.init()
 
-    def create_anchor(self):
+    def create_anchor(self, name):
         raise NotImplementedError()
 
     def create_scene_anchor(self):
@@ -402,8 +444,8 @@ class CartesianWorld(SimpleWorld):
         SimpleWorld.__init__(self, name)
         self.anchor.set_bounding_radius(self.get_bounding_radius())
 
-    def create_anchor(self):
-        return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame())
+    def create_anchor(self, name):
+        return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame(), LColor(), [name], [], '')
 
     def create_scene_anchor(self):
         return SceneAnchor(self.get_ascii_name() + '-scene-anchor', self.anchor, False, LColor(), True)
@@ -419,8 +461,8 @@ class OriginCenteredWorld(SimpleWorld):
     def __init__(self, name):
         SimpleWorld.__init__(self, name)
 
-    def create_anchor(self):
-        return OriginAnchor()
+    def create_anchor(self, name):
+        return OriginAnchor(0, self, [name], [], '')
 
     def create_scene_anchor(self):
         return AbsoluteSceneAnchor(self.anchor)
@@ -432,8 +474,8 @@ class FlatTerrainWorld(OriginCenteredWorld):
         OriginCenteredWorld.__init__(self, name)
         self.model_body_center_offset = 0.0
 
-    def create_anchor(self):
-        return FlatSurfaceAnchor(0, self, self.surface)
+    def create_anchor(self, name):
+        return FlatSurfaceAnchor(0, self, self.surface, [name], [], '')
 
     def set_terrain(self, surface):
         self.remove_component(self.surface)
@@ -465,8 +507,8 @@ class ObserverCenteredWorld(SimpleWorld):
         SimpleWorld.__init__(self, name)
         self.components.visible = True
 
-    def create_anchor(self):
-        return ObserverAnchor(0, self)
+    def create_anchor(self, name):
+        return ObserverAnchor(0, self, [name], [], '')
 
     def create_scene_anchor(self):
         return ObserverSceneAnchor(self.anchor, background=self.background)

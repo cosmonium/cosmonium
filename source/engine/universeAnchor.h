@@ -24,12 +24,25 @@
 
 class UniverseAnchor : public OctreeAnchor
 {
+public:
+  UniverseAnchor(PyObject *ref_object,
+      OrbitBase *orbit,
+      RotationBase *rotation,
+      double radius,
+      LColor point_color,
+      const pvector<std::string> names,
+      const pvector<std::string> source_names,
+      const std::string &description);
+
 PUBLISHED:
   UniverseAnchor(PyObject *ref_object,
       OrbitBase *orbit,
       RotationBase *rotation,
       double radius,
-      LColor point_color);
+      LColor point_color,
+      PyObject *names = nullptr,
+      PyObject *source_names = nullptr,
+      const std::string &description = "");
   virtual void traverse(AnchorTraverser &visitor);
 
   MAKE_TYPE("UniverseAnchor", OctreeAnchor);
