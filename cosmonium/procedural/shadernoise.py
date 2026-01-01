@@ -591,6 +591,46 @@ class NoiseMul(NoiseSource):
         return parameters
 
 
+class NoiseDiv(NoiseSource):
+    def __init__(self, noise_a, noise_b, name=None):
+        NoiseSource.__init__(self, name, 'div')
+        self.noise_a = noise_a
+        self.noise_b = noise_b
+
+    def get_id(self):
+        return self.noise_a.get_id() + "-div-" + self.noise_b.get_id()
+
+    def noise_uniforms(self, code):
+        self.noise_a.noise_uniforms(code)
+        self.noise_b.noise_uniforms(code)
+
+    def noise_extra(self, program, code):
+        self.noise_a.noise_extra(program, code)
+        self.noise_b.noise_extra(program, code)
+
+    def noise_func(self, code):
+        self.noise_a.noise_func(code)
+        self.noise_b.noise_func(code)
+        code.append('float noise_div_%d(vec3 point)' % self.num_id)
+        code.append('{')
+        code.append('  float value_a;')
+        code.append('  float value_b;')
+        self.noise_a.noise_value(code, 'value_a', 'point')
+        self.noise_b.noise_value(code, 'value_b', 'point')
+        code.append('  return value_a / value_b;')
+        code.append('}')
+
+    def noise_value(self, code, value, point):
+        code.append('%s = noise_div_%d(%s);' % (value, self.num_id, point))
+
+    def update(self, instance):
+        self.noise_a.update(instance)
+        self.noise_b.update(instance)
+
+    def get_user_parameters(self):
+        return self.noise_a.get_user_parameters() + self.noise_b.get_user_parameters()
+
+
 class NoisePow(NoiseSource):
     def __init__(self, noise_a, noise_b, name=None):
         NoiseSource.__init__(self, name, 'pow')

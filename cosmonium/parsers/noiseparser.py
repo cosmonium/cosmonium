@@ -21,7 +21,7 @@
 from ..astro import units
 from ..procedural.shadernoise import NoiseConst, NoiseMap, PositionMap
 from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
-from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoisePow, NoiseExp, NoiseThreshold
+from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoiseDiv, NoisePow, NoiseExp, NoiseThreshold
 from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
 from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
 from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
@@ -91,6 +91,12 @@ class NoiseYamlParser(YamlParser):
         return result
 
     def decode_noise_dict(self, data):
+        # Import NoiseSource here to avoid circular dependency issues
+        from ..procedural.shadernoise import NoiseSource
+
+        # If data is already a Noise object, return it directly
+        if isinstance(data, NoiseSource):
+            return data
         if isinstance(data, (float, int)):
             return NoiseConst(data)
         (func, parameters) = self.get_type_and_data(data)
@@ -112,6 +118,12 @@ class NoiseYamlParser(YamlParser):
                 self.register_noise_parser(alias, parser)
             else:
                 print("Function", func, "unknown")
+        # Support Python syntax via python: key
+        python_code = data.get('python')
+        if python_code is not None:
+            from .noisepythonparser import NoisePythonParser
+
+            return NoisePythonParser(yaml_parser=self).compile(python_code)
         func = data.get('func')
         if func is None:
             func = data.get('noise')
@@ -142,6 +154,13 @@ def create_mul_noise(parser, data, length_scale):
     name = data.get('name', None)
     noises = parser.decode_noise_list(data.get('factors'))
     return NoiseMul(noises, name=name)
+
+
+def create_div_noise(parser, data, length_scale):
+    name = data.get('name', None)
+    a = parser.decode_noise_dict(data.get('dividend'))
+    b = parser.decode_noise_dict(data.get('divisor'))
+    return NoiseDiv(a, b, name=name)
 
 
 def create_pow_noise(parser, data, length_scale):
@@ -419,9 +438,43 @@ def create_rotate_noise(parser, data, length_scale):
     return NoiseRotate(main, angle, axis, name=name)
 
 
+def create_position_map(parser, data, length_scale):
+    """Create a PositionMap noise that scales and offsets the input position."""
+    noise = parser.decode_noise_dict(data.get("noise"))
+    scale = data.get("pos-scale", 1.0)
+    offset = data.get("pos-offset", 0.0)
+    offset /= length_scale
+    dynamic = data.get("name") is not None
+    name = data.get("name", None)
+    return PositionMap(noise, offset, scale, dynamic=dynamic, name=name)
+
+
+def create_noise_map(parser, data, length_scale):
+    """Create a NoiseMap that remaps the output range of a noise function."""
+    noise = parser.decode_noise_dict(data.get("noise"))
+    min_value = data.get("min", None)
+    max_value = data.get("max", None)
+
+    # If min/max not specified, compute from scale/offset
+    if min_value is None and max_value is None:
+        scale = data.get("scale", 1.0)
+        offset = data.get("offset", 0.0)
+        min_value = -scale + offset
+        max_value = scale + offset
+    else:
+        # Use defaults if only one is specified
+        if min_value is None:
+            min_value = -1.0
+        if max_value is None:
+            max_value = 1.0
+
+    return NoiseMap(noise, min_value, max_value)
+
+
 NoiseYamlParser.register_noise_parser('add', create_add_noise)
 NoiseYamlParser.register_noise_parser('sub', create_sub_noise)
 NoiseYamlParser.register_noise_parser('mul', create_mul_noise)
+NoiseYamlParser.register_noise_parser('div', create_div_noise)
 NoiseYamlParser.register_noise_parser('pow', create_pow_noise)
 NoiseYamlParser.register_noise_parser('exp', create_exp_noise)
 NoiseYamlParser.register_noise_parser('threshold', create_threshold_noise)
@@ -454,3 +507,5 @@ NoiseYamlParser.register_noise_parser('stegu:cellulardiff', create_stegu_cellula
 NoiseYamlParser.register_noise_parser('iq:perlin', create_iq_perlin_noise)
 NoiseYamlParser.register_noise_parser('iq:gradient', create_iq_gradient_noise)
 NoiseYamlParser.register_noise_parser('sincos', create_sincos_noise)
+NoiseYamlParser.register_noise_parser('pos-map', create_position_map)
+NoiseYamlParser.register_noise_parser('noise-map', create_noise_map)
