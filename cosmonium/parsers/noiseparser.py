@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +19,27 @@
 
 
 from ..astro import units
-from ..procedural.shadernoise import NoiseConst, NoiseMap, PositionMap
-from ..procedural.shadernoise import NoiseClamp, NoiseMin, NoiseMax, NegNoise
-from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoiseDiv, NoisePow, NoiseExp, NoiseThreshold
-from ..procedural.shadernoise import RidgedNoise, AbsNoise, FbmNoise, SquareNoise, CubeNoise
-from ..procedural.shadernoise import NoiseWarp, Noise1D, NoiseCoord, SpiralNoise, NoiseRotate
-from ..procedural.shadernoise import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
-from ..procedural.shadernoise import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
-from ..procedural.shadernoise import QuilezPerlin3D, QuilezGradientNoise3D
-from ..procedural.shadernoise import SinCosNoise
+from ..procedural.primitives.arithmetic import NegNoise, NoiseAdd, NoiseDiv, NoiseMul, NoisePow, NoiseSub
+from ..procedural.primitives.fbm import FbmNoise
+from ..procedural.primitives.functions import NoiseMap, NoiseThreshold, RidgedNoise
+from ..procedural.primitives.math import (
+    AbsNoise,
+    CubeNoise,
+    NoiseClamp,
+    NoiseExp,
+    NoiseMax,
+    NoiseMin,
+    SquareNoise,
+)
+from ..procedural.primitives.position import Noise1D, NoiseRotate, PositionMap
+from ..procedural.primitives.spiral import SpiralNoise
+from ..procedural.primitives.warp import NoiseWarp
+
+from ..procedural.sources.gpunoiselib import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
+from ..procedural.sources.quilez import QuilezPerlin3D, QuilezGradientNoise3D
+from ..procedural.sources.simple import NoiseConst, NoiseCoord
+from ..procedural.sources.sincos import SinCosNoise
+from ..procedural.sources.stegu import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
 
 from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import YamlParser

@@ -40,9 +40,8 @@ Supported Syntax:
 
 import ast
 
-from ..procedural.shadernoise import NoiseConst, NoiseCoord
-from ..procedural.shadernoise import NoiseAdd, NoiseSub, NoiseMul, NoiseDiv, NoisePow
-from ..procedural.shadernoise import NegNoise
+from ..procedural.primitives.arithmetic import NegNoise, NoiseAdd, NoiseSub, NoiseMul, NoiseDiv, NoisePow
+from ..procedural.sources.simple import NoiseConst, NoiseCoord
 
 # Import all the create_*() functions from noiseparser
 from .noiseparser import (

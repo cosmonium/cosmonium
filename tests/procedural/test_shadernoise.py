@@ -24,21 +24,10 @@ import math
 
 from panda3d.core import LPoint3
 
+from cosmonium.procedural.primitives.arithmetic import NegNoise, NoiseAdd, NoiseDiv, NoiseMul, NoisePow, NoiseSub
+from cosmonium.procedural.primitives.math import AbsNoise, NoiseClamp, NoiseExp, NoiseMax, NoiseMin
 from cosmonium.procedural.shadernoise import NoiseSource
-from cosmonium.procedural.shadernoise import NoiseCoord, NoiseConst
-from cosmonium.procedural.shadernoise import (
-    AbsNoise,
-    NegNoise,
-    NoiseAdd,
-    NoiseClamp,
-    NoiseDiv,
-    NoiseExp,
-    NoiseMax,
-    NoiseMin,
-    NoiseMul,
-    NoisePow,
-    NoiseSub,
-)
+from cosmonium.procedural.sources.simple import NoiseCoord, NoiseConst
 
 from ..glsl import run_glsl_test
 
