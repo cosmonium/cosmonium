@@ -9,3 +9,7 @@
   - `TestEquivalence` - Test equivalence between YAML and Python syntax
   - `TestIntegrationWithYamlParser` - Test integration with the YAML parser
   - `TestEdgeCases` - Test edge and corner cases
+- `test_shadernoise.py` - Unit tests for shader noise (requires GPU with compute shaders support
+  - `TestSimpleSources` - Test simple source of noise data
+  - `TestArithmetic` - Test arithmetic operations
+  - `TestMathFunctions` - Test basic math functions
