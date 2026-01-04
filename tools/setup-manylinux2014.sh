@@ -5,8 +5,8 @@ set -x
 
 BASEDIR=`pwd`
 URL=https://github.com/cosmonium/panda3d/releases/download/
-VERSION=1.11.0.dev3844
-FULL_VERSION=${VERSION}-g062e3365fd
+VERSION=1.11.0.dev3918
+FULL_VERSION=${VERSION}-g3c852c8d72
 
 PANDA3D_RPM=panda3d-$VERSION.x86_64.rpm
 EXTRA_INCLUDES=extra-includes.$VERSION.zip
