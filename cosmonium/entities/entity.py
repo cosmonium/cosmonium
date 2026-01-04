@@ -27,7 +27,7 @@ from ..foundation import VisibleObject
 from ..parameters import ParametersGroup
 from ..shaders.base import AutoShader
 from ..shaders.lighting.scattering import NoScattering
-from ..shadows import MultiShadows
+from ..shadows.manager import MultiShadows
 from .. import settings
 
 from .datasource import DataSourcesHandler

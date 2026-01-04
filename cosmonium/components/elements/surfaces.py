@@ -22,7 +22,8 @@ from math import floor, ceil
 from panda3d.core import LVector3, LQuaternion, LVector3d, LPoint3d
 
 from ...entities.entity import Entity
-from ...shadows import SphereShadowCaster, CustomShadowMapShadowCaster
+from ...shadows.shadowmap import CustomShadowMapShadowCaster
+from ...shadows.sphere import SphereShadowCaster
 from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 
 from ...mathutil.surface_models import SphereModel, SpheroidModel, EllipsoidModel

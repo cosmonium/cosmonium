@@ -69,7 +69,8 @@ from cosmonium.procedural.water import WaterNode
 from cosmonium.scene.flatuniverse import FlatUniverse
 from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
 from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld
-from cosmonium.shadows import CustomShadowMapShadowCaster, PSSMShadowMapShadowCaster
+from cosmonium.shadows.pssm import PSSMShadowMapShadowCaster
+from cosmonium.shadows.shadowmap import CustomShadowMapShadowCaster
 from cosmonium.ui.splash import NoSplash
 from cosmonium import settings, mesh
 

@@ -21,7 +21,7 @@
 from panda3d.core import LQuaternion
 
 from ...entities.entity import Entity
-from ...shadows import RingShadowCaster
+from ...shadows.rings import RingsShadowCaster
 from ...shapes.rings import RingsShape
 
 
@@ -41,7 +41,7 @@ class Rings(Entity):
         self.body = body
 
     def do_create_shadow_caster_for(self, light_source):
-        return RingShadowCaster(light_source, self)
+        return RingsShadowCaster(light_source, self)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
         Entity.update_instance(self, scene_manager, camera_pos, camera_rot)
