@@ -247,7 +247,7 @@ class TestPatchNoNeighbours:
 
         result = neighbours.get_neighbours(PatchNoNeighbours.NORTH)
 
-        assert result == []
+        assert result == set()
 
     def test_get_all_neighbours_returns_empty(self):
         """Test that get_all_neighbours returns empty list."""
@@ -256,7 +256,7 @@ class TestPatchNoNeighbours:
 
         result = neighbours.get_all_neighbours()
 
-        assert result == []
+        assert result == set()
 
     def test_get_neighbour_lower_lod_returns_patch_lod(self):
         """Test that lower LOD returns the patch's LOD."""
@@ -278,7 +278,6 @@ class TestPatchNoNeighbours:
         neighbours.set_all_neighbours([], [], [], [])
         neighbours.clear_all_neighbours()
         neighbours.remove_detached_neighbours()
-        neighbours.replace_neighbours(PatchNoNeighbours.NORTH, [], [])
         neighbours.split_neighbours([])
         neighbours.merge_neighbours([])
         neighbours.calc_outer_tessellation_level([])

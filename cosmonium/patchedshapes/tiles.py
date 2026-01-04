@@ -27,7 +27,7 @@ from .. import settings
 from .boundingbox import PatchBoundingBox
 from .patchedshapes import CullingFrustum, QuadTreeNode
 from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer, PatchFactory
-from .patchneighbours import PatchNeighboursBase
+from .patchneighbours import PatchNeighboursInterface
 
 
 class Tile(PatchBase):
@@ -242,28 +242,28 @@ class TiledShape(PatchedShapeBase):
                 linked_object.create_root_patch(patch)
             north = self.find_root_patch(patch.x, patch.y + 1)
             if north is not None:
-                neighbours = north.neighbours.collect_neighbours(PatchNeighboursBase.SOUTH)
+                neighbours = north.neighbours.collect_neighbours(PatchNeighboursInterface.SOUTH)
                 for neighbour in neighbours:
-                    patch.add_neighbour(PatchNeighboursBase.NORTH, neighbour)
-                    neighbour.add_neighbour(PatchNeighboursBase.SOUTH, patch)
+                    patch.add_neighbour(PatchNeighboursInterface.NORTH, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursInterface.SOUTH, patch)
             east = self.find_root_patch(patch.x + 1, patch.y)
             if east is not None:
-                neighbours = east.neighbours.collect_neighbours(PatchNeighboursBase.WEST)
+                neighbours = east.neighbours.collect_neighbours(PatchNeighboursInterface.WEST)
                 for neighbour in neighbours:
-                    patch.add_neighbour(PatchNeighboursBase.EAST, neighbour)
-                    neighbour.add_neighbour(PatchNeighboursBase.WEST, patch)
+                    patch.add_neighbour(PatchNeighboursInterface.EAST, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursInterface.WEST, patch)
             south = self.find_root_patch(patch.x, patch.y - 1)
             if south is not None:
-                neighbours = south.neighbours.collect_neighbours(PatchNeighboursBase.NORTH)
+                neighbours = south.neighbours.collect_neighbours(PatchNeighboursInterface.NORTH)
                 for neighbour in neighbours:
-                    patch.add_neighbour(PatchNeighboursBase.SOUTH, neighbour)
-                    neighbour.add_neighbour(PatchNeighboursBase.NORTH, patch)
+                    patch.add_neighbour(PatchNeighboursInterface.SOUTH, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursInterface.NORTH, patch)
             west = self.find_root_patch(patch.x - 1, patch.y)
             if west is not None:
-                neighbours = west.neighbours.collect_neighbours(PatchNeighboursBase.EAST)
+                neighbours = west.neighbours.collect_neighbours(PatchNeighboursInterface.EAST)
                 for neighbour in neighbours:
-                    patch.add_neighbour(PatchNeighboursBase.WEST, neighbour)
-                    neighbour.add_neighbour(PatchNeighboursBase.EAST, patch)
+                    patch.add_neighbour(PatchNeighboursInterface.WEST, neighbour)
+                    neighbour.add_neighbour(PatchNeighboursInterface.EAST, patch)
         return patch
 
     def split_patch(self, parent):
@@ -289,7 +289,7 @@ class TiledShape(PatchedShapeBase):
         self.add_root_patch(patch.x - 1, patch.y + 1)
         self.add_root_patch(patch.x, patch.y + 1)
         self.add_root_patch(patch.x + 1, patch.y + 1)
-        patch.calc_outer_tessellation_level(update)
+        patch.neighbours.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
         model_camera_pos = camera_pos / self.scale

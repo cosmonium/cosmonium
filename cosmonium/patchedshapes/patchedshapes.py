@@ -188,30 +188,6 @@ class PatchBase(Shape):
     def remove_layer(self, layer):
         self.layers.remove(layer)
 
-    def add_neighbour(self, face, neighbour):
-        return self.neighbours.add_neighbour(face, neighbour)
-
-    def set_all_neighbours(self, north, east, south, west):
-        return self.neighbours.set_all_neighbours(north, east, south, west)
-
-    def get_neighbours(self, face):
-        return self.neighbours.get_all_neighbours()
-
-    def collect_side_patches(self, side):
-        return self.neighbours.collect_side_patches(side)
-
-    def remove_detached_neighbours(self):
-        return self.neighbours.remove_detached_neighbours()
-
-    def split_neighbours(self, update):
-        return self.neighbours.split_neighbours(update)
-
-    def merge_neighbours(self, update):
-        return self.neighbours.merge_neighbours(update)
-
-    def calc_outer_tessellation_level(self, update):
-        self.neighbours.calc_outer_tessellation_level(update)
-
     def patch_done(self, early):
         self.quadtree_node.set_instance_ready(self.instance_ready)
         if self.instance is not None:
@@ -880,7 +856,7 @@ class PatchedShapeBase(Shape):
             if settings.debug_lod_split_merge:
                 print(frame, "Split", patch.str_id())
             self.split_patch(patch)
-            patch.split_neighbours(update)
+            patch.neighbours.split_neighbours(update)
             for linked_object in self.linked_objects:
                 linked_object.split_patch(patch)
                 linked_object.remove_patch_instance(patch)
@@ -925,7 +901,7 @@ class PatchedShapeBase(Shape):
             if settings.debug_lod_split_merge:
                 print(frame, "Merge", patch.str_id(), patch.quadtree_node.visible)
             self.merge_patch(patch)
-            patch.merge_neighbours(update)
+            patch.neighbours.merge_neighbours(update)
             if patch.quadtree_node.visible:
                 if settings.debug_lod_split_merge:
                     print(frame, "Show", patch.str_id(), patch.quadtree_node.patch_in_view, patch.instance_ready)
