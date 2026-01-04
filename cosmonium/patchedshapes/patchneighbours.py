@@ -137,27 +137,12 @@ class PatchNeighbours(PatchNeighboursBase):
         return lower_lod
 
     def remove_detached_neighbours(self):
-        valid = set()
         patch = self.patch
-        for neighbour in self.neighbours[self.NORTH]:
-            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.add(neighbour)
-        self.neighbours[self.NORTH] = valid
-        valid = set()
-        for neighbour in self.neighbours[self.SOUTH]:
-            if neighbour.x1 > patch.x0 and neighbour.x0 < patch.x1:
-                valid.add(neighbour)
-        self.neighbours[self.SOUTH] = valid
-        valid = set()
-        for neighbour in self.neighbours[self.EAST]:
-            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.add(neighbour)
-        self.neighbours[self.EAST] = valid
-        valid = set()
-        for neighbour in self.neighbours[self.WEST]:
-            if neighbour.y1 > patch.y0 and neighbour.y0 < patch.y1:
-                valid.add(neighbour)
-        self.neighbours[self.WEST] = valid
+
+        self.neighbours[self.NORTH] = {n for n in self.neighbours[self.NORTH] if n.x1 > patch.x0 and n.x0 < patch.x1}
+        self.neighbours[self.SOUTH] = {n for n in self.neighbours[self.SOUTH] if n.x1 > patch.x0 and n.x0 < patch.x1}
+        self.neighbours[self.EAST] = {n for n in self.neighbours[self.EAST] if n.y1 > patch.y0 and n.y0 < patch.y1}
+        self.neighbours[self.WEST] = {n for n in self.neighbours[self.WEST] if n.y1 > patch.y0 and n.y0 < patch.y1}
 
     def split_opposite_neighbours(self, face, news):
         opposite = self.opposite_face[face]
@@ -220,11 +205,19 @@ class PatchNeighbours(PatchNeighboursBase):
 
     def split_neighbours(self, update):
         (bl, br, tr, tl) = self.patch.children
-        tl.set_all_neighbours(self.get_neighbours(self.NORTH), set([tr]), set([bl]), self.get_neighbours(self.WEST))
-        tr.set_all_neighbours(self.get_neighbours(self.NORTH), self.get_neighbours(self.EAST), set([br]), set([tl]))
-        br.set_all_neighbours(set([tr]), self.get_neighbours(self.EAST), self.get_neighbours(self.SOUTH), set([bl]))
-        bl.set_all_neighbours(set([tl]), set([br]), self.get_neighbours(self.SOUTH), self.get_neighbours(self.WEST))
-        neighbours = self.get_all_neighbours()
+
+        north_neighbours = self.get_neighbours(self.NORTH)
+        east_neighbours = self.get_neighbours(self.EAST)
+        south_neighbours = self.get_neighbours(self.SOUTH)
+        west_neighbours = self.get_neighbours(self.WEST)
+
+        tl.set_all_neighbours(north_neighbours, {tr}, {bl}, west_neighbours)
+        tr.set_all_neighbours(north_neighbours, east_neighbours, {br}, {tl})
+        br.set_all_neighbours({tr}, east_neighbours, south_neighbours, {bl})
+        bl.set_all_neighbours({tl}, {br}, south_neighbours, west_neighbours)
+
+        old_neighbours = north_neighbours | east_neighbours | south_neighbours | west_neighbours
+
         self.split_opposite_neighbours(self.NORTH, [tl, tr])
         self.split_opposite_neighbours(self.EAST, [tr, br])
         self.split_opposite_neighbours(self.SOUTH, [bl, br])
@@ -235,7 +228,7 @@ class PatchNeighbours(PatchNeighboursBase):
             new.remove_detached_neighbours()
             new.calc_outer_tessellation_level(update)
         # print("Neighbours")
-        for neighbour in neighbours:
+        for neighbour in old_neighbours:
             neighbour.remove_detached_neighbours()
             neighbour.calc_outer_tessellation_level(update)
         self.clear_all_neighbours()
