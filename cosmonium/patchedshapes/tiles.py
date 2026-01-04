@@ -242,25 +242,25 @@ class TiledShape(PatchedShapeBase):
                 linked_object.create_root_patch(patch)
             north = self.find_root_patch(patch.x, patch.y + 1)
             if north is not None:
-                neighbours = north.collect_side_patches(PatchNeighboursBase.SOUTH)
+                neighbours = north.neighbours.collect_neighbours(PatchNeighboursBase.SOUTH)
                 for neighbour in neighbours:
                     patch.add_neighbour(PatchNeighboursBase.NORTH, neighbour)
                     neighbour.add_neighbour(PatchNeighboursBase.SOUTH, patch)
             east = self.find_root_patch(patch.x + 1, patch.y)
             if east is not None:
-                neighbours = east.collect_side_patches(PatchNeighboursBase.WEST)
+                neighbours = east.neighbours.collect_neighbours(PatchNeighboursBase.WEST)
                 for neighbour in neighbours:
                     patch.add_neighbour(PatchNeighboursBase.EAST, neighbour)
                     neighbour.add_neighbour(PatchNeighboursBase.WEST, patch)
             south = self.find_root_patch(patch.x, patch.y - 1)
             if south is not None:
-                neighbours = south.collect_side_patches(PatchNeighboursBase.NORTH)
+                neighbours = south.neighbours.collect_neighbours(PatchNeighboursBase.NORTH)
                 for neighbour in neighbours:
                     patch.add_neighbour(PatchNeighboursBase.SOUTH, neighbour)
                     neighbour.add_neighbour(PatchNeighboursBase.NORTH, patch)
             west = self.find_root_patch(patch.x - 1, patch.y)
             if west is not None:
-                neighbours = west.collect_side_patches(PatchNeighboursBase.EAST)
+                neighbours = west.neighbours.collect_neighbours(PatchNeighboursBase.EAST)
                 for neighbour in neighbours:
                     patch.add_neighbour(PatchNeighboursBase.WEST, neighbour)
                     neighbour.add_neighbour(PatchNeighboursBase.EAST, patch)

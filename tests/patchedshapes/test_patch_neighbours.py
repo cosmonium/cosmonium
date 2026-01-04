@@ -229,16 +229,6 @@ class TestPatchNeighbours:
         assert overlapping in neighbours.neighbours[PatchNeighbours.EAST]
         assert non_overlapping not in neighbours.neighbours[PatchNeighbours.EAST]
 
-    def test_collect_side_patches_leaf(self):
-        """Test collecting side patches from a leaf node."""
-        patch = create_mock_patch()
-        neighbours = PatchNeighbours(patch)
-
-        result = neighbours.collect_side_patches(PatchNeighbours.NORTH)
-
-        assert len(result) == 1
-        assert patch in result
-
 
 class TestPatchNoNeighbours:
     """Test suite for PatchNoNeighbours class."""
