@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ class LayoutDockWidget(DockWidgetBase):
         direction: str,
         widgets: list[DockWidgetBase],
         decoration_size: tuple[int],
+        rounded_corners: int,
         image=None,
         geom=None,
         proportions=None,
@@ -56,10 +57,17 @@ class LayoutDockWidget(DockWidgetBase):
         self.size = size
         self.direction = direction
         self.decoration_size = decoration_size
-        self.widget = DecoratedSizer(self.decoration_size, image, geom, direction, gaps=gaps)
+        self.widget = DecoratedSizer(decoration_size, rounded_corners, image, geom, direction, gaps=gaps)
         self.sizer = self.widget
         self.frame = None
         self.widgets = widgets
+        if rounded_corners:
+            delta = LVector4(max(decoration_size[0], (rounded_corners - decoration_size[0]) * 0.707))
+            self.widget_borders = LVector4(delta)
+        else:
+            self.widget_borders = LVector4(
+                decoration_size[0], decoration_size[0], decoration_size[1], decoration_size[1]
+            )
 
     def create(self, dock: Dock, parent, skin) -> None:
         self.widget.create(dock, parent, skin)
@@ -69,32 +77,22 @@ class LayoutDockWidget(DockWidgetBase):
             borders = LVector4(0)
             if self.direction == 'horizontal':
                 if len(self.widgets) == 1:
-                    borders = LVector4(
-                        self.decoration_size[0],
-                        self.decoration_size[0],
-                        self.decoration_size[1],
-                        self.decoration_size[1],
-                    )
+                    borders = self.widget_borders
                 elif i == 0:
-                    borders = LVector4(self.decoration_size[0], 0, self.decoration_size[1], self.decoration_size[1])
+                    borders = LVector4(self.widget_borders[0], 0, self.widget_borders[2], self.widget_borders[3])
                 elif i == len(self.widgets) - 1:
-                    borders = LVector4(0, self.decoration_size[0], self.decoration_size[1], self.decoration_size[1])
+                    borders = LVector4(0, self.widget_borders[1], self.widget_borders[2], self.widget_borders[3])
                 else:
-                    borders = LVector4(0, 0, self.decoration_size[1], self.decoration_size[1])
+                    borders = LVector4(0, 0, self.widget_borders[2], self.widget_borders[3])
             else:
                 if len(self.widgets) == 1:
-                    borders = LVector4(
-                        self.decoration_size[0],
-                        self.decoration_size[0],
-                        self.decoration_size[1],
-                        self.decoration_size[1],
-                    )
+                    borders = self.widget_borders
                 elif i == 0:
-                    borders = LVector4(self.decoration_size[0], self.decoration_size[0], 0, self.decoration_size[1])
+                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], 0, self.widget_borders[3])
                 elif i == len(self.widgets) - 1:
-                    borders = LVector4(self.decoration_size[0], self.decoration_size[0], self.decoration_size[1], 0)
+                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], self.widget_borders[2], 0)
                 else:
-                    borders = LVector4(self.decoration_size[0], self.decoration_size[0], 0, 0)
+                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], 0, 0)
             widget.add_to(dock, self, borders, skin)
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
@@ -104,8 +102,7 @@ class LayoutDockWidget(DockWidgetBase):
 
     def update_layout(self):
         min_size = self.sizer.update_min_size()
-        (width, height) = min_size
-        self.sizer.update((width, height))
+        self.sizer.update(min_size)
 
     def update(self, global_vars):
         has_changed = False

@@ -42,53 +42,105 @@ def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
         right = frame_size[0]
         top = 0
         bottom = -frame_size[1]
+
+    # Calculate UV coordinates for 9-slice mapping when texture is enabled
+    if texture:
+        u_left = 0.0
+        u_mid_left = 0.5
+        u_mid_right = 0.5
+        u_right = 1.0
+        v_top = 0.0
+        v_mid_top = 0.5
+        v_mid_bottom = 0.5
+        v_bottom = 1.0
+
     # Top left corner
     gvw.add_data3(left, 0, top)
-    gvw.add_data3(right - border_size[0], 0, top)
-    gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+    gvw.add_data3(left + border_size[0], 0, top)
+    gvw.add_data3(left + border_size[0], 0, top - border_size[1])
     gvw.add_data3(left, 0, top - border_size[1])
+    if texture:
+        gtw.add_data2(u_left, v_top)
+        gtw.add_data2(u_mid_left, v_top)
+        gtw.add_data2(u_mid_left, v_mid_top)
+        gtw.add_data2(u_left, v_mid_top)
 
-    # Top frame
+    # Top edge
     gvw.add_data3(left + border_size[0], 0, top)
     gvw.add_data3(right - border_size[0], 0, top)
     gvw.add_data3(right - border_size[0], 0, top - border_size[1])
     gvw.add_data3(left + border_size[0], 0, top - border_size[1])
+    if texture:
+        gtw.add_data2(u_mid_left, v_top)
+        gtw.add_data2(u_mid_right, v_top)
+        gtw.add_data2(u_mid_right, v_mid_top)
+        gtw.add_data2(u_mid_left, v_mid_top)
 
     # Top right corner
     gvw.add_data3(right - border_size[0], 0, top)
     gvw.add_data3(right, 0, top)
     gvw.add_data3(right, 0, top - border_size[1])
     gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+    if texture:
+        gtw.add_data2(u_mid_right, v_top)
+        gtw.add_data2(u_right, v_top)
+        gtw.add_data2(u_right, v_mid_top)
+        gtw.add_data2(u_mid_right, v_mid_top)
 
-    # left frame
+    # Left edge
     gvw.add_data3(left, 0, top - border_size[1])
     gvw.add_data3(left + border_size[0], 0, top - border_size[1])
     gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
     gvw.add_data3(left, 0, bottom + border_size[1])
+    if texture:
+        gtw.add_data2(u_left, v_mid_top)
+        gtw.add_data2(u_mid_left, v_mid_top)
+        gtw.add_data2(u_mid_left, v_mid_bottom)
+        gtw.add_data2(u_left, v_mid_bottom)
 
-    # bottom left corner
+    # Bottom left corner
     gvw.add_data3(left, 0, bottom + border_size[1])
     gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
     gvw.add_data3(left + border_size[0], 0, bottom)
     gvw.add_data3(left, 0, bottom)
+    if texture:
+        gtw.add_data2(u_left, v_mid_bottom)
+        gtw.add_data2(u_mid_left, v_mid_bottom)
+        gtw.add_data2(u_mid_left, v_bottom)
+        gtw.add_data2(u_left, v_bottom)
 
-    # Right frame
+    # Right edge
     gvw.add_data3(right - border_size[0], 0, top - border_size[1])
     gvw.add_data3(right, 0, top - border_size[1])
     gvw.add_data3(right, 0, bottom + border_size[1])
     gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
+    if texture:
+        gtw.add_data2(u_mid_right, v_mid_top)
+        gtw.add_data2(u_right, v_mid_top)
+        gtw.add_data2(u_right, v_mid_bottom)
+        gtw.add_data2(u_mid_right, v_mid_bottom)
 
-    # bottom right corner
+    # Bottom right corner
     gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
     gvw.add_data3(right, 0, bottom + border_size[1])
     gvw.add_data3(right, 0, bottom)
     gvw.add_data3(right - border_size[0], 0, bottom)
+    if texture:
+        gtw.add_data2(u_mid_right, v_mid_bottom)
+        gtw.add_data2(u_right, v_mid_bottom)
+        gtw.add_data2(u_right, v_bottom)
+        gtw.add_data2(u_mid_right, v_bottom)
 
-    # bottom left corner
+    # Bottom edge
     gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
     gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
     gvw.add_data3(right - border_size[0], 0, bottom)
     gvw.add_data3(left + border_size[0], 0, bottom)
+    if texture:
+        gtw.add_data2(u_mid_left, v_mid_bottom)
+        gtw.add_data2(u_mid_right, v_mid_bottom)
+        gtw.add_data2(u_mid_right, v_bottom)
+        gtw.add_data2(u_mid_left, v_bottom)
 
     for i in range(8):
         offset = i * 4

@@ -276,6 +276,7 @@ class UIConfigLoader:
         gaps = self.parse_gaps(data.get('gaps'))
         size = data.get('size', 32)
         decoration_size = data.get('decoration-size', (1, 1))
+        rounded_corners = data.get('rounded-corners', 0)
         orientation = data.get('orientation', 'horizontal')
         widgets = []
         for widget_data in data.get('widgets', []):
@@ -287,6 +288,7 @@ class UIConfigLoader:
             orientation,
             widgets,
             decoration_size=decoration_size,
+            rounded_corners=rounded_corners,
             alignments=alignments,
             borders=borders,
             gaps=gaps,
