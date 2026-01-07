@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ class DecoratedSizer(Sizer):
         self.geom = geom
         self.border_color = None
         self.element = None
+        self.frame_size = None
 
     def create(self, dock, parent, skin):
         self.element = UIElement('frame', class_='sizer', parent=parent.element)
@@ -48,11 +49,14 @@ class DecoratedSizer(Sizer):
         self.border_color = skin.get(self.element).border_color
 
     def update_frame(self):
+        if self.frame_size == self.get_size():
+            return
         size = self.get_size()
         self.frame['frameSize'] = (0, size[0], -size[1], 0)
         geom = FrameGeom(size, self.border, texture=False)
         geom.set_color(*self.border_color)
         self.frame['geom'] = geom
+        self.frame_size = size
 
     def set_pos(self, pos):
         Sizer.set_pos(self, pos)
