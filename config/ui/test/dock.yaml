@@ -19,7 +19,7 @@ dock:
         gaps: [2, 2]
         widgets:
           - type: text
-            text: '{{time.date}}'
+            text: '{time.date}'
             borders: 2
           - type: layout
             orientation: horizontal

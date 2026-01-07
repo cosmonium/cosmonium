@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ from direct.gui.DirectLabel import DirectLabel
 from typing import TYPE_CHECKING
 
 from ..skin import UIElement
-from ..templates.simple import SimpleTemplateParser
 from .base import DGuiDockWidget
 
 if TYPE_CHECKING:
@@ -33,16 +32,11 @@ if TYPE_CHECKING:
 
 class TextDockWidget(DGuiDockWidget):
 
-    def __init__(self, text: str, align, proportions=None, alignments=None, borders=None, index=None):
+    def __init__(self, template: str, align, proportions=None, alignments=None, borders=None, index=None):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
-        self.text_source = text
         self.align = align
-        self.template = None
+        self.template = template
         self.text = None
-
-    def compile(self):
-        parser = SimpleTemplateParser()
-        self.template = parser.create_template(self.text_source)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         label_element = UIElement('label', parent=parent.element)
