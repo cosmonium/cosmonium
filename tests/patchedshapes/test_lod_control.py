@@ -216,7 +216,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_initialization(self):
         """Test TextureOrVertexSizeLodControl initialization."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=12)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64, max_lod=12)
 
         assert lod_control.max_vertex_size == 2.0
         assert lod_control.density == 64
@@ -224,7 +224,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_get_density_for_with_texture(self):
         """Test getting density based on texture size."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64)
         lod_control.set_texture_size(512)
 
         # density = texture_size / max_vertex_size = 512 / 2.0 = 256
@@ -232,13 +232,13 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_get_density_for_without_texture(self):
         """Test getting density without texture."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64)
 
         assert lod_control.get_density_for(0) == 64
 
     def test_should_split_by_texture(self):
         """Test splitting based on texture size."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64, max_lod=10)
         lod_control.set_texture_size(256)
         patch = create_mock_patch(lod=3, density=128)
 
@@ -248,7 +248,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_should_split_by_vertex_size(self):
         """Test splitting based on vertex size when no texture."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64, max_lod=10)
         patch = create_mock_patch(lod=3, density=64)
 
         # Without texture, use vertex-based split logic
@@ -257,7 +257,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_should_not_split_by_vertex_size(self):
         """Test not splitting when vertex size is appropriate."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64, max_lod=10)
         patch = create_mock_patch(lod=3, density=64)
 
         # Apparent vertex size = 100 / 64 = 1.56 < 2.0
@@ -265,7 +265,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_should_merge_by_texture(self):
         """Test merging based on texture size."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64)
         lod_control.set_texture_size(256)
         patch = create_mock_patch(lod=5, density=128)
 
@@ -275,7 +275,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_should_merge_by_vertex_size(self):
         """Test merging based on vertex size when no texture."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64)
         patch = create_mock_patch(lod=5, density=64)
 
         # Without texture, use vertex-based merge logic
@@ -284,7 +284,7 @@ class TestTextureOrVertexSizeLodControl:
 
     def test_should_not_merge_by_vertex_size(self):
         """Test not merging when vertex size is too large."""
-        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = TextureOrVertexSizeLodControl(max_vertex_size=2, density=64)
         patch = create_mock_patch(lod=5, density=64)
 
         # Apparent vertex size = 120 / 64 = 1.875 > 2.0 / 1.1 = 1.82
@@ -296,15 +296,15 @@ class TestVertexSizeLodControl:
 
     def test_initialization(self):
         """Test VertexSizeLodControl initialization."""
-        lod_control = VertexSizeLodControl(max_vertex_size=3.0, density=32, max_lod=15)
+        lod_control = VertexSizeLodControl(max_vertex_size=3, density=32, max_lod=15)
 
-        assert lod_control.max_vertex_size == 3.0
+        assert lod_control.max_vertex_size == 3
         assert lod_control.density == 32
         assert lod_control.max_lod == 15
 
     def test_should_split_large_vertex_size(self):
         """Test splitting when vertex size is too large."""
-        lod_control = VertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = VertexSizeLodControl(max_vertex_size=2, density=64, max_lod=10)
         patch = create_mock_patch(lod=3, density=64)
 
         # Apparent vertex size = 200 / 64 = 3.125 > 2.0 * 1.1 = 2.2
@@ -312,7 +312,7 @@ class TestVertexSizeLodControl:
 
     def test_should_not_split_appropriate_vertex_size(self):
         """Test not splitting when vertex size is appropriate."""
-        lod_control = VertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = VertexSizeLodControl(max_vertex_size=2, density=64, max_lod=10)
         patch = create_mock_patch(lod=3, density=64)
 
         # Apparent vertex size = 120 / 64 = 1.875 < 2.0 * 1.1 = 2.2
@@ -320,14 +320,14 @@ class TestVertexSizeLodControl:
 
     def test_should_not_split_at_max_lod(self):
         """Test that splitting doesn't occur at max LOD."""
-        lod_control = VertexSizeLodControl(max_vertex_size=2.0, density=64, max_lod=5)
+        lod_control = VertexSizeLodControl(max_vertex_size=2, density=64, max_lod=5)
         patch = create_mock_patch(lod=5, density=64)
 
         assert lod_control.should_split(patch, 1000, 100) is False
 
     def test_should_merge_small_vertex_size(self):
         """Test merging when vertex size is small."""
-        lod_control = VertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = VertexSizeLodControl(max_vertex_size=2, density=64)
         patch = create_mock_patch(lod=5, density=64)
 
         # Apparent vertex size = 100 / 64 = 1.56 < 2.0 / 1.1 = 1.82
@@ -335,7 +335,7 @@ class TestVertexSizeLodControl:
 
     def test_should_not_merge_appropriate_vertex_size(self):
         """Test not merging when vertex size is appropriate."""
-        lod_control = VertexSizeLodControl(max_vertex_size=2.0, density=64)
+        lod_control = VertexSizeLodControl(max_vertex_size=2, density=64)
         patch = create_mock_patch(lod=5, density=64)
 
         # Apparent vertex size = 120 / 64 = 1.875 > 2.0 / 1.1 = 1.82
@@ -347,37 +347,37 @@ class TestVertexSizeMaxDistanceLodControl:
 
     def test_initialization(self):
         """Test VertexSizeMaxDistanceLodControl initialization."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.5, density=32, max_lod=10)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=32, max_lod=10)
 
         assert lod_control.max_distance == 1000.0
-        assert lod_control.max_vertex_size == 2.5
+        assert lod_control.max_vertex_size == 2
         assert lod_control.density == 32
         assert lod_control.max_lod == 10
 
     def test_should_instanciate_within_distance(self):
         """Test instantiation when within max distance."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.0, density=32)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=32)
         patch = create_mock_patch(visible=True)
 
         assert lod_control.should_instanciate(patch, 100, 500) is True
 
     def test_should_not_instanciate_beyond_distance(self):
         """Test not instantiating when beyond max distance."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.0, density=32)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=32)
         patch = create_mock_patch(visible=True)
 
         assert lod_control.should_instanciate(patch, 100, 1500) is False
 
     def test_should_not_instanciate_invisible(self):
         """Test not instantiating invisible patches regardless of distance."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.0, density=32)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=32)
         patch = create_mock_patch(visible=False)
 
         assert lod_control.should_instanciate(patch, 100, 500) is False
 
     def test_inherits_vertex_size_split_behavior(self):
         """Test that it inherits split behavior from VertexSizeLodControl."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.0, density=64, max_lod=10)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=64, max_lod=10)
         patch = create_mock_patch(lod=3, density=64)
 
         # Should behave like VertexSizeLodControl for split
@@ -386,7 +386,7 @@ class TestVertexSizeMaxDistanceLodControl:
 
     def test_inherits_vertex_size_merge_behavior(self):
         """Test that it inherits merge behavior from VertexSizeLodControl."""
-        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2.0, density=64)
+        lod_control = VertexSizeMaxDistanceLodControl(max_distance=1000.0, max_vertex_size=2, density=64)
         patch = create_mock_patch(lod=5, density=64)
 
         # Should behave like VertexSizeLodControl for merge
