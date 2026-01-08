@@ -24,7 +24,18 @@ Pytest configuration file for Cosmonium tests.
 This file provides global fixtures for testing.
 """
 
+import os
+import sys
+
 import pytest
+
+
+# Add lib/ directory to import path to be able to load the c++ libraries
+# Temporarily disabled as some tests fails with C++ library
+# sys.path.insert(1, os.path.join(os.path.dirname(__file__),'../lib'))
+
+# Add third-party/ directory to import path to be able to load the external libraries
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../third-party'))
 
 # ============================================================================
 # Fixtures copied from Panda3D test infrastructure to perform GLSL tests
