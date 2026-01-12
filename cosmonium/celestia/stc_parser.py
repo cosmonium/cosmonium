@@ -143,7 +143,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         distance = orbit.get_absolute_reference_point_at(0).length()
     if app_magnitude is not None and distance is not None:
         if distance <= 0:
-            print(names, distance, parent.anchor.body.names)
+            print(names, distance, parent.anchor.body.get_names())
             return None
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     if texture is not None:

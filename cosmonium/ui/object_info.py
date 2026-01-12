@@ -187,11 +187,11 @@ def stellar_object(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.names))
+    names = utils.join_names(bayer.decode_names(body.get_names()))
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
-    if body.description != '':
-        general.append([_("Description"), body.description])
+    if body.get_description() != '':
+        general.append([_("Description"), body.get_description()])
     texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
     texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
     return texts
@@ -201,7 +201,7 @@ def stellar_body(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.names))
+    names = utils.join_names(bayer.decode_names(body.get_names()))
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
     if body.oblateness is None or body.oblateness == 0.0:
@@ -228,8 +228,8 @@ def stellar_body(body):
     general.append([_("Atmosphere"), _("Yes") if body.atmosphere is not None else _("No")])
     general.append([_("Clouds"), _("Yes") if body.clouds is not None else _("No")])
     general.append([_("Rings"), _("Yes") if body.has_rings() else _("No")])
-    if body.description != '':
-        general.append([_("Description"), body.description])
+    if body.get_description() != '':
+        general.append([_("Description"), body.get_description()])
     if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
         texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
     else:
@@ -244,7 +244,7 @@ def star(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.names))
+    names = utils.join_names(bayer.decode_names(body.get_names()))
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
     general.append(
@@ -268,8 +268,8 @@ def star(body):
         ]
     )
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
-    if body.description != '':
-        general.append([_("Description"), body.description])
+    if body.get_description() != '':
+        general.append([_("Description"), body.get_description()])
     if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
         texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
     else:

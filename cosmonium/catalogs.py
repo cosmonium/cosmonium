@@ -68,7 +68,7 @@ class GlobalObjectsDB(object):
             return None
 
     def remove(self, body):
-        for name in body.names:
+        for name in body.get_names():
             self.db.pop(name.upper(), None)
         self.oids[body.oid] = None
 
