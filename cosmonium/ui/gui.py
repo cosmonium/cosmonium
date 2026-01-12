@@ -29,7 +29,9 @@ from .. import version
 # TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 
-from .loader import UIConfigLoader
+from .loaders.init import init_widget_loaders
+from .loaders.config import UIConfigLoader
+from .loaders.widgets import WidgetLoaderRegistry
 from .shortcuts import Shortcuts
 from .huds import Huds
 from .hud.query import Query
@@ -119,6 +121,7 @@ class Gui(object):
 
         self.global_vars = GlobalVars(self.base, self)
 
+        init_widget_loaders(WidgetLoaderRegistry.get_instance())
         ui_config = self.load(config_file)
         self.skin = ui_config.skin
         self.translation = self.cosmonium.load_lang("ui", ui_config.locale)
