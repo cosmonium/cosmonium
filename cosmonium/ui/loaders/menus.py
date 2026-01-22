@@ -25,7 +25,7 @@ This module handles loading of menu and menubar configurations from YAML files.
 """
 
 from ...parsers.yamlparser import YamlParser
-from ..menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
+from ..menus.menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
 from .base import BaseComponentLoader
 

@@ -22,23 +22,18 @@ from __future__ import annotations
 from direct.gui.DirectFrame import DirectFrame
 from panda3d.core import LVector3
 
-from ..hud.hud_object import HUDObject
+from ..core.ui_element import DockedUIElement
 from ..skin import UIElement
 
 
-class Dock(HUDObject):
+class Dock(DockedUIElement):
 
-    def __init__(self, id_, gui, direction, location, layout, owner=None):
-        HUDObject.__init__(self, id_, owner)
-        self.gui = gui
+    def __init__(self, id_, direction, location, layout, owner=None):
+        DockedUIElement.__init__(self, id_, location, owner)
         self.direction = direction
-        self.location = location
         self.layout = layout
+        self.anchor = None
         self.element = None
-        if location in ('top', 'bottom', 'left', 'right'):
-            self.center = True
-        else:
-            self.center = False
         self.pos = LVector3(0)
 
     def create(self):
@@ -56,26 +51,26 @@ class Dock(HUDObject):
         size = self.layout.sizer.get_size()
         if self.direction == "horizontal":
             if self.center:
-                self.pos[0] = (self.gui.width - size[0]) / 2
+                self.pos[0] = -size[0] / 2
             elif self.location.endswith("left"):
                 self.pos[0] = 0
             elif self.location.endswith("right"):
-                self.pos[0] = self.gui.width - size[0] - 1
+                self.pos[0] = -size[0] - 1
             if self.location.startswith("top"):
                 self.pos[2] = -self.offset[1]
             elif self.location.startswith("bottom"):
-                self.pos[2] = -self.gui.height + size[1] + 1
+                self.pos[2] = size[1] + 1
         else:
             if self.location.endswith("left"):
                 self.pos[0] = 0
             elif self.location.endswith("right"):
-                self.pos[0] = self.gui.width - size[0] - 1
+                self.pos[0] = -size[0] - 1
             if self.center:
-                self.pos[2] = -(self.gui.height - size[1]) / 2
+                self.pos[2] = size[1] / 2
             elif self.location.startswith("top"):
                 self.pos[2] = -self.offset[1]
             elif self.location.startswith("bottom"):
-                self.pos[2] = -self.gui.height + size[1] + 1
+                self.pos[2] = size[1] + 1
         self.update_instance()
 
     def update(self, global_vars):

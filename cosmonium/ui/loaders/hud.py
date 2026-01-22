@@ -132,8 +132,8 @@ class HUDLoader(BaseComponentLoader):
             down = True
 
         entries = self.load_hud_entries(data.get('entries'))
-        widget = DynamicTextBlock(id_, align=align, down=down, count=size, entries=entries)
-        return widget, anchor_name
+        widget = DynamicTextBlock(id_, location=anchor_name, align=align, down=down, count=size, entries=entries)
+        return widget
 
     def load_hud_widgets(self, data):
         """
@@ -145,10 +145,10 @@ class HUDLoader(BaseComponentLoader):
         Returns:
             Dictionary mapping anchor names to lists of widgets
         """
-        hud = {}
+        hud = []
         for widget_data in data:
-            widget, anchor_name = self.load_hud_widget(widget_data)
-            hud.setdefault(anchor_name, []).append(widget)
+            widget = self.load_hud_widget(widget_data)
+            hud.append(widget)
         return hud
 
     def load(self, filepath):

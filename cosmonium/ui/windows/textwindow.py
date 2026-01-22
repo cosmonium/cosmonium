@@ -24,7 +24,7 @@ from ...dircontext import defaultDirContext
 from ..markdown import create_markdown_renderer
 from ..skin import UIElement
 from ..widgets.scroll_text import ScrollText
-from ..widgets.window import Window
+from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -49,5 +49,5 @@ class TextWindow(UIWindow):
 
     def create_layout(self):
         self.layout = ScrollText(parent=self.owner.root, text=self.text, align=TextNode.ALeft, owner=self)
-        self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)

@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026  Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,23 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from __future__ import annotations
+
 from direct.showbase.DirectObject import DirectObject
 
 
 class EventsDispatcher(DirectObject):
+    _instance: EventsDispatcher
+
+    @classmethod
+    def register_instance(cls, instance):
+        cls._instance = instance
+
+    @classmethod
+    def instance(cls):
+        return cls._instance
+
     def __init__(self, engine, time, camera, autopilot, gui, debug):
-        DirectObject.__init__(self)
         self.engine = engine
         self.time = time
         self.camera = camera
@@ -31,24 +42,18 @@ class EventsDispatcher(DirectObject):
         self.gui = gui
         self.debug = debug
         self.accept('exit', self.engine.userExit)
+        self.accept('escape-dispatch', self.engine.escape_dispatch)
         self.accept('gui-search-object', self.gui.open_find_object)
-        self.accept('escape-dispatch', self.gui.escape)
         self.accept('cancel', self.engine.reset_all)
         self.accept('toggle-fullscreen', self.engine.toggle_fullscreen)
         self.accept('zoom-in', self.camera.zoom, [1.05])
         self.accept('zoom-out', self.camera.zoom, [1.0 / 1.05])
         self.accept('reset-zoom', self.camera.reset_zoom)
+        self.accept('gui-show-context-menu', self.gui.show_context_menu)
         self.accept('gui-toggle-menubar', self.gui.toggle_menu)
         self.accept('gui-show-menubar', self.gui.show_menu)
-        self.accept('gui-show-preferences', self.gui.show_preferences)
-        self.accept('gui-show-editor', self.gui.show_editor)
-        self.accept('gui-show-time-editor', self.gui.show_time_editor)
+        self.accept('gui-close-window', self.gui.window_manager.close_last_open)
 
-        self.accept('gui-show-info', self.gui.show_info)
-        self.accept('gui-show-help', self.gui.show_help)
-        self.accept('gui-show-license', self.gui.show_license)
-        self.accept('gui-show-about', self.gui.show_about)
-        self.accept('gui-show-select-screenshots', self.gui.show_select_screenshots)
         self.accept('debug-connect-pstats', self.engine.connect_pstats)
         self.accept('debug-toggle-filled-wireframe', self.engine.toggle_filled_wireframe)
         self.accept('debug-toggle-wireframe', self.engine.toggle_wireframe)
@@ -99,7 +104,6 @@ class EventsDispatcher(DirectObject):
 
         self.accept('save-cel-url', self.engine.save_celurl)
         self.accept('load-cel-url', self.engine.load_celurl)
-        self.accept('open-script', self.gui.show_open_script)
 
         self.accept('set-j2000-date', self.time.set_J2000_date)
         self.accept('set-current-date', self.time.set_current_date)
@@ -111,6 +115,7 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-freeze-time', self.time.toggle_freeze_time)
         self.accept('set-real-time', self.time.set_real_time)
 
+        self.accept('select-or-center', self.engine.select_or_center)
         self.accept('follow-selected', self.engine.follow_selected)
         self.accept('sync-selected', self.engine.sync_selected)
         self.accept('track-selected', self.engine.toggle_track_selected)
@@ -187,3 +192,6 @@ class EventsDispatcher(DirectObject):
                 self.gui.set_display_render_info,
                 [display_render_info],
             )
+
+    def register(self, event, func, extraArgs=[]):
+        self.accept(event, func, extraArgs)

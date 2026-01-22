@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@ from directguilayout.gui import Widget as SizerWidget
 from directspinbox.DirectSpinBox import DirectSpinBox
 from panda3d.core import TextNode
 
+from ...events import EventsDispatcher
 from ... import settings
+from ..managers.window_manager import WindowManager
 from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window import Window
+from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -57,7 +59,7 @@ class TimeEditor(UIWindow):
             text=text,
             textMayChange=True,
             text_align=TextNode.A_left,
-            **self.skin.get_style(label_element)
+            **self.skin.get_style(label_element),
         )
         return label
 
@@ -74,7 +76,7 @@ class TimeEditor(UIWindow):
             suppressKeys=1,
             valueEntry_width=width,
             valueEntry_text_align=TextNode.A_left,
-            **self.skin.get_style(spin_element)
+            **self.skin.get_style(spin_element),
         )
         return entry
 
@@ -128,7 +130,7 @@ class TimeEditor(UIWindow):
             parent=frame,
             text=_("Set current time"),
             command=self.set_current_time,
-            **self.skin.get_style(current_time_button_element)
+            **self.skin.get_style(current_time_button_element),
         )
         hsizer.add(SizerWidget(current), alignments=("min", "center"), borders=self.borders)
         cancel_button_element = UIElement('button', class_='cancel-button')
@@ -140,7 +142,9 @@ class TimeEditor(UIWindow):
         sizer.update((self.width, self.height))
         size = sizer.min_size
         frame['frameSize'] = (0, size[0], -size[1], 0)
-        self.window = Window(_("Set time"), parent=self.owner.root, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(
+            _("Set time"), parent=self.owner.root, scale=self.scale, child=self.layout, owner=self
+        )
 
     def ok(self):
         years = self.year_entry.getValue()
@@ -155,3 +159,17 @@ class TimeEditor(UIWindow):
 
     def cancel(self):
         self.hide()
+
+
+def _show_time_editor_window():
+    """Show the time editor window."""
+    window_manager = WindowManager.instance()
+    if not window_manager.get_window_by_id('time-editor'):
+        # TODO: Retrieve properly time instance
+        window = TimeEditor(window_manager.gui.time, owner=window_manager.gui)
+        window_manager.open_window(window, 'time-editor')
+
+
+def register_time_editor_window():
+    dispatcher = EventsDispatcher.instance()
+    dispatcher.register('gui-show-time-editor', _show_time_editor_window)

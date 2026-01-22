@@ -82,18 +82,19 @@ class UIConfigLoader:
         shortcuts_loader: ShortcutsLoader for shortcuts loading
     """
 
-    def __init__(self, global_vars):
+    def __init__(self, gui, global_vars):
         """
         Initialize the UI config loader.
 
         Args:
             global_vars: Dictionary of global variables for expression evaluation
         """
+        self.gui = gui
         self.global_vars = global_vars
 
         # Initialize specialized loaders
         self.menu_loader = MenuLoader(global_vars)
-        self.dock_loader = DockLoader(global_vars)
+        self.dock_loader = DockLoader(gui, global_vars)
         self.hud_loader = HUDLoader(global_vars)
         self.skin_loader = SkinLoader()
         self.shortcuts_loader = ShortcutsLoader()
@@ -126,6 +127,17 @@ class UIConfigLoader:
 
         # Load locale directory
         localedir = data.get('locale', os.path.join(basedir, 'locale'))
+
+        # Load skin
+        skin_file = data.get('skin')
+        if skin_file is not None:
+            if not os.path.isabs(skin_file):
+                skin_file = os.path.join(basedir, skin_file)
+            skin = self.load_skin_file(skin_file)
+        else:
+            skin = None
+        # TODO: Skin must be available in gui module for the loaders below
+        self.gui.skin = skin
 
         # Load shortcuts
         shortcuts_file = data.get('shortcuts')
@@ -171,15 +183,6 @@ class UIConfigLoader:
             hud = self.load_hud_file(hud_file)
         else:
             hud = {}
-
-        # Load skin
-        skin_file = data.get('skin')
-        if skin_file is not None:
-            if not os.path.isabs(skin_file):
-                skin_file = os.path.join(basedir, skin_file)
-            skin = self.load_skin_file(skin_file)
-        else:
-            skin = None
 
         return UIConfig(
             locale=localedir,

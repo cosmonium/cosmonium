@@ -27,6 +27,7 @@ This module handles loading of dock widget configurations from YAML files.
 
 from ...parsers.yamlparser import YamlParser
 
+from ..dock.dock import Dock
 from .base import BaseComponentLoader
 from .widgets import WidgetLoaderRegistry
 
@@ -39,13 +40,14 @@ class DockLoader(BaseComponentLoader):
     and contain button, text, and layout widgets.
     """
 
-    def __init__(self, global_vars):
+    def __init__(self, gui, global_vars):
         """
         Initialize the Dock loader with global variables for expressions.
 
         Args:
             global_vars: Dictionary of global variables for expression evaluation
         """
+        self.gui = gui
         self.global_vars = global_vars
 
     def load_dock_config(self, data):
@@ -59,6 +61,7 @@ class DockLoader(BaseComponentLoader):
         Returns:
             Tuple of (layout_widget, orientation, location)
         """
+        id_ = data.get('id', None)
         orientation = data.get('orientation', 'horizontal')
         location = data.get('location', 'bottom')
 
@@ -69,7 +72,8 @@ class DockLoader(BaseComponentLoader):
 
         widget_registry = WidgetLoaderRegistry.get_instance()
         layout = widget_registry.load(layout_data, self.global_vars)
-        return layout, orientation, location
+        dock = Dock(id_, orientation, location, layout, self.gui)
+        return dock
 
     def load(self, filepath):
         """
@@ -83,5 +87,8 @@ class DockLoader(BaseComponentLoader):
         """
         parser = YamlParser()
         data = parser.load_and_parse(filepath)
-        dock = self.load_dock_config(data.get('dock'))
-        return dock
+        docks = []
+        for dock_config in data.get('dock'):
+            dock = self.load_dock_config(dock_config)
+            docks.append(dock)
+        return docks

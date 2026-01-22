@@ -86,6 +86,7 @@ from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
 from .ui.splash import Splash, NoSplash
+from .ui.windows.register import register_windows
 from . import workers
 from . import cache
 from . import mesh
@@ -517,10 +518,12 @@ class Cosmonium(CosmoniumBase):
 
         if self.gui is None:
             self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)
-            self.mouse.set_ui(self.gui)
 
         # TODO: Temporarily until event registration is split up between each class
         self.events_dispatcher = EventsDispatcher(self, self.time, self.observer, self.autopilot, self.gui, self.debug)
+        EventsDispatcher.register_instance(self.events_dispatcher)
+
+        register_windows()
 
         # Use the first of each controllers as default
         self.set_nav(self.nav_controllers[0])
@@ -803,6 +806,13 @@ class Cosmonium(CosmoniumBase):
             self.gui.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
             self.gui.show_select_screenshots()
 
+    def escape_dispatch(self):
+        if len(self.gui.window_manager.open_windows) != 0:
+            window = self.gui.window_manager.open_windows.pop()
+            window.hide()
+        else:
+            self.reset_all()
+
     def select_body(self, body):
         if self.selected == body:
             return
@@ -839,6 +849,13 @@ class Cosmonium(CosmoniumBase):
         if target is None and self.selected is not None:
             target = self.selected
         self.camera_controller.center_on_object(target, duration, cmd, proportional)
+
+    def select_or_center(self):
+        body = self.mouse.get_over()
+        if body is not None and self.gui.cosmonium.selected == body:
+            self.center_on_object(body)
+            return
+        self.select_body(body)
 
     def run_script(self, sequence):
         if self.current_sequence is not None:

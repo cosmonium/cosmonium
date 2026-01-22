@@ -31,6 +31,9 @@ import tempfile
 
 from panda3d.core import LColor
 
+from cosmonium.ui.dock.dock import Dock
+from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
+
 from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.loaders.hud import HUDLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
@@ -115,24 +118,25 @@ class TestDockLoader:
             f.write(
                 """
 dock:
-   orientation: horizontal
-   location: bottom
+ - orientation: horizontal
+   anchor    : bottom
    widgets:
       - type: text
         text: "A"
 """
             )
         try:
-            loader = DockLoader({})
-            dock = loader.load(filepath)
+            loader = DockLoader(None, {})
+            docks = loader.load(filepath)
 
-            assert isinstance(dock, tuple)
-            assert len(dock) == 3
+            assert isinstance(docks, list)
+            assert len(docks) == 1
 
-            layout, orientation, location = dock
-            assert orientation == 'horizontal'
-            assert location == 'bottom'
-            assert len(layout.widgets) == 1
+            dock = docks[0]
+            assert isinstance(dock, Dock)
+            assert dock.direction == 'horizontal'
+            assert dock.location == 'bottom'
+            assert len(dock.layout.widgets) == 1
         finally:
             os.unlink(filepath)
 
@@ -166,19 +170,21 @@ hud:
             loader = HUDLoader(global_vars)
             hud = loader.load(filepath)
 
-            assert isinstance(hud, dict)
+            assert isinstance(hud, list)
             assert len(hud) == 2
 
-            entry = hud['top-left']
+            entry = hud[0]
             # Check widgets structure
-            assert isinstance(entry, list)
-            assert len(entry) == 1
-            assert entry[0].entries[0].template.expression.source == 'f"""my-text"""'
-            entry = hud['top-right']
+            assert entry.location == 'top-left'
+            assert isinstance(entry, DynamicTextBlock)
+            assert len(entry.entries) == 1
+            assert entry.entries[0].template.expression.source == 'f"""my-text"""'
+            entry = hud[1]
             # Check widgets structure
-            assert isinstance(entry, list)
-            assert len(entry) == 1
-            assert entry[0].entries[0].template.expression.source == 'f"""my-other-text"""'
+            assert entry.location == 'top-right'
+            assert isinstance(entry, DynamicTextBlock)
+            assert len(entry.entries) == 1
+            assert entry.entries[0].template.expression.source == 'f"""my-other-text"""'
         finally:
             os.unlink(filepath)
 

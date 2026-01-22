@@ -18,6 +18,7 @@
 #
 
 from direct.showbase.DirectObject import DirectObject
+from direct.showbase.MessengerGlobal import messenger
 from direct.task.Task import Task
 from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import LPoint2, LColor
@@ -32,7 +33,6 @@ class Mouse(DirectObject):
     def __init__(self, base, oid_texture):
         self.base = base
         self.picking_texture = oid_texture
-        self.ui = None
         self.mouse1_pos = None
         self.mouse3_pos = None
         self.accept('mouse1', self.mouse1_press)
@@ -42,9 +42,6 @@ class Mouse(DirectObject):
         if settings.mouse_over:
             taskMgr.add(self.mouse_task, 'mouse-task')
         self.over = None
-
-    def set_ui(self, ui):
-        self.ui = ui
 
     def mouse1_press(self):
         if self.base.mouseWatcherNode.hasMouse():
@@ -58,7 +55,7 @@ class Mouse(DirectObject):
                 and self.mouse1_pos.get_x() == mpos.get_x()
                 and self.mouse1_pos.get_y() == mpos.get_y()
             ):
-                self.ui.left_click()
+                messenger.send('mouse1-click')
         self.mouse1_pos = None
 
     def mouse3_press(self):
@@ -73,7 +70,7 @@ class Mouse(DirectObject):
                 and self.mouse3_pos.get_x() == mpos.get_x()
                 and self.mouse3_pos.get_y() == mpos.get_y()
             ):
-                self.ui.right_click()
+                messenger.send('mouse3-click')
         self.mouse3_pos = None
 
     def find_over_ray(self):

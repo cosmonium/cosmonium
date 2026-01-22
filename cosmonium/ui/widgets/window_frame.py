@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from ...geometry.geometry import FrameGeom
 from ..skin import UIElement
 
 
-class Window:
+class WindowFrame:
 
     def __init__(self, title_text, scale, parent=None, child=None, owner=None):
         self.title_text = title_text
@@ -39,7 +39,6 @@ class Window:
         self.owner = owner
         self.skin = owner.skin
         self.child = None
-        self.last_pos = None
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
         self.base = builtins.base
@@ -69,7 +68,7 @@ class Window:
             pos=(0, 0),
             align=TextNode.ALeft,
             mayChange=True,
-            **self.skin.get_style(title_element)
+            **self.skin.get_style(title_element),
         )
         bounds = self.title.get_tight_bounds()
         size = bounds[1] - bounds[0]
@@ -86,7 +85,7 @@ class Window:
             pos=(0, 0),
             align=TextNode.ACenter,
             mayChange=True,
-            **self.skin.get_style(close_element)
+            **self.skin.get_style(close_element),
         )
         bounds = self.close.get_tight_bounds()
         size = bounds[1] - bounds[0]
@@ -207,12 +206,11 @@ class Window:
 
     def close_window(self, event=None):
         if self.owner is not None:
-            self.owner.window_closed(self)
+            self.owner.window_closed()
         self.destroy()
 
     def stop_drag(self, event):
         taskMgr.remove("drag")
-        self.last_pos = self.frame.get_pos()
 
     def destroy(self):
         if self.frame is not None:

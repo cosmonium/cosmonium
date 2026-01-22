@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,24 +24,27 @@ from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import TextNode
 
+from ...events import EventsDispatcher
 from ... import settings
+from ..managers.window_manager import WindowManager
 from ..object_info import ObjectInfo
 from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window import Window
+from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
 class InfoWindow(UIWindow):
 
-    def __init__(self, owner=None):
+    def __init__(self, body, owner=None):
         UIWindow.__init__(self, owner)
+        self.body = body
         self.element = UIElement('window', id_='info-window')
         self.font_size = self.skin.get(self.element).font_size(None, False, None)
         self.width = settings.default_window_width / 2
         self.height = settings.default_window_height
 
-    def create_layout(self, body):
+    def create_layout(self):
         self.element = UIElement('scrolled-frame', class_='info')
         vsizer_element = UIElement('sizer', class_='vertical-sizer', parent=self.element)
         sizer = Sizer("vertical", **self.skin.get_style(vsizer_element))
@@ -53,17 +56,17 @@ class InfoWindow(UIWindow):
                 state=DGG.NORMAL,
                 horizontalScroll_relief=DGG.FLAT,
                 verticalScroll_relief=DGG.FLAT,
-                **self.skin.get_style(self.element)
+                **self.skin.get_style(self.element),
             )
         )
         self.layout.frame.setPos(0, 0, 0)
-        self.make_entries(self.layout.frame.getCanvas(), hsizer, body)
+        self.make_entries(self.layout.frame.getCanvas(), hsizer, self.body)
         sizer.update((self.width, self.height))
         self.layout.frame['frameSize'] = (0, self.width * settings.ui_scale, -self.height * settings.ui_scale, 0)
         size = sizer.min_size
         self.layout.frame['canvasSize'] = (0, size[0], -size[1], 0)
         title = "Body information"
-        self.window = Window(title, parent=self.owner.root, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(title, parent=self.owner.root, scale=self.scale, child=self.layout, owner=self)
         self.window.register_scroller(self.layout.frame)
 
     def make_title_entry(self, frame, title):
@@ -119,3 +122,17 @@ class InfoWindow(UIWindow):
                         value_widget = SizerWidget(value_label)
                         hsizer.add(title_widget, borders=borders, alignments=("min", "left"))
                         hsizer.add(value_widget, borders=borders, alignments=("min", "left"))
+
+
+def _show_info_window():
+    """Show the info window for selected object."""
+    window_manager = WindowManager.instance()
+    if not window_manager.get_window_by_id('info') and window_manager.gui.cosmonium.selected is not None:
+        # TODO: Retrieve properly selected object
+        window = InfoWindow(window_manager.gui.cosmonium.selected, owner=window_manager.gui)
+        window_manager.open_window(window, 'info')
+
+
+def register_info_window():
+    dispatcher = EventsDispatcher.instance()
+    dispatcher.register('gui-show-info', _show_info_window)

@@ -21,13 +21,13 @@
 from panda3d.core import LVector2, LVector3
 from direct.gui.OnscreenText import OnscreenText, Plain
 
+from ..core.ui_element import DockedUIElement
 from ..skin import UIElement
-from .hud_object import HUDObject
 
 
-class TextLine(HUDObject):
-    def __init__(self, id_, align, pos, owner=None):
-        HUDObject.__init__(self, id_, owner)
+class TextLine(DockedUIElement):
+    def __init__(self, id_, location, align, pos, owner=None):
+        DockedUIElement.__init__(self, id_, location, owner)
         self.align = align
         self.text = ""
         self.pos = LVector2(pos[0], -pos[1])

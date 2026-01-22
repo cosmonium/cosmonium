@@ -5,6 +5,7 @@ toggle-fullscreen: alt-enter
 zoom-in: ","
 zoom-out: "."
 reset-zoom: control-r
+gui-show-context-menu: mouse3-click
 gui-toggle-menubar: control-m
 gui-show-preferences: control-p
 gui-show-editor: control-e
@@ -31,6 +32,7 @@ debug-scene-ls: f11
 debug-scene-explore: control-f11
 debug-scene-analyze: f12
 debug-print-tasks: shift-f12
+select-or-center: mouse1-click
 follow-selected: f
 sync-selected: y
 track-selected: t

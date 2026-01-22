@@ -24,7 +24,6 @@ from panda3d.core import LVector2
 from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
 from .. import settings
-from .. import version
 
 # TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
@@ -33,43 +32,16 @@ from .loaders.init import init_widget_loaders
 from .loaders.config import UIConfigLoader
 from .loaders.widgets import WidgetLoaderRegistry
 from .shortcuts import Shortcuts
-from .huds import Huds
 from .hud.query import Query
 from .clipboard import create_clipboard
 from .templates.providers import GlobalVars
+from .managers.window_manager import WindowManager
+from .managers.overlay_manager import OverlayManager
+from .managers.theme_manager import ThemeManager
+from .menus.menubuilder import MenuBuilder
+from .menus.menubar import Menubar
+from .menus.popup import Popup
 from .windows.browser import Browser
-from .windows.filewindow import FileWindow
-from .windows.info import InfoWindow
-from .windows.objecteditor import ObjectEditorWindow
-from .windows.preferences import Preferences
-from .windows.textwindow import TextWindow
-from .windows.time import TimeEditor
-from .menubuilder import MenuBuilder
-from .menubar import Menubar
-from .popup import Popup
-
-
-about_text = (
-    """# Cosmonium
-
-**Version**: V%s
-Copyright 2018-2025 Laurent Deru
-
-
-**Website**: http://github.com/cosmonium/cosmonium
-
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 3 of the License, or (at your option) any later
-version.
-
-
-This program uses several third-party libraries which are subject to their own
-licenses, see Third-Party.md for the complete list.
-"""
-    % version.version_str
-)
 
 
 class Gui(object):
@@ -83,7 +55,6 @@ class Gui(object):
         self.nav = None
         self.autopilot = autopilot
         self.messenger = self.cosmonium.messenger
-        self.over = None
         self.hud = None
         if self.base.pipe is not None:
             self.screen_width = self.base.pipe.getDisplayWidth()
@@ -116,6 +87,7 @@ class Gui(object):
             self.font = font.load()
         else:
             self.font = None
+        self.skin = None
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
 
@@ -128,29 +100,27 @@ class Gui(object):
 
         self.shortcuts.set_shortcuts(ui_config.shortcuts)
 
-        self.hud = Huds(self, ui_config.hud, ui_config.dock, self.global_vars, self.skin)
-        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
-        self.opened_windows = []
-        self.browser = Browser(owner=self)
-        self.editor = ObjectEditorWindow(owner=self)
-        self.time_editor = TimeEditor(self.time, owner=self)
-        self.info = InfoWindow(owner=self)
-        self.preferences = Preferences(self.cosmonium, owner=self)
-        self.help = TextWindow('Help', owner=self)
-        self.help.load('control.md')
-        self.license = TextWindow('License', owner=self)
-        self.license.load('COPYING.md')
-        self.about = TextWindow('About', owner=self)
-        self.about.set_text(about_text)
-        self.filewindow = FileWindow('Select', owner=self)
+        # Initialize managers
+        self.window_manager = WindowManager(self)
+        self.window_manager.register_instance(self.window_manager)
+        self.theme_manager = ThemeManager(self, self.skin)
 
-        self.menu_builder = MenuBuilder(
+        # Initialize overlay manager (replaces Huds)
+        self.hud = OverlayManager(self, ui_config.hud, ui_config.dock, self.global_vars, self.skin)
+
+        # Initialize query object
+        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
+
+        self.browser = Browser(owner=self)
+
+        menu_builder = MenuBuilder(
             self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser
         )
-        self.menu_builder.add_named_menus(ui_config.named_menus)
-        self.menubar = Menubar(self.menu_builder.create_menubar(ui_config.menubar), owner=self)
-        self.menubar.create(self.scale)
-        self.popup_menu = Popup(self.cosmonium, self.menu_builder.create_menu(ui_config.popup), owner=self)
+        menu_builder.add_named_menus(ui_config.named_menus)
+        self.menubar = Menubar(menu_builder.create_menubar(ui_config.menubar), self.scale, owner=self)
+        self.menubar.create()
+
+        self.popup_menu_config = menu_builder.create_menu(ui_config.popup)
         self.popup_menu_shown = False
 
         if settings.show_hud:
@@ -166,48 +136,23 @@ class Gui(object):
         return self
 
     def load(self, ui_config_file):
-        loader = UIConfigLoader(self.global_vars.globals)
+        loader = UIConfigLoader(self, self.global_vars.globals)
         return loader.load(ui_config_file)
 
     def set_nav(self, nav):
         self.nav = nav
 
     def calc_scale(self):
-        self.scale = LVector2(
-            1 / self.screen_width * 2.0, 1 / self.screen_height * 2.0
-        )
+        self.scale = LVector2(1 / self.screen_width * 2.0, 1 / self.screen_height * 2.0)
 
     def register_events(self, event_ctrl):
         pass
 
     def window_closed(self, window):
-        if window in self.opened_windows:
-            self.opened_windows.remove(window)
+        self.window_manager.window_closed(window)
 
     def update(self):
         self.clipboard.update()
-
-    def escape(self):
-        if len(self.opened_windows) != 0:
-            window = self.opened_windows.pop()
-            window.hide()
-        else:
-            self.cosmonium.reset_all()
-
-    def left_click(self):
-        body = self.mouse.get_over()
-        if body is not None and self.cosmonium.selected == body:
-            self.cosmonium.center_on_object(body)
-            return
-        self.cosmonium.select_body(body)
-
-    def right_click(self):
-        self.over = self.mouse.get_over()
-        if self.over is None and self.menubar_shown:
-            return False
-        self.popup_menu.create(self.scale, self.over, self.popup_done)
-        self.popup_menu_shown = True
-        self.over = None
 
     def popup_done(self):
         self.popup_menu_shown = False
@@ -234,16 +179,13 @@ class Gui(object):
         return result
 
     def open_find_object(self):
-        self.query.open_query(self)
+        self.query.create()
 
     def update_status(self):
         self.hud.update(self.global_vars.globals)
 
     def update_info(self, text, pos=(1, -3), color=(1, 1, 1, 1), anchor=None, duration=3.0, fade=1.0):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
-
-    def update_scale(self):
-        self.hud.set_scale()
 
     def update_size(self, width, height):
         if self.width == width and self.height == height:
@@ -329,7 +271,7 @@ class Gui(object):
         self.menubar_shown = True
         limits = self.get_limits()
         self.hud.set_y_offset(-limits[2])
-        for window in self.opened_windows:
+        for window in self.window_manager.open_windows:
             window.set_limits(limits)
 
     def hide_menu(self):
@@ -337,7 +279,7 @@ class Gui(object):
         self.menubar_shown = False
         self.hud.set_y_offset(0)
         limits = self.get_limits()
-        for window in self.opened_windows:
+        for window in self.window_manager.open_windows:
             window.set_limits(limits)
 
     def toggle_menu(self):
@@ -348,65 +290,10 @@ class Gui(object):
         settings.show_menubar = self.menubar_shown
         self.cosmonium.save_settings()
 
-    def show_help(self):
-        self.help.show()
-        if self.help not in self.opened_windows:
-            self.opened_windows.append(self.help)
-
-    def show_license(self):
-        self.license.show()
-        if self.license not in self.opened_windows:
-            self.opened_windows.append(self.license)
-
-    def show_about(self):
-        self.about.show()
-        if self.about not in self.opened_windows:
-            self.opened_windows.append(self.about)
-
-    def show_time_editor(self):
-        self.time_editor.show()
-        if self.time_editor not in self.opened_windows:
-            self.opened_windows.append(self.time_editor)
-
-    def show_info(self):
-        if self.cosmonium.selected is not None:
-            if self.info.shown():
-                self.info.hide()
-            self.info.show(self.cosmonium.selected)
-            if self.info not in self.opened_windows:
-                self.opened_windows.append(self.info)
-
-    def show_editor(self):
-        if self.cosmonium.selected is not None:
-            if self.editor.shown():
-                self.editor.hide()
-            self.editor.show(self.cosmonium.selected)
-            if self.editor not in self.opened_windows:
-                self.opened_windows.append(self.editor)
-
-    def show_ship_editor(self):
-        if self.cosmonium.ship is not None:
-            if self.editor.shown():
-                self.editor.hide()
-            self.editor.show(self.cosmonium.ship)
-            if self.editor not in self.opened_windows:
-                self.opened_windows.append(self.editor)
-
-    def show_preferences(self):
-        self.preferences.show()
-        if self.preferences not in self.opened_windows:
-            self.opened_windows.append(self.preferences)
-
-    def show_select_screenshots(self):
-        if self.filewindow.shown():
-            self.filewindow.hide()
-        self.filewindow.show(settings.screenshot_path, self.cosmonium.set_screenshots_path, show_files=False)
-        if self.filewindow not in self.opened_windows:
-            self.opened_windows.append(self.filewindow)
-
-    def show_open_script(self):
-        if self.filewindow.shown():
-            self.filewindow.hide()
-        self.filewindow.show(settings.last_script_path, self.load_cel_script, extensions=['.cel', '.CEL'])
-        if self.filewindow not in self.opened_windows:
-            self.opened_windows.append(self.filewindow)
+    def show_context_menu(self):
+        over = self.mouse.get_over()
+        if over is None and self.menubar_shown:
+            return
+        popup_menu = Popup(self.cosmonium, self.scale, self.popup_menu_config, over, self, self.popup_done)
+        popup_menu.create()
+        self.popup_menu_shown = True

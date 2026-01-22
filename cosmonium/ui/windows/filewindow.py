@@ -22,7 +22,7 @@ from direct.gui.DirectGui import DirectFrame, DGG
 from directfolderbrowser.DirectFolderBrowser import DirectFolderBrowser
 
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window import Window
+from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -36,21 +36,23 @@ class FileWindow(UIWindow):
         'file': "textures/icons/File.png",
     }
 
-    def __init__(self, title, owner=None):
+    def __init__(self, title, path, callback, show_files=True, extensions=[], owner=None):
         UIWindow.__init__(self, owner)
         self.title = title
+        if path is None:
+            path = "~"
+        self.path = path
+        self.callback = callback
+        self.show_files = show_files
+        self.extensions = extensions
         self.browser = None
-        self.callback = None
 
     def done(self, status):
         if status == 1:
             self.callback(self.browser.get())
         self.hide()
 
-    def create_layout(self, path, callback, show_files=True, extensions=[]):
-        self.callback = callback
-        if path is None:
-            path = "~"
+    def create_layout(self):
         width = 800
         height = 600
         self.layout = DirectWidgetContainer(DirectFrame(parent=self.owner.root, state=DGG.NORMAL))
@@ -58,13 +60,13 @@ class FileWindow(UIWindow):
             command=self.done,
             size=(width, height),
             parent=self.layout.frame,
-            defaultPath=path,
-            fileBrowser=show_files,
-            fileExtensions=extensions,
+            defaultPath=self.path,
+            fileBrowser=self.show_files,
+            fileExtensions=self.extensions,
             icons=self.icons,
         )
         self.layout.frame['frameSize'] = [0, width, -height, 0]
-        self.window = Window(self.title, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, owner=self)
 
     def hide(self):
         UIWindow.hide(self)

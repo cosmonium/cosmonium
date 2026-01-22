@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,9 @@
 #
 
 from ...bodyclass import bodyClasses
+from ...events import EventsDispatcher
 from ...parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
+from ..managers.window_manager import WindowManager
 from .editor import ParamEditor
 
 
@@ -231,3 +233,17 @@ class Preferences(ParamEditor):
                 ],
             )
         ]
+
+
+def _show_preferences_window():
+    """Show the preferences window."""
+    window_manager = WindowManager.instance()
+    if not window_manager.get_window_by_id('preferences'):
+        # TODO: Retrieve properly cosmonium instance
+        window = Preferences(window_manager.gui.cosmonium, owner=window_manager.gui)
+        window_manager.open_window(window, 'preferences')
+
+
+def register_preferences_window():
+    dispatcher = EventsDispatcher.instance()
+    dispatcher.register('gui-show-preferences', _show_preferences_window)

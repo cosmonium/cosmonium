@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,29 +19,27 @@
 
 from pandamenu.menu import PopupMenu
 
-from .skin import UIElement
+from ..core.ui_element import UIElement
+from ..skin import UIElement as SKinUIElement
 
 
-class Popup:
+class Popup(UIElement):
 
-    def __init__(self, engine, menu_builder, owner):
+    def __init__(self, engine, scale, menu_builder, over, owner, popup_done=None):
+        UIElement.__init__(self, 'popup', owner)
         self.engine = engine
+        self.scale = scale
         self.menu_builder = menu_builder
-        self.popup_done = None
-        self.owner = owner
-        if owner is not None:
-            self.skin = owner.skin
-        else:
-            self.skin = None
-
-    def create(self, scale, over, popup_done=None):
+        self.over = over
         self.popup_done = popup_done
+
+    def create(self):
         # TODO: This should not be done here !
-        if over is not None:
-            self.engine.select_body(over)
+        if self.over is not None:
+            self.engine.select_body(self.over)
         items = self.menu_builder()
-        popup_element = UIElement('menu', id_="popup")
-        style = self.skin.get_style(popup_element, ui_scale=scale)
+        popup_element = SKinUIElement('menu', id_="popup")
+        style = self.skin.get_style(popup_element, ui_scale=self.scale)
         PopupMenu(
             items=items,
             baselineOffset=-0.35,
@@ -52,8 +50,12 @@ class Popup:
             BGBorderColor=(0.3, 0.3, 0.3, 1),
             separatorColor=(0, 0, 0, 1),
             onDestroy=self.on_destroy,
-            **style
+            **style,
         )
+
+    def update_instance(self):
+        # Nothing to update
+        pass
 
     def on_destroy(self):
         if self.popup_done is not None:

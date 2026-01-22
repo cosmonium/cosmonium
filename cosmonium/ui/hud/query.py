@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,14 +24,13 @@ from direct.gui.DirectFrame import DirectFrame
 from direct.gui.OnscreenText import OnscreenText
 from direct.task.TaskManagerGlobal import taskMgr
 
+from ..core.ui_element import OverlayUIElement
 from ..skin import UIElement
 
-from .hud_object import HUDObject
 
-
-class Query(HUDObject):
+class Query(OverlayUIElement):
     def __init__(self, id_, anchor, offset, query_delay, owner=None):
-        HUDObject.__init__(self, id_, owner)
+        OverlayUIElement.__init__(self, id_, owner)
         self.query_delay = query_delay
         self.background = None
         self.prefix = None
@@ -123,8 +122,7 @@ class Query(HUDObject):
         self.current_selection = new_selection
         self.update_suggestions()
 
-    def open_query(self, owner):
-        self.owner = owner
+    def create(self):
         element = UIElement(None, id_=self.id_)
         background_element = UIElement('frame', parent=element)
         text_element = UIElement('onscreen-text', parent=element, class_='query-entry')
@@ -138,14 +136,14 @@ class Query(HUDObject):
         self.background = DirectFrame(
             frameSize=(0, self.owner.width, query_height + suggestion_height, 0.0),
             parent=self.anchor,
-            **self.skin.get_style(background_element)
+            **self.skin.get_style(background_element),
         )
         self.prefix = OnscreenText(
             text=_("Target name: "),
             align=TextNode.ALeft,
             parent=self.anchor,
             pos=(0, suggestion_height),
-            **self.skin.get_style(text_element)
+            **self.skin.get_style(text_element),
         )
         bounds = self.prefix.getTightBounds()
         length = bounds[1][0] - bounds[0][0]
@@ -159,7 +157,7 @@ class Query(HUDObject):
             width=200,
             focus=1,
             suppressKeys=1,
-            **query_style
+            **query_style,
         )
         self.query.bind("press-escape-", self.escape)
         self.query.bind("press-tab-", self.select)
@@ -172,5 +170,9 @@ class Query(HUDObject):
             mayChange=True,
             parent=self.anchor,
             pos=(0, suggestion_offset),
-            **suggestion_style
+            **suggestion_style,
         )
+
+    def update_instance(self):
+        # Nothing to update
+        pass

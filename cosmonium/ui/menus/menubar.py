@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,23 +19,21 @@
 
 from pandamenu.menu import DropDownMenu
 
-from .skin import UIElement
+from ..core.ui_element import DockedUIElement
+from ..skin import UIElement
 
 
-class Menubar:
+class Menubar(DockedUIElement):
 
-    def __init__(self, menu_items, owner):
+    def __init__(self, menu_items, scale, owner):
+        DockedUIElement.__init__(self, 'menubar', 'top', owner)
         self.menu_items = menu_items
+        self.scale = scale
         self.menubar = None
-        self.owner = owner
-        if owner is not None:
-            self.skin = owner.skin
-        else:
-            self.skin = None
 
-    def create(self, scale):
+    def create(self):
         menubar_element = UIElement('menu', id_="menubar")
-        style = self.skin.get_style(menubar_element, ui_scale=scale)
+        style = self.skin.get_style(menubar_element, ui_scale=self.scale)
         self.menubar = DropDownMenu(
             items=self.menu_items,
             sidePad=0.75,
@@ -48,8 +46,12 @@ class Menubar:
             underscoreThickness=1,
             BGBorderColor=(0.3, 0.3, 0.3, 1),
             separatorColor=(0, 0, 0, 1),
-            **style
+            **style,
         )
+
+    def update_instance(self):
+        # Nothing to update
+        pass
 
     def show(self):
         self.menubar.menu.unstash()

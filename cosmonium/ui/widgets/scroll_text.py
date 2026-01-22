@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ class ScrollText(DirectWidgetContainer):
             relief=DGG.FLAT,
             horizontalScroll_relief=DGG.FLAT,
             verticalScroll_relief=DGG.FLAT,
-            **self.skin.get_style(scrolled_frame_element)
+            **self.skin.get_style(scrolled_frame_element),
         )
         text_element = UIElement('onscreen-text', parent=scrolled_frame_element)
         # TODO: wordwrap width should retrieve font size from style object
@@ -51,7 +51,7 @@ class ScrollText(DirectWidgetContainer):
             text=text,
             align=align,
             wordwrap=wordwrap,
-            **self.skin.get_style(text_element)
+            **self.skin.get_style(text_element),
         )
         bounds = self.text.getTightBounds()
         self.frame['canvasSize'] = [0, bounds[1][0] - bounds[0][0], -bounds[1][2] + bounds[0][2], 0]
