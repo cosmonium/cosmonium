@@ -29,8 +29,8 @@ from ..skin import UIElement
 
 
 class Query(OverlayUIElement):
-    def __init__(self, id_, anchor, offset, query_delay, owner=None):
-        OverlayUIElement.__init__(self, id_, owner)
+    def __init__(self, id_, anchor, offset, query_delay, parent=None):
+        OverlayUIElement.__init__(self, id_, parent=parent)
         self.query_delay = query_delay
         self.background = None
         self.prefix = None
@@ -52,8 +52,8 @@ class Query(OverlayUIElement):
                 body = self.current_list[self.current_selection][1]
         else:
             text = self.query.get()
-            body = self.owner.get_object(text)
-        self.owner.select_object(body)
+            body = self.parent.get_object(text)
+        self.parent.select_object(body)
         self.close()
 
     def close(self):
@@ -95,7 +95,7 @@ class Query(OverlayUIElement):
     def completion(self, event):
         text = self.query.get()
         if text != '':
-            self.current_list = self.owner.list_objects(text)
+            self.current_list = self.parent.list_objects(text)
         else:
             self.current_list = []
         self.current_selection = None
@@ -134,7 +134,7 @@ class Query(OverlayUIElement):
         suggestion_height = suggestion_style['scale'][1] * (self.max_lines + 1) * 1.5
         suggestion_offset = suggestion_style['scale'][1] * self.max_lines * 1.5
         self.background = DirectFrame(
-            frameSize=(0, self.owner.width, query_height + suggestion_height, 0.0),
+            frameSize=(0, self.parent.width, query_height + suggestion_height, 0.0),
             parent=self.anchor,
             **self.skin.get_style(background_element),
         )

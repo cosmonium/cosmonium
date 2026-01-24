@@ -36,8 +36,8 @@ from .uiwindow import UIWindow
 
 class InfoWindow(UIWindow):
 
-    def __init__(self, body, owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, body, parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.body = body
         self.element = UIElement('window', id_='info-window')
         self.font_size = self.skin.get(self.element).font_size(None, False, None)
@@ -66,7 +66,7 @@ class InfoWindow(UIWindow):
         size = sizer.min_size
         self.layout.frame['canvasSize'] = (0, size[0], -size[1], 0)
         title = "Body information"
-        self.window = WindowFrame(title, parent=self.owner.root, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(title, scale=self.scale, child=self.layout, parent=self)
         self.window.register_scroller(self.layout.frame)
 
     def make_title_entry(self, frame, title):
@@ -129,7 +129,7 @@ def _show_info_window():
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('info') and window_manager.gui.cosmonium.selected is not None:
         # TODO: Retrieve properly selected object
-        window = InfoWindow(window_manager.gui.cosmonium.selected, owner=window_manager.gui)
+        window = InfoWindow(window_manager.gui.cosmonium.selected, parent=window_manager.gui)
         window_manager.open_window(window, 'info')
 
 

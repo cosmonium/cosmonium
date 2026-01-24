@@ -25,8 +25,8 @@ from ..skin import UIElement as SKinUIElement
 
 class Popup(UIElement):
 
-    def __init__(self, engine, scale, menu_builder, over, owner, popup_done=None):
-        UIElement.__init__(self, 'popup', owner)
+    def __init__(self, engine, scale, menu_builder, over, parent=None, popup_done=None):
+        UIElement.__init__(self, 'popup', parent)
         self.engine = engine
         self.scale = scale
         self.menu_builder = menu_builder

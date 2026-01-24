@@ -52,7 +52,7 @@ def _show_about_window():
     """Show the about window."""
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('about'):
-        window = TextWindow('About', owner=window_manager.gui)
+        window = TextWindow('About', parent=window_manager.gui)
         window.set_text(about_text)
         window_manager.open_window(window, 'about')
 

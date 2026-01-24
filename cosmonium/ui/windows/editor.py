@@ -39,8 +39,8 @@ from .uiwindow import UIWindow
 
 class ParamEditor(UIWindow):
 
-    def __init__(self, owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
 
@@ -248,7 +248,7 @@ class ParamEditor(UIWindow):
         self.element = None
         self.button_background['frameSize'] = [0, self.width * settings.ui_scale, 0, self.layout.height_offset]
         title = "Editor - " + group.name
-        self.window = WindowFrame(title, parent=self.owner.root, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(title, scale=self.scale, child=self.layout, parent=self)
         self.window.register_scroller(self.layout.frame.viewingArea)
 
     def do_update(self, value, slider, param, component=None):

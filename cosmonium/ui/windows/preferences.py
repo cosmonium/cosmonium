@@ -26,8 +26,8 @@ from .editor import ParamEditor
 
 class Preferences(ParamEditor):
 
-    def __init__(self, cosmonium, owner=None):
-        ParamEditor.__init__(self, owner)
+    def __init__(self, cosmonium, parent=None):
+        ParamEditor.__init__(self, parent=parent)
         self.cosmonium = cosmonium
 
     def update_parameter(self, param):
@@ -240,7 +240,7 @@ def _show_preferences_window():
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('preferences'):
         # TODO: Retrieve properly cosmonium instance
-        window = Preferences(window_manager.gui.cosmonium, owner=window_manager.gui)
+        window = Preferences(window_manager.gui.cosmonium, parent=window_manager.gui)
         window_manager.open_window(window, 'preferences')
 
 

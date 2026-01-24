@@ -33,19 +33,22 @@ from .draggable import DraggableWidgetMixin
 
 class WindowFrame(DraggableWidgetMixin):
 
-    def __init__(self, title_text, scale, parent=None, child=None, owner=None):
+    def __init__(self, title_text, scale, parent=None, child=None):
         DraggableWidgetMixin.__init__(self)
         self.title_text = title_text
         self.scale = scale
-        self.owner = owner
-        self.skin = owner.skin
+        self.parent = parent
         self.child = None
         self.title_color = (1, 1, 1, 1)
         self.title_pad = tuple(self.scale * 2)
         self.base = builtins.base
-        if parent is None:
-            parent = self.base.pixel2d
-        self.parent = parent
+
+        if parent is not None:
+            self.skin = parent.skin
+        else:
+            self.skin = None
+
+        self.anchor = parent.anchor
         self.border = (1, 1)
         self.event_handler = DirectObject()
         self.button_thrower = self.base.buttonThrowers[0].node()
@@ -53,7 +56,7 @@ class WindowFrame(DraggableWidgetMixin):
         self.event_handler.accept("wheel_down-up", self.mouse_wheel_event, extraArgs=[1])
         self.scrollers = []
 
-        self.frame = DirectFrame(parent=parent, state=DGG.NORMAL)
+        self.frame = DirectFrame(parent=parent.anchor, state=DGG.NORMAL)
         if max(self.border) > 0:
             self.decorator_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(0, 0, 0, 0))
             self.decorator_frame.set_pos((-self.border[0], 0, self.border[1]))
@@ -107,7 +110,7 @@ class WindowFrame(DraggableWidgetMixin):
         self.set_child(child)
 
     def get_ui(self):
-        return self.owner.get_ui()
+        return self.parent.get_ui()
 
     def set_child(self, child):
         if child is not None:
@@ -184,8 +187,8 @@ class WindowFrame(DraggableWidgetMixin):
             obj.setValue(obj.getValue() + dir * obj["pageSize"])
 
     def close_window(self, event=None):
-        if self.owner is not None:
-            self.owner.window_closed()
+        if self.parent is not None:
+            self.parent.window_closed()
         self.destroy()
 
     def destroy(self):

@@ -37,8 +37,8 @@ from .uiwindow import UIWindow
 
 class TimeEditor(UIWindow):
 
-    def __init__(self, time, owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, time, parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.time = time
         self.element = UIElement('window', id_='time-window')
         self.font_size = self.skin.get(self.element).font_size(None, False, None)
@@ -142,9 +142,7 @@ class TimeEditor(UIWindow):
         sizer.update((self.width, self.height))
         size = sizer.min_size
         frame['frameSize'] = (0, size[0], -size[1], 0)
-        self.window = WindowFrame(
-            _("Set time"), parent=self.owner.root, scale=self.scale, child=self.layout, owner=self
-        )
+        self.window = WindowFrame(_("Set time"), scale=self.scale, child=self.layout, parent=self)
 
     def ok(self):
         years = self.year_entry.getValue()
@@ -166,7 +164,7 @@ def _show_time_editor_window():
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('time-editor'):
         # TODO: Retrieve properly time instance
-        window = TimeEditor(window_manager.gui.time, owner=window_manager.gui)
+        window = TimeEditor(window_manager.gui.time, parent=window_manager.gui)
         window_manager.open_window(window, 'time-editor')
 
 

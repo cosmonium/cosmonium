@@ -16,21 +16,3 @@
 # You should have received a copy of the GNU General Public License
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-
-
-from ...events import EventsDispatcher
-from ..managers.window_manager import WindowManager
-from .textwindow import TextWindow
-
-
-def _show_help_window():
-    window_manager = WindowManager.instance()
-    if not window_manager.get_window_by_id('help'):
-        window = TextWindow('Help', parent=window_manager.gui)
-        window.load('control.md')
-        window_manager.open_window(window, 'help')
-
-
-def register_help_window():
-    dispatcher = EventsDispatcher.instance()
-    dispatcher.register('gui-show-help', _show_help_window)

@@ -25,8 +25,8 @@ from ..skin import UIElement
 
 class Menubar(DockedUIElement):
 
-    def __init__(self, menu_items, scale, owner):
-        DockedUIElement.__init__(self, 'menubar', 'top', owner)
+    def __init__(self, menu_items, scale, parent=None):
+        DockedUIElement.__init__(self, 'menubar', 'top', parent=parent)
         self.menu_items = menu_items
         self.scale = scale
         self.menubar = None

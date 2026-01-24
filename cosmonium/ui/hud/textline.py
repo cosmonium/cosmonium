@@ -26,8 +26,8 @@ from ..skin import UIElement
 
 
 class TextLine(DockedUIElement):
-    def __init__(self, id_, location, align, pos, owner=None):
-        DockedUIElement.__init__(self, id_, location, owner)
+    def __init__(self, id_, location, align, pos, parent=None):
+        DockedUIElement.__init__(self, id_, location, parent=parent)
         self.align = align
         self.text = ""
         self.pos = LVector2(pos[0], -pos[1])
@@ -54,7 +54,7 @@ class TextLine(DockedUIElement):
             self.instance.reparent_to(self.anchor)
 
     def create(self):
-        text_line_element = UIElement('onscreen-text', parent=self.owner.element, id_=self.id_)
+        text_line_element = UIElement('onscreen-text', parent=self.parent.element, id_=self.id_)
         style = self.skin.get_style(text_line_element)
         self.scale = style['scale']
         self.instance = OnscreenText(

@@ -23,41 +23,14 @@ Main UI configuration loader.
 """
 
 import os
-from typing import NamedTuple
 
 from ...parsers.yamlparser import YamlParser
-from ..skin import UISkin
 
 from .menus import MenuLoader
 from .dock import DockLoader
 from .hud import HUDLoader
 from .skin import SkinLoader
 from .shortcuts import ShortcutsLoader
-
-
-class UIConfig(NamedTuple):
-    """
-    Container for all UI configuration data.
-
-    Attributes:
-        locale: Path to locale directory for translations
-        shortcuts: List of (event, shortcuts) tuples for keyboard bindings
-        named_menus: Dictionary of named menu configurations
-        menubar: MenubarConfig instance for the main menu bar
-        popup: MenuConfig instance for context menu
-        dock: Tuple of (layout, orientation, location) for dock widget
-        hud: Dictionary mapping anchor positions to HUD widgets
-        skin: UISkin instance for UI styling
-    """
-
-    locale: str
-    shortcuts: list
-    named_menus: dict
-    menubar: object
-    popup: object
-    dock: object
-    hud: dict
-    skin: UISkin
 
 
 class UIConfigLoader:
@@ -82,7 +55,7 @@ class UIConfigLoader:
         shortcuts_loader: ShortcutsLoader for shortcuts loading
     """
 
-    def __init__(self, gui, global_vars):
+    def __init__(self, gui):
         """
         Initialize the UI config loader.
 
@@ -90,21 +63,23 @@ class UIConfigLoader:
             global_vars: Dictionary of global variables for expression evaluation
         """
         self.gui = gui
-        self.global_vars = global_vars
 
         # Initialize specialized loaders
-        self.menu_loader = MenuLoader(global_vars)
-        self.dock_loader = DockLoader(gui, global_vars)
-        self.hud_loader = HUDLoader(global_vars)
-        self.skin_loader = SkinLoader()
-        self.shortcuts_loader = ShortcutsLoader()
+        self.menu_loader = MenuLoader(gui)
+        self.dock_loader = DockLoader(gui)
+        self.hud_loader = HUDLoader(gui)
+        self.skin_loader = SkinLoader(gui)
+        self.shortcuts_loader = ShortcutsLoader(gui)
 
         # For backward compatibility - expose named_menus
         self.named_menus = self.menu_loader.named_menus
 
     def load(self, ui_config_file):
         """
-        Load complete UI configuration from a main config file.
+        Load complete UI configuration from a main config file and apply directly to GUI.
+
+        This method loads all UI components and applies them directly to the
+        GUI instance instead of returning an intermediate configuration object.
 
         The main config file should contain paths to component-specific files:
         - shortcuts: path to shortcuts.yaml
@@ -117,18 +92,12 @@ class UIConfigLoader:
 
         Args:
             ui_config_file: Path to main UI configuration file
-
-        Returns:
-            UIConfig instance containing all loaded components
         """
         parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
         data = parser.load_and_parse(ui_config_file)
 
-        # Load locale directory
-        localedir = data.get('locale', os.path.join(basedir, 'locale'))
-
-        # Load skin
+        # Load skin first (needed by other components)
         skin_file = data.get('skin')
         if skin_file is not None:
             if not os.path.isabs(skin_file):
@@ -136,64 +105,59 @@ class UIConfigLoader:
             skin = self.load_skin_file(skin_file)
         else:
             skin = None
-        # TODO: Skin must be available in gui module for the loaders below
         self.gui.skin = skin
 
-        # Load shortcuts
+        # Apply locale directly
+        locale = data.get('locale', os.path.join(basedir, 'locale'))
+        self.gui.locale = locale
+
+        # Apply shortcuts directly
         shortcuts_file = data.get('shortcuts')
         if shortcuts_file is not None:
             if not os.path.isabs(shortcuts_file):
                 shortcuts_file = os.path.join(basedir, shortcuts_file)
-            shortcuts = self.load_shortcuts(shortcuts_file)
+            self.gui.shortcuts_config = self.load_shortcuts(shortcuts_file)
         else:
-            shortcuts = []
+            self.gui.shortcuts_config = []
 
-        # Load menubar
+        # Apply menubar directly
         menubar_file = data.get('menubar')
         if menubar_file is not None:
             if not os.path.isabs(menubar_file):
                 menubar_file = os.path.join(basedir, menubar_file)
-            menubar = self.load_menubar(menubar_file)
+            self.gui.menubar_config = self.load_menubar(menubar_file)
         else:
-            menubar = None
+            self.gui.menubar_config = None
 
-        # Load popup menu
+        # Apply popup directly
         popup_file = data.get('popup')
         if popup_file is not None:
             if not os.path.isabs(popup_file):
                 popup_file = os.path.join(basedir, popup_file)
-            popup = self.load_popup(popup_file)
+            self.gui.popup_config = self.load_popup(popup_file)
         else:
-            popup = None
+            self.gui.popup_config = None
 
-        # Load dock
+        # Apply dock directly
         dock_file = data.get('dock')
         if dock_file is not None:
             if not os.path.isabs(dock_file):
                 dock_file = os.path.join(basedir, dock_file)
-            dock = self.load_dock_file(dock_file)
+            self.gui.dock_config = self.load_dock_file(dock_file)
         else:
-            dock = None
+            self.gui.dock_config = None
 
-        # Load HUD
+        # Apply HUD directly
         hud_file = data.get('hud')
         if hud_file is not None:
             if not os.path.isabs(hud_file):
                 hud_file = os.path.join(basedir, hud_file)
-            hud = self.load_hud_file(hud_file)
+            self.gui.hud_config = self.load_hud_file(hud_file)
         else:
-            hud = {}
+            self.gui.hud_config = {}
 
-        return UIConfig(
-            locale=localedir,
-            shortcuts=shortcuts,
-            named_menus=self.named_menus,
-            menubar=menubar,
-            popup=popup,
-            dock=dock,
-            hud=hud,
-            skin=skin,
-        )
+        # Store named_menus for backward compatibility
+        self.gui.named_menus = self.named_menus
 
     def load_shortcuts(self, shortcuts_file):
         """

@@ -33,7 +33,7 @@ def _show_select_screenshots_window():
             settings.screenshot_path,
             window_manager.gui.cosmonium.set_screenshots_path,
             show_files=False,
-            owner=window_manager.gui,
+            parent=window_manager.gui,
         )
         window_manager.open_window(window)
 

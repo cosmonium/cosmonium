@@ -28,30 +28,28 @@ class UIElement(ABC):
     Provides common interface and properties for windows, HUD widgets, and dock elements.
     """
 
-    def __init__(self, id_, owner=None):
+    def __init__(self, id_, parent=None):
         """Initialize a UI element.
 
         Args:
             id_: Unique identifier for this element
-            owner: Parent UI object that owns this element
+            parent: Parent UI element in the hierarchy
         """
         self.id_ = id_
-        self.owner = owner
+        self.parent = parent
         self.anchor = None
         self.visible = True
         self.instance = None
-        if owner is not None:
-            self.skin = owner.skin
+        if parent is not None:
+            self.skin = parent.skin
         else:
             self.skin = None
 
-    def set_owner(self, owner):
-        """Set the owner of this element."""
-        self.owner = owner
-        if owner is not None:
-            self.skin = owner.skin
-        else:
-            self.skin = None
+    def set_parent(self, parent):
+        """Set the parent of this element."""
+        self.parent = parent
+        if parent is not None:
+            self.skin = parent.skin
 
     def set_anchor(self, anchor):
         """Set the anchor point for positioning."""
@@ -99,9 +97,9 @@ class UIElement(ABC):
 class PositionedUIElement(UIElement):
     """UI element with position management."""
 
-    def __init__(self, id_, owner=None):
+    def __init__(self, id_, parent=None):
         """Initialize a positioned UI element."""
-        super().__init__(id_, owner)
+        super().__init__(id_, parent=parent)
         self.last_pos = None
 
 
@@ -120,15 +118,15 @@ class OverlayUIElement(UIElement):
 class DockedUIElement(OverlayUIElement):
     """UI element for dock widgets at screen edges."""
 
-    def __init__(self, id_, location, owner=None):
+    def __init__(self, id_, location, parent=None):
         """Initialize a docked UI element.
 
         Args:
             id_: Unique identifier
             location: Location of element
-            owner: Parent UI object
+            parent: Parent UI element
         """
-        super().__init__(id_, owner)
+        super().__init__(id_, parent=parent)
         self.location = location
         self.direction = None
         self.center = location in ('top', 'bottom', 'left', 'right')

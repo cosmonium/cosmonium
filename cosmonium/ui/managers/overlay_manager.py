@@ -33,7 +33,7 @@ class OverlayManager:
     # Valid anchor positions
     ANCHORS = {'top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'}
 
-    def __init__(self, gui, widgets, docks, global_vars, skin):
+    def __init__(self, gui, widgets, docks):
         """Initialize the overlay manager.
 
         Args:
@@ -44,8 +44,8 @@ class OverlayManager:
             skin: UI skin
         """
         self.base = builtins.base
-        self.owner = gui
-        self.skin = skin
+        self.gui = gui
+        self.skin = gui.skin
         self.element = UIElement(None, class_='hud', id_='hud')
         self.widgets = {}
         self.shown = True
@@ -67,7 +67,7 @@ class OverlayManager:
         if docks:
             self._initialize_widgets(docks)
         # Create info widget
-        self.info = FadeTextLine('info', 'bottom-left', TextNode.ALeft, LVector2(0, -3), owner=self)
+        self.info = FadeTextLine('info', 'bottom-left', TextNode.ALeft, LVector2(0, -3), parent=self)
         self.info.set_anchor(self.base.p2dBottomLeft)
         self.info.create()
 
@@ -95,7 +95,7 @@ class OverlayManager:
         """
         anchor = self._get_anchor(widget.location)
         if anchor is not None:
-            widget.set_owner(self)
+            widget.set_parent(self)
             widget.set_anchor(anchor)
             widget.create()
 

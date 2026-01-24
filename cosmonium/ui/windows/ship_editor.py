@@ -27,7 +27,7 @@ def _show_ship_editor_window():
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('ship-editor') and window_manager.gui.cosmonium.ship is not None:
         # TODO: Retrieve properly ship object
-        window = ObjectEditorWindow(window_manager.gui.cosmonium.ship, owner=window_manager.gui)
+        window = ObjectEditorWindow(window_manager.gui.cosmonium.ship, parent=window_manager.gui)
         window_manager.open_window(window, 'ship-editor')
 
 

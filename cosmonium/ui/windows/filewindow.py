@@ -36,8 +36,8 @@ class FileWindow(UIWindow):
         'file': "textures/icons/File.png",
     }
 
-    def __init__(self, title, path, callback, show_files=True, extensions=[], owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, title, path, callback, show_files=True, extensions=[], parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.title = title
         if path is None:
             path = "~"
@@ -55,7 +55,7 @@ class FileWindow(UIWindow):
     def create_layout(self):
         width = 800
         height = 600
-        self.layout = DirectWidgetContainer(DirectFrame(parent=self.owner.root, state=DGG.NORMAL))
+        self.layout = DirectWidgetContainer(DirectFrame(state=DGG.NORMAL))
         self.browser = DirectFolderBrowser(
             command=self.done,
             size=(width, height),
@@ -66,7 +66,7 @@ class FileWindow(UIWindow):
             icons=self.icons,
         )
         self.layout.frame['frameSize'] = [0, width, -height, 0]
-        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, parent=self)
 
     def hide(self):
         UIWindow.hide(self)

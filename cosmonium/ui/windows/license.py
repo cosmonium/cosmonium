@@ -27,7 +27,7 @@ def _show_license_window():
     """Show the license window."""
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('license'):
-        window = TextWindow('License', owner=window_manager.gui)
+        window = TextWindow('License', parent=window_manager.gui)
         window.load('COPYING.md')
         window_manager.open_window(window)
 

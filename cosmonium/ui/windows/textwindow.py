@@ -29,8 +29,8 @@ from .uiwindow import UIWindow
 
 
 class TextWindow(UIWindow):
-    def __init__(self, title, owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, title, parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.title = title
         self.element = UIElement('text-window')
         self.markdown = create_markdown_renderer(self.skin.get(self.element).font_family)
@@ -48,6 +48,6 @@ class TextWindow(UIWindow):
             self.text = self.markdown(self.text)
 
     def create_layout(self):
-        self.layout = ScrollText(parent=self.owner.root, text=self.text, align=TextNode.ALeft, owner=self)
-        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, owner=self)
+        self.layout = ScrollText(text=self.text, align=TextNode.ALeft, parent=self)
+        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, parent=self)
         self.window.register_scroller(self.layout.frame)

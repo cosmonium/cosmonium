@@ -28,8 +28,8 @@ from ..skin import UIElement
 
 class Dock(DockedUIElement):
 
-    def __init__(self, id_, direction, location, layout, owner=None):
-        DockedUIElement.__init__(self, id_, location, owner)
+    def __init__(self, id_, direction, location, layout, parent=None):
+        DockedUIElement.__init__(self, id_, location, parent=parent)
         self.direction = direction
         self.layout = layout
         self.anchor = None

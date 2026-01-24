@@ -40,15 +40,14 @@ class DockLoader(BaseComponentLoader):
     and contain button, text, and layout widgets.
     """
 
-    def __init__(self, gui, global_vars):
+    def __init__(self, gui):
         """
         Initialize the Dock loader with global variables for expressions.
 
         Args:
-            global_vars: Dictionary of global variables for expression evaluation
+            gui: UI instance
         """
         self.gui = gui
-        self.global_vars = global_vars
 
     def load_dock_config(self, data):
         """
@@ -56,10 +55,9 @@ class DockLoader(BaseComponentLoader):
 
         Args:
             data: Dictionary containing dock configuration
-            global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
-            Tuple of (layout_widget, orientation, location)
+            Dock instance
         """
         id_ = data.get('id', None)
         orientation = data.get('orientation', 'horizontal')
@@ -71,8 +69,8 @@ class DockLoader(BaseComponentLoader):
         layout_data['orientation'] = orientation
 
         widget_registry = WidgetLoaderRegistry.get_instance()
-        layout = widget_registry.load(layout_data, self.global_vars)
-        dock = Dock(id_, orientation, location, layout, self.gui)
+        layout = widget_registry.load(layout_data, self.gui)
+        dock = Dock(id_, orientation, location, layout)
         return dock
 
     def load(self, filepath):
@@ -83,7 +81,7 @@ class DockLoader(BaseComponentLoader):
             filepath: Path to dock YAML file
 
         Returns:
-            Tuple of (layout_widget, orientation, location)
+            List of dock widgets
         """
         parser = YamlParser()
         data = parser.load_and_parse(filepath)

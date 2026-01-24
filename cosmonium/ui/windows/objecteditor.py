@@ -25,8 +25,8 @@ from .editor import ParamEditor
 
 class ObjectEditorWindow(ParamEditor):
 
-    def __init__(self, body, owner=None):
-        ParamEditor.__init__(self, owner=owner)
+    def __init__(self, body, parent=None):
+        ParamEditor.__init__(self, parent=parent)
         self.body = body
         self.editor = None
 
@@ -43,7 +43,7 @@ def _show_object_editor_window():
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('object-editor') and window_manager.gui.cosmonium.selected is not None:
         # TODO: Retrieve properly selected object
-        window = ObjectEditorWindow(window_manager.gui.cosmonium.selected, owner=window_manager.gui)
+        window = ObjectEditorWindow(window_manager.gui.cosmonium.selected, parent=window_manager.gui)
         window_manager.open_window(window, 'object-editor')
 
 

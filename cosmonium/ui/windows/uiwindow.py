@@ -28,16 +28,24 @@ from ..core.ui_element import FloatingUIElement
 class UIWindow(FloatingUIElement):
     """Base class for all window types."""
 
-    def __init__(self, owner=None):
-        super().__init__(id_='window', owner=owner)
+    def __init__(self, parent=None):
+        super().__init__(id_='window', parent=parent)
         self.window = None
         self.layout = None
         self.last_pos = None
+        if parent is not None:
+            self.anchor = parent.anchor
+        else:
+            self.anchor = None
         self.scale = LVector2(settings.ui_scale, settings.ui_scale)
-        self.skin = owner.skin if owner else None
+
+    def set_parent(self, parent):
+        FloatingUIElement.set_parent(self, parent)
+        if parent is not None:
+            self.anchor = parent.anchor
 
     def get_ui(self):
-        return self.owner.get_ui() if self.owner else None
+        return self.parent.get_ui() if self.parent else None
 
     def set_limits(self, limits):
         if self.window is not None:
@@ -59,10 +67,10 @@ class UIWindow(FloatingUIElement):
             return
         self.create_layout()
         if self.last_pos is None:
-            if self.layout is not None and self.owner is not None:
+            if self.layout is not None and self.parent is not None:
                 width = self.layout.frame['frameSize'][1] - self.layout.frame['frameSize'][0]
                 height = self.layout.frame['frameSize'][3] - self.layout.frame['frameSize'][2]
-                self.last_pos = ((self.owner.width - width) / 2, 0, -(self.owner.height - height) / 2)
+                self.last_pos = ((self.parent.width - width) / 2, 0, -(self.parent.height - height) / 2)
             else:
                 self.last_pos = (100, 0, -100)
         self.window.setPos(self.last_pos)
@@ -82,8 +90,8 @@ class UIWindow(FloatingUIElement):
         self.last_pos = self.window.getPos()
         self.window = None
         self.layout = None
-        if self.owner is not None:
-            self.owner.window_closed(self)
+        if self.parent is not None:
+            self.parent.window_closed(self)
 
     def update_instance(self):
         """Update the visual instance."""

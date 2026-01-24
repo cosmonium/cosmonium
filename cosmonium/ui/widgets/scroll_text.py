@@ -28,14 +28,13 @@ from ..skin import UIElement
 
 
 class ScrollText(DirectWidgetContainer):
-    def __init__(self, text='', align=TextNode.ALeft, parent=None, frameSize=(0, 800, -600, 0), owner=None):
+    def __init__(self, text='', align=TextNode.ALeft, parent=None, frameSize=(0, 800, -600, 0)):
         super().__init__(None)
         self.parent = parent
-        self.owner = owner
-        self.skin = owner.skin
+        self.skin = parent.skin
+
         scrolled_frame_element = UIElement('scrolled-frame', class_='scroll-text')
         self.frame = DirectScrolledFrame(
-            parent=parent,
             state=DGG.DISABLED,
             frameSize=frameSize,
             relief=DGG.FLAT,

@@ -38,8 +38,13 @@ class SkinLoader(BaseComponentLoader):
     UI elements including colors, fonts, margins, padding, and sizes.
     """
 
-    def __init__(self):
-        """Initialize the skin loader with parsers."""
+    def __init__(self, gui):
+        """Initialize the skin loader with parsers.
+
+        Args:
+            gui: UI instance
+        """
+        self.gui = gui
         self.parsers = ParsersCollection()
 
     def load_skin_selector(self, data):

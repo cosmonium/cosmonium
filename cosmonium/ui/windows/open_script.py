@@ -33,7 +33,7 @@ def _show_open_script_window():
             settings.last_script_path,
             window_manager.gui.load_cel_script,
             extensions=['.cel', '.CEL'],
-            owner=window_manager.gui,
+            parent=window_manager.gui,
         )
         window_manager.open_window(window, 'open-script')
 

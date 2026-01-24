@@ -41,14 +41,14 @@ class HUDLoader(BaseComponentLoader):
     with conditional visibility and templated text content.
     """
 
-    def __init__(self, global_vars):
+    def __init__(self, gui):
         """
         Initialize the HUD loader with global variables for expressions.
 
         Args:
-            global_vars: Dictionary of global variables for expression evaluation
+            gui: UI instance
         """
-        self.global_vars = global_vars
+        self.gui = gui
         self.expression_parser = PythonExpressionParser()
         self.fstring_template_parser = FStringTemplateParser()
 
@@ -64,7 +64,7 @@ class HUDLoader(BaseComponentLoader):
         """
         condition = data.get('condition')
         if condition is not None:
-            condition = self.expression_parser.compile_expression(condition, self.global_vars)
+            condition = self.expression_parser.compile_expression(condition, self.gui.global_vars.globals)
 
         text = data.get('text')
         if text:

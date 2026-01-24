@@ -70,7 +70,7 @@ class Gui(object):
         self.width = 0
         self.height = 0
 
-        self.root = cosmonium.pixel2d
+        self.anchor = cosmonium.pixel2d
         self.cosmonium.p2dTopCenter = cosmonium.pixel2d.attach_new_node('p2dTopCenter')
         self.cosmonium.p2dBottomCenter = cosmonium.pixel2d.attach_new_node('p2dBottomCenter')
         self.cosmonium.p2dLeftCenter = cosmonium.pixel2d.attach_new_node('p2dLeftCenter')
@@ -94,11 +94,10 @@ class Gui(object):
         self.global_vars = GlobalVars(self.base, self)
 
         init_widget_loaders(WidgetLoaderRegistry.get_instance())
-        ui_config = self.load(config_file)
-        self.skin = ui_config.skin
-        self.translation = self.cosmonium.load_lang("ui", ui_config.locale)
+        self.load(config_file)
+        self.translation = self.cosmonium.load_lang("ui", self.locale)
 
-        self.shortcuts.set_shortcuts(ui_config.shortcuts)
+        self.shortcuts.set_shortcuts(self.shortcuts_config)
 
         # Initialize managers
         self.window_manager = WindowManager(self)
@@ -106,21 +105,21 @@ class Gui(object):
         self.theme_manager = ThemeManager(self, self.skin)
 
         # Initialize overlay manager (replaces Huds)
-        self.hud = OverlayManager(self, ui_config.hud, ui_config.dock, self.global_vars, self.skin)
+        self.hud = OverlayManager(self, self.hud_config, self.dock_config)
 
         # Initialize query object
-        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, owner=self)
+        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, parent=self)
 
-        self.browser = Browser(owner=self)
+        self.browser = Browser(parent=self)
 
         menu_builder = MenuBuilder(
             self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser
         )
-        menu_builder.add_named_menus(ui_config.named_menus)
-        self.menubar = Menubar(menu_builder.create_menubar(ui_config.menubar), self.scale, owner=self)
+        menu_builder.add_named_menus(self.named_menus)
+        self.menubar = Menubar(menu_builder.create_menubar(self.menubar_config), self.scale, parent=self)
         self.menubar.create()
 
-        self.popup_menu_config = menu_builder.create_menu(ui_config.popup)
+        self.popup_menu_config = menu_builder.create_menu(self.popup_config)
         self.popup_menu_shown = False
 
         if settings.show_hud:
@@ -136,8 +135,9 @@ class Gui(object):
         return self
 
     def load(self, ui_config_file):
-        loader = UIConfigLoader(self, self.global_vars.globals)
-        return loader.load(ui_config_file)
+        """Load UI configuration and apply directly to GUI."""
+        loader = UIConfigLoader(self)
+        loader.load(ui_config_file)
 
     def set_nav(self, nav):
         self.nav = nav

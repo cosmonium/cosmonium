@@ -38,14 +38,14 @@ class MenuLoader(BaseComponentLoader):
     separators, and menu bars with dynamic state expressions.
     """
 
-    def __init__(self, global_vars):
+    def __init__(self, gui):
         """
         Initialize the menu loader with global variables for expressions.
 
         Args:
-            global_vars: Dictionary of global variables for expression evaluation
+            gui: UI instance
         """
-        self.global_vars = global_vars
+        self.gui = gui
         self.expression_parser = PythonExpressionParser()
         self.named_menus = {}
 
@@ -65,14 +65,14 @@ class MenuLoader(BaseComponentLoader):
             # Parse enabled condition
             enabled_source = data.get('enabled')
             if enabled_source is not None:
-                enabled = self.expression_parser.compile_expression(enabled_source, self.global_vars)
+                enabled = self.expression_parser.compile_expression(enabled_source, self.gui.global_vars.globals)
             else:
                 enabled = true_expression
 
             # Parse visible condition
             visible_source = data.get('visible')
             if visible_source is not None:
-                visible = self.expression_parser.compile_expression(visible_source, self.global_vars)
+                visible = self.expression_parser.compile_expression(visible_source, self.gui.global_vars.globals)
             else:
                 visible = true_expression
 
@@ -80,7 +80,7 @@ class MenuLoader(BaseComponentLoader):
                 # Event menu entry
                 state_source = data.get('state')
                 if state_source is not None:
-                    state = self.expression_parser.compile_expression(state_source, self.global_vars)
+                    state = self.expression_parser.compile_expression(state_source, self.gui.global_vars.globals)
                 else:
                     state = zero_expression
                 event = data.get("event")
@@ -123,7 +123,6 @@ class MenuLoader(BaseComponentLoader):
 
         Args:
             filepath: Path to menubar YAML file
-            global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             MenubarConfig instance
@@ -154,7 +153,6 @@ class MenuLoader(BaseComponentLoader):
 
         Args:
             filepath: Path to popup YAML file
-            global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             MenuConfig instance
@@ -174,7 +172,6 @@ class MenuLoader(BaseComponentLoader):
 
         Args:
             filepath: Path to menu configuration file
-            global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             MenubarConfig or MenuConfig instance

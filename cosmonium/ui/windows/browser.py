@@ -35,8 +35,8 @@ except Exception:
 
 
 class Browser(UIWindow):
-    def __init__(self, owner=None):
-        UIWindow.__init__(self, owner)
+    def __init__(self, parent=None):
+        UIWindow.__init__(self, parent=parent)
         self.renderer = None
 
     def create_layout(self):
@@ -47,7 +47,7 @@ class Browser(UIWindow):
         else:
             self.renderer.set_target(self.layout)
         self.layout.create()
-        self.window = WindowFrame("Browser", scale=self.scale, child=self.layout, owner=self)
+        self.window = WindowFrame("Browser", scale=self.scale, child=self.layout, parent=self)
 
     def load(self, url):
         if not cefpanda_valid:
