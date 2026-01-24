@@ -24,16 +24,17 @@ from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.DirectObject import DirectObject
-from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import Point3, TextNode, PGSliderBar
 
 from ...geometry.geometry import FrameGeom
 from ..skin import UIElement
+from .draggable import DraggableWidgetMixin
 
 
-class WindowFrame:
+class WindowFrame(DraggableWidgetMixin):
 
     def __init__(self, title_text, scale, parent=None, child=None, owner=None):
+        DraggableWidgetMixin.__init__(self)
         self.title_text = title_text
         self.scale = scale
         self.owner = owner
@@ -98,11 +99,10 @@ class WindowFrame:
         ]
         self.close.setTextPos(-bottom_left[0] + self.title_pad[0], -size[2] - bottom_left[2] - self.title_pad[1])
         self.frame.set_pos(0, 0, 0)
-        self.title_frame.bind(DGG.B1PRESS, self.start_drag)
-        self.title_frame.bind(DGG.B1RELEASE, self.stop_drag)
+        self.instance = self.frame
+        self.setup_dragging(self.title_frame)
         if self.decorator_frame is not None:
-            self.decorator_frame.bind(DGG.B1PRESS, self.start_drag)
-            self.decorator_frame.bind(DGG.B1RELEASE, self.stop_drag)
+            self.setup_dragging(self.decorator_frame)
         self.close_frame.bind(DGG.B1PRESS, self.close_window)
         self.set_child(child)
 
@@ -141,6 +141,7 @@ class WindowFrame:
         pos = self.frame.get_pos()
         new_pos = (min(max(pos[0], limits[0]), limits[1]), 0, max(min(pos[2], limits[2]), limits[3]))
         self.frame.set_pos(new_pos)
+        self.set_drag_limits(limits)
 
     def register_scroller(self, scroller):
         self.scrollers.append(scroller)
@@ -182,35 +183,10 @@ class WindowFrame:
         if isinstance(obj, DirectSlider) or isinstance(obj, DirectScrollBar):
             obj.setValue(obj.getValue() + dir * obj["pageSize"])
 
-    def start_drag(self, event):
-        if self.base.mouseWatcherNode.has_mouse():
-            mpos = self.base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(
-                self.base.render2d, Point3(mpos.get_x(), 0, mpos.get_y())
-            )
-            self.drag_start = current_pos - self.frame.get_pos()
-            taskMgr.add(self.drag, "drag", -1)
-
-    def drag(self, task):
-        if self.base.mouseWatcherNode.has_mouse():
-            mpos = self.base.mouseWatcherNode.get_mouse()
-            current_pos = self.frame.parent.get_relative_point(
-                self.base.render2d, Point3(mpos.get_x(), 0, mpos.get_y())
-            )
-            # Don't let the top left corner go out of the UI limits
-            limits = self.get_ui().get_limits()
-            pos = current_pos - self.drag_start
-            new_pos = (min(max(pos[0], limits[0]), limits[1]), 0, max(min(pos[2], limits[2]), limits[3]))
-            self.frame.set_pos(new_pos)
-        return task.again
-
     def close_window(self, event=None):
         if self.owner is not None:
             self.owner.window_closed()
         self.destroy()
-
-    def stop_drag(self, event):
-        taskMgr.remove("drag")
 
     def destroy(self):
         if self.frame is not None:
