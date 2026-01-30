@@ -25,12 +25,13 @@ Main UI configuration loader.
 import os
 
 from ...parsers.yamlparser import YamlParser
-
-from .menus import MenuLoader
+from ..config.models import UIConfigModel
+from ..config.validator import ConfigValidator
 from .dock import DockLoader
 from .hud import HUDLoader
-from .skin import SkinLoader
+from .menus import MenuLoader
 from .shortcuts import ShortcutsLoader
+from .skin import SkinLoader
 
 
 class UIConfigLoader:
@@ -64,15 +65,32 @@ class UIConfigLoader:
         """
         self.gui = gui
 
-        # Initialize specialized loaders
-        self.menu_loader = MenuLoader(gui)
-        self.dock_loader = DockLoader(gui)
-        self.hud_loader = HUDLoader(gui)
-        self.skin_loader = SkinLoader(gui)
-        self.shortcuts_loader = ShortcutsLoader(gui)
+        # Config validator
+        self.validator = ConfigValidator()
 
-        # For backward compatibility - expose named_menus
-        self.named_menus = self.menu_loader.named_menus
+        # Create specialized loaders
+        self.menu_loader = MenuLoader(gui, self.validator)
+        self.dock_loader = DockLoader(gui, self.validator)
+        self.hud_loader = HUDLoader(gui, self.validator)
+        self.skin_loader = SkinLoader(gui, self.validator)
+        self.shortcuts_loader = ShortcutsLoader(gui, self.validator)
+
+    def _resolve_path(self, path, basedir):
+        """
+        Resolve a file path relative to the base directory.
+
+        Args:
+            path: File path (absolute or relative)
+            basedir: Base directory for relative paths
+
+        Returns:
+            Absolute path or None if path is None
+        """
+        if path is None:
+            return None
+        if os.path.isabs(path):
+            return path
+        return os.path.join(basedir, path)
 
     def load(self, ui_config_file):
         """
@@ -95,138 +113,58 @@ class UIConfigLoader:
         """
         parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
-        data = parser.load_and_parse(ui_config_file)
+        raw_data = parser.load_and_parse(ui_config_file)
+
+        # Validate main config
+        data = UIConfigModel.model_validate(raw_data)
 
         # Load skin first (needed by other components)
-        skin_file = data.get('skin')
+        skin_file = self._resolve_path(data.skin, basedir)
         if skin_file is not None:
-            if not os.path.isabs(skin_file):
-                skin_file = os.path.join(basedir, skin_file)
-            skin = self.load_skin_file(skin_file)
+            skin = self.skin_loader.load(skin_file)
         else:
             skin = None
         self.gui.skin = skin
 
-        # Apply locale directly
-        locale = data.get('locale', os.path.join(basedir, 'locale'))
+        # Load locale
+        locale = self._resolve_path(data.locale, basedir) or os.path.join(basedir, 'locale')
         self.gui.locale = locale
 
-        # Apply shortcuts directly
-        shortcuts_file = data.get('shortcuts')
+        # Load shortcuts
+        shortcuts_file = self._resolve_path(data.shortcuts, basedir)
         if shortcuts_file is not None:
-            if not os.path.isabs(shortcuts_file):
-                shortcuts_file = os.path.join(basedir, shortcuts_file)
-            self.gui.shortcuts_config = self.load_shortcuts(shortcuts_file)
+            self.gui.shortcuts_config = self.shortcuts_loader.load(shortcuts_file)
         else:
             self.gui.shortcuts_config = []
 
-        # Apply menubar directly
-        menubar_file = data.get('menubar')
+        # Load menubar
+        menubar_file = self._resolve_path(data.menubar, basedir)
         if menubar_file is not None:
-            if not os.path.isabs(menubar_file):
-                menubar_file = os.path.join(basedir, menubar_file)
-            self.gui.menubar_config = self.load_menubar(menubar_file)
+            named_menus, menubar_config = self.menu_loader.load_menubar(menubar_file)
+            self.gui.named_menus = named_menus
+            self.gui.menubar_config = menubar_config
         else:
             self.gui.menubar_config = None
 
-        # Apply popup directly
-        popup_file = data.get('popup')
+        # Load popup menu
+        popup_file = self._resolve_path(data.popup, basedir)
         if popup_file is not None:
-            if not os.path.isabs(popup_file):
-                popup_file = os.path.join(basedir, popup_file)
-            self.gui.popup_config = self.load_popup(popup_file)
+            self.gui.popup_config = self.menu_loader.load_popup(popup_file)
         else:
             self.gui.popup_config = None
 
-        # Apply dock directly
-        dock_file = data.get('dock')
+        # Load dock
+        dock_file = self._resolve_path(data.dock, basedir)
         if dock_file is not None:
-            if not os.path.isabs(dock_file):
-                dock_file = os.path.join(basedir, dock_file)
-            self.gui.dock_config = self.load_dock_file(dock_file)
+            self.gui.dock_config = self.dock_loader.load(dock_file)
         else:
             self.gui.dock_config = None
 
-        # Apply HUD directly
-        hud_file = data.get('hud')
+        # Load HUD
+        hud_file = self._resolve_path(data.hud, basedir)
         if hud_file is not None:
-            if not os.path.isabs(hud_file):
-                hud_file = os.path.join(basedir, hud_file)
-            self.gui.hud_config = self.load_hud_file(hud_file)
+            self.gui.hud_config = self.hud_loader.load(hud_file)
         else:
             self.gui.hud_config = {}
 
         # Store named_menus for backward compatibility
-        self.gui.named_menus = self.named_menus
-
-    def load_shortcuts(self, shortcuts_file):
-        """
-        Load keyboard shortcuts from a file.
-
-        Args:
-            shortcuts_file: Path to shortcuts configuration file
-
-        Returns:
-            List of (event, shortcuts) tuples
-        """
-        return self.shortcuts_loader.load(shortcuts_file)
-
-    def load_menubar(self, menubar_file):
-        """
-        Load menubar configuration from a file.
-
-        Args:
-            menubar_file: Path to menubar configuration file
-
-        Returns:
-            MenubarConfig instance
-        """
-        return self.menu_loader.load_menubar(menubar_file)
-
-    def load_popup(self, popup_file):
-        """
-        Load popup menu configuration from a file.
-
-        Args:
-            popup_file: Path to popup menu configuration file
-
-        Returns:
-            MenuConfig instance
-        """
-        return self.menu_loader.load_popup(popup_file)
-
-    def load_dock_file(self, dock_file):
-        """
-        Load dock configuration from a file.
-
-        Args:
-            dock_file: Path to dock configuration file
-
-        Returns:
-            Tuple of (layout, orientation, location)
-        """
-        return self.dock_loader.load(dock_file)
-
-    def load_hud_file(self, hud_file):
-        """
-        Load HUD configuration from a file.
-
-        Args:
-            hud_file: Path to HUD configuration file
-
-        Returns:
-            Dictionary mapping anchor names to lists of HUD widgets
-        """
-        return self.hud_loader.load(hud_file)
-
-    def load_skin_file(self, skin_file):
-        """
-        Load skin configuration from a file.
-
-        Args:
-            skin_file: Path to skin configuration file
-
-        Returns:
-            UISkin instance
-        """
-        return self.skin_loader.load(skin_file)

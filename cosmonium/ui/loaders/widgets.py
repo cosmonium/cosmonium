@@ -25,11 +25,11 @@ This module implements the registry pattern for widget loaders, allowing
 new widget types to be registered dynamically without modifying core code.
 """
 
+from ..config.models import ButtonWidgetConfig, LayoutWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
 from ..dock.button import ButtonDockWidget
 from ..dock.layouts import LayoutDockWidget, SpaceDockWidget
 from ..dock.text import TextDockWidget
 from ..templates.fstring import FStringTemplateParser
-
 from .base import BaseWidgetLoader
 from .parsers import ParsersCollection
 
@@ -73,24 +73,26 @@ class WidgetLoaderRegistry:
             raise TypeError(f"Loader must be an instance of BaseWidgetLoader, got {type(loader)}")
         self._loaders[widget_type] = loader
 
-    def load(self, data, global_vars):
+    def load(self, widget_config, global_vars):
         """
         Load a widget from configuration data.
 
         Args:
-            data: Dictionary containing widget configuration with 'type' field
+            widget_config: WidgetConfig Pydantic model
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             Widget instance or None if loading fails
         """
-        widget_type = data.get('type')
+
+        # Get widget type from Pydantic model
+        widget_type = widget_config.type
+
         if widget_type not in self._loaders:
-            print(f"Unsupported widget type: {widget_type}")
-            return None
+            raise NotImplementedError(f"Unsupported widget type: {widget_type}")
 
         loader = self._loaders[widget_type]
-        return loader.load(data, self._parsers, global_vars)
+        return loader.load(widget_config, self._parsers, global_vars)
 
 
 class ButtonWidgetLoader(BaseWidgetLoader):
@@ -100,35 +102,34 @@ class ButtonWidgetLoader(BaseWidgetLoader):
     Handles loading of button dock widgets with text or icon codes.
     """
 
-    def load(self, data, parsers, global_vars):
+    def load(self, widget_config: ButtonWidgetConfig, parsers, global_vars):
         """
         Load a button widget from configuration data.
 
         Args:
-            data: Configuration dictionary containing button parameters
+            widget_config: ButtonWidgetConfig Pydantic model
             parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             ButtonDockWidget instance
         """
-        alignments = parsers.alignment.parse(data.get('align'))
-        borders = parsers.border.parse(data.get('borders'))
+        alignments = parsers.alignment.parse(widget_config.align)
+        borders = parsers.border.parse(widget_config.borders)
 
-        if 'text' in data:
-            text = data.get('text')
+        if widget_config.text:
+            text = widget_config.text
             rescale = False
-        elif 'code' in data:
-            code = int(data['code'], 16)
+        elif widget_config.code:
+            code = int(widget_config.code, 16)
             text = chr(code)
-            rescale = data.get('rescale', True)
+            rescale = widget_config.rescale
         else:
             text = None
 
-        event = data.get('event')
-        size = data.get('size', None)
-
-        return ButtonDockWidget(text, event, size, rescale=rescale, alignments=alignments, borders=borders)
+        return ButtonDockWidget(
+            text, widget_config.event, widget_config.size, rescale=rescale, alignments=alignments, borders=borders
+        )
 
 
 class TextWidgetLoader(BaseWidgetLoader):
@@ -144,23 +145,22 @@ class TextWidgetLoader(BaseWidgetLoader):
         """
         self.fstring_template_parser = FStringTemplateParser()
 
-    def load(self, data, parsers, global_vars):
+    def load(self, widget_config: TextWidgetConfig, parsers, global_vars):
         """
         Load a text widget from configuration data.
 
         Args:
-            data: Configuration dictionary containing text parameters
+            widget_config: TextWidgetConfig Pydantic model
             parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             TextDockWidget instance
         """
-        alignments = parsers.alignment.parse(data.get('align'))
-        borders = parsers.border.parse(data.get('borders'))
-        text = data.get('text')
-        template = self.fstring_template_parser.create_template(text)
-        align = parsers.text_alignment.parse(data.get('align'))
+        alignments = parsers.alignment.parse(widget_config.align)
+        borders = parsers.border.parse(widget_config.borders)
+        template = self.fstring_template_parser.create_template(widget_config.text)
+        align = parsers.text_alignment.parse(widget_config.align)
 
         return TextDockWidget(template, align=align, alignments=alignments, borders=borders)
 
@@ -172,20 +172,20 @@ class SpacerWidgetLoader(BaseWidgetLoader):
     Handles loading of spacer dock widgets used for layout spacing.
     """
 
-    def load(self, data, parsers, global_vars):
+    def load(self, widget_config: SpacerWidgetConfig, parsers, global_vars):
         """
         Load a spacer widget from configuration data.
 
         Args:
-            data: Configuration dictionary containing spacer parameters
+            widget_config: SpacerWidgetConfig Pydantic model
             parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             SpaceDockWidget instance
         """
-        alignments = parsers.alignment.parse(data.get('align'), ("min", "min"))
-        size = tuple(data.get('size', (0, 0)))
+        alignments = parsers.alignment.parse(widget_config.align, ("min", "min"))
+        size = tuple(widget_config.size)
 
         return SpaceDockWidget(size=size, alignments=alignments, borders=None)
 
@@ -198,37 +198,35 @@ class LayoutWidgetLoader(BaseWidgetLoader):
     This loader recursively loads child widgets using the registry.
     """
 
-    def load(self, data, parsers, global_vars):
+    def load(self, widget_config: LayoutWidgetConfig, parsers, global_vars):
         """
         Load a layout widget from configuration data.
 
         Args:
-            data: Configuration dictionary containing layout parameters
+            widget_config: LayoutWidgetConfig Pydantic model
             parsers: ParsersCollection instance
-            global_vars: Dictionary of global variables for expression evaluation
+            global_vars: Dictionary of global_vars for expression evaluation
 
         Returns:
             LayoutDockWidget instance
         """
-        alignments = parsers.alignment.parse(data.get('align'))
-        borders = parsers.border.parse(data.get('borders'))
-        gaps = parsers.gap.parse(data.get('gaps'))
-        size = data.get('size', 32)
-        decoration_size = data.get('decoration-size', (1, 1))
-        rounded_corners = data.get('rounded-corners', 0)
-        orientation = data.get('orientation', 'horizontal')
+        alignments = parsers.alignment.parse(widget_config.align)
+        borders = parsers.border.parse(widget_config.borders)
+        gaps = parsers.gap.parse(widget_config.gaps)
+        decoration_size = widget_config.decoration_size
+        rounded_corners = widget_config.rounded_corners
 
         # Recursively load child widgets
         registry = WidgetLoaderRegistry.get_instance()
         widgets = []
-        for widget_data in data.get('widgets', []):
-            widget = registry.load(widget_data, global_vars)
+        for child_widget_config in widget_config.widgets:
+            widget = registry.load(child_widget_config, global_vars)
             if widget is not None:
                 widgets.append(widget)
 
         return LayoutDockWidget(
-            size,
-            orientation,
+            widget_config.size,
+            widget_config.orientation,
             widgets,
             decoration_size=decoration_size,
             rounded_corners=rounded_corners,

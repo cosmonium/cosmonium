@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
-from copy import deepcopy
 
 
 """
@@ -26,7 +25,7 @@ This module handles loading of dock widget configurations from YAML files.
 """
 
 from ...parsers.yamlparser import YamlParser
-
+from ..config.models import DockConfig, LayoutWidgetConfig
 from ..dock.dock import Dock
 from .base import BaseComponentLoader
 from .widgets import WidgetLoaderRegistry
@@ -40,14 +39,16 @@ class DockLoader(BaseComponentLoader):
     and contain button, text, and layout widgets.
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui, validator):
         """
         Initialize the Dock loader with global variables for expressions.
 
         Args:
             gui: UI instance
+            validator: ConfigValidator instance
         """
         self.gui = gui
+        self.validator = validator
 
     def load_dock_config(self, data):
         """
@@ -59,18 +60,26 @@ class DockLoader(BaseComponentLoader):
         Returns:
             Dock instance
         """
-        id_ = data.get('id', None)
-        orientation = data.get('orientation', 'horizontal')
-        location = data.get('location', 'bottom')
+        # Validate dock configuration
+        validated = self.validator.validate_dict(data, DockConfig)
 
-        # Create a layout widget configuration from dock data
-        layout_data = deepcopy(data)
-        layout_data['type'] = 'layout'
-        layout_data['orientation'] = orientation
+        # Create a LayoutWidgetConfig from the dock for widget loading
+        layout_data = {
+            'type': 'layout',
+            'orientation': validated.orientation,
+            'widgets': validated.widgets,
+            'size': validated.size,
+            'gaps': validated.gaps,
+            'borders': validated.borders,
+            'decoration-size': validated.decoration_size,
+            'rounded-corners': validated.rounded_corners,
+        }
+        layout_config = LayoutWidgetConfig(**layout_data)
 
         widget_registry = WidgetLoaderRegistry.get_instance()
-        layout = widget_registry.load(layout_data, self.gui)
-        dock = Dock(id_, orientation, location, layout)
+        layout = widget_registry.load(layout_config, self.gui)
+        dock = Dock(validated.id, validated.orientation, validated.anchor, layout)
+
         return dock
 
     def load(self, filepath):

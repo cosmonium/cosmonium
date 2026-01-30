@@ -27,7 +27,8 @@ This module handles loading of HUD configurations from YAML files.
 from panda3d.core import TextNode
 
 from ...parsers.yamlparser import YamlParser
-from ..hud.dynamictextblock import DynamicTextBlockEntries, DynamicTextBlockEntry, DynamicTextBlock
+from ..config.models import HUDWidgetConfig
+from ..hud.dynamictextblock import DynamicTextBlock, DynamicTextBlockEntries, DynamicTextBlockEntry
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
 from .base import BaseComponentLoader
@@ -41,43 +42,43 @@ class HUDLoader(BaseComponentLoader):
     with conditional visibility and templated text content.
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui, validator):
         """
         Initialize the HUD loader with global variables for expressions.
 
         Args:
             gui: UI instance
+            validator: ConfigValidator instance
         """
         self.gui = gui
+        self.validator = validator
         self.expression_parser = PythonExpressionParser()
         self.fstring_template_parser = FStringTemplateParser()
 
-    def load_hud_entry(self, data):
+    def load_hud_entry(self, entry_config):
         """
         Load a HUD entry from configuration data.
 
         Args:
-            data: Dictionary containing HUD entry configuration
+            entry_config: HUDEntryConfig Pydantic model
 
         Returns:
             DynamicTextBlockEntry or DynamicTextBlockEntries instance
         """
-        condition = data.get('condition')
-        if condition is not None:
-            condition = self.expression_parser.compile_expression(condition, self.gui.global_vars.globals)
+        if entry_config.condition is not None:
+            condition = self.expression_parser.compile_expression(entry_config.condition, self.gui.global_vars.globals)
+        else:
+            condition = None
 
-        text = data.get('text')
-        if text:
+        if entry_config.text:
             # Single text entry
-            title = data.get('title')
-            template = self.fstring_template_parser.create_template(text)
-            entry = DynamicTextBlockEntry(condition, title, template)
+            template = self.fstring_template_parser.create_template(entry_config.text)
+            entry = DynamicTextBlockEntry(condition, entry_config.title, template)
         else:
             # Nested entries
-            entries_data = data.get('entries', [])
             entries = []
-            for entry_data in entries_data:
-                entry = self.load_hud_entry(entry_data)
+            for nested_entry_config in entry_config.entries:
+                entry = self.load_hud_entry(nested_entry_config)
                 entries.append(entry)
             entry = DynamicTextBlockEntries(condition, entries)
 
@@ -104,26 +105,23 @@ class HUDLoader(BaseComponentLoader):
         Load a HUD widget from configuration data.
 
         Args:
-            data: Dictionary containing HUD widget configuration
+            data: HUD widget configuration
 
         Returns:
-            Tuple of (DynamicTextBlock instance, anchor_name)
+            DynamicTextBlock instance
         """
-        id_ = data.get('id')
-        anchor_name = data.get('anchor')
-        size = data.get('size', 5)
 
         # Determine alignment and direction based on anchor position
-        if anchor_name == 'top-left':
+        if data.anchor == 'top-left':
             align = TextNode.A_left
             down = True
-        elif anchor_name == 'top-right':
+        elif data.anchor == 'top-right':
             align = TextNode.A_right
             down = True
-        elif anchor_name == 'bottom-left':
+        elif data.anchor == 'bottom-left':
             align = TextNode.A_left
             down = False
-        elif anchor_name == 'bottom-right':
+        elif data.anchor == 'bottom-right':
             align = TextNode.A_right
             down = False
         else:
@@ -131,8 +129,12 @@ class HUDLoader(BaseComponentLoader):
             align = TextNode.A_left
             down = True
 
-        entries = self.load_hud_entries(data.get('entries'))
-        widget = DynamicTextBlock(id_, location=anchor_name, align=align, down=down, count=size, entries=entries)
+        # Load entries from Pydantic model
+        entries = self.load_hud_entries(data.entries)
+
+        widget = DynamicTextBlock(
+            data.id, location=data.anchor, align=align, down=down, count=data.size, entries=entries
+        )
         return widget
 
     def load_hud_widgets(self, data):
@@ -147,7 +149,9 @@ class HUDLoader(BaseComponentLoader):
         """
         hud = []
         for widget_data in data:
-            widget = self.load_hud_widget(widget_data)
+            # Validate HUD widget configuration
+            validated = self.validator.validate_dict(widget_data, HUDWidgetConfig)
+            widget = self.load_hud_widget(validated)
             hud.append(widget)
         return hud
 

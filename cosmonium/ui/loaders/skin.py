@@ -25,7 +25,8 @@ This module handles loading of UI skin configurations from YAML files.
 """
 
 from ...parsers.yamlparser import YamlParser
-from ..skin import ParentSelector, Selector, UISkinEntry, UISkin
+from ..config.models import SkinEntryConfig, SkinSelectorConfig
+from ..skin import ParentSelector, Selector, UISkin, UISkinEntry
 from .base import BaseComponentLoader
 from .parsers import ParsersCollection
 
@@ -38,67 +39,66 @@ class SkinLoader(BaseComponentLoader):
     UI elements including colors, fonts, margins, padding, and sizes.
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui, validator):
         """Initialize the skin loader with parsers.
 
         Args:
             gui: UI instance
+            validator: ConfigValidator instance
         """
         self.gui = gui
+        self.validator = validator
         self.parsers = ParsersCollection()
 
-    def load_skin_selector(self, data):
+    def load_skin_selector(self, selector_config: SkinSelectorConfig):
         """
         Load a CSS-like selector from configuration data.
 
         Args:
-            data: Dictionary containing selector configuration
+            selector_config: SkinSelectorConfig Pydantic model
 
         Returns:
             Selector or ParentSelector instance
         """
-        element = data.get('element', None)
-        state = data.get('state', None)
-        class_ = data.get('class', None)
-        id_ = data.get('id', None)
 
-        selector = Selector(element, state, class_, id_)
+        selector = Selector(selector_config.element, selector_config.state, selector_config.class_, selector_config.id)
 
-        if 'parent' in data:
-            parent_selector = self.load_skin_selector(data['parent'])
+        if selector_config.parent is not None:
+            parent_selector = self.load_skin_selector(selector_config.parent)
             selector = ParentSelector(parent_selector, selector)
 
         return selector
 
-    def load_skin_entry(self, data):
+    def load_skin_entry(self, entry_config: SkinEntryConfig):
         """
         Load a skin entry from configuration data.
 
         Args:
-            data: Dictionary containing skin entry configuration
+            entry_config: SkinEntryConfig Pydantic model
 
         Returns:
             UISkinEntry instance
         """
-        selector = self.load_skin_selector(data)
+        # Load selector
+        selector = self.load_skin_selector(entry_config)
         entry = UISkinEntry(selector, {})
 
-        # Parse colors
-        entry.background_color = self.parsers.color.parse(data.get('background-color'))
-        entry.text_color = self.parsers.color.parse(data.get('text-color'))
-        entry.border_color = self.parsers.color.parse(data.get('border-color'))
+        # Parse colors using Pydantic model fields
+        entry.background_color = self.parsers.color.parse(entry_config.background_color)
+        entry.text_color = self.parsers.color.parse(entry_config.text_color)
+        entry.border_color = self.parsers.color.parse(entry_config.border_color)
 
         # Parse font properties
-        entry.font_family = data.get('font-family')
-        entry.font_size = self.parsers.length.parse(data.get('font-size'), entry)
-        entry.font_style = data.get('font-style')
-        entry.font_weight = data.get('font-weight')
+        entry.font_family = entry_config.font_family
+        entry.font_size = self.parsers.length.parse(entry_config.font_size, entry)
+        entry.font_style = entry_config.font_style
+        entry.font_weight = entry_config.font_weight
 
         # Parse layout properties
-        entry.margin = self.parsers.length.parse_edge_lengths(data.get('margin'), entry)
-        entry.padding = self.parsers.length.parse_edge_lengths(data.get('padding'), entry)
-        entry.width = self.parsers.length.parse(data.get('width'), entry)
-        entry.height = self.parsers.length.parse(data.get('height'), entry)
+        entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry)
+        entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry)
+        entry.width = self.parsers.length.parse(entry_config.width, entry)
+        entry.height = self.parsers.length.parse(entry_config.height, entry)
 
         return entry
 
@@ -114,7 +114,8 @@ class SkinLoader(BaseComponentLoader):
         """
         skin = UISkin()
         for entry_data in data:
-            entry = self.load_skin_entry(entry_data)
+            validated = self.validator.validate_dict(entry_data, SkinEntryConfig)
+            entry = self.load_skin_entry(validated)
             skin.add_entry(entry)
         return skin
 

@@ -26,11 +26,14 @@ with configuration files.
 """
 
 import os
+from pydantic import BaseModel, Field
 import pytest
 import tempfile
 
 from panda3d.core import LColor
 
+from cosmonium.ui.config.models import ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig
+from cosmonium.ui.config.validator import ConfigValidator
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
 
@@ -48,10 +51,15 @@ def init_registry(scope='module'):
     init_widget_loaders(WidgetLoaderRegistry.get_instance())
 
 
+@pytest.fixture
+def validator():
+    return ConfigValidator()
+
+
 class TestShortcutsLoader:
     """Tests for ShortcutsLoader with actual config files."""
 
-    def test_load_default_shortcuts(self):
+    def test_load_default_shortcuts(self, validator):
         """Test loading default shortcuts configuration."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
@@ -62,7 +70,7 @@ event-2: [2, control-2]
 """
             )
         try:
-            loader = ShortcutsLoader()
+            loader = ShortcutsLoader(None, validator)
             shortcuts = loader.load(filepath)
 
             assert isinstance(shortcuts, list)
@@ -76,7 +84,7 @@ event-2: [2, control-2]
 class TestSkinLoader:
     """Tests for SkinLoader with actual config files."""
 
-    def test_load_default_skin(self):
+    def test_load_default_skin(self, validator):
         """Test loading default skin configuration."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
@@ -89,7 +97,7 @@ class TestSkinLoader:
 """
             )
         try:
-            loader = SkinLoader()
+            loader = SkinLoader(None, validator)
             skin = loader.load(filepath)
 
             assert skin is not None
@@ -110,7 +118,7 @@ class TestSkinLoader:
 class TestDockLoader:
     """Tests for DockLoader with actual config files."""
 
-    def test_load_test_dock(self, init_registry):
+    def test_load_test_dock(self, init_registry, validator):
         """Test loading test dock configuration."""
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
@@ -126,7 +134,7 @@ dock:
 """
             )
         try:
-            loader = DockLoader(None, {})
+            loader = DockLoader(None, validator)
             docks = loader.load(filepath)
 
             assert isinstance(docks, list)
@@ -144,7 +152,7 @@ dock:
 class TestHUDLoader:
     """Tests for HUDLoader with actual config files."""
 
-    def test_load_default_hud(self):
+    def test_load_default_hud(self, validator):
         """Test loading default HUD configuration."""
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
@@ -166,8 +174,7 @@ hud:
 """
             )
         try:
-            global_vars = {}
-            loader = HUDLoader(global_vars)
+            loader = HUDLoader(None, validator)
             hud = loader.load(filepath)
 
             assert isinstance(hud, list)
@@ -192,39 +199,42 @@ hud:
 class TestWidgetLoaders:
     """Tests for widget loaders."""
 
-    def test_button_widget_loader(self):
+    def test_button_widget_loader(self, validator):
         """Test ButtonWidgetLoader."""
 
         parsers = ParsersCollection()
         loader = ButtonWidgetLoader()
 
         # Test with text button
-        data = {'text': 'Click me', 'event': 'test-event', 'size': 32}
-        widget = loader.load(data, parsers, {})
+        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'size': 32}
+        config = validator.validate_dict(data, ButtonWidgetConfig)
+        widget = loader.load(config, parsers, {})
         assert widget is not None
         assert widget.event == 'test-event'
 
-    def test_text_widget_loader(self):
+    def test_text_widget_loader(self, validator):
         """Test TextWidgetLoader."""
 
         parsers = ParsersCollection()
         loader = TextWidgetLoader()
 
-        data = {'text': 'Hello World', 'align': 'left'}
-        widget = loader.load(data, parsers, {})
+        data = {'type': 'text', 'text': 'Hello World', 'align': 'left'}
+        config = validator.validate_dict(data, TextWidgetConfig)
+        widget = loader.load(config, parsers, {})
         assert widget is not None
 
-    def test_spacer_widget_loader(self):
+    def test_spacer_widget_loader(self, validator):
         """Test SpacerWidgetLoader."""
 
         parsers = ParsersCollection()
         loader = SpacerWidgetLoader()
 
-        data = {'size': [10, 10]}
-        widget = loader.load(data, parsers, {})
+        data = {'type': 'spacer', 'size': [10, 10]}
+        config = validator.validate_dict(data, SpacerWidgetConfig)
+        widget = loader.load(config, parsers, {})
         assert widget is not None
 
-    def test_widget_registry(self):
+    def test_widget_registry(self, validator):
         """Test WidgetLoaderRegistry."""
 
         registry = WidgetLoaderRegistry()
@@ -232,20 +242,25 @@ class TestWidgetLoaders:
 
         # Test loading button
         button_data = {'type': 'button', 'text': 'Test', 'event': 'test'}
-        button = registry.load(button_data, {})
+        button_config = validator.validate_dict(button_data, ButtonWidgetConfig)
+        button = registry.load(button_config, {})
         assert button is not None
 
         # Test loading text
         text_data = {'type': 'text', 'text': 'Test'}
-        text = registry.load(text_data, {})
+        text_config = validator.validate_dict(text_data, TextWidgetConfig)
+        text = registry.load(text_config, {})
         assert text is not None
 
         # Test loading spacer
         spacer_data = {'type': 'spacer', 'size': [5, 5]}
-        spacer = registry.load(spacer_data, {})
+        space_config = validator.validate_dict(spacer_data, SpacerWidgetConfig)
+        spacer = registry.load(space_config, {})
         assert spacer is not None
 
         # Test unknown type
-        unknown_data = {'type': 'unknown'}
-        unknown = registry.load(unknown_data, {})
-        assert unknown is None
+        class UnknownConfig(BaseModel):
+            type: str = Field()
+
+        with pytest.raises(NotImplementedError):
+            registry.load(UnknownConfig(type='unknown'), {})

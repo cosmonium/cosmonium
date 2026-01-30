@@ -14,6 +14,8 @@ numpy==1.26.4
 platformdirs == 4.4.0 ; python_version < "3.10"
 platformdirs == 4.5.1 ; python_version >= "3.10"
 
+pydantic == 2.12.5
+
 pywin32 == 311 ; sys_platform == 'win32' or sys_platform == 'win_amd64'
 
 ruamel.yaml == 0.19.1

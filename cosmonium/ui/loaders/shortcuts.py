@@ -35,13 +35,15 @@ class ShortcutsLoader(BaseComponentLoader):
     Loads shortcut bindings from YAML files mapping events to key combinations.
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui, validator):
         """Initialize the skin loader with parsers.
 
         Args:
             gui: UI instance
+            validator: ConfigValidator instance
         """
         self.gui = gui
+        self.validator = validator
 
     def load(self, filepath):
         """

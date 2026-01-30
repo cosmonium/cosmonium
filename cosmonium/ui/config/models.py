@@ -1,0 +1,325 @@
+#
+# This file is part of Cosmonium.
+#
+# Copyright (C) 2018-2026 Laurent Deru.
+#
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+
+"""Pydantic models for UI configuration validation."""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+AlignmentLiteral = Literal['left', 'right', 'center', 'min', 'max']
+AnchorLiteral = Literal['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
+CornerLiteral = Literal['top-left', 'top-right', 'bottom-left', 'bottom-right']
+OrientationLiteral = Literal['horizontal', 'vertical']
+TextAlignLiteral = Literal['left', 'center', 'right']
+
+
+def to_kebab(name):
+    return name.replace('_', '-')
+
+
+# ============================================================================
+# Widget Configuration Models
+# ============================================================================
+
+
+class ButtonWidgetConfig(BaseModel):
+    """Configuration for button dock widgets."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    type: Literal['button'] = Field(description="Widget type identifier")
+    text: Optional[str] = Field(None, description="Button label text")
+    code: Optional[str] = Field(None, pattern=r'^[0-9a-fA-F]+$', description="Unicode hex code for icon")
+    event: Optional[str] = Field(None, description="Event name to send when clicked")
+    size: Optional[float] = Field(None, ge=1, description="Button size in pixels")
+    rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
+    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
+    borders: Optional[Any] = Field(None, description="Border configuration")
+    tooltip: Optional[str] = Field(None, description="Tooltip text")
+
+    @model_validator(mode='after')
+    def validate_text_or_code(self):
+        """Button must have either text or code, but not both."""
+        if self.text is None and self.code is None:
+            raise ValueError("Button must have either 'text' or 'code' field")
+        if self.text is not None and self.code is not None:
+            raise ValueError("Button cannot have both 'text' and 'code' fields")
+        return self
+
+
+class TextWidgetConfig(BaseModel):
+    """Configuration for text dock widgets."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    type: Literal['text'] = Field(description="Widget type identifier")
+    text: str = Field(description="Template text to display")
+    align: Optional[TextAlignLiteral] = Field('left', description="Text alignment (left/center/right)")
+    borders: Optional[Any] = Field(None, description="Border configuration")
+
+
+class SpacerWidgetConfig(BaseModel):
+    """Configuration for spacer dock widgets."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    type: Literal['spacer'] = Field(description="Widget type identifier")
+    size: List[float] = Field(default=[0, 0], min_length=2, max_length=2, description="[width, height] in pixels")
+    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
+
+
+class LayoutWidgetConfig(BaseModel):
+    """Configuration for layout dock widgets."""
+
+    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+
+    type: Literal['layout'] = Field(description="Widget type identifier")
+    orientation: OrientationLiteral = Field('horizontal', description="Layout orientation")
+    widgets: List['WidgetConfig'] = Field(default_factory=list, description="Child widgets")
+    align: Optional[List[AlignmentLiteral]] = Field(None, description="Widget alignment")
+    borders: Optional[Any] = Field(None, description="Border configuration")
+    gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
+    size: float = Field(32, description="Default widget size")
+    decoration_size: Optional[List[float]] = Field(default_factory=lambda: [1, 1], description="Decoration size")
+    rounded_corners: Optional[float] = Field(0, description="Corner radius for rounded borders")
+
+
+# Union type for all widget configs
+WidgetConfig = Union[ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig, LayoutWidgetConfig]
+
+LayoutWidgetConfig.model_rebuild()  # Rebuild to resolve forward reference
+
+
+# ============================================================================
+# Component Configuration Models
+# ============================================================================
+
+
+class DockConfig(BaseModel):
+    """Configuration for dock widgets."""
+
+    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+
+    id: Optional[str] = Field(None, description="Unique identifier for the dock")
+    orientation: OrientationLiteral = Field('horizontal', description="Dock orientation")
+    anchor: AnchorLiteral = Field('bottom', description="Screen location for the dock")
+    widgets: List[WidgetConfig] = Field(default_factory=list, description="Widgets in the dock")
+    size: float = Field(32, description="Default widget size")
+    gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
+    borders: Optional[Any] = Field(None, description="Border configuration")
+    decoration_size: Optional[List[float]] = Field(default_factory=lambda: [1, 1], description="Decoration size")
+    rounded_corners: Optional[float] = Field(0, description="Corner radius")
+
+
+class HUDEntryConfig(BaseModel):
+    """Configuration for a HUD text entry."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    condition: Optional[str] = Field(None, description="Python expression for visibility condition")
+    title: Optional[str] = Field(None, description="Entry title")
+    text: Optional[str] = Field(None, description="Template text to display")
+    entries: Optional[List['HUDEntryConfig']] = Field(None, description="Nested entries")
+
+    @model_validator(mode='after')
+    def validate_text_or_entries(self):
+        """Entry must have either text or entries, but not both."""
+        if self.text is None and self.entries is None:
+            raise ValueError("HUD entry must have either 'text' or 'entries' field")
+        if self.text is not None and self.entries is not None:
+            raise ValueError("HUD entry cannot have both 'text' and 'entries' fields")
+        return self
+
+
+HUDEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
+
+
+class HUDWidgetConfig(BaseModel):
+    """Configuration for HUD widgets."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    id: Optional[str] = Field(None, description="Unique identifier for the HUD widget")
+    anchor: CornerLiteral = Field(description="Screen anchor position")
+    size: int = Field(5, ge=1, description="Maximum number of lines to display")
+    entries: List[HUDEntryConfig] = Field(default_factory=list, description="HUD entries to display")
+    type: Optional[str] = Field(None, description="Type of HUD widget")
+
+
+class UIDocksConfig(BaseModel):
+    """Configuration for dock file."""
+
+    dock: List[DockConfig] = Field(default_factory=list)
+
+
+class UIHudsConfig(BaseModel):
+    """Configuration for hud file."""
+
+    hud: List[HUDWidgetConfig] = Field(default_factory=list)
+
+
+# ============================================================================
+# Menu Configuration Models
+# ============================================================================
+
+
+class MenuEntryConfig(BaseModel):
+    """Configuration for a menu entry."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    title: Optional[str] = Field(None, description="Menu entry title (only if sub entries)")
+    event: Optional[Union[str, Literal[0]]] = Field(None, description="Event to send when activated (0 to deactivate)")
+    menu: Optional[str] = Field(None, description="Named submenu reference")
+    entries: Optional[List[Union['MenuEntryConfig', None]]] = Field(
+        None, description="Inline submenu entries (None for separator)"
+    )
+    state: Optional[str] = Field(None, description="Python expression for entry state")
+    enabled: Optional[str] = Field(None, description="Python expression for enabled condition")
+    visible: Optional[str] = Field(None, description="Python expression for visibility condition")
+
+    @model_validator(mode='after')
+    def validate_text_or_entries(self):
+        """Entry with entries must have a title and no event nor state."""
+        if self.menu is not None and self.entries is not None:
+            raise ValueError("Menu entry cannot have both 'menu' and 'entries' fields")
+        if self.entries is not None or self.menu is not None:
+            if self.title is None:
+                raise ValueError("Menu entry with sub entries must have a 'title' field")
+            if self.event is not None:
+                raise ValueError("Menu entry with sub entries can not have an 'event' field")
+            if self.state is not None:
+                raise ValueError("Menu entry with sub entries can not have an 'state' field")
+        return self
+
+
+MenuEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
+
+
+class MenubarEntryConfig(BaseModel):
+    """Configuration for a menubar entry."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    title: str = Field(description="Menubar entry title")
+    entries: List[Union[MenuEntryConfig, None]] = Field(
+        default_factory=list, description="Menu entries (None for separator)"
+    )
+
+
+class MenubarConfigModel(BaseModel):
+    """Configuration for the menubar."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    menus: Dict[str, List[MenuEntryConfig]] = Field(default_factory=dict, description="Named menus")
+    menubar: List[MenubarEntryConfig] = Field(default_factory=list, description="Menubar entries")
+
+
+class PopupMenuConfig(BaseModel):
+    """Configuration for popup menus."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    popup: List[Union[MenuEntryConfig, None]] = Field(default_factory=list, description="Popup menu entries")
+
+
+class ShortcutConfig(BaseModel):
+    """Configuration for a keyboard shortcut."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    event: str = Field(description="Event name to trigger")
+    keys: List[str] = Field(min_length=1, description="Key combinations")
+
+
+# ============================================================================
+# Skin Configuration Models
+# ============================================================================
+
+
+class SkinSelectorConfig(BaseModel):
+    """Configuration for a skin selector."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    element: Optional[str] = Field(None, description="Element type (e.g., 'button', 'label')")
+    state: Optional[str] = Field(None, description="Element state (e.g., 'hover', 'active')")
+    class_: Optional[str] = Field(None, alias='class', description="CSS-like class name")
+    id: Optional[str] = Field(None, description="Element ID")
+    parent: Optional['SkinSelectorConfig'] = Field(None, description="Parent selector for nesting")
+
+
+SkinSelectorConfig.model_rebuild()  # Rebuild to resolve forward reference
+
+
+class SkinEntryConfig(BaseModel):
+    """Configuration for a skin style entry."""
+
+    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+
+    element: Optional[str] = Field(None, description="Element type")
+    state: Optional[str] = Field(None, description="Element state")
+    class_: Optional[str] = Field(None, alias='class', description="CSS class")
+    id: Optional[str] = Field(None, description="Element ID")
+    parent: Optional[SkinSelectorConfig] = Field(None, description="Parent selector")
+
+    # Style properties
+    background_color: Optional[Union[str, List[float]]] = Field(
+        None, description="Background color (hex string or RGB list)"
+    )
+    text_color: Optional[Union[str, List[float]]] = Field(None, description="Text color (hex string or RGB list)")
+    border_color: Optional[Union[str, List[float]]] = Field(None, description="Border color (hex string or RGB list)")
+    font_family: Optional[str] = Field(None, description="Font family name")
+    font_size: Optional[Union[float, str]] = Field(None, description="Font size (numeric or CSS string)")
+    font_style: Optional[str] = Field(None, description="Font style (e.g., 'italic')")
+    font_weight: Optional[str] = Field(None, description="Font weight (e.g., 'bold')")
+    margin: Optional[Union[str, List[str]]] = Field(None, description="Margin around the element")
+    padding: Optional[Union[str, List[str]]] = Field(None, description="Padding inside the element")
+    width: Optional[str] = Field(None, description="Element width (CSS value)")
+    height: Optional[str] = Field(None, description="Element height (CSS value)")
+
+
+class UISkinConfig(BaseModel):
+    """Configuration for a skin style."""
+
+    entries: List[SkinEntryConfig] = Field(default_factory=list)
+
+
+# ============================================================================
+# Main UI Configuration Model
+# ============================================================================
+
+
+class UIConfigModel(BaseModel):
+    """Main UI configuration file model."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    skin: Optional[str] = Field(None, description="Path to skin YAML file")
+    shortcuts: Optional[str] = Field(None, description="Path to shortcuts YAML file")
+    menubar: Optional[str] = Field(None, description="Path to menubar YAML file")
+    popup: Optional[str] = Field(None, description="Path to popup menu YAML file")
+    dock: Optional[str] = Field(None, description="Path to dock YAML file")
+    hud: Optional[str] = Field(None, description="Path to HUD YAML file")
+    locale: Optional[str] = Field(None, description="Path to locale directory")

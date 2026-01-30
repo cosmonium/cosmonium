@@ -25,7 +25,8 @@ This module handles loading of menu and menubar configurations from YAML files.
 """
 
 from ...parsers.yamlparser import YamlParser
-from ..menus.menubuilder import EventMenuEntry, SubMenuEntry, MenuSeparator, MenubarEntry, MenubarConfig, MenuConfig
+from ..config.models import MenubarConfigModel, MenuEntryConfig, PopupMenuConfig
+from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenubarEntry, MenuConfig, MenuSeparator, SubMenuEntry
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
 from .base import BaseComponentLoader
 
@@ -38,66 +39,62 @@ class MenuLoader(BaseComponentLoader):
     separators, and menu bars with dynamic state expressions.
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui, validator):
         """
         Initialize the menu loader with global variables for expressions.
 
         Args:
             gui: UI instance
+            validator: ConfigValidator instance
         """
         self.gui = gui
+        self.validator = validator
         self.expression_parser = PythonExpressionParser()
-        self.named_menus = {}
 
-    def load_menu_entry(self, data):
+    def load_menu_entry(self, entry_config: MenuEntryConfig):
         """
         Load a single menu entry from configuration data.
 
         Args:
-            data: Dictionary containing menu entry configuration
+            entry_config: MenuEntryConfig Pydantic model or None for separator
 
         Returns:
             MenuEntry instance (EventMenuEntry, SubMenuEntry, or MenuSeparator)
         """
-        if data is not None:
-            text = data.get("title")
+        if entry_config is None:
+            return MenuSeparator(visible=true_expression)
 
-            # Parse enabled condition
-            enabled_source = data.get('enabled')
-            if enabled_source is not None:
-                enabled = self.expression_parser.compile_expression(enabled_source, self.gui.global_vars.globals)
-            else:
-                enabled = true_expression
-
-            # Parse visible condition
-            visible_source = data.get('visible')
-            if visible_source is not None:
-                visible = self.expression_parser.compile_expression(visible_source, self.gui.global_vars.globals)
-            else:
-                visible = true_expression
-
-            if 'event' in data:
-                # Event menu entry
-                state_source = data.get('state')
-                if state_source is not None:
-                    state = self.expression_parser.compile_expression(state_source, self.gui.global_vars.globals)
-                else:
-                    state = zero_expression
-                event = data.get("event")
-                menu = EventMenuEntry(text=text, state=state, event=event, enabled=enabled, visible=visible)
-            elif 'menu' in data:
-                # Named submenu reference
-                menu = data.get("menu")
-                menu = SubMenuEntry(text=text, entries=menu, enabled=enabled, visible=visible)
-            elif 'title' in data:
-                # Inline submenu
-                entries = self.load_submenu(data.get("entries", []))
-                menu = SubMenuEntry(text=text, entries=entries, enabled=enabled, visible=visible)
-            else:
-                # Separator
-                menu = MenuSeparator(visible=visible)
+        # Parse enabled condition
+        if entry_config.enabled is not None:
+            enabled = self.expression_parser.compile_expression(entry_config.enabled, self.gui.global_vars.globals)
         else:
-            menu = MenuSeparator(visible=true_expression)
+            enabled = true_expression
+
+        # Parse visible condition
+        if entry_config.visible is not None:
+            visible = self.expression_parser.compile_expression(entry_config.visible, self.gui.global_vars.globals)
+        else:
+            visible = true_expression
+
+        if entry_config.event is not None:
+            # Event menu entry
+            if entry_config.state is not None:
+                state = self.expression_parser.compile_expression(entry_config.state, self.gui.global_vars.globals)
+            else:
+                state = zero_expression
+            menu = EventMenuEntry(
+                text=entry_config.title, state=state, event=entry_config.event, enabled=enabled, visible=visible
+            )
+        elif entry_config.menu is not None:
+            # Named submenu reference
+            menu = SubMenuEntry(text=entry_config.title, entries=entry_config.menu, enabled=enabled, visible=visible)
+        elif entry_config.title is not None:
+            # Inline submenu
+            entries = self.load_submenu(entry_config.entries if entry_config.entries else [])
+            menu = SubMenuEntry(text=entry_config.title, entries=entries, enabled=enabled, visible=visible)
+        else:
+            # Separator
+            menu = MenuSeparator(visible=visible)
 
         return menu
 
@@ -125,27 +122,30 @@ class MenuLoader(BaseComponentLoader):
             filepath: Path to menubar YAML file
 
         Returns:
-            MenubarConfig instance
+            Tuple with named menus dict and MenubarConfig instance
         """
         parser = YamlParser()
         data = parser.load_and_parse(filepath)
 
+        # Validate menubar configuration
+        validated = self.validator.validate_dict(data, MenubarConfigModel)
+
         # Load named menus that can be referenced elsewhere
-        for name, entries in data.get('menus', {}).items():
+        named_menus = {}
+        for name, entries in validated.menus.items():
             submenu = self.load_submenu(entries)
-            self.named_menus[name] = submenu
+            named_menus[name] = submenu
 
         # Load menubar entries
         entries = []
-        for menu_entry in data.get('menubar', []):
-            title = menu_entry.get('title')
-            submenu = menu_entry.get('entries', [])
-            submenu = self.load_submenu(submenu)
-            entry = MenubarEntry(title, submenu)
+        for menu_entry in validated.menubar:
+            # menu_entry is MenubarEntryConfig Pydantic model
+            submenu = self.load_submenu(menu_entry.entries)
+            entry = MenubarEntry(menu_entry.title, submenu)
             entries.append(entry)
 
         menubar = MenubarConfig(entries)
-        return menubar
+        return named_menus, menubar
 
     def load_popup(self, filepath):
         """
@@ -159,7 +159,11 @@ class MenuLoader(BaseComponentLoader):
         """
         parser = YamlParser()
         data = parser.load_and_parse(filepath)
-        entries = self.load_submenu(data.get('popup'))
+
+        # Validate popup configuration
+        validated = self.validator.validate_dict(data, PopupMenuConfig)
+        entries = self.load_submenu(validated.popup)
+
         menuconfig = MenuConfig(entries)
         return menuconfig
 
