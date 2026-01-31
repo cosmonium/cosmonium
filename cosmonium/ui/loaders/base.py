@@ -26,6 +26,9 @@ for widget loaders and component loaders.
 """
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
+
+from .parsers import ParsersCollection
 
 
 class BaseWidgetLoader(ABC):
@@ -38,7 +41,7 @@ class BaseWidgetLoader(ABC):
     """
 
     @abstractmethod
-    def load(self, data, parsers, global_vars):
+    def load(self, data: Dict[str, Any], parsers: ParsersCollection, global_vars: Dict[str, Any]) -> Optional[Any]:
         """
         Load a widget from configuration data.
 
@@ -63,7 +66,7 @@ class BaseComponentLoader(ABC):
     """
 
     @abstractmethod
-    def load(self, filepath):
+    def load(self, filepath: str) -> Optional[Dict[str, Any]]:
         """
         Load a component from a configuration file.
 

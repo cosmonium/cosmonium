@@ -22,7 +22,10 @@
 Main UI configuration loader.
 """
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING, Optional
 
 from ...parsers.yamlparser import YamlParser
 from ..config.models import UIConfigModel
@@ -32,6 +35,9 @@ from .hud import HUDLoader
 from .menus import MenuLoader
 from .shortcuts import ShortcutsLoader
 from .skin import SkinLoader
+
+if TYPE_CHECKING:
+    from ..gui import Gui
 
 
 class UIConfigLoader:
@@ -56,7 +62,7 @@ class UIConfigLoader:
         shortcuts_loader: ShortcutsLoader for shortcuts loading
     """
 
-    def __init__(self, gui):
+    def __init__(self, gui: Gui) -> None:
         """
         Initialize the UI config loader.
 
@@ -75,7 +81,7 @@ class UIConfigLoader:
         self.skin_loader = SkinLoader(gui, self.validator)
         self.shortcuts_loader = ShortcutsLoader(gui, self.validator)
 
-    def _resolve_path(self, path, basedir):
+    def _resolve_path(self, path: Optional[str], basedir: str) -> Optional[str]:
         """
         Resolve a file path relative to the base directory.
 
@@ -92,7 +98,7 @@ class UIConfigLoader:
             return path
         return os.path.join(basedir, path)
 
-    def load(self, ui_config_file):
+    def load(self, ui_config_file: str) -> None:
         """
         Load complete UI configuration from a main config file and apply directly to GUI.
 
@@ -166,5 +172,3 @@ class UIConfigLoader:
             self.gui.hud_config = self.hud_loader.load(hud_file)
         else:
             self.gui.hud_config = {}
-
-        # Store named_menus for backward compatibility

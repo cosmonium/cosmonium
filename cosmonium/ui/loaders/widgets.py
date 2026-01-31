@@ -25,6 +25,10 @@ This module implements the registry pattern for widget loaders, allowing
 new widget types to be registered dynamically without modifying core code.
 """
 
+from __future__ import annotations
+
+from typing import Any, Dict, Optional
+
 from ..config.models import ButtonWidgetConfig, LayoutWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
 from ..dock.button import ButtonDockWidget
 from ..dock.layouts import LayoutDockWidget, SpaceDockWidget
@@ -53,12 +57,12 @@ class WidgetLoaderRegistry:
         self._loaders = {}
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls) -> WidgetLoaderRegistry:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
-    def register(self, widget_type, loader):
+    def register(self, widget_type: str, loader: BaseWidgetLoader) -> None:
         """
         Register a widget loader for a specific type.
 
@@ -73,7 +77,7 @@ class WidgetLoaderRegistry:
             raise TypeError(f"Loader must be an instance of BaseWidgetLoader, got {type(loader)}")
         self._loaders[widget_type] = loader
 
-    def load(self, widget_config, global_vars):
+    def load(self, widget_config: Any, global_vars: Dict[str, Any]) -> Optional[Any]:
         """
         Load a widget from configuration data.
 
@@ -102,7 +106,9 @@ class ButtonWidgetLoader(BaseWidgetLoader):
     Handles loading of button dock widgets with text or icon codes.
     """
 
-    def load(self, widget_config: ButtonWidgetConfig, parsers, global_vars):
+    def load(
+        self, widget_config: ButtonWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
+    ) -> ButtonDockWidget:
         """
         Load a button widget from configuration data.
 
@@ -145,7 +151,9 @@ class TextWidgetLoader(BaseWidgetLoader):
         """
         self.fstring_template_parser = FStringTemplateParser()
 
-    def load(self, widget_config: TextWidgetConfig, parsers, global_vars):
+    def load(
+        self, widget_config: TextWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
+    ) -> TextDockWidget:
         """
         Load a text widget from configuration data.
 
@@ -172,7 +180,9 @@ class SpacerWidgetLoader(BaseWidgetLoader):
     Handles loading of spacer dock widgets used for layout spacing.
     """
 
-    def load(self, widget_config: SpacerWidgetConfig, parsers, global_vars):
+    def load(
+        self, widget_config: SpacerWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
+    ) -> SpaceDockWidget:
         """
         Load a spacer widget from configuration data.
 
@@ -198,7 +208,9 @@ class LayoutWidgetLoader(BaseWidgetLoader):
     This loader recursively loads child widgets using the registry.
     """
 
-    def load(self, widget_config: LayoutWidgetConfig, parsers, global_vars):
+    def load(
+        self, widget_config: LayoutWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
+    ) -> LayoutDockWidget:
         """
         Load a layout widget from configuration data.
 

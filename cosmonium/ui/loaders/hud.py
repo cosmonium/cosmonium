@@ -24,6 +24,10 @@ HUD loader.
 This module handles loading of HUD configurations from YAML files.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, List
+
 from panda3d.core import TextNode
 
 from ...parsers.yamlparser import YamlParser
@@ -32,6 +36,10 @@ from ..hud.dynamictextblock import DynamicTextBlock, DynamicTextBlockEntries, Dy
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
 from .base import BaseComponentLoader
+
+if TYPE_CHECKING:
+    from ..config.validator import ConfigValidator
+    from ..gui import Gui
 
 
 class HUDLoader(BaseComponentLoader):
@@ -42,7 +50,7 @@ class HUDLoader(BaseComponentLoader):
     with conditional visibility and templated text content.
     """
 
-    def __init__(self, gui, validator):
+    def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
         """
         Initialize the HUD loader with global variables for expressions.
 
@@ -55,7 +63,7 @@ class HUDLoader(BaseComponentLoader):
         self.expression_parser = PythonExpressionParser()
         self.fstring_template_parser = FStringTemplateParser()
 
-    def load_hud_entry(self, entry_config):
+    def load_hud_entry(self, entry_config: Any) -> Any:
         """
         Load a HUD entry from configuration data.
 
@@ -84,7 +92,7 @@ class HUDLoader(BaseComponentLoader):
 
         return entry
 
-    def load_hud_entries(self, data):
+    def load_hud_entries(self, data: List[Any]) -> List[Any]:
         """
         Load a list of HUD entries from configuration data.
 
@@ -100,7 +108,7 @@ class HUDLoader(BaseComponentLoader):
             entries.append(entry)
         return entries
 
-    def load_hud_widget(self, data):
+    def load_hud_widget(self, data: Any) -> DynamicTextBlock:
         """
         Load a HUD widget from configuration data.
 
@@ -137,7 +145,7 @@ class HUDLoader(BaseComponentLoader):
         )
         return widget
 
-    def load_hud_widgets(self, data):
+    def load_hud_widgets(self, data: List[Any]) -> List[DynamicTextBlock]:
         """
         Load HUD widgets from configuration data.
 
@@ -155,7 +163,7 @@ class HUDLoader(BaseComponentLoader):
             hud.append(widget)
         return hud
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> List[DynamicTextBlock]:
         """
         Load HUD configuration from a YAML file.
 

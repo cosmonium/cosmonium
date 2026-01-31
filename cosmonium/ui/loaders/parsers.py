@@ -26,6 +26,8 @@ values like colors, lengths, alignments, borders, and gaps. Each parser
 encapsulates the logic for parsing a specific type of value.
 """
 
+from typing import Any, Callable, List, Optional, Tuple
+
 from panda3d.core import LColor, LVector4, TextNode
 
 
@@ -40,7 +42,7 @@ class ColorParser:
     """
 
     @staticmethod
-    def parse(data):
+    def parse(data: Any) -> Optional[LColor]:
         """
         Parse a color value from configuration data.
 
@@ -80,7 +82,7 @@ class LengthParser:
     """
 
     @staticmethod
-    def parse(data, entry):
+    def parse(data: Any, entry: Any) -> Optional[Callable]:
         """
         Parse a length value from configuration data.
 
@@ -119,7 +121,7 @@ class LengthParser:
         return size
 
     @classmethod
-    def parse_edge_lengths(cls, data, entry):
+    def parse_edge_lengths(cls, data: Any, entry: Any) -> Optional[List[Optional[Callable]]]:
         """
         Parse edge lengths (margin, padding) from configuration data.
 
@@ -161,7 +163,7 @@ class AlignmentParser:
     """
 
     @staticmethod
-    def parse(value, default=('min', 'min')):
+    def parse(value: Any, default: Tuple[str, str] = ('min', 'min')) -> Tuple[str, str]:
         """
         Parse alignment specification from configuration data.
 
@@ -197,7 +199,7 @@ class BorderParser:
     """
 
     @staticmethod
-    def parse(value):
+    def parse(value: Any) -> Optional[LVector4]:
         """
         Parse border specification from configuration data.
 
@@ -226,7 +228,7 @@ class GapParser:
     """
 
     @staticmethod
-    def parse(value, default=(0, 0)):
+    def parse(value: Any, default: Tuple[int, int] = (0, 0)) -> Tuple[int, int]:
         """
         Parse gap specification from configuration data.
 
@@ -256,7 +258,7 @@ class TextAlignmentParser:
     """
 
     @staticmethod
-    def parse(value, default=TextNode.A_boxed_left):
+    def parse(value: Any, default: int = TextNode.A_boxed_left) -> int:
         """
         Parse text alignment specification from configuration data.
 
@@ -290,7 +292,7 @@ class ParsersCollection:
 
     _instance = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize all parser instances."""
         self.color = ColorParser()
         self.length = LengthParser()
@@ -300,7 +302,7 @@ class ParsersCollection:
         self.text_alignment = TextAlignmentParser()
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls) -> 'ParsersCollection':
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

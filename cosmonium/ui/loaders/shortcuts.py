@@ -24,8 +24,16 @@ Shortcuts loader.
 This module handles loading of keyboard shortcuts from configuration files.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List, Tuple
+
 from ...parsers.yamlparser import YamlParser
 from .base import BaseComponentLoader
+
+if TYPE_CHECKING:
+    from ..config.validator import ConfigValidator
+    from ..gui import Gui
 
 
 class ShortcutsLoader(BaseComponentLoader):
@@ -35,7 +43,7 @@ class ShortcutsLoader(BaseComponentLoader):
     Loads shortcut bindings from YAML files mapping events to key combinations.
     """
 
-    def __init__(self, gui, validator):
+    def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
         """Initialize the skin loader with parsers.
 
         Args:
@@ -45,7 +53,7 @@ class ShortcutsLoader(BaseComponentLoader):
         self.gui = gui
         self.validator = validator
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> List[Tuple[str, List[str]]]:
         """
         Load shortcuts from a configuration file.
 

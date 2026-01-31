@@ -24,11 +24,19 @@ Dock loader.
 This module handles loading of dock widget configurations from YAML files.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List
+
 from ...parsers.yamlparser import YamlParser
 from ..config.models import DockConfig, LayoutWidgetConfig
 from ..dock.dock import Dock
 from .base import BaseComponentLoader
 from .widgets import WidgetLoaderRegistry
+
+if TYPE_CHECKING:
+    from ..config.validator import ConfigValidator
+    from ..gui import Gui
 
 
 class DockLoader(BaseComponentLoader):
@@ -39,7 +47,7 @@ class DockLoader(BaseComponentLoader):
     and contain button, text, and layout widgets.
     """
 
-    def __init__(self, gui, validator):
+    def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
         """
         Initialize the Dock loader with global variables for expressions.
 
@@ -50,7 +58,7 @@ class DockLoader(BaseComponentLoader):
         self.gui = gui
         self.validator = validator
 
-    def load_dock_config(self, data):
+    def load_dock_config(self, data: Dict[str, Any]) -> Dock:
         """
         Load dock configuration from parsed YAML data.
 
@@ -82,7 +90,7 @@ class DockLoader(BaseComponentLoader):
 
         return dock
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> List[Dock]:
         """
         Load dock configuration from a YAML file.
 

@@ -24,11 +24,19 @@ Skin loader.
 This module handles loading of UI skin configurations from YAML files.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, List
+
 from ...parsers.yamlparser import YamlParser
 from ..config.models import SkinEntryConfig, SkinSelectorConfig
 from ..skin import ParentSelector, Selector, UISkin, UISkinEntry
 from .base import BaseComponentLoader
 from .parsers import ParsersCollection
+
+if TYPE_CHECKING:
+    from ..config.validator import ConfigValidator
+    from ..gui import Gui
 
 
 class SkinLoader(BaseComponentLoader):
@@ -39,7 +47,7 @@ class SkinLoader(BaseComponentLoader):
     UI elements including colors, fonts, margins, padding, and sizes.
     """
 
-    def __init__(self, gui, validator):
+    def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
         """Initialize the skin loader with parsers.
 
         Args:
@@ -50,7 +58,7 @@ class SkinLoader(BaseComponentLoader):
         self.validator = validator
         self.parsers = ParsersCollection()
 
-    def load_skin_selector(self, selector_config: SkinSelectorConfig):
+    def load_skin_selector(self, selector_config: SkinSelectorConfig) -> Any:
         """
         Load a CSS-like selector from configuration data.
 
@@ -69,7 +77,7 @@ class SkinLoader(BaseComponentLoader):
 
         return selector
 
-    def load_skin_entry(self, entry_config: SkinEntryConfig):
+    def load_skin_entry(self, entry_config: SkinEntryConfig) -> UISkinEntry:
         """
         Load a skin entry from configuration data.
 
@@ -102,7 +110,7 @@ class SkinLoader(BaseComponentLoader):
 
         return entry
 
-    def load_skin_entries(self, data):
+    def load_skin_entries(self, data: List[Any]) -> UISkin:
         """
         Load skin entries from configuration data.
 
@@ -119,7 +127,7 @@ class SkinLoader(BaseComponentLoader):
             skin.add_entry(entry)
         return skin
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> UISkin:
         """
         Load skin configuration from a YAML file.
 

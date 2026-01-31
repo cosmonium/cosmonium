@@ -24,11 +24,19 @@ Menu loader.
 This module handles loading of menu and menubar configurations from YAML files.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
 from ...parsers.yamlparser import YamlParser
 from ..config.models import MenubarConfigModel, MenuEntryConfig, PopupMenuConfig
 from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenubarEntry, MenuConfig, MenuSeparator, SubMenuEntry
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
 from .base import BaseComponentLoader
+
+if TYPE_CHECKING:
+    from ..config.validator import ConfigValidator
+    from ..gui import Gui
 
 
 class MenuLoader(BaseComponentLoader):
@@ -39,7 +47,7 @@ class MenuLoader(BaseComponentLoader):
     separators, and menu bars with dynamic state expressions.
     """
 
-    def __init__(self, gui, validator):
+    def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
         """
         Initialize the menu loader with global variables for expressions.
 
@@ -98,7 +106,7 @@ class MenuLoader(BaseComponentLoader):
 
         return menu
 
-    def load_submenu(self, data):
+    def load_submenu(self, data: List[Any]) -> List[Any]:
         """
         Load a submenu (list of menu entries) from configuration data.
 
@@ -114,7 +122,7 @@ class MenuLoader(BaseComponentLoader):
             submenu.append(entry)
         return submenu
 
-    def load_menubar(self, filepath):
+    def load_menubar(self, filepath: str) -> Tuple[Dict[str, List[Any]], MenubarConfig]:
         """
         Load a menubar configuration from a YAML file.
 
@@ -147,7 +155,7 @@ class MenuLoader(BaseComponentLoader):
         menubar = MenubarConfig(entries)
         return named_menus, menubar
 
-    def load_popup(self, filepath):
+    def load_popup(self, filepath: str) -> MenuConfig:
         """
         Load a popup menu configuration from a YAML file.
 
@@ -167,7 +175,7 @@ class MenuLoader(BaseComponentLoader):
         menuconfig = MenuConfig(entries)
         return menuconfig
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> Any:
         """
         Load a menu configuration from a file.
 
