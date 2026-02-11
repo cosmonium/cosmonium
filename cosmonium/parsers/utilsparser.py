@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,13 @@
 #
 
 
-from panda3d.core import LVector3d
 import re
+
+from panda3d.core import LVector3d
 
 from ..astro import units
 from ..catalogs import objectsDB
-
 from .yamlparser import YamlModuleParser
-
 
 hour_angle_regex = re.compile(r'^(\d+)\:(\d+)\'(\d+\.?\d*)\"$')
 degree_angle_regex = re.compile(r'^([-+]?\d+)[d°](\d+)\'(\d+\.?\d*)\"$')
@@ -136,15 +135,15 @@ class AngleSpeedUnitsYamlParser(YamlModuleParser):
 
 
 def get_radius_scale(data, parent):
-    radius = data.get('radius', None)
+    radius = data.radius if hasattr(data, 'radius') else data.get('radius', None)
     if radius is None:
-        diameter = data.get('diameter', None)
+        diameter = data.diameter if hasattr(data, 'diameter') else data.get('diameter', None)
         if diameter is not None:
             radius = diameter / 2.0
     else:
         radius = float(radius)
-    ellipticity = data.get('ellipticity', None)
-    scale = data.get('axes', None)
+    ellipticity = data.ellipticity if hasattr(data, 'ellipticity') else data.get('ellipticity', None)
+    scale = data.axes if hasattr(data, 'axes') else data.get('axes', None)
     if scale is not None:
         if radius is None:
             radius = max(scale) / 2.0

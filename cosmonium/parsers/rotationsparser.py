@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,32 +19,33 @@
 
 
 from math import pi
+
 from panda3d.core import LQuaterniond, LVector3d
 
+from ..astro import units
 from ..astro.astro import calc_orientation, calc_orientation_from_incl_an
 from ..astro.elementsdb import rotation_elements_db
 from ..astro.frame import BodyReferenceFrames
-from ..astro.rotations import FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro import units
+from ..astro.rotations import FixedRotation, SynchronousRotation, UniformRotation, UnknownRotation
 from ..mathutil.quaternion import quaternion_from_axis_angle
-
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
-from .utilsparser import TimeUnitsYamlParser, AngleUnitsYamlParser
-from .yamlparser import YamlModuleParser
+from .schemas.rotation import FixedRotationConfig, UniformRotationConfig
+from .utilsparser import AngleUnitsYamlParser, TimeUnitsYamlParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class OrientationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, flipped):
-        inclination = data.get('inclination', 0.0)
-        inclination_units = AngleUnitsYamlParser.decode(data.get('inclination-units', 'Deg'))
-        ascending_node = data.get('ascending-node', 0.0)
-        ascending_node_units = AngleUnitsYamlParser.decode(data.get('ascending-node-units', 'Deg'))
-        right_ascension = data.get('ra', None)
-        right_ascension_units = AngleUnitsYamlParser.decode(data.get('ra-units', 'Deg'))
-        declination = data.get('de', 0.0)
-        declination_units = AngleUnitsYamlParser.decode(data.get('de-units', 'Deg'))
+        inclination = data.inclination if data.inclination is not None else 0.0
+        inclination_units = AngleUnitsYamlParser.decode(data.inclination_units)
+        ascending_node = data.ascending_node if data.ascending_node is not None else 0.0
+        ascending_node_units = AngleUnitsYamlParser.decode(data.ascending_node_units)
+        right_ascension = data.ra
+        right_ascension_units = AngleUnitsYamlParser.decode(data.ra_units)
+        declination = data.de if data.de is not None else 0.0
+        declination_units = AngleUnitsYamlParser.decode(data.de_units)
         if right_ascension is not None:
             orientation = calc_orientation(
                 right_ascension * right_ascension_units, declination * declination_units, flipped
@@ -59,18 +60,18 @@ class OrientationYamlParser(YamlModuleParser):
 class UniformYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, frame, parent):
-        synchronous = data.get('synchronous', False)
-        period = data.get('period', None)
-        period_units = TimeUnitsYamlParser.decode(data.get('period-units', 'Year'))
-        meridian_angle = data.get('meridian', 0.0)
-        meridian_units = AngleUnitsYamlParser.decode(data.get('meridian-units', 'Deg'))
-        epoch = data.get('epoch', units.J2000)
-        if data.get('frame') is not None or frame is None:
-            if data.get('ra') is not None:
-                default_frame = 'J2000Equatorial'
+        synchronous = data.synchronous if data.synchronous is not None else False
+        period = data.period
+        period_units = TimeUnitsYamlParser.decode(data.period_units)
+        meridian_angle = data.meridian if data.meridian is not None else 0.0
+        meridian_units = AngleUnitsYamlParser.decode(data.meridian_units)
+        epoch = data.epoch if data.epoch is not None else units.J2000
+        if data.frame is not None or frame is None:
+            if data.ra is not None:
+                default_frame = 'j2000equatorial'
             else:
-                default_frame = 'J2000Ecliptic'
-            frame = FrameYamlParser.decode(data.get('frame', default_frame), parent)
+                default_frame = 'j2000ecliptic'
+            frame = FrameYamlParser.decode(data.frame if data.frame else default_frame, parent)
         flipped = period is not None and period < 0
         orientation = OrientationYamlParser.decode(data, flipped)
         if synchronous:
@@ -92,21 +93,23 @@ class UniformYamlParser(YamlModuleParser):
 class FixedRotationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, frame, parent):
-        if 'angle' in data:
-            angle = float(data['angle'])
-            axis = data.get("axis", LVector3d.up())
+        if data.angle is not None:
+            angle = float(data.angle)
+            axis = data.axis if data.axis is not None else LVector3d.up()
             orientation = quaternion_from_axis_angle(axis, angle, units.Deg)
-        elif 'ra' in data:
+        elif data.ra is not None:
             orientation = OrientationYamlParser.decode(data, False)
         else:
             orientation = LQuaterniond()
-        if data.get('frame') is not None or frame is None:
-            frame = FrameYamlParser.decode(data.get('frame', 'J2000Equatorial'), parent)
+        if data.frame is not None or frame is None:
+            frame = FrameYamlParser.decode(data.frame if data.frame else 'j2000equatorial', parent)
         rotation = FixedRotation(orientation, frame)
         return rotation
 
 
-class RotationYamlParser(YamlModuleParser):
+class RotationYamlParser(TypedYamlParser):
+    """Parser for rotation types with validation."""
+
     @classmethod
     def decode(cls, data, frame=None, parent=None, default=None):
         if data is None:
@@ -114,11 +117,12 @@ class RotationYamlParser(YamlModuleParser):
                 data = {'type': default}
             else:
                 return UnknownRotation()
-        (object_type, parameters) = cls.get_type_and_data(data)
-        if object_type == 'uniform':
-            rotation = UniformYamlParser.decode(parameters, frame, parent)
-        elif object_type == 'fixed':
-            rotation = FixedRotationYamlParser.decode(parameters, frame, parent)
+        object_type, parameters = cls.get_type_and_data(data)
+
+        if object_type in cls.parsers:
+            # Validate and decode using registered parser
+            validated = cls.validate_and_decode(object_type, parameters)
+            rotation = cls.parsers[object_type].decode(validated, frame, parent)
         else:
             rotation = rotation_elements_db.get(data)
             if rotation is None:
@@ -148,4 +152,12 @@ class NamedRotationYamlParser(YamlModuleParser):
 
 
 def register_rotation_parsers():
+    """Register rotation type parsers with their models."""
+    # Register rotation types with RotationYamlParser
+    RotationYamlParser.register_parser('uniform', UniformYamlParser, UniformRotationConfig)
+    RotationYamlParser.register_parser('fixed', FixedRotationYamlParser, FixedRotationConfig)
+
+    # Register top-level object parser
     ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser())
+    ObjectYamlParser.register_object_parser('uniform', NamedRotationYamlParser())
+    ObjectYamlParser.register_object_parser('fixed', NamedRotationYamlParser())

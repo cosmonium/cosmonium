@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,8 @@
 
 import os
 
-from ..bodyclass import bodyClasses
 from .. import settings
-
+from ..bodyclass import bodyClasses
 from .yamlparser import YamlParser
 
 
@@ -36,7 +35,7 @@ class ConfigParser(YamlParser):
     def load(self):
         if os.path.exists(self.config_file):
             print("Loading config file", self.config_file)
-            self.load_and_parse(self.config_file)
+            self.load_and_parse(self.config_file, use_splash=False)
 
     def save(self):
         config_dir = os.path.dirname(self.config_file)

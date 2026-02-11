@@ -23,10 +23,9 @@ from panda3d.core import LPoint3d
 from ..catalogs import objectsDB
 from ..controllers.controllers import FlatSurfaceBodyController, SurfaceBodyController
 from ..plugins import moduleLoader
-
 from .objectparser import ObjectYamlParser
 from .utilsparser import AngleUnitsYamlParser
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class ScriptControllerYamlParser(YamlModuleParser):
@@ -61,12 +60,7 @@ class FlatSurfaceControllerYamlParser(YamlModuleParser):
         return FlatSurfaceBodyController(anchor, position)
 
 
-class ControllerYamlParser(YamlModuleParser):
-    parsers = {}
-
-    @classmethod
-    def register(cls, name, parser):
-        cls.parsers[name] = parser
+class ControllerYamlParser(TypedYamlParser):
 
     @classmethod
     def decode(cls, data, anchor):
@@ -80,9 +74,9 @@ class ControllerYamlParser(YamlModuleParser):
         return controller
 
 
-ControllerYamlParser.register('script', ScriptControllerYamlParser())
-ControllerYamlParser.register('surface', SurfaceControllerYamlParser())
-ControllerYamlParser.register('flat-surface', FlatSurfaceControllerYamlParser())
+ControllerYamlParser.register_parser('script', ScriptControllerYamlParser())
+ControllerYamlParser.register_parser('surface', SurfaceControllerYamlParser())
+ControllerYamlParser.register_parser('flat-surface', FlatSurfaceControllerYamlParser())
 
 
 class StandaloneControllerYamlParser(YamlModuleParser):

@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ from cosmonium.celestia import asterisms_parser  # noqa: E402
 from cosmonium.celestia import boundaries_parser  # noqa: E402
 from cosmonium.cosmonium import Cosmonium  # noqa: E402
 from cosmonium.dircontext import defaultDirContext  # noqa: E402
-from cosmonium.parsers.yamlparser import YamlParser  # noqa: E402
+from cosmonium.parsers.yamlparser import YamlLoader, YamlParser, YamlModuleParser  # noqa: E402
 from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser  # noqa: E402
 from cosmonium import settings  # noqa: E402
 
@@ -248,12 +248,14 @@ class CosmoniumApp(Cosmonium):
                 self.load_file(parser, entry_path)
 
     def load_universe_cosmonium(self):
-        parser = ObjectYamlParser()
         locale = defaultDirContext.find_file('main', 'data/locale')
-        parser.set_translation(self.load_lang('main', locale))
+        YamlModuleParser.set_translation(self.load_lang('main', locale))
         universeYamlParser.set_universe(self.universe)
-        parser.load_and_parse(self.app_config.common)
-        parser.load_and_parse(self.app_config.main, self.background)
+        parser = ObjectYamlParser()
+        common_data = YamlLoader.load_file(self.app_config.common)
+        parser.decode_objects_list(common_data)
+        main_data = YamlLoader.load_file(self.app_config.main)
+        parser.decode_objects_list(main_data, parent=self.background)
         for extra in self.app_config.extra:
             if os.path.isdir(extra):
                 self.load_dir(parser, extra)

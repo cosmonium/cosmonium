@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,38 +18,94 @@
 #
 
 
-from panda3d.core import LPoint3d,  LVector3d, LQuaterniond
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from ..astro import units
-from ..patchedshapes.patchedshapes import PatchedSpherePatchFactory, PatchedSphereShape
-from ..patchedshapes.patchedshapes import SquaredDistanceSquarePatchFactory, SquaredDistanceSquareShape
-from ..patchedshapes.patchedshapes import NormalizedSquarePatchFactory, NormalizedSquareShape
+from ..patchedshapes.patchedshapes import (
+    NormalizedSquarePatchFactory,
+    NormalizedSquareShape,
+    PatchedSpherePatchFactory,
+    PatchedSphereShape,
+    SquaredDistanceSquarePatchFactory,
+    SquaredDistanceSquareShape,
+)
 from ..patchedshapes.tiles import TiledShape
 from ..shapes.billboard import BillboardShape
 from ..shapes.mesh import MeshShape
-from ..shapes.spheres import SphereShape, IcoSphereShape
+from ..shapes.spheres import IcoSphereShape, SphereShape
 from ..spaceengine.shapes import SpaceEnginePatchedSquareShape, SpaceEngineTextureSquarePatchFactory
-
+from .schemas.shape import (
+    BillboardShapeConfig,
+    IcoSphereShapeConfig,
+    MeshShapeConfig,
+    PatchedShapeConfig,
+    SphereShapeConfig,
+    TiledPlaneShapeConfig,
+)
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
+
+
+class PatchedSphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        factory = PatchedSpherePatchFactory()
+        shape = PatchedSphereShape(factory)
+        return (shape, {})
+
+
+class SphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        shape = SphereShape()
+        return (shape, {})
+
+
+class IcoSphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        shape = IcoSphereShape(data.subdivisions)
+        return (shape, {})
+
+
+class SqrtSphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        factory = NormalizedSquarePatchFactory()
+        shape = NormalizedSquareShape(factory)
+        return (shape, {})
+
+
+class CubeSphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        factory = SquaredDistanceSquarePatchFactory()
+        shape = SquaredDistanceSquareShape(factory)
+        return (shape, {})
+
+
+class SeSphereYamlParser(YamlModuleParser):
+    @classmethod
+    def decode(cls, data, radius=None):
+        factory = SpaceEngineTextureSquarePatchFactory()
+        shape = SpaceEnginePatchedSquareShape(factory)
+        return (shape, {})
 
 
 class MeshYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius):
-        if isinstance(data, str):
-            data = {'model': data}
-        model = data.get('model')
-        create_uv = data.get('create-uv', False)
-        panda = data.get('panda', False)
-        auto_scale_mesh = data.get('auto-scale', False)
-        auto_center_mesh = data.get('auto-center', False)
-        offset = data.get('offset', None)
-        rotation_data = data.get('rotation', None)
+    def decode(cls, data, radius=None):
+        model = data.model
+        create_uv = data.create_uv
+        panda = data.panda
+        auto_scale_mesh = data.auto_scale
+        auto_center_mesh = data.auto_center
+        offset = data.offset
+        rotation_data = data.rotation
         if offset is None:
             offset = LPoint3d()
-        scale = data.get('scale', None)
-        scale_units = DistanceUnitsYamlParser.decode(data.get('scale-units'), units.m)
+        scale = data.scale
+        scale_units = DistanceUnitsYamlParser.decode(data.scale_units, units.m)
         if scale is not None:
             if isinstance(scale, list):
                 scale = LVector3d(*scale)
@@ -71,8 +127,6 @@ class MeshYamlParser(YamlModuleParser):
                 rotation = LQuaterniond(*rotation_data)
         else:
             rotation = LQuaterniond()
-        flatten = data.get('flatten', True)
-        attribution = data.get('attribution', None)
         shape = MeshShape(
             model,
             offset,
@@ -80,9 +134,9 @@ class MeshYamlParser(YamlModuleParser):
             scale,
             auto_scale_mesh,
             auto_center_mesh,
-            flatten,
+            data.flatten,
             panda,
-            attribution,
+            data.attribution,
             context=YamlModuleParser.context,
         )
         return (shape, {'create-uv': create_uv})
@@ -90,47 +144,31 @@ class MeshYamlParser(YamlModuleParser):
 
 class BillboardYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data, radius=None):
         shape = BillboardShape()
         return (shape, {})
 
 
 class TiledPlaneYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data):
-        shape = TiledShape(None, data.get('tile-size'), None)
+    def decode(cls, data, radius=None):
+        shape = TiledShape(None, data.tile_size, None)
         return (shape, {})
 
 
-class ShapeYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(cls, data, default='patched-sphere', radius=None):
-        shape = None
-        extra = {}
-        (shape_type, shape_data) = cls.get_type_and_data(data, default)
-        if shape_type == 'patched-sphere':
-            factory = PatchedSpherePatchFactory()
-            shape = PatchedSphereShape(factory)
-        elif shape_type == 'sphere':
-            shape = SphereShape()
-        elif shape_type == 'icosphere':
-            subdivisions = shape_data.get('subdivisions', 3)
-            shape = IcoSphereShape(subdivisions)
-        elif shape_type == 'sqrt-sphere':
-            factory = NormalizedSquarePatchFactory()
-            shape = NormalizedSquareShape(factory)
-        elif shape_type == 'cube-sphere':
-            factory = SquaredDistanceSquarePatchFactory()
-            shape = SquaredDistanceSquareShape(factory)
-        elif shape_type == 'se-sphere':
-            factory = SpaceEngineTextureSquarePatchFactory()
-            shape = SpaceEnginePatchedSquareShape(factory)
-        elif shape_type == 'mesh':
-            shape, extra = MeshYamlParser.decode(shape_data, radius)
-        elif shape_type == 'raymarching':
-            shape, extra = BillboardYamlParser.decode(shape_data)
-        elif shape_type == 'tiled-plane':
-            shape, extra = TiledPlaneYamlParser.decode(shape_data)
-        else:
-            print("Unknown shape", shape_type)
-        return shape, extra
+class ShapeYamlParser(TypedYamlParser):
+    default_type = 'patched-sphere'
+
+
+def register_shape_parsers():
+    """Register shape parsers with their corresponding Pydantic models."""
+    ShapeYamlParser.register_parser('patched-sphere', PatchedSphereYamlParser, PatchedShapeConfig)
+    ShapeYamlParser.register_parser('sqrt-sphere', SqrtSphereYamlParser, PatchedShapeConfig)
+    ShapeYamlParser.register_parser('cube-sphere', CubeSphereYamlParser, PatchedShapeConfig)
+    ShapeYamlParser.register_parser('se-sphere', SeSphereYamlParser, PatchedShapeConfig)
+    ShapeYamlParser.register_parser('sphere', SphereYamlParser, SphereShapeConfig)
+    ShapeYamlParser.register_parser('icosphere', IcoSphereYamlParser, IcoSphereShapeConfig)
+    ShapeYamlParser.register_parser('mesh', MeshYamlParser, MeshShapeConfig)
+    ShapeYamlParser.register_parser('raymarching', BillboardYamlParser, BillboardShapeConfig)
+    ShapeYamlParser.register_parser('billboard', BillboardYamlParser, BillboardShapeConfig)
+    ShapeYamlParser.register_parser('tiled-plane', TiledPlaneYamlParser, TiledPlaneShapeConfig)

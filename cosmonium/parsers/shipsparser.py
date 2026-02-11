@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@ from ..components.elements.surfaces import MeshSurface
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 from ..ships import VisibleShip
-
 from .appearancesparser import AppearanceYamlParser
 from .objectparser import ObjectYamlParser
+from .schemas.misc import ShipConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .yamlparser import YamlModuleParser
@@ -39,14 +39,16 @@ class BaseShipYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        name = data.get('name')
-        radius = data.get('radius', 10)
-        radius_units = data.get('radius-units', units.m)
+        name = data.name
+        radius = data.radius
+        radius_units_str = data.radius_units
+        radius_units = getattr(units, radius_units_str, units.m)
         radius *= radius_units
-        camera_distance = data.get('camera-distance', None)
-        camera_pos = data.get('camera-position', None)
-        camera_pos_units = data.get('camera-position-units', units.m)
-        camera_rot_data = data.get('camera-rotation', None)
+        camera_distance = data.camera_distance
+        camera_pos = data.camera_position
+        camera_pos_units_str = data.camera_position_units
+        camera_pos_units = getattr(units, camera_pos_units_str, units.m)
+        camera_rot_data = data.camera_rotation
         if camera_rot_data is not None:
             if len(camera_rot_data) == 3:
                 camera_rot = LQuaterniond()
@@ -55,17 +57,17 @@ class BaseShipYamlParser(YamlModuleParser):
                 camera_rot = LQuaterniond(*camera_rot_data)
         else:
             camera_rot = LQuaterniond()
-        shape = data.get('shape')
-        appearance = data.get('appearance')
-        lighting_model = data.get('lighting-model')
-        shape, extra = ShapeYamlParser.decode(shape)
-        if appearance is None:
+        shape_data = data.shape
+        appearance_data = data.appearance
+        lighting_model_data = data.lighting_model
+        shape, extra = ShapeYamlParser.decode(shape_data)
+        if appearance_data is None:
             if isinstance(shape, MeshShape):
-                appearance = 'model'
+                appearance_data = 'model'
             else:
-                appearance = 'textures'
-        appearance = AppearanceYamlParser.decode(appearance)
-        lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
+                appearance_data = 'textures'
+        appearance = AppearanceYamlParser.decode(appearance_data)
+        lighting_model = LightingModelYamlParser.decode(lighting_model_data, appearance)
         shader = RenderingShader(lighting_model=lighting_model, use_model_texcoord=not extra.get('create-uv', False))
         ship_object = MeshSurface('ship', shape=shape, appearance=appearance, shader=shader)
         if camera_distance is None:
@@ -93,5 +95,5 @@ class ShipYamlParser(BaseShipYamlParser):
 
 
 def register_ship_parsers():
-    ObjectYamlParser.register_object_parser('cockpit', CockpitYamlParser())
-    ObjectYamlParser.register_object_parser('ship', ShipYamlParser())
+    ObjectYamlParser.register_object_parser('cockpit', CockpitYamlParser(), model=ShipConfig)
+    ObjectYamlParser.register_object_parser('ship', ShipYamlParser(), model=ShipConfig)

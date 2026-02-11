@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,15 +20,22 @@
 
 from math import pi
 
-from ..objects.galaxies import LenticularGalaxyShape, EllipticalGalaxyShape, IrregularGalaxyShape
-from ..objects.galaxies import SpiralGalaxyShape, FullSpiralGalaxyShape, FullRingGalaxyShape
-from ..objects.galaxies import Galaxy, GalaxyAppearance
-from ..sprites import GaussianPointSprite, ExpPointSprite, RoundDiskPointSprite
-
-from .orbitsparser import OrbitYamlParser
+from ..objects.galaxies import (
+    EllipticalGalaxyShape,
+    FullRingGalaxyShape,
+    FullSpiralGalaxyShape,
+    Galaxy,
+    GalaxyAppearance,
+    IrregularGalaxyShape,
+    LenticularGalaxyShape,
+    SpiralGalaxyShape,
+)
+from ..sprites import ExpPointSprite, GaussianPointSprite, RoundDiskPointSprite
 from .objectparser import ObjectYamlParser
+from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
-from .utilsparser import check_parent, DistanceUnitsYamlParser
+from .schemas.stellarobjects import GalaxyConfig
+from .utilsparser import DistanceUnitsYamlParser, check_parent
 from .yamlparser import YamlModuleParser
 
 
@@ -201,21 +208,21 @@ class GalaxyShapeYamlParser(YamlModuleParser):
 
 class GalaxyYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
-        name = data.get('name')
-        (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
+        name = data.name
+        translated_names, source_names = self.translate_names(name)
+        parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
-        body_class = data.get('body-class', 'galaxy')
-        radius = float(data.get('radius'))
-        radius_units = DistanceUnitsYamlParser.decode(data.get('radius-units', 'Ly'))
-        abs_magnitude = data.get('magnitude')
-        shape_type = data.get('type')
-        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
-        appearance = GalaxyAppearanceYamlParser.decode(data)
-        shape = GalaxyShapeYamlParser.decode(data, shape_type)
+        body_class = data.body_class or 'galaxy'
+        radius = data.radius
+        radius_units = DistanceUnitsYamlParser.decode(data.radius_units)
+        abs_magnitude = data.magnitude
+        shape_type = data.classification
+        orbit = OrbitYamlParser.decode(data.orbit, None, parent)
+        rotation = RotationYamlParser.decode(data.rotation, None, parent)
+        appearance = GalaxyAppearanceYamlParser.decode(data.appearance)
+        shape = GalaxyShapeYamlParser.decode(data.shape, shape_type)
         galaxy = Galaxy(
             translated_names,
             source_names=source_names,
@@ -229,11 +236,10 @@ class GalaxyYamlParser(YamlModuleParser):
             orbit=orbit,
             rotation=rotation,
         )
-        children_data = data.get('children', [])
-        ObjectYamlParser.decode(children_data, galaxy)
+        ObjectYamlParser.decode_objects_list(data.children, parent=galaxy)
         parent.add_child_fast(galaxy)
         return galaxy
 
 
 def register_galaxy_parsers():
-    ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser())
+    ObjectYamlParser.register_object_parser('galaxy', GalaxyYamlParser(), model=GalaxyConfig)

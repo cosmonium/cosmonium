@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,34 +18,45 @@
 #
 
 
-from ..procedural.textures import NoiseTextureGenerator
-from ..procedural.textures import ProceduralVirtualTextureSource, PatchedProceduralVirtualTextureSource
-from ..procedural.shadernoise import GrayTarget, AlphaTarget
-from ..textures import AutoTextureSource
 # TODO: Should not be here but in respective packages
 from ..celestia.textures import CelestiaVirtualTextureSource
+from ..procedural.shadernoise import AlphaTarget, GrayTarget
+from ..procedural.textures import (
+    NoiseTextureGenerator,
+    PatchedProceduralVirtualTextureSource,
+    ProceduralVirtualTextureSource,
+)
 from ..spaceengine.textures import SpaceEngineVirtualTextureSource
-
+from ..textures import AutoTextureSource
 from .noiseparser import NoiseYamlParser
-from .yamlparser import YamlModuleParser
+from .schemas.texturesource import (
+    CelestiaVirtualTextureSourceConfig,
+    ProceduralTextureSourceConfig,
+    ReferenceTextureSourceConfig,
+    SpaceEngineVirtualTextureSourceConfig,
+    TextureFileSourceConfig,
+)
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class ReferenceTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
         # TODO: This is a hack, a proper reference object should be used
-        ref_name = data.get('ref')
-        texture_source = TextureSourceYamlParser.tex_references.get(ref_name)
-        texture_offset = 0
-        return texture_source, texture_offset
+        try:
+            texture_source = TextureSourceYamlParser.tex_references[data.ref]
+            texture_offset = 0
+            return texture_source, texture_offset
+        except KeyError:
+            print("Reference '%s' not found" % data.ref)
+            return None, None
 
 
 class TextureFileSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
-        texture_attribution = data.get('attribution', None)
-        texture_source = AutoTextureSource(data.get('file'), texture_attribution, YamlModuleParser.context)
-        texture_offset = data.get('offset', 0)
+        texture_source = AutoTextureSource(data.file, data.attribution, YamlModuleParser.context)
+        texture_offset = data.offset
         return texture_source, texture_offset
 
 
@@ -53,14 +64,8 @@ class TextureFileSourceYamlParser(YamlModuleParser):
 class CelestiaVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
-        root = data.get('root', None)
-        ext = data.get('ext', 'dds')
-        size = data.get('size', None)
-        prefix = data.get('prefix', 'tx_')
-        offset = data.get('offset', 0)
-        attribution = data.get('attribution', None)
         texture_source = CelestiaVirtualTextureSource(
-            root, ext, size, prefix, offset, attribution, YamlModuleParser.context
+            data.root, data.ext, data.size, data.prefix, data.offset, data.attribution, YamlModuleParser.context
         )
         texture_offset = 0
         return texture_source, texture_offset
@@ -70,14 +75,8 @@ class CelestiaVirtualTextureSourceYamlParser(YamlModuleParser):
 class SpaceEngineVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
-        root = data.get('root', None)
-        ext = data.get('ext', 'jpg')
-        size = data.get('size', 258)
-        channel = data.get('color', None)
-        alpha_channel = data.get('alpha', None)
-        attribution = data.get('attribution', None)
         texture_source = SpaceEngineVirtualTextureSource(
-            root, ext, size, channel, alpha_channel, attribution, YamlModuleParser.context
+            data.root, data.ext, data.size, data.color, data.alpha, data.attribution, YamlModuleParser.context
         )
         texture_offset = 0
         return texture_source, texture_offset
@@ -87,39 +86,33 @@ class ProceduralTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
         noise_parser = NoiseYamlParser()
-        func = data.get('func')
+        func = data.func
         if func is None:
-            func = data.get('noise')
-            print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+            func = data.noise
+            print("Warning: 'noise' entry is deprecated, use 'func' instead")
         func = noise_parser.decode(func)
-        target = data.get('target', 'gray')
         has_alpha = False
         use_srgb = False
-        if target == 'gray':
+        if data.target == 'gray':
             target = GrayTarget()
-        elif target == 'alpha':
+        elif data.target == 'alpha':
             target = AlphaTarget()
             has_alpha = True
         else:
-            print("Unknown noise target", target)
+            print("Unknown noise target", data.target)
             target = None
-        size = int(data.get('size', 256))
-        tex_generator = NoiseTextureGenerator(size, func, target, alpha=has_alpha, srgb=use_srgb)
+        tex_generator = NoiseTextureGenerator(data.size, func, target, alpha=has_alpha, srgb=use_srgb)
         if patched_shape:
-            texture_source = PatchedProceduralVirtualTextureSource(tex_generator, size)
+            texture_source = PatchedProceduralVirtualTextureSource(tex_generator, data.size)
         else:
-            texture_source = ProceduralVirtualTextureSource(tex_generator, size)
-        texture_offset = data.get('offset', 0)
+            texture_source = ProceduralVirtualTextureSource(tex_generator, data.size)
+        texture_offset = 0
         return texture_source, texture_offset
 
 
-class TextureSourceYamlParser(YamlModuleParser):
+class TextureSourceYamlParser(TypedYamlParser):
+    default_type = 'file'
     tex_references = {}
-    parsers = {}
-
-    @classmethod
-    def register_parser(cls, name, parser):
-        cls.parsers[name] = parser
 
     @classmethod
     def canonize_data(cls, data):
@@ -133,24 +126,36 @@ class TextureSourceYamlParser(YamlModuleParser):
         return parameters
 
     @classmethod
-    def decode(cls, data, patched_shape=True):
+    def decode_object(cls, data, **extra):
+        # TODO: The named references should be handled in a more robust way,
+        # with a proper reference object and resolution mechanism
         data = cls.canonize_data(data)
-        object_type = data.get('type', 'file')
+        (object_type, parameters) = cls.get_type_and_data(data, cls.default_type, detect_trivial=cls.detect_trivial)
         if object_type in cls.parsers:
-            texture_source, texture_offset = cls.parsers[object_type].decode(data, patched_shape)
-            name = data.get('name')
-            if texture_source is not None and name is not None:
-                cls.tex_references[name] = texture_source
+            parser = cls.parsers[object_type]
+            # Validate parameters if model is registered
+            validated_parameters = cls.validate_and_decode(object_type, parameters)
+            texture_source, texture_offset = parser.decode(validated_parameters, **extra)
+            if hasattr(validated_parameters, 'name'):
+                name = validated_parameters.name
+                if texture_source is not None and name is not None:
+                    cls.tex_references[name] = texture_source
             result = (texture_source, texture_offset)
         else:
-            print("Unknown object type", object_type)
+            print("Unknown type '%s'" % object_type)
             result = (None, None)
         return result
 
 
 def register_texture_source_parsers():
-    TextureSourceYamlParser.register_parser('ref', ReferenceTextureSourceYamlParser())
-    TextureSourceYamlParser.register_parser('file', TextureFileSourceYamlParser())
-    TextureSourceYamlParser.register_parser('ctx', CelestiaVirtualTextureSourceYamlParser())
-    TextureSourceYamlParser.register_parser('se', SpaceEngineVirtualTextureSourceYamlParser())
-    TextureSourceYamlParser.register_parser('procedural', ProceduralTextureSourceYamlParser())
+    TextureSourceYamlParser.register_parser('ref', ReferenceTextureSourceYamlParser(), ReferenceTextureSourceConfig)
+    TextureSourceYamlParser.register_parser('file', TextureFileSourceYamlParser(), TextureFileSourceConfig)
+    TextureSourceYamlParser.register_parser(
+        'ctx', CelestiaVirtualTextureSourceYamlParser(), CelestiaVirtualTextureSourceConfig
+    )
+    TextureSourceYamlParser.register_parser(
+        'se', SpaceEngineVirtualTextureSourceYamlParser(), SpaceEngineVirtualTextureSourceConfig
+    )
+    TextureSourceYamlParser.register_parser(
+        'procedural', ProceduralTextureSourceYamlParser(), ProceduralTextureSourceConfig
+    )

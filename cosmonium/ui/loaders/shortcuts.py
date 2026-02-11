@@ -65,7 +65,7 @@ class ShortcutsLoader(BaseComponentLoader):
         """
         shortcuts_items = []
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
 
         for event, shortcuts in data.items():
             if not isinstance(shortcuts, list):

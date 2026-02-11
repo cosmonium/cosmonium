@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,18 +21,16 @@
 from ..astro.orbits import FixedPosition
 from ..catalogs import objectsDB
 from ..components.annotations.asterism import Asterism
-
 from .objectparser import ObjectYamlParser
+from .schemas.annotations import AsterismConfig
 from .yamlparser import YamlModuleParser
 
 
 class AsterismYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name', "dummy")
-        text_segments = data.get('segments', [])
         segments = []
-        for text_segment in text_segments:
+        for text_segment in data.segments:
             segment = []
             for star_name in text_segment:
                 star = objectsDB.get(star_name)
@@ -43,7 +41,7 @@ class AsterismYamlParser(YamlModuleParser):
                 else:
                     print("Could not find star", star_name)
             segments.append(segment)
-        asterism = Asterism(name)
+        asterism = Asterism(data.name)
         asterism.set_segments_list(segments)
         if parent is not None:
             parent.add_component(asterism)
@@ -53,4 +51,4 @@ class AsterismYamlParser(YamlModuleParser):
 
 
 def register_asterism_parsers():
-    ObjectYamlParser.register_object_parser('asterism', AsterismYamlParser())
+    ObjectYamlParser.register_object_parser('asterism', AsterismYamlParser(), model=AsterismConfig)

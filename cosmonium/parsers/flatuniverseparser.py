@@ -38,7 +38,7 @@ class FlatUniverseYamlParser(YamlModuleParser):
         if data.get('terrain'):
             terrain = FlatTerrainWorldYamlParser.decode(data.get('terrain'))
             self.universe.set_terrain(terrain)
-        # children = ObjectYamlParser.decode(data.get('children', []), self.universe)
+        # children = ObjectYamlParser.decode_objects_list(data.get('children', []), self.universe)
         for light_data in data.get('lights', []):
             light = InfiniteSunLightYamlParser.decode(light_data)
             self.universe.add_light(light)

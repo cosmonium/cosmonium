@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,85 +18,99 @@
 #
 
 
-import builtins
-import hashlib
-import io
-import os
-import pickle
-import ruamel.yaml
+"""
+Parser Base Classes - Domain object instantiation layer.
 
-from ..dircontext import defaultDirContext, DirContext
-from ..cache import create_path_for
-from .. import settings
+This module provides base classes for parsers that convert validated data
+into domain objects. This is the instantiation layer.
+
+The YAML loading layer is in yamlloader.py.
+The validation layer is in schemavalidator.py.
+"""
+
+from pydantic import BaseModel
+
+from ..dircontext import defaultDirContext
+from .yamlloader import YamlLoader
 
 
 class YamlParser:
+    """
+    Base parser class - handles domain object instantiation.
+
+    This class is responsible for:
+    - Converting validated data into domain objects (decode)
+
+    For backward compatibility, this class provides wrapper methods
+    that delegate to YamlLoader.
+    """
+
     def __init__(self):
         pass
 
     def decode(self, data):
+        """
+        Convert validated data into domain object.
+
+        Args:
+            data: Validated Pydantic model or raw dictionary
+
+        Returns:
+            Domain object, or processed data
+        """
         return data
 
-    def encode(self):
-        return None
+    # ===== Backward Compatibility Wrappers =====
+    # These methods delegate to YamlLoader for backward compatibility.
+    # New code should use YamlLoader directly.
 
     def parse(self, stream, stream_name=None):
-        data = None
-        try:
-            yaml = ruamel.yaml.YAML(typ='safe')
-            yaml.allow_duplicate_keys = True
-            data = yaml.load(stream)
-        except ruamel.yaml.YAMLError as e:
-            if stream_name is not None:
-                print("Syntax error in '%s' :" % stream_name, e)
-            else:
-                print("Syntax error : ", e)
-        return data
+        """
+        DEPRECATED: Use YamlLoader.parse() instead.
+        Parse YAML text into dictionary.
+        """
+        return YamlLoader.parse(stream, stream_name)
 
     def store(self, data, stream):
-        yaml = ruamel.yaml.YAML(typ='safe')
-        yaml.default_flow_style = False
-        yaml.dump(data, stream)
+        """
+        DEPRECATED: Use YamlLoader.store() instead.
+        Store dictionary as YAML.
+        """
+        return YamlLoader.store(data, stream)
 
     def encode_and_store(self, filename):
-        try:
-            stream = open(filename, 'w')
-            data = self.encode()
-            self.store(data, stream)
-            stream.close()
-        except IOError as e:
-            print("Could not write", filename, ':', e)
-            return None
+        """
+        DEPRECATED: Use YamlLoader.save_file() instead.
+        Encode and store to file.
+        """
+        data = self.encode()
+        if data is not None:
+            return YamlLoader.save_file(data, filename)
+        return False
 
-    def load_and_parse(self, filename):
-        data = None
-        try:
-            text = open(filename).read()
-            data = self.parse(text, filename)
+    def load_and_parse(self, filename, use_splash=True):
+        """
+        DEPRECATED: Use YamlLoader + decode separately.
+        Load file, parse, and decode.
+        """
+        data = YamlLoader.load_file(filename, use_splash=use_splash)
+        if data is not None:
             data = self.decode(data)
-        except IOError as e:
-            print("Could not read", filename, ':', e)
         return data
-
-    @classmethod
-    def get_type_and_data(cls, data, default=None, detect_trivial=True):
-        if data is None:
-            object_type = default
-            object_data = {}
-        elif isinstance(data, str):
-            object_type = data
-            object_data = {'type': object_type}
-        else:
-            if detect_trivial and len(data) == 1 and data.get('type') is None:
-                object_type = list(data)[0]
-                object_data = data[object_type]
-            else:
-                object_type = data.get('type', default)
-                object_data = data
-        return (object_type, object_data)
 
 
 class YamlModuleParser(YamlParser):
+    """
+    Module parser with context management and translation support.
+
+    This class extends YamlParser with:
+    - Directory context management for relative paths
+    - Translation support for internationalization
+    - Loading with context (delegates to YamlLoader)
+
+    This provides backward compatibility while using the new architecture.
+    """
+
     context = defaultDirContext
     translation = None
     app = None
@@ -132,90 +146,214 @@ class YamlModuleParser(YamlParser):
                     source_names.append(name)
         return (translated_names, source_names)
 
-    def create_new_context(self, old_context, filepath):
-        new_context = DirContext(old_context)
-        path = os.path.dirname(filepath)
-        new_context.add_all_path(path)
-        for category in new_context.category_paths.keys():
-            new_context.add_path(category, os.path.join(path, category))
-        return new_context
-
-    def load_from_cache(self, filename, filepath):
-        data = None
-        config_path = create_path_for('config')
-        md5 = hashlib.md5(filepath.encode()).hexdigest()
-        cache_file = os.path.join(config_path, md5 + ".dat")
-        if os.path.exists(cache_file):
-            file_timestamp = os.path.getmtime(filepath)
-            cache_timestamp = os.path.getmtime(cache_file)
-            if cache_timestamp > file_timestamp:
-                print("Loading %s (cached)" % filepath)
-                builtins.base.splash.set_text("Loading %s (cached)" % filepath)
-                try:
-                    with open(cache_file, "rb") as f:
-                        data = pickle.load(f)
-                except (IOError, ValueError) as e:
-                    print("Could not read cache for", filename, cache_file, ':', e)
-        return data
-
-    def store_to_cache(self, data, filename, filepath):
-        config_path = create_path_for('config')
-        md5 = hashlib.md5(filepath.encode()).hexdigest()
-        cache_file = os.path.join(config_path, md5 + ".dat")
-        try:
-            with open(cache_file, "wb") as f:
-                print("Caching into", cache_file)
-                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-        except IOError as e:
-            print("Could not write cache for", filename, cache_file, ':', e)
-
     def load_and_parse(self, filename, parent=None, context=None):
-        data = None
+        """
+        Load YAML file with context management and decode.
+
+        This method now delegates to YamlLoader for the loading,
+        then handles context management and decoding.
+
+        Args:
+            filename: Relative filename to load
+            parent: Optional parent object for decode
+            context: Optional DirContext for path resolution
+
+        Returns:
+            Decoded domain object, or None on error
+        """
         if context is None:
             context = YamlModuleParser.context
-        filepath = context.find_data(filename)
-        if filepath is not None:
-            saved_context = YamlModuleParser.context
-            YamlModuleParser.context = self.create_new_context(context, filepath)
-            if settings.cache_yaml:
-                data = self.load_from_cache(filename, filepath)
-            if data is None:
-                print("Loading %s" % filepath)
-                builtins.base.splash.set_text("Loading %s" % filepath)
-                try:
-                    text = io.open(filepath, encoding='utf8').read()
-                    data = self.parse(text, filepath)
-                except IOError as e:
-                    print("Could not read", filename, filepath, ':', e)
-                if settings.cache_yaml and data is not None:
-                    self.store_to_cache(data, filename, filepath)
-            if data is not None:
-                if parent is not None:
-                    data = self.decode(data, parent)
-                else:
-                    data = self.decode(data)
+
+        # Use YamlLoader to load with context
+        data, filepath, new_context = YamlLoader.load_with_context(filename, context)
+
+        if data is None:
+            return None
+
+        # Temporarily switch context
+        saved_context = YamlModuleParser.context
+        YamlModuleParser.context = new_context
+
+        # Decode the loaded data
+        try:
+            if parent is not None:
+                result = self.decode(data, parent=parent)
+            else:
+                result = self.decode(data)
+        finally:
+            # Restore context
             YamlModuleParser.context = saved_context
-        else:
-            print("Could not find", filename)
-        return data
+
+        return result
 
 
-class TypedYamlParser(YamlParser):
+class TypedYamlParser(YamlModuleParser):
+    """
+    Base class for parsers that support type-based registration and validation.
 
-    parsers = None
+    This class provides a common pattern for parsers that handle multiple types
+    (e.g., OrbitYamlParser handles 'elliptic', 'fixed', 'global' types).
+    Each parser and its associated Pydantic model can be registered for validation.
+
+    Note: Subclasses should define their own parsers and models dictionaries to avoid sharing.
+    """
+
     default_type = None
-    detect_trivial = False
+    detect_trivial = True
+    models = {}
+    parsers = {}
+
+    def __init_subclass__(cls, **kwargs):
+        """Ensure each subclass gets its own parsers and models dictionaries."""
+        super().__init_subclass__(**kwargs)
+        cls.parsers = {}
+        cls.models = {}
 
     @classmethod
-    def register(cls, name, parser):
-        cls.parsers[name] = parser
+    def register_parser(cls, type_name, parser, model=None):
+        """
+        Register a parser for a given type.
+
+        Args:
+            type_name: The type identifier (e.g., 'elliptic', 'uniform')
+            parser: The parser instance/class to handle this type
+            model: Optional Pydantic model class to validate data before parsing
+        """
+        cls.parsers[type_name] = parser
+        if model is not None:
+            cls.models[type_name] = model
+
+    # Aliases for backward compatiblity
+    register = register_parser
+    register_object_parser = register_parser
+
+    @classmethod
+    def get_type_and_data(cls, data, default=None, detect_trivial=True, map_type=True):
+        """
+        Extract type and parameters from data.
+
+        This method handles various data formats for type detection:
+        - If data is None, it uses the default type if provided.
+        - If data is a string, it treats it as the type with no parameters.
+        - If data is a dictionary and has only one key (and detect_trivial is True),
+          it treats that key as the type and its value as parameters.
+        - Otherwise, it looks for a 'type' key in the dictionary, and treats the whole dictionary as parameters.
+        """
+        if data is None:
+            if default is not None:
+                object_type = default.lower()
+                object_data = {'type': object_type}
+            else:
+                object_type = None
+                object_data = None
+        elif isinstance(data, str):
+            object_type = data.lower()
+            object_data = {'type': object_type}
+        else:
+            if detect_trivial and len(data) == 1 and data.get('type') is None:
+                object_type = list(data)[0]
+                object_data = data[object_type]
+                if isinstance(object_data, dict):
+                    if 'type' in object_data:
+                        # Avoid conflict if 'type' is already present
+                        object_type = object_data.get('type', default)
+                    else:
+                        # Inject 'type' into the data for consistency
+                        object_data['type'] = object_type
+                else:
+                    if map_type:
+                        # If the value is not a dict, treat it as a simple type definition
+                        object_data = {'type': object_type, object_type: object_data}
+            else:
+                object_type = data.get('type', default)
+                object_data = data
+        return (object_type, object_data)
+
+    @classmethod
+    def validate_and_decode(cls, type_name, parameters):
+        """
+        Validate parameters against registered model if available.
+
+        Args:
+            type_name: The type name
+            parameters: The raw dictionary parameters
+
+        Returns:
+            Validated Pydantic model if model is registered, otherwise raw dict
+        """
+        if type_name in cls.models:
+            try:
+                model_class = cls.models[type_name]
+                # Validate and create model instance
+                validated = model_class.model_validate(parameters)
+                return validated
+            except Exception as e:
+                raise ValueError(f"Validation error for {type_name}: {e}")
+        else:
+            print(f"No model registered for {type_name}, skipping validation.")
+        return parameters
+
+    @classmethod
+    def canonize_data(cls, data):
+        """
+        Canonize data for type detection.
+
+        This method can be overridden by subclasses to implement specific canonization logic.
+        By default, it returns the data unchanged."""
+        return data
+
+    @classmethod
+    def decode_object(cls, data, **extra):
+        """
+        Decode a single object from data.
+
+        This method handles both already validated Pydantic models and raw dictionaries.
+        If data is a Pydantic model, it uses the 'type' field to find
+        the appropriate parser. If data is a raw dictionary, it first canonizes it,
+        then extracts the type and parameters, validates them if a model is registered,
+        and finally uses the appropriate parser to decode it."""
+        if isinstance(data, BaseModel):
+            if data.type in cls.parsers:
+                parser = cls.parsers[data.type]
+                return parser.decode(data, **extra)
+            else:
+                print("Unknown type '%s'" % data.type)
+                return None
+        else:
+            data = cls.canonize_data(data)
+            (object_type, parameters) = cls.get_type_and_data(
+                data, cls.default_type, detect_trivial=cls.detect_trivial
+            )
+            if object_type in cls.parsers:
+                parser = cls.parsers[object_type]
+                # Validate parameters if model is registered
+                validated_parameters = cls.validate_and_decode(object_type, parameters)
+                return parser.decode(validated_parameters, **extra)
+            else:
+                print("Unknown type '%s'" % object_type)
+                return None
+
+    @classmethod
+    def decode_objects_list(cls, data, **extra):
+        """
+        Decode a list of objects from data.
+
+         This method expects data to be a list of entries, where each entry can be either
+         a validated Pydantic model or a raw dictionary. It iterates over the list,
+         decodes each entry using decode_object, and collects the results into a list."""
+        if data is None:
+            return []
+        objects = []
+        for entry in data:
+            parsed_data = cls.decode_object(entry, **extra)
+            if parsed_data is not None:
+                objects.append(parsed_data)
+        return objects
 
     @classmethod
     def decode(cls, data, **extra):
-        (object_type, parameters) = cls.get_type_and_data(data, cls.default_type, detect_trivial=cls.detect_trivial)
-        if object_type in cls.parsers:
-            parser = cls.parsers[object_type]
-            return parser.decode(parameters, **extra)
+        """Decode data which can be a single object or a list of objects."""
+        if isinstance(data, list):
+            return cls.decode_objects_list(data, **extra)
         else:
-            print("Unknown type '%s'" % object_type, data)
-            return None
+            return cls.decode_object(data, **extra)

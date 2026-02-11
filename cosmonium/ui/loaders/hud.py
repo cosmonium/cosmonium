@@ -174,6 +174,6 @@ class HUDLoader(BaseComponentLoader):
             Dictionary mapping anchor names to lists of DynamicTextBlock widgets
         """
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
         hud = self.load_hud_widgets(data.get('hud', []))
         return hud

@@ -119,7 +119,7 @@ class UIConfigLoader:
         """
         parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
-        raw_data = parser.load_and_parse(ui_config_file)
+        raw_data = parser.load_and_parse(ui_config_file, use_splash=False)
 
         # Validate main config
         data = UIConfigModel.model_validate(raw_data)

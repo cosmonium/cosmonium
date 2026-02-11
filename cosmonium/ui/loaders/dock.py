@@ -101,7 +101,7 @@ class DockLoader(BaseComponentLoader):
             List of dock widgets
         """
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
         docks = []
         for dock_config in data.get('dock'):
             dock = self.load_dock_config(dock_config)

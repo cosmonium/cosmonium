@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,42 +19,41 @@
 
 
 from ..objects.star import Star
-from ..procedural.stars import proceduralStarSurfaceFactoryDB
-from ..procedural.stars import ProceduralStarSurfaceFactory
-
+from ..procedural.stars import ProceduralStarSurfaceFactory, proceduralStarSurfaceFactoryDB
 from .elementsparser import CloudsYamlParser
 from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
+from .schemas.stellarobjects import StarConfig
 from .surfacesparser import SurfaceYamlParser
 from .utilsparser import check_parent, get_radius_scale
 from .yamlparser import YamlModuleParser
 
 
 class StarYamlParser(YamlModuleParser):
+    def __init__(self, body_class):
+        self.body_class = body_class
+
     def decode(self, data, parent):
-        name = data.get('name')
-        (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
+        name = data.name
+        translated_names, source_names = self.translate_names(name)
+        parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
-        body_class = data.get('body-class', 'star')
+        body_class = data.body_class or self.body_class
         radius, ellipticity, scale = get_radius_scale(data, None)
-        temperature = data.get('temperature')
-        abs_magnitude = data.get('magnitude')
-        spectral_type = data.get('spectral-type')
-        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
-        surfaces = data.get('surfaces')
+        orbit = OrbitYamlParser.decode(data.orbit, None, parent)
+        rotation = RotationYamlParser.decode(data.rotation, None, parent)
+        surfaces = data.surfaces
         if surfaces is None:
-            factory_name = data.get('surface-factory', 'default')
+            factory_name = data.surface_factory if data.surface_factory else 'default'
             factory = proceduralStarSurfaceFactoryDB.get(factory_name)
         else:
             factory = None
-        clouds = CloudsYamlParser.decode(data.get('clouds'))
-        # rings = RingsYamlParser.decode(data.get('rings'))
+        clouds = CloudsYamlParser.decode(data.clouds)
+        # rings = RingsYamlParser.decode(data.rings)
         star = Star(
             translated_names,
             source_names=source_names,
@@ -66,13 +65,13 @@ class StarYamlParser(YamlModuleParser):
             orbit=orbit,
             rotation=rotation,
             clouds=clouds,
-            abs_magnitude=abs_magnitude,
-            temperature=temperature,
-            spectral_type=spectral_type,
+            abs_magnitude=data.magnitude,
+            temperature=data.temperature,
+            spectral_type=data.spectral_type,
         )
-        surfaces = data.get('surfaces')
+        surfaces = data.surfaces
         if surfaces is not None:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), star)
+            surfaces = SurfaceYamlParser.decode(data.surfaces, star)
             factory = None
         else:
             surfaces = []
@@ -99,5 +98,5 @@ class StarSurfaceFactoryYamlParser(YamlModuleParser):
 
 
 def register_star_parsers():
-    ObjectYamlParser.register_object_parser('star', StarYamlParser())
+    ObjectYamlParser.register_object_parser('star', StarYamlParser('star'), model=StarConfig)
     ObjectYamlParser.register_object_parser('star-surface', StarSurfaceFactoryYamlParser())

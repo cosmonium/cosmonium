@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,50 +18,50 @@
 #
 
 
-from ..objects.systems import SimpleSystem, Barycenter
-
+from ..objects.systems import Barycenter, SimpleSystem
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
+from .schemas.stellarobjects import SystemConfig
 from .utilsparser import check_parent
 from .yamlparser import YamlModuleParser
 
 
 class SystemYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
-        name = data.get('name')
-        (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
-        star_system = data.get('star-system', False)
+        name = data.name
+        translated_names, source_names = self.translate_names(name)
+        parent_name = data.parent
+        star_system = data.star_system
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
-        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
+        orbit = OrbitYamlParser.decode(data.orbit, None, parent)
+        rotation = RotationYamlParser.decode(data.rotation, None, parent)
         system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
-        children_data = data.get('children', [])
-        ObjectYamlParser.decode(children_data, system)
+        children_data = data.children if data.children else []
+        ObjectYamlParser.decode_objects_list(children_data, parent=system)
         parent.add_child_fast(system)
         return system
 
 
 class BarycenterYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
-        name = data.get('name')
-        (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
+        name = data.name
+        translated_names, source_names = self.translate_names(name)
+        parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
-        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
+        orbit = OrbitYamlParser.decode(data.orbit, None, parent)
+        rotation = RotationYamlParser.decode(data.rotation, None, parent)
         system = Barycenter(translated_names, source_names, orbit=orbit, rotation=rotation)
-        children_data = data.get('children', [])
-        ObjectYamlParser.decode(children_data, system)
+        children_data = data.children if data.children else []
+        ObjectYamlParser.decode_objects_list(children_data, parent=system)
         parent.add_child_fast(system)
         return system
 
 
 def register_system_parsers():
-    ObjectYamlParser.register_object_parser('system', SystemYamlParser())
-    ObjectYamlParser.register_object_parser('barycenter', BarycenterYamlParser())
+    ObjectYamlParser.register_object_parser('system', SystemYamlParser(), model=SystemConfig)
+    ObjectYamlParser.register_object_parser('barycenter', BarycenterYamlParser(), model=SystemConfig)

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,36 +21,29 @@
 from ..appearances import Appearance
 from ..celestia.scattering import CelestiaScattering
 from ..components.elements.atmosphere import Atmosphere
-from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.base import AtmosphereLightingModel
-
+from ..shaders.rendering import RenderingShader
 from .scatteringparser import ScatteringYamlParser
+from .schemas.atmosphere import CelestiaAtmosphereConfig, ONeilAtmosphereConfig, ONeilSimpleAtmosphereConfig
 from .shapesparser import ShapeYamlParser
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class CelestiaAtmosphereYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        atmosphere_height = data.get('height', None)
-        mie_coef = data.get('mie', 0.0)
-        mie_scale_height = data.get('mie-scale-height', 0.0)
-        mie_phase_asymmetry = data.get('mie-asymmetry', 0.0)
-        rayleigh_coef = data.get('rayleigh', None)
-        rayleigh_scale_height = data.get('rayleigh-scale-height', 0.0)
-        absorption_coef = data.get('absorption', None)
         appearance = Appearance()
-        shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
+        shape, extra = ShapeYamlParser.decode(data.shape)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         scattering = CelestiaScattering(
-            height=atmosphere_height,
+            height=data.height,
             appearance=appearance,
-            mie_scale_height=mie_scale_height,
-            mie_coef=mie_coef,
-            mie_phase_asymmetry=mie_phase_asymmetry,
-            rayleigh_coef=rayleigh_coef,
-            rayleigh_scale_height=rayleigh_scale_height,
-            absorption_coef=absorption_coef,
+            mie_scale_height=data.mie_scale_height,
+            mie_coef=data.mie,
+            mie_phase_asymmetry=data.mie_asymmetry,
+            rayleigh_coef=data.rayleigh,
+            rayleigh_scale_height=data.rayleigh_scale_height,
+            absorption_coef=data.absorption,
         )
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
@@ -61,7 +54,11 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
     def decode(cls, data):
         scattering = ScatteringYamlParser.decode(data)
         appearance = Appearance()
-        shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
+        if data.shape is None:
+            shape = {'icosphere': {'subdivisions': 5}}
+        else:
+            shape = data.shape
+        shape, extra = ShapeYamlParser.decode(shape)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
@@ -72,24 +69,36 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
     def decode(cls, data):
         scattering = ScatteringYamlParser.decode(data)
         appearance = Appearance()
-        shape, extra = ShapeYamlParser.decode(data.get('shape', {'icosphere': {'subdivisions': 5}}))
+        if data.shape is None:
+            shape = {'icosphere': {'subdivisions': 5}}
+        else:
+            shape = data.shape
+        shape, extra = ShapeYamlParser.decode(shape)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
 
 
-class AtmosphereYamlParser(YamlModuleParser):
+class AtmosphereYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         if data is None:
             return None
         (object_type, parameters) = cls.get_type_and_data(data)
+        validated_data = cls.validate_and_decode(object_type, parameters)
         if object_type == 'oneil:simple':
-            return ONeilSimpleAtmosphereYamlParser.decode(parameters)
+            return ONeilSimpleAtmosphereYamlParser.decode(validated_data)
         elif object_type == 'oneil':
-            return ONeilAtmosphereYamlParser.decode(parameters)
+            return ONeilAtmosphereYamlParser.decode(validated_data)
         elif object_type == 'celestia':
-            return CelestiaAtmosphereYamlParser.decode(parameters)
+            return CelestiaAtmosphereYamlParser.decode(validated_data)
         else:
             print("Atmosphpere type", object_type, "unknown")
             return None
+
+
+def register_atmosphere_parsers():
+    """Register atmosphere parsers with their corresponding Pydantic models."""
+    AtmosphereYamlParser.register_parser('celestia', CelestiaAtmosphereYamlParser, CelestiaAtmosphereConfig)
+    AtmosphereYamlParser.register_parser('oneil:simple', ONeilSimpleAtmosphereYamlParser, ONeilSimpleAtmosphereConfig)
+    AtmosphereYamlParser.register_parser('oneil', ONeilAtmosphereYamlParser, ONeilAtmosphereConfig)

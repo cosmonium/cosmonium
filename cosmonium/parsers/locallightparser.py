@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 
 
 from dataclasses import dataclass
-from panda3d.core import LVector3, LPoint3, LColor
 from typing import Optional
 
-from ..locallights import LocalDirectionalLight, LocalPointLight, LocalSpotLight
+from panda3d.core import LColor, LPoint3, LVector3
 
-from .yamlparser import YamlModuleParser
+from ..locallights import LocalDirectionalLight, LocalPointLight, LocalSpotLight
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 @dataclass
@@ -140,26 +140,10 @@ class LocalSpotLightYamlParser(YamlModuleParser):
         return light
 
 
-class LocalLightYamlParser(YamlModuleParser):
-
-    parsers = {}
-
-    @classmethod
-    def register(cls, name, parser):
-        cls.parsers[name] = parser
-
-    @classmethod
-    def decode(cls, data):
-        (object_type, parameters) = cls.get_type_and_data(data, detect_trivial=False)
-        if object_type in cls.parsers:
-            parser = cls.parsers[object_type]
-            light = parser.decode(parameters)
-        else:
-            print("Unknown light type type '%s'" % object_type, data)
-            light = None
-        return light
+class LocalLightYamlParser(TypedYamlParser):
+    detect_trivial = False
 
 
-LocalLightYamlParser.register('directional', LocalDirectionalLightYamlParser)
-LocalLightYamlParser.register('point', LocalPointLightYamlParser)
-LocalLightYamlParser.register('spot', LocalSpotLightYamlParser)
+LocalLightYamlParser.register_parser('directional', LocalDirectionalLightYamlParser)
+LocalLightYamlParser.register_parser('point', LocalPointLightYamlParser)
+LocalLightYamlParser.register_parser('spot', LocalSpotLightYamlParser)

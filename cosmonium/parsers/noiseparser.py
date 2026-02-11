@@ -22,27 +22,17 @@ from ..astro import units
 from ..procedural.primitives.arithmetic import NegNoise, NoiseAdd, NoiseDiv, NoiseMul, NoisePow, NoiseSub
 from ..procedural.primitives.fbm import FbmNoise
 from ..procedural.primitives.functions import NoiseMap, NoiseThreshold, RidgedNoise
-from ..procedural.primitives.math import (
-    AbsNoise,
-    CubeNoise,
-    NoiseClamp,
-    NoiseExp,
-    NoiseMax,
-    NoiseMin,
-    SquareNoise,
-)
+from ..procedural.primitives.math import AbsNoise, CubeNoise, NoiseClamp, NoiseExp, NoiseMax, NoiseMin, SquareNoise
 from ..procedural.primitives.position import Noise1D, NoiseRotate, PositionMap
 from ..procedural.primitives.spiral import SpiralNoise
 from ..procedural.primitives.warp import NoiseWarp
-
-from ..procedural.sources.gpunoiselib import GpuNoiseLibPerlin3D, GpuNoiseLibCellular3D, GpuNoiseLibPolkaDot3D
-from ..procedural.sources.quilez import QuilezPerlin3D, QuilezGradientNoise3D
+from ..procedural.sources.gpunoiselib import GpuNoiseLibCellular3D, GpuNoiseLibPerlin3D, GpuNoiseLibPolkaDot3D
+from ..procedural.sources.quilez import QuilezGradientNoise3D, QuilezPerlin3D
 from ..procedural.sources.simple import NoiseConst, NoiseCoord
 from ..procedural.sources.sincos import SinCosNoise
-from ..procedural.sources.stegu import SteGuPerlin3D, SteGuCellular3D, SteGuCellularDiff3D
-
+from ..procedural.sources.stegu import SteGuCellular3D, SteGuCellularDiff3D, SteGuPerlin3D
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import YamlParser
+from .yamlparser import TypedYamlParser, YamlParser
 
 
 class NoiseYamlParser(YamlParser):
@@ -111,7 +101,8 @@ class NoiseYamlParser(YamlParser):
             return data
         if isinstance(data, (float, int)):
             return NoiseConst(data)
-        (func, parameters) = self.get_type_and_data(data)
+        # Temporary hack until NoiseYamlParser inherits from TypedYamlParser
+        (func, parameters) = TypedYamlParser.get_type_and_data(data, map_type=False)
         return self.decode_noise(func, parameters)
 
     def decode_noise_list(self, data):

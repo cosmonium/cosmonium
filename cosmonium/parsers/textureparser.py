@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,12 @@
 from ..appearances import TexturesBlock
 from ..procedural.appearances import TexturesDictionary
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
-from ..textures import SurfaceTexture, NormalMapTexture, OcclusionMapTexture
-
+from ..textures import NormalMapTexture, OcclusionMapTexture, SurfaceTexture
 from .texturesourceparser import TextureSourceYamlParser
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
-class TextureTilingYamlParser(YamlModuleParser):
+class TextureTilingYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         (object_type, object_data) = cls.get_type_and_data(data, 'default')

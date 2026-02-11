@@ -133,7 +133,7 @@ class MenuLoader(BaseComponentLoader):
             Tuple with named menus dict and MenubarConfig instance
         """
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
 
         # Validate menubar configuration
         validated = self.validator.validate_dict(data, MenubarConfigModel)
@@ -166,7 +166,7 @@ class MenuLoader(BaseComponentLoader):
             MenuConfig instance
         """
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
 
         # Validate popup configuration
         validated = self.validator.validate_dict(data, PopupMenuConfig)

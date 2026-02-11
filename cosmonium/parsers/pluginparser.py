@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,18 +19,20 @@
 
 
 from ..plugins import moduleLoader
-
 from .objectparser import ObjectYamlParser
+from .schemas.misc import PluginConfig
 from .yamlparser import YamlModuleParser
 
 
 class AddonYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
+        # Handle legacy string format
         if isinstance(data, str):
-            data = {'file': data}
-        # name = data.get('name', None)
-        filename = data.get('file')
+            # This shouldn't happen after validation, but keep for safety
+            filename = data
+        else:
+            filename = data.file
         module_path = cls.context.find_module(filename)
         if module_path is not None:
             module = moduleLoader.load_module(module_path)
@@ -42,4 +44,4 @@ class AddonYamlParser(YamlModuleParser):
 
 
 def register_plugin_parsers():
-    ObjectYamlParser.register_object_parser('plugin', AddonYamlParser())
+    ObjectYamlParser.register_object_parser('plugin', AddonYamlParser(), model=PluginConfig)

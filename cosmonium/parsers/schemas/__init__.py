@@ -18,23 +18,6 @@
 #
 
 
-from panda3d.bullet import BulletCapsuleShape, Z_up
-
-from .yamlparser import TypedYamlParser, YamlModuleParser
-
-
-class BulletCapsuleShapeYamlParser(YamlModuleParser):
-
-    @classmethod
-    def decode(cls, data):
-        width = data.get('width', 0.5)
-        height = data.get('height', 1.8)
-        shape = BulletCapsuleShape(width, height - 2 * width, Z_up)
-        return shape
-
-
-class BulletPhysicsShapeYamlParser(TypedYamlParser):
-    """Parser for Bullet physics shapes."""
-
-
-BulletPhysicsShapeYamlParser.register('capsule', BulletCapsuleShapeYamlParser)
+"""
+Configuration schemas package.
+"""

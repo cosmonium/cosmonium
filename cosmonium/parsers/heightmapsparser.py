@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,20 +21,20 @@
 from math import pi
 
 from ..astro import units
-from ..filters import NearestFilter, BilinearFilter, SmoothstepFilter, QuinticFilter, BSplineFilter
+from ..filters import BilinearFilter, BSplineFilter, NearestFilter, QuinticFilter, SmoothstepFilter
 from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
 from ..interpolators import HardwareInterpolator, SoftwareInterpolator
 from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderPatchedHeightmap
 from ..textures import HeightMapTexture
-
 from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
+from .schemas.heightmap import HeightmapConfig
 from .texturesourceparser import TextureSourceYamlParser
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
-class InterpolatorYamlParser(YamlModuleParser):
+class InterpolatorYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         interpolator = None
@@ -48,7 +48,7 @@ class InterpolatorYamlParser(YamlModuleParser):
         return interpolator
 
 
-class FilterYamlParser(YamlModuleParser):
+class FilterYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, interpolator):
         filter = None
@@ -71,21 +71,18 @@ class FilterYamlParser(YamlModuleParser):
 class HeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, name, patched, radius=None, scale=1.0, coord_scale=1.0):
-        heightmap_type = data.get('type', 'procedural')
-        min_height = data.get('min-height', None)
-        max_height = data.get('max-height', None)
-        height_scale = data.get('height-scale', 1.0)
-        height_offset = data.get('height-offset', 0.0)
+        data = HeightmapConfig.model_validate(data)
+        heightmap_type = 'texture' if data.data else 'procedural'
+        min_height = data.min_height
+        max_height = data.max_height
+        height_scale = data.height_scale
+        height_offset = data.height_offset
         if min_height is not None:
-            min_height_units = DistanceUnitsYamlParser.decode(data.get('min-height-units'), units.m)
-            min_height *= min_height_units
+            min_height *= DistanceUnitsYamlParser.decode(data.min_height_units, units.m)
         if max_height is not None:
-            max_height_units = DistanceUnitsYamlParser.decode(data.get('max-height-units'), units.m)
-            max_height *= max_height_units
-        height_scale_units = DistanceUnitsYamlParser.decode(data.get('height-scale-units'), units.m)
-        height_scale *= height_scale_units
-        height_offset_units = DistanceUnitsYamlParser.decode(data.get('height-offset-units'), units.m)
-        height_offset *= height_offset_units
+            max_height *= DistanceUnitsYamlParser.decode(data.max_height_units, units.m)
+        height_scale *= DistanceUnitsYamlParser.decode(data.height_scale_units, units.m)
+        height_offset *= DistanceUnitsYamlParser.decode(data.height_offset_units, units.m)
         if min_height is None:
             if max_height is None:
                 min_height = -(height_scale + height_offset)
@@ -96,10 +93,8 @@ class HeightmapYamlParser(YamlModuleParser):
             if max_height is None:
                 max_height = -min_height
         if radius is not None:
-            scale_length = data.get('scale-length', None)
-            scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
-            if scale_length is not None:
-                scale_length *= scale_length_units
+            if data.scale_length is not None:
+                scale_length = data.scale_length * DistanceUnitsYamlParser.decode(data.scale_length_units, units.m)
             else:
                 scale_length = radius * 2 * pi
             min_height /= radius
@@ -107,30 +102,31 @@ class HeightmapYamlParser(YamlModuleParser):
             height_scale /= radius
             height_offset /= radius
         else:
-            scale_length = data.get('scale-length', 1.0)
-            scale_length_units = DistanceUnitsYamlParser.decode(data.get('scale-length-units'), units.m)
-            scale_length *= scale_length_units
+            scale_length = data.scale_length
+            if scale_length is None:
+                scale_length = 1.0
+            scale_length = scale_length * DistanceUnitsYamlParser.decode(data.scale_length_units, units.m)
             min_height /= scale
             max_height /= scale
             height_scale /= scale
             height_offset /= scale
-        interpolator = InterpolatorYamlParser.decode(data.get('interpolator'))
-        filter = FilterYamlParser.decode(data.get('filter'), interpolator)
+        interpolator = InterpolatorYamlParser.decode(data.interpolator)
+        filter = FilterYamlParser.decode(data.filter, interpolator)
         if heightmap_type == 'procedural':
-            size = data.get('size', 256)
-            overlap = data.get('overlap', 1)
+            size = data.size
+            overlap = data.overlap
             noise_parser = NoiseYamlParser(scale_length)
-            func = data.get('func')
+            func = data.func
             if func is None:
-                func = data.get('noise')
-                print("Warning: 'noise' entry is deprecated, use 'func' instead'")
+                func = data.noise
+                print("Warning: 'noise' entry is deprecated, use 'func' instead")
             heightmap_function = noise_parser.decode(func)
             heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, coord_scale)
             # TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures
             heightmap_class = ShaderPatchedHeightmap
         else:
-            heightmap_data = data.get('data')
-            overlap = data.get('overlap', 0)
+            heightmap_data = data.data
+            overlap = data.overlap
             if heightmap_data is not None:
                 texture_source, texture_offset = TextureSourceYamlParser.decode(heightmap_data)
                 heightmap_data_source = HeightMapTexture(texture_source)
@@ -141,8 +137,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 else:
                     size = 1.0
         if patched:
-            max_lod = data.get('max-lod', 100)
-            heightmap = heightmap_class(
+            return heightmap_class(
                 name,
                 heightmap_data_source,
                 size,
@@ -153,10 +148,10 @@ class HeightmapYamlParser(YamlModuleParser):
                 overlap,
                 interpolator,
                 filter,
-                max_lod,
+                data.max_lod,
             )
         else:
-            heightmap = TextureHeightmap(
+            return TextureHeightmap(
                 name,
                 size,
                 size / 2,
@@ -168,15 +163,13 @@ class HeightmapYamlParser(YamlModuleParser):
                 interpolator,
                 filter,
             )
-        return heightmap
 
 
 class StandaloneHeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        name = data.get('name')
-        if name is None:
-            return None
+        data = HeightmapConfig.model_validate(data)
+        name = data.name
         heightmap = HeightmapYamlParser.decode(data, name, False, None)
         patched_heightmap = HeightmapYamlParser.decode(data, name, True, None)
         heightmapRegistry.register(name, heightmap)

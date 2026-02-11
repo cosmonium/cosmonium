@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,18 +20,16 @@
 
 from ..entities.entity import Entity
 from ..opengl import OpenGLConfig
-from ..procedural.populator import RandomObjectPlacer
-from ..procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator
+from ..procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, RandomObjectPlacer
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
-
 from .appearancesparser import AppearanceYamlParser
-from .shapesparser import ShapeYamlParser
 from .shadersparser import VertexControlYamlParser
-from .yamlparser import YamlModuleParser
+from .shapesparser import ShapeYamlParser
+from .yamlparser import TypedYamlParser
 
 
-class PlacerYamlParser(YamlModuleParser):
+class PlacerYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, default='random'):
         placer = None
@@ -43,7 +41,7 @@ class PlacerYamlParser(YamlModuleParser):
         return placer
 
 
-class PopulatorYamlParser(YamlModuleParser):
+class PopulatorYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         if OpenGLConfig.hardware_instancing:

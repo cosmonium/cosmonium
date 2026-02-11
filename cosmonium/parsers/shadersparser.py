@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@ from ..shaders.lighting.flat import FlatLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..shaders.lighting.oren_nayar import OrenNayarPhongLightingModel
 from ..shaders.lighting.pbr import PbrLightingModel
-
-from .yamlparser import YamlModuleParser
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class CustomShaderComponentYamlParser(YamlModuleParser):
@@ -63,7 +62,7 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
         return custom
 
 
-class LightingModelYamlParser(YamlModuleParser):
+class LightingModelYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, appearance):
         (object_type, parameters) = cls.get_type_and_data(data, 'lambert-phong')
@@ -88,7 +87,7 @@ class LightingModelYamlParser(YamlModuleParser):
         return model
 
 
-class VertexControlYamlParser(YamlModuleParser):
+class VertexControlYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         component = None

@@ -138,6 +138,6 @@ class SkinLoader(BaseComponentLoader):
             UISkin instance
         """
         parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = parser.load_and_parse(filepath, use_splash=False)
         skin = self.load_skin_entries(data)
         return skin

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,59 +18,17 @@
 #
 
 
-from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceCategory
+from ..components.elements.surface_categories import SurfaceCategory, surfaceCategoryDB
 from ..dataattribution import DataAttribution, dataAttributionDB
+from .schemas.base import IncludeConfig
+from .schemas.misc import AttributionConfig
+from .schemas.stellarobjects import UniverseConfig
+from .schemas.surface import SurfaceCategoryConfig
+from .yamlparser import TypedYamlParser, YamlModuleParser
 
-from .yamlparser import YamlModuleParser
 
-
-class ObjectYamlParser(YamlModuleParser):
-    parsers = {}
-
-    @classmethod
-    def register_object_parser(cls, name, parser):
-        cls.parsers[name] = parser
-
-    @classmethod
-    def decode_object(cls, object_type, parameters, parent=None):
-        result = None
-        if object_type in cls.parsers:
-            if parent is not None:
-                result = cls.parsers[object_type].decode(parameters, parent)
-            else:
-                result = cls.parsers[object_type].decode(parameters)
-        else:
-            print("Unknown object type", object_type)
-        return result
-
-    @classmethod
-    def decode_object_dict(cls, data, parent=None):
-        (object_type, parameters) = cls.get_type_and_data(data)
-        if parent is not None:
-            return cls.decode_object(object_type, parameters, parent)
-        else:
-            return cls.decode_object(object_type, parameters)
-
-    @classmethod
-    def decode_objects_list(cls, data, parent=None, merge_sub=False):
-        objects = []
-        for entry in data:
-            parsed_data = cls.decode_object_dict(entry, parent)
-            if parsed_data is not None:
-                if merge_sub and isinstance(parsed_data, list):
-                    for sub in parsed_data:
-                        if sub is not None:
-                            objects.append(sub)
-                else:
-                    objects.append(parsed_data)
-        return objects
-
-    @classmethod
-    def decode(cls, data, parent=None):
-        if isinstance(data, list):
-            return cls.decode_objects_list(data, parent, merge_sub=True)
-        else:
-            return cls.decode_object_dict(data, parent)
+class ObjectYamlParser(TypedYamlParser):
+    """Parser for top-level objects with type-based dispatch."""
 
 
 class UniverseYamlParser(YamlModuleParser):
@@ -82,17 +40,18 @@ class UniverseYamlParser(YamlModuleParser):
         self.universe = universe
 
     def decode(self, data, parent=None):
-        ObjectYamlParser.decode(data.get('children', []), self.universe)
+        ObjectYamlParser.decode_objects_list(data.children, parent=self.universe)
 
 
 class IncludeYamlParser(YamlModuleParser):
-    def decode(self, data, parent=None):
+    def decode(self, data, **extra):
         if isinstance(data, str):
             filename = data
         else:
-            filename = data.get('include')
+            filename = data.include
+
         parser = ObjectYamlParser()
-        body = parser.load_and_parse(filename, parent)
+        body = parser.load_and_parse(filename, **extra)
         return body
 
 
@@ -100,11 +59,11 @@ class DataAttributionYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, attribution_id=None):
         if attribution_id is None:
-            attribution_id = data.get('id')
-        name = data.get('name')
-        copyright = data.get('copyright', None)
-        license = data.get('license', None)
-        url = data.get('url', None)
+            attribution_id = data.id
+        name = data.name
+        copyright = data.copyright
+        license = data.license
+        url = data.url
         attribution = DataAttribution(name, copyright, license, url)
         dataAttributionDB.add_attribution(attribution_id, attribution)
         return None
@@ -113,16 +72,19 @@ class DataAttributionYamlParser(YamlModuleParser):
 class DataAttributionsListYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        for attribution_id, attribution_data in data.items():
-            DataAttributionYamlParser.decode(attribution_data, attribution_id)
+        # data is a dict of attribution_id -> attribution data
+        # This parser doesn't validate individual attributions, just passes them through
+        attributions = data.get('attributions', {})
+        for attribution_id, attribution_data in attributions.items():
+            validated_attribution = AttributionConfig.model_validate(attribution_data)
+            DataAttributionYamlParser.decode(validated_attribution, attribution_id)
         return None
 
 
 class SurfaceCategoryYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        name = data.get('name')
-        category = SurfaceCategory(name)
+        category = SurfaceCategory(data.name)
         surfaceCategoryDB.add(category)
         return None
 
@@ -131,8 +93,10 @@ universeYamlParser = UniverseYamlParser()
 
 
 def register_object_parsers():
-    ObjectYamlParser.register_object_parser('universe', universeYamlParser)
-    ObjectYamlParser.register_object_parser('include', IncludeYamlParser())
+    ObjectYamlParser.register_object_parser('universe', universeYamlParser, UniverseConfig)
+    ObjectYamlParser.register_object_parser('include', IncludeYamlParser(), IncludeConfig)
     ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
-    ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser())
-    ObjectYamlParser.register_object_parser('surface-category', SurfaceCategoryYamlParser())
+    ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser(), model=AttributionConfig)
+    ObjectYamlParser.register_object_parser(
+        'surface-category', SurfaceCategoryYamlParser(), model=SurfaceCategoryConfig
+    )

@@ -20,10 +20,12 @@
 
 from .appearancesparser import register_appearance_parsers
 from .asterismsparser import register_asterism_parsers
+from .atmospheresparser import register_atmosphere_parsers
 from .bodiesparser import register_body_parsers
 from .cameraparser import register_camera_parsers
 from .constellationsparser import register_constellation_parsers
 from .fogscatterparser import register_fog_parsers
+from .framesparser import register_frame_parsers
 from .galaxiesparser import register_galaxy_parsers
 from .heightmapsparser import register_heightmap_parsers
 from .nebulasparser import register_nebula_parsers
@@ -33,6 +35,7 @@ from .orbitsparser import register_orbit_parsers
 from .pluginparser import register_plugin_parsers
 from .raymarchingparser import register_raymarching_parsers
 from .rotationsparser import register_rotation_parsers
+from .shapesparser import register_shape_parsers
 from .shipsparser import register_ship_parsers
 from .starsparser import register_star_parsers
 from .systemsparser import register_system_parsers
@@ -42,10 +45,12 @@ from .texturesourceparser import register_texture_source_parsers
 def register_parsers():
     register_appearance_parsers()
     register_asterism_parsers()
+    register_atmosphere_parsers()
     register_body_parsers()
     register_camera_parsers()
     register_constellation_parsers()
     register_fog_parsers()
+    register_frame_parsers()
     register_galaxy_parsers()
     register_heightmap_parsers()
     register_nebula_parsers()
@@ -55,6 +60,7 @@ def register_parsers():
     register_plugin_parsers()
     register_raymarching_parsers()
     register_rotation_parsers()
+    register_shape_parsers()
     register_ship_parsers()
     register_star_parsers()
     register_system_parsers()

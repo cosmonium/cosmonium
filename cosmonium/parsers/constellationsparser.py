@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,30 +18,30 @@
 #
 
 
-from ..astro.projection import InfinitePosition
 from ..astro import units
+from ..astro.projection import InfinitePosition
 from ..components.annotations.constellation import Constellation
-
-from .objectparser import ObjectYamlParser
-from .utilsparser import hour_angle_decoder, degree_angle_decoder
-from .yamlparser import YamlModuleParser
 from . import boundariesparser
+from .objectparser import ObjectYamlParser
+from .schemas.annotations import ConstellationConfig
+from .utilsparser import degree_angle_decoder, hour_angle_decoder
+from .yamlparser import YamlModuleParser
 
 
 class ConstellationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
         constellation = None
-        name = cls.translate_name(data.get('name'), context='constellation')
-        # genitive = data.get('genitive')
-        abbr = data.get('abbreviation')
-        ra = hour_angle_decoder(data.get('ra'))
+        name = cls.translate_name(data.name, context='constellation')
+        # genitive = data.genitive
+        abbr = data.abbreviation
+        ra = hour_angle_decoder(data.ra)
         if ra is None:
-            print("Invalid ra : '%s'" % data.get('ra'))
+            print("Invalid ra : '%s'" % data.ra)
             ra = 0
-        decl = degree_angle_decoder(data.get('de'))
+        decl = degree_angle_decoder(data.de)
         if decl is None:
-            print("Invalid de : '%s'" % data.get('de'))
+            print("Invalid de : '%s'" % data.de)
             decl = 0
         center = InfinitePosition(ra * units.Deg, decl * units.Deg)
         boundaries = 'boundaries/%s.txt' % abbr.lower()
@@ -56,4 +56,4 @@ class ConstellationYamlParser(YamlModuleParser):
 
 
 def register_constellation_parsers():
-    ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser())
+    ObjectYamlParser.register_object_parser('constellation', ConstellationYamlParser(), model=ConstellationConfig)

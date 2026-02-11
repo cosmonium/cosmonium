@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 
 
 from ..objects.emissive import EmissiveBody
-
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
+from .schemas.stellarobjects import NebulaConfig
 from .surfacesparser import SurfaceYamlParser
 from .utilsparser import check_parent
 from .yamlparser import YamlModuleParser
@@ -30,17 +30,17 @@ from .yamlparser import YamlModuleParser
 
 class NebulaYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
-        name = data.get('name')
+        name = data.name
         (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
+        parent_name = data.parent
         parent, _explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
-        body_class = data.get('body-class', 'nebula')
-        radius = data.get('radius')
-        abs_magnitude = data.get('magnitude')
-        orbit = OrbitYamlParser.decode(data.get('orbit'), None, parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), None, parent)
+        body_class = data.body_class or 'nebula'
+        radius = data.radius
+        abs_magnitude = data.magnitude
+        orbit = OrbitYamlParser.decode(data.orbit, None, parent)
+        rotation = RotationYamlParser.decode(data.rotation, None, parent)
         nebula = EmissiveBody(
             translated_names,
             source_names,
@@ -51,10 +51,16 @@ class NebulaYamlParser(YamlModuleParser):
             rotation=rotation,
         )
         nebula.has_resolved_halo = False
-        if data.get('surfaces') is None:
-            surfaces = [SurfaceYamlParser.decode_surface(data, {}, nebula)]
+        if data.surfaces is None:
+            # Create inline surface from shape/appearance if available
+            inline_data = {}
+            if data.shape is not None:
+                inline_data['shape'] = data.shape
+            if data.appearance is not None:
+                inline_data['appearance'] = data.appearance
+            surfaces = [SurfaceYamlParser.decode_surface(inline_data, {}, nebula)]
         else:
-            surfaces = SurfaceYamlParser.decode(data.get('surfaces'), nebula)
+            surfaces = SurfaceYamlParser.decode(data.surfaces, nebula)
         for surface in surfaces:
             nebula.add_surface(surface)
         parent.add_child_fast(nebula)
@@ -62,4 +68,4 @@ class NebulaYamlParser(YamlModuleParser):
 
 
 def register_nebula_parsers():
-    ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser())
+    ObjectYamlParser.register_object_parser('nebula', NebulaYamlParser(), model=NebulaConfig)
