@@ -117,6 +117,7 @@ class DropDownMenu(DirectObject):
       LSborder.drawTo(r,0,b)
       self.menuBG.attachNewNode(LSborder.create())
       self.itemsParent=self.menu.attachNewNode('menu items parent')
+      self.menu.setTransparency(1)
 
       x=sidePad*self.scale[0] + gapFromEdge
       for t,menuItemsGenerator in items:
