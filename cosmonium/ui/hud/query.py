@@ -18,13 +18,14 @@
 #
 
 
-from panda3d.core import KeyboardButton, TextNode
-from direct.gui.DirectGui import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
+from direct.gui.DirectGui import DirectEntry
 from direct.gui.OnscreenText import OnscreenText
 from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import KeyboardButton, TextNode
 
 from ..core.ui_element import OverlayUIElement
+from ..markdown import create_markdown_renderer
 from ..skin import UIElement
 
 
@@ -124,6 +125,10 @@ class Query(OverlayUIElement):
 
     def create(self):
         element = UIElement(None, id_=self.id_)
+        # TODO: Common text properties are initialized in DirectMarkdownRenderer,
+        # should be done in a more central place
+        create_markdown_renderer(self.skin.get(element).font_family)
+
         background_element = UIElement('frame', parent=element)
         text_element = UIElement('onscreen-text', parent=element, class_='query-entry')
         query_element = UIElement('entry', parent=element, class_='query-entry')
