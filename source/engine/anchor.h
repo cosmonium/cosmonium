@@ -25,6 +25,7 @@
 #include "pvector.h"
 #include "luse.h"
 #include "type_utils.h"
+#include "objectName.h"
 #include <string>
 #include <algorithm>
 
@@ -212,8 +213,7 @@ PUBLISHED:
 protected:
   double bounding_radius;
   // Name management data
-  pvector<std::string> names;
-  pvector<std::string> source_names;
+  ObjectNames object_names;
   std::string description;
 
 public:

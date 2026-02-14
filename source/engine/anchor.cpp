@@ -91,11 +91,24 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _point_radiance(0.0),
   _albedo(0.0),
   // Name management
-  source_names(source_names),
   description(description)
 {
   Py_INCREF(ref_object);
-  set_names(names);
+
+  // Parse and add names
+  if (names.empty()) {
+    object_names.add_name(ObjectName::make_vernacular(""));
+  } else {
+    for (size_t i = 0; i < names.size(); ++i) {
+      ObjectName parsed = ObjectNames::parse_name(names[i]);
+      // If there's a corresponding source name, use it as the original
+      if (i < source_names.size()) {
+        object_names.add_name(parsed, source_names[i]);
+      } else {
+        object_names.add_name(parsed);
+      }
+    }
+  }
 }
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
@@ -137,7 +150,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
 {
   Py_INCREF(ref_object);
 
-  // Extract names from Python list
+  // Extract and parse names from Python list
+  pvector<std::string> name_strings;
   if (names != nullptr && PyList_Check(names)) {
     Py_ssize_t size = PyList_Size(names);
     for (Py_ssize_t i = 0; i < size; ++i) {
@@ -147,13 +161,14 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
         Py_ssize_t str_len;
         str = PyUnicode_AsUTF8AndSize(item, &str_len);
         if (str != nullptr) {
-          this->names.push_back(std::string(str, str_len));
+          name_strings.push_back(std::string(str, str_len));
         }
       }
     }
   }
 
   // Extract source_names from Python list
+  pvector<std::string> source_name_strings;
   if (source_names != nullptr && PyList_Check(source_names)) {
     Py_ssize_t size = PyList_Size(source_names);
     for (Py_ssize_t i = 0; i < size; ++i) {
@@ -163,15 +178,25 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
           Py_ssize_t str_len;
           str = PyUnicode_AsUTF8AndSize(item, &str_len);
         if (str != nullptr) {
-          this->source_names.push_back(std::string(str, str_len));
+          source_name_strings.push_back(std::string(str, str_len));
         }
       }
     }
   }
 
-  // Ensure names has at least one empty string if empty
-  if (this->names.empty()) {
-    this->names.push_back("");
+  // Parse and add names with originals
+  if (name_strings.empty()) {
+    object_names.add_name(ObjectName::make_vernacular(""));
+  } else {
+    for (size_t i = 0; i < name_strings.size(); ++i) {
+      ObjectName parsed = ObjectNames::parse_name(name_strings[i]);
+      // If there's a corresponding source name, use it as the original
+      if (i < source_name_strings.size()) {
+        object_names.add_name(parsed, source_name_strings[i]);
+      } else {
+        object_names.add_name(parsed);
+      }
+    }
   }
 }
 
@@ -246,62 +271,66 @@ AnchorBase::update_all(double time, CameraAnchor &observer, unsigned long int up
 pvector<std::string>
 AnchorBase::_get_names(void) const
 {
-  return names;
+  return object_names.get_all_names();
 }
 
 void
 AnchorBase::set_names(const pvector<std::string> names)
 {
+  // Clear existing names
+  object_names = ObjectNames();
+
+  // Parse and add new names
   if (names.empty()) {
-    this->names = pvector<std::string>(1, "");
+    object_names.add_name(ObjectName::make_vernacular(""));
   } else {
-    this->names = names;
+    for (const auto &name : names) {
+      object_names.add_name(ObjectNames::parse_name(name));
+    }
   }
 }
 
 std::string
 AnchorBase::get_friendly_name(void) const
 {
-  return names.empty() ? "" : names[0];
+  return object_names.get_friendly_name();
 }
 
 std::string
 AnchorBase::get_name(void) const
 {
-  return names.empty() ? "" : names[0];
+  return object_names.get_name();
 }
 
 unsigned int
 AnchorBase::get_num_names(void) const
 {
-  return names.size();
+  return object_names.get_num_names();
 }
 
 std::string
 AnchorBase::get_name_at(unsigned int index) const
 {
-  return names[index];
+  return object_names.get_name_entry(index).get_full_name();
 }
 
 unsigned int
 AnchorBase::get_num_source_names(void) const
 {
-  return source_names.size();
+  return object_names.get_source_names().size();
 }
 
 std::string
 AnchorBase::get_source_name_at(unsigned int index) const
 {
+  pvector<std::string> source_names = object_names.get_source_names();
   return source_names[index];
 }
 
 std::string
 AnchorBase::get_c_name(void) const
 {
-  if (!source_names.empty()) {
-    return source_names[0];
-  }
-  return get_name();
+  return object_names.get_c_name();
 }
 
 std::string

@@ -54,6 +54,7 @@ from cosmonium.celestia import asterisms_parser  # noqa: E402
 from cosmonium.celestia import boundaries_parser  # noqa: E402
 from cosmonium.cosmonium import Cosmonium  # noqa: E402
 from cosmonium.dircontext import defaultDirContext  # noqa: E402
+from cosmonium.parsers.catalogsparser import load_catalogs  # noqa: E402
 from cosmonium.parsers.yamlparser import YamlLoader, YamlParser, YamlModuleParser  # noqa: E402
 from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser  # noqa: E402
 from cosmonium import settings  # noqa: E402
@@ -73,6 +74,7 @@ class CosmoniumConfig(object):
         self.common = os.path.join(base_path, 'data/defaults.yaml')
         self.main = os.path.join(base_path, 'data/cosmonium.yaml')
         self.ui = os.path.join(base_path, 'config/ui/default/ui.yaml')
+        self.catalogs = 'config/catalogs.yaml'
         self.default_home = None
         self.default_target = None
         self.script = None
@@ -172,6 +174,7 @@ class CosmoniumConfigParser(YamlParser):
         if self.config.celestia:
             self.decode_celestia(celestia_data)
         self.config.common = data.get('common', self.config.common)
+        self.config.catalogs = data.get('catalogs', self.config.catalogs)
         self.config.main = data.get('main', self.config.main)
         self.config.script = data.get('script', self.config.script)
         self.config.default_home = data.get('home', self.config.default_home)
@@ -263,6 +266,7 @@ class CosmoniumApp(Cosmonium):
                 self.load_file(parser, extra)
 
     def load_universe(self):
+        load_catalogs(self.app_config.catalogs)
         if self.app_config.celestia:
             self.load_universe_celestia()
         else:

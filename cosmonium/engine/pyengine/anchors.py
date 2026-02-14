@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from ...mathutil.quaternion import relative_rotation
 from ... import settings
 
 from ..octree import OctreeNode
+from .objectname import ObjectNames
 
 
 class AnchorBase:
@@ -39,8 +40,23 @@ class AnchorBase:
         self.parent = None
         self.rebuild_needed = False
         # Name management
-        self.set_names(names)
-        self.source_names = source_names if source_names is not None else []
+        self.object_names = ObjectNames()
+        if names is None:
+            self.object_names.add_name(ObjectNames.parse_name(''))
+        elif isinstance(names, (list, tuple)):
+            # Parse names and associate with source_names if provided
+            source_list = source_names if source_names is not None else []
+            for i, name in enumerate(names):
+                parsed = ObjectNames.parse_name(name)
+                # If there's a corresponding source name, use it as the original
+                if i < len(source_list):
+                    self.object_names.add_name(parsed, source_list[i])
+                else:
+                    self.object_names.add_name(parsed)
+        else:
+            # Single name
+            self.object_names.add_name(ObjectNames.parse_name(names))
+
         self.description = description
         # Flags
         self.was_visible = False
@@ -66,27 +82,30 @@ class AnchorBase:
         self.z_distance = 0.0
 
     def get_names(self):
-        return self.names
+        return self.object_names.get_all_names()
 
     def set_names(self, names):
+        # Rebuild object_names from scratch
+        self.object_names = ObjectNames()
         if names is None:
-            self.names = ['']
+            self.object_names.add_name(ObjectNames.parse_name(''))
         elif isinstance(names, (list, tuple)):
-            self.names = names
+            for name in names:
+                self.object_names.add_name(ObjectNames.parse_name(name))
         else:
-            self.names = [names]
+            self.object_names.add_name(ObjectNames.parse_name(names))
 
     def get_source_names(self):
-        return self.source_names
+        return self.object_names.get_source_names()
 
     def get_friendly_name(self):
-        return self.names[0]
+        return self.object_names.get_friendly_name()
 
     def get_name(self):
-        return self.names[0]
+        return self.object_names.get_name()
 
     def get_c_name(self):
-        return self.source_names[0] if self.source_names else self.names[0]
+        return self.object_names.get_c_name()
 
     def get_description(self):
         return self.description

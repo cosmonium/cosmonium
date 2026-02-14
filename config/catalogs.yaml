@@ -1,0 +1,60 @@
+# Astronomical catalog definitions
+# Each catalog has:
+#   - prefix: short code used in names (e.g., "HIP 32349")
+#   - description: full name of the catalog
+# Note: Catalog IDs are auto-assigned based on order (starting from 1)
+
+catalogs:
+  - prefix: HIP
+    description: Hipparcos Catalogue
+
+  - prefix: HD
+    description: Henry Draper Catalogue
+
+  - prefix: HR
+    description: Harvard Revised Photometry Catalogue (Bright Star Catalog)
+
+  - prefix: SAO
+    description: Smithsonian Astrophysical Observatory Star Catalog
+
+  - prefix: TYC
+    description: Tycho Catalogue
+
+  - prefix: BD
+    description: Bonner Durchmusterung
+
+  - prefix: CD
+    description: Cordoba Durchmusterung
+
+  - prefix: NGC
+    description: New General Catalogue (deep-sky objects)
+
+  - prefix: IC
+    description: Index Catalogue (deep-sky objects)
+
+  - prefix: M
+    description: Messier Catalogue (deep-sky objects)
+
+  - prefix: GJ
+    description: Gliese-Jahreiss Catalogue (nearby stars)
+
+  - prefix: GL
+    description: Gliese Catalogue (nearby stars, older version of GJ)
+
+  - prefix: LHS
+    description: Luyten Half-Second Catalogue (high proper motion stars)
+
+  - prefix: PGC
+    description: Principal Galaxies Catalogue
+
+  - prefix: UGC
+    description: Uppsala General Catalogue of Galaxies
+
+  - prefix: WDS
+    description: Washington Double Star Catalog
+
+  - prefix: CCDM
+    description: Catalogue of Components of Double and Multiple Stars
+
+  - prefix: ADS
+    description: Aitken Double Star Catalog
