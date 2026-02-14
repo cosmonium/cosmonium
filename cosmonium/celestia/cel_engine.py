@@ -124,15 +124,15 @@ def display(command_name, sequence, base, parameters):
     Show a line of text on the screen.
     """
     origin_map = {
-        'bottomleft': base.a2dBottomLeft,
-        'bottom': base.a2dBottomCenter,
-        'bottomright': base.a2dBottomRight,
-        'left': base.a2dLeftCenter,
-        'center': base.aspect2d,
-        'right': base.a2dRightCenter,
-        'topleft': base.a2dTopLeft,
-        'top': base.a2dTopCenter,
-        'topright': base.a2dTopRight,
+        'bottomleft': base.p2dBottomLeft,
+        'bottom': base.p2dBottomCenter,
+        'bottomright': base.p2dBottomRight,
+        'left': base.p2dLeftCenter,
+        'center': base.p2dCenter,
+        'right': base.p2dRightCenter,
+        'topleft': base.p2dTopLeft,
+        'top': base.p2dTopCenter,
+        'topright': base.p2dTopRight,
     }
     text = parameters.get('text', '')
     text = text.replace('\\n', '\n')
