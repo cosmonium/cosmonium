@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2025 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +15,27 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * @file geometry.cpp
+ * @brief Implementation of procedural geometry generators for planetary rendering.
+ *
+ * This file implements various patch generators for creating spherical and planar
+ * geometry used in planetary-scale rendering systems. The generators support:
+ *
+ * - Multiple coordinate systems (UV spherical, QCS cube-mapped, improved QCS)
+ * - Adaptive tessellation for seamless LOD transitions
+ * - Edge skirts to prevent Z-fighting and cracks between LOD levels
+ * - Vertex data generation with normals, tangents, and texture coordinates
+ *
+ * Key components:
+ * - TessellationInfo: Configuration for adaptive mesh density
+ * - UVPatchGenerator: Spherical patches using lat/lon parameterization
+ * - QCSPatchGenerator: Cube-mapped sphere patches (standard projection)
+ * - ImprovedQCSPatchGenerator: Cube-mapped patches with better area uniformity
+ * - TilePatchGenerator: Flat planar tiles for heightfield terrain
+ * - CubePatchGeneratorBase: Template methods for triangle primitive generation
  */
 
 #include "geometry.h"
@@ -34,6 +55,17 @@
 
 static PStatCollector _geom_collector("Engine:geom");
 
+// ============================================================================
+// TessellationInfo Implementation
+// ============================================================================
+
+/**
+ * @brief Constructs tessellation configuration and computes edge ratios.
+ *
+ * Calculates the tessellation ratios for each edge based on the difference
+ * between inner and outer tessellation densities. These ratios are used to
+ * create smooth transitions between patches with different LOD levels.
+ */
 TessellationInfo::TessellationInfo(unsigned int inner, LVecBase4i outer) :
         inner(inner),
         outer(outer)
@@ -44,10 +76,20 @@ TessellationInfo::TessellationInfo(unsigned int inner, LVecBase4i outer) :
     }
 }
 
+// ============================================================================
+// UVPatchGenerator Implementation
+// ============================================================================
+
 UVPatchGenerator::UVPatchGenerator()
 {
 }
 
+/**
+ * @brief Computes offset vector to patch center using spherical coordinates.
+ *
+ * Converts UV coordinates (longitude/latitude) to 3D position on the ellipsoid
+ * surface. The offset points from the origin to the geometric center of the patch.
+ */
 LVector3d
 UVPatchGenerator::make_offset_vector(LVector3d axes, double x0, double y0, double x1, double y1)
 {
@@ -61,7 +103,13 @@ UVPatchGenerator::make_offset_vector(LVector3d axes, double x0, double y0, doubl
     return vector;
 }
 
-
+/**
+ * @brief Computes surface normal at a point using spherical parameterization.
+ *
+ * Calculates the normal vector for an ellipsoid at the given UV coordinates.
+ * The normal is computed from the gradient of the ellipsoid equation and
+ * normalized to unit length.
+ */
 LVector3d
 UVPatchGenerator::make_normal(LVector3d axes, double r, double s, double x0, double y0, double x1, double y1)
 {
@@ -79,6 +127,14 @@ UVPatchGenerator::make_normal(LVector3d axes, double r, double s, double x0, dou
     return normal;
 }
 
+/**
+ * @brief Generates a UV-mapped spherical patch with full vertex attributes.
+ *
+ * Creates a rectangular patch on an ellipsoid surface using latitude/longitude
+ * parameterization. Generates vertex positions, normals, texture coordinates,
+ * tangents, and binormals. The patch is subdivided into rings (latitude) and
+ * sectors (longitude) for the desired tessellation density.
+ */
 NodePath
 UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         double x0, double y0, double x1, double y1,
@@ -191,6 +247,16 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     return NodePath(node);
 }
 
+// ============================================================================
+// CubePatchGeneratorBase Implementation
+// ============================================================================
+
+/**
+ * @brief Adds a triangle to the primitive array.
+ *
+ * Helper template method to write three vertex indices forming a triangle.
+ * Used by all primitive generation methods.
+ */
 template <typename T>
 T *
 CubePatchGeneratorBase::add_vertices(T *ptr, unsigned int a, unsigned int b, unsigned int c) {
@@ -200,6 +266,13 @@ CubePatchGeneratorBase::add_vertices(T *ptr, unsigned int a, unsigned int b, uns
     return ptr;
 }
 
+/**
+ * @brief Generates uniform triangle primitives for a square patch.
+ *
+ * Creates a regular grid of triangles with uniform tessellation. Each quad
+ * in the grid is split into two triangles. This is used when no adaptive
+ * tessellation is wanted.
+ */
 template <typename T>
 T *
 CubePatchGeneratorBase::make_primitives(T *ptr, unsigned int inner, unsigned int nb_vertices)
@@ -214,6 +287,18 @@ CubePatchGeneratorBase::make_primitives(T *ptr, unsigned int inner, unsigned int
     return ptr;
 }
 
+/**
+ * @brief Generates adaptive triangle primitives for a square patch.
+ *
+ * Creates triangulated mesh with potentially different tessellation densities
+ * on each edge. The algorithm:
+ * 1. Generates inner uniform grid
+ * 2. Creates transition zones along edges with different densities
+ * 3. Fills corners with adaptive triangulation
+ *
+ * This allows seamless transitions between patches with different LOD levels
+ * without T-junctions or cracks.
+ */
 template <typename T>
 T *
 CubePatchGeneratorBase::make_adapted_square_primitives(T *ptr,
@@ -295,6 +380,14 @@ CubePatchGeneratorBase::make_adapted_square_primitives(T *ptr,
     return ptr;
 }
 
+/**
+ * @brief Generates adaptive skirt primitives for edge crack prevention.
+ *
+ * Creates vertical "skirt" geometry along patch edges that extends downward
+ * to hide cracks and Z-fighting between patches with different LOD levels.
+ * The skirts follow the same adaptive tessellation pattern as the main patch
+ * to ensure proper connection with edge vertices.
+ */
 template <typename T>
 T *
 CubePatchGeneratorBase::make_adapted_square_primitives_skirt(T *ptr,
@@ -349,6 +442,12 @@ CubePatchGeneratorBase::make_adapted_square_primitives_skirt(T *ptr,
     return ptr;
 }
 
+/**
+ * @brief Generates uniform skirt primitives.
+ *
+ * Creates edge skirts with uniform tessellation (no adaptation). Used when
+ * adaptive tessellation is disabled.
+ */
 template <typename T>
 T *
 CubePatchGeneratorBase::make_primitives_skirt(T *ptr,
@@ -391,10 +490,20 @@ CubePatchGeneratorBase::make_primitives_skirt(T *ptr,
     return ptr;
 }
 
+// ============================================================================
+// QCSPatchGenerator Implementation
+// ============================================================================
+
 QCSPatchGenerator::QCSPatchGenerator()
 {
 }
 
+/**
+ * @brief Computes offset vector using standard QCS cube-to-sphere mapping.
+ *
+ * Maps cube face coordinates to sphere surface using direct normalization.
+ * Handles axis inversions and swapping for different cube face orientations.
+ */
 LVector3d
 QCSPatchGenerator::make_offset_vector(LVector3d axes,
     double x0, double y0, double x1, double y1,
@@ -428,6 +537,12 @@ QCSPatchGenerator::make_offset_vector(LVector3d axes,
   return offset_vector;
 }
 
+/**
+ * @brief Computes surface normal using standard QCS mapping.
+ *
+ * Calculates normal vector for an ellipsoid at the given cube face coordinates.
+ * The normal is derived from the gradient of the ellipsoid equation.
+ */
 LVector3d
 QCSPatchGenerator::make_normal(LVector3d axes,
         double u, double v, double x0, double y0, double x1, double y1,
@@ -521,6 +636,20 @@ QCSPatchGenerator::make_point(LVector3d axes,
     }
 }
 
+/**
+ * @brief Generates a complete QCS patch with adaptive tessellation.
+ *
+ * Main method that creates the full patch geometry including:
+ * - Vertex positions mapped from cube face to sphere
+ * - Surface normals for lighting
+ * - Texture coordinates
+ * - Tangent space vectors for normal mapping
+ * - Optional Jacobian data for area-correct rendering
+ * - Optional edge skirts for crack prevention
+ *
+ * The method handles axis transformations for different cube face orientations
+ * and supports adaptive tessellation for seamless LOD transitions.
+ */
 NodePath
 QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
@@ -671,9 +800,26 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     return NodePath(node);
 }
 
+// ============================================================================
+// ImprovedQCSPatchGenerator Implementation
+// ============================================================================
+
 ImprovedQCSPatchGenerator::ImprovedQCSPatchGenerator()
 {
 }
+
+/**
+ * @brief Computes offset vector using improved equal-area QCS mapping.
+ *
+ * Uses a modified cube-to-sphere projection that provides better area uniformity
+ * than standard QCS. The mapping uses the formula:
+ * x' = x * sqrt(1 - y^2/2 - z^2/2 + y^2z^2/3)
+ * y' = y * sqrt(1 - z^2/2 - x^2/2 + z^2x^2/3)
+ * z' = z * sqrt(1 - x^2/2 - y^2/2 + x^2y^2/3)
+ *
+ * This results in more uniform triangle sizes across the sphere surface compared
+ * to the simple normalization used in standard QCS.
+ */
 LVector3d
 ImprovedQCSPatchGenerator::make_offset_vector(LVector3d axes,
     double x0, double y0, double x1, double y1,
@@ -716,6 +862,13 @@ ImprovedQCSPatchGenerator::make_offset_vector(LVector3d axes,
     return offset_vector;
 }
 
+/**
+ * @brief Computes surface normal using improved equal-area QCS mapping.
+ *
+ * Calculates normal vector using the improved projection formula for better
+ * area uniformity. The normal computation accounts for the modified mapping
+ * to ensure correct lighting.
+ */
 LVector3d
 ImprovedQCSPatchGenerator::make_normal(LVector3d axes,
         double u, double v, double x0, double y0, double x1, double y1,
@@ -758,6 +911,13 @@ ImprovedQCSPatchGenerator::make_normal(LVector3d axes,
     return normal;
 }
 
+/**
+ * @brief Generates a single vertex with all attributes for improved QCS patch.
+ *
+ * Helper method that computes and writes all vertex attributes using the
+ * improved equal-area mapping. Ensures consistent vertex generation across
+ * the patch with proper tangent space calculation.
+ */
 void
 ImprovedQCSPatchGenerator::make_point(LVector3d axes,
         double u, double v,
@@ -822,6 +982,14 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
     }
 }
 
+/**
+ * @brief Generates a complete improved QCS patch with adaptive tessellation.
+ *
+ * Main method for creating improved QCS patches. Uses the equal-area mapping
+ * for better mesh uniformity. Supports all the same features as standard QCS
+ * (adaptive tessellation, skirts, layering) but with improved triangle size
+ * distribution across the sphere.
+ */
 NodePath
 ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
@@ -974,10 +1142,21 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
     return NodePath(node);
 }
 
+// ============================================================================
+// TilePatchGenerator Implementation
+// ============================================================================
+
 TilePatchGenerator::TilePatchGenerator()
 {
 }
 
+/**
+ * @brief Generates a single vertex for a flat tile patch.
+ *
+ * Helper method that creates vertex attributes for planar geometry. The tile
+ * lies in the XY plane with a constant upward normal. Tangent and binormal
+ * vectors align with the X and Y axes respectively.
+ */
 void
 TilePatchGenerator::make_point(double size,
         double u, double v,
@@ -1012,6 +1191,15 @@ TilePatchGenerator::make_point(double size,
     gbiw.add_data3d(bin);
 }
 
+/**
+ * @brief Generates a complete flat tile patch with adaptive tessellation.
+ *
+ * Creates a rectangular planar tile suitable for heightfield terrain. The tile
+ * is centered at the origin and lies in the XY plane. Vertices can be displaced
+ * in Z by vertex shaders or heightfield data.
+ *
+ * Features adaptive tessellation and edge skirts.
+ */
 NodePath
 TilePatchGenerator::make(double size, TessellationInfo tessellation,
         bool inv_u, bool inv_v, bool swap_uv,
