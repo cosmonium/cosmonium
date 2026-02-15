@@ -56,8 +56,8 @@ def Tile(
     swap_uv: bool = False,
     use_patch_adaptation: bool = True,
     use_patch_skirts: bool = True,
-    skirt_size: float = 0.1,
-    skirt_uv: float = 0.1,
+    skirt_size: float = 0.05,
+    skirt_uv: float = 0.05,
 ) -> NodePath:
     """Create a flat rectangular tile with optional adaptive tessellation and skirts.
 
@@ -74,7 +74,7 @@ def Tile(
         swap_uv: If True, swap U and V texture coordinates.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
         use_patch_skirts: If True, add skirts around tile edges to prevent gaps.
-        skirt_size: Vertical offset for skirt vertices (negative Z displacement).
+        skirt_size: Size of edge skirts (as fraction of patch size)
         skirt_uv: UV coordinate extension for skirt vertices beyond [0,1].
 
     Returns:

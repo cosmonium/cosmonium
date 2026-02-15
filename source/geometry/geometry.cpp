@@ -245,7 +245,7 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     // Generate skirt vertices if enabled
     if (use_patch_skirts) {
         // Reduce axes for skirt depth
-        LVector3d reduced_axes = axes - LVector3d(skirt_size, skirt_size, skirt_size);
+        LVector3d reduced_axes = axes - LVector3d(std::max(dx, dy) * skirt_size);
 
         // Edge order: 0=left, 1=right, 2=bottom, 3=top
         for (unsigned int edge = 0; edge < 4; ++edge) {

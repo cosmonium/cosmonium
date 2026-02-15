@@ -160,8 +160,8 @@ def SquaredDistanceSquarePatch(
     offset: Optional[float] = None,
     use_patch_adaptation: bool = True,
     use_patch_skirts: bool = True,
-    skirt_size: float = 0.001,
-    skirt_uv: float = 0.001,
+    skirt_size: float = 0.05,
+    skirt_uv: float = 0.05,
     use_jacobian: bool = True,
 ) -> NodePath:
     """Create a spherical patch using squared distance cube-to-sphere mapping.
@@ -194,7 +194,7 @@ def SquaredDistanceSquarePatch(
         offset: Offset magnitude from patch center if has_offset is True.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
         use_patch_skirts: If True, add skirts around patch edges.
-        skirt_size: Size of the skirt as a fraction of axes.
+        skirt_size: Size of edge skirts (as fraction of patch size).
         skirt_uv: UV coordinate extension for skirt vertices.
         use_jacobian: If True, store Jacobian data instead of computing tangent/binormal.
 
@@ -595,8 +595,8 @@ def NormalizedSquarePatch(
     offset: Optional[float] = None,
     use_patch_adaptation: bool = True,
     use_patch_skirts: bool = True,
-    skirt_size: float = 0.001,
-    skirt_uv: float = 0.001,
+    skirt_size: float = 0.05,
+    skirt_uv: float = 0.05,
     use_jacobian: bool = True,
 ) -> NodePath:
     """Create a spherical patch using normalized cube-to-sphere mapping.
@@ -625,7 +625,7 @@ def NormalizedSquarePatch(
         offset: Offset magnitude from patch center if has_offset is True.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
         use_patch_skirts: If True, add skirts around patch edges.
-        skirt_size: Size of the skirt as a fraction of axes.
+        skirt_size: Size of edge skirts (as fraction of patch size).
         skirt_uv: UV coordinate extension for skirt vertices.
         use_jacobian: If True, store Jacobian data instead of computing tangent/binormal.
 

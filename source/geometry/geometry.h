@@ -130,7 +130,7 @@ PUBLISHED:
   make(LVector3d axes, unsigned int rings, unsigned int sectors,
       double x0, double y0, double x1, double y1,
       bool global_texture=false, bool inv_texture_u=false, bool inv_texture_v=false,
-      double offset=0.0, bool use_patch_skirts=true, double skirt_size=0.001, double skirt_uv=0.001);
+      double offset=0.0, bool use_patch_skirts=true, double skirt_size=0.05, double skirt_uv=0.05);
 };
 
 /**
@@ -517,7 +517,7 @@ PUBLISHED:
    * @param swap_uv If true, swap U and V texture coordinates
    * @param use_patch_adaptation If true, enable adaptive tessellation
    * @param use_patch_skirts If true, generate edge skirts
-   * @param skirt_size Size of edge skirts (in world units)
+   * @param skirt_size Size of edge skirts (as fraction of patch size)
    * @param skirt_uv UV offset for skirt texture coordinates
    * @return NodePath containing the generated tile geometry
    */
@@ -525,7 +525,7 @@ PUBLISHED:
   make(double size, TessellationInfo tessellation,
       bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
-      double skirt_size=0.1, double skirt_uv=0.1);
+      double skirt_size=0.05, double skirt_uv=0.05);
 
 private:
   inline void

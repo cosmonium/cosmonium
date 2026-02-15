@@ -160,8 +160,8 @@ def UVPatch(
     inv_texture_v: bool = False,
     offset: float = 0.0,
     use_patch_skirts=True,
-    skirt_size=0.001,
-    skirt_uv=0.001,
+    skirt_size=0.05,
+    skirt_uv=0.05,
 ) -> NodePath:
     """Create UV-mapped spherical patch.
 
@@ -185,8 +185,10 @@ def UVPatch(
             Default is 0.0.
         use_patch_skirts: If True, generate skirts along patch edges to hide gaps.
             Default is True.
-        skirt_size: Depth of skirts as a fraction of patch size. Default is 0.001.
-        skirt_uv: UV offset for skirt texture coordinates. Default is 0.001.
+        skirt_size: Size of edge skirts (as fraction of patch size).
+                Default is 0.05 (5% of patch size).
+        skirt_uv: UV offset for skirt texture coordinates.
+            Default is 0.05 (5% beyond patch UV range).
 
     Returns:
         NodePath containing the patch geometry with positions, normals,
@@ -261,7 +263,7 @@ def UVPatch(
     # Generate skirt vertices if enabled
     if use_patch_skirts:
         # Reduce axes for skirt depth
-        reduced_axes = axes - LVector3d(skirt_size)
+        reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
 
         # Edge order: 0=left, 1=right, 2=bottom, 3=top
         for edge in range(0, 4):
