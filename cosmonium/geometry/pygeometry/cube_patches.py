@@ -733,6 +733,7 @@ def NormalizedSquarePatch(
                 normal = LVector3d(point)
                 if not use_jacobian:
                     tangent = LVector3d(1.0 + y * y, -x * y, -x)
+                    binormal = LVector3d(-x * y, 1.0 + x * x, -y)
                 u = float(i) / inner
                 v = float(j) / inner
                 if inv_u:
@@ -749,10 +750,12 @@ def NormalizedSquarePatch(
                 normal.componentwise_mult(normal_coefs)
                 normal.normalize()
                 gnw.add_data3d(normal)
-                if not use_jacobian:
+                if use_jacobian:
+                    jacobian.add_data3d(x, y, 1 / (x * x + y * y + 1))
+                else:
                     tangent.componentwise_mult(axes)
                     tangent.normalize()
-                    binormal = tangent.cross(normal)
+                    binormal.componentwise_mult(axes)
                     binormal.normalize()
                     if inv_u:
                         tangent = -tangent
