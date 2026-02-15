@@ -194,10 +194,12 @@ def UVPatch(
     r_sectors = sectors + 1
     r_rings = rings + 1
 
+    nb_data = r_rings * r_sectors
+    # Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
+    nb_vertices = rings * sectors * 2 * 3
+
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'uv', (r_rings * r_sectors), rings * sectors, tanbin=True
-    )
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom( 'uv', nb_data, nb_vertices, tanbin=True)
 
     dx = x1 - x0
     dy = y1 - y0

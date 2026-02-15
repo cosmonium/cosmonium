@@ -96,7 +96,7 @@ def Tile(
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives * 6, tanbin=True)
     node.add_geom(geom)
 
     for i in range(0, nb_vertices):

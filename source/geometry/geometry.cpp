@@ -147,7 +147,8 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     unsigned int r_rings = rings + 1;
 
     unsigned int nb_data = r_rings * r_sectors;
-    unsigned int nb_vertices = rings * sectors;
+    // Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
+    unsigned int nb_vertices = rings * sectors * 2 * 3;
 
     PT(GeomNode) node = new GeomNode("uv");
 
@@ -186,7 +187,7 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
 
     LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
     for (unsigned int r = 0; r < r_rings; ++r) {
-        for (unsigned s = 0; s < r_sectors; ++s) {
+        for (unsigned int s = 0; s < r_sectors; ++s) {
             double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
             double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
             double sin_r = sin(M_PI * (y0 + r * dy / rings));
@@ -415,7 +416,7 @@ CubePatchGeneratorBase::make_adapted_square_primitives_skirt(T *ptr,
                 x = b;
                 y = inner - 1;
             }
-            unsigned v = nb_vertices * x + y;
+            unsigned int v = nb_vertices * x + y;
             if (a == 0) {
                 if ((y % ratio[i]) == 0) {
                     ptr = add_vertices(ptr, v, v + ratio[i], skirt);

@@ -102,7 +102,7 @@ def SquarePatch(
 
     (path, node) = empty_node('uv')
     (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', nb_vertices * nb_vertices, inner * inner, tanbin=True
+        'cube', nb_vertices * nb_vertices, inner * inner * 6, tanbin=True
     )
     node.add_geom(geom)
 
@@ -218,7 +218,7 @@ def SquaredDistanceSquarePatch(
         nb_primitives += inner * 4
     if use_jacobian:
         (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
-            'cube', nb_points, nb_primitives, tanbin=False, jacobian=4
+            'cube', nb_points, nb_primitives * 6, tanbin=False, jacobian=4
         )
     else:
         (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
@@ -650,7 +650,7 @@ def NormalizedSquarePatch(
         nb_primitives += inner * 4
     if use_jacobian:
         (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
-            'cube', nb_points, nb_primitives, tanbin=False, jacobian=3
+            'cube', nb_points, nb_primitives * 6, tanbin=False, jacobian=3
         )
     else:
         (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
