@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,9 @@
 
 
 try:
+    from cosmonium_engine import ImprovedQCSPatchGenerator, QCSPatchGenerator
     from cosmonium_engine import TessellationInfo as CTessellationInfo
-    from cosmonium_engine import UVPatchGenerator, QCSPatchGenerator, ImprovedQCSPatchGenerator, TilePatchGenerator
+    from cosmonium_engine import TilePatchGenerator, UVPatchGenerator
 
     TessellationInfo = CTessellationInfo
     uv_patch_generator = UVPatchGenerator()
@@ -34,19 +35,73 @@ try:
 except ImportError as e:
     print("WARNING: Could not load geometry C implementation, fallback on python implementation")
     print("\t", e)
-    from .pygeometry.geometry import UVPatch  # noqa: F401
-    from .pygeometry.geometry import SquaredDistanceSquarePatch  # noqa: F401
-    from .pygeometry.geometry import NormalizedSquarePatch  # noqa: F401
-    from .pygeometry.geometry import Tile  # noqa: F401
-    from .pygeometry.geometry import TessellationInfo  # noqa: F401
+    from .pygeometry.cube_patches import SquaredDistanceSquarePatch
+    from .pygeometry.cube_patches import NormalizedSquarePatch
+    from .pygeometry.tessellation import TessellationInfo
+    from .pygeometry.tiles import Tile  # noqa: F401
+    from .pygeometry.uv_patches import UVPatch  # noqa: F401
 
-from .pygeometry.geometry import BoundingBoxGeom, BoundingBoxGeomUpdate  # noqa: F401
-from .pygeometry.geometry import UVSphere, IcoSphere  # noqa: F401
-from .pygeometry.geometry import RingFaceGeometry  # noqa: F401
-from .pygeometry.geometry import UVPatchOffsetVector, UVPatchPoint, UVPatchBoundingPoints  # noqa: F401
-from .pygeometry.geometry import NormalizedSquarePatchOffsetVector, NormalizedSquarePatchPoint  # noqa: F401
-from .pygeometry.geometry import NormalizedSquarePatchBoundingPoints  # noqa: F401
-from .pygeometry.geometry import SquaredDistanceSquarePatchOffsetVector, SquaredDistanceSquarePatchPoint  # noqa: F401
-from .pygeometry.geometry import SquaredDistanceSquarePatchBoundingPoints  # noqa: F401
-from .pygeometry.geometry import Patch, PatchBoundingPoints  # noqa: F401
-from .pygeometry.ui import FrameGeom  # noqa: F401
+from .pygeometry.cube_patches import (
+    NormalizedSquarePatchBoundingPoints,
+    NormalizedSquarePatchNormal,
+    NormalizedSquarePatchOffsetVector,
+    NormalizedSquarePatchPoint,
+    SquaredDistanceSquarePatchBoundingPoints,
+    SquaredDistanceSquarePatchNormal,
+    SquaredDistanceSquarePatchOffsetVector,
+    SquaredDistanceSquarePatchPoint,
+    SquarePatch,
+)
+from .pygeometry.primitives import BoundingBoxGeom, BoundingBoxGeomUpdate, CubeGeom
+from .pygeometry.rings import RingFaceGeometry
+from .pygeometry.spheres import DisplacementUVSphere, IcoSphere, UVPatchedSphere, UVSphere
+from .pygeometry.tiles import Patch, PatchBoundingPoints, QuadPatch, TileBoundingPoints
+from .pygeometry.ui import FrameGeom
+from .pygeometry.uv_patches import (
+    UVPatchBoundingPoints,
+    UVPatchNormal,
+    UVPatchOffsetVector,
+    UVPatchPoint,
+)
+
+__all__ = [
+    # Primitives
+    "BoundingBoxGeom",
+    "BoundingBoxGeomUpdate",
+    "CubeGeom",
+    # Spheres
+    "UVSphere",
+    "DisplacementUVSphere",
+    "UVPatchedSphere",
+    "IcoSphere",
+    # UV Patches
+    "UVPatch",
+    "UVPatchPoint",
+    "UVPatchNormal",
+    "UVPatchOffsetVector",
+    "UVPatchBoundingPoints",
+    # Cube patches
+    "SquarePatch",
+    "SquaredDistanceSquarePatch",
+    "SquaredDistanceSquarePatchPoint",
+    "SquaredDistanceSquarePatchNormal",
+    "SquaredDistanceSquarePatchOffsetVector",
+    "SquaredDistanceSquarePatchBoundingPoints",
+    "NormalizedSquarePatch",
+    "NormalizedSquarePatchPoint",
+    "NormalizedSquarePatchNormal",
+    "NormalizedSquarePatchOffsetVector",
+    "NormalizedSquarePatchBoundingPoints",
+    # Tiles
+    "Tile",
+    "TileBoundingPoints",
+    "Patch",
+    "PatchBoundingPoints",
+    "QuadPatch",
+    # Tessellation
+    "TessellationInfo",
+    # Rings
+    "RingFaceGeometry",
+    # UI
+    "FrameGeom",
+]

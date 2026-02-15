@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 from panda3d.core import CullFaceAttrib, LVector2
 
-from .geometry import empty_geom, empty_node
+from .core import empty_geom, empty_node
 
 
 def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
