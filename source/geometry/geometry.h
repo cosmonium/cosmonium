@@ -121,13 +121,16 @@ PUBLISHED:
    * @param inv_texture_u If true, invert U texture coordinates
    * @param inv_texture_v If true, invert V texture coordinates
    * @param offset Offset distance from surface
+   * @param use_patch_skirts If true, generate edge skirts
+   * @param skirt_size Size of edge skirts (as fraction of patch size)
+   * @param skirt_uv UV offset for skirt texture coordinates
    * @return NodePath containing the generated patch geometry
    */
   NodePath
   make(LVector3d axes, unsigned int rings, unsigned int sectors,
       double x0, double y0, double x1, double y1,
       bool global_texture=false, bool inv_texture_u=false, bool inv_texture_v=false,
-      double offset=0.0);
+      double offset=0.0, bool use_patch_skirts=true, double skirt_size=0.001, double skirt_uv=0.001);
 };
 
 /**

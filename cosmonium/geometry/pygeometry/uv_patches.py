@@ -159,6 +159,9 @@ def UVPatch(
     inv_texture_u: bool = False,
     inv_texture_v: bool = False,
     offset: float = 0.0,
+    use_patch_skirts=True,
+    skirt_size=0.001,
+    skirt_uv=0.001,
 ) -> NodePath:
     """Create UV-mapped spherical patch.
 
@@ -180,6 +183,10 @@ def UVPatch(
         inv_texture_v: If True, invert V texture coordinates. Default is False.
         offset: Offset distance from surface.
             Default is 0.0.
+        use_patch_skirts: If True, generate skirts along patch edges to hide gaps.
+            Default is True.
+        skirt_size: Depth of skirts as a fraction of patch size. Default is 0.001.
+        skirt_uv: UV offset for skirt texture coordinates. Default is 0.001.
 
     Returns:
         NodePath containing the patch geometry with positions, normals,
@@ -197,9 +204,14 @@ def UVPatch(
     nb_data = r_rings * r_sectors
     # Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
     nb_vertices = rings * sectors * 2 * 3
+    if use_patch_skirts:
+        # Add vertices for 4 edges
+        nb_data += 2 * r_rings + 2 * r_sectors
+        # Add indices for skirt: each segment becomes 2 triangles with 3 indices each
+        nb_vertices += (2 * rings + 2 * sectors) * 6
 
     (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom( 'uv', nb_data, nb_vertices, tanbin=True)
+    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', nb_data, nb_vertices, tanbin=True)
 
     dx = x1 - x0
     dy = y1 - y0
@@ -208,6 +220,8 @@ def UVPatch(
         offset_vector = UVPatchOffsetVector(axes, x0, y0, x1, y1) * offset
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
+
+    # Generate main patch vertices
     for r in range(0, r_rings):
         for s in range(0, r_sectors):
             cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
@@ -244,10 +258,175 @@ def UVPatch(
             binormal.normalize()
             gbiw.add_data3d(binormal)
 
+    # Generate skirt vertices if enabled
+    if use_patch_skirts:
+        # Reduce axes for skirt depth
+        reduced_axes = axes - LVector3d(skirt_size)
+
+        # Edge order: 0=left, 1=right, 2=bottom, 3=top
+        for edge in range(0, 4):
+            if edge == 0:  # Left edge (s=0, all r)
+                for r in range(0, r_rings):
+                    s = 0
+                    u_skirt = -skirt_uv if not inv_texture_u else 1.0 + skirt_uv
+                    v_skirt = r / rings
+                    if inv_texture_v:
+                        v_skirt = 1.0 - v_skirt
+
+                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_r = sin(pi * (y0 + r * dy / rings))
+                    cos_r = cos(pi * (y0 + r * dy / rings))
+                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+                    normal = LVector3d(point)
+                    if sin_r != 0:
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+                    else:
+                        tangent = LVector3d(-axes[0], 0, 0)
+                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+
+                    if not global_texture:
+                        gtw.add_data2(u_skirt, v_skirt)
+                    else:
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
+
+                    point.componentwise_mult(reduced_axes)
+                    if offset != 0.0:
+                        point -= offset_vector
+                    gvw.add_data3d(point)
+                    normal.componentwise_mult(normal_coefs)
+                    normal.normalize()
+                    gnw.add_data3d(normal)
+                    tangent.normalize()
+                    gtanw.add_data3d(tangent)
+                    binormal.componentwise_mult(axes)
+                    binormal.normalize()
+                    gbiw.add_data3d(binormal)
+
+            elif edge == 1:  # Right edge (s=sectors, all r)
+                for r in range(0, r_rings):
+                    s = sectors
+                    u_skirt = 1.0 + skirt_uv if not inv_texture_u else -skirt_uv
+                    v_skirt = r / rings
+                    if inv_texture_v:
+                        v_skirt = 1.0 - v_skirt
+
+                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_r = sin(pi * (y0 + r * dy / rings))
+                    cos_r = cos(pi * (y0 + r * dy / rings))
+                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+                    normal = LVector3d(point)
+                    if sin_r != 0:
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+                    else:
+                        tangent = LVector3d(-axes[0], 0, 0)
+                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+
+                    if not global_texture:
+                        gtw.add_data2(u_skirt, v_skirt)
+                    else:
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
+
+                    point.componentwise_mult(reduced_axes)
+                    if offset != 0.0:
+                        point -= offset_vector
+                    gvw.add_data3d(point)
+                    normal.componentwise_mult(normal_coefs)
+                    normal.normalize()
+                    gnw.add_data3d(normal)
+                    tangent.normalize()
+                    gtanw.add_data3d(tangent)
+                    binormal.componentwise_mult(axes)
+                    binormal.normalize()
+                    gbiw.add_data3d(binormal)
+
+            elif edge == 2:  # Bottom edge (r=0, all s)
+                for s in range(0, r_sectors):
+                    r = 0
+                    u_skirt = s / sectors
+                    if inv_texture_u:
+                        u_skirt = 1.0 - u_skirt
+                    v_skirt = -skirt_uv if not inv_texture_v else 1.0 + skirt_uv
+
+                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_r = sin(pi * (y0 + r * dy / rings))
+                    cos_r = cos(pi * (y0 + r * dy / rings))
+                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+                    normal = LVector3d(point)
+                    if sin_r != 0:
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+                    else:
+                        tangent = LVector3d(-axes[0], 0, 0)
+                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+
+                    if not global_texture:
+                        gtw.add_data2(u_skirt, v_skirt)
+                    else:
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
+
+                    point.componentwise_mult(reduced_axes)
+                    if offset != 0.0:
+                        point -= offset_vector
+                    gvw.add_data3d(point)
+                    normal.componentwise_mult(normal_coefs)
+                    normal.normalize()
+                    gnw.add_data3d(normal)
+                    tangent.normalize()
+                    gtanw.add_data3d(tangent)
+                    binormal.componentwise_mult(axes)
+                    binormal.normalize()
+                    gbiw.add_data3d(binormal)
+
+            else:  # edge == 3, Top edge (r=rings, all s)
+                for s in range(0, r_sectors):
+                    r = rings
+                    u_skirt = s / sectors
+                    if inv_texture_u:
+                        u_skirt = 1.0 - u_skirt
+                    v_skirt = 1.0 + skirt_uv if not inv_texture_v else -skirt_uv
+
+                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
+                    sin_r = sin(pi * (y0 + r * dy / rings))
+                    cos_r = cos(pi * (y0 + r * dy / rings))
+                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
+                    normal = LVector3d(point)
+                    if sin_r != 0:
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+                    else:
+                        tangent = LVector3d(-axes[0], 0, 0)
+                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
+
+                    if not global_texture:
+                        gtw.add_data2(u_skirt, v_skirt)
+                    else:
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
+
+                    point.componentwise_mult(reduced_axes)
+                    if offset != 0.0:
+                        point -= offset_vector
+                    gvw.add_data3d(point)
+                    normal.componentwise_mult(normal_coefs)
+                    normal.normalize()
+                    gnw.add_data3d(normal)
+                    tangent.normalize()
+                    gtanw.add_data3d(tangent)
+                    binormal.componentwise_mult(axes)
+                    binormal.normalize()
+                    gbiw.add_data3d(binormal)
+
+    # Generate main patch primitives
     for r in range(0, r_rings - 1):
         for s in range(0, r_sectors - 1):
             prim.add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s)
             prim.add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s)
+
+    # Generate skirt primitives if enabled
+    if use_patch_skirts:
+        make_uv_primitives_skirt(prim, rings, sectors, r_rings, r_sectors)
+
     prim.closePrimitive()
     geom.addPrimitive(prim)
     node.add_geom(geom)
@@ -309,3 +488,54 @@ def UVPatchBoundingPoints(
                     point -= offset_vector
                 points.append(point)
     return points
+
+
+def make_uv_primitives_skirt(prim, rings: int, sectors: int, r_rings: int, r_sectors: int) -> None:
+    """
+    Generate skirt primitives for UV patch.
+    Skirt vertices are stored after main vertices in this order:
+    - Left edge (r_rings vertices)
+    - Right edge (r_rings vertices)
+    - Bottom edge (r_sectors vertices)
+    - Top edge (r_sectors vertices)
+
+    Args:
+        prim: GeomPrimitive to which skirt indices will be added.
+        rings: Number of rings in the main patch.
+        sectors: Number of sectors in the main patch.
+        r_rings: Number of vertices per ring (sectors + 1).
+        r_sectors: Number of vertices per sector (rings + 1).
+    """
+    base_idx = r_rings * r_sectors  # First skirt vertex index
+
+    # Left edge (s=0): Connect to skirt
+    skirt_start = base_idx
+    for r in range(0, rings):
+        v = r * r_sectors  # Main vertex at s=0, r
+        skirt = skirt_start + r
+        prim.add_vertices(v, v + r_sectors, skirt)
+        prim.add_vertices(skirt, v + r_sectors, skirt + 1)
+
+    # Right edge (s=sectors): Connect to skirt
+    skirt_start = base_idx + r_rings
+    for r in range(0, rings):
+        v = r * r_sectors + sectors  # Main vertex at s=sectors, r
+        skirt = skirt_start + r
+        prim.add_vertices(skirt, v, v + r_sectors)
+        prim.add_vertices(v + r_sectors, skirt + 1, skirt)
+
+    # Bottom edge (r=0): Connect to skirt
+    skirt_start = base_idx + 2 * r_rings
+    for s in range(0, sectors):
+        v = s  # Main vertex at r=0, s
+        skirt = skirt_start + s
+        prim.add_vertices(skirt, v, v + 1)
+        prim.add_vertices(v + 1, skirt + 1, skirt)
+
+    # Top edge (r=rings): Connect to skirt
+    skirt_start = base_idx + 2 * r_rings + r_sectors
+    for s in range(0, sectors):
+        v = rings * r_sectors + s  # Main vertex at r=rings, s
+        skirt = skirt_start + s
+        prim.add_vertices(v, skirt, v + 1)
+        prim.add_vertices(skirt, skirt + 1, v + 1)

@@ -139,7 +139,7 @@ NodePath
 UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         double x0, double y0, double x1, double y1,
         bool global_texture, bool inv_texture_u, bool inv_texture_v,
-        double offset)
+        double offset, bool use_patch_skirts, double skirt_size, double skirt_uv)
 {
     _geom_collector.start();
 
@@ -149,6 +149,13 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     unsigned int nb_data = r_rings * r_sectors;
     // Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
     unsigned int nb_vertices = rings * sectors * 2 * 3;
+
+    if (use_patch_skirts) {
+        // Add vertices for 4 edges
+        nb_data += 2 * r_rings + 2 * r_sectors;
+        // Add indices for skirt: each segment becomes 2 triangles with 3 indices each
+        nb_vertices += (2 * rings + 2 * sectors) * 2 * 3;
+    }
 
     PT(GeomNode) node = new GeomNode("uv");
 
@@ -186,6 +193,8 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     }
 
     LVector3d normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1]);
+
+    // Generate main patch vertices
     for (unsigned int r = 0; r < r_rings; ++r) {
         for (unsigned int s = 0; s < r_sectors; ++s) {
             double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
@@ -233,12 +242,238 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         }
     }
 
+    // Generate skirt vertices if enabled
+    if (use_patch_skirts) {
+        // Reduce axes for skirt depth
+        LVector3d reduced_axes = axes - LVector3d(skirt_size, skirt_size, skirt_size);
+
+        // Edge order: 0=left, 1=right, 2=bottom, 3=top
+        for (unsigned int edge = 0; edge < 4; ++edge) {
+            if (edge == 0) {  // Left edge (s=0, all r)
+                for (unsigned int r = 0; r < r_rings; ++r) {
+                    unsigned int s = 0;
+                    double u_skirt = (!inv_texture_u) ? -skirt_uv : 1.0 + skirt_uv;
+                    double v_skirt = double(r) / rings;
+                    if (inv_texture_v) {
+                        v_skirt = 1.0 - v_skirt;
+                    }
+
+                    double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_r = sin(M_PI * (y0 + r * dy / rings));
+                    double cos_r = cos(M_PI * (y0 + r * dy / rings));
+                    LPoint3d point = LPoint3d(cos_s * sin_r, sin_s * sin_r, -cos_r);
+                    LVector3d normal(point);
+                    LVector3d tangent;
+                    if (sin_r > 0) {
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0);
+                    } else {
+                        tangent = LVector3d(-axes[0], 0, 0);
+                    }
+                    LVector3d binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r);
+
+                    if (!global_texture) {
+                        gtw.add_data2(u_skirt, v_skirt);
+                    } else {
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
+                    }
+
+                    point.componentwise_mult(reduced_axes);
+                    if (offset != 0.0) {
+                        point -= offset_vector;
+                    }
+                    gvw.add_data3d(point);
+                    normal.componentwise_mult(normal_coefs);
+                    normal.normalize();
+                    gnw.add_data3d(normal);
+                    tangent.normalize();
+                    gtanw.add_data3d(tangent);
+                    binormal.componentwise_mult(axes);
+                    binormal.normalize();
+                    gbiw.add_data3d(binormal);
+                }
+            } else if (edge == 1) {  // Right edge (s=sectors, all r)
+                for (unsigned int r = 0; r < r_rings; ++r) {
+                    unsigned int s = sectors;
+                    double u_skirt = (!inv_texture_u) ? 1.0 + skirt_uv : -skirt_uv;
+                    double v_skirt = double(r) / rings;
+                    if (inv_texture_v) {
+                        v_skirt = 1.0 - v_skirt;
+                    }
+
+                    double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_r = sin(M_PI * (y0 + r * dy / rings));
+                    double cos_r = cos(M_PI * (y0 + r * dy / rings));
+                    LPoint3d point = LPoint3d(cos_s * sin_r, sin_s * sin_r, -cos_r);
+                    LVector3d normal(point);
+                    LVector3d tangent;
+                    if (sin_r > 0) {
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0);
+                    } else {
+                        tangent = LVector3d(-axes[0], 0, 0);
+                    }
+                    LVector3d binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r);
+
+                    if (!global_texture) {
+                        gtw.add_data2(u_skirt, v_skirt);
+                    } else {
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
+                    }
+
+                    point.componentwise_mult(reduced_axes);
+                    if (offset != 0.0) {
+                        point -= offset_vector;
+                    }
+                    gvw.add_data3d(point);
+                    normal.componentwise_mult(normal_coefs);
+                    normal.normalize();
+                    gnw.add_data3d(normal);
+                    tangent.normalize();
+                    gtanw.add_data3d(tangent);
+                    binormal.componentwise_mult(axes);
+                    binormal.normalize();
+                    gbiw.add_data3d(binormal);
+                }
+            } else if (edge == 2) {  // Bottom edge (r=0, all s)
+                for (unsigned int s = 0; s < r_sectors; ++s) {
+                    unsigned int r = 0;
+                    double u_skirt = double(s) / sectors;
+                    if (inv_texture_u) {
+                        u_skirt = 1.0 - u_skirt;
+                    }
+                    double v_skirt = (!inv_texture_v) ? -skirt_uv : 1.0 + skirt_uv;
+
+                    double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_r = sin(M_PI * (y0 + r * dy / rings));
+                    double cos_r = cos(M_PI * (y0 + r * dy / rings));
+                    LPoint3d point = LPoint3d(cos_s * sin_r, sin_s * sin_r, -cos_r);
+                    LVector3d normal(point);
+                    LVector3d tangent;
+                    if (sin_r > 0) {
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0);
+                    } else {
+                        tangent = LVector3d(-axes[0], 0, 0);
+                    }
+                    LVector3d binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r);
+
+                    if (!global_texture) {
+                        gtw.add_data2(u_skirt, v_skirt);
+                    } else {
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
+                    }
+
+                    point.componentwise_mult(reduced_axes);
+                    if (offset != 0.0) {
+                        point -= offset_vector;
+                    }
+                    gvw.add_data3d(point);
+                    normal.componentwise_mult(normal_coefs);
+                    normal.normalize();
+                    gnw.add_data3d(normal);
+                    tangent.normalize();
+                    gtanw.add_data3d(tangent);
+                    binormal.componentwise_mult(axes);
+                    binormal.normalize();
+                    gbiw.add_data3d(binormal);
+                }
+            } else {  // edge == 3, Top edge (r=rings, all s)
+                for (unsigned int s = 0; s < r_sectors; ++s) {
+                    unsigned int r = rings;
+                    double u_skirt = double(s) / sectors;
+                    if (inv_texture_u) {
+                        u_skirt = 1.0 - u_skirt;
+                    }
+                    double v_skirt = (!inv_texture_v) ? 1.0 + skirt_uv : -skirt_uv;
+
+                    double cos_s = cos(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_s = sin(2 * M_PI * (x0 + s * dx / sectors) + M_PI);
+                    double sin_r = sin(M_PI * (y0 + r * dy / rings));
+                    double cos_r = cos(M_PI * (y0 + r * dy / rings));
+                    LPoint3d point = LPoint3d(cos_s * sin_r, sin_s * sin_r, -cos_r);
+                    LVector3d normal(point);
+                    LVector3d tangent;
+                    if (sin_r > 0) {
+                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0);
+                    } else {
+                        tangent = LVector3d(-axes[0], 0, 0);
+                    }
+                    LVector3d binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r);
+
+                    if (!global_texture) {
+                        gtw.add_data2(u_skirt, v_skirt);
+                    } else {
+                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings));
+                    }
+
+                    point.componentwise_mult(reduced_axes);
+                    if (offset != 0.0) {
+                        point -= offset_vector;
+                    }
+                    gvw.add_data3d(point);
+                    normal.componentwise_mult(normal_coefs);
+                    normal.normalize();
+                    gnw.add_data3d(normal);
+                    tangent.normalize();
+                    gtanw.add_data3d(tangent);
+                    binormal.componentwise_mult(axes);
+                    binormal.normalize();
+                    gbiw.add_data3d(binormal);
+                }
+            }
+        }
+    }
+
+    // Generate main patch primitives
     for (unsigned int r = 0; r < r_rings - 1; ++r) {
         for (unsigned int s = 0; s < r_sectors - 1; ++s) {
             prim->add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s);
             prim->add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s);
         }
     }
+
+    // Generate skirt primitives if enabled
+    if (use_patch_skirts) {
+        unsigned int base_idx = r_rings * r_sectors;
+
+        // Left edge (s=0): Connect to skirt
+        unsigned int skirt_start = base_idx;
+        for (unsigned int r = 0; r < rings; ++r) {
+            unsigned int v = r * r_sectors;
+            unsigned int skirt = skirt_start + r;
+            prim->add_vertices(v, v + r_sectors, skirt);
+            prim->add_vertices(skirt, v + r_sectors, skirt + 1);
+        }
+
+        // Right edge (s=sectors): Connect to skirt
+        skirt_start = base_idx + r_rings;
+        for (unsigned int r = 0; r < rings; ++r) {
+            unsigned int v = r * r_sectors + sectors;
+            unsigned int skirt = skirt_start + r;
+            prim->add_vertices(skirt, v, v + r_sectors);
+            prim->add_vertices(v + r_sectors, skirt + 1, skirt);
+        }
+
+        // Bottom edge (r=0): Connect to skirt
+        skirt_start = base_idx + 2 * r_rings;
+        for (unsigned int s = 0; s < sectors; ++s) {
+            unsigned int v = s;
+            unsigned int skirt = skirt_start + s;
+            prim->add_vertices(skirt, v, v + 1);
+            prim->add_vertices(v + 1, skirt + 1, skirt);
+        }
+
+        // Top edge (r=rings): Connect to skirt
+        skirt_start = base_idx + 2 * r_rings + r_sectors;
+        for (unsigned int s = 0; s < sectors; ++s) {
+            unsigned int v = rings * r_sectors + s;
+            unsigned int skirt = skirt_start + s;
+            prim->add_vertices(v, skirt, v + 1);
+            prim->add_vertices(skirt, skirt + 1, v + 1);
+        }
+    }
+
     prim->close_primitive();
     geom->add_primitive(prim);
     node->add_geom(geom);
