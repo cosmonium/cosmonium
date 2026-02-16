@@ -97,19 +97,25 @@ class ShadowMap(ShadowMapBase):
 
         cam = Camera("shadow-cam")
         self.cam = scene_anchor.unshifted_instance.attach_new_node(cam)
+        self.node = self.cam.node()
         cam.set_lens(OrthographicLens())
         dr = self.buffer.make_display_region(0, 1, 0, 1)
         dr.disable_clears()
         dr.set_scissor_enabled(False)
         dr.set_camera(self.cam)
+        cam.set_scene(scene_anchor.unshifted_instance)
 
-        self.node = self.cam.node()
-        self.node.setInitialState(
-            RenderState.make(
+        # TODO: Find a better way to retrieve common render state
+        common_state = builtins.base.common_state.get_state()
+        if self.debug_shadow_map_texture:
+            state = RenderState.make(CullFaceAttrib.make_reverse())
+        else:
+            state = common_state.make(
                 CullFaceAttrib.make_reverse(),
                 ColorWriteAttrib.make(ColorWriteAttrib.M_none),
             )
-        )
+        initial_state = common_state.compose(state)
+        self.node.set_initial_state(initial_state)
         if settings.debug_shadow_frustum:
             self.node.show_frustum()
 
