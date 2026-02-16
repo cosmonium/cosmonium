@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ shadow casters and handle shader configuration for different shadow types.
 from __future__ import annotations
 
 from ..shaders.shadows.ellipsoid import ShaderSphereShadow
-
 from .base import ShadowBase
 from .sphere import SphereShadowDataSource
 
@@ -41,7 +40,8 @@ class RingsShadows(ShadowBase):
     def __init__(self, target: object) -> None:
         """Initialize ring shadows manager.
 
-        :param target: Target object that will receive ring shadows
+        Args:
+            target: Target object that will receive ring shadows.
         """
         self.target = target
         self.casters: list[object] = []
@@ -54,7 +54,8 @@ class RingsShadows(ShadowBase):
     def add_shadow_caster(self, caster: object) -> None:
         """Add a ring shadow caster.
 
-        :param caster: Ring shadow caster to add
+        Args:
+            caster: Ring shadow caster to add.
         """
         if not caster.is_valid():
             return
@@ -91,7 +92,8 @@ class RingsShadows(ShadowBase):
     def end_update(self) -> bool:
         """End shadow update cycle.
 
-        :return: True if rebuild is needed
+        Returns:
+            True if rebuild is needed.
         """
         self.nb_updates -= 1
         if self.nb_updates == 0:
@@ -124,7 +126,8 @@ class SphereShadows(ShadowBase):
     def __init__(self, target: object) -> None:
         """Initialize sphere shadows manager.
 
-        :param target: Target object that will receive sphere shadows
+        Args:
+            target: Target object that will receive sphere shadows.
         """
 
         self.target = target
@@ -139,7 +142,8 @@ class SphereShadows(ShadowBase):
     def add_shadow_caster(self, shadow_caster: object) -> None:
         """Add a sphere shadow caster.
 
-        :param shadow_caster: Sphere shadow caster to add
+        Args:
+            shadow_caster: Sphere shadow caster to add.
         """
         if shadow_caster not in self.shadow_casters:
             self.shadow_casters.append(shadow_caster)
@@ -147,7 +151,8 @@ class SphereShadows(ShadowBase):
     def empty(self) -> bool:
         """Check if there are no shadow casters.
 
-        :return: True if no casters present
+        Returns:
+            True if no casters present.
         """
         return len(self.shadow_casters) == 0
 
@@ -168,7 +173,8 @@ class SphereShadows(ShadowBase):
     def end_update(self) -> bool:
         """End shadow update cycle.
 
-        :return: True if rebuild is needed
+        Returns:
+            True if rebuild is needed.
         """
         self.nb_updates -= 1
         if self.nb_updates == 0:
@@ -195,7 +201,8 @@ class ShadowMapShadows(ShadowBase):
     def __init__(self, target: object) -> None:
         """Initialize shadow map shadows manager.
 
-        :param target: Target object that will receive shadow map shadows
+        Args:
+            target: Target object that will receive shadow map shadows.
         """
         self.target = target
         self.casters: list[object] = []
@@ -208,8 +215,9 @@ class ShadowMapShadows(ShadowBase):
     def add_shadow_caster(self, caster: object, self_shadow: bool) -> None:
         """Add a shadow map caster.
 
-        :param caster: Shadow map caster to add
-        :param self_shadow: Enable self-shadowing
+        Args:
+            caster: Shadow map caster to add.
+            self_shadow: Enable self-shadowing.
         """
         if not caster.is_valid():
             return
@@ -246,7 +254,8 @@ class ShadowMapShadows(ShadowBase):
     def end_update(self) -> bool:
         """End shadow update cycle.
 
-        :return: True if rebuild is needed
+        Returns:
+            True if rebuild is needed.
         """
         self.nb_updates -= 1
         if self.nb_updates == 0:
@@ -279,7 +288,8 @@ class MultiShadows(ShadowBase):
     def __init__(self, target: object) -> None:
         """Initialize multi-shadow manager.
 
-        :param target: Target object that will receive all shadow types
+        Args:
+            target: Target object that will receive all shadow types.
         """
         self.target = target
         self.rings_shadows = RingsShadows(target)
@@ -318,21 +328,24 @@ class MultiShadows(ShadowBase):
     def add_ring_shadow_caster(self, shadow_caster: object) -> None:
         """Add a ring shadow caster.
 
-        :param shadow_caster: Ring shadow caster to add
+        Args:
+            shadow_caster: Ring shadow caster to add.
         """
         self.rings_shadows.add_shadow_caster(shadow_caster)
 
     def add_sphere_shadow_caster(self, shadow_caster: object) -> None:
         """Add a sphere shadow caster.
 
-        :param shadow_caster: Sphere shadow caster to add
+        Args:
+            shadow_caster: Sphere shadow caster to add.
         """
         self.sphere_shadows.add_shadow_caster(shadow_caster)
 
     def add_shadow_map_shadow_caster(self, shadow_caster: object, self_shadow: bool) -> None:
         """Add a shadow map caster.
 
-        :param shadow_caster: Shadow map caster to add
-        :param self_shadow: Enable self-shadowing
+        Args:
+            shadow_caster: Shadow map caster to add.
+            self_shadow: Enable self-shadowing.
         """
         self.shadow_map_shadows.add_shadow_caster(shadow_caster, self_shadow)

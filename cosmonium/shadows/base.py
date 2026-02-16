@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,14 +41,16 @@ class ShadowCasterBase:
     def __init__(self, light: object) -> None:
         """Initialize shadow caster with a light source.
 
-        :param light: The light source that will cast shadows
+        Args:
+            light: The light source that will cast shadows.
         """
         self.light = light
 
     def is_analytic(self) -> bool:
         """Check if this shadow caster uses analytic shadow calculation.
 
-        :return: True if analytic, False if using shadow maps
+        Returns:
+            True if analytic, False if using shadow maps.
         """
         pass
 
@@ -67,21 +69,24 @@ class ShadowCasterBase:
     def is_valid(self) -> bool:
         """Check if shadow caster is properly initialized and valid.
 
-        :return: True if valid and ready to use
+        Returns:
+            True if valid and ready to use.
         """
         return True
 
-    def add_target(self, entity: Entity) -> None:
+    def add_target(self, entity: 'Entity') -> None:
         """Add an entity as a target for this shadow caster.
 
-        :param entity: Entity that will receive shadows
+        Args:
+            entity: Entity that will receive shadows.
         """
         pass
 
     def update(self, scene_manager: object) -> None:
         """Update shadow caster state for current frame.
 
-        :param scene_manager: The scene manager
+        Args:
+            scene_manager: The scene manager.
         """
         pass
 

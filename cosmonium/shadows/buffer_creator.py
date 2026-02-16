@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import builtins
 from typing import Optional, Tuple
-from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe, GraphicsOutput
-from panda3d.core import Texture, LColor
+
+from panda3d.core import FrameBufferProperties, GraphicsOutput, GraphicsPipe, LColor, Texture, WindowProperties
 
 
 class ShadowMapBufferCreator:
@@ -37,9 +37,10 @@ class ShadowMapBufferCreator:
     This class encapsulates the logic for creating render buffers
     that produce depth textures for shadow mapping.
 
-    :ivar base: Reference to the Panda3D base application
-    :ivar win: Reference to the main window
-    :ivar graphics_engine: Reference to the graphics engine
+    Attributes:
+        base: Reference to the Panda3D base application.
+        win: Reference to the main window.
+        graphics_engine: Reference to the graphics engine.
     """
 
     def __init__(self) -> None:
@@ -56,12 +57,15 @@ class ShadowMapBufferCreator:
     ) -> Optional[GraphicsOutput]:
         """Create a render buffer producing a depth texture.
 
-        :param size_x: Width of the buffer in pixels
-        :param size_y: Height of the buffer in pixels
-        :param depth_bits: Number of depth bits (e.g., 16, 24, 32)
-        :param depth_tex: Texture object to receive depth data
-        :param color_tex: Optional texture object to receive color data
-        :return: The created graphics buffer or None on failure
+        Args:
+            size_x: Width of the buffer in pixels.
+            size_y: Height of the buffer in pixels.
+            depth_bits: Number of depth bits (e.g., 16, 24, 32).
+            depth_tex: Texture object to receive depth data.
+            color_tex: Optional texture object to receive color data.
+
+        Returns:
+            The created graphics buffer or None on failure.
         """
         # Configure window properties
         window_props = WindowProperties.size(size_x, size_y)
@@ -126,9 +130,13 @@ class ShadowMapBufferCreator:
     ) -> Tuple[Optional[GraphicsOutput], Optional[Texture]]:
         """Create a simple shadow buffer with depth texture.
 
-        :param size: Size of the square shadow map in pixels
-        :param name: Name for the buffer (default: "shadows-buffer")
-        :return: Tuple of (buffer, depthmap) or (None, None) on failure
+        Args:
+            size: Size of the square shadow map in pixels.
+            name: Name for the buffer (default: "shadows-buffer").
+            color_tex: Whether to create a color texture for debugging (default: False).
+
+        Returns:
+            Tuple of (buffer, depthmap) or (None, None) on failure.
         """
         winprops = WindowProperties.size(size, size)
         props = FrameBufferProperties()
@@ -166,7 +174,8 @@ class ShadowMapBufferCreator:
         Sets up texture filtering and wrapping modes appropriate for
         shadow map sampling.
 
-        :param texture: The texture to configure
+        Args:
+            texture: The texture to configure.
         """
         texture.set_minfilter(Texture.FT_shadow)
         texture.set_magfilter(Texture.FT_shadow)

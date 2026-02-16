@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,20 +24,31 @@ directional lights with single shadow maps.
 """
 
 import builtins
-from panda3d.core import GraphicsOutput, Camera, NodePath, LQuaterniond
-from panda3d.core import Texture, OrthographicLens
-from panda3d.core import LPoint3, LPoint3d, LVector3, LVector3d
-from panda3d.core import ColorWriteAttrib, CullFaceAttrib, RenderState
 from typing import Optional
 
+from panda3d.core import (
+    Camera,
+    ColorWriteAttrib,
+    CullFaceAttrib,
+    GraphicsOutput,
+    LPoint3,
+    LPoint3d,
+    LQuaterniond,
+    LVector3,
+    LVector3d,
+    NodePath,
+    OrthographicLens,
+    RenderState,
+    Texture,
+)
+
+from .. import settings
 from ..entities.datasource import DataSource
 from ..foundation import BaseObject
 from ..shaders.shadows.shadowmap import ShaderShadowMap
-from .. import settings
-
 from .base import ShadowCasterBase
-from .projector import ShadowProjector
 from .buffer_creator import ShadowMapBufferCreator
+from .projector import ShadowProjector
 
 
 class ShadowMapBase:
@@ -46,8 +57,9 @@ class ShadowMapBase:
     This class provides the foundation for shadow mapping by integrating
     with the ShadowMapBufferCreator for buffer creation.
 
-    :ivar base: Reference to the Panda3D base application
-    :ivar buffer_creator: ShadowMapBufferCreator instance for buffer creation
+    Attributes:
+        base: Reference to the Panda3D base application.
+        buffer_creator: ShadowMapBufferCreator instance for buffer creation.
     """
 
     def __init__(self) -> None:
@@ -62,19 +74,21 @@ class ShadowMap(ShadowMapBase):
     Uses ShadowMapper for buffer creation and ShadowProjector for
     camera alignment and projection calculations.
 
-    :ivar size: Resolution of the shadow map
-    :ivar buffer: Graphics buffer for shadow rendering
-    :ivar depthmap: Depth texture storing shadow data
-    :ivar cam: Shadow camera node path
-    :ivar node: Shadow camera node
-    :ivar snap_cam: Whether to snap camera to texel grid
-    :ivar shadow_projector: Projector for frustum calculations
+    Attributes:
+        size: Resolution of the shadow map.
+        buffer: Graphics buffer for shadow rendering.
+        depthmap: Depth texture storing shadow data.
+        cam: Shadow camera node path.
+        node: Shadow camera node.
+        snap_cam: Whether to snap camera to texel grid.
+        shadow_projector: Projector for frustum calculations.
     """
 
     def __init__(self, size: int) -> None:
         """Initialize shadow map with specified resolution.
 
-        :param size: Size of the square shadow map in pixels
+        Args:
+            size: Size of the square shadow map in pixels.
         """
         ShadowMapBase.__init__(self)
         self.size = size
@@ -89,7 +103,8 @@ class ShadowMap(ShadowMapBase):
     def create(self, scene_anchor: object) -> None:
         """Create shadow map resources.
 
-        :param scene_anchor: Scene anchor for attaching shadow camera
+        Args:
+            scene_anchor: Scene anchor for attaching shadow camera.
         """
         self.buffer, self.depthmap = self.buffer_creator.create_simple_shadow_buffer(
             self.size, "shadow-buffer", color_tex=self.debug_shadow_map_texture
@@ -126,10 +141,11 @@ class ShadowMap(ShadowMapBase):
     def set_lens(self, size: float, near: float, far: float, direction: LVector3d) -> None:
         """Configure shadow camera lens.
 
-        :param size: Film size (frustum size)
-        :param near: Near plane distance
-        :param far: Far plane distance
-        :param direction: View direction
+        Args:
+            size: Film size (frustum size).
+            near: Near plane distance.
+            far: Far plane distance.
+            direction: View direction.
         """
         lens = self.node.get_lens()
         lens.set_film_size(size)
@@ -139,14 +155,16 @@ class ShadowMap(ShadowMapBase):
     def get_lens(self) -> object:
         """Get shadow camera lens.
 
-        :return: Camera lens
+        Returns:
+            Camera lens.
         """
         return self.node.get_lens()
 
     def set_direction(self, direction: LVector3d) -> None:
         """Set shadow camera view direction.
 
-        :param direction: View direction vector
+        Args:
+            direction: View direction vector.
         """
         lens = self.node.get_lens()
         lens.set_view_vector(LVector3(*direction), LVector3.up())
@@ -154,14 +172,16 @@ class ShadowMap(ShadowMapBase):
     def get_pos(self) -> LPoint3:
         """Get shadow camera position.
 
-        :return: Camera position
+        Returns:
+            Camera position.
         """
         return self.cam.get_pos()
 
     def set_pos(self, position: LPoint3d) -> None:
         """Set shadow camera position.
 
-        :param position: Camera position
+        Args:
+            position: Camera position.
         """
         self.cam.set_pos(LPoint3(*position))
         if self.snap_cam:
@@ -184,20 +204,22 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     Uses ShadowProjector for computing frustum parameters and managing
     shadow camera projections.
 
-    :ivar occluder: Object casting the shadow
-    :ivar entity: Entity owning this caster
-    :ivar name: Name of the shadow caster
-    :ivar shadow_map: Shadow map instance
-    :ivar shadow_camera: Shadow camera node
-    :ivar shadow_projector: Projector for frustum calculations
+    Attributes:
+        occluder: Object casting the shadow.
+        entity: Entity owning this caster.
+        name: Name of the shadow caster.
+        shadow_map: Shadow map instance.
+        shadow_camera: Shadow camera node.
+        shadow_projector: Projector for frustum calculations.
     """
 
     def __init__(self, light: object, occluder: object, entity: object) -> None:
         """Initialize shadow map shadow caster.
 
-        :param light: Light source
-        :param occluder: Object casting shadows
-        :param entity: Owner entity
+        Args:
+            light: Light source.
+            occluder: Object casting shadows.
+            entity: Owner entity.
         """
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
@@ -210,7 +232,8 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def is_analytic(self) -> bool:
         """Check if using analytic shadows.
 
-        :return: False (uses shadow maps)
+        Returns:
+            False if using shadow maps.
         """
         return False
 
@@ -248,14 +271,16 @@ class ShadowMapShadowCaster(ShadowCasterBase):
     def is_valid(self) -> bool:
         """Check if shadow caster is valid.
 
-        :return: True if valid
+        Returns:
+            True if valid.
         """
         return self.shadow_map is not None
 
     def update(self, scene_manager: object) -> None:
         """Update shadow caster for current frame.
 
-        :param scene_manager: Scene manager
+        Args:
+            scene_manager: Scene manager.
         """
         if self.shadow_map is None:
             return
@@ -268,15 +293,17 @@ class ShadowMapShadowCaster(ShadowCasterBase):
 class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     """Custom shadow map shadow caster with target management.
 
-    :ivar targets: Dictionary of target entities
+    Attributes:
+        targets: Dictionary of target entities.
     """
 
     def __init__(self, light: object, occluder: object, entity: object) -> None:
         """Initialize custom shadow map shadow caster.
 
-        :param light: Light source
-        :param occluder: Object casting shadows
-        :param entity: Owner entity
+        Args:
+            light: Light source.
+            occluder: Object casting shadows.
+            entity: Owner entity.
         """
         ShadowMapShadowCaster.__init__(self, light, occluder, entity)
         self.targets = {}
@@ -303,7 +330,8 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def update(self, scene_manager: object) -> None:
         """Update shadow caster and position.
 
-        :param scene_manager: Scene manager
+        Args:
+            scene_manager: Scene manager.
         """
         ShadowMapShadowCaster.update(self, scene_manager)
         if self.shadow_map is not None:
@@ -313,24 +341,31 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
     def create_shader_component(self, self_shadow: bool) -> ShaderShadowMap:
         """Create shader component for this shadow caster.
 
-        :param self_shadow: Whether to enable self-shadowing
-        :return: Shader shadow map component
+        Args:
+            self_shadow: Whether the shader is used for self-shadowing.
+
+        Returns:
+            ShaderShadowMap: Shader shadow map component.
         """
         return ShaderShadowMap(self.name, use_bias=self_shadow)
 
     def create_data_source(self, self_shadow: bool) -> 'ShadowMapDataSource':
         """Create data source for shader uniforms.
 
-        :param self_shadow: Whether to enable self-shadowing
-        :return: Shadow map data source
+        Args:
+            self_shadow: Whether the data-sourcer is used for self-shadowing.
+
+        Returns:
+            Shadow map data source.
         """
         return ShadowMapDataSource(self.name, self, use_bias=self_shadow, calculate_shadow_coef=True)
 
     def add_target(self, entity: object, self_shadow: bool = False) -> None:
         """Add target entity to receive shadows.
 
-        :param entity: Target entity
-        :param self_shadow: Enable self-shadowing
+        Args:
+            entity: Target entity.
+            self_shadow: Whether the target is the object casting the shadow.
         """
         entity.shadows.add_shadow_map_shadow_caster(self, self_shadow)
 
@@ -353,19 +388,21 @@ class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
 class ShadowMapDataSource(DataSource):
     """Data source for shadow map shader uniforms.
 
-    :ivar name: Name of the shadow map
-    :ivar caster: Shadow caster instance
-    :ivar use_bias: Whether to use shadow bias
-    :ivar calculate_shadow_coef: Whether to calculate shadow coefficient
+    Attributes:
+        name: Name of the shadow map.
+        caster: Shadow caster instance.
+        use_bias: Whether to use shadow bias.
+        calculate_shadow_coef: Whether to calculate shadow coefficient.
     """
 
     def __init__(self, name: str, caster: ShadowMapShadowCaster, use_bias: bool, calculate_shadow_coef: bool) -> None:
         """Initialize shadow map data source.
 
-        :param name: Name identifier
-        :param caster: Shadow caster
-        :param use_bias: Enable shadow bias
-        :param calculate_shadow_coef: Enable shadow coefficient calculation
+        Args:
+            name: Name identifier.
+            caster: Shadow caster.
+            use_bias: Enable shadow bias.
+            calculate_shadow_coef: Enable shadow coefficient calculation.
         """
         DataSource.__init__(self, 'shadowmap-' + name)
         self.name = name
@@ -376,8 +413,9 @@ class ShadowMapDataSource(DataSource):
     def apply(self, shape: object, instance: NodePath) -> None:
         """Apply shadow map to shape instance.
 
-        :param shape: Shape to apply shadows to
-        :param instance: Instance node
+        Args:
+            shape: Shape to apply shadows to.
+            instance: Instance node.
         """
         instance.set_shader_input('%s_depthmap' % self.name, self.caster.shadow_map.depthmap)
         instance.set_shader_input("%sLightSource" % self.name, self.caster.shadow_map.cam)
@@ -387,10 +425,11 @@ class ShadowMapDataSource(DataSource):
     def update(self, shape: object, instance: NodePath, camera_pos: LPoint3d, camera_rot: LQuaterniond) -> None:
         """Update shadow parameters for current frame.
 
-        :param shape: Shape receiving shadows
-        :param instance: Instance node
-        :param camera_pos: Camera position
-        :param camera_rot: Camera rotation
+        Args:
+            shape: Shape receiving shadows.
+            instance: Instance node.
+            camera_pos: Camera position.
+            camera_rot: Camera rotation.
         """
         from math import asin, pi
 
@@ -429,8 +468,9 @@ class ShadowMapDataSource(DataSource):
     def clear_shape_data(self, shape: object, instance: NodePath) -> None:
         """Clear shadow data from shape instance.
 
-        :param shape: Shape to clear
-        :param instance: Instance node
+        Args:
+            shape: Shape to clear.
+            instance: Instance node.
         """
         instance.clearShaderInput('%s_depthmap' % self.name)
         instance.clearShaderInput("%sLightSource" % self.name)

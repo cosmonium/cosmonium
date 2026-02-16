@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,25 +17,39 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Parallel Split Shadow Maps (PSSM) implementation.
+
+This module provides classes for implementing Parallel Split Shadow Maps,
+a technique for rendering high-quality shadows over large distances by
+dividing the view frustum into multiple splits.
+"""
+
 
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import Texture
-from panda3d.core import LVector3
-from panda3d.core import PTA_LMatrix4
 from panda3d._rplight import PSSMCameraRig
+from panda3d.core import LVector3, PTA_LMatrix4, Texture
 
+from .. import settings
 from ..entities.datasource import DataSource
 from ..foundation import BaseObject
 from ..shaders.shadows.pssm import ShaderPSSMShadowMap
-from .. import settings
-
 from .base import ShadowCasterBase
 from .shadowmap import ShadowMapBase
 
 
 class PSSMShadowMap(ShadowMapBase):
+    """Parallel Split Shadow Map implementation.
+
+    Manages the creation and updating of PSSM shadow maps using multiple splits
+    for better shadow quality over varying distances.
+    """
 
     def __init__(self, size):
+        """Initialize PSSM shadow map.
+
+        Args:
+            size: Resolution of each shadow map split.
+        """
         ShadowMapBase.__init__(self)
         self.size = size
         self.buffer = None
@@ -50,11 +64,21 @@ class PSSMShadowMap(ShadowMapBase):
         self.last_cache_reset = globalClock.get_frame_time()
 
     def create(self, scene_anchor):
+        """Create PSSM shadow map resources.
+
+        Args:
+            scene_anchor: Scene anchor for attaching the camera rig.
+        """
         self.create_camera_rig(scene_anchor)
         self.create_pssm_buffer()
         self.attach_pssm_camera_rig()
 
     def create_camera_rig(self, scene_anchor):
+        """Create and configure the PSSM camera rig.
+
+        Args:
+            scene_anchor: Scene anchor for attaching the camera rig.
+        """
         # Construct the actual PSSM rig
         self.camera_rig = PSSMCameraRig(self.num_splits)
         # Set the max distance from the camera where shadows are rendered
@@ -76,6 +100,7 @@ class PSSMShadowMap(ShadowMapBase):
         self.camera_rig.reparent_to(self.base.scene_manager.root)
 
     def attach_pssm_camera_rig(self):
+        """Attach cameras to the shadow buffer regions."""
         # Attach the cameras to the shadow stage
         for i in range(self.num_splits):
             camera_np = self.camera_rig.get_camera(i)
@@ -86,6 +111,7 @@ class PSSMShadowMap(ShadowMapBase):
                 camera_np.show(BaseObject.DefaultCameraFlag)
 
     def create_pssm_buffer(self):
+        """Create the PSSM shadow buffer and depth texture."""
         # Create the depth buffer
         # The depth buffer is the concatenation of num_splits shadow maps
         self.depthmap = Texture("PSSMShadowMap")
@@ -116,6 +142,12 @@ class PSSMShadowMap(ShadowMapBase):
             self.split_regions.append(region)
 
     def update(self, camera_np, light_dir):
+        """Update the PSSM camera rig for the current frame.
+
+        Args:
+            camera_np: Main camera node path.
+            light_dir: Light direction vector.
+        """
         if settings.debug_lod_freeze:
             return
         self.camera_rig.update(camera_np, -light_dir)
@@ -125,22 +157,40 @@ class PSSMShadowMap(ShadowMapBase):
             self.camera_rig.reset_film_size_cache()
 
     def remove(self):
+        """Remove PSSM shadow map resources."""
         # TODO
         pass
 
 
 class PSSMShadowMapShadowCaster(ShadowCasterBase):
+    """Shadow caster using PSSM shadow maps.
+
+    Handles the creation and management of PSSM shadow maps for a given light
+    and occluder.
+    """
 
     def __init__(self, light, occluder):
+        """Initialize PSSM shadow caster.
+
+        Args:
+            light: Light source for casting shadows.
+            occluder: Object casting the shadows.
+        """
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
         self.name = self.occluder.get_ascii_name()
         self.shadow_map = None
 
     def is_analytic(self):
+        """Check if this shadow caster uses analytic shadows.
+
+        Returns:
+            False, as PSSM uses shadow maps.
+        """
         return False
 
     def create(self):
+        """Create PSSM shadow map resources."""
         if self.shadow_map is not None:
             return
         self.shadow_map = PSSMShadowMap(settings.shadow_size)
@@ -150,10 +200,12 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
             camera_np.node().set_camera_mask(BaseObject.ShadowCameraFlag)
 
     def remove(self):
+        """Remove PSSM shadow map resources."""
         self.shadow_map.remove()
         self.shadow_map = None
 
     def check_settings(self):
+        """Check and apply shadow settings."""
         return
         if settings.debug_shadow_frustum:
             self.shadow_camera.show_frustum()
@@ -161,29 +213,76 @@ class PSSMShadowMapShadowCaster(ShadowCasterBase):
             self.shadow_camera.hide_frustum()
 
     def is_valid(self):
+        """Check if the shadow caster is valid.
+
+        Returns:
+            True if shadow map is created, False otherwise.
+        """
         return self.shadow_map is not None
 
     def update(self, scene_manager):
+        """Update the shadow caster for the current frame.
+
+        Args:
+            scene_manager: Scene manager instance.
+        """
         self.shadow_map.update(scene_manager.camera, LVector3(*self.light.light_direction))
 
     def create_shader_component(self, self_shadow):
+        """Create shader component for PSSM shadows.
+
+        Args:
+            self_shadow: Whether to enable self-shadowing.
+
+        Returns:
+            ShaderPSSMShadowMap instance.
+        """
         return ShaderPSSMShadowMap(self.name)
 
     def create_data_source(self, self_shadow):
+        """Create data source for PSSM shader uniforms.
+
+        Args:
+            self_shadow: Whether to enable self-shadowing.
+
+        Returns:
+            PSSMShadowMapDataSource instance.
+        """
         return PSSMShadowMapDataSource(self.name, self)
 
     def add_target(self, entity):
+        """Add target entity to receive PSSM shadows.
+
+        Args:
+            entity: Entity to receive shadows.
+        """
         entity.shadows.add_shadow_map_shadow_caster(self, self_shadow=False)
 
 
 class PSSMShadowMapDataSource(DataSource):
+    """Data source for PSSM shadow map shader uniforms.
+
+    Provides the necessary uniforms for PSSM shadow mapping in shaders.
+    """
 
     def __init__(self, name, caster):
+        """Initialize PSSM data source.
+
+        Args:
+            name: Name identifier for the shadow map.
+            caster: PSSM shadow caster instance.
+        """
         DataSource.__init__(self, 'pssmshadowmap-' + name)
         self.name = name
         self.caster = caster
 
     def apply(self, shape, instance):
+        """Apply PSSM shadow uniforms to the shape instance.
+
+        Args:
+            shape: Shape to apply shadows to.
+            instance: Node path instance.
+        """
         src_mvp_array = self.caster.shadow_map.camera_rig.get_mvp_array()
         mvp_array = PTA_LMatrix4()
         for array in src_mvp_array:
@@ -196,6 +295,14 @@ class PSSMShadowMapDataSource(DataSource):
         )
 
     def update(self, shape, instance, camera_pos, camera_rot):
+        """Update PSSM uniforms for the current frame.
+
+        Args:
+            shape: Shape receiving shadows.
+            instance: Node path instance.
+            camera_pos: Camera position.
+            camera_rot: Camera rotation.
+        """
         pssm = self.caster.shadow_map
         src_mvp_array = pssm.camera_rig.get_mvp_array()
         mvp_array = PTA_LMatrix4()
@@ -204,4 +311,10 @@ class PSSMShadowMapDataSource(DataSource):
         instance.set_shader_inputs(pssm_mvps=mvp_array)
 
     def clear_shape_data(self, shape, instance):
+        """Clear PSSM shadow data from the shape instance.
+
+        Args:
+            shape: Shape to clear.
+            instance: Node path instance.
+        """
         instance.clear_shader_input('pssm_mvps')

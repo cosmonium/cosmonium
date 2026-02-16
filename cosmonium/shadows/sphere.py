@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,31 +17,72 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Sphere shadow implementation.
+
+This module provides classes for implementing analytic sphere shadows,
+which are shadows cast by spherical occluders using mathematical calculations
+rather than shadow maps.
+"""
+
 
 from math import asin
-from panda3d.core import LMatrix4, PTA_LMatrix4, LQuaternion
+
+from panda3d.core import LMatrix4, LQuaternion, PTA_LMatrix4
 
 from ..entities.datasource import DataSource
-
 from .base import ShadowCasterBase
 
 
 class SphereShadowCaster(ShadowCasterBase):
+    """Shadow caster for analytic sphere shadows.
+
+    Handles the creation and management of shadows cast by spherical objects
+    using analytic methods.
+    """
 
     def __init__(self, light, occluder):
+        """Initialize sphere shadow caster.
+
+        Args:
+            light: Light source for casting shadows.
+            occluder: Spherical object casting the shadows.
+        """
         ShadowCasterBase.__init__(self, light)
         self.occluder = occluder
 
     def is_analytic(self):
+        """Check if this shadow caster uses analytic shadows.
+
+        Returns:
+            True, as sphere shadows are analytic.
+        """
         return True
 
     def add_target(self, entity):
+        """Add target entity to receive sphere shadows.
+
+        Args:
+            entity: Entity to receive shadows.
+        """
         entity.shadows.add_sphere_shadow_caster(self)
 
 
 class SphereShadowDataSource(DataSource):
+    """Data source for sphere shadow shader uniforms.
+
+    Provides the necessary uniforms for analytic sphere shadow rendering
+    in shaders, handling multiple occluders.
+    """
 
     def __init__(self, shadow_casters, max_occluders, far_sun, oblate_occluder):
+        """Initialize sphere shadow data source.
+
+        Args:
+            shadow_casters: Collection of shadow casters.
+            max_occluders: Maximum number of occluders to handle.
+            far_sun: Whether the sun is treated as far away.
+            oblate_occluder: Whether occluders are oblate spheroids.
+        """
         DataSource.__init__(self, 'sphere-shadows')
         self.shadow_casters = shadow_casters
         self.max_occluders = max_occluders
@@ -49,6 +90,14 @@ class SphereShadowDataSource(DataSource):
         self.oblate_occluder = oblate_occluder
 
     def update(self, shape, instance, camera_pos, camera_rot):
+        """Update sphere shadow uniforms for the current frame.
+
+        Args:
+            shape: Shape receiving shadows.
+            instance: Node path instance.
+            camera_pos: Camera position.
+            camera_rot: Camera rotation.
+        """
         if len(self.shadow_casters.shadow_casters) == 0:
             print("ERROR: No lights for", shape, shape.owner.get_name())
             return

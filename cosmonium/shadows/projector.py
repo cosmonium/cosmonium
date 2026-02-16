@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@ calculations, frustum computations, and camera alignment for reducing flickering
 
 from __future__ import annotations
 
-from panda3d.core import LPoint3, LPoint4, LVector3, LVector3d, Mat4
-from panda3d.core import NodePath, OrthographicLens, TransformState
+from panda3d.core import LPoint3, LPoint4, LVector3, LVector3d, Mat4, NodePath, OrthographicLens, TransformState
 
 
 class ShadowProjector:
@@ -46,11 +45,8 @@ class ShadowProjector:
         This snaps the shadow camera position to the texel grid to ensure
         consistent shadow sampling when the camera moves.
 
-        :param base_render: The base render node
-        :param cam: The shadow camera node path
-        :param size: The shadow map size in pixels
-        :param lens: The camera lens
-        :return: The adjusted camera position
+        Returns:
+            The adjusted camera position.
         """
         # Calculate model-view-projection matrix
         mvp = Mat4(base_render.get_transform(cam).get_mat() * lens.get_projection_mat())
@@ -81,9 +77,10 @@ class ShadowProjector:
     def update_lens(self, lens: OrthographicLens, occluder_radius: float, light_direction: LVector3d) -> None:
         """Compute shadow frustum parameters for an occluder.
 
-        :param lens: The camera lens
-        :param occluder_radius: Bounding radius of the shadow-casting object
-        :param light_direction: Direction vector to the light (should be normalized for consistent results)
+        Args:
+            lens: The camera lens.
+            occluder_radius: Bounding radius of the shadow-casting object.
+            light_direction: Direction vector to the light (should be normalized for consistent results).
         """
         # Film size should be slightly larger than occluder to avoid clipping
         film_size = occluder_radius * 2.1
@@ -102,8 +99,11 @@ class ShadowProjector:
     def compute_light_space_matrix(self, cam_transform: TransformState, lens: OrthographicLens) -> Mat4:
         """Compute the light space transformation matrix.
 
-        :param cam_transform: The camera's transform matrix
-        :param lens: The camera's lens
-        :return: The combined model-view-projection matrix
+        Args:
+            cam_transform: The camera's transform matrix.
+            lens: The camera's lens.
+
+        Returns:
+            The combined model-view-projection matrix.
         """
         return Mat4(cam_transform.get_mat() * lens.get_projection_mat())
