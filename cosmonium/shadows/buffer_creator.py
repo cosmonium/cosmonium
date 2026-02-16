@@ -147,6 +147,7 @@ class ShadowMapBufferCreator:
 
         depthmap = Texture()
         buffer.add_render_texture(depthmap, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_depth_stencil)
+        self.configure_shadow_texture(depthmap)
 
         return buffer, depthmap
 
