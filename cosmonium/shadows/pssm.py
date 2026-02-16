@@ -40,6 +40,7 @@ class PSSMShadowMap(ShadowMapBase):
         self.size = size
         self.buffer = None
         self.depthmap = None
+        self.debug_texture = None
         self.camera_rig = None
         self.split_regions = []
         # Basic PSSM configuration
@@ -88,8 +89,10 @@ class PSSMShadowMap(ShadowMapBase):
         # Create the depth buffer
         # The depth buffer is the concatenation of num_splits shadow maps
         self.depthmap = Texture("PSSMShadowMap")
+        if settings.debug_shadow_map_texture:
+            self.debug_texture = Texture("PSSMShadowMapDebug")
         self.buffer = self.buffer_creator.create_render_buffer(
-            self.size * self.num_splits, self.size, 32, self.depthmap
+            self.size * self.num_splits, self.size, 32, self.depthmap, self.debug_texture
         )
 
         # Remove all unused display regions

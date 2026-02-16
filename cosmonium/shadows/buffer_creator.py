@@ -122,7 +122,7 @@ class ShadowMapBufferCreator:
         return buffer
 
     def create_simple_shadow_buffer(
-        self, size: int, name: str = "shadows-buffer"
+        self, size: int, name: str = "shadows-buffer", color_tex: bool = False
     ) -> Tuple[Optional[GraphicsOutput], Optional[Texture]]:
         """Create a simple shadow buffer with depth texture.
 
@@ -132,8 +132,11 @@ class ShadowMapBufferCreator:
         """
         winprops = WindowProperties.size(size, size)
         props = FrameBufferProperties()
-        props.set_rgb_color(0)
-        props.set_alpha_bits(0)
+        if color_tex:
+            props.set_rgb_color(1)
+        else:
+            props.set_rgb_color(0)
+            props.set_alpha_bits(0)
         props.set_depth_bits(1)
 
         win = self.base.win
@@ -148,6 +151,12 @@ class ShadowMapBufferCreator:
         depthmap = Texture()
         buffer.add_render_texture(depthmap, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_depth_stencil)
         self.configure_shadow_texture(depthmap)
+
+        if color_tex:
+            colortex = Texture()
+            buffer.add_render_texture(colortex, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_color)
+            buffer.setClearColor((1, 1, 1, 1))
+            buffer.setClearColorActive(True)
 
         return buffer, depthmap
 

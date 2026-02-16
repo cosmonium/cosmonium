@@ -83,6 +83,7 @@ class ShadowMap(ShadowMapBase):
         self.cam: Optional[NodePath] = None
         self.node: Optional[Camera] = None
         self.snap_cam = settings.shadows_snap_cam
+        self.debug_shadow_map_texture: bool = settings.debug_shadow_map_texture
         self.shadow_projector = ShadowProjector()
 
     def create(self, scene_anchor: object) -> None:
@@ -90,7 +91,9 @@ class ShadowMap(ShadowMapBase):
 
         :param scene_anchor: Scene anchor for attaching shadow camera
         """
-        self.buffer, self.depthmap = self.buffer_creator.create_simple_shadow_buffer(self.size, "shadow-buffer")
+        self.buffer, self.depthmap = self.buffer_creator.create_simple_shadow_buffer(
+            self.size, "shadow-buffer", color_tex=self.debug_shadow_map_texture
+        )
 
         cam = Camera("shadow-cam")
         self.cam = scene_anchor.unshifted_instance.attach_new_node(cam)
