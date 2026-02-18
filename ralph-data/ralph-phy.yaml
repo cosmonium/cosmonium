@@ -1,20 +1,24 @@
+camera:
+  type: surface-follow
+
 lights:
   - {}
 
 ralph:
-  shape:
-    model: ralph-data/models/ralph
-    animations:
+  actor:
+    shape:
+      model: ralph-data/models/ralph
+      animations:
         run: ralph-data/models/ralph-run
         walk: ralph-data/models/ralph-walk
-    auto-scale: false
-    rotation: [180, 0, 0]
-    scale: [0.2, 0.2, 0.2]
-  appearance:
-    type: model
-    vertex-color: true
-    material: false
-  position: [0, 0, 1]
+      auto-scale: false
+      rotation: [180, 0, 0]
+      scale: [0.2, 0.2, 0.2]
+    appearance:
+      type: model
+      vertex-color: true
+      material: false
+    position: [0, 0, 10]
 
 physics:
     enable: true

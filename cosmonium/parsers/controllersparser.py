@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@
 from panda3d.core import LPoint3d
 
 from ..catalogs import objectsDB
-from ..controllers.controllers import FlatSurfaceBodyController, SurfaceBodyController
+from ..controllers.position import FlatSurfaceMovementController, SurfaceMovementController
 from ..plugins import moduleLoader
 from .objectparser import ObjectYamlParser
-from .utilsparser import AngleUnitsYamlParser
+from .utilsparser import AngleUnitsYamlParser, DistanceUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -45,7 +45,11 @@ class SurfaceControllerYamlParser(YamlModuleParser):
         long_units = AngleUnitsYamlParser.decode(data.get('long-units', 'Deg'))
         lat = data.get('lat', 0.0)
         lat_units = AngleUnitsYamlParser.decode(data.get('lat-units', 'Deg'))
-        return SurfaceBodyController(anchor, anchor.parent.body.primary, long * long_units, lat * lat_units)
+        altitude = data.get('altitude', 0)
+        altitude_units = DistanceUnitsYamlParser.decode(data.get('altitude-units', 'm'))
+        return SurfaceMovementController(
+            anchor, anchor.parent.body.primary, long * long_units, lat * lat_units, altitude * altitude_units
+        )
 
 
 class FlatSurfaceControllerYamlParser(YamlModuleParser):
@@ -53,11 +57,13 @@ class FlatSurfaceControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, anchor):
         position = data.get('position', [0, 0, 0])
+        altitude = data.get('altitude', 0)
         if len(position) == 3:
             position = LPoint3d(*position)
         else:
             position = LPoint3d(*position, 0)
-        return FlatSurfaceBodyController(anchor, position)
+        # Terrain is not known at this stage.
+        return FlatSurfaceMovementController(anchor, None, position, altitude)
 
 
 class ControllerYamlParser(TypedYamlParser):

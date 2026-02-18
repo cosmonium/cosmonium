@@ -25,6 +25,7 @@ from panda3d.bullet import ZUp, BulletCharacterControllerNode
 from panda3d.core import LQuaterniond, LVector3d, NodePath, LVector3, BitMask32
 
 from .base import PhysicsBase
+from ..controllers.kinetic import KineticMovementController
 
 
 class BulletPhysics(PhysicsBase):
@@ -126,32 +127,18 @@ class BulletPhysics(PhysicsBase):
         physics_instance.node().set_mass(mass)
 
 
-class KineticMover:
-
-    kinetic_mover = True
-    position_mover = False
-
-    def __init__(self, entity):
-        self.entity = entity
-
-    def activate(self):
-        pass
-
-    def set_state(self, state):
-        self.entity.set_state(state)
-
-    def update(self):
-        pass
-
-
-class BulletMover(KineticMover):
+class BulletMovementController(KineticMovementController):
+    """
+    Movement controller for Bullet physics-based character control.
+    Uses physics simulation for movement via velocity commands.
+    """
 
     def feedback(self):
+        """Update anchor position from physics simulation"""
         if self.entity.physics_node is not None:
             if self.entity.ship_object is not None:
                 bounds = self.entity.ship_object.instance.get_tight_bounds()
                 dims = bounds[1] - bounds[0]
-                # width = max(dims[0], dims[1]) / 2.0
                 height = dims[2]
                 offset = LVector3(0, 0, -height / 2)
                 self.entity.anchor.set_frame_position(self.entity.physics_instance.get_pos() + offset)
@@ -159,17 +146,23 @@ class BulletMover(KineticMover):
                 self.entity.anchor.set_frame_position(self.entity.physics_instance.get_pos())
 
     def set_local_position(self, position):
+        """
+        Set initial position (only for setup, not continuous control).
+        Once physics is active, use set_speed_relative for movement.
+        """
         if self.entity.physics_node is not None:
             self.entity.physics_node.set_pos(position)
         else:
             self.entity.anchor.set_frame_position(position)
 
     def set_speed_relative(self, speed):
+        """Set velocity in local reference frame"""
         if self.entity.physics_node is not None:
             rotation = self.entity.anchor.get_frame_orientation()
             self.entity.physics_node.set_linear_movement(rotation.xform(speed), True)
 
     def turn_relative(self, step):
+        """Rotate around vertical axis"""
         rotation = self.entity.anchor.get_frame_orientation()
         delta = LQuaterniond()
         delta.set_from_axis_angle_rad(step, LVector3d.up())

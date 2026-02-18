@@ -20,8 +20,6 @@
 
 from abc import ABC, abstractmethod
 
-from ..controllers.controllers import BodyController
-
 
 class PhysicsBase(ABC):
 
@@ -80,7 +78,3 @@ class PhysicsBase(ABC):
     @abstractmethod
     def set_mass(self, physics_instance, mass):
         raise NotImplementedError()
-
-
-class PhysicsController(BodyController):
-    pass

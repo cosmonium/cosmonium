@@ -28,7 +28,8 @@ from panda3d.core import CollisionNode, CollisionCapsule, CollisionRay
 from panda3d.core import BitMask32, LPoint3
 from typing import Any
 
-from .base import PhysicsBase, PhysicsController
+from ..controllers.position import CartesianMovementController
+from .base import PhysicsBase
 
 
 @dataclass
@@ -113,7 +114,7 @@ class CollisionPhysics(PhysicsBase):
         self.traverser.add_collider(solid, node.handler)
 
         instance.setCollideMask(BitMask32.all_off())
-        entity.set_controller(ReactBodyController(entity.anchor, entity.scene_anchor, entity.mover))
+        entity.set_controller(ReactBodyController(entity.anchor))
         # self.traverser.show_collisions(render)
         return instance
 
@@ -151,24 +152,29 @@ class CollisionPhysics(PhysicsBase):
         pass
 
 
-class ReactBodyController(PhysicsController):
-    def __init__(self, anchor, scene_anchor, mover):
-        PhysicsController.__init__(self, anchor)
-        self.scene_anchor = scene_anchor
-        self.mover = mover
-
-    def create_mover(self):
-        pass
+class ReactBodyController(CartesianMovementController):
+    """
+    Physics controller that reacts to collision physics.
+    Updates anchor position based on scene physics simulation.
+    """
 
     def update(self, time, dt):
+        """Update anchor position from collision physics"""
         if self.anchor.body.ship_object is not None:
             if self.anchor.body.ship_object.instance is not None:
                 scene_position = self.anchor.body.ship_object.instance.get_pos()
                 self.anchor.body.ship_object.instance.set_pos(LPoint3())
                 position = self.anchor.get_local_position() + scene_position
-                self.mover.set_local_position(position)
-                self.mover.update()
+                self.set_local_position(position)
+                # Force update of the controlled anchor
+                self.anchor.update(time, dt)
         else:
             scene_position = self.anchor.body.scene_anchor.instance.get_pos()
-            self.mover.set_local_position(scene_position)
-            self.mover.update()
+            self.set_local_position(scene_position)
+            print(f"Scene position: {scene_position}")
+            # Force update of the controlled anchor
+            self.anchor.update(time, dt)
+
+    def set_local_position(self, position):
+        """Set position directly on anchor"""
+        self.anchor.set_local_position(position)

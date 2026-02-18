@@ -54,7 +54,7 @@ units.m = 1.0
 units.Km = 1000.0
 
 from cosmonium.camera.base import CameraHolder, EventsControllerBase
-from cosmonium.controllers.controllers import FlatSurfaceBodyMover, CartesianBodyMover
+from cosmonium.controllers.position import FlatSurfaceMovementController, CartesianMovementController
 from cosmonium.cosmonium import CosmoniumBase
 from cosmonium.engine.c_settings import c_settings
 from cosmonium.foundation import BaseObject
@@ -67,7 +67,7 @@ from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
 from cosmonium.parsers.yamlparser import YamlModuleParser
 from cosmonium.patchedshapes.patchedshapes import PatchLayer
 from cosmonium.patchedshapes.tiles import TerrainLayerFactoryInterface
-from cosmonium.physics.bullet import BulletPhysics, BulletMover
+from cosmonium.physics.bullet import BulletPhysics, BulletMovementController
 from cosmonium.physics.collision import CollisionPhysics
 from cosmonium.procedural.water import WaterNode
 from cosmonium.scene.flatuniverse import FlatUniverse
@@ -630,11 +630,11 @@ class RoamingRalphDemo(CosmoniumBase):
 
         if self.physics is None or not self.physics.support_heightmap:
             if self.terrain_world:
-                self.mover = FlatSurfaceBodyMover(self.ralph_world.anchor, self.terrain_world)
+                self.mover = FlatSurfaceMovementController(self.ralph_world.anchor, self.terrain_world)
             else:
-                self.mover = CartesianBodyMover(self.ralph_world.anchor)
+                self.mover = CartesianMovementController(self.ralph_world.anchor)
         else:
-            self.mover = BulletMover(self.ralph_world)
+            self.mover = BulletMovementController(self.ralph_world)
         self.mover.activate()
         if self.ralph_config.start_position is not None:
             self.mover.set_local_position(LPoint3d(*self.ralph_config.start_position))
@@ -671,7 +671,7 @@ class RoamingRalphDemo(CosmoniumBase):
         self.worlds.update_specials(0, self.update_id)
         self.nav.update(0, dt)
         self.controller.update(0, dt)
-        self.mover.update()
+        self.mover.update(0, dt)
 
         if self.physics:
             to_remove = []

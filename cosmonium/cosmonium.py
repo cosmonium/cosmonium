@@ -52,7 +52,8 @@ from .camera.track_controller import TrackCameraController
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 from .components.annotations.grid import Grid
-from .controllers.controllers import BodyController, SurfaceBodyMover, CartesianBodyMover
+from .controllers.base import MovementController
+from .controllers.position import CartesianMovementController, SurfaceMovementController
 from .debug import Debug
 from .dircontext import defaultDirContext
 from .engine.anchors import StellarAnchor
@@ -134,7 +135,7 @@ class CosmoniumBase(ShowBase):
         BaseObject.context = self
         StellarObject.context = self
         YamlModuleParser.app = self
-        BodyController.context = self
+        MovementController.context = self
 
         self.setBackgroundColor(0, 0, 0, 1)
         self.disableMouse()
@@ -715,8 +716,8 @@ class Cosmonium(CosmoniumBase):
         print("Switching ship to", self.ship.get_name())
         if self.ship is not None:
             self.worlds.add_world(self.ship)
-            self.autopilot.set_controller(CartesianBodyMover(self.ship.anchor))
-            self.nav.set_controller(CartesianBodyMover(self.ship.anchor))
+            self.autopilot.set_controller(CartesianMovementController(self.ship.anchor))
+            self.nav.set_controller(CartesianMovementController(self.ship.anchor))
             if old_ship is not None:
                 self.ship.anchor.copy(old_ship.anchor)
             if self.camera_controller is not None:
@@ -749,7 +750,7 @@ class Cosmonium(CosmoniumBase):
         if nav.require_controller() and controller is None:
             return
         if controller is None and self.ship is not None:
-            controller = CartesianBodyMover(self.ship.anchor)
+            controller = CartesianMovementController(self.ship.anchor)
         if self.nav is not None:
             self.nav.remove_events(self)
         self.nav = nav
@@ -1125,7 +1126,7 @@ class Cosmonium(CosmoniumBase):
             return
         print("Can not take control")
         return
-        mover = SurfaceBodyMover(self.selected)
+        mover = SurfaceMovementController(self.selected)
         print("Take control")
         self.fly = True
         self.follow = None
