@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2023 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -239,8 +239,6 @@ StellarAnchor::update_observer(CameraAnchor &observer, unsigned long int update_
 void
 StellarAnchor::update_state(CameraAnchor &observer, unsigned long int update_id)
 {
-  was_visible = visible;
-  was_resolved = resolved;
   double radius = bounding_radius;
   if (distance_to_obs > radius) {
       bool in_view = observer.rel_frustum->is_sphere_in(rel_position, radius);

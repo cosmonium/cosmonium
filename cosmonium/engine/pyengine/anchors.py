@@ -59,10 +59,8 @@ class AnchorBase:
 
         self.description = description
         # Flags
-        self.was_visible = False
         self.visible = False
         self.visibility_override = False
-        self.was_resolved = False
         self.resolved = False
         self.update_id = -1
         self.update_frozen = False
@@ -186,8 +184,6 @@ class AnchorBase:
             # We are in the object
             resolved = True
             visible = True
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
         self.visible = visible
         self.resolved = resolved
 
@@ -382,8 +378,6 @@ class FlatSurfaceAnchor(OriginAnchor):
         self.z_distance = 0.0
 
     def update_state(self, observer, update_id):
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
         self.visible = True
         self.resolved = True
 
@@ -409,8 +403,6 @@ class ObserverAnchor(CartesianAnchor):
         self.z_distance = 0.0
 
     def update_state(self, observer, update_id):
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
         self.visible = True
         self.resolved = True
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2025 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -182,10 +182,8 @@ public:
 
 PUBLISHED:
   //Flags
-  bool was_visible;
   bool visible;
   bool visibility_override;
-  bool was_resolved;
   bool resolved;
   unsigned long int update_id;
   bool update_frozen;

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@ class Worlds:
         self.worlds = []
         self.specials = []
         self.global_shadows = None
-        self.old_visibles = []
-        self.visibles = []
-        self.becoming_visibles = []
-        self.no_longer_visibles = []
-        self.old_resolved = []
-        self.resolved = []
-        self.becoming_resolved = []
-        self.no_longer_resolved = []
+        self.old_visibles = set()
+        self.visibles = set()
+        self.becoming_visibles = set()
+        self.no_longer_visibles = set()
+        self.old_resolved = set()
+        self.resolved = set()
+        self.becoming_resolved = set()
+        self.no_longer_resolved = set()
 
     def init(self):
         for world in self.worlds:
@@ -104,55 +104,46 @@ class Worlds:
 
     def start_update(self):
         self.old_visibles = self.visibles
-        self.visibles = []
-        self.becoming_visibles = []
-        self.no_longer_visibles = []
+        self.visibles = set()
+        self.becoming_visibles = set()
+        self.no_longer_visibles = set()
         self.old_resolved = self.resolved
-        self.resolved = []
-        self.becoming_resolved = []
-        self.no_longer_resolved = []
+        self.resolved = set()
+        self.becoming_resolved = set()
+        self.no_longer_resolved = set()
 
     def update(self, time, dt, update_id, observer):
         self.update_anchor(time, update_id)
         self.update_anchor_obs(observer.anchor, update_id)
         for world in self.worlds:
             if world.anchor.visible:
-                self.visibles.append(world.anchor)
+                self.visibles.add(world.anchor)
             if world.anchor.resolved:
-                self.resolved.append(world.anchor)
+                self.resolved.add(world.anchor)
 
     def update_states(self):
-        visibles = []
-        resolved = []
+        visibles = set()
+        resolved = set()
         self.visible_scene_anchors = SceneAnchorCollection()
         self.resolved_scene_anchors = SceneAnchorCollection()
         for anchor in self.visibles:
             visible = anchor.resolved
             if visible:
-                visibles.append(anchor)
+                visibles.add(anchor)
                 self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
-                if not anchor.was_visible:
-                    self.becoming_visibles.append(anchor)
                 if anchor.resolved:
-                    resolved.append(anchor)
+                    resolved.add(anchor)
                     self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
             else:
-                if anchor.was_visible:
-                    self.no_longer_visibles.append(anchor)
-            anchor.visible = visible
-        for anchor in self.old_visibles:
-            if anchor not in self.visibles:
-                self.no_longer_visibles.append(anchor)
-                anchor.was_visible = anchor.visible
                 anchor.visible = False
+        for anchor in self.old_visibles - self.visibles:
+            anchor.visible = False
         self.visibles = visibles
         self.resolved = resolved
-        for anchor in resolved:
-            if not anchor.was_resolved:
-                self.becoming_resolved.append(anchor)
-        for anchor in self.old_resolved:
-            if anchor not in self.resolved:
-                self.no_longer_resolved.append(anchor)
+        self.becoming_visibles = visibles - self.old_visibles
+        self.no_longer_visibles = self.old_visibles - visibles
+        self.becoming_resolved = resolved - self.old_resolved
+        self.no_longer_resolved = self.old_resolved - resolved
 
     def find_shadows(self):
         for world in self.worlds:

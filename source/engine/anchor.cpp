@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2025 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,10 +63,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
-  was_visible(false),
   visible(false),
   visibility_override(false),
-  was_resolved(false),
   resolved(false),
   update_id(~0),
   update_frozen(false),
@@ -118,10 +116,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
-  was_visible(false),
   visible(false),
   visibility_override(false),
-  was_resolved(false),
   resolved(false),
   update_id(~0),
   update_frozen(false),

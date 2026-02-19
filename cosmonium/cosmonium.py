@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -418,14 +418,14 @@ class Cosmonium(CosmoniumBase):
         self.nav_controllers = []
         self.nav = None
         self.gui = None
-        self.old_visibles = []
-        self.visibles = []
-        self.becoming_visibles = []
-        self.no_longer_visibles = []
-        self.old_resolved = []
-        self.resolved = []
-        self.becoming_resolved = []
-        self.no_longer_resolved = []
+        self.old_visibles = set()
+        self.visibles = set()
+        self.becoming_visibles = set()
+        self.no_longer_visibles = set()
+        self.old_resolved = set()
+        self.resolved = set()
+        self.becoming_resolved = set()
+        self.no_longer_resolved = set()
         self.global_light_sources = []
         self.orbits = []
         self.shadow_casters = set()
@@ -1183,8 +1183,7 @@ class Cosmonium(CosmoniumBase):
         )
         traverser = UpdateTraverser(time, self.observer.anchor, lowest_radiance, self.update_id)
         self.universe.anchor.traverse(traverser)
-        self.visibles = list(traverser.get_collected())
-        self.visibles.sort(key=lambda v: v.z_distance)
+        self.visibles = sorted(traverser.get_collected(), key=lambda v: v.z_distance)
         self.controllers_to_update = []
         for controller in self.body_controllers:
             if controller.should_update(time, dt):
@@ -1270,40 +1269,32 @@ class Cosmonium(CosmoniumBase):
             * units.L0
             / (4 * pi * units.abs_mag_distance * units.abs_mag_distance / units.m / units.m)
         )
-        visibles = []
-        resolved = []
+        incoming_visibles = set(self.visibles)
+        visibles = set()
+        resolved = set()
         self.visible_scene_anchors = SceneAnchorCollection()
         self.resolved_scene_anchors = SceneAnchorCollection()
         for anchor in self.visibles:
             visible = anchor.resolved or anchor._point_radiance > lowest_radiance
             if visible:
-                visibles.append(anchor)
+                visibles.add(anchor)
                 self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
-                if not anchor.was_visible:
-                    self.becoming_visibles.append(anchor)
                 if anchor.resolved:
-                    resolved.append(anchor)
+                    resolved.add(anchor)
                     self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
             else:
-                if anchor.was_visible:
-                    self.no_longer_visibles.append(anchor)
-            anchor.visible = visible
-        for world in self.worlds.worlds:
-            resolved.append(world.anchor)
-            self.resolved_scene_anchors.add_scene_anchor(world.scene_anchor)
-        for anchor in self.old_visibles:
-            if anchor not in self.visibles:
-                self.no_longer_visibles.append(anchor)
-                anchor.was_visible = anchor.visible
                 anchor.visible = False
+        for world in self.worlds.worlds:
+            resolved.add(world.anchor)
+            self.resolved_scene_anchors.add_scene_anchor(world.scene_anchor)
+        for anchor in self.old_visibles - incoming_visibles:
+            anchor.visible = False
         self.visibles = visibles
         self.resolved = resolved
-        for anchor in resolved:
-            if not anchor.was_resolved:
-                self.becoming_resolved.append(anchor)
-        for anchor in self.old_resolved:
-            if anchor not in self.resolved:
-                self.no_longer_resolved.append(anchor)
+        self.becoming_visibles = visibles - self.old_visibles
+        self.no_longer_visibles = self.old_visibles - visibles
+        self.becoming_resolved = resolved - self.old_resolved
+        self.no_longer_resolved = self.old_resolved - resolved
 
     @pstat
     def find_local_lights(self):
@@ -1548,13 +1539,13 @@ class Cosmonium(CosmoniumBase):
         self.old_focused_objects = self.focused_objects
         self.focused_objects = set()
         self.old_visibles = self.visibles
-        self.visibles = []
-        self.becoming_visibles = []
-        self.no_longer_visibles = []
+        self.visibles = set()
+        self.becoming_visibles = set()
+        self.no_longer_visibles = set()
         self.old_resolved = self.resolved
-        self.resolved = []
-        self.becoming_resolved = []
-        self.no_longer_resolved = []
+        self.resolved = set()
+        self.becoming_resolved = set()
+        self.no_longer_resolved = set()
         self.update_c_settings()
 
         if task is not None:
