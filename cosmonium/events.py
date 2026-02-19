@@ -57,7 +57,6 @@ class EventsDispatcher(DirectObject):
         self.accept('debug-connect-pstats', self.engine.connect_pstats)
         self.accept('debug-toggle-filled-wireframe', self.engine.toggle_filled_wireframe)
         self.accept('debug-toggle-wireframe', self.engine.toggle_wireframe)
-        self.accept('toggle-hdr', self.engine.toggle_hdr)
         self.accept('debug-toggle-buffer-viewer', self.debug.toggle_buffer_viewer)
         self.accept('debug-dump-octree-stats', self.engine.universe.dumpOctreeStats)
         self.accept('debug-dump-octree', self.engine.universe.dumpOctree)

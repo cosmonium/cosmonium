@@ -28,7 +28,7 @@ from itertools import chain
 from math import pi
 from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
 from panda3d.core import Texture, CullBinManager
-from panda3d.core import LightRampAttrib, AntialiasAttrib
+from panda3d.core import AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
 import os
@@ -776,20 +776,6 @@ class Cosmonium(CosmoniumBase):
             print("Free mode")
             self.fly = False
             self.set_nav(self.nav_controllers[self.FREE_NAV])
-
-    def toggle_hdr(self):
-        self.hdr += 1
-        if self.hdr > 3:
-            self.hdr = 0
-        print("HDR:", self.hdr)
-        if self.hdr == 0:
-            self.common_state.clearAttrib(LightRampAttrib.getClassType())
-        elif self.hdr == 1:
-            self.common_state.setAttrib(LightRampAttrib.makeHdr0())
-        elif self.hdr == 2:
-            self.common_state.setAttrib(LightRampAttrib.makeHdr1())
-        elif self.hdr == 3:
-            self.common_state.setAttrib(LightRampAttrib.makeHdr2())
 
     def save_screenshot_no_annotation(self):
         if settings.screenshot_path is not None:
