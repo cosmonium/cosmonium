@@ -148,17 +148,27 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
 
   // Extract and parse names from Python list
   pvector<std::string> name_strings;
-  if (names != nullptr && PyList_Check(names)) {
-    Py_ssize_t size = PyList_Size(names);
-    for (Py_ssize_t i = 0; i < size; ++i) {
-      PyObject *item = PyList_GetItem(names, i);
-      if (item != nullptr && PyUnicode_Check(item)) {
-        const char *str;
-        Py_ssize_t str_len;
-        str = PyUnicode_AsUTF8AndSize(item, &str_len);
-        if (str != nullptr) {
-          name_strings.push_back(std::string(str, str_len));
+  if (names != nullptr) {
+    if(PyList_Check(names)) {
+      Py_ssize_t size = PyList_Size(names);
+      for (Py_ssize_t i = 0; i < size; ++i) {
+        PyObject *item = PyList_GetItem(names, i);
+        if (item != nullptr && PyUnicode_Check(item)) {
+          const char *str;
+          Py_ssize_t str_len;
+          str = PyUnicode_AsUTF8AndSize(item, &str_len);
+          if (str != nullptr) {
+            name_strings.push_back(std::string(str, str_len));
+          }
         }
+      }
+    } else if (PyUnicode_Check(names)) {
+      // If names is not a list, try to parse it as a single name
+      const char *str;
+      Py_ssize_t str_len;
+      str = PyUnicode_AsUTF8AndSize(names, &str_len);
+      if (str != nullptr) {
+        name_strings.push_back(std::string(str, str_len));
       }
     }
   }
