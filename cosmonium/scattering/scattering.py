@@ -27,7 +27,7 @@ from ..parameters import ParametersGroup
 from .. import settings
 
 if TYPE_CHECKING:
-    from ..shapes.entity import Entity
+    from ..entities.entity import Entity
 
 
 class ScatteringBase(ABC):

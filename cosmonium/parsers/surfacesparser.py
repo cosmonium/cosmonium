@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 from math import sqrt
 
 from ..catalogs import objectsDB
-from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface, HeightmapSurface
-from ..components.elements.surfaces import FlatSurface, HeightmapFlatSurface
+from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
+from ..components.elements.surfaces import FlatSurface, HeightmapFlatSurface, HeightmapSurface
 from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceCategory
 from ..heightmap import heightmapRegistry
 from ..opengl import OpenGLConfig

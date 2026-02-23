@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,33 +17,61 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from direct.showbase.ShowBaseGlobal import globalClock
-from direct.task.Task import shield
-from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import NodePath
-from panda3d.core import OmniBoundingVolume
 
+from direct.showbase.ShowBaseGlobal import globalClock
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import LVector3d, NodePath, OmniBoundingVolume
+
+from .. import settings
 from ..foundation import VisibleObject
 from ..parameters import ParametersGroup
 from ..shaders.base import AutoShader
 from ..shaders.lighting.scattering import NoScattering
 from ..shadows.manager import MultiShadows
-from .. import settings
-
 from .datasource import DataSourcesHandler
+from .shape_controller import PatchedShapeController
 from .tasks_tree import TasksTree
 
 
 class Entity(VisibleObject):
+    """Represents a visible object in Cosmonium with shape, appearance, shader, and shadow management.
+
+    Attributes:
+        default_camera_mask: Default camera mask flags.
+        sources: Handler for shape-related data sources.
+        shape: The geometric shape of the entity.
+        shape_controller: Controller for shape patches.
+        owner: The owner of the entity.
+        appearance: Appearance settings for the entity.
+        shader: Shader used for rendering.
+        clickable: Whether the entity is clickable.
+        instance_ready: If the instance is ready for rendering.
+        oid_color: Color used for object ID picking.
+        shadows: Shadow manager.
+        shadow_casters: Shadow casters for light sources.
+        task: Task for instance creation.
+        body: Physical body of the entity.
+        physics: Physics handler.
+    """
+
     default_camera_mask = (
         VisibleObject.DefaultCameraFlag | VisibleObject.WaterCameraFlag | VisibleObject.ShadowCameraFlag
     )
 
-    def __init__(self, name, shape=None, appearance=None, shader=None, clickable=True):
+    def __init__(self, name: str, shape=None, appearance=None, shader=None, clickable: bool = True):
+        """Initializes an Entity object.
+
+        Args:
+            name: Name of the entity.
+            shape: Shape of the entity.
+            appearance: Appearance settings.
+            shader: Shader for rendering.
+            clickable: If the entity is clickable.
+        """
         VisibleObject.__init__(self, name)
         self.sources = DataSourcesHandler("shape")
-        self.patch_sources = DataSourcesHandler("patch")
         self.shape = None
+        self.shape_controller = None
         self.owner = None
         self.appearance = appearance
         self.set_shape(shape)
@@ -56,40 +84,61 @@ class Entity(VisibleObject):
         self.oid_color = None
         self.shadows = MultiShadows(self)
         self.shadow_casters = {}
-        self.first_patch = True
         self.task = None
         self.body = None
         self.physics = None
 
-    def set_body(self, body):
+    def set_body(self, body) -> None:
+        """Sets the body of which this entity is part.
+
+        Args:
+            body: The body to set.
+        """
         self.body = body
 
-    def check_settings(self):
+    def check_settings(self) -> None:
+        """Checks and updates settings."""
         self.shape.check_settings()
         for shadow_caster in self.shadow_casters.values():
             shadow_caster.check_settings()
         self.update_shader()
 
-    def get_user_parameters(self):
+    def get_user_parameters(self) -> ParametersGroup:
+        """Returns user-editable parameters for the entity.
+
+        Returns:
+            Group of user parameters.
+        """
         group = ParametersGroup(self.get_component_name())
         if self.shape is not None:
             group.add_parameters(self.shape.get_user_parameters())
         # Commented out as appearance is also a source and so included below
         # if self.appearance is not None:
-            # group.add_parameters(self.appearance.get_user_parameters())
+        # group.add_parameters(self.appearance.get_user_parameters())
         # TODO: DataSourcesHandler should have an iterator interface
         for source in self.sources.sources:
             group.add_parameters(source.get_user_parameters())
         return group
 
-    def update_user_parameters(self):
+    def update_user_parameters(self) -> None:
+        """Updates shape and shader parameters from user input."""
         self.update_shape()
         self.update_shader()
 
-    def get_component_name(self):
+    def get_component_name(self) -> str:
+        """Returns the component name for the entity.
+
+        Returns:
+            Component name.
+        """
         return 'Unknown'
 
-    def set_shape(self, shape):
+    def set_shape(self, shape) -> None:
+        """Sets the shape of the entity and configures data sources and controllers.
+
+        Args:
+            shape: Shape to set.
+        """
         if self.shape is not None:
             self.shape.parent = None
             self.shape.set_owner(None)
@@ -100,18 +149,44 @@ class Entity(VisibleObject):
             self.shape.set_owner(self.owner)
             self.sources.add_source(self.shape.get_data_source())
             if shape.patchable:
-                self.patch_sources.add_source(self.shape.get_patch_data_source())
-            # Not using add source as some dependencies of the appearance can also be sources
-            if shape.patchable:
-                self.appearance.add_as_source(self.patch_sources)
-            else:
+                self.shape_controller = PatchedShapeController(self)
+            if not shape.patchable:
                 self.appearance.add_as_source(self.sources)
+            if self.shape_controller is not None:
+                self.shape_controller.configure_sources(shape, self.appearance)
 
-    def set_owner(self, owner):
+    def set_owner(self, owner) -> None:
+        """
+        Sets the owner of the entity.
+        Note: To be merged with set_body()
+
+        Args:
+            owner: Owner to set.
+        """
         self.owner = owner
         self.shape.set_owner(owner)
 
+    @property
+    def patch_sources(self) -> None:
+        """
+        Returns patch sources for patched shapes.
+        Note: Temporary workaround.
+
+        Returns:
+            Patch sources.
+        Raises:
+            AttributeError: If patch_sources is unavailable.
+        """
+        if self.shape_controller is None or not hasattr(self.shape_controller, 'patch_sources'):
+            raise AttributeError("patch_sources is only available for patched shapes")
+        return self.shape_controller.patch_sources
+
     def set_lights(self, lights):
+        """Sets the lights data source for the entity.
+
+        Args:
+            lights: Lights data source.
+        """
         self.sources.remove_source_by_name('lights')
         self.shader.data_source.remove_source('global_lights')
         if lights is not None:
@@ -119,41 +194,96 @@ class Entity(VisibleObject):
             self.shader.data_source.add_source(lights.get_data_source())
 
     def set_oid_color(self, oid_color):
+        """Sets the object ID color for picking.
+
+        Args:
+            oid_color: Color to set.
+        """
         self.oid_color = oid_color
 
-    def get_oid_color(self):
+    def get_oid_color(self) -> None:
+        """Gets the object ID color.
+
+        Returns:
+            The object ID color.
+        """
         return self.oid_color
 
-    def set_appearance(self, appearance):
+    def set_appearance(self, appearance) -> None:
+        """Sets the appearance of the entity.
+
+        Args:
+            appearance: Appearance to set.
+        """
         self.appearance = appearance
 
-    def set_shader(self, shader):
+    def set_shader(self, shader) -> None:
+        """Sets the shader for the entity.
+
+        Args:
+            shader: Shader to set.
+        """
         self.shader = shader
 
-    def add_source(self, source):
+    def add_source(self, source) -> None:
+        """Adds a data source to the entity.
+
+        Args:
+            source: Data source to add.
+        """
         self.sources.add_source(source)
 
-    def get_source(self, name):
+    def get_source(self, name: str):
+        """Gets a data source by name.
+
+        Args:
+            name: Name of the source.
+        Returns:
+            The data source.
+        """
         return self.sources.get_source(name)
 
-    def add_after_effect(self, after_effect):
+    def add_after_effect(self, after_effect) -> None:
+        """Adds an after-effect to the shader.
+
+        Args:
+            after_effect: After-effect to add.
+        """
         if self.shader is not None:
             self.shader.add_after_effect(after_effect)
 
-    def configure_shape(self):
+    def configure_shape(self) -> None:
+        """Configures the shape. Placeholder for subclass implementation."""
         pass
 
-    def unconfigure_shape(self):
+    def unconfigure_shape(self) -> None:
+        """Unconfigures the shape and removes shadows."""
         self.shadows.clear_shadows()
         self.remove_all_shadows()
 
-    def set_scale(self, scale):
+    def set_scale(self, scale) -> None:
+        """Sets the scale of the shape.
+
+        Args:
+            scale: Scale value.
+        """
         self.shape.set_scale(scale)
 
-    def get_scale(self):
+    def get_scale(self) -> LVector3d:
+        """Gets the scale of the shape.
+
+        Returns:
+            Scale value.
+        """
         return self.shape.get_scale()
 
-    def set_scattering(self, scattering_source, scattering_shader):
+    def set_scattering(self, scattering_source, scattering_shader) -> None:
+        """Sets the scattering source and shader for the entity.
+
+        Args:
+            scattering_source: Scattering data source.
+            scattering_shader: Scattering shader.
+        """
         self.sources.remove_source_by_name('scattering')
         self.shader.lighting_model.set_scattering(scattering_shader)
         self.update_shader()
@@ -161,7 +291,8 @@ class Entity(VisibleObject):
         if self.instance is not None and self.instance_ready:
             scattering_source.apply(self.shape, self.instance)
 
-    def remove_scattering(self):
+    def remove_scattering(self) -> None:
+        """Removes scattering from the shader and sources."""
         self.shader.lighting_model.set_scattering(NoScattering())
         self.update_shader()
         self.sources.remove_source_by_name('scattering')
@@ -169,16 +300,32 @@ class Entity(VisibleObject):
             # scattering_source.un_apply(self.instance)
             pass
 
-    def is_flat(self):
+    def is_flat(self) -> bool:
+        """Checks if the entity is flat.
+
+        Returns:
+            True if flat.
+        """
         return True
 
-    def is_spherical(self):
+    def is_spherical(self) -> bool:
+        """Checks if the entity is spherical.
+
+        Returns:
+            True if spherical.
+        """
         return self.shape.is_spherical()
 
-    def task_done(self, task):
+    def task_done(self, task) -> None:
+        """Callback for when the shape_task is done.
+
+        Args:
+            task: The completed task.
+        """
         self.task = None
 
-    def create_instance(self):
+    def create_instance(self) -> None:
+        """Creates the rendering instance for the entity asynchronously."""
         if not self.instance and not self.task:
             if settings.debug_shape_task:
                 print(globalClock.get_frame_count(), "CREATE", self)
@@ -188,7 +335,12 @@ class Entity(VisibleObject):
                 uponDeath=self.task_done,
             )
 
-    async def create_instance_task(self, scene_anchor):
+    async def create_instance_task(self, scene_anchor) -> None:
+        """Asynchronous task to create the entity's rendering instance.
+
+        Args:
+            scene_anchor: Anchor for the scene.
+        """
         # TODO: Temporarily here until foundation.show() is corrected
         if settings.debug_shape_task:
             print(globalClock.get_frame_count(), "DO CREATE", self)
@@ -226,8 +378,9 @@ class Entity(VisibleObject):
         if settings.color_picking and self.get_oid_color() is not None:
             self.instance.set_shader_input("color_picking", self.get_oid_color())
         self.sources.use()
-        self.patch_sources.use()
-        self.schedule_jobs([])
+        if self.shape_controller is not None:
+            self.shape_controller.use_sources()
+        self.schedule_jobs()
         if self.shape.has_lights:
             scene_anchor.add_lights(self.shape.lights)
         if self.physics is not None and self.context.physics:
@@ -236,13 +389,24 @@ class Entity(VisibleObject):
                 # physics_instance.set_scale(self.get_scale())
             self.context.physics.add_objects(self, physics_instances)
 
-    def configure_render_order(self):
+    def configure_render_order(self) -> None:
+        """Configures the render order. Placeholder for subclass implementation."""
         pass
 
-    def do_create_shadow_caster_for(self, light_source):
+    def do_create_shadow_caster_for(self, light_source) -> None:
+        """Creates a shadow caster for a light source. Placeholder for subclass implementation.
+
+        Args:
+            light_source: Light source to create shadow caster for.
+        """
         pass
 
-    def create_shadow_caster_for(self, light_source):
+    def create_shadow_caster_for(self, light_source) -> None:
+        """Creates and registers a shadow caster for a light source.
+
+        Args:
+            light_source: Light source to create shadow caster for.
+        """
         if light_source.source not in self.shadow_casters:
             shadow_caster = self.do_create_shadow_caster_for(light_source)
             self.shadow_casters[light_source.source] = shadow_caster
@@ -250,50 +414,46 @@ class Entity(VisibleObject):
                 self.owner.set_visibility_override(True)
         self.shadow_casters[light_source.source].create()
 
-    def remove_all_shadows(self):
+    def remove_all_shadows(self) -> None:
+        """Removes all shadow casters and clears shadow overrides."""
         for target, shadow_caster in list(self.shadow_casters.items()):
             if not shadow_caster.is_analytic():
                 shadow_caster.remove()
                 self.owner.set_visibility_override(False)
                 del self.shadow_casters[target]
 
-    def start_shadows_update(self):
+    def start_shadows_update(self) -> None:
+        """Starts updating shadows."""
         self.shadows.start_update()
 
-    def end_shadows_update(self):
+    def end_shadows_update(self) -> None:
+        """Ends updating shadows."""
         self.shadows.end_update()
 
-    def add_shadow_target(self, light_source, target):
+    def add_shadow_target(self, light_source, target) -> None:
+        """Adds a shadow target for a light source.
+
+        Args:
+            light_source: Light source.
+            target: Target to add.
+        """
         self.create_shadow_caster_for(light_source)
         self.shadow_casters[light_source.source].add_target(target)
 
-    def add_self_shadow(self, light_source):
+    def add_self_shadow(self, light_source) -> None:
+        """Adds self-shadowing for a light source. Placeholder for subclass implementation.
+
+        Args:
+            light_source: Light source.
+        """
         pass
 
-    async def patch_task(self, patch):
-        if settings.debug_shape_task:
-            print(globalClock.get_frame_count(), "START", patch.str_id(), patch.instance_ready)
-        if self.shape.task is not None:
-            await shield(self.shape.task)
-        tasks_tree = TasksTree(self.patch_sources.sources)
-        self.patch_sources.load(tasks_tree, patch)
-        patch.create_geometry_instance(tasks_tree)
-        patch.set_clickable(self.clickable)
-        await tasks_tree.run_tasks()
-        if patch.instance is not None:
-            self.patch_sources.apply(patch)
-            patch.instance_ready = True
-            if self.shader is not None:
-                if self.first_patch:
-                    self.shader.create(self.shape, self.appearance)
-                    self.shader.apply(self.shape.instance)
-                    self.first_patch = False
-            patch.patch_done(early=False)
-            self.shape.patch_done(patch, early=False)
-        if settings.debug_shape_task:
-            print(globalClock.get_frame_count(), "DONE", patch.str_id())
+    async def shape_task(self, shape) -> None:
+        """Asynchronous task to load and apply shape data sources.
 
-    async def shape_task(self, shape):
+        Args:
+            shape: Shape to process.
+        """
         if settings.debug_shape_task:
             print(globalClock.get_frame_count(), "START", shape.str_id(), shape.instance_ready)
         tasks_tree = TasksTree(self.sources.sources)
@@ -310,18 +470,8 @@ class Entity(VisibleObject):
         if settings.debug_shape_task:
             print(globalClock.get_frame_count(), "DONE", shape.str_id())
 
-    def schedule_jobs(self, patches):
-        if self.shape.patchable:
-            for patch in patches:
-                if not patch.instance_ready and patch.task is None:
-                    if settings.debug_shape_task:
-                        print(globalClock.get_frame_count(), "SCHEDULE", patch.str_id())
-                    self.patch_sources.create(patch)
-                    # Patch generation is ongoing, use parent data to display the patch in the meantime
-                    self.early_apply_patch(patch)
-                    patch.task = taskMgr.add(
-                        self.patch_task(patch), sort=taskMgr.getCurrentTask().sort + 1, uponDeath=patch.task_done
-                    )
+    def schedule_jobs(self) -> None:
+        """Schedules shape-related jobs if not already scheduled."""
         if not self.shape.instance_ready and self.shape.task is None:
             if settings.debug_shape_task:
                 print(globalClock.get_frame_count(), "SCHEDULE", self.shape.str_id())
@@ -329,38 +479,29 @@ class Entity(VisibleObject):
                 self.shape_task(self.shape), sort=taskMgr.getCurrentTask().sort + 1, uponDeath=self.shape.task_done
             )
 
-    def early_apply_patch(self, patch):
-        if patch.lod > 0:
-            if settings.debug_shape_task:
-                print(globalClock.get_frame_count(), "EARLY", patch.str_id(), patch.instance_ready)
-            patch.instance_ready = True
-            self.patch_sources.early_apply(patch)
-            patch.patch_done(early=True)
-            self.shape.patch_done(patch, early=True)
-
-    def update_shape(self):
+    def update_shape(self) -> None:
+        """Updates the shape if the instance is ready."""
         if self.instance is not None and self.shape is not None and self.instance_ready:
             self.shape.update_shape()
 
-    def update_shader(self):
+    def update_shader(self) -> None:
+        """Updates the shader if the instance is ready."""
         if self.instance is not None and self.shader is not None and self.instance_ready:
             self.shader.create(self.shape, self.appearance)
             self.shader.apply(self.shape.instance)
             self.sources.apply(self.shape)
+            if self.shape_controller is not None:
+                self.shape_controller.update_shader()
 
-    def update_lod(self, camera_pos, camera_rot):
+    def update_lod(self, camera_pos, camera_rot) -> None:
+        """Updates level of detail (LOD) for appearance and shape controller.
+
+        Args:
+            camera_pos: Camera position.
+            camera_rot: Camera rotation.
+        """
         if not self.instance_ready:
             return
-        to_show, to_update = self.shape.update_lod(
-            self.context.observer.get_local_position(),
-            self.owner.anchor.distance_to_obs,
-            self.context.observer.pixel_size,
-            self.appearance,
-        )
-        self.schedule_jobs(to_show)
-        for patch in to_update:
-            if patch.instance is not None:
-                self.patch_sources.apply(patch)
         if self.appearance is not None:
             self.appearance.update_lod(
                 self.shape,
@@ -368,8 +509,17 @@ class Entity(VisibleObject):
                 self.owner.anchor.distance_to_obs,
                 self.context.observer.pixel_size,
             )
+        if self.shape_controller is not None:
+            self.shape_controller.update_lod(camera_pos, camera_rot)
 
-    def update_instance(self, scene_manager, camera_pos, camera_rot):
+    def update_instance(self, scene_manager, camera_pos, camera_rot) -> None:
+        """Updates the entity instance for rendering and shadow management.
+
+        Args:
+            scene_manager: Scene manager.
+            camera_pos: Camera position.
+            camera_rot: Camera rotation.
+        """
         if self.context.observer.apply_scattering > 0:
             self.context.observer.scattering.add_attenuated_object(self)
         if self.shape.instance is not None:
@@ -377,23 +527,25 @@ class Entity(VisibleObject):
         if not self.instance_ready:
             return
         self.shape.update_instance(scene_manager, camera_pos, camera_rot)
-        if self.shape.patchable:
-            self.shape.place_patches(self.owner)
         for shadow_caster in self.shadow_casters.values():
             shadow_caster.update(scene_manager)
         if self.shadows.rebuild_needed:
             self.update_shader()
             self.shadows.rebuild_needed = False
+        if self.shape_controller is not None:
+            self.shape_controller.update_instance()
 
-    def remove_instance(self):
+    def remove_instance(self) -> None:
+        """Removes the rendering instance and releases resources."""
         # This method could be called even if the instance does not exist
         if self.instance is None:
             return
         # Remove the shadows data sources as shadows won't be checked anymore
         self.shadows.clear_shadows()
+        if self.shape_controller is not None:
+            self.shape_controller.remove_instance()
         self.sources.clear(self.shape, self.shape.instance)
         self.sources.release()
-        self.patch_sources.release()
         self.shape.remove_instance()
         if self.instance is not None:
             self.instance.remove_node()
@@ -401,9 +553,14 @@ class Entity(VisibleObject):
         self.instance_ready = False
         if self.context.observer.has_scattering:
             self.context.observer.scattering.remove_attenuated_object(self)
-        self.first_patch = True
 
-    def remove_patch(self, patch):
-        # TODO: This should be reworked and moved into a dedicated class
-        # print("CLEAR", patch.str_id())
-        self.patch_sources.clear(patch, patch.instance)
+    def remove_patch(self, patch) -> None:
+        """
+        Removes a patch from the shape controller.
+        Note: Temporarily in this class
+
+        Args:
+            patch: Patch to remove.
+        """
+        if self.shape_controller is not None:
+            self.shape_controller.remove_patch(patch)

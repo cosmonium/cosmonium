@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,18 +18,25 @@
 #
 
 
-from math import floor, ceil
-from panda3d.core import LVector3, LQuaternion, LVector3d, LPoint3d
+from abc import ABC, abstractmethod
+from math import ceil, floor
+
+from panda3d.core import LPoint3d, LQuaternion, LVector3, LVector3d
 
 from ...entities.entity import Entity
+from ...mathutil.surface_models import EllipsoidModel, SphereModel, SpheroidModel
+from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
 from ...shadows.shadowmap import CustomShadowMapShadowCaster
 from ...shadows.sphere import SphereShadowCaster
-from ...shaders.shadows.ellipsoid import ShaderSphereSelfShadow
-
-from ...mathutil.surface_models import SphereModel, SpheroidModel, EllipsoidModel
 
 
-class Surface(Entity):
+class Surface(Entity, ABC):
+    """
+    Surface component, representing the surface of a celestial body,
+    providing methods to get the altitude, height and point under a given position,
+    as well as the tangent plane and height at a given patch and UV coordinates.
+    """
+
     def __init__(
         self,
         name=None,
@@ -48,33 +55,54 @@ class Surface(Entity):
         self.body = None
 
     def get_component_name(self):
+        """
+        Returns a human-readable name for this component, used in the UI and logs.
+        """
         return _('Surface')
 
     def set_body(self, body):
+        """Sets the body this surface is attached to."""
         self.body = body
 
     def configure_render_order(self):
+        """Configures the render order for this surface."""
         self.instance.set_bin("front_to_back", 0)
 
+    @abstractmethod
     def get_alt_under(self, position, strict=False):
-        raise NotImplementedError()
+        """
+        Returns the altitude of the surface under the given position,
+        or None if not found (if strict is True) or 0 if not found (if strict is False).
+        """
 
+    @abstractmethod
     def get_height_under(self, position, strict=False):
-        raise NotImplementedError()
+        """
+        Returns the height of the surface under the given position,
+        or None if not found (if strict is True) or 0 if not found (if strict is False).
+        """
 
+    @abstractmethod
     def get_point_under(self, position, strict=False):
-        raise NotImplementedError()
+        """
+        Returns the point on the surface under the given position,
+        or None if not found (if strict is True) or 0 if not found (if strict is False).
+        """
 
+    @abstractmethod
     def get_tangent_plane_under(self, position):
-        raise NotImplementedError()
+        """Returns the tangent plane of the surface under the given position."""
 
+    @abstractmethod
     def get_height_patch(self, patch, u, v):
-        raise NotImplementedError
+        """Returns the height of the surface at the given patch and UV coordinates."""
 
     def parametric_to_shape_coord(self, x, y):
+        """Returns the shape coordinates corresponding to the given parametric coordinates."""
         return self.shape.parametric_to_shape_coord(x, y)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
+        """Updates the instance of this surface, called every frame."""
         Entity.update_instance(self, scene_manager, camera_pos, camera_rot)
         if not self.instance_ready:
             return
@@ -82,6 +110,7 @@ class Surface(Entity):
 
 
 class EllipsoidSurface(Surface):
+
     def __init__(
         self,
         name=None,
