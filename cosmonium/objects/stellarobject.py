@@ -80,7 +80,7 @@ class StellarObject:
         self.anchor = self.create_anchor(
             self.anchor_class, orbit, rotation, frame, point_color, names, source_names, description
         )
-        self.scene_anchor = SceneAnchor(
+        self.anchor.scene_anchor = SceneAnchor(
             self.get_ascii_name() + '-scene-anchor',
             self.anchor,
             self.support_offset_body_center,
@@ -105,7 +105,7 @@ class StellarObject:
         self.init_components = False
         objectsDB.add(self)
         # TODO: Should be done properly
-        self.scene_anchor.oid_color = self.oid_color
+        self.anchor.scene_anchor.oid_color = self.oid_color
 
         self.shown = True
         self.visible = False
@@ -113,7 +113,7 @@ class StellarObject:
         self.lights = None
 
         self.components = CompositeObject(self.get_ascii_name())
-        self.components.set_scene_anchor(self.scene_anchor)
+        self.components.set_scene_anchor(self.anchor.scene_anchor)
 
     def get_names(self):
         return self.anchor.get_names()
@@ -144,6 +144,10 @@ class StellarObject:
 
     def get_description(self):
         return self.anchor.get_description()
+
+    @property
+    def scene_anchor(self):
+        return self.anchor.scene_anchor
 
     def create_label_instance(self):
         if not self.anchor.has_orbit() or isinstance(self.anchor.orbit, FixedPosition):

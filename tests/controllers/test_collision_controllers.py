@@ -34,6 +34,7 @@ from cosmonium.scene.pyscene.sceneanchor import SceneAnchor
 
 class MockAnchor(CartesianAnchor):
     body = None
+    scene_anchor = None
     visible = None
 
 
@@ -44,7 +45,6 @@ class MockBody:
 
 class MockEntity(Entity):
     instance = None
-    scene_anchor = None
 
 
 class MockNodePath:
@@ -64,7 +64,7 @@ def make_mock_anchor():
     mock_scene_anchor = create_autospec(MockSceneAnchor, spec_set=True, instance=True)
     mock_scene_instance = create_autospec(MockNodePath, spec_set=True, instance=True)
     mock_scene_anchor.instance = mock_scene_instance
-    mock_body.scene_anchor = mock_scene_anchor
+    mock_anchor.scene_anchor = mock_scene_anchor
     mock_body.ship_object = None
     mock_anchor.body = mock_body
     return mock_anchor
@@ -77,7 +77,7 @@ class TestReactBodyController:
         """Test update when no ship object exists"""
         mock_anchor = make_mock_anchor()
         mock_anchor.get_local_position.return_value = LPoint3d(0, 0, 0)
-        mock_anchor.body.scene_anchor.instance.get_pos.return_value = LPoint3(10, 20, 30)
+        mock_anchor.scene_anchor.instance.get_pos.return_value = LPoint3(10, 20, 30)
 
         controller = ReactBodyController(mock_anchor)
         controller.update(0, 0.1)

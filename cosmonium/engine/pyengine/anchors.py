@@ -58,6 +58,8 @@ class AnchorBase:
             self.object_names.add_name(ObjectNames.parse_name(names))
 
         self.description = description
+        # Scene anchor (set by StellarObject or SceneWorld)
+        self.scene_anchor = None
         # Flags
         self.visible = False
         self.visibility_override = False

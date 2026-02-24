@@ -130,10 +130,10 @@ class Worlds:
             visible = anchor.resolved
             if visible:
                 visibles.add(anchor)
-                self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+                self.visible_scene_anchors.add_scene_anchor(anchor.scene_anchor)
                 if anchor.resolved:
                     resolved.add(anchor)
-                    self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+                    self.resolved_scene_anchors.add_scene_anchor(anchor.scene_anchor)
             else:
                 anchor.visible = False
         for anchor in self.old_visibles - self.visibles:
@@ -164,11 +164,11 @@ class Worlds:
 
     def update_scene_anchors(self, scene_manager):
         for newly_visible in self.becoming_visibles:
-            newly_visible.body.scene_anchor.create_instance(scene_manager)
+            newly_visible.scene_anchor.create_instance(scene_manager)
         for visible in self.visibles:
-            visible.body.scene_anchor.update(scene_manager)
+            visible.scene_anchor.update(scene_manager)
         for old_visible in self.no_longer_visibles:
-            old_visible.body.scene_anchor.remove_instance()
+            old_visible.scene_anchor.remove_instance()
 
     def update_instances_state(self, scene_manager):
         # for occluder in self.shadow_casters:
@@ -240,9 +240,19 @@ class SceneWorld:
 
     def __init__(self):
         self.anchor = None
-        self.scene_anchor = None
         self.parent = None
         self.mover = None
+
+    @property
+    def scene_anchor(self):
+        if self.anchor is not None:
+            return self.anchor.scene_anchor
+        return None
+
+    @scene_anchor.setter
+    def scene_anchor(self, value):
+        if self.anchor is not None:
+            self.anchor.scene_anchor = value
 
     # Delegate name management to anchor when it exists
     def get_names(self):
@@ -297,12 +307,12 @@ class SimpleWorld(SceneWorld):
         SceneWorld.__init__(self)
         self.anchor = self.create_anchor(name)
         self.anchor.body = self
-        self.scene_anchor = self.create_scene_anchor()
+        self.anchor.scene_anchor = self.create_scene_anchor()
         self.controller = None
         self.lights = None
 
         self.components = CompositeObject('<root>')
-        self.components.set_scene_anchor(self.scene_anchor)
+        self.components.set_scene_anchor(self.anchor.scene_anchor)
 
         # TODO: To remove, needed by cam controller
         self.apparent_radius = 0.0

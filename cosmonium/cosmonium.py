@@ -1264,15 +1264,15 @@ class Cosmonium(CosmoniumBase):
             visible = anchor.resolved or anchor._point_radiance > lowest_radiance
             if visible:
                 visibles.add(anchor)
-                self.visible_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+                self.visible_scene_anchors.add_scene_anchor(anchor.scene_anchor)
                 if anchor.resolved:
                     resolved.add(anchor)
-                    self.resolved_scene_anchors.add_scene_anchor(anchor.body.scene_anchor)
+                    self.resolved_scene_anchors.add_scene_anchor(anchor.scene_anchor)
             else:
                 anchor.visible = False
         for world in self.worlds.worlds:
             resolved.add(world.anchor)
-            self.resolved_scene_anchors.add_scene_anchor(world.scene_anchor)
+            self.resolved_scene_anchors.add_scene_anchor(world.anchor.scene_anchor)
         for anchor in self.old_visibles - incoming_visibles:
             anchor.visible = False
         self.visibles = visibles
@@ -1378,18 +1378,18 @@ class Cosmonium(CosmoniumBase):
     def update_scene_anchors(self):
         scene_manager = self.scene_manager
         for newly_visible in self.becoming_visibles:
-            newly_visible.body.scene_anchor.create_instance(scene_manager)
+            newly_visible.scene_anchor.create_instance(scene_manager)
         for visible in self.visibles:
-            visible.body.scene_anchor.update(scene_manager)
+            visible.scene_anchor.update(scene_manager)
         for old_visible in self.no_longer_visibles:
-            old_visible.body.scene_anchor.remove_instance()
+            old_visible.scene_anchor.remove_instance()
 
     @pstat
     def update_instances_state(self):
         scene_manager = self.scene_manager
         for occluder in self.shadow_casters:
             #    occluder.update_scene(self.c_observer)
-            occluder.body.scene_anchor.update(scene_manager)
+            occluder.scene_anchor.update(scene_manager)
         for newly_visible in self.becoming_visibles:
             # print("NEW VISIBLE", newly_visible.body.get_name())
             self.labels.add_label(newly_visible.body)

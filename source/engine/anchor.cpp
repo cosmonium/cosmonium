@@ -88,6 +88,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _reflected_luminosity(0.0),
   _point_radiance(0.0),
   _albedo(0.0),
+  // Scene anchor
+  _scene_anchor(nullptr),
   // Name management
   description(description)
 {
@@ -141,6 +143,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _reflected_luminosity(0.0),
   _point_radiance(0.0),
   _albedo(0.0),
+  // Scene anchor
+  _scene_anchor(nullptr),
   // Name management
   description(description)
 {
@@ -224,6 +228,18 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+SceneAnchor *
+AnchorBase::get_scene_anchor(void) const
+{
+  return _scene_anchor;
+}
+
+void
+AnchorBase::set_scene_anchor(SceneAnchor *scene_anchor)
+{
+  _scene_anchor = scene_anchor;
 }
 
 LColor

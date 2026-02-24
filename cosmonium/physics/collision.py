@@ -169,7 +169,7 @@ class ReactBodyController(CartesianMovementController):
                 # Force update of the controlled anchor
                 self.anchor.update(time, dt)
         else:
-            scene_position = self.anchor.body.scene_anchor.instance.get_pos()
+            scene_position = self.anchor.scene_anchor.instance.get_pos()
             self.set_local_position(scene_position)
             print(f"Scene position: {scene_position}")
             # Force update of the controlled anchor

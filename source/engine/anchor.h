@@ -26,6 +26,7 @@
 #include "luse.h"
 #include "type_utils.h"
 #include "objectName.h"
+#include "sceneAnchor.h"
 #include <string>
 #include <algorithm>
 
@@ -93,6 +94,10 @@ PUBLISHED:
   PyObject *get_object(void) const;
   void set_body(PyObject *ref_object); //TODO: Is set needed ?
   MAKE_PROPERTY(body, get_object, set_body);
+
+  SceneAnchor *get_scene_anchor(void) const;
+  void set_scene_anchor(SceneAnchor *scene_anchor);
+  MAKE_PROPERTY(scene_anchor, get_scene_anchor, set_scene_anchor);
 
   LColor get_point_color(void) const;
   void set_point_color(LColor color);
@@ -179,6 +184,7 @@ PUBLISHED:
 
 public:
   PyObject *ref_object;
+  PT(SceneAnchor) _scene_anchor;
 
 PUBLISHED:
   //Flags
