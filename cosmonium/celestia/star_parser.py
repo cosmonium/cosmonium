@@ -50,7 +50,7 @@ def parse_line(line, names, universe):
             name = names[catNo]
         else:
             name = "HIP %d" % catNo
-        position = calc_position(float(ra) * units.Deg, float(decl) * units.Deg, distance * units.Ly)
+        position = calc_position(float(ra) * units.Deg, float(decl) * units.Deg, float(distance) * units.Ly)
         frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
         orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
         abs_magnitude = app_to_abs_mag(float(app_magnitude), float(distance) * units.KmPerLy)
