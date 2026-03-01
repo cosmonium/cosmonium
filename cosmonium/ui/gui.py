@@ -96,7 +96,7 @@ class Gui(object):
 
         init_widget_loaders(WidgetLoaderRegistry.get_instance())
         self.load(config_file)
-        self.translation = self.cosmonium.load_lang("ui", self.locale)
+        self.translation = self.cosmonium.lang_manager.load_lang("ui", self.locale)
 
         self.shortcuts.set_shortcuts(self.shortcuts_config)
 

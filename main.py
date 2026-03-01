@@ -252,7 +252,7 @@ class CosmoniumApp(Cosmonium):
 
     def load_universe_cosmonium(self):
         locale = defaultDirContext.find_file('main', 'data/locale')
-        YamlModuleParser.set_translation(self.load_lang('main', locale))
+        YamlModuleParser.set_translation(self.lang_manager.load_lang('main', locale))
         universeYamlParser.set_universe(self.universe)
         parser = ObjectYamlParser()
         common_data = YamlLoader.load_file(self.app_config.common)

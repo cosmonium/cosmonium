@@ -23,18 +23,15 @@ from direct.showbase.ShowBaseGlobal import globalClock
 from direct.showbase.ShowBase import ShowBase
 from direct.task.Task import Task
 from direct.task.TaskManagerGlobal import taskMgr
-import gettext
 from itertools import chain
 from math import pi
-from panda3d.core import loadPrcFileData, loadPrcFile, Filename, WindowProperties, PandaSystem, PStatClient
+from panda3d.core import loadPrcFileData, loadPrcFile, Filename, PandaSystem, PStatClient
 from panda3d.core import Texture, CullBinManager
 from panda3d.core import AntialiasAttrib
 from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
 import os
 import platform
-import subprocess
-import sys
 
 from .appstate import AppState
 from .astro.astro import abs_mag_to_lum
@@ -83,6 +80,8 @@ from .scene.sceneanchor import SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .ships import NoShip
 from .sprites import GaussianPointSprite, ExpPointSprite
+from .support.lang import LangManager
+from .support.window_manager import WindowManager
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
@@ -103,14 +102,14 @@ class CosmoniumBase(ShowBase):
         self.wireframe = False
         self.wireframe_filled = False
         self.trigger_check_settings = True
-        self.request_fullscreen = False
+        self.lang_manager = LangManager()
+        self.window_manager = WindowManager(self)
         self.common_state = NodePath("<state>")
 
         register_parsers()
-        self.languages = None
 
         configParser.load()
-        self.init_lang()
+        self.lang_manager.init_lang()
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
@@ -152,48 +151,6 @@ class CosmoniumBase(ShowBase):
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
         mesh.init_mesh_loader()
 
-    def find_lang(self):
-        languages = None
-        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
-                languages = val.split(':')
-                break
-        if languages is None:
-            if sys.platform == 'darwin':
-                # TODO: This is a workaround until either Panda3D provides the locale to use
-                # or we switch to pyobjc.
-                # This should be moved to its own module
-                status, output = subprocess.getstatusoutput('defaults read -g AppleLocale')
-                if status == 0:
-                    languages = [output]
-                else:
-                    print("Could not retrieve default locale")
-            elif sys.platform == 'win32':
-                import ctypes
-                import locale
-
-                windll = ctypes.windll.kernel32
-                language = locale.windows_locale[windll.GetUserDefaultUILanguage()]
-                if language is not None:
-                    languages = [language]
-                else:
-                    print("Could not retrieve default locale")
-
-        print("Found languages:", ', '.join(languages))
-        self.languages = languages
-
-    def load_lang(self, domain, locale_path):
-        if locale_path is not None:
-            return gettext.translation(domain, locale_path, languages=self.languages, fallback=True)
-        else:
-            return gettext.NullTranslations()
-
-    def init_lang(self):
-        self.find_lang()
-        self.translation = self.load_lang('cosmonium', defaultDirContext.find_file('main', 'locale'))
-        self.translation.install()
-
     def panda_config(self):
         data = []
         OpenGLConfig.request_opengl_config(data)
@@ -206,7 +163,7 @@ class CosmoniumBase(ShowBase):
         data.append("screenshot-extension {}".format(settings.screenshot_format))
         data.append("screenshot-filename %~p/{}".format(settings.screenshot_filename))
         if settings.win_fullscreen and settings.win_fs_width != 0 and settings.win_fs_height != 0:
-            self.request_fullscreen = True
+            self.window_manager.request_fullscreen = True
             data.append("fullscreen %d" % settings.win_fullscreen)
             data.append("win-size %d %d" % (settings.win_fs_width, settings.win_fs_height))
         else:
@@ -259,76 +216,13 @@ class CosmoniumBase(ShowBase):
         self.userExit()
 
     def get_fullscreen_sizes(self):
-        info = self.pipe.getDisplayInformation()
-        resolutions = []
-        for idx in range(info.getTotalDisplayModes()):
-            width = info.getDisplayModeWidth(idx)
-            height = info.getDisplayModeHeight(idx)
-            # bits = info.getDisplayModeBitsPerPixel(idx)
-            resolutions.append([width, height])
-        resolutions.sort(key=lambda x: x[0], reverse=True)
-        return resolutions
+        return self.window_manager.get_fullscreen_sizes()
 
     def toggle_fullscreen(self):
-        settings.win_fullscreen = not settings.win_fullscreen
-        wp = WindowProperties(self.win.getProperties())
-        wp.setFullscreen(settings.win_fullscreen)
-        if settings.win_fullscreen:
-            if settings.win_fs_width != 0 and settings.win_fs_height != 0:
-                win_fs_width = settings.win_fs_width
-                win_fs_height = settings.win_fs_height
-            else:
-                win_fs_width = self.pipe.getDisplayWidth()
-                win_fs_height = self.pipe.getDisplayHeight()
-            wp.setSize(win_fs_width, win_fs_height)
-            # Defer config saving in case the switch fails
-            self.request_fullscreen = True
-        else:
-            wp.setSize(settings.win_width, settings.win_height)
-            configParser.save()
-        self.win.requestProperties(wp)
+        self.window_manager.toggle_fullscreen()
 
     def window_event(self, window):
-        if self.win is None:
-            return
-        if self.win.is_closed():
-            self.userExit()
-        wp = self.win.getProperties()
-        width = wp.getXSize()
-        height = wp.getYSize()
-        if settings.win_fullscreen:
-            # Only save config is the switch to FS is successful
-            if wp.getFullscreen():
-                if self.request_fullscreen or width != settings.win_fs_width or height != settings.win_fs_height:
-                    settings.win_fs_width = width
-                    settings.win_fs_height = height
-                    configParser.save()
-                if self.request_fullscreen:
-                    if self.gui is not None:
-                        self.gui.update_info("Press <Alt-Enter> to leave fullscreen mode", duration=0.5, fade=2.0)
-            else:
-                if self.gui is not None:
-                    self.gui.update_info("Could not switch to fullscreen mode", duration=0.5, fade=2.0)
-                settings.win_fullscreen = False
-            self.request_fullscreen = False
-        else:
-            if width != settings.win_width or height != settings.win_height:
-                settings.win_width = width
-                settings.win_height = height
-                configParser.save()
-        if self.observer is not None:
-            self.observer.set_film_size(width, height)
-            self.common_state.setShaderInput("near_plane_height", self.observer.height / self.observer.tan_fov2)
-            self.common_state.setShaderInput("pixel_size", self.observer.pixel_size)
-            self.common_state.setShaderInput("win_size", (width, height))
-        if self.pipeline is not None:
-            self.pipeline.update_win_size(width, height)
-        if self.gui is not None:
-            self.gui.update_size(width, height)
-        if settings.color_picking and self.oid_texture is not None:
-            self.oid_texture.clear()
-            self.oid_texture.setup_2d_texture(width, height, Texture.T_unsigned_byte, Texture.F_rgba8)
-            self.oid_texture.set_clear_color(LColor(0, 0, 0, 0))
+        self.window_manager.window_event(window)
 
     def connect_pstats(self):
         PStatClient.connect()
