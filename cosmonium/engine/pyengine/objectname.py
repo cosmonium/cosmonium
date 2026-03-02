@@ -22,6 +22,12 @@ from __future__ import annotations
 
 from typing import Optional
 
+"""
+Object name registry and management.
+This module provides the CatalogRegistry, ObjectName, and ObjectNames classes for managing
+object names in the simulation.
+"""
+
 
 class CatalogRegistry:
     """Registry for astronomical catalogs with dynamic ID assignment."""

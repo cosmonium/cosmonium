@@ -17,9 +17,20 @@
 #
 
 
+"""
+Object name registry and management.
+This module provides the CatalogRegistry, ObjectName, and ObjectNames classes for managing
+object names in the simulation. It attempts to import optimized C++ implementations
+from the cosmonium_engine module, falling back to pure Python implementations from the
+pyengine submodule if the C++ extension is not available.
+"""
+
 try:
     from cosmonium_engine import CatalogRegistry, ObjectName, ObjectNames
 except ImportError as e:
     print("WARNING: Could not load ObjectName C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.objectname import CatalogRegistry, ObjectName, ObjectNames  # noqa: F401
+    from .pyengine.objectname import CatalogRegistry, ObjectName, ObjectNames
+
+
+__all__ = ["CatalogRegistry", "ObjectName", "ObjectNames"]

@@ -17,24 +17,55 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Anchor classes for the 3D space simulation.
 
-from math import sqrt, pi
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond, LColor
+This module provides the Python implementation of anchor classes that represent
+positions and orientations in the 3D space simulation. Anchors form a hierarchical
+graph for celestial objects, handling coordinate transformations, visibility
+determination, and observer-relative calculations.
+"""
+
+from __future__ import annotations
+
+from math import pi, sqrt
 from time import time
+from typing import TYPE_CHECKING
 
+from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
+
+from ... import settings
 from ...astro import units
-from ...astro.astro import abs_to_app_mag, app_to_abs_mag, abs_mag_to_lum, lum_to_abs_mag
+from ...astro.astro import abs_mag_to_lum, abs_to_app_mag, app_to_abs_mag, lum_to_abs_mag
 from ...astro.frame import AbsoluteReferenceFrame
 from ...mathutil.quaternion import relative_rotation
-from ... import settings
-
 from ..octree import OctreeNode
 from .objectname import ObjectNames
 
+if TYPE_CHECKING:
+    from ...astro.frame import ReferenceFrame
+    from .traversers import AnchorTraverser
+
 
 class AnchorBase:
+    """Base class for all anchor types in the 3D space simulation.
+
+    An anchor represents a position and orientation in the 3D space simulation.
+    It handles visibility determination, observer-relative calculations, reference
+    frame transformations and luminosity calculations for both intrinsic and reflected
+    light, and hierarchical parent-child relationships.
+    Anchors form the foundation of the graph for simulation and rendering.
+    """
 
     def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+        """Initialize the anchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         self.content = anchor_class
         self.body = body
         self.parent = None
@@ -110,56 +141,129 @@ class AnchorBase:
     def get_description(self):
         return self.description
 
-    def set_rebuild_needed(self):
+    def set_rebuild_needed(self) -> None:
+        """Mark this anchor as needing rebuild and propagate to parent."""
         self.rebuild_needed = True
         if self.parent is not None:
             self.parent.set_rebuild_needed()
 
-    def rebuild(self):
+    def rebuild(self) -> None:
+        """Rebuild this anchor's internal state."""
         pass
 
-    def traverse(self, visitor):
+    def traverse(self, visitor: AnchorTraverser) -> None:
+        """Accept a visitor for traversal.
+
+        Args:
+            visitor: The traverser object visiting this anchor.
+        """
         visitor.traverse_anchor(self)
 
-    def is_stellar(self):
+    def is_stellar(self) -> bool:
+        """Check if this anchor represents a stellar object.
+
+        Returns:
+            True if this is a stellar anchor.
+        """
         return True
 
-    def has_orbit(self):
+    def has_orbit(self) -> bool:
+        """Check if this anchor position is based on an orbit.
+
+        Returns:
+            True if this anchor has orbital motion.
+        """
         return False
 
-    def has_rotation(self):
+    def has_rotation(self) -> bool:
+        """Check if this anchor orientation is based on rotation.
+
+        Returns:
+            True if this anchor has rotational motion.
+        """
         return False
 
     def has_frame(self):
         return False
 
-    def get_bounding_radius(self):
+    def get_bounding_radius(self) -> float:
+        """Get the bounding radius of this anchor.
+
+        Returns:
+            The bounding radius (in kilometers).
+        """
         return self.bounding_radius
 
-    def set_bounding_radius(self, bounding_radius):
+    def set_bounding_radius(self, bounding_radius: float) -> None:
+        """Set the bounding radius of this anchor.
+
+        Args:
+            bounding_radius: The new bounding radius in kilometers.
+        """
         self.bounding_radius = bounding_radius
 
-    def get_apparent_radius(self):
+    def get_apparent_radius(self) -> float:
+        """Get the apparent radius for rendering.
+
+        Returns:
+            The apparent radius, same as bounding radius by default.
+        """
         return self.get_bounding_radius()
 
-    def calc_absolute_relative_position_to(self, position):
+    def calc_absolute_relative_position_to(self, position: LPoint3d) -> LPoint3d:
+        """Calculate the absolute position relative to a given point.
+
+        Args:
+            position: The reference point to calculate the relative position from.
+
+        Returns:
+            The absolute position relative to the given point.
+        """
         return (self.get_absolute_reference_point() - position) + self.get_local_position()
 
-    def calc_absolute_relative_position(self, anchor):
+    def calc_absolute_relative_position(self, anchor: AnchorBase) -> LPoint3d:
+        """Calculate the relative position between this anchor and another.
+
+        Args:
+            anchor: The other anchor to calculate the relative position to.
+
+        Returns:
+            The position vector from this anchor to the other.
+        """
         reference_point_delta = anchor.get_absolute_reference_point() - self.get_absolute_reference_point()
         local_delta = anchor.get_local_position() - self.get_local_position()
         delta = reference_point_delta + local_delta
         return delta
 
-    def calc_local_distance_to(self, anchor):
+    def calc_local_distance_to(self, anchor: AnchorBase) -> tuple[LVector3d, float]:
+        """Calculate the normalized direction and distance to another anchor.
+
+        Args:
+            anchor: The other anchor to calculate distance to.
+
+        Returns:
+            The normalized direction vector and distance as a tuple.
+        """
         local_delta = anchor.get_local_position() - self.get_local_position()
         length = local_delta.length()
         return (local_delta / length, length)
 
-    def update(self, time, update_id):
+    def update(self, time: float, update_id: int) -> None:
+        """Update the anchor's state for the current time.
+
+        Args:
+            time: The current simulation time.
+            update_id: The unique identifier for this update pass.
+        """
         pass
 
     def update_observer(self, observer, update_id):
+        """Update observer-relative position and visibility metrics.
+
+        Args:
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
         if self.update_id == update_id:
             return
         global_delta = self._global_position - observer._global_position
@@ -177,7 +281,13 @@ class AnchorBase:
             self.z_distance = 0.0
         self.distance_to_obs = distance_to_obs
 
-    def update_state(self, observer, update_id):
+    def update_state(self, observer: CameraAnchor, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state.
+
+        Args:
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
         if self.distance_to_obs > self.bounding_radius:
             in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
             resolved = self.visible_size > settings.min_body_size
@@ -189,14 +299,38 @@ class AnchorBase:
         self.visible = visible
         self.resolved = resolved
 
-    def update_all(self, time, observer, update_id):
+    def update_all(self, time: float, observer: CameraAnchor, update_id: int) -> None:
+        """Update all anchor states: time, observer, and visibility.
+
+        Args:
+            time: The current simulation time.
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
         self.update(time, update_id)
         self.update_observer(observer, update_id)
         self.update_state(observer, update_id)
 
 
 class CartesianAnchor(AnchorBase):
+    """Anchor with Cartesian coordinate positioning in a reference frame.
+
+    This anchor represents objects that use Cartesian coordinates within a
+    reference frame (e.g., surface-bound objects, spacecraft).
+    """
+
     def __init__(self, anchor_class, body, frame, point_color=None, names=None, source_names=None, description=''):
+        """Initialize the Cartesian anchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            frame: The reference frame for coordinate transformations.
+            point_color: Optional color for point rendering.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
         self.frame = frame
         self._frame_position = LPoint3d()
@@ -341,60 +475,124 @@ class CartesianAnchor(AnchorBase):
 
 
 class CameraAnchor(CartesianAnchor):
-    def __init__(self, body, frame):
+    """
+    Specialized anchor to represent the observer/camera in the 3D space simulation.
+    """
+
+    def __init__(self, body, frame: ReferenceFrame) -> None:
+        """Initialize the CameraAnchor.
+
+        Args:
+            body: The body associated with the camera (usually None or observer).
+            frame: The reference frame for the camera.
+        """
         CartesianAnchor.__init__(self, 0, body, frame, None)
         self.camera_vector = LVector3d()
         self.frustum = None
         self.rel_frustum = None
         self.pixel_size = 0.0
 
-    def do_update(self):
+    def do_update(self) -> None:
         CartesianAnchor.do_update(self)
         self.camera_vector = self.get_absolute_orientation().xform(LVector3d.forward())
 
 
 class OriginAnchor(CartesianAnchor):
+    """Anchor positioned at the origin of the absolute reference frame.
+
+    This anchor uses the absolute reference frame, making it suitable for
+    objects that don't need frame transformations.
+    """
+
     def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+        """Initialize the OriginAnchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         CartesianAnchor.__init__(
             self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
         )
 
 
 class FlatSurfaceAnchor(OriginAnchor):
+    """
+    Anchor for objects on flat surfaces.
+    """
+
     def __init__(self, anchor_class, body, surface, names=None, source_names=None, description=''):
+        """Initialize the FlatSurfaceAnchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            surface: The surface object this anchor is attached to.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         OriginAnchor.__init__(self, anchor_class, body, names, source_names, description)
         self.surface = surface
 
-    def set_surface(self, surface):
+    def set_surface(self, surface) -> None:
+        """Set the surface for this anchor.
+
+        Args:
+            surface: The surface object to attach to.
+        """
         self.surface = surface
 
-    def update_observer(self, observer, update_id):
-        if self.update_id == update_id:
-            return
-        self.vector_to_obs = LPoint3d(observer.get_local_position())
-        self.vector_to_obs.normalize()
-        observer_local_position = observer.get_local_position()
-        self.rel_position = self._local_position - observer_local_position
-        self.distance_to_obs = self.rel_position.length()
-        self.visible_size = 0.0
-        self.z_distance = 0.0
+    def update_observer(self, observer: CameraAnchor, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics.
 
-    def update_state(self, observer, update_id):
-        self.visible = True
-        self.resolved = True
+        Args:
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
 
 
 class ObserverAnchor(CartesianAnchor):
+    """Anchor that follows the observer position.
+
+    This anchor is used for objects that should remain at the observer's
+    position.
+    """
+
     def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+        """Initialize the ObserverAnchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         CartesianAnchor.__init__(
             self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
         )
 
-    def update(self, time, update_id):
+    def update(self, time: float, update_id: int) -> None:
+        """Update the anchor state during simulation.
+
+        Args:
+            time: The current simulation time.
+            update_id: The unique identifier for this update pass.
+        """
         # TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
         pass
 
-    def update_observer(self, observer, update_id):
+    def update_observer(self, observer: CameraAnchor, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics.
+
+        Args:
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
         if self.update_id == update_id:
             return
         self.copy(observer)
@@ -404,7 +602,15 @@ class ObserverAnchor(CartesianAnchor):
         self.visible_size = 0.0
         self.z_distance = 0.0
 
-    def update_state(self, observer, update_id):
+    def update_state(self, observer: CameraAnchor, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state.
+
+        Args:
+            observer: The observer/camera anchor.
+            update_id: The unique identifier for this update pass.
+        """
+        self.was_visible = self.visible
+        self.was_resolved = self.resolved
         self.visible = True
         self.resolved = True
 
@@ -415,14 +621,32 @@ class ControlledCartesianAnchor(CartesianAnchor):
 
 
 class StellarAnchor(AnchorBase):
-    Emissive = 1
-    Reflective = 2
-    System = 4
-    OctreeAnchor = 8
+    """Anchor for celestial bodies with orbital mechanics.
+    This anchor represents celestial bodies that have orbital and rotational
+    dynamics. It includes support for luminosity calculations, both intrinsic
+    (for stars) and reflected (for planets/moons).
+    """
+
+    Emissive: int = 1
+    Reflective: int = 2
+    System: int = 4
+    OctreeAnchor: int = 8
 
     def __init__(
         self, anchor_class, body, orbit, rotation, point_color, names=None, source_names=None, description=''
     ):
+        """Initialize the StellarAnchor.
+
+        Args:
+            anchor_class: Bitmask defining the anchor's classification.
+            body: The celestial body associated with this anchor.
+            orbit: The orbital component defining the body's motion.
+            rotation: The rotational component defining the body's orientation.
+            point_color: Color for point rendering.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
         # TODO: To remove
         if point_color is None:
@@ -527,6 +751,13 @@ class StellarAnchor(AnchorBase):
 
 
 class FixedStellarAnchor(StellarAnchor):
+    """Stellar anchor for fixed/static celestial bodies.
+
+    This anchor is used for celestial bodies that don't require dynamic updates.
+
+    Note: Deprecated class, should not be used.
+    """
+
     def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
         StellarAnchor.__init__(self, 0, body, orbit, rotation, point_color, names, source_names, description)
         # self.update_frozen = True
@@ -534,28 +765,70 @@ class FixedStellarAnchor(StellarAnchor):
 
 
 class DynamicStellarAnchor(StellarAnchor):
+    """Stellar anchor for dynamic celestial bodies.
+
+    This anchor is used for celestial bodies that require continuous updates
+    for their orbital and rotational states (e.g., planets, moons).
+
+    Note: Now just an alias for StellarAnchor.
+    """
+
     pass
 
 
 class SystemAnchor(DynamicStellarAnchor):
+    """Anchor for stellar systems containing multiple bodies.
+
+    This anchor serves as a container for multiple celestial bodies that form
+    a system (e.g., a planet with moons, a binary star system). It manages
+    the hierarchical relationships and aggregate properties like bounding radius
+    and combined luminosity.
+    """
+
     def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
+        """Initialize the SystemAnchor.
+
+        Args:
+            body: The celestial body associated with this anchor.
+            orbit: The orbital component of the system.
+            rotation: The rotational component of the system.
+            point_color: Color for point rendering.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         DynamicStellarAnchor.__init__(
             self, self.System, body, orbit, rotation, point_color, names, source_names, description
         )
         self.primary = None
         self.children = []
 
-    def set_primary(self, primary):
+    def set_primary(self, primary: StellarAnchor) -> None:
+        """Set the primary body of the system.
+
+        Args:
+            primary: The primary stellar anchor (e.g., the star in a planetary system).
+        """
         self.primary = primary
 
-    def add_child(self, child):
+    def add_child(self, child: StellarAnchor) -> None:
+        """Add a child body to the system.
+
+        Args:
+            child: The child stellar anchor to add.
+        """
         # Primary is still managed by StellarSystem
         self.children.append(child)
         child.parent = self
         if not self.rebuild_needed:
             self.set_rebuild_needed()
 
-    def remove_child(self, child):
+    def remove_child(self, child: StellarAnchor) -> None:
+        """Remove a child body from the system.
+
+        Args:
+            child: The child stellar anchor to remove.
+        """
         try:
             self.children.remove(child)
             child.parent = None
@@ -564,7 +837,12 @@ class SystemAnchor(DynamicStellarAnchor):
         if not self.rebuild_needed:
             self.set_rebuild_needed()
 
-    def rebuild(self):
+    def rebuild(self) -> None:
+        """Rebuild the system's bounding radius and content flags.
+
+        This recalculates the aggregate properties of the system based on
+        its children and marks rebuild as complete.
+        """
         content = self.System
         bounding_radius = 0
         for child in self.children:
@@ -585,11 +863,21 @@ class SystemAnchor(DynamicStellarAnchor):
             self._intrinsic_luminosity = self.primary._intrinsic_luminosity
         self.rebuild_needed = False
 
-    def traverse(self, visitor):
+    def traverse(self, visitor: AnchorTraverser) -> None:
+        """Accept a visitor for traversal.
+
+        Args:
+            visitor: The traverser object visiting this anchor.
+        """
         if visitor.enter_system(self):
             visitor.traverse_system(self)
 
-    def update_luminosity(self, star):
+    def update_luminosity(self, star: StellarAnchor | None) -> None:
+        """Update the system's luminosity based on a light source.
+
+        Args:
+            star: The light source star, or None for intrinsic luminosity only.
+        """
         if self.primary is not None:
             self.primary.update_luminosity(star)
             self._intrinsic_luminosity = self.primary._intrinsic_luminosity
@@ -600,7 +888,27 @@ class SystemAnchor(DynamicStellarAnchor):
 
 
 class OctreeAnchor(SystemAnchor):
+    """SystemAnchor integrated with octree spatial partitioning.
+
+    This anchor combines a stellar system with an octree data structure for
+    efficient spatial queries. It's typically used for large collections of
+    objects like star fields or asteroid belts.
+    """
+
     def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+        """Initialize the OctreeAnchor.
+
+        Args:
+            body: The celestial body associated with this anchor.
+            orbit: The orbital component.
+            rotation: The rotational component.
+            radius: The radius of the octree volume.
+            point_color: Color for point rendering.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
+
         SystemAnchor.__init__(self, body, orbit, rotation, point_color, names, source_names, description)
         self.bounding_radius = radius
         # TODO: Should be configurable
@@ -616,18 +924,28 @@ class OctreeAnchor(SystemAnchor):
         self.content = ~0
         self.recreate_octree = True
 
-    def rebuild(self):
+    def rebuild(self) -> None:
+        """Rebuild the octree structure and nested content.
+
+        This recalculates the octree from its children and marks rebuild as complete.
+        """
         if self.recreate_octree:
             self.create_octree()
         if self.octree.rebuild_needed:
             self.octree.rebuild()
         self.rebuild_needed = False
 
-    def traverse(self, visitor):
+    def traverse(self, visitor: AnchorTraverser) -> None:
+        """Accept a visitor for traversal.
+
+        Args:
+            visitor: The traverser object visiting this anchor.
+        """
         if visitor.enter_system(self):
             self.octree.traverse(visitor)
 
-    def create_octree(self):
+    def create_octree(self) -> None:
+        """Create and populate the octree structure with child objects."""
         print("Creating octree...")
         start = time()
         for child in self.children:
@@ -638,15 +956,39 @@ class OctreeAnchor(SystemAnchor):
         end = time()
         print("Creation time:", end - start)
 
-    def dump_octree(self):
+    def dump_octree(self) -> None:
+        """Print octree structure for debugging."""
         self.octree.dump_octree()
 
 
 class UniverseAnchor(OctreeAnchor):
+    """Root anchor representing the entire universe.
+
+    This is the top-level anchor in the graph hierarchy, encompassing
+    all stellar systems and objects. It's always visible and resolved.
+    """
+
     def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+        """Initialize the UniverseAnchor.
+
+        Args:
+            body: The celestial body associated with this anchor.
+            orbit: The orbital component (typically static for the universe).
+            rotation: The rotational component (typically static for the universe).
+            radius: The radius of the universe volume.
+            point_color: Color for point rendering.
+            names: Translated name(s) for this anchor. Can be a single name or a list of names.
+            source_names: List of source (untranslated) names corresponding to the provided names.
+            description: Optional description for this anchor.
+        """
         OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color, names, source_names, description)
         self.visible = True
         self.resolved = True
 
-    def traverse(self, visitor):
+    def traverse(self, visitor: object) -> None:
+        """Accept a visitor for traversal.
+
+        Args:
+            visitor: The traverser object visiting this anchor.
+        """
         self.octree.traverse(visitor)

@@ -17,22 +17,59 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Octree spatial partitioning data structure.
+
+This module provides the OctreeNode class for efficient spatial organization
+and queries of celestial objects.
+"""
+
+from __future__ import annotations
 
 from math import sqrt
+from typing import TYPE_CHECKING
+
 from panda3d.core import LPoint3d
 
+if TYPE_CHECKING:
+    from .anchors import StellarAnchor
+    from .traversers import AnchorTraverser
 
-class OctreeNode(object):
 
-    OctreeSystem = 8
+class OctreeNode:
+    """Spatial partitioning data structure for efficient queries.
 
-    max_level = 200
-    max_leaves = 75
-    nb_cells = 0
-    nb_leaves = 0
-    child_factor = 0.25
+    An octree node recursively subdivides 3D space into eight octants, enabling
+    efficient spatial queries for large numbers of celestial objects.
+    Each node can contain leaves (stellar objects) and up to eight child octree nodes.
+    """
 
-    def __init__(self, level, parent, center, width, threshold, index=-1):
+    OctreeSystem: int = 8
+
+    max_level: int = 200
+    max_leaves: int = 75
+    nb_cells: int = 0
+    nb_leaves: int = 0
+    child_factor: float = 0.25
+
+    def __init__(
+        self,
+        level: int,
+        parent: OctreeNode | None,
+        center: LPoint3d,
+        width: float,
+        threshold: float,
+        index: int = -1,
+    ) -> None:
+        """Initialize an OctreeNode with the given parameters.
+
+        Args:
+            level: The depth level of this node in the octree (0 for root).
+            parent: The parent OctreeNode, or None for the root node.
+            center: The center point of this octree node's volume.
+            width: The width of this octree node's cubic volume.
+            threshold: The luminosity threshold for determining object placement.
+            index: The index of this node within its parent (0-7), or -1 for root.
+        """
         self.level = level
         self.parent = parent
         self.width = width
@@ -49,22 +86,42 @@ class OctreeNode(object):
         self.content = ~0
         OctreeNode.nb_cells += 1
 
-    def get_num_children(self):
+    def get_num_children(self) -> int:
+        """Get the number of non-None child nodes.
+
+        Returns:
+            The count of child nodes that have been created.
+        """
         nb_children = 0
         for child in self.children:
             if child is not None:
                 nb_children += 1
         return nb_children
 
-    def get_num_leaves(self):
+    def get_num_leaves(self) -> int:
+        """Get the number of leaf objects in this node.
+
+        Returns:
+            The count of stellar objects directly contained in this node.
+        """
         return len(self.leaves)
 
-    def set_rebuild_needed(self):
+    def set_rebuild_needed(self) -> None:
+        """Mark this node and all ancestors as needing rebuild.
+
+        This propagates the rebuild flag up the tree to ensure the entire
+        hierarchy is updated when needed.
+        """
         self.rebuild_needed = True
         if self.parent is not None:
             self.parent.set_rebuild_needed()
 
-    def rebuild(self):
+    def rebuild(self) -> None:
+        """Rebuild this node and all children that need rebuilding.
+
+        This recursively rebuilds all child nodes and leaves that have been
+        marked as needing rebuild.
+        """
         for leaf in self.leaves:
             if (leaf.content & self.OctreeSystem) != 0:
                 leaf.rebuild()
@@ -73,25 +130,56 @@ class OctreeNode(object):
                 child.rebuild()
         self.rebuild_needed = False
 
-    def traverse(self, traverser):
+    def traverse(self, traverser: AnchorTraverser) -> None:
+        """Traverse this node and its children using the visitor pattern.
+
+        Args:
+            traverser: The traverser object that visits each node.
+        """
         traverser.traverse_octree_node(self)
         for child in self.children:
             if child is not None and traverser.enter_octree_node(child):
                 child.traverse(traverser)
 
-    def add(self, leaf):
+    def add(self, leaf: StellarAnchor) -> None:
+        """Add a stellar object as a leaf to the octree.
+
+        Args:
+            leaf: The stellar anchor to add to the octree.
+        """
         self._add(leaf, leaf._global_position, leaf._intrinsic_luminosity)
 
-    def get_child(self, index):
+    def get_child(self, index: int) -> OctreeNode | None:
+        """Get a child node by its index.
+
+        Args:
+            index: The index of the child (0-7).
+
+        Returns:
+            The child node, or None if no child exists at that index.
+        """
         return self.children[index]
 
-    def get_leaf(self, index):
+    def get_leaf(self, index: int) -> StellarAnchor:
+        """Get a leaf object by its index.
+
+        Args:
+            index: The index of the leaf in the leaves list.
+
+        Returns:
+            The stellar anchor at that index.
+        """
         return self.leaves[index]
 
-    def get_leaves(self):
+    def get_leaves(self) -> list[StellarAnchor]:
+        """Get all leaf objects in this node.
+
+        Returns:
+            The list of stellar anchors contained in this node.
+        """
         return self.leaves
 
-    def _add_in_child(self, obj, position, luminosity):
+    def _add_in_child(self, obj: StellarAnchor, position: LPoint3d, luminosity: float) -> None:
         index = 0
         if position.x >= self.center.x:
             index |= 1
@@ -120,7 +208,7 @@ class OctreeNode(object):
             self.children[index] = child
         self.children[index]._add(obj, position, luminosity)
 
-    def _add(self, obj, position, luminosity):
+    def _add(self, obj: StellarAnchor, position: LPoint3d, luminosity: float) -> None:
         self.nb_leaves += 1
         if luminosity > self.max_luminosity:
             self.max_luminosity = luminosity
@@ -132,7 +220,7 @@ class OctreeNode(object):
         if self.level < self.max_level and len(self.leaves) >= self.max_leaves and not self.has_children:
             self._split()
 
-    def _split(self):
+    def _split(self) -> None:
         new_leaves = []
         center = self.center
         for leaf in self.leaves:
@@ -144,14 +232,16 @@ class OctreeNode(object):
         self.leaves = new_leaves
         self.has_children = True
 
-    def dump_octree_summary(self):
+    def dump_octree_summary(self) -> None:
+        """Print a summary of the octree structure to stdout."""
         if len(self.leaves) > 0:
             print(' ' * self.level, self.level, self.index, self.width, self.threshold, len(self.leaves), self.center)
         for i in range(8):
             if self.children[i] is not None:
                 self.children[i].dump_octree_summary()
 
-    def dump_octree(self):
+    def dump_octree(self) -> None:
+        """Print detailed octree information including leaf names to stdout."""
         if len(self.leaves) > 0:
             print(
                 '  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children
@@ -167,6 +257,7 @@ class OctreeNode(object):
             if self.children[i] is not None:
                 self.children[i].dump_octree()
 
-    def print_stats(self):
+    def print_stats(self) -> None:
+        """Print octree statistics including cell and leaf counts."""
         print("Nb cells:", self.nb_cells)
         print("Nb leaves:", self.nb_leaves)

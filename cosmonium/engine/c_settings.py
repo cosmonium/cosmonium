@@ -1,6 +1,6 @@
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,16 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""C++ engine settings.
+
+This module provides access to the C++ engine settings through the Settings
+class. The application uses the singletion instance of this class to copy
+the user settings to the C++ engine.
+It attempts to import the optimized C++ implementation from the
+cosmonium_engine module. If the C++ extension is not available, c_settings
+will be set to None.
+"""
+
 
 try:
     from cosmonium_engine import Settings
@@ -26,3 +36,6 @@ except ImportError as e:
     print("WARNING: Could not load C++, fallback on python implementation")
     print("\t", e)
     c_settings = None
+
+
+__all__ = ["c_settings"]

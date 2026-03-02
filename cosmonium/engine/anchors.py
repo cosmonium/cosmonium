@@ -1,6 +1,6 @@
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2022 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,17 +16,61 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Anchor classes for the simulation.
+
+This module provides anchor classes that represent positions and orientations
+in the 3D space simulation. It attempts to import optimized C++ implementations
+from the cosmonium_engine module, falling back to pure Python implementations
+from the pyengine submodule if the C++ extension is not available.
+"""
+
 
 try:
-    from cosmonium_engine import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor
-    from cosmonium_engine import CartesianAnchor, CameraAnchor, OriginAnchor, FlatSurfaceAnchor, ObserverAnchor
+    from cosmonium_engine import (
+        AnchorBase,
+        CameraAnchor,
+        CartesianAnchor,
+        FlatSurfaceAnchor,
+        ObserverAnchor,
+        OctreeAnchor,
+        OriginAnchor,
+        StellarAnchor,
+        SystemAnchor,
+        UniverseAnchor,
+    )
 
     FixedStellarAnchor = StellarAnchor
     DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.anchors import AnchorBase, UniverseAnchor, StellarAnchor, SystemAnchor, OctreeAnchor  # noqa: F401
-    from .pyengine.anchors import CartesianAnchor, CameraAnchor  # noqa: F401
-    from .pyengine.anchors import OriginAnchor, FlatSurfaceAnchor, ObserverAnchor  # noqa: F401
-    from .pyengine.anchors import FixedStellarAnchor, DynamicStellarAnchor  # noqa: F401
+    from .pyengine.anchors import (
+        AnchorBase,
+        CameraAnchor,
+        CartesianAnchor,
+        DynamicStellarAnchor,
+        FixedStellarAnchor,
+        FlatSurfaceAnchor,
+        ObserverAnchor,
+        OctreeAnchor,
+        OriginAnchor,
+        StellarAnchor,
+        SystemAnchor,
+        UniverseAnchor,
+    )
+
+
+__all__ = [
+    "AnchorBase",
+    "UniverseAnchor",
+    "StellarAnchor",
+    "SystemAnchor",
+    "OctreeAnchor",
+    "CartesianAnchor",
+    "CameraAnchor",
+    "OriginAnchor",
+    "FlatSurfaceAnchor",
+    "ObserverAnchor",
+    "FixedStellarAnchor",
+    "DynamicStellarAnchor",
+]

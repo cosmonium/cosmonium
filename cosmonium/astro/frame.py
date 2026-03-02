@@ -45,6 +45,7 @@ try:
 except ImportError as e:
     print("WARNING: Could not load frames C implementation, fallback on python implementation")
     print("\t", e)
+    from .pyastro.frame import ReferenceFrame  # noqa: F401
     from .pyastro.frame import AnchorReferenceFrame  # noqa: F401
     from .pyastro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame  # noqa: F401
     from .pyastro.frame import CelestialReferenceFrame, RelativeReferenceFrame  # noqa: F401

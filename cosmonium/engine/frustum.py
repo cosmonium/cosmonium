@@ -16,10 +16,21 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""View frustum for visibility culling.
+
+This module provides the InfiniteFrustum class for determining object visibility
+in the scene. It attempts to import the optimized C++ implementation from the
+cosmonium_engine module, falling back to the pure Python implementation from
+the pyengine submodule if the C++ extension is not available.
+"""
+
 
 try:
     from cosmonium_engine import InfiniteFrustum
 except ImportError as e:
     print("WARNING: Could not load Frustum C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyengine.frustum import InfiniteFrustum  # noqa: F401
+    from .pyengine.frustum import InfiniteFrustum
+
+
+__all__ = ["InfiniteFrustum"]

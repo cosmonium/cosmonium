@@ -17,12 +17,43 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""View frustum implementation for visibility culling.
+
+This module provides the InfiniteFrustum class for determining object visibility
+within the camera view. The frustum uses an infinite far plane which is essential
+for space rendering where objects can be arbitrarily far away.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from panda3d.core import LPlaned
 
+if TYPE_CHECKING:
+    from panda3d.core import BoundingVolume, LMatrix4, LPoint3d
 
-class InfiniteFrustum(object):
-    def __init__(self, frustum, view_mat, view_position, zero_near=True):
+
+class InfiniteFrustum:
+    """View frustum with infinite far plane for space rendering.
+
+    An infinite frustum is used for visibility culling in space environments
+    where objects can be arbitrarily far away. This implementation drops the
+    far plane from a standard frustum, keeping only the near plane and four
+    side planes.
+    """
+
+    def __init__(
+        self, frustum: BoundingVolume, view_mat: LMatrix4, view_position: LPoint3d, zero_near: bool = True
+    ) -> None:
+        """Initialize the InfiniteFrustum by extracting and transforming the planes from the given frustum.
+
+        Args:
+            frustum: The source bounding volume representing the camera frustum.
+            view_mat: The view transformation matrix.
+            view_position: The position of the view/camera.
+            zero_near: If True, sets the near plane distance to zero.
+        """
         self.planes = []
         self.position = view_position
         # Panda3D frustum has side planes stored from 1 to 4, far plane is 0 and near plane is 5
@@ -40,15 +71,29 @@ class InfiniteFrustum(object):
             new_plane[3] = plane[3] - view_position.length()
             self.planes.append(new_plane)
 
-    def is_sphere_in(self, center, radius):
+    def is_sphere_in(self, center: LPoint3d, radius: float) -> bool:
+        """Test if a sphere intersects or is contained within the frustum.
+
+        Args:
+            center: The center point of the sphere.
+            radius: The radius of the sphere.
+
+        Returns:
+            True if the sphere is at least partially inside the frustum.
+        """
         for plane in self.planes:
             dist = plane.dist_to_plane(center)
             if dist > radius:
                 return False
         return True
 
-    def get_position(self):
+    def get_position(self) -> LPoint3d:
+        """Get the frustum's position.
+
+        Returns:
+            The position of the frustum.
+        """
         return self.position
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "InfiniteFrustum " + str(self.planes)
