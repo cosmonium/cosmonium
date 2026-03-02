@@ -40,7 +40,7 @@ jobs:
         ./cosmonium --test-start
     - name: Upload logs
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: linux-logs
         path: ~/.local/state/cosmonium/log/output.log
@@ -82,7 +82,7 @@ jobs:
         ./cosmonium --test-start
     - name: Upload logs
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: macos-logs
         path: ~/Library/Logs/cosmonium/output.log
@@ -126,7 +126,7 @@ jobs:
         ./cosmonium.exe --test-start | Out-Null
     - name: Upload logs
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: windows-logs
         path: ~/AppData/Local/Cosmonium/Cosmonium/Logs/output.log
