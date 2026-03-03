@@ -43,6 +43,8 @@ from .objectname import ObjectNames
 
 if TYPE_CHECKING:
     from ...astro.frame import ReferenceFrame
+    from ...astro.orbits import OrbitBase
+    from ...astro.rotations import RotationBase
     from .traversers import AnchorTraverser
 
 
@@ -56,7 +58,15 @@ class AnchorBase(ABC):
     Anchors form the foundation of the graph for simulation and rendering.
     """
 
-    def __init__(self, anchor_class, body, point_color=None, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        anchor_class: int,
+        body: object,
+        point_color: LColor | None = None,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the anchor.
 
         Args:
@@ -121,10 +131,20 @@ class AnchorBase(ABC):
         self.visible_size = 0.0
         self.z_distance = 0.0
 
-    def get_names(self):
+    def get_names(self) -> list[str]:
+        """Get all translated names for this anchor.
+
+        Returns:
+            List of translated name strings.
+        """
         return self.object_names.get_all_names()
 
-    def set_names(self, names):
+    def set_names(self, names: list[str] | str | None) -> None:
+        """Set the anchor's translated names.
+
+        Args:
+            names: Single name, list of names, or None.
+        """
         # Rebuild object_names from scratch
         self.object_names = ObjectNames()
         if names is None:
@@ -135,16 +155,36 @@ class AnchorBase(ABC):
         else:
             self.object_names.add_name(ObjectNames.parse_name(names))
 
-    def get_source_names(self):
+    def get_source_names(self) -> list[str]:
+        """Get the original (untranslated) names.
+
+        Returns:
+            List of source name strings.
+        """
         return self.object_names.get_source_names()
 
-    def get_name(self):
+    def get_name(self) -> str:
+        """Get the primary name for this anchor.
+
+        Returns:
+            The primary name string.
+        """
         return self.object_names.get_name()
 
-    def get_c_name(self):
+    def get_c_name(self) -> str:
+        """Get the C-style identifier for this anchor.
+
+        Returns:
+            The C-name identifier.
+        """
         return self.object_names.get_c_name()
 
-    def get_description(self):
+    def get_description(self) -> str:
+        """Get the description of this anchor.
+
+        Returns:
+            The anchor's description string.
+        """
         return self.description
 
     def get_point_color(self) -> LColor:
@@ -283,7 +323,7 @@ class AnchorBase(ABC):
 
     @abstractmethod
     def get_local_position(self) -> LPoint3d:
-        """Get the local position within the reference frame.
+        """Get the position relative to the reference point.
 
         Returns:
             The local position.
@@ -472,7 +512,16 @@ class CartesianAnchor(AnchorBase):
     reference frame (e.g., surface-bound objects, spacecraft).
     """
 
-    def __init__(self, anchor_class, body, frame, point_color=None, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        anchor_class: int,
+        body: object,
+        frame: ReferenceFrame,
+        point_color: LColor | None = None,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the Cartesian anchor.
 
         Args:
@@ -489,16 +538,16 @@ class CartesianAnchor(AnchorBase):
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
 
-    def is_stellar(self):
+    def is_stellar(self) -> bool:
         return False
 
-    def has_orbit(self):
+    def has_orbit(self) -> bool:
         return False
 
-    def has_rotation(self):
+    def has_rotation(self) -> bool:
         return False
 
-    def has_frame(self):
+    def has_frame(self) -> bool:
         return True
 
     def rebuild(self) -> None:
@@ -507,7 +556,8 @@ class CartesianAnchor(AnchorBase):
     def traverse(self, visitor) -> None:
         visitor.traverse_anchor(self)
 
-    def do_update(self):
+    def do_update(self) -> None:
+        """Update cached position and orientation from frame coordinates."""
         # TODO: _position should be global + local !
         self._position = self.get_local_position()
         self._local_position = self.get_local_position()
@@ -547,16 +597,31 @@ class CartesianAnchor(AnchorBase):
         self.visible = visible
         self.resolved = resolved
 
-    def copy(self, other):
+    def copy(self, other: CartesianAnchor) -> None:
+        """Copy state from another CartesianAnchor.
+
+        Args:
+            other: The anchor to copy from.
+        """
         self.frame = other.get_frame()
         self._global_position = other.get_absolute_reference_point()
         self._frame_position = other.get_frame_position()
         self._frame_orientation = other.get_frame_orientation()
 
-    def get_frame(self):
+    def get_frame(self) -> ReferenceFrame:
+        """Get the reference frame for this anchor.
+
+        Returns:
+            The reference frame object.
+        """
         return self.frame
 
-    def set_frame(self, frame):
+    def set_frame(self, frame: ReferenceFrame) -> None:
+        """Set the reference frame for this anchor.
+
+        Args:
+            frame: The new reference frame.
+        """
         # Get position and rotation in the absolute reference frame
         pos = self.get_local_position()
         rot = self.get_absolute_orientation()
@@ -566,13 +631,20 @@ class CartesianAnchor(AnchorBase):
         self.set_local_position(pos)
         self.set_absolute_orientation(rot)
 
-    def get_position_bounding_radius(self):
+    def get_position_bounding_radius(self) -> float:
+        """Get the bounding radius of the position trajectory."""
         return 0.0
 
-    def update_luminosity(self, star=None):
+    def update_luminosity(self, star=None) -> None:
+        """Update luminosity values based on a stellar light source."""
         pass
 
-    def set_absolute_reference_point(self, new_reference_point):
+    def set_absolute_reference_point(self, new_reference_point: LPoint3d) -> None:
+        """Set the absolute reference point.
+
+        Args:
+            new_reference_point: The new absolute reference point.
+        """
         if new_reference_point == self._global_position:
             return
         old_local = self.frame.get_local_position(self._frame_position)
@@ -581,56 +653,159 @@ class CartesianAnchor(AnchorBase):
         self._frame_position = self.frame.get_frame_position(new_local)
         self.do_update()
 
-    def set_frame_position(self, position):
+    def set_frame_position(self, position: LPoint3d) -> None:
+        """Set the position in frame coordinates.
+
+        Args:
+            position: The new frame position.
+        """
         self._frame_position = position
 
-    def get_frame_position(self):
+    def get_frame_position(self) -> LPoint3d:
+        """Get the position in frame coordinates.
+
+        Returns:
+            The frame-relative position.
+        """
         return self._frame_position
 
-    def set_frame_orientation(self, rotation):
+    def set_frame_orientation(self, rotation: LQuaterniond) -> None:
+        """Set the orientation in frame coordinates.
+
+        Args:
+            rotation: The new frame-relative orientation.
+        """
         self._frame_orientation = rotation
 
-    def get_frame_orientation(self):
+    def get_frame_orientation(self) -> LQuaterniond:
+        """Get the orientation in frame coordinates.
+
+        Returns:
+            The frame-relative orientation.
+        """
         return self._frame_orientation
 
-    def get_local_position(self):
+    def get_local_position(self) -> LPoint3d:
+        """Get the position relative to the reference point.
+
+        Returns:
+            The local position.
+        """
         return self.frame.get_local_position(self._frame_position)
 
-    def set_local_position(self, position):
+    def set_local_position(self, position: LPoint3d) -> None:
+        """Set the position relative to the reference point.
+
+        Args:
+            position: The new local position.
+        """
         self._frame_position = self.frame.get_frame_position(position)
 
-    def get_absolute_reference_point(self):
+    def get_absolute_reference_point(self) -> LPoint3d:
+        """Get the absolute reference point.
+
+        Returns:
+            The absolute reference point for this anchor.
+        """
         return self._global_position
 
-    def get_absolute_position(self):
+    def get_absolute_position(self) -> LPoint3d:
+        """Get the absolute position (reference point + local position).
+
+        Returns:
+            The absolute position.
+        """
         return self._global_position + self.get_local_position()
 
-    def set_absolute_position(self, position):
+    def set_absolute_position(self, position: LPoint3d) -> None:
+        """Set the absolute position.
+
+        Args:
+            position: The new absolute position.
+        """
         position -= self._global_position
         self._frame_position = self.frame.get_frame_position(position)
 
-    def get_absolute_orientation(self):
+    def get_absolute_orientation(self) -> LQuaterniond:
+        """Get the absolute orientation.
+
+        Returns:
+            The absolute orientation.
+        """
         return self.frame.get_absolute_orientation(self._frame_orientation)
 
-    def set_absolute_orientation(self, orientation):
+    def set_absolute_orientation(self, orientation: LQuaterniond) -> None:
+        """Set the absolute orientation.
+
+        Args:
+            orientation: The new absolute orientation.
+        """
         self._frame_orientation = self.frame.get_frame_orientation(orientation)
 
-    def calc_absolute_position_of(self, frame_position):
+    def calc_absolute_position_of(self, frame_position: LPoint3d) -> LPoint3d:
+        """Calculate the absolute position of a point given in frame coordinates.
+
+        Args:
+            frame_position: Position in frame coordinates.
+
+        Returns:
+            The absolute position.
+        """
         return self._global_position + self.frame.get_local_position(frame_position)
 
-    def calc_relative_position_to(self, position):
+    def calc_relative_position_to(self, position: LPoint3d) -> LPoint3d:
+        """Calculate position relative to a reference point.
+
+        Args:
+            position: The reference point.
+
+        Returns:
+            The relative position.
+        """
         return (self._global_position - position) + self.get_local_position()
 
-    def calc_local_position_of_frame(self, frame_position):
+    def calc_local_position_of_frame(self, frame_position: LPoint3d) -> LPoint3d:
+        """Convert frame coordinates to local coordinates.
+
+        Args:
+            frame_position: Position in frame coordinates.
+
+        Returns:
+            The local position.
+        """
         return self.frame.get_local_position(frame_position)
 
-    def calc_frame_position_of_absolute(self, position):
+    def calc_frame_position_of_absolute(self, position: LPoint3d) -> LPoint3d:
+        """Convert absolute position to frame coordinates.
+
+        Args:
+            position: Position in absolute coordinates.
+
+        Returns:
+            The frame-relative position.
+        """
         return self.frame.get_frame_position(position - self._global_position)
 
-    def calc_frame_position_of_local(self, position):
+    def calc_frame_position_of_local(self, position: LPoint3d) -> LPoint3d:
+        """Convert local position to frame coordinates.
+
+        Args:
+            position: Position in local coordinates.
+
+        Returns:
+            The frame-relative position.
+        """
         return self.frame.get_frame_position(position)
 
-    def calc_frame_orientation_of(self, orientation):
+    def calc_frame_orientation_of(self, orientation: LQuaterniond) -> LQuaterniond:
+        """Convert absolute orientation to frame-relative orientation.
+
+        Args:
+            orientation: Orientation in absolute coordinates.
+
+        Returns:
+            The frame-relative orientation.
+        """
         return self.frame.get_frame_orientation(orientation)
 
     def calc_look_at2(self, target, rel=True, position=None):
@@ -654,11 +829,9 @@ class CartesianAnchor(AnchorBase):
 
 
 class CameraAnchor(CartesianAnchor):
-    """
-    Specialized anchor to represent the observer/camera in the 3D space simulation.
-    """
+    """Specialized anchor to represent the observer/camera in the 3D space simulation."""
 
-    def __init__(self, body, frame: ReferenceFrame) -> None:
+    def __init__(self, body: object, frame: ReferenceFrame) -> None:
         """Initialize the CameraAnchor.
 
         Args:
@@ -672,6 +845,7 @@ class CameraAnchor(CartesianAnchor):
         self.pixel_size = 0.0
 
     def do_update(self) -> None:
+        """Update camera vector from absolute orientation."""
         CartesianAnchor.do_update(self)
         self.camera_vector = self.get_absolute_orientation().xform(LVector3d.forward())
 
@@ -683,7 +857,14 @@ class OriginAnchor(CartesianAnchor):
     objects that don't need frame transformations.
     """
 
-    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        anchor_class: int,
+        body: object,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the OriginAnchor.
 
         Args:
@@ -699,11 +880,17 @@ class OriginAnchor(CartesianAnchor):
 
 
 class FlatSurfaceAnchor(OriginAnchor):
-    """
-    Anchor for objects on flat surfaces.
-    """
+    """Anchor for objects on flat surfaces."""
 
-    def __init__(self, anchor_class, body, surface, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        anchor_class: int,
+        body: object,
+        surface: object,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the FlatSurfaceAnchor.
 
         Args:
@@ -750,7 +937,14 @@ class ObserverAnchor(CartesianAnchor):
     position.
     """
 
-    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        anchor_class: int,
+        body: object,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the ObserverAnchor.
 
         Args:
@@ -786,6 +980,7 @@ class ObserverAnchor(CartesianAnchor):
 
 class StellarAnchor(AnchorBase):
     """Anchor for celestial bodies with orbital mechanics.
+
     This anchor represents celestial bodies that have orbital and rotational
     dynamics. It includes support for luminosity calculations, both intrinsic
     (for stars) and reflected (for planets/moons).
@@ -797,8 +992,16 @@ class StellarAnchor(AnchorBase):
     OctreeAnchor: int = 8
 
     def __init__(
-        self, anchor_class, body, orbit, rotation, point_color, names=None, source_names=None, description=''
-    ):
+        self,
+        anchor_class: int,
+        body: object,
+        orbit: OrbitBase,
+        rotation: RotationBase,
+        point_color: LColor,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the StellarAnchor.
 
         Args:
@@ -816,16 +1019,16 @@ class StellarAnchor(AnchorBase):
         self.rotation = rotation
         self._equatorial = LQuaterniond.ident_quat()
 
-    def is_stellar(self):
+    def is_stellar(self) -> bool:
         return True
 
-    def has_orbit(self):
+    def has_orbit(self) -> bool:
         return True
 
-    def has_rotation(self):
+    def has_rotation(self) -> bool:
         return True
 
-    def has_frame(self):
+    def has_frame(self) -> bool:
         return False
 
     def rebuild(self) -> None:
@@ -834,16 +1037,36 @@ class StellarAnchor(AnchorBase):
     def traverse(self, visitor) -> None:
         visitor.traverse_anchor(self)
 
-    def get_orbit(self):
+    def get_orbit(self) -> OrbitBase:
+        """Get the orbital component of this anchor.
+
+        Returns:
+            The orbit object.
+        """
         return self.orbit
 
-    def set_orbit(self, orbit) -> None:
+    def set_orbit(self, orbit: OrbitBase) -> None:
+        """Set the orbital component of this anchor.
+
+        Args:
+            orbit: The new orbit object.
+        """
         self.orbit = orbit
 
-    def get_rotation(self):
+    def get_rotation(self) -> RotationBase:
+        """Get the rotational component of this anchor.
+
+        Returns:
+            The rotation object.
+        """
         return self.rotation
 
-    def set_rotation(self, rotation) -> None:
+    def set_rotation(self, rotation: RotationBase) -> None:
+        """Set the rotational component of this anchor.
+
+        Args:
+            rotation: The new rotation object.
+        """
         self.rotation = rotation
 
     def update_observer(self, observer, update_id: int) -> None:
@@ -877,37 +1100,47 @@ class StellarAnchor(AnchorBase):
         self.visible = visible
         self.resolved = resolved
 
-    def get_position_bounding_radius(self):
+    def get_position_bounding_radius(self) -> float:
         return self.orbit.get_bounding_radius()
 
-    def get_absolute_reference_point(self):
+    def get_absolute_reference_point(self) -> LPoint3d:
         return self._global_position
 
-    def get_absolute_position(self):
+    def get_absolute_position(self) -> LPoint3d:
         return self._position
 
-    def get_frame_position(self):
+    def get_frame_position(self) -> LPoint3d:
         return self.orbit.get_frame().get_frame_position(self._local_position)
 
-    def get_local_position(self):
+    def get_local_position(self) -> LPoint3d:
         return self._local_position
 
-    def get_absolute_orientation(self):
+    def get_absolute_orientation(self) -> LQuaterniond:
         return self._orientation
 
-    def get_equatorial_rotation(self):
+    def get_equatorial_rotation(self) -> LQuaterniond:
+        """Get the equatorial orientation of the body.
+
+        Returns:
+            The equatorial rotation quaternion.
+        """
         return self._equatorial
 
-    def get_sync_rotation(self):
+    def get_sync_rotation(self) -> LQuaterniond:
+        """Get the synchronous rotation (same as absolute orientation).
+
+        Returns:
+            The synchronous rotation quaternion.
+        """
         return self._orientation
 
-    def get_absolute_magnitude(self):
+    def get_absolute_magnitude(self) -> float:
         return lum_to_abs_mag(self.get_radiant_flux() / units.L0)
 
-    def get_apparent_magnitude(self):
+    def get_apparent_magnitude(self) -> float:
         return abs_to_app_mag(self.get_absolute_magnitude(), self.distance_to_obs)
 
-    def update(self, time, update_id):
+    def update(self, time: float, update_id: int) -> None:
         if self.update_id == update_id:
             return
         self._orientation = self.rotation.get_absolute_rotation_at(time)
@@ -916,7 +1149,7 @@ class StellarAnchor(AnchorBase):
         self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
 
-    def get_reflected_luminosity(self, star) -> float:
+    def get_reflected_luminosity(self, star: StellarAnchor) -> float:
         """Compute the reflected luminosity from a stellar light source.
 
         Args:
@@ -962,7 +1195,16 @@ class SystemAnchor(StellarAnchor):
     and combined luminosity.
     """
 
-    def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        body: object,
+        orbit: OrbitBase,
+        rotation: RotationBase,
+        point_color: LColor,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the SystemAnchor.
 
         Args:
@@ -978,11 +1220,11 @@ class SystemAnchor(StellarAnchor):
         self.primary = None
         self.children = []
 
-    def set_primary(self, primary: StellarAnchor) -> None:
+    def set_primary(self, primary: StellarAnchor | None) -> None:
         """Set the primary body of the system.
 
         Args:
-            primary: The primary stellar anchor (e.g., the star in a planetary system).
+            primary: The primary stellar anchor (e.g., the star).
         """
         self.primary = primary
 
@@ -1058,7 +1300,17 @@ class OctreeAnchor(SystemAnchor):
     objects like star fields or asteroid belts.
     """
 
-    def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        body: object,
+        orbit: OrbitBase,
+        rotation: RotationBase,
+        radius: float,
+        point_color: LColor,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the OctreeAnchor.
 
         Args:
@@ -1071,7 +1323,6 @@ class OctreeAnchor(SystemAnchor):
             source_names: List of source (untranslated) names corresponding to the provided names.
             description: Optional description for this anchor.
         """
-
         SystemAnchor.__init__(self, body, orbit, rotation, point_color, names, source_names, description)
         self.bounding_radius = radius
         # TODO: Should be configurable
@@ -1121,7 +1372,17 @@ class UniverseAnchor(OctreeAnchor):
     all stellar systems and objects. It's always visible and resolved.
     """
 
-    def __init__(self, body, orbit, rotation, radius, point_color, names=None, source_names=None, description=''):
+    def __init__(
+        self,
+        body: object,
+        orbit: OrbitBase,
+        rotation: RotationBase,
+        radius: float,
+        point_color: LColor,
+        names: list[str] | str | None = None,
+        source_names: list[str] | None = None,
+        description: str = '',
+    ) -> None:
         """Initialize the UniverseAnchor.
 
         Args:
