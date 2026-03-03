@@ -189,18 +189,6 @@ ObjectNames::get_name_entry(unsigned int index) const
 }
 
 std::string
-ObjectNames::get_friendly_name() const
-{
-  // Return first vernacular name, or first name if none
-  for (const auto &name : _names) {
-    if (name.type == ObjectName::NameType::NT_vernacular) {
-      return name.get_full_name();
-    }
-  }
-  return _names.empty() ? "" : _names[0].get_full_name();
-}
-
-std::string
 ObjectNames::get_c_name() const
 {
   // Return the first name untranslated (original before translation)
@@ -214,8 +202,8 @@ ObjectNames::get_c_name() const
 std::string
 ObjectNames::get_name() const
 {
-  // Same as get_friendly_name
-  return get_friendly_name();
+  // Return the primary name
+  return _names.empty() ? "" : _names[0].get_full_name();
 }
 
 pvector<std::string>

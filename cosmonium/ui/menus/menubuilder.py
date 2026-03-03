@@ -80,9 +80,9 @@ class MenuBuilder:
         }
         self.text_generators = {
             'select-name': lambda: (
-                self.engine.selected.get_friendly_name() if self.engine.selected is not None else ''
+                self.engine.selected.get_name() if self.engine.selected is not None else ''
             ),
-            'over-name': lambda: (self.mouse.over.get_friendly_name() if self.mouse.over is not None else ''),
+            'over-name': lambda: (self.mouse.over.get_name() if self.mouse.over is not None else ''),
         }
 
     def add_named_menu(self, name, entries):

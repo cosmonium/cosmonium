@@ -156,10 +156,6 @@ PUBLISHED:
   const ObjectName&
   get_name_entry(unsigned int index) const;
 
-  /// Return a user-friendly name for the object.
-  std::string
-  get_friendly_name() const;
-
   /// Return the untranslated primary name.
   std::string
   get_c_name() const;

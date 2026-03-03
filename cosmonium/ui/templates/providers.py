@@ -52,7 +52,7 @@ class ObjectProvider(ABC):
 
     @property
     def friendly_name(self):
-        return self._object.get_friendly_name()
+        return self._object.get_name()
 
     @property
     def ground_distance(self):

@@ -124,9 +124,6 @@ class StellarObject:
     def get_source_names(self):
         return self.anchor.get_source_names()
 
-    def get_friendly_name(self):
-        return self.anchor.get_friendly_name()
-
     def get_name(self):
         return self.anchor.get_name()
 

@@ -299,10 +299,6 @@ class ObjectNames:
         """Get the ObjectName entry at the given index."""
         return self._names[index]
 
-    def get_friendly_name(self) -> str:
-        """Get the first vernacular name, or first name if none."""
-        return self._names[0].get_full_name() if self._names else ''
-
     def get_c_name(self) -> str:
         """Get the first name untranslated (original before translation)."""
         # Return the original untranslated name from _originals[0] if available
@@ -312,8 +308,8 @@ class ObjectNames:
         return self._names[0].get_full_name() if self._names else ''
 
     def get_name(self) -> str:
-        """Get the primary name (same as get_friendly_name)."""
-        return self.get_friendly_name()
+        """Get the primary name."""
+        return self._names[0].get_full_name() if self._names else ''
 
     def get_all_names(self) -> list[str]:
         """Get all names as a list of strings."""

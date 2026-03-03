@@ -106,7 +106,6 @@ PUBLISHED:
   // Name management methods
   pvector<std::string> _get_names(void) const;
   void set_names(const pvector<std::string> names);
-  std::string get_friendly_name(void) const;
   std::string get_name(void) const;
   unsigned int get_num_names(void) const;
   std::string get_name_at(unsigned int index) const;

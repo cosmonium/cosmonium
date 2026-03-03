@@ -152,15 +152,15 @@ class TestObjectNames:
         assert "Sirius" in all_names
         assert "HIP 32349" in all_names
 
-    def test_get_friendly_name(self, registry):
-        """Test getting the friendly name."""
+    def test_get_name(self, registry):
+        """Test getting the primary name."""
         names = ObjectNames()
         names.add_name(ObjectNames.parse_name("Sirius"))
         names.add_name(ObjectNames.parse_name("HIP 32349"))
         names.add_name(ObjectNames.parse_name("ALF CMa"))
 
         # Should return first vernacular name
-        assert names.get_friendly_name() == "Sirius"
+        assert names.get_name() == "Sirius"
 
     def test_get_c_name(self, registry):
         """Test getting the C name (first name untranslated)."""

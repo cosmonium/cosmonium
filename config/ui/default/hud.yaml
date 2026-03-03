@@ -62,7 +62,7 @@ hud:
     entries:
       - text: '{scales.speed(nav.speed)}'
       - condition: 'False' #settings.mouse_over and mouse.over is not None'
-        text: '{mouse.over.get_friendly_name()}'
+        text: '{mouse.over.get_name()}'
 
   - anchor: bottom-right
     type: text-list

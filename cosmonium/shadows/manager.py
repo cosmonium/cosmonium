@@ -61,7 +61,7 @@ class RingsShadows(ShadowBase):
             return
         self.casters.append(caster)
         if caster not in self.old_casters:
-            print("Add ring shadow caster", caster.name, "on", self.target.owner.get_friendly_name())
+            print("Add ring shadow caster", caster.name, "on", self.target.owner.get_name())
             shadow_shader = caster.create_shader_component()
             self.shader_components[caster] = shadow_shader
             data_source = caster.create_data_source()
@@ -179,14 +179,14 @@ class SphereShadows(ShadowBase):
         self.nb_updates -= 1
         if self.nb_updates == 0:
             if self.empty() and self.had_sphere_occluder:
-                print("Remove sphere shadow component on", self.target.owner.get_friendly_name())
+                print("Remove sphere shadow component on", self.target.owner.get_name())
                 self.target.shader.remove_shadows(self.target.shape, self.target.appearance, self.shader_component)
                 self.target.sources.remove_source(self.data_source)
                 self.rebuild_needed = True
             elif not self.had_sphere_occluder and not self.empty():
                 self.target.shader.add_shadows(self.shader_component)
                 self.target.sources.add_source(self.data_source)
-                print("Add sphere shadow component on", self.target.owner.get_friendly_name())
+                print("Add sphere shadow component on", self.target.owner.get_name())
                 self.rebuild_needed = True
         return self.rebuild_needed
 
@@ -223,7 +223,7 @@ class ShadowMapShadows(ShadowBase):
             return
         self.casters.append(caster)
         if caster not in self.old_casters:
-            print("Add shadow caster", caster.name, "on", self.target.owner.get_friendly_name())
+            print("Add shadow caster", caster.name, "on", self.target.owner.get_name())
             shadow_shader = caster.create_shader_component(self_shadow)
             self.shader_components[caster] = shadow_shader
             data_source = caster.create_data_source(self_shadow)

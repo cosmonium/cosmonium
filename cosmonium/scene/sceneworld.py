@@ -264,11 +264,6 @@ class SceneWorld:
         if self.anchor:
             self.anchor.set_names(names)
 
-    def get_friendly_name(self):
-        if self.anchor:
-            return self.anchor.get_friendly_name()
-        return ''
-
     def get_name(self):
         if self.anchor:
             return self.anchor.get_name()

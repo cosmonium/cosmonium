@@ -208,11 +208,11 @@ class Debug:
             if isinstance(selected, ReflectiveBody) and selected.surface is not None:
                 print(
                     "\tRing shadow:",
-                    [x.body.get_friendly_name() for x in selected.surface.shadows.rings_shadows.casters],
+                    [x.body.get_name() for x in selected.surface.shadows.rings_shadows.casters],
                 )
                 print(
                     "\tSphere shadow:",
-                    [x.body.get_friendly_name() for x in selected.surface.shadows.sphere_shadows.shadow_casters],
+                    [x.body.get_name() for x in selected.surface.shadows.sphere_shadows.shadow_casters],
                 )
             if isinstance(selected, StellarBody):
                 if selected.scene_anchor.scene_scale_factor is not None:

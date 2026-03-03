@@ -313,12 +313,6 @@ AnchorBase::set_names(const pvector<std::string> names)
 }
 
 std::string
-AnchorBase::get_friendly_name(void) const
-{
-  return object_names.get_friendly_name();
-}
-
-std::string
 AnchorBase::get_name(void) const
 {
   return object_names.get_name();

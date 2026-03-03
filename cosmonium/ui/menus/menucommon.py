@@ -41,9 +41,9 @@ def create_orbiting_bodies_menu(engine, body):
             subitems = []
             for child in children:
                 if isinstance(child, SimpleSystem):
-                    subitems.append([child.primary.get_friendly_name(), 0, engine.select_body, child.primary])
+                    subitems.append([child.primary.get_name(), 0, engine.select_body, child.primary])
                 else:
-                    subitems.append([child.get_friendly_name(), 0, engine.select_body, child])
+                    subitems.append([child.get_name(), 0, engine.select_body, child])
     return subitems
 
 
@@ -54,9 +54,9 @@ def create_orbits_menu(engine, body):
         while parent is not None and not isinstance(parent, Universe):
             if isinstance(parent, SimpleSystem):
                 if parent.primary != body:
-                    subitems.append([parent.primary.get_friendly_name(), 0, engine.select_body, parent.primary])
+                    subitems.append([parent.primary.get_name(), 0, engine.select_body, parent.primary])
             else:
-                subitems.append([parent.get_friendly_name(), 0, engine.select_body, parent])
+                subitems.append([parent.get_name(), 0, engine.select_body, parent])
             parent = parent.parent
     return subitems
 
