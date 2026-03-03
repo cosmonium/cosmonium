@@ -39,8 +39,6 @@ try:
         UniverseAnchor,
     )
 
-    FixedStellarAnchor = StellarAnchor
-    DynamicStellarAnchor = StellarAnchor
 except ImportError as e:
     print("WARNING: Could not load Anchors C implementation, fallback on python implementation")
     print("\t", e)
@@ -48,8 +46,6 @@ except ImportError as e:
         AnchorBase,
         CameraAnchor,
         CartesianAnchor,
-        DynamicStellarAnchor,
-        FixedStellarAnchor,
         FlatSurfaceAnchor,
         ObserverAnchor,
         OctreeAnchor,
@@ -58,6 +54,10 @@ except ImportError as e:
         SystemAnchor,
         UniverseAnchor,
     )
+
+
+FixedStellarAnchor = StellarAnchor
+DynamicStellarAnchor = StellarAnchor
 
 
 __all__ = [

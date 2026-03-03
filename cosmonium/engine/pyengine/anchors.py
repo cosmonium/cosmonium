@@ -27,8 +27,8 @@ determination, and observer-relative calculations.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from math import pi, sqrt
-from time import time
 from typing import TYPE_CHECKING
 
 from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from .traversers import AnchorTraverser
 
 
-class AnchorBase:
+class AnchorBase(ABC):
     """Base class for all anchor types in the 3D space simulation.
 
     An anchor represents a position and orientation in the 3D space simulation.
@@ -56,12 +56,13 @@ class AnchorBase:
     Anchors form the foundation of the graph for simulation and rendering.
     """
 
-    def __init__(self, anchor_class, body, names=None, source_names=None, description=''):
+    def __init__(self, anchor_class, body, point_color=None, names=None, source_names=None, description=''):
         """Initialize the anchor.
 
         Args:
             anchor_class: Bitmask defining the anchor's classification.
             body: The celestial body associated with this anchor.
+            point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
             description: Optional description for this anchor.
@@ -70,6 +71,9 @@ class AnchorBase:
         self.body = body
         self.parent = None
         self.rebuild_needed = False
+        if point_color is None:
+            point_color = LColor(1.0, 1.0, 1.0, 1.0)
+        self.point_color = point_color
         # Name management
         self.object_names = ObjectNames()
         if names is None:
@@ -105,6 +109,11 @@ class AnchorBase:
         self._orientation = LQuaterniond()
         self.bounding_radius = 0.0
         self._height_under = 0.0
+        # Luminosity / radiance
+        self._albedo = 0.5
+        self._intrinsic_luminosity = 0.0
+        self._reflected_luminosity = 0.0
+        self._point_radiance = 0.0
         # Scene parameters
         self.rel_position = LPoint3d()
         self.distance_to_obs = 0
@@ -141,50 +150,221 @@ class AnchorBase:
     def get_description(self):
         return self.description
 
+    def get_point_color(self) -> LColor:
+        """Get the point color used for rendering.
+
+        Returns:
+            The point color.
+        """
+        return self.point_color
+
+    def set_point_color(self, color: LColor) -> None:
+        """Set the point color used for rendering.
+
+        Args:
+            color: The new point color.
+        """
+        self.point_color = color
+
+    def get_albedo(self) -> float:
+        """Get the albedo (reflectivity fraction).
+
+        Returns:
+            The albedo value.
+        """
+        return self._albedo
+
+    def set_albedo(self, albedo: float) -> None:
+        """Set the albedo.
+
+        Args:
+            albedo: The new albedo value.
+        """
+        self._albedo = albedo
+
+    def get_intrinsic_luminosity(self) -> float:
+        """Get the intrinsic (emitted) luminosity in Watts.
+
+        Returns:
+            The intrinsic luminosity.
+        """
+        return self._intrinsic_luminosity
+
+    def set_intrinsic_luminosity(self, intrinsic_luminosity: float) -> None:
+        """Set the intrinsic luminosity.
+
+        Args:
+            intrinsic_luminosity: The new intrinsic luminosity in Watts.
+        """
+        self._intrinsic_luminosity = intrinsic_luminosity
+
+    def get_reflected_luminosity(self) -> float:
+        """Get the reflected luminosity in Watts.
+
+        Returns:
+            The reflected luminosity.
+        """
+        return self._reflected_luminosity
+
+    def get_cached_point_radiance(self) -> float:
+        """Get the cached point radiance.
+
+        Returns:
+            The cached point radiance value.
+        """
+        return self._point_radiance
+
+    def get_radiant_flux(self) -> float:
+        """Get the total radiant flux (intrinsic + reflected) in Watts.
+
+        Returns:
+            The total radiant flux.
+        """
+        return self._intrinsic_luminosity + self._reflected_luminosity
+
+    def get_point_radiance(self, distance: float) -> float:
+        """Get the point radiance at a given distance.
+
+        This method assumes the source is a point-like light source aligned
+        with the normal of the receiver.
+
+        Args:
+            distance: The distance in kilometers.
+
+        Returns:
+            The radiance at the given distance.
+        """
+        return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
+
+    def get_cached_absolute_position(self) -> LPoint3d:
+        """Get the cached absolute (global) position.
+
+        Returns:
+            The last computed absolute position.
+        """
+        return self._global_position
+
+    def get_cached_local_position(self) -> LPoint3d:
+        """Get the cached local position.
+
+        Returns:
+            The last computed local position.
+        """
+        return self._local_position
+
+    def get_cached_absolute_orientation(self) -> LQuaterniond:
+        """Get the cached absolute orientation.
+
+        Returns:
+            The last computed absolute orientation.
+        """
+        return self._orientation
+
+    @abstractmethod
+    def get_position_bounding_radius(self) -> float:
+        """Get the bounding radius of the orbit/position trajectory.
+
+        Returns:
+            The position bounding radius.
+        """
+
+    @abstractmethod
+    def get_absolute_reference_point(self) -> LPoint3d:
+        """Get the absolute (global) reference point of this anchor.
+
+        Returns:
+            The absolute reference point.
+        """
+
+    @abstractmethod
+    def get_absolute_position(self) -> LPoint3d:
+        """Get the absolute position (reference point + local position).
+
+        Returns:
+            The absolute position.
+        """
+
+    @abstractmethod
+    def get_local_position(self) -> LPoint3d:
+        """Get the local position within the reference frame.
+
+        Returns:
+            The local position.
+        """
+
+    @abstractmethod
+    def get_frame_position(self) -> LPoint3d:
+        """Get the position expressed in the reference frame coordinates.
+
+        Returns:
+            The frame-relative position.
+        """
+
+    @abstractmethod
+    def get_absolute_orientation(self) -> LQuaterniond:
+        """Get the absolute orientation.
+
+        Returns:
+            The absolute orientation quaternion.
+        """
+
+    @abstractmethod
+    def update_luminosity(self, star=None) -> None:
+        """Update luminosity values based on a stellar light source.
+
+        Args:
+            star: The stellar anchor acting as the light source, or None.
+        """
+
     def set_rebuild_needed(self) -> None:
         """Mark this anchor as needing rebuild and propagate to parent."""
         self.rebuild_needed = True
         if self.parent is not None:
             self.parent.set_rebuild_needed()
 
+    @abstractmethod
     def rebuild(self) -> None:
         """Rebuild this anchor's internal state."""
-        pass
 
+    @abstractmethod
     def traverse(self, visitor: AnchorTraverser) -> None:
         """Accept a visitor for traversal.
 
         Args:
             visitor: The traverser object visiting this anchor.
         """
-        visitor.traverse_anchor(self)
 
+    @abstractmethod
     def is_stellar(self) -> bool:
         """Check if this anchor represents a stellar object.
 
         Returns:
             True if this is a stellar anchor.
         """
-        return True
 
+    @abstractmethod
     def has_orbit(self) -> bool:
         """Check if this anchor position is based on an orbit.
 
         Returns:
             True if this anchor has orbital motion.
         """
-        return False
 
+    @abstractmethod
     def has_rotation(self) -> bool:
         """Check if this anchor orientation is based on rotation.
 
         Returns:
             True if this anchor has rotational motion.
         """
-        return False
 
-    def has_frame(self):
-        return False
+    @abstractmethod
+    def has_frame(self) -> bool:
+        """Check if this anchor has a reference frame.
+
+        Returns:
+            True if this anchor has a reference frame.
+        """
 
     def get_bounding_radius(self) -> float:
         """Get the bounding radius of this anchor.
@@ -248,6 +428,7 @@ class AnchorBase:
         length = local_delta.length()
         return (local_delta / length, length)
 
+    @abstractmethod
     def update(self, time: float, update_id: int) -> None:
         """Update the anchor's state for the current time.
 
@@ -255,51 +436,26 @@ class AnchorBase:
             time: The current simulation time.
             update_id: The unique identifier for this update pass.
         """
-        pass
 
-    def update_observer(self, observer, update_id):
+    @abstractmethod
+    def update_observer(self, observer, update_id: int) -> None:
         """Update observer-relative position and visibility metrics.
 
         Args:
             observer: The observer/camera anchor.
             update_id: The unique identifier for this update pass.
         """
-        if self.update_id == update_id:
-            return
-        global_delta = self._global_position - observer._global_position
-        local_delta = self._local_position - observer._local_position
-        self.rel_position = global_delta + local_delta
-        distance_to_obs = self.rel_position.length()
-        if distance_to_obs > 0.0:
-            self.vector_to_obs = -self.rel_position / distance_to_obs
-            self.visible_size = self.bounding_radius / (distance_to_obs * observer.pixel_size)
-            coef = -self.vector_to_obs.dot(observer.camera_vector)
-            self.z_distance = distance_to_obs * coef
-        else:
-            self.vector_to_obs = LVector3d()
-            self.visible_size = 0.0
-            self.z_distance = 0.0
-        self.distance_to_obs = distance_to_obs
 
-    def update_state(self, observer: CameraAnchor, update_id: int) -> None:
+    @abstractmethod
+    def update_state(self, observer, update_id: int) -> None:
         """Update the anchor's visibility and resolved state.
 
         Args:
             observer: The observer/camera anchor.
             update_id: The unique identifier for this update pass.
         """
-        if self.distance_to_obs > self.bounding_radius:
-            in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
-            resolved = self.visible_size > settings.min_body_size
-            visible = in_view  # and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
-        else:
-            # We are in the object
-            resolved = True
-            visible = True
-        self.visible = visible
-        self.resolved = resolved
 
-    def update_all(self, time: float, observer: CameraAnchor, update_id: int) -> None:
+    def update_all(self, time: float, observer, update_id: int) -> None:
         """Update all anchor states: time, observer, and visibility.
 
         Args:
@@ -331,20 +487,68 @@ class CartesianAnchor(AnchorBase):
             source_names: List of source (untranslated) names corresponding to the provided names.
             description: Optional description for this anchor.
         """
-        AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
+        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names, description)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
-        self.point_color = point_color
-        self._intrinsic_luminosity = 0
-        self._reflected_luminosity = 0
-        self._point_radiance = 0
 
     def is_stellar(self):
         return False
 
+    def has_orbit(self):
+        return False
+
+    def has_rotation(self):
+        return False
+
     def has_frame(self):
         return True
+
+    def rebuild(self) -> None:
+        pass
+
+    def traverse(self, visitor) -> None:
+        visitor.traverse_anchor(self)
+
+    def do_update(self):
+        # TODO: _position should be global + local !
+        self._position = self.get_local_position()
+        self._local_position = self.get_local_position()
+        self._orientation = self.get_absolute_orientation()
+
+    def update(self, time: float, update_id: int) -> None:
+        self.do_update()
+
+    def update_observer(self, observer, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics."""
+        if self.update_id == update_id:
+            return
+        reference_point_delta = self.get_absolute_reference_point() - observer.get_absolute_reference_point()
+        local_delta = self.get_local_position() - observer.get_local_position()
+        self.rel_position = reference_point_delta + local_delta
+        self.distance_to_obs = self.rel_position.length()
+        if self.distance_to_obs > 0.0:
+            self.vector_to_obs = -self.rel_position / self.distance_to_obs
+            self.visible_size = self.bounding_radius / (self.distance_to_obs * observer.pixel_size)
+            coef = -self.vector_to_obs.dot(observer.camera_vector)
+            self.z_distance = self.distance_to_obs * coef
+        else:
+            self.vector_to_obs = LVector3d()
+            self.visible_size = 0.0
+            self.z_distance = 0.0
+
+    def update_state(self, observer, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state."""
+        if self.distance_to_obs > self.bounding_radius:
+            in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
+            resolved = self.visible_size > settings.min_body_size
+            visible = in_view  # and (visible_size > 1.0 or self._app_magnitude < settings.lowest_app_magnitude)
+        else:
+            # We are in the object
+            resolved = True
+            visible = True
+        self.visible = visible
+        self.resolved = resolved
 
     def copy(self, other):
         self.frame = other.get_frame()
@@ -365,32 +569,10 @@ class CartesianAnchor(AnchorBase):
         self.set_local_position(pos)
         self.set_absolute_orientation(rot)
 
-    def do_update(self):
-        # TODO: _position should be global + local !
-        self._position = self.get_local_position()
-        self._local_position = self.get_local_position()
-        self._orientation = self.get_absolute_orientation()
-
-    def update(self, time, dt):
-        self.do_update()
-
     def get_position_bounding_radius(self):
         return 0.0
 
-    def get_radiant_flux(self):
-        """
-        Returns the radiant flux, expressed in W.
-        """
-        return self._intrinsic_luminosity + self._reflected_luminosity
-
-    def get_point_radiance(self, distance):
-        """
-        Returns the anchor radiance.
-        This method assume the source is a point-like light source aligned with the normal of the receiver.
-        """
-        return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
-
-    def update_luminosity(self, star):
+    def update_luminosity(self, star=None):
         pass
 
     def set_absolute_reference_point(self, new_reference_point):
@@ -486,7 +668,7 @@ class CameraAnchor(CartesianAnchor):
             body: The body associated with the camera (usually None or observer).
             frame: The reference frame for the camera.
         """
-        CartesianAnchor.__init__(self, 0, body, frame, None)
+        CartesianAnchor.__init__(self, 0, body, frame, LColor(0))
         self.camera_vector = LVector3d()
         self.frustum = None
         self.rel_frustum = None
@@ -515,7 +697,7 @@ class OriginAnchor(CartesianAnchor):
             description: Optional description for this anchor.
         """
         CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names, description
         )
 
 
@@ -546,13 +728,22 @@ class FlatSurfaceAnchor(OriginAnchor):
         """
         self.surface = surface
 
-    def update_observer(self, observer: CameraAnchor, update_id: int) -> None:
-        """Update observer-relative position and visibility metrics.
+    def update_observer(self, observer, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics."""
+        if self.update_id == update_id:
+            return
+        self.vector_to_obs = LVector3d(observer.get_local_position())
+        self.vector_to_obs.normalize()
+        observer_local_position = observer.get_local_position()
+        self.rel_position = self._local_position - observer_local_position
+        self.distance_to_obs = self.rel_position.length()
+        self.visible_size = 0.0
+        self.z_distance = 0.0
 
-        Args:
-            observer: The observer/camera anchor.
-            update_id: The unique identifier for this update pass.
-        """
+    def update_state(self, observer, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state."""
+        self.visible = True
+        self.resolved = True
 
 
 class ObserverAnchor(CartesianAnchor):
@@ -573,51 +764,27 @@ class ObserverAnchor(CartesianAnchor):
             description: Optional description for this anchor.
         """
         CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(), names, source_names, description
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names, description
         )
 
     def update(self, time: float, update_id: int) -> None:
-        """Update the anchor state during simulation.
-
-        Args:
-            time: The current simulation time.
-            update_id: The unique identifier for this update pass.
-        """
-        # TODO: This anchor should be updated by the Observer Class, now only the ObserverSceneAnchor is valid
+        # Do nothing
         pass
 
-    def update_observer(self, observer: CameraAnchor, update_id: int) -> None:
-        """Update observer-relative position and visibility metrics.
-
-        Args:
-            observer: The observer/camera anchor.
-            update_id: The unique identifier for this update pass.
-        """
+    def update_observer(self, observer, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics."""
         if self.update_id == update_id:
             return
         self.copy(observer)
-        self.rel_position = LPoint3d()
-        self.distance_to_obs = 0
+        self.distance_to_obs = 0.0
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
         self.z_distance = 0.0
 
-    def update_state(self, observer: CameraAnchor, update_id: int) -> None:
-        """Update the anchor's visibility and resolved state.
-
-        Args:
-            observer: The observer/camera anchor.
-            update_id: The unique identifier for this update pass.
-        """
-        self.was_visible = self.visible
-        self.was_resolved = self.resolved
+    def update_state(self, observer, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state."""
         self.visible = True
         self.resolved = True
-
-
-class ControlledCartesianAnchor(CartesianAnchor):
-    def update(self, time, update_id):
-        pass
 
 
 class StellarAnchor(AnchorBase):
@@ -647,27 +814,71 @@ class StellarAnchor(AnchorBase):
             source_names: List of source (untranslated) names corresponding to the provided names.
             description: Optional description for this anchor.
         """
-        AnchorBase.__init__(self, anchor_class, body, names, source_names, description)
-        # TODO: To remove
-        if point_color is None:
-            point_color = LColor(1.0, 1.0, 1.0, 1.0)
-        self.point_color = point_color
+        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names, description)
         self.orbit = orbit
         self.rotation = rotation
-        self._intrinsic_luminosity = 0.0
-        self._reflected_luminosity = 0.0
-        self._point_radiance = 0.0
-        self._equatorial = LQuaterniond()
-        self._albedo = 0.5
-        # TODO: Should be done properly
-        # orbit.body = body
-        # rotation.body = body
+        self._equatorial = LQuaterniond.ident_quat()
+
+    def is_stellar(self):
+        return True
 
     def has_orbit(self):
         return True
 
     def has_rotation(self):
         return True
+
+    def has_frame(self):
+        return False
+
+    def rebuild(self) -> None:
+        pass
+
+    def traverse(self, visitor) -> None:
+        visitor.traverse_anchor(self)
+
+    def get_orbit(self):
+        return self.orbit
+
+    def set_orbit(self, orbit) -> None:
+        self.orbit = orbit
+
+    def get_rotation(self):
+        return self.rotation
+
+    def set_rotation(self, rotation) -> None:
+        self.rotation = rotation
+
+    def update_observer(self, observer, update_id: int) -> None:
+        """Update observer-relative position and visibility metrics."""
+        if self.update_id == update_id:
+            return
+        reference_point_delta = self._global_position - observer.get_absolute_reference_point()
+        local_delta = self._local_position - observer.get_local_position()
+        self.rel_position = reference_point_delta + local_delta
+        self.distance_to_obs = self.rel_position.length()
+        if self.distance_to_obs > 0.0:
+            self.vector_to_obs = -self.rel_position / self.distance_to_obs
+            self.visible_size = self.bounding_radius / (self.distance_to_obs * observer.pixel_size)
+            coef = -self.vector_to_obs.dot(observer.camera_vector)
+            self.z_distance = self.distance_to_obs * coef
+        else:
+            self.vector_to_obs = LVector3d()
+            self.visible_size = 0.0
+            self.z_distance = 0.0
+
+    def update_state(self, observer, update_id: int) -> None:
+        """Update the anchor's visibility and resolved state."""
+        if self.distance_to_obs > self.bounding_radius:
+            in_view = observer.rel_frustum.is_sphere_in(self.rel_position, self.bounding_radius)
+            resolved = self.visible_size > settings.min_body_size
+            visible = in_view
+        else:
+            # We are in the object
+            resolved = True
+            visible = True
+        self.visible = visible
+        self.resolved = resolved
 
     def get_position_bounding_radius(self):
         return self.orbit.get_bounding_radius()
@@ -676,10 +887,10 @@ class StellarAnchor(AnchorBase):
         return self._global_position
 
     def get_absolute_position(self):
-        return self._global_position + self._local_position
+        return self._position
 
     def get_frame_position(self):
-        return self.orbit.frame.get_frame_position(self._local_position)
+        return self.orbit.get_frame().get_frame_position(self._local_position)
 
     def get_local_position(self):
         return self._local_position
@@ -699,19 +910,6 @@ class StellarAnchor(AnchorBase):
     def get_apparent_magnitude(self):
         return abs_to_app_mag(self.get_absolute_magnitude(), self.distance_to_obs)
 
-    def get_radiant_flux(self):
-        """
-        Returns the radiant flux, expressed in W.
-        """
-        return self._intrinsic_luminosity + self._reflected_luminosity
-
-    def get_point_radiance(self, distance):
-        """
-        Returns the anchor radiance.
-        This method assume the source is a point-like light source aligned with the normal of the receiver.
-        """
-        return (self._intrinsic_luminosity + self._reflected_luminosity) / (4 * pi * distance * distance * 1000 * 1000)
-
     def update(self, time, update_id):
         if self.update_id == update_id:
             return
@@ -721,7 +919,15 @@ class StellarAnchor(AnchorBase):
         self._global_position = self.orbit.get_absolute_reference_point_at(time)
         self._position = self._global_position + self._local_position
 
-    def get_reflected_luminosity(self, star):
+    def get_reflected_luminosity(self, star) -> float:
+        """Compute the reflected luminosity from a stellar light source.
+
+        Args:
+            star: The stellar anchor acting as the light source.
+
+        Returns:
+            The reflected luminosity in Watts.
+        """
         vector_to_star = self.calc_absolute_relative_position(star)
         distance_to_star = vector_to_star.length()
         vector_to_star /= distance_to_star
@@ -736,7 +942,7 @@ class StellarAnchor(AnchorBase):
         else:
             return 0.0
 
-    def update_luminosity(self, star):
+    def update_luminosity(self, star=None):
         if self.content & self.Reflective != 0:
             if star is not None:
                 self._reflected_luminosity = self.get_reflected_luminosity(star)
@@ -750,33 +956,7 @@ class StellarAnchor(AnchorBase):
             self._point_radiance = 0.0
 
 
-class FixedStellarAnchor(StellarAnchor):
-    """Stellar anchor for fixed/static celestial bodies.
-
-    This anchor is used for celestial bodies that don't require dynamic updates.
-
-    Note: Deprecated class, should not be used.
-    """
-
-    def __init__(self, body, orbit, rotation, point_color, names=None, source_names=None, description=''):
-        StellarAnchor.__init__(self, 0, body, orbit, rotation, point_color, names, source_names, description)
-        # self.update_frozen = True
-        # self.update(0)
-
-
-class DynamicStellarAnchor(StellarAnchor):
-    """Stellar anchor for dynamic celestial bodies.
-
-    This anchor is used for celestial bodies that require continuous updates
-    for their orbital and rotational states (e.g., planets, moons).
-
-    Note: Now just an alias for StellarAnchor.
-    """
-
-    pass
-
-
-class SystemAnchor(DynamicStellarAnchor):
+class SystemAnchor(StellarAnchor):
     """Anchor for stellar systems containing multiple bodies.
 
     This anchor serves as a container for multiple celestial bodies that form
@@ -797,9 +977,7 @@ class SystemAnchor(DynamicStellarAnchor):
             source_names: List of source (untranslated) names corresponding to the provided names.
             description: Optional description for this anchor.
         """
-        DynamicStellarAnchor.__init__(
-            self, self.System, body, orbit, rotation, point_color, names, source_names, description
-        )
+        StellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color, names, source_names, description)
         self.primary = None
         self.children = []
 
@@ -811,73 +989,61 @@ class SystemAnchor(DynamicStellarAnchor):
         """
         self.primary = primary
 
-    def add_child(self, child: StellarAnchor) -> None:
+    def add_child(self, child: AnchorBase) -> None:
         """Add a child body to the system.
 
         Args:
-            child: The child stellar anchor to add.
+            child: The child anchor to add.
         """
-        # Primary is still managed by StellarSystem
         self.children.append(child)
         child.parent = self
         if not self.rebuild_needed:
             self.set_rebuild_needed()
 
-    def remove_child(self, child: StellarAnchor) -> None:
+    def remove_child(self, child: AnchorBase) -> None:
         """Remove a child body from the system.
 
         Args:
-            child: The child stellar anchor to remove.
+            child: The child anchor to remove.
         """
         try:
             self.children.remove(child)
-            child.parent = None
         except ValueError:
             pass
+        else:
+            child.parent = None
         if not self.rebuild_needed:
             self.set_rebuild_needed()
 
     def rebuild(self) -> None:
-        """Rebuild the system's bounding radius and content flags.
-
-        This recalculates the aggregate properties of the system based on
-        its children and marks rebuild as complete.
-        """
-        content = self.System
+        """Rebuild the system's bounding radius and content flags."""
+        self.content = self.System
         bounding_radius = 0
         for child in self.children:
             if child.rebuild_needed:
                 child.rebuild()
-            content |= child.content
-            farthest_distance = child.get_position_bounding_radius() + child.bounding_radius
+            self.content |= child.content
+            farthest_distance = child.get_position_bounding_radius() + child.get_bounding_radius()
             if farthest_distance > bounding_radius:
                 bounding_radius = farthest_distance
-        self.content = content
         self.bounding_radius = bounding_radius
-        luminosity = 0.0
         if self.primary is None:
+            luminosity = 0.0
             for child in self.children:
-                luminosity += child._intrinsic_luminosity
+                if child.content & self.Emissive != 0:
+                    luminosity += child._intrinsic_luminosity
             self._intrinsic_luminosity = luminosity
         else:
             self._intrinsic_luminosity = self.primary._intrinsic_luminosity
         self.rebuild_needed = False
 
-    def traverse(self, visitor: AnchorTraverser) -> None:
-        """Accept a visitor for traversal.
-
-        Args:
-            visitor: The traverser object visiting this anchor.
-        """
+    def traverse(self, visitor) -> None:
+        """Accept a visitor for traversal."""
         if visitor.enter_system(self):
             visitor.traverse_system(self)
 
-    def update_luminosity(self, star: StellarAnchor | None) -> None:
-        """Update the system's luminosity based on a light source.
-
-        Args:
-            star: The light source star, or None for intrinsic luminosity only.
-        """
+    def update_luminosity(self, star=None) -> None:
+        """Update the system's luminosity based on a light source."""
         if self.primary is not None:
             self.primary.update_luminosity(star)
             self._intrinsic_luminosity = self.primary._intrinsic_luminosity
@@ -918,6 +1084,7 @@ class OctreeAnchor(SystemAnchor):
         self.octree = OctreeNode(
             0, self, LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly), radius * 2, luminosity
         )
+        self.octree.parent = self
         # TODO: Should be done during rebuild
         self._intrinsic_luminosity = luminosity
         # TODO: Right now an octree contains anything
@@ -925,36 +1092,25 @@ class OctreeAnchor(SystemAnchor):
         self.recreate_octree = True
 
     def rebuild(self) -> None:
-        """Rebuild the octree structure and nested content.
-
-        This recalculates the octree from its children and marks rebuild as complete.
-        """
+        """Rebuild the octree structure and nested content."""
         if self.recreate_octree:
             self.create_octree()
+            self.recreate_octree = False
         if self.octree.rebuild_needed:
             self.octree.rebuild()
         self.rebuild_needed = False
 
-    def traverse(self, visitor: AnchorTraverser) -> None:
-        """Accept a visitor for traversal.
-
-        Args:
-            visitor: The traverser object visiting this anchor.
-        """
+    def traverse(self, visitor) -> None:
+        """Accept a visitor for traversal."""
         if visitor.enter_system(self):
             self.octree.traverse(visitor)
 
     def create_octree(self) -> None:
         """Create and populate the octree structure with child objects."""
-        print("Creating octree...")
-        start = time()
         for child in self.children:
-            # TODO: this should be done properly at anchor creation
-            child.update(0, None)
+            child.update(0, 0)
             child.rebuild()
             self.octree.add(child)
-        end = time()
-        print("Creation time:", end - start)
 
     def dump_octree(self) -> None:
         """Print octree structure for debugging."""
