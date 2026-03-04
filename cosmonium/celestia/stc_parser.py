@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -150,6 +150,20 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         surface_factory = StarTexSurfaceFactory(texture)
     else:
         surface_factory = celestiaStarSurfaceFactory
+    # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
+    # If so, merge its names into the new star and replace it.
+    existing_star = objectsDB.get(names[0]) if names else None
+    if existing_star is not None:
+        # Merge all names from the existing star, preserving new names first and deduplicating
+        existing_names = existing_star.get_names() + existing_star.get_source_names()
+        names_set = set(names)
+        for n in existing_names:
+            if n not in names_set:
+                names.append(n)
+                names_set.add(n)
+        # Detach the existing star from its parent
+        if existing_star.parent is not None:
+            existing_star.parent.remove_child_fast(existing_star)
     star = Star(
         names,
         source_names=[],
@@ -162,6 +176,8 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         rotation=rotation,
     )
     parent.add_child_fast(star)
+    if existing_star is not None:
+        objectsDB.replace(existing_star, star)
     return star
 
 
@@ -206,10 +222,19 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
             pass  # = value
         else:
             print("Key of Barycenter", key, "not supported")
-    existing_star = objectsDB.get(names[-1])
-    if existing_star:
+    # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
+    # If so, merge its names into the new star and replace it.
+    existing_star = objectsDB.get(names[0]) if names else None
+    if existing_star is not None:
         # print("Replacing star", names, "with barycenter")
-        objectsDB.remove(existing_star)
+        # Merge all names from the existing star, preserving new names first and deduplicating
+        existing_names = existing_star.get_names() + existing_star.get_source_names()
+        names_set = set(names)
+        for n in existing_names:
+            if n not in names_set:
+                names.append(n)
+                names_set.add(n)
+        # Detach the existing star from its parent
         if existing_star.parent is not None:
             existing_star.parent.remove_child_fast(existing_star)
     if has_barycenter:
@@ -224,6 +249,8 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         orbit.set_frame(frame)
     barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
     parent.add_child_fast(barycenter)
+    if existing_star is not None:
+        objectsDB.replace(existing_star, barycenter)
     return barycenter
 
 
