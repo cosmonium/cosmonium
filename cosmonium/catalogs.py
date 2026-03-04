@@ -223,6 +223,48 @@ class GlobalObjectsDB:
         """
         self.oids[body.oid] = None
 
+    def replace(self, old_body: Any, new_body: Any) -> None:
+        """
+        Replace old_body with new_body in all indexes.
+        All names that pointed to old_body will now point to new_body.
+        new_body must already have all the desired names set before calling this.
+        """
+        self.oids[old_body.oid] = None  # Clear old body reference
+
+        # Update catalog indexes: replace old_body with new_body for all names
+        all_names = set(new_body.get_names() + new_body.get_source_names())
+        for name in all_names:
+            space_pos = name.find(' ')
+            if space_pos > 0:
+                prefix = name[:space_pos].upper()
+                if prefix in self.catalog_indexes:
+                    catalog_id = name[space_pos + 1 :]
+                    catalog_index = self.catalog_indexes[prefix]
+                    upper_id = catalog_id.upper()
+                    if upper_id in catalog_index._id_to_body:
+                        # Update the dict entry
+                        catalog_index._id_to_body[upper_id] = new_body
+                        # Update the sorted list entry
+                        for i, (eid, _) in enumerate(catalog_index._sorted_ids):
+                            if eid == upper_id:
+                                catalog_index._sorted_ids[i] = (eid, new_body)
+                                break
+                    else:
+                        catalog_index.add(catalog_id, new_body)
+                    continue
+
+            # Update the name index
+            name_index = self.name_index
+            upper_name = name.upper()
+            found = False
+            for i, (ename, _, _) in enumerate(name_index._entries):
+                if ename == upper_name:
+                    name_index._entries[i] = (ename, name_index._entries[i][1], new_body)
+                    found = True
+                    break
+            if not found:
+                name_index.add(name, new_body)
+
     def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
         """
         Find objects whose names start with the given text.
