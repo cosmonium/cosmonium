@@ -68,8 +68,8 @@ class Asterism(VisibleObject):
         ra_cos = 0
         decl = 0
         if len(self.segments) > 0 and len(self.segments[0]) > 0:
-            for star in self.segments[0]:
-                (right_ascension, declination) = position_to_equatorial(star.anchor.orbit.get_absolute_position_at(0))
+            for anchor in self.segments[0]:
+                (right_ascension, declination) = position_to_equatorial(anchor.orbit.get_absolute_position_at(0))
                 ra_sin += sin(right_ascension)
                 ra_cos += cos(right_ascension)
                 decl += declination
@@ -90,16 +90,16 @@ class Asterism(VisibleObject):
         for segment in self.segments:
             if len(segment) < 2:
                 continue
-            for star in segment:
+            for anchor in segment:
                 # TODO: Temporary workaround to have star pos
-                star.anchor.update(0, self.context.update_id)
-                star.anchor.update_observer(self.context.observer.anchor, self.context.update_id)
+                anchor.update(0, self.context.update_id)
+                anchor.update_observer(self.context.observer.anchor, self.context.update_id)
                 position = SceneAnchor.calc_scene_position(
                     self.context.scene_manager,
-                    star.anchor.rel_position,
-                    star.anchor._position,
-                    star.anchor.distance_to_obs,
-                    star.anchor.vector_to_obs,
+                    anchor.rel_position,
+                    anchor._position,
+                    anchor.distance_to_obs,
+                    anchor.vector_to_obs,
                 )
                 self.vertexWriter.addData3f(*position)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
