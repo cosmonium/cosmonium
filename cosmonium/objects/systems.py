@@ -66,11 +66,6 @@ class StellarSystem(StellarObject):
             if child.orbit_object is not None:
                 child.orbit_object.check_settings()
 
-    def apply_func(self, func):
-        StellarObject.apply_func(self, func)
-        for child in self.children:
-            child.apply_func(func)
-
     def _find_by_name(self, name_up):
         if self._is_named(name_up):
             return self

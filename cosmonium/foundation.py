@@ -67,9 +67,6 @@ class BaseObject(object):
     def update_user_parameters(self):
         pass
 
-    def apply_func(self, func, near_only=False):
-        func(self)
-
     def set_parent(self, parent):
         self.parent = parent
 
@@ -246,11 +243,6 @@ class CompositeObject(BaseObject):
     def update_user_parameters(self):
         for component in self.components:
             component.update_user_parameters()
-
-    def apply_func_composite(self, func, near_only=False):
-        BaseObject.apply_func(self, func, near_only)
-        for component in self.components:
-            component.apply_func(func, near_only)
 
     def do_show(self):
         for component in self.components:
