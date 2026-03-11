@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 #
 
 
-import builtins
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
 from math import pi
 from panda3d.core import LVector3d, LQuaterniond
@@ -32,14 +31,14 @@ from ..mathutil.quaternion import quaternion_from_euler, quaternion_from_axis_an
 from .. import settings
 
 from .bigfix import Bigfix
-from .celestia_utils import body_path
+from .celestia_utils import body_path, find_body
 
 
 def create_frame(coordsys, ref_name):
     ref = None
     if ref_name is not None and ref_name != "":
         path = body_path(ref_name)
-        body = builtins.base.universe.find_by_path(path)
+        body = find_body(path)
         if body is not None:
             ref = body.anchor
     coordsys = coordsys.lower()
@@ -478,7 +477,7 @@ def select(command_name, sequence, base, parameters):
     """
     path_name = str(parameters.get('object', ''))
     path = body_path(path_name)
-    body = base.universe.find_by_path(path)
+    body = find_body(path)
     if body:
         sequence.append(Func(base.select_body, body))
     else:

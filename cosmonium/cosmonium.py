@@ -64,7 +64,7 @@ from .labels import Labels
 from .lights import GlobalLight, LightSources
 from .nav import FreeNav, WalkNav, ControlNav
 from .objects.stellarobject import StellarObject
-from .objects.systems import StellarSystem, SimpleSystem
+from .objects.systems import StellarSystem
 from .objects.universe import Universe
 from .opengl import OpenGLConfig
 from .parsers.configparser import configParser
@@ -306,6 +306,7 @@ class Cosmonium(CosmoniumBase):
         self.follow = None
         self.sync = None
         self.track = None
+        self.home = None
         self.focused_objects = set()
         self.old_focused_objects = set()
         self.fly = False
@@ -401,7 +402,9 @@ class Cosmonium(CosmoniumBase):
         # self.universe.octree.print_summary()
         # self.universe.octree.print_stats()
 
-        self.home = self.universe.find_by_path(self.app_config.default_home)
+        anchor = self.universe.find_by_path(self.app_config.default_home)
+        if anchor:
+            self.home = anchor.body
         if self.home is None:
             print("Could not find home object", self.app_config.default_home)
         self.splash.set_text("Done")
@@ -895,7 +898,7 @@ class Cosmonium(CosmoniumBase):
         order = int(name)
         to_select = None
         if self.nearest_system is not None:
-            if isinstance(self.nearest_system, SimpleSystem):
+            if isinstance(self.nearest_system, StellarSystem) and self.nearest_system.primary is not None:
                 if order > 0:
                     to_select = self.nearest_system.find_nth_child(order)
                 else:
@@ -910,7 +913,8 @@ class Cosmonium(CosmoniumBase):
                 if order == 0:
                     to_select = self.nearest_system
         if to_select is not None:
-            if isinstance(to_select, SimpleSystem):
+            to_select = to_select.body
+            if isinstance(to_select, StellarSystem) and to_select.primary is not None:
                 to_select = to_select.primary
             self.select_body(to_select)
 

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
 from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
+from ..catalogs import objectsDB
 
 
 def names_list(name):
@@ -36,6 +37,20 @@ def names_list(name):
 def body_path(parent):
     path = list(map(lambda x: bayer.canonize_name(x), parent.split('/')))
     return path
+
+
+def find_body(path):
+    body = objectsDB.get(path[0])
+    if not body:
+        print("Body", path[0], "not found")
+        return None
+    if len(path) > 1:
+        if not body.is_system() and body.anchor.get_system() is not None:
+            body = body.anchor.get_system().body
+        anchor = body.anchor.find_by_path(path[1:])
+        if anchor:
+            body = anchor.body
+    return body
 
 
 def instanciate_custom_orbit(data, parent_anchor):
@@ -149,7 +164,7 @@ def instanciate_frame(universe, data, parent_anchor, global_coord):
                 else:
                     global_coord = True
                 path = body_path(name)
-                frame_center = universe.find_by_path(path)
+                frame_center = find_body(path)
                 if frame_center is not None:
                     frame_center = frame_center.anchor
                 else:

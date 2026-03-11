@@ -230,8 +230,8 @@ def stellar_body(body):
     general.append([_("Rings"), _("Yes") if body.has_rings() else _("No")])
     if body.get_description() != '':
         general.append([_("Description"), body.get_description()])
-    if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
-        texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
+    if body.anchor.has_system() and isinstance(body.anchor.orbit, FixedPosition):
+        texts.append(ObjectInfo.get_info_for(body.anchor.get_system().orbit))
     else:
         texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
     texts.append(ObjectInfo.get_info_for(body.anchor.rotation))
@@ -270,8 +270,8 @@ def star(body):
     general.append([_("Temperature"), "%g K" % body.temperature if body.temperature is not None else _('Unknown')])
     if body.get_description() != '':
         general.append([_("Description"), body.get_description()])
-    if body.system is not None and isinstance(body.anchor.orbit, FixedPosition):
-        texts.append(ObjectInfo.get_info_for(body.system.anchor.orbit))
+    if body.anchor.has_system() and isinstance(body.anchor.orbit, FixedPosition):
+        texts.append(ObjectInfo.get_info_for(body.anchor.get_system().orbit))
     else:
         texts.append(ObjectInfo.get_info_for(body.anchor.orbit))
     texts.append(ObjectInfo.get_info_for(body.anchor.rotation))

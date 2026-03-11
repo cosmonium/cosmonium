@@ -287,8 +287,10 @@ class CosmoniumApp(Cosmonium):
         if not running:
             if self.app_config.default_target is None:
                 self.app_config.default_target = _("Earth")
-            self.select_body(self.universe.find_by_name(self.app_config.default_target))
-            self.autopilot.go_to_front(duration=0.0)
+            anchor = self.universe.find_by_path(self.app_config.default_target)
+            if anchor:
+                self.select_body(anchor.body)
+                self.autopilot.go_to_front(duration=0.0)
             self.gui.update_info(_("Welcome to Cosmonium!"))
 
 

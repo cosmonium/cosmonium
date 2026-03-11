@@ -130,6 +130,8 @@ class AnchorBase(ABC):
         self.vector_to_obs = LVector3d()
         self.visible_size = 0.0
         self.z_distance = 0.0
+        # If this anchor is the primary body of a stellar system, this will point to the system anchor
+        self.system: SystemAnchor | None = None
 
     def get_names(self) -> list[str]:
         """Get all translated names for this anchor.
@@ -162,6 +164,23 @@ class AnchorBase(ABC):
             List of source name strings.
         """
         return self.object_names.get_source_names()
+
+    def _is_named(self, name_up: str) -> bool:
+        """Check whether this anchor matches the given upper-case name.
+
+        Args:
+            name_up: An already-uppercased name string.
+
+        Returns:
+            True if any translated or source name matches.
+        """
+        for name in self.get_names():
+            if name.upper() == name_up:
+                return True
+        for name in self.get_source_names():
+            if name.upper() == name_up:
+                return True
+        return False
 
     def get_name(self) -> str:
         """Get the primary name for this anchor.
@@ -402,6 +421,14 @@ class AnchorBase(ABC):
         Returns:
             True if this anchor has a reference frame.
         """
+
+    def is_system(self) -> bool:
+        """Return whether this anchor represents a stellar system.
+
+        Returns:
+            False for non-system anchors; overridden in SystemAnchor.
+        """
+        return False
 
     def get_bounding_radius(self) -> float:
         """Get the bounding radius of this anchor.
@@ -1069,6 +1096,33 @@ class StellarAnchor(AnchorBase):
         """
         self.rotation = rotation
 
+    def has_system(self) -> bool:
+        """Check if this anchor has a stellar system.
+
+        Returns:
+            True if this anchor is the primary body of a stellar system.
+        """
+        return self.system is not None
+
+    def get_system(self) -> SystemAnchor | None:
+        """Get the stellar system this anchor is the primary body of.
+
+        Returns:
+            The SystemAnchor this anchor is the primary body of, or None if it has no system.
+        """
+        return self.system
+
+    def set_system(self, system: SystemAnchor) -> None:
+        """Set the stellar system this anchor is the primary body of.
+
+        Most system consists of a primary body (e.g., a star or planet) and one or more secondary bodies
+        (e.g., planets, moons) that orbit it.
+        This method is used to assign this anchor as the primary body of a stellar system.
+        Args:
+            system: The SystemAnchor to set as the system of this anchor.
+        """
+        self.system = system
+
     def update_observer(self, observer, update_id: int) -> None:
         """Update observer-relative position and visibility metrics."""
         if self.update_id == update_id:
@@ -1191,8 +1245,8 @@ class SystemAnchor(StellarAnchor):
 
     This anchor serves as a container for multiple celestial bodies that form
     a system (e.g., a planet with moons, a binary star system). It manages
-    the hierarchical relationships and aggregate properties like bounding radius
-    and combined luminosity.
+    the hierarchical relationships, aggregate properties like bounding radius
+    and combined luminosity, and child lookup by name or index.
     """
 
     def __init__(
@@ -1208,7 +1262,7 @@ class SystemAnchor(StellarAnchor):
         """Initialize the SystemAnchor.
 
         Args:
-            body: The celestial body associated with this anchor.
+            body: The system body associated with this anchor.
             orbit: The orbital component of the system.
             rotation: The rotational component of the system.
             point_color: Color for point rendering.
@@ -1218,7 +1272,13 @@ class SystemAnchor(StellarAnchor):
         """
         StellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color, names, source_names, description)
         self.primary = None
-        self.children = []
+        self.star_system = False
+        self.children: list[StellarAnchor] = []
+        self.children_map: dict[str, StellarAnchor] = {}
+
+    def is_system(self) -> bool:
+        """Return True — this anchor represents a stellar system."""
+        return True
 
     def set_primary(self, primary: StellarAnchor | None) -> None:
         """Set the primary body of the system.
@@ -1227,20 +1287,24 @@ class SystemAnchor(StellarAnchor):
             primary: The primary stellar anchor (e.g., the star).
         """
         self.primary = primary
+        if primary is not None:
+            primary.set_system(self)
 
     def add_child(self, child: AnchorBase) -> None:
-        """Add a child body to the system.
+        """Add a child anchor to the system and register its names.
 
         Args:
             child: The child anchor to add.
         """
         self.children.append(child)
+        for name in child.get_names():
+            self.children_map[name.upper()] = child
         child.parent = self
         if not self.rebuild_needed:
             self.set_rebuild_needed()
 
     def remove_child(self, child: AnchorBase) -> None:
-        """Remove a child body from the system.
+        """Remove a child anchor from the system and unregister its names.
 
         Args:
             child: The child anchor to remove.
@@ -1251,8 +1315,90 @@ class SystemAnchor(StellarAnchor):
             pass
         else:
             child.parent = None
+            for name in child.get_names():
+                del self.children_map[name.upper()]
         if not self.rebuild_needed:
             self.set_rebuild_needed()
+
+    def get_children(self) -> list[AnchorBase]:
+        """Get the list of child anchors in this system.
+
+        Returns:
+            A list of child AnchorBase objects.
+        """
+        return self.children
+
+    def find_child_by_name(self, name: str) -> AnchorBase | None:
+        """Find a direct child body by name.
+
+        Checks the fast children_map first, then falls back to a linear scan to find
+        simple system referenced by their primary body name.
+
+        Args:
+            name: The (possibly mixed-case) name to search for.
+
+        Returns:
+            The anchor of the matching body, or None.
+        """
+        name_up = name.upper()
+        child_anchor = self.children_map.get(name_up)
+        if child_anchor is not None:
+            return child_anchor
+        for child_anchor in self.children:
+            # SimpleSystem-like: child is a system with a primary whose name matches
+            if (
+                child_anchor.is_system()
+                and child_anchor.primary is not None
+                and child_anchor.primary._is_named(name_up)
+            ):
+                return child_anchor.primary
+        return None
+
+    def find_by_path(
+        self,
+        path: list[str] | str,
+        separator: str = '/',
+    ) -> AnchorBase | None:
+        """Resolve a slash-separated path into a body relative to this system.
+
+        Args:
+            path: A path string (e.g. ``"Earth/Moon"``) or a list of name
+                components that has already been split.
+            separator: Character used to split a string *path*.
+
+        Returns:
+            The resolved anchor of the body, or None.
+        """
+        if not isinstance(path, list):
+            path = path.split(separator)
+        if not path:
+            return None
+        name = path[0]
+        child = self.find_child_by_name(name)
+        if child is None:
+            return None
+        if len(path) == 1:
+            return child
+        # Recurse: go through child (system) or child's containing system anchor
+        sub_path = path[1:]
+        if child.is_system():
+            return child.find_by_path(sub_path, separator)
+        elif child.system is not None:
+            return child.system.find_by_path(sub_path, separator)
+        return None
+
+    def find_nth_child(self, index: int) -> AnchorBase | None:
+        """Return the body of the *index*-th child (0-based).
+
+        Args:
+            index: Zero-based child index.
+
+        Returns:
+            The anchor of the child body, or None when out of range.
+        """
+        if index < len(self.children):
+            return self.children[index].body
+        return None
 
     def rebuild(self) -> None:
         """Rebuild the system's bounding radius and content flags."""

@@ -18,7 +18,7 @@
 #
 
 
-from ..objects.systems import Barycenter, SimpleSystem
+from ..objects.systems import Barycenter, StellarSystem
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
@@ -38,9 +38,11 @@ class SystemYamlParser(YamlModuleParser):
             return None
         orbit = OrbitYamlParser.decode(data.orbit, None, parent)
         rotation = RotationYamlParser.decode(data.rotation, None, parent)
-        system = SimpleSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
+        system = StellarSystem(translated_names, source_names, star_system=star_system, orbit=orbit, rotation=rotation)
         children_data = data.children if data.children else []
         ObjectYamlParser.decode_objects_list(children_data, parent=system)
+        if system.children:
+            system.set_primary(system.children[0])
         parent.add_child_fast(system)
         return system
 

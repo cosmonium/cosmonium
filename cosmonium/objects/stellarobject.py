@@ -69,7 +69,6 @@ class StellarObject:
         point_color=None,
         description='',
     ):
-        self.system = None
         self.body_class = body_class
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
@@ -192,7 +191,7 @@ class StellarObject:
             )
 
     def is_system(self):
-        return False
+        return self.anchor.is_system()
 
     def check_settings(self):
         self.components.check_settings()
@@ -251,7 +250,7 @@ class StellarObject:
         self.resolved_halo = None
 
     def set_system(self, system):
-        self.system = system
+        self.anchor.set_system(system.anchor)
 
     def set_body_class(self, body_class):
         self.body_class = body_class
@@ -278,16 +277,6 @@ class StellarObject:
 
     def set_rotation(self, rotation):
         self.anchor.rotation = rotation
-
-    def _find_by_name(self, name_up):
-        if self._is_named(name_up):
-            return self
-        else:
-            return None
-
-    def find_by_name(self, name):
-        name_up = name.upper()
-        return self._find_by_name(name_up)
 
     def _is_named(self, name_up):
         for name in self.get_names():
@@ -377,12 +366,12 @@ class StellarObject:
             return
         if override:
             self.anchor.visibility_override = True
-            if self.system is not None:
-                self.system.set_visibility_override(override)
+            if self.anchor.has_system():
+                self.anchor.system.body.set_visibility_override(override)
         else:
             self.anchor.visibility_override = False
-            if self.system is not None:
-                self.system.set_visibility_override(override)
+            if self.anchor.has_system():
+                self.anchor.system.body.set_visibility_override(override)
             # Force recheck of visibility or the object will be instanciated in create_or_update_instance()
             self.check_visibility(self.context.observer.anchor.frustum, self.context.observer.anchor.pixel_size)
 

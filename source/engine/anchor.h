@@ -33,6 +33,7 @@
 class AnchorTraverser;
 class CameraAnchor;
 class StellarAnchor;
+class SystemAnchor;
 
 class AnchorTreeBase : public TypedObject, public ReferenceCount
 {
@@ -113,6 +114,7 @@ PUBLISHED:
   std::string get_source_name_at(unsigned int index) const;
   std::string get_c_name(void) const;
   std::string get_description(void) const;
+  bool _is_named(const std::string &name_up) const;
 
   MAKE_SEQ(get_names, get_num_names, get_name_at);
   MAKE_SEQ(get_source_names, get_num_source_names, get_source_name_at);
@@ -124,6 +126,8 @@ PUBLISHED:
   virtual bool has_rotation(void) const = 0;
 
   virtual bool has_frame(void) const = 0;
+
+  virtual bool is_system(void) const;
 
   double get_bounding_radius(void) const;
 
@@ -166,6 +170,12 @@ PUBLISHED:
   INLINE double get_point_radiance(double distance) const;
 
   INLINE double get_radiant_flux(void) const;
+
+  bool has_system(void) const;
+
+  SystemAnchor *get_system(void) const;
+  void set_system(SystemAnchor * system);
+  MAKE_PROPERTY(system, get_system, set_system);
 
   INLINE double get_albedo(void) const;
   INLINE void set_albedo(double albedo);
@@ -218,6 +228,9 @@ protected:
   // Name management data
   ObjectNames object_names;
   std::string description;
+
+  // If this anchor is the primary body of a stellar system, this will point to the system anchor
+  PT(SystemAnchor) _system;
 
 public:
   // Temporary

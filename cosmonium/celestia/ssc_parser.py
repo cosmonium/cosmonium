@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotatio
 from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
 from ..astro.frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
+from ..catalogs import objectsDB
 from ..components.elements.atmosphere import Atmosphere
 from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
 from ..components.elements.rings import Rings
@@ -483,13 +484,18 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
     return ref
 
 
-def find_parent(universe, path, item_parent):
-    body = universe.find_by_path(path, return_system=True)
+def find_parent_system(path):
+    body = objectsDB.get(path[0])
     if not body:
-        path = body_path(item_parent)
-        body = universe.find_by_path(path)
-        if body:
-            body = body.get_or_create_system()
+        print("Body", path[0], "not found")
+        return None
+    body = body.get_or_create_system()
+    if len(path) > 1:
+        anchor = body.find_by_path(path[1:])
+        if anchor:
+            body = anchor.body.get_or_create_system()
+        else:
+            body = None
     return body
 
 
@@ -505,7 +511,7 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
     names = names_list(item_name)
     path = body_path(item_parent)
     is_planet = len(path) == 1
-    parent = find_parent(universe, path, item_parent)
+    parent = find_parent_system(path)
     if not parent:
         print("Parent", item_parent, "not found")
         return

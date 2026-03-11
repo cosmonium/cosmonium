@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFr
 from .astro import units
 from .mathutil.easing import ExpEasing, SinEasing
 from .mathutil.quaternion import slerp
-from .objects.systems import SimpleSystem
+from .objects.systems import StellarSystem
 from .utils import isclose
 from . import settings
 
@@ -162,9 +162,7 @@ class AutoPilot(object):
                 self.end_rot = new_rot
             self.start_rotation = start_rotation
             self.end_rotation = end_rotation
-            func_lerp = LerpFunc(
-                self.do_move_and_rot, fromData=0, toData=1, duration=duration, name=None
-            )
+            func_lerp = LerpFunc(self.do_move_and_rot, fromData=0, toData=1, duration=duration, name=None)
             self.current_interval = func_lerp
             self.current_interval.start()
 
@@ -201,7 +199,11 @@ class AutoPilot(object):
             if target.lights is not None and len(target.lights.lights) > 0:
                 position = target.lights.lights[0].source
         else:
-            if target.parent is not None and isinstance(target.parent, SimpleSystem):
+            if (
+                target.parent is not None
+                and isinstance(target.parent, StellarSystem)
+                and target.parent.primary is not None
+            ):
                 if target.parent.primary == target:
                     if target.lights is not None and len(target.lights.lights) > 0:
                         position = target.lights.lights[0].source

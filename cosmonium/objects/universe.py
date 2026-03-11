@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from panda3d.core import LPoint3d, LQuaterniond
 from ..astro.frame import AbsoluteReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
+from ..catalogs import objectsDB
 from ..engine.anchors import UniverseAnchor
 
 from .systems import OctreeSystem
@@ -46,3 +47,21 @@ class Universe(OctreeSystem):
 
     def get_fullname(self, separator='/'):
         return ''
+
+    def find_by_path(self, path, separator='/'):
+        # TODO: Should probably moved outsidde Of Universe class
+        if not isinstance(path, str):
+            return self.anchor.find_by_path(path, separator)
+        elif path.startswith(separator):
+            path = path[len(separator):]
+            return self.anchor.find_by_path(path, separator)
+        else:
+            parts = path.split(separator)
+            root = objectsDB.get(parts[0])
+            if root is not None:
+                if len(parts) > 1:
+                    return root.find_by_path(parts[1:], separator)
+                else:
+                    return root.anchor
+            else:
+                return None

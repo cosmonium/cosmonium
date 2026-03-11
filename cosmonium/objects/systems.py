@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 from .stellarobject import StellarObject
 
-from ..catalogs import ObjectsDB, objectsDB
 from ..engine.anchors import SystemAnchor, OctreeAnchor
 
 
@@ -37,6 +36,8 @@ class StellarSystem(StellarObject):
         self,
         names,
         source_names,
+        primary=None,
+        star_system=False,
         orbit=None,
         rotation=None,
         frame=None,
@@ -45,14 +46,26 @@ class StellarSystem(StellarObject):
         description='',
     ):
         StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
-        self.children = []
-        self.children_map = ObjectsDB()
-        # Not used by StellarSystem, but used to detect SimpleSystem
         self.primary = None
         self.has_halo = False
+        self.anchor.star_system = star_system
+        self.set_primary(primary)
 
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names, description):
         return SystemAnchor(self, orbit, rotation, point_color, names, source_names, description)
+
+    @property
+    def star_system(self):
+        return self.anchor.star_system
+
+    @star_system.setter
+    def star_system(self, value):
+        self.anchor.star_system = value
+
+    @property
+    def children(self):
+        """Delegated to the underlying SystemAnchor."""
+        return [child.body for child in self.anchor.get_children()]
 
     def is_system(self):
         return True
@@ -60,101 +73,83 @@ class StellarSystem(StellarObject):
     def get_or_create_system(self):
         return self
 
+    def set_primary(self, primary):
+        if self.primary is not None:
+            self.anchor.set_primary(None)
+            self.primary.set_system(None)
+            self.primary = None
+        if primary is not None:
+            self.primary = primary
+            self.anchor.set_primary(primary.anchor)
+            self.body_class = primary.body_class
+            self.anchor.point_color = primary.anchor.point_color
+
     def check_settings(self):
         StellarObject.check_settings(self)
         for child in self.children:
             if child.orbit_object is not None:
                 child.orbit_object.check_settings()
 
-    def _find_by_name(self, name_up):
-        if self._is_named(name_up):
-            return self
-        else:
-            for child in self.children:
-                found = child._find_by_name(name_up)
-                if found is not None:
-                    return found
-            return None
+    def find_child_by_name(self, name):
+        return self.anchor.find_child_by_name(name)
 
-    def find_child_by_name(self, name, return_system=False):
-        child = self.children_map.get(name)
-        if child is not None:
-            return child
-        name_up = name.upper()
-        for child in self.children:
-            if child._is_named(name_up):
-                return child
-            elif isinstance(child, SimpleSystem) and child.primary is not None and child.primary._is_named(name_up):
-                if return_system:
-                    return child
-                else:
-                    return child.primary
-        return None
-
-    def find_by_path(self, path, return_system=False, first=True, separator='/'):
-        if not isinstance(path, list):
-            path = path.split(separator)
-        if len(path) > 0:
-            # print("Looking for", path, "in '" + self.get_name() + "'", "RS:", return_system)
-            name = path[0]
-            sub_path = path[1:]
-            child = None
-            if first:
-                # TODO: should be done in Universe class, not here...
-                child = objectsDB.get(name)
-                if child is not None and return_system and not isinstance(child, StellarSystem):
-                    child = child.system
-            if child is None:
-                child = self.find_child_by_name(name, return_system)
-            if child is not None:
-                if len(sub_path) == 0:
-                    if not return_system or isinstance(child, StellarSystem):
-                        # print("Found child", child.get_name())
-                        return child
-                else:
-                    if isinstance(child, StellarSystem):
-                        # print("Found child, rec into", child.get_name())
-                        return child.find_by_path(sub_path, return_system, first=False)
-                    elif child.system is not None:
-                        # print("Found child, rec into system", child.parent.get_name(), sub_path)
-                        return child.system.find_by_path(sub_path, return_system, first=False)
-                    else:
-                        return None
-        return None
+    def find_by_path(self, path, separator='/'):
+        return self.anchor.find_by_path(path, separator)
 
     def find_nth_child(self, index):
-        if index < len(self.children):
-            return self.children[index]
-        else:
-            return None
+        return self.anchor.find_nth_child(index)
 
     def add_child_fast(self, child):
         if child.parent is not None:
             child.parent.anchor.remove_child(child.anchor)
             child.parent.remove_child_fast(child)
-        # print("Add child", child.get_name(), "to", self.get_name())
-        self.children_map.add(child)
-        self.children.append(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
         # TODO: This is a quick workaround until stars of a system are properly managed
         if child.is_emissive():
             self.has_halo = True
 
-    add_child_star_fast = add_child_fast
+    def add_child_star_fast(self, child):
+        self.add_child_fast(child)
 
     def add_child(self, child):
         self.add_child_fast(child)
 
     def remove_child_fast(self, child):
-        # print("Remove child", child.get_name(), "from", self.get_name())
-        self.children.remove(child)
         child.set_parent(None)
-        self.children_map.remove(child)
         self.anchor.remove_child(child.anchor)
+        if child is self.primary:
+            self.primary = None
 
     def remove_child(self, child):
         self.remove_child_fast(child)
+
+    def is_emissive(self):
+        if self.primary is not None:
+            return self.primary.is_emissive()
+        return False
+
+    def get_label_text(self):
+        if self.primary is not None:
+            return self.primary.get_label_text()
+        return StellarObject.get_label_text(self)
+
+    def get_components(self):
+        if self.primary is not None:
+            return self.primary.get_components()
+        return []
+
+    def start_shadows_update(self):
+        if self.primary is not None:
+            self.primary.start_shadows_update()
+
+    def end_shadows_update(self):
+        if self.primary is not None:
+            self.primary.end_shadows_update()
+
+    def add_shadow_target(self, target):
+        if self.primary is not None:
+            self.primary.add_shadow_target(target)
 
     def on_resolved(self, scene_manager):
         StellarObject.on_resolved(self, scene_manager)
@@ -206,7 +201,17 @@ class OctreeSystem(StellarSystem):
         description='',
     ):
         self.radius = radius
-        StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
+        StellarSystem.__init__(
+            self,
+            names,
+            source_names,
+            orbit=orbit,
+            rotation=rotation,
+            frame=frame,
+            body_class=body_class,
+            point_color=point_color,
+            description=description,
+        )
 
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
         return OctreeAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)
@@ -225,79 +230,6 @@ class OctreeSystem(StellarSystem):
 
     def is_emissive(self):
         return True
-
-
-class SimpleSystem(StellarSystem):
-    def __init__(
-        self,
-        names,
-        source_names,
-        primary=None,
-        star_system=False,
-        orbit=None,
-        rotation=None,
-        frame=None,
-        body_class='system',
-        point_color=None,
-        description='',
-    ):
-        StellarSystem.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
-        self.star_system = star_system
-        self.set_primary(primary)
-
-    def set_primary(self, primary):
-        if self.primary is not None:
-            self.primary.set_system(None)
-            self.primary = None
-        if primary is not None:
-            self.primary = primary
-            self.anchor.set_primary(primary.anchor)
-            primary.set_system(self)
-            self.body_class = primary.body_class
-            self.anchor.point_color = primary.anchor.point_color
-
-    def add_child(self, child):
-        StellarSystem.add_child(self, child)
-        if self.primary is None and len(self.children) == 1:
-            self.set_primary(child)
-
-    def add_child_fast(self, child):
-        StellarSystem.add_child_fast(self, child)
-        if self.primary is None and len(self.children) == 1:
-            self.set_primary(child)
-
-    def add_child_star_fast(self, child):
-        StellarSystem.add_child_star_fast(self, child)
-        if self.primary is None and len(self.children) == 1:
-            self.set_primary(child)
-
-    def remove_child(self, child):
-        StellarSystem.remove_child(self, child)
-        if child is self.primary:
-            self.primary = None
-
-    def remove_child_fast(self, child):
-        StellarSystem.remove_child_fast(self, child)
-        if child is self.primary:
-            self.primary = None
-
-    def is_emissive(self):
-        return self.primary.is_emissive()
-
-    def get_label_text(self):
-        return self.primary.get_label_text()
-
-    def get_components(self):
-        return self.primary.get_components()
-
-    def start_shadows_update(self):
-        self.primary.start_shadows_update()
-
-    def end_shadows_update(self):
-        self.primary.end_shadows_update()
-
-    def add_shadow_target(self, target):
-        self.primary.add_shadow_target(target)
 
 
 class Barycenter(StellarSystem):

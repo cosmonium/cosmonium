@@ -21,7 +21,7 @@
 import re
 from urllib import parse as urlquote
 
-from .objects.systems import SimpleSystem
+from .objects.systems import StellarSystem
 
 
 starts_with_digit = re.compile(r"^\d")
@@ -42,7 +42,7 @@ class WikipediaExtraInfo(object):
         return "Wikipedia"
 
     def get_url_for(self, body):
-        if isinstance(body, SimpleSystem):
+        if isinstance(body, StellarSystem) and body.primary is not None:
             body = body.primary
         name = urlquote.quote(body.get_name())
         if body.body_class in ['planet']:
@@ -71,7 +71,7 @@ class SimbadExtraInfo(object):
         return "Simbad"
 
     def get_url_for(self, body):
-        if isinstance(body, SimpleSystem):
+        if isinstance(body, StellarSystem) and body.primary is not None:
             body = body.primary
         name = urlquote.quote(body.get_name())
         if body.body_class in ['star']:
@@ -86,7 +86,7 @@ class MpcExtraInfo(object):
         return "Minor Planet Center"
 
     def get_url_for(self, body):
-        if isinstance(body, SimpleSystem):
+        if isinstance(body, StellarSystem) and body.primary is not None:
             body = body.primary
         name = body.get_name()
         if '/' in name:

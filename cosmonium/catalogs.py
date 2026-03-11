@@ -135,31 +135,6 @@ class NameIndex:
         return result
 
 
-class ObjectsDB:
-    def __init__(self) -> None:
-        self.db: dict[str, Any] = {}
-
-    def add(self, body: Any) -> None:
-        for name in body.get_names():
-            self.db[name.upper()] = body
-
-    def get(self, name: str) -> Optional[Any]:
-        return self.db.get(name.upper(), None)
-
-    def remove(self, body: Any) -> None:
-        for name in body.get_names():
-            self.db.pop(name.upper(), None)
-
-    def startswith(self, text: str) -> list[tuple[str, Any]]:
-        text = text.upper()
-        result = []
-        for key, value in self.db.items():
-            if key.startswith(text):
-                name = value.get_name_from_upper(key)
-                result.append((name, value))
-        return result
-
-
 class GlobalObjectsDB:
     def __init__(self) -> None:
         self.oids: list[Optional[Any]] = []

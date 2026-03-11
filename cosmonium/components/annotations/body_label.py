@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,16 +36,16 @@ class StellarBodyLabel(ObjectLabel):
         if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved:
             self.visible = False
             return
-        if self.label_source.system is not None:
-            body = self.label_source.system
+        if self.label_source.anchor.get_system() is not None:
+            anchor = self.label_source.anchor.get_system()
         else:
-            body = self.label_source
+            anchor = self.label_source.anchor
         if self.label_source.anchor.visible and self.label_source.anchor.resolved:
             self.visible = True
             self.fade = 1.0
         else:
-            if body.anchor.distance_to_obs > 0.0:
-                size = body.anchor.get_position_bounding_radius() / (body.anchor.distance_to_obs * pixel_size)
+            if anchor.distance_to_obs > 0.0:
+                size = anchor.get_position_bounding_radius() / (anchor.distance_to_obs * pixel_size)
                 self.visible = size > settings.label_fade
                 self.fade = min(1.0, max(0.0, (size - settings.orbit_fade) / settings.orbit_fade))
         self.fade = clamp(self.fade, 0.0, 1.0)

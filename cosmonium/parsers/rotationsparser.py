@@ -77,8 +77,8 @@ class UniformYamlParser(YamlModuleParser):
         if synchronous:
             rotation = SynchronousRotation(orientation, meridian_angle * meridian_units, epoch, frame)
             if parent is not None:
-                if parent.system is not None:
-                    rotation.set_parent_body(parent.system.anchor)
+                if parent.anchor.has_system():
+                    rotation.set_parent_body(parent.anchor.get_system())
                 else:
                     rotation.set_parent_body(parent.anchor)
         else:
@@ -132,8 +132,8 @@ class RotationYamlParser(TypedYamlParser):
             if isinstance(rotation.frame, BodyReferenceFrames) and rotation.frame.anchor is None:
                 rotation.frame.set_anchor(parent.anchor)
             if isinstance(rotation, SynchronousRotation) and rotation.parent_body is None:
-                if parent.system is not None:
-                    rotation.set_parent_body(parent.system.anchor)
+                if parent.anchor.has_system():
+                    rotation.set_parent_body(parent.anchor.get_system())
                 else:
                     rotation.set_parent_body(parent.anchor)
         return rotation

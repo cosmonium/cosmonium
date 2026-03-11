@@ -19,6 +19,7 @@
 
 #include "anchor.h"
 #include "py_panda.h"
+#include "systemAnchor.h"
 
 TypeHandle AnchorTreeBase::_type_handle;
 
@@ -90,6 +91,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _albedo(0.0),
   // Scene anchor
   _scene_anchor(nullptr),
+  // Owning system anchor
+  _system(nullptr),
   // Name management
   description(description)
 {
@@ -145,6 +148,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _albedo(0.0),
   // Scene anchor
   _scene_anchor(nullptr),
+  // If this anchor is the primary body of a stellar system, this will point to the system anchor
+  _system(nullptr),
   // Name management
   description(description)
 {
@@ -228,6 +233,24 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+bool
+AnchorBase::has_system(void) const
+{
+  return _system != nullptr;
+}
+
+SystemAnchor *
+AnchorBase::get_system(void) const
+{
+  return _system;
+}
+
+void
+AnchorBase::set_system(SystemAnchor * system)
+{
+  this->_system = system;
 }
 
 SceneAnchor *
@@ -353,4 +376,30 @@ std::string
 AnchorBase::get_description(void) const
 {
   return description;
+}
+
+bool
+AnchorBase::is_system(void) const
+{
+  return false;
+}
+
+bool
+AnchorBase::_is_named(const std::string &name_up) const
+{
+  // Check translated names
+  pvector<std::string> all_names = object_names.get_all_names();
+  for (const auto &n : all_names) {
+    std::string n_up = n;
+    std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);
+    if (n_up == name_up) return true;
+  }
+  // Check source (untranslated) names
+  pvector<std::string> src_names = object_names.get_source_names();
+  for (const auto &n : src_names) {
+    std::string n_up = n;
+    std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);
+    if (n_up == name_up) return true;
+  }
+  return false;
 }

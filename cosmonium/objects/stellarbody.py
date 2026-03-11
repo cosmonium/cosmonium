@@ -25,7 +25,7 @@ from ..astro.orbits import LocalFixedPosition
 from ..astro.rotations import FixedRotation
 
 from .stellarobject import StellarObject
-from .systems import SimpleSystem
+from .systems import StellarSystem
 
 
 class StellarBody(StellarObject):
@@ -87,12 +87,11 @@ class StellarBody(StellarObject):
                     self.surface = None
 
     def get_or_create_system(self):
-        if self.system is None:
-            print("Creating system for", self.get_name())
+        if self.anchor.system is None:
             system_orbit = self.anchor.orbit
             system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
             # TODO: The system name should be translated correctly
-            self.system = SimpleSystem(
+            system = StellarSystem(
                 [self.get_name() + " System"],
                 source_names=[],
                 primary=self,
@@ -100,12 +99,12 @@ class StellarBody(StellarObject):
                 rotation=system_rotation,
             )
             if self.parent is not None:
-                self.parent.add_child_fast(self.system)
-            # system_orbit.set_body(self.system)
-            orbit = LocalFixedPosition(frame=OrbitReferenceFrame(self.system.anchor), frame_position=LPoint3d())
+                self.parent.add_child_fast(system)
+            # system_orbit.set_body(system)
+            orbit = LocalFixedPosition(frame=OrbitReferenceFrame(system.anchor), frame_position=LPoint3d())
             self.set_orbit(orbit)
-            self.system.add_child_fast(self)
-        return self.system
+            system.add_child_fast(self)
+        return self.anchor.system.body
 
     def create_surface(self):
         self.surface = self.surface_factory.create(self)
