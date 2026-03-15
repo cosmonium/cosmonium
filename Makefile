@@ -65,7 +65,7 @@ ifeq ($(PLATFORM),)
            endif
         endif
         ifeq ($(UNAME_S),Darwin)
-            PLATFORM=macosx_10_9_x86_64
+            PLATFORM=macosx_10_12_x86_64
         endif
     endif
 endif
@@ -80,9 +80,10 @@ ifeq ($(PLATFORM),win32)
     SOURCE_OPTIONS+=--windows-sdk $(OS_SDK)
 endif
 
-ifeq ($(PLATFORM),macosx_10_9_x86_64)
-    OS_SDK=10.9
+ifeq ($(PLATFORM),macosx_10_12_x86_64)
+    OS_SDK=10.12
     SOURCE_OPTIONS+=--macosx-sdk $(OS_SDK)
+	PANDA3D_TARGET_PLATFORM=macosx_10_9_x86_64
     ifneq ($(RELEASE),1)
         SOURCE_OPTIONS+="--use-sdk-path"
     endif
@@ -96,11 +97,15 @@ ifeq ($(TARGET_PLATFORM),)
   TARGET_PLATFORM=$(PLATFORM)
 endif
 
+ifeq ($(PANDA3D_TARGET_PLATFORM),)
+  PANDA3D_TARGET_PLATFORM=$(TARGET_PLATFORM)
+endif
+
 PYTHON_ABI=`$(PYTHON) tools/pyversion.py`
 
 
 ifeq ($(CUSTOM_PANDA3D),1)
-    PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(TARGET_PLATFORM).whl
+    PANDA3D_WHEEL=https://github.com/cosmonium/panda3d/releases/download/cosmonium-v$(PANDA3D_VERSION_LONG)/panda3d-$(PANDA3D_VERSION)+fp64-$(PYTHON_ABI)-$(PANDA3D_TARGET_PLATFORM).whl
 else
     PANDA3D_WHEEL="panda3d==$(PANDA3D_VERSION)"
 endif

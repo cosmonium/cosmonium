@@ -75,10 +75,10 @@ jobs:
       run: |
         echo "panda3d-1.11.0-cp310-cp310-macosx_10_9_x86_64.whl" > requirements-tmp.txt
         cat requirements.txt >> requirements-tmp.txt
-        python setup.py bdist_apps -p macosx_10_9_x86_64 -r requirements-tmp.txt
+        python setup.py bdist_apps -p macosx_10_12_x86_64 -r requirements-tmp.txt
     - name: Test binary
       run: |
-        cd build/macosx_10_9_x86_64/cosmonium.app/Contents/MacOS
+        cd build/macosx_10_12_x86_64/cosmonium.app/Contents/MacOS
         ./cosmonium --test-start
     - name: Upload logs
       if: ${{ always() }}
