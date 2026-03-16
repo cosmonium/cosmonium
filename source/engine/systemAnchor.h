@@ -54,6 +54,8 @@ PUBLISHED:
   virtual void rebuild(void);
   virtual bool is_system(void) const;
 
+  virtual SystemAnchor *get_or_create_system(void);
+
   void add_child(AnchorBase *child);
   void remove_child(AnchorBase *child);
 

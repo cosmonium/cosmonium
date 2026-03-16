@@ -18,6 +18,7 @@
  */
 
 #include "stellarAnchor.h"
+#include "systemAnchor.h"
 #include "cameraAnchor.h"
 #include "orbits.h"
 #include "rotations.h"
@@ -57,6 +58,35 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     rotation(rotation),
     _equatorial(LQuaterniond::ident_quat())
 {
+}
+
+SystemAnchor *
+StellarAnchor::get_or_create_system(void)
+{
+  if (_system != nullptr) {
+    // System already exists
+    return _system;
+  }
+
+  std::string sys_name_str = get_name() + " System";
+  pvector<std::string> name_strings;
+  name_strings.push_back(sys_name_str);
+
+  PT(ReferenceFrame) system_frame = new J2000BarycentricEclipticReferenceFrame();
+  PT(FixedRotation) system_rotation = new FixedRotation(LQuaterniond::ident_quat(), system_frame);
+  // TODO: The system name should be translated correctly
+  _system = new SystemAnchor(nullptr, orbit, system_rotation, LColor(0), name_strings, pvector<std::string>(), "");
+  _system->set_primary(this);
+  if (parent != nullptr) {
+    DCAST(SystemAnchor, parent)->add_child(_system);
+  }
+
+  PT(ReferenceFrame) orbit_frame = new OrbitReferenceFrame(_system);
+  PT(LocalFixedPosition) orbit = new LocalFixedPosition(orbit_frame, LPoint3d(0));
+  set_orbit(orbit);
+  _system->add_child(this);
+
+  return _system;
 }
 
 StellarAnchor::~StellarAnchor(void)

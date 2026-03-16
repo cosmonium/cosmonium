@@ -58,6 +58,13 @@ SystemAnchor::is_system(void) const
   return true;
 }
 
+SystemAnchor *
+SystemAnchor::get_or_create_system(void)
+{
+  // A SystemAnchor is already a stellar system — return itself.
+  return this;
+}
+
 void
 SystemAnchor::add_child(AnchorBase *child)
 {

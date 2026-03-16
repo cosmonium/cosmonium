@@ -24,6 +24,7 @@
 
 class OrbitBase;
 class RotationBase;
+class SystemAnchor;
 
 class StellarAnchor : public AnchorBase
 {
@@ -55,6 +56,8 @@ PUBLISHED:
   virtual bool has_rotation(void) const;
 
   virtual bool has_frame(void) const;
+
+  virtual SystemAnchor *get_or_create_system(void);
 
   OrbitBase *get_orbit(void) const;
   void set_orbit(OrbitBase * orbit);

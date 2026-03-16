@@ -1046,6 +1046,35 @@ class StellarAnchor(AnchorBase):
         self.rotation = rotation
         self._equatorial = LQuaterniond.ident_quat()
 
+    def get_or_create_system(self) -> SystemAnchor:
+        """Return the system this anchor is primary of, creating it lazily if needed.
+
+        If this anchor has no stellar system yet, a new SystemAnchor wrapping this
+        body is created, the current orbit is transferred to the system, and a
+        LocalFixedPosition orbit is set on this body so that it is placed at the
+        origin of the new system.
+
+        Returns:
+            The system anchor (a SystemAnchor instance).
+        """
+        if self.system is None:
+            # Lazy imports to avoid circular dependencies
+            from ...astro.frame import OrbitReferenceFrame, J2000BarycentricEclipticReferenceFrame
+            from ...astro.orbits import LocalFixedPosition
+            from ...astro.rotations import FixedRotation
+
+            system_orbit = self.orbit
+            system_rotation = FixedRotation(LQuaterniond(), J2000BarycentricEclipticReferenceFrame())
+            # TODO: The system name should be translated correctly
+            system = SystemAnchor(None, system_orbit, system_rotation, LColor(0), [self.get_name() + " System"])
+            system.set_primary(self)
+            if self.parent is not None:
+                self.parent.add_child_fast(system)
+            orbit = LocalFixedPosition(frame=OrbitReferenceFrame(system), frame_position=LPoint3d())
+            self.set_orbit(orbit)
+            system.add_child_fast(self)
+        return self.system
+
     def is_stellar(self) -> bool:
         return True
 
@@ -1275,6 +1304,16 @@ class SystemAnchor(StellarAnchor):
         self.star_system = False
         self.children: list[StellarAnchor] = []
         self.children_map: dict[str, StellarAnchor] = {}
+
+    def get_or_create_system(self) -> SystemAnchor:
+        """Return the system this anchor is primary of, creating it lazily if needed.
+
+        A SystemAnchor is already a stellar system, so no creation is needed.
+
+        Returns:
+            This anchor.
+        """
+        return self
 
     def is_system(self) -> bool:
         """Return True — this anchor represents a stellar system."""
