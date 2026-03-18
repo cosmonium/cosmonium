@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from .base import ShaderProgram, StructuredShader
 from .component import ShaderComponent
 from .data_source.base import CompositeShaderDataSource
 from .data_source.panda import PandaShaderDataSource
+from .geometry.base import GeometryControl
 from .instancing import NoInstanceControl
 from .lighting.base import ShadingLightingModel
 from .lighting.lambert import LambertPhongLightingModel
@@ -58,6 +59,7 @@ class VertexShader(ShaderProgram):
         instance_control,
         shadows,
         lighting_model,
+        geometry_control,
     ):
         ShaderProgram.__init__(self, shader_type)
         self.config = config
@@ -69,6 +71,7 @@ class VertexShader(ShaderProgram):
         self.instance_control = instance_control
         self.shadows = shadows
         self.lighting_model = lighting_model
+        self.geometry_control = geometry_control
 
     def create_layout(self, code):
         self.vertex_source.vertex_layout(code)
@@ -89,6 +92,7 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_uniforms(code)
         self.lighting_model.vertex_uniforms(code)
+        self.geometry_control.vertex_uniforms(code)
         self.data_source.vertex_uniforms(code)
         self.appearance.vertex_uniforms(code)
 
@@ -97,6 +101,7 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_inputs(code)
         self.lighting_model.vertex_inputs(code)
+        self.geometry_control.vertex_inputs(code)
         self.point_control.vertex_inputs(code)
         self.instance_control.vertex_inputs(code)
         self.data_source.vertex_inputs(code)
@@ -133,6 +138,7 @@ class VertexShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.vertex_outputs(code)
         self.lighting_model.vertex_outputs(code)
+        self.geometry_control.vertex_outputs(code)
         self.data_source.vertex_outputs(code)
         self.appearance.vertex_outputs(code)
         if self.config.color_picking and self.config.vertex_oids:
@@ -145,6 +151,7 @@ class VertexShader(ShaderProgram):
         self.vertex_control.vertex_extra(code)
         self.point_control.vertex_extra(code)
         self.lighting_model.vertex_extra(code)
+        self.geometry_control.vertex_extra(code)
         for shadow in self.shadows:
             shadow.vertex_extra(code)
 
@@ -236,6 +243,7 @@ class VertexShader(ShaderProgram):
             shadow.vertex_shader(code)
         self.point_control.vertex_shader(code)
         self.lighting_model.vertex_shader(code)
+        self.geometry_control.vertex_shader(code)
         self.data_source.vertex_shader(code)
         self.appearance.vertex_shader(code)
         if 'model_vertex' in self.config.fragment_requires:
@@ -291,10 +299,47 @@ class TessellationShader(ShaderProgram):
         code.append("gl_out[id].gl_Position = gl_in[id].gl_Position;")
 
 
+class GeometryShaderProgram(ShaderProgram):
+    """Structured geometry shader program that delegates to a GeometryControl component."""
+
+    def __init__(self, config, geometry_control):
+        ShaderProgram.__init__(self, 'geometry')
+        self.config = config
+        self.geometry_control = geometry_control
+
+    def create_layout(self, code):
+        self.geometry_control.geometry_layout(code)
+
+    def create_uniforms(self, code):
+        self.geometry_control.geometry_uniforms(code)
+
+    def create_inputs(self, code):
+        self.geometry_control.geometry_inputs(code)
+
+    def create_outputs(self, code):
+        self.geometry_control.geometry_outputs(code)
+
+    def create_extra(self, code):
+        ShaderProgram.create_extra(self, code)
+        self.geometry_control.geometry_extra(code)
+
+    def create_body(self, code):
+        self.geometry_control.geometry_shader(code)
+
+
 class FragmentShader(ShaderProgram):
 
     def __init__(
-        self, config, data_source, appearance, shadows, lighting_model, vertex_control, point_control, after_effects
+        self,
+        config,
+        data_source,
+        appearance,
+        shadows,
+        lighting_model,
+        vertex_control,
+        point_control,
+        after_effects,
+        geometry_control,
     ):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -305,6 +350,7 @@ class FragmentShader(ShaderProgram):
         self.vertex_control = vertex_control
         self.point_control = point_control
         self.after_effects = after_effects
+        self.geometry_control = geometry_control
         self.nb_outputs = 1
 
     def create_uniforms(self, code):
@@ -317,6 +363,7 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_uniforms(code)
         self.lighting_model.fragment_uniforms(code)
+        self.geometry_control.fragment_uniforms(code)
         self.point_control.fragment_uniforms(code)
         for effect in self.after_effects:
             effect.fragment_uniforms(code)
@@ -355,6 +402,7 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_inputs(code)
         self.lighting_model.fragment_inputs(code)
+        self.geometry_control.fragment_inputs(code)
         self.vertex_control.fragment_inputs(code)
         self.point_control.fragment_inputs(code)
         if self.config.color_picking and self.config.vertex_oids:
@@ -513,6 +561,7 @@ class RenderingShader(StructuredShader):
         after_effects=None,
         use_model_texcoord=True,
         vertex_oids=False,
+        geometry_control=None,
     ):
         StructuredShader.__init__(self)
         if appearance is None:
@@ -559,6 +608,12 @@ class RenderingShader(StructuredShader):
         self.appearance.data = self.data_source
         self.lighting_model.appearance = self.appearance
         self.vertex_oids = vertex_oids
+        if geometry_control is not None:
+            self.geometry_control = geometry_control
+            self.geometry_control.set_shader(self)
+        else:
+            # Empty geometry control used by vertex and fragment shaders
+            self.geometry_control = GeometryControl()
         if tessellation_control is not None:
             self.tessellation_control = tessellation_control
             self.tessellation_control.set_shader(self)
@@ -575,6 +630,7 @@ class RenderingShader(StructuredShader):
                 instance_control=self.instance_control,
                 shadows=self.shadows,
                 lighting_model=self.lighting_model,
+                geometry_control=self.geometry_control,
             )
         else:
             self.tessellation_control = TessellationControl()
@@ -590,6 +646,7 @@ class RenderingShader(StructuredShader):
                 instance_control=self.instance_control,
                 shadows=self.shadows,
                 lighting_model=self.lighting_model,
+                geometry_control=self.geometry_control,
             )
         self.fragment_shader = FragmentShader(
             self,
@@ -600,7 +657,13 @@ class RenderingShader(StructuredShader):
             vertex_control=vertex_control,
             point_control=self.point_control,
             after_effects=self.after_effects,
+            geometry_control=self.geometry_control,
         )
+
+        if geometry_control is not None:
+            self.geometry_shader = GeometryShaderProgram(self, geometry_control)
+        else:
+            self.geometry_shader = None
 
         self.nb_textures_coord = 0
 
@@ -668,6 +731,7 @@ class RenderingShader(StructuredShader):
             self.point_control,
             self.instance_control,
             self.lighting_model,
+            self.geometry_control,
             *self.shadows,
         )
         for component in components:
@@ -675,7 +739,13 @@ class RenderingShader(StructuredShader):
             self.vertex_provides.update(component.vertex_provides)
 
         component: ShaderComponent
-        for component in (self.appearance, *self.after_effects, self.lighting_model, *self.shadows):
+        for component in (
+            self.appearance,
+            *self.after_effects,
+            self.lighting_model,
+            self.geometry_control,
+            *self.shadows,
+        ):
             self.fragment_requires.update(component.fragment_requires)
             self.fragment_provides.update(component.fragment_provides)
 
@@ -730,6 +800,9 @@ class RenderingShader(StructuredShader):
         tc_id = self.tessellation_control.get_id()
         if tc_id:
             name += '-' + tc_id
+        gc_id = self.geometry_control.get_id()
+        if gc_id:
+            name += '-' + gc_id
         if not self.color_picking:
             name += "-ncp"
         return name
@@ -749,4 +822,5 @@ class RenderingShader(StructuredShader):
         for after_effect in self.after_effects:
             group.add_parameter(after_effect.get_user_parameters())
         group.add_parameter(self.tessellation_control.get_user_parameters())
+        group.add_parameter(self.geometry_control.get_user_parameters())
         return group

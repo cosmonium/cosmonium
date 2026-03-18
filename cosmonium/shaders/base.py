@@ -124,6 +124,10 @@ class ShaderProgram(object):
         self.version = settings.shader_version
         self.functions = {}
         self.file_id: str = None
+        self.config = None
+
+    def set_config(self, config):
+        self.config = config
 
     def get_shader_id(self):
         return ''
