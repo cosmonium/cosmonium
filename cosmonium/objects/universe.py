@@ -40,7 +40,6 @@ class Universe(OctreeSystem):
             radius=radius,
             description='Universe',
         )
-        self.visible = True
 
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
         return UniverseAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)

@@ -107,7 +107,6 @@ class StellarObject:
         self.anchor.scene_anchor.oid_color = self.oid_color
 
         self.shown = True
-        self.visible = False
         self.parent = None
         self.lights = None
 
@@ -140,6 +139,10 @@ class StellarObject:
 
     def get_description(self):
         return self.anchor.get_description()
+
+    @property
+    def visible(self):
+        return self.anchor.visible
 
     @property
     def scene_anchor(self):
