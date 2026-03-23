@@ -254,6 +254,9 @@ class SceneWorld:
         if self.anchor is not None:
             self.anchor.scene_anchor = value
 
+    def is_system(self):
+        return False
+
     # Delegate name management to anchor when it exists
     def get_names(self):
         if self.anchor:

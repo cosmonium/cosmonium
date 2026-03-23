@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ class ReferenceAxes(VisibleObject):
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, body):
-        VisibleObject.__init__(self, body.get_ascii_name() + '-axis')
+        VisibleObject.__init__(self, body.get_ascii_name() + '-reference-axes')
         self.body = body
         self.model = "zup-axis"
 

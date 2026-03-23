@@ -84,12 +84,6 @@ class StellarSystem(StellarObject):
             self.body_class = primary.body_class
             self.anchor.point_color = primary.anchor.point_color
 
-    def check_settings(self):
-        StellarObject.check_settings(self)
-        for child in self.children:
-            if child.orbit_object is not None:
-                child.orbit_object.check_settings()
-
     def find_child_by_name(self, name):
         return self.anchor.find_child_by_name(name)
 
@@ -151,40 +145,8 @@ class StellarSystem(StellarObject):
         if self.primary is not None:
             self.primary.add_shadow_target(target)
 
-    def on_resolved(self, scene_manager):
-        StellarObject.on_resolved(self, scene_manager)
-        for child in self.children:
-            child.create_orbit_object()
-
-    def on_point(self, scene_manager):
-        StellarObject.on_point(self, scene_manager)
-        for child in self.children:
-            child.remove_orbit_object()
-
     def get_bounding_radius(self):
         return self.anchor.get_bounding_radius()
-
-    def check_visibility(self, frustum, pixel_size):
-        StellarObject.check_visibility(self, frustum, pixel_size)
-        if not self.anchor.resolved:
-            return
-        for child in self.children:
-            if child.orbit_object is not None:
-                child.orbit_object.check_visibility(frustum, pixel_size)
-
-    def check_and_create_instance(self, scene_manager, camera_pos, camera_rot):
-        StellarObject.check_and_create_instance(self, scene_manager, camera_pos, camera_rot)
-        for child in self.children:
-            if child.orbit_object is not None:
-                child.orbit_object.check_and_create_instance(scene_manager, camera_pos, camera_rot)
-                if child.orbit_object.instance is not None:
-                    scene_manager.add_spread_object(child.orbit_object.instance)
-
-    def check_and_update_instance(self, scene_manager, camera_pos, camera_rot):
-        StellarObject.check_and_update_instance(self, scene_manager, camera_pos, camera_rot)
-        for child in self.children:
-            if child.orbit_object is not None:
-                child.orbit_object.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
 
 class OctreeSystem(StellarSystem):

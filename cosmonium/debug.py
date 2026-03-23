@@ -203,8 +203,9 @@ class Debug:
             if selected.anchor.is_stellar():
                 print("\tOrbit:", selected.anchor.orbit.__class__.__name__, selected.anchor.orbit.frame)
                 print("\tRotation:", selected.anchor.rotation.__class__.__name__, selected.anchor.rotation.frame)
-            if selected.label is not None:
-                print("\tLabel visible:", selected.label.visible)
+            label = selected.context.labels.get_label(selected)
+            if label is not None:
+                print("\tLabel visible:", label.visible)
             if isinstance(selected, ReflectiveBody) and selected.surface is not None:
                 print(
                     "\tRing shadow:",

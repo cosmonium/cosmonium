@@ -22,14 +22,8 @@ import re
 
 from panda3d.core import LColor, LVector3d
 
-from ..astro.orbits import FixedPosition
 from ..bodyclass import bodyClasses
 from ..catalogs import objectsDB
-from ..components.annotations.body_label import StellarBodyLabel, FixedOrbitLabel
-from ..components.annotations.reference_axes import ReferenceAxes
-from ..components.annotations.rotation_axis import RotationAxis
-from ..components.annotations.orbit import Orbit
-from ..components.elements.halo import Halo
 from ..engine.anchors import CartesianAnchor
 from ..engine.anchors import DynamicStellarAnchor
 from ..foundation import CompositeObject
@@ -96,11 +90,6 @@ class StellarObject:
         # Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         # Components
-        self.label = None
-        self.orbit_object = None
-        self.rotation_axis = None
-        self.reference_axes = None
-        self.resolved_halo = None
         self.init_components = False
         objectsDB.add(self)
         # TODO: Should be done properly
@@ -147,34 +136,6 @@ class StellarObject:
     @property
     def scene_anchor(self):
         return self.anchor.scene_anchor
-
-    def create_label_instance(self):
-        if not self.anchor.has_orbit() or isinstance(self.anchor.orbit, FixedPosition):
-            return FixedOrbitLabel(self.get_ascii_name() + '-label', self)
-        else:
-            return StellarBodyLabel(self.get_ascii_name() + '-label', self)
-
-    def create_label(self):
-        if self.label is None:
-            self.label = self.create_label_instance()
-        return self.label
-
-    def remove_label(self):
-        if self.label is not None:
-            self.label.remove_instance()
-            self.label = None
-
-    def show_label(self):
-        if self.label:
-            self.label.show()
-
-    def hide_label(self):
-        if self.label:
-            self.label.hide()
-
-    def toggle_label(self):
-        if self.label:
-            self.label.toggle_shown()
 
     def set_parent(self, parent):
         self.parent = parent
@@ -231,26 +192,13 @@ class StellarObject:
             return name
 
     def create_components(self):
-        if self.has_rotation_axis:
-            self.rotation_axis = RotationAxis(self)
-            self.components.add_component(self.rotation_axis)
-        if self.has_reference_axis:
-            self.reference_axes = ReferenceAxes(self)
-            self.components.add_component(self.reference_axes)
-        if not settings.use_pbr and self.has_resolved_halo:
-            self.resolved_halo = Halo(self)
-            self.components.add_component(self.resolved_halo)
+        pass
 
     def update_components(self, camera_pos):
         pass
 
     def remove_components(self):
-        self.components.remove_component(self.rotation_axis)
-        self.rotation_axis = None
-        self.components.remove_component(self.reference_axes)
-        self.reference_axes = None
-        self.components.remove_component(self.resolved_halo)
-        self.resolved_halo = None
+        pass
 
     def set_system(self, system):
         self.anchor.set_system(system.anchor)
@@ -258,25 +206,8 @@ class StellarObject:
     def set_body_class(self, body_class):
         self.body_class = body_class
 
-    def create_orbit_object(self):
-        if self.orbit_object is None and self.anchor.has_orbit() and self.anchor.orbit.is_dynamic():
-            self.orbit_object = Orbit(self)
-            self.orbit_object.check_settings()
-
-    def remove_orbit_object(self):
-        if self.orbit_object is not None:
-            self.orbit_object.remove_instance()
-            self.orbit_object = None
-
     def set_orbit(self, orbit):
-        if self.orbit_object is not None:
-            self.remove_orbit_object()
-            recreate = True
-        else:
-            recreate = False
         self.anchor.orbit = orbit
-        if recreate:
-            self.create_orbit_object()
 
     def set_rotation(self, rotation):
         self.anchor.rotation = rotation
@@ -308,11 +239,6 @@ class StellarObject:
 
     def set_selected(self, selected):
         self.selected = selected
-        if self.orbit_object:
-            self.orbit_object.set_selected(selected)
-        else:
-            if self.parent:
-                self.parent.set_selected(selected)
 
     def is_emissive(self):
         return False
@@ -409,39 +335,3 @@ class StellarObject:
             self.lights.update_instances(camera_pos)
         self.update_components(camera_pos)
         self.components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
-
-    def show_rotation_axis(self):
-        if self.rotation_axis:
-            self.rotation_axis.show()
-
-    def hide_rotation_axis(self):
-        if self.rotation_axis:
-            self.rotation_axis.hide()
-
-    def toggle_rotation_axis(self):
-        if self.rotation_axis:
-            self.rotation_axis.toggle_shown()
-
-    def show_reference_axis(self):
-        if self.reference_axes:
-            self.reference_axes.show()
-
-    def hide_reference_axis(self):
-        if self.reference_axes:
-            self.reference_axes.hide()
-
-    def toggle_reference_axis(self):
-        if self.reference_axes:
-            self.reference_axes.toggle_shown()
-
-    def show_orbit(self):
-        if self.orbit_object:
-            self.orbit_object.show()
-
-    def hide_orbit(self):
-        if self.orbit_object:
-            self.orbit_object.hide()
-
-    def toggle_orbit(self):
-        if self.orbit_object:
-            self.orbit_object.toggle_shown()

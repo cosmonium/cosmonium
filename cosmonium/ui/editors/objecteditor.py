@@ -27,11 +27,12 @@ class StellarObjectEditor:
 
     def __init__(self, stellar_object):
         self.stellar_object = stellar_object
+        orbits = stellar_object.context.orbits
         orbit = self.stellar_object.anchor.orbit
         if isinstance(orbit, FixedPosition) and self.stellar_object.anchor.has_system():
-            self.orbit_object = self.stellar_object.anchor.system.body.orbit_object
+            self.orbit_object = orbits.orbiting_objects.get(self.stellar_object.anchor.system.body)
         else:
-            self.orbit_object = self.stellar_object.orbit_object
+            self.orbit_object = orbits.orbiting_objects.get(self.stellar_object)
 
     def get_user_parameters(self):
         group = ParametersGroup(self.stellar_object.get_name())

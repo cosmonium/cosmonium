@@ -18,13 +18,20 @@
 #
 
 
+from ..astro.orbits import FixedPosition
+from ..components.annotations.body_label import FixedOrbitLabel, StellarBodyLabel
+
+
 class Labels:
     def __init__(self):
         self.labeled_objects = dict()
         self.labels = []
 
     def add_label(self, named_object):
-        label = named_object.create_label()
+        if not named_object.anchor.has_orbit() or isinstance(named_object.anchor.orbit, FixedPosition):
+            label = FixedOrbitLabel(named_object.get_ascii_name() + '-label', named_object)
+        else:
+            label = StellarBodyLabel(named_object.get_ascii_name() + '-label', named_object)
         label.set_scene_anchor(named_object.scene_anchor)
         label.check_settings()
         self.labels.append(label)
@@ -35,9 +42,27 @@ class Labels:
             label = self.labeled_objects[named_object]
             del self.labeled_objects[named_object]
             self.labels.remove(label)
-            named_object.remove_label()
+            label.remove_instance()
         except KeyError:
             pass
+
+    def get_label(self, named_object):
+        return self.labeled_objects.get(named_object)
+
+    def show_label(self, named_object):
+        label = self.labeled_objects.get(named_object)
+        if label is not None:
+            label.show()
+
+    def hide_label(self, named_object):
+        label = self.labeled_objects.get(named_object)
+        if label is not None:
+            label.hide()
+
+    def toggle_label(self, named_object):
+        label = self.labeled_objects.get(named_object)
+        if label is not None:
+            label.toggle_shown()
 
     def check_settings(self):
         for label in self.labels:

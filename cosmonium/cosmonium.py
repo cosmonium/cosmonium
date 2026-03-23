@@ -60,7 +60,6 @@ from .engine.traversers import FindShadowCastersTraverser
 from .events import EventsDispatcher
 from .fonts import fontsManager
 from .foundation import BaseObject
-from .labels import Labels
 from .lights import GlobalLight, LightSources
 from .nav import FreeNav, WalkNav, ControlNav
 from .objects.stellarobject import StellarObject
@@ -72,6 +71,10 @@ from .parsers.parsers import register_parsers
 from .parsers.yamlparser import YamlModuleParser
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat
+from .rendering.axes import Axes
+from .rendering.labels import Labels
+from .rendering.orbits import Orbits
+from .rendering.halos import Halos
 from .rendering.pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
 from .rendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
@@ -322,7 +325,9 @@ class Cosmonium(CosmoniumBase):
         self.becoming_resolved = set()
         self.no_longer_resolved = set()
         self.global_light_sources = []
-        self.orbits = []
+        self.axes = Axes()
+        self.orbits = Orbits()
+        self.halos = Halos()
         self.shadow_casters = set()
         self.shadows = {}
         self.nearest_system = None
@@ -703,10 +708,12 @@ class Cosmonium(CosmoniumBase):
         if self.selected is not None:
             print("Deselect", self.selected.get_name())
             self.selected.set_selected(False)
+            self.orbits.set_selected(self.selected, False)
         if body is not None:
             print("Select", body.get_name())
             self.update_extra(body.anchor)
             body.set_selected(True)
+            self.orbits.set_selected(body, True)
         self.selected = body
         if self.fly:
             # Disable fly mode when changing body
@@ -1293,17 +1300,34 @@ class Cosmonium(CosmoniumBase):
             self.labels.add_label(newly_visible.body)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
+                self.axes.add_axis(newly_visible.body)
+                self.halos.add_halo(newly_visible.body)
+                if newly_visible.body.is_system():
+                    self.orbits.add_system_orbits(newly_visible.body)
         for newly_resolved in self.becoming_resolved:
             # print("NEW RESOLVED", newly_resolved.body.get_name())
             newly_resolved.body.on_resolved(scene_manager)
+            if newly_resolved.body.stellar_object:
+                self.axes.add_axis(newly_resolved.body)
+                self.halos.add_halo(newly_resolved.body)
+                if newly_resolved.body.is_system():
+                    self.orbits.add_system_orbits(newly_resolved.body)
         for old_resolved in self.no_longer_resolved:
             # print("OLD RESOLVED", old_resolved.body.get_name())
             old_resolved.body.on_point(scene_manager)
+            self.axes.remove_axis(old_resolved.body)
+            self.halos.remove_halo(old_resolved.body)
+            if old_resolved.body.is_system():
+                self.orbits.remove_system_orbits(old_resolved.body)
         for old_visible in self.no_longer_visibles:
             # print("OLD VISIBLE", old_visible.body.get_name())
             self.labels.remove_label(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
+                self.axes.remove_axis(old_visible.body)
+                self.halos.remove_halo(old_visible.body)
+                if old_visible.body.is_system():
+                    self.orbits.remove_system_orbits(old_visible.body)
         for old_focused in self.old_focused_objects:
             old_focused.body.set_focused(False)
         self.old_focused_objects = set()
@@ -1361,6 +1385,36 @@ class Cosmonium(CosmoniumBase):
                 self.haloset.reset()
                 self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
                 self.haloset.update()
+
+    @pstat
+    def update_axes(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        self.axes.check_visibility(frustum, pixel_size)
+        self.axes.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
+        self.axes.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
+
+    @pstat
+    def update_orbits(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        self.orbits.check_visibility(frustum, pixel_size)
+        self.orbits.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
+        self.orbits.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
+
+    @pstat
+    def update_halos(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        self.halos.check_visibility(frustum, pixel_size)
+        self.halos.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
+        self.halos.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
 
     @pstat
     def update_labels(self):
@@ -1483,6 +1537,9 @@ class Cosmonium(CosmoniumBase):
                 visible.body.check_settings()
             self.worlds.check_settings()
             self.labels.check_settings()
+            self.axes.check_settings()
+            self.orbits.check_settings()
+            self.halos.check_settings()
             # TODO: This should be done by a container object
             self.ecliptic_grid.check_settings()
             self.equatorial_grid.check_settings()
@@ -1510,6 +1567,9 @@ class Cosmonium(CosmoniumBase):
         )
         if task is not None:
             self.update_points()
+            self.update_axes()
+            self.update_orbits()
+            self.update_halos()
             self.update_labels()
             self.update_gui()
         return Task.cont
