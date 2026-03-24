@@ -172,6 +172,11 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-label-constellation', self.engine.toggle_label, ['constellation'])
         self.accept('toggle-label-location', self.engine.toggle_label, ['location'])
 
+        # Markers
+        self.accept('mark-selected', self.engine.mark_selected)
+        self.accept('unmark-selected', self.engine.unmark_selected)
+        self.accept('unmark-all', self.engine.unmark_all)
+
         self.accept('toggle-hud', self.gui.toggle_hud)
 
         for i in range(0, 10):

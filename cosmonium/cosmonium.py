@@ -72,9 +72,10 @@ from .parsers.yamlparser import YamlModuleParser
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat
 from .rendering.axes import Axes
+from .rendering.halos import Halos
 from .rendering.labels import Labels
 from .rendering.orbits import Orbits
-from .rendering.halos import Halos
+from .rendering.markers import Markers
 from .rendering.pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
 from .rendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
@@ -354,6 +355,7 @@ class Cosmonium(CosmoniumBase):
         self.background = ObserverCenteredWorld("background", background=True)
         self.worlds.add_world(self.background)
         self.labels = Labels()
+        self.markers = Markers()
 
         print("Use color picking:", settings.color_picking)
         if settings.color_picking:
@@ -886,6 +888,18 @@ class Cosmonium(CosmoniumBase):
         bodyClasses.toggle_show_label(body_class)
         self.update_settings()
 
+    def mark_selected(self, color=None, size=None, symbol=None, label='', occludable=True):
+        if self.selected is not None:
+            self.markers.mark(self.selected, color=color, size=size, symbol=symbol,
+                              label=label, occludable=occludable)
+
+    def unmark_selected(self):
+        if self.selected is not None:
+            self.markers.unmark(self.selected)
+
+    def unmark_all(self):
+        self.markers.unmark_all()
+
     def show_orbit(self, body_class):
         print("Show orbit", body_class)
         bodyClasses.show_orbit(body_class)
@@ -1298,6 +1312,7 @@ class Cosmonium(CosmoniumBase):
         for newly_visible in self.becoming_visibles:
             # print("NEW VISIBLE", newly_visible.body.get_name())
             self.labels.add_label(newly_visible.body)
+            self.markers.on_visible(newly_visible.body)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
                 self.axes.add_axis(newly_visible.body)
@@ -1322,6 +1337,7 @@ class Cosmonium(CosmoniumBase):
         for old_visible in self.no_longer_visibles:
             # print("OLD VISIBLE", old_visible.body.get_name())
             self.labels.remove_label(old_visible.body)
+            self.markers.on_invisible(old_visible.body)
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
                 self.axes.remove_axis(old_visible.body)
@@ -1426,6 +1442,17 @@ class Cosmonium(CosmoniumBase):
         self.labels.check_visibility(frustum, pixel_size)
         self.labels.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
         self.labels.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
+
+    @pstat
+    def update_markers(self):
+        camera_pos = self.observer.get_local_position()
+        camera_rot = self.observer.get_absolute_orientation()
+        frustum = self.observer.anchor.rel_frustum
+        pixel_size = self.observer.anchor.pixel_size
+        self.markers.update_obs(self.observer)
+        self.markers.check_visibility(frustum, pixel_size)
+        self.markers.check_and_create_instance(self.scene_manager, camera_pos, camera_rot)
+        self.markers.check_and_update_instance(self.scene_manager, camera_pos, camera_rot)
 
     @pstat
     def find_nearest_system(self):
@@ -1571,6 +1598,7 @@ class Cosmonium(CosmoniumBase):
             self.update_orbits()
             self.update_halos()
             self.update_labels()
+            self.update_markers()
             self.update_gui()
         return Task.cont
 

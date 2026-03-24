@@ -95,6 +95,9 @@ toggle-label-comet: shift-w
 toggle-label-asteroid: w
 toggle-label-spacecraft: n
 toggle-label-constellation: "="
+mark-selected: shift-control-m
+unmark-selected: shift-control-u
+unmark-all: shift-control-alt-m
 toggle-hud: v
 select-object-0: 0
 select-object-1: 1

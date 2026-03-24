@@ -91,6 +91,10 @@ menubar:
     - title: "Orbits"
       menu: 'orbits'
       enabled: 'engine.selected'
+    -
+    - title: '_Mark'
+      event: 'mark-selected'
+      enabled: 'engine.selected'
 
 - title: '_Time'
   entries:

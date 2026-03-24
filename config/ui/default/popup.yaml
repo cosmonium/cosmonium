@@ -24,6 +24,9 @@ popup:
 - title: "Orbits"
   visible: 'engine.selected'
   menu: orbits
+- title: "Mark"
+  visible: 'engine.selected'
+  event: 'mark-selected'
 - title: '_Edit'
   visible: 'engine.selected'
   event: 'gui-show-editor'
