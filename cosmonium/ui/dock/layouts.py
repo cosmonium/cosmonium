@@ -25,7 +25,7 @@ from panda3d.core import LVector4
 
 from ..skin import UIElement
 from .base import DockWidgetBase
-from .decorated_size import DecoratedSizer
+from .decorated_sizer import DecoratedSizer
 
 if TYPE_CHECKING:
     from .dock import Dock
