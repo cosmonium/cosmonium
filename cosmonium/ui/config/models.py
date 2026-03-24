@@ -100,8 +100,6 @@ class LayoutWidgetConfig(BaseModel):
     borders: Optional[Any] = Field(None, description="Border configuration")
     gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
     size: float = Field(32, description="Default widget size")
-    decoration_size: Optional[List[float]] = Field(default_factory=lambda: [1, 1], description="Decoration size")
-    rounded_corners: Optional[float] = Field(0, description="Corner radius for rounded borders")
 
 
 # Union type for all widget configs
@@ -127,8 +125,6 @@ class DockConfig(BaseModel):
     size: float = Field(32, description="Default widget size")
     gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
     borders: Optional[Any] = Field(None, description="Border configuration")
-    decoration_size: Optional[List[float]] = Field(default_factory=lambda: [1, 1], description="Decoration size")
-    rounded_corners: Optional[float] = Field(0, description="Corner radius")
 
 
 class HUDEntryConfig(BaseModel):
@@ -290,6 +286,8 @@ class SkinEntryConfig(BaseModel):
     )
     text_color: Optional[Union[str, List[float]]] = Field(None, description="Text color (hex string or RGB list)")
     border_color: Optional[Union[str, List[float]]] = Field(None, description="Border color (hex string or RGB list)")
+    border_radius: Optional[Union[float, str]] = Field(None, description="Border radius (CSS value)")
+    border_width: Optional[Union[float, str]] = Field(None, description="Border width (CSS value)")
     font_family: Optional[str] = Field(None, description="Font family name")
     font_size: Optional[Union[float, str]] = Field(None, description="Font size (numeric or CSS string)")
     font_style: Optional[str] = Field(None, description="Font style (e.g., 'italic')")

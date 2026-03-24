@@ -29,8 +29,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List
 
 from ...parsers.yamlparser import YamlParser
-from ..config.models import DockConfig, LayoutWidgetConfig
+from ..config.models import DockConfig
 from ..dock.dock import Dock
+from ..dock.layouts import LayoutDockWidget
 from .base import BaseComponentLoader
 from .widgets import WidgetLoaderRegistry
 
@@ -71,21 +72,29 @@ class DockLoader(BaseComponentLoader):
         # Validate dock configuration
         validated = self.validator.validate_dict(data, DockConfig)
 
-        # Create a LayoutWidgetConfig from the dock for widget loading
-        layout_data = {
-            'type': 'layout',
-            'orientation': validated.orientation,
-            'widgets': validated.widgets,
-            'size': validated.size,
-            'gaps': validated.gaps,
-            'borders': validated.borders,
-            'decoration-size': validated.decoration_size,
-            'rounded-corners': validated.rounded_corners,
-        }
-        layout_config = LayoutWidgetConfig(**layout_data)
+        registry = WidgetLoaderRegistry.get_instance()
+        # TODO: Should retrieve parsers from a central location instead of registry
+        parsers = registry._parsers
 
-        widget_registry = WidgetLoaderRegistry.get_instance()
-        layout = widget_registry.load(layout_config, self.gui)
+        # Parse borders, and gaps values
+        borders = parsers.border.parse(validated.borders)
+        gaps = parsers.gap.parse(validated.gaps)
+
+        # Recursively load child widgets
+        widgets = []
+        for child_widget_config in validated.widgets:
+            widget = registry.load(child_widget_config, self.gui.global_vars.globals)
+            if widget is not None:
+                widgets.append(widget)
+
+        layout = LayoutDockWidget(
+            size=validated.size,
+            direction=validated.orientation,
+            widgets=widgets,
+            gaps=gaps,
+            borders=borders,
+            element_class='dock',
+        )
         dock = Dock(validated.id, validated.orientation, validated.anchor, layout)
 
         return dock

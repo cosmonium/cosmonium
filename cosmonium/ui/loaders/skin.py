@@ -95,6 +95,8 @@ class SkinLoader(BaseComponentLoader):
         entry.background_color = self.parsers.color.parse(entry_config.background_color)
         entry.text_color = self.parsers.color.parse(entry_config.text_color)
         entry.border_color = self.parsers.color.parse(entry_config.border_color)
+        entry.border_radius = self.parsers.length.parse(entry_config.border_radius, entry)
+        entry.border_width = self.parsers.length.parse(entry_config.border_width, entry)
 
         # Parse font properties
         entry.font_family = entry_config.font_family

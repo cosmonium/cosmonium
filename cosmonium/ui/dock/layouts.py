@@ -19,9 +19,11 @@
 
 from __future__ import annotations
 
-from panda3d.core import LVector4
 from typing import TYPE_CHECKING
 
+from panda3d.core import LVector4
+
+from ..skin import UIElement
 from .base import DockWidgetBase
 from .decorated_size import DecoratedSizer
 
@@ -43,8 +45,6 @@ class LayoutDockWidget(DockWidgetBase):
         size: int,
         direction: str,
         widgets: list[DockWidgetBase],
-        decoration_size: tuple[int],
-        rounded_corners: int,
         image=None,
         geom=None,
         proportions=None,
@@ -52,27 +52,29 @@ class LayoutDockWidget(DockWidgetBase):
         borders=None,
         index=None,
         gaps=(0, 0),
+        element_class='layout',
     ):
         DockWidgetBase.__init__(self, proportions, alignments, borders, index)
         self.size = size
         self.direction = direction
-        self.decoration_size = decoration_size
-        self.widget = DecoratedSizer(decoration_size, rounded_corners, image, geom, direction, gaps=gaps)
+        self.element = UIElement('frame', class_=element_class)
+        self.widget = DecoratedSizer(self.element, image, geom, direction, gaps=gaps)
         self.sizer = self.widget
         self.frame = None
         self.widgets = widgets
-        if rounded_corners:
-            delta = LVector4(max(decoration_size[0], (rounded_corners - decoration_size[0]) * 0.707))
-            self.widget_borders = LVector4(delta)
-        else:
-            self.widget_borders = LVector4(
-                decoration_size[0], decoration_size[0], decoration_size[1], decoration_size[1]
-            )
+        self.widget_borders = LVector4(1, 1, 1, 1)
 
     def create(self, dock: Dock, parent, skin) -> None:
+        self.element.parent = parent.element
         self.widget.create(dock, parent, skin)
         self.instance = parent.instance
-        self.element = self.widget.element
+        border_x, border_y = self.widget.border
+        corner_radius = self.widget.corner_radius
+        if corner_radius:
+            delta = LVector4(max(border_x, (corner_radius - border_x) * 0.707))
+            self.widget_borders = LVector4(delta)
+        else:
+            self.widget_borders = LVector4(border_x, border_x, border_y, border_y)
         for i, widget in enumerate(self.widgets):
             borders = LVector4(0)
             if self.direction == 'horizontal':

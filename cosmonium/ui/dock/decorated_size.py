@@ -25,34 +25,37 @@ from directguilayout.gui import Sizer
 from panda3d.core import TransparencyAttrib
 
 from ...geometry.geometry import FrameGeom
-from ..skin import UIElement
 from ..textures.circle_generator import CircleTextureGenerator
 
 
 class DecoratedSizer(Sizer):
 
-    def __init__(self, border, rounded_corners, image, geom, *args, **kwargs):
+    def __init__(self, element, image, geom, *args, **kwargs):
         Sizer.__init__(self, *args, **kwargs)
         self.frame = None
-        self.border = border
-        self.rounded_corners = rounded_corners
+        self.border = (0, 0)
+        self.element = element
         self.image = image
         self.geom = geom
         self.border_color = None
-        self.element = None
-        self.corner_radius = rounded_corners
+        self.corner_radius = 0
         self.corner_texture = None
         self.frame_size = None
 
     def create(self, dock, parent, skin):
-        self.element = UIElement('frame', class_='sizer', parent=parent.element)
         self.frame = DirectFrame(
             **skin.get_style(self.element),
             parent=parent.instance,
             state=DGG.NORMAL,
         )
-        self.background_color = skin.get(self.element).background_color
-        self.border_color = skin.get(self.element).border_color
+        skin_entry = skin.get(self.element)
+        self.background_color = skin_entry.background_color
+        self.border_color = skin_entry.border_color
+        if skin_entry.border_width is not None:
+            border_val = skin_entry.border_width(self.element, False, skin)
+            self.border = (border_val, border_val)
+        if skin_entry.border_radius is not None:
+            self.corner_radius = skin_entry.border_radius(self.element, False, skin)
 
     def update_frame(self):
         if self.frame_size == self.get_size():
@@ -74,7 +77,7 @@ class DecoratedSizer(Sizer):
             )
         self.frame['frameSize'] = frame_size
         # Create geometry for the frame
-        if self.rounded_corners:
+        if self.corner_radius:
             # Generate rounded corner texture if corner_radius is specified
             if self.corner_texture is None:
                 # Generate circle texture for the border

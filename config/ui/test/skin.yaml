@@ -7,3 +7,7 @@
 - class: dock-button
   font-family: Material Design Icons
   font-size: 12px
+- element: frame
+  class: dock
+  border-width: 10px
+  border-radius: 50px

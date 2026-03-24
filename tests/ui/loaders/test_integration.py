@@ -46,9 +46,24 @@ from cosmonium.ui.loaders.skin import SkinLoader
 from cosmonium.ui.loaders.widgets import ButtonWidgetLoader, SpacerWidgetLoader, TextWidgetLoader, WidgetLoaderRegistry
 
 
+class MockGlobalVars:
+    """Mock global variables for testing."""
+    globals: dict = {}
+
+
+class MockGUI:
+    """Mock GUI class for testing."""
+    global_vars = MockGlobalVars()
+
+
 @pytest.fixture
 def init_registry(scope='module'):
     init_widget_loaders(WidgetLoaderRegistry.get_instance())
+
+
+@pytest.fixture
+def gui():
+    return MockGUI()
 
 
 @pytest.fixture
@@ -118,7 +133,7 @@ class TestSkinLoader:
 class TestDockLoader:
     """Tests for DockLoader with actual config files."""
 
-    def test_load_test_dock(self, init_registry, validator):
+    def test_load_test_dock(self, gui, init_registry, validator):
         """Test loading test dock configuration."""
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
@@ -134,7 +149,7 @@ dock:
 """
             )
         try:
-            loader = DockLoader(None, validator)
+            loader = DockLoader(gui, validator)
             docks = loader.load(filepath)
 
             assert isinstance(docks, list)

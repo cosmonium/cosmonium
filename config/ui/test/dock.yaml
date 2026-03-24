@@ -2,8 +2,6 @@ dock:
  - anchor: bottom
    orientation: horizontal
    gaps: [2, 2]
-   decoration-size: [10, 10]
-   rounded-corners: 50
    widgets:
       - type: text
         text: "A"

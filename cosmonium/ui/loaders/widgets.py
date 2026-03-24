@@ -225,8 +225,6 @@ class LayoutWidgetLoader(BaseWidgetLoader):
         alignments = parsers.alignment.parse(widget_config.align)
         borders = parsers.border.parse(widget_config.borders)
         gaps = parsers.gap.parse(widget_config.gaps)
-        decoration_size = widget_config.decoration_size
-        rounded_corners = widget_config.rounded_corners
 
         # Recursively load child widgets
         registry = WidgetLoaderRegistry.get_instance()
@@ -240,8 +238,6 @@ class LayoutWidgetLoader(BaseWidgetLoader):
             widget_config.size,
             widget_config.orientation,
             widgets,
-            decoration_size=decoration_size,
-            rounded_corners=rounded_corners,
             alignments=alignments,
             borders=borders,
             gaps=gaps,
