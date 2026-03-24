@@ -33,7 +33,7 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
         appearance = Appearance()
-        shape, extra = ShapeYamlParser.decode(data.shape)
+        shape, extra = ShapeYamlParser.decode(data.shape, use_skirt=False)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         scattering = CelestiaScattering(
             height=data.height,
@@ -58,7 +58,7 @@ class ONeilSimpleAtmosphereYamlParser(YamlModuleParser):
             shape = {'icosphere': {'subdivisions': 5}}
         else:
             shape = data.shape
-        shape, extra = ShapeYamlParser.decode(shape)
+        shape, extra = ShapeYamlParser.decode(shape, use_skirt=False)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere
@@ -73,7 +73,7 @@ class ONeilAtmosphereYamlParser(YamlModuleParser):
             shape = {'icosphere': {'subdivisions': 5}}
         else:
             shape = data.shape
-        shape, extra = ShapeYamlParser.decode(shape)
+        shape, extra = ShapeYamlParser.decode(shape, use_skirt=False)
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         atmosphere = Atmosphere(scattering, shape, appearance, shader)
         return atmosphere

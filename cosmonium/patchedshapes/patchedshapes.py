@@ -100,8 +100,16 @@ class PatchLayer:
             self.instance = None
 
 
+class GeometryPatchLayer(PatchLayer):
+
+    def __init__(self, use_skirt):
+        PatchLayer.__init__(self)
+        self.use_skirt = use_skirt
+
+
 class PatchFactory:
-    def __init__(self):
+    def __init__(self, use_skirt):
+        self.use_skirt = use_skirt and settings.use_patch_skirts
         self.heightmap = None
         self.lod_control = None
         self.surface = None
@@ -349,7 +357,7 @@ class SpherePatch(PatchBase):
         return (u, v)
 
 
-class SpherePatchLayer(PatchLayer):
+class SpherePatchLayer(GeometryPatchLayer):
 
     def create_instance(self, patch, tasks_tree):
         self.instance = geometry.UVPatch(
@@ -361,6 +369,7 @@ class SpherePatchLayer(PatchLayer):
             patch.x1,
             patch.y1,
             offset=patch.offset,
+            use_patch_skirts=self.use_skirt,
         )
         self.instance.reparent_to(patch.instance)
 
@@ -503,7 +512,7 @@ class NormalizedSquarePatch(SquarePatchBase):
         return geometry.NormalizedSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
 
 
-class NormalizedSquarePatchLayer(PatchLayer):
+class NormalizedSquarePatchLayer(GeometryPatchLayer):
 
     def create_instance(self, patch, tasks_tree):
         orientation = patch.rotations[patch.face]
@@ -519,7 +528,7 @@ class NormalizedSquarePatchLayer(PatchLayer):
             has_offset=patch.offset is not None,
             offset=patch.offset if patch.offset is not None else 0.0,
             use_patch_adaptation=settings.use_patch_adaptation,
-            use_patch_skirts=settings.use_patch_skirts,
+            use_patch_skirts=self.use_skirt,
         )
         self.instance.reparent_to(patch.instance)
         self.instance.set_quat(LQuaternion(*orientation))
@@ -547,7 +556,7 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
         return geometry.SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
 
 
-class SquaredDistanceSquarePatchLayer(PatchLayer):
+class SquaredDistanceSquarePatchLayer(GeometryPatchLayer):
 
     def create_instance(self, patch, tasks_tree):
         orientation = patch.rotations[patch.face]
@@ -563,7 +572,7 @@ class SquaredDistanceSquarePatchLayer(PatchLayer):
             has_offset=patch.offset is not None,
             offset=patch.offset,
             use_patch_adaptation=settings.use_patch_adaptation,
-            use_patch_skirts=settings.use_patch_skirts,
+            use_patch_skirts=self.use_skirt,
         )
 
         self.instance.reparent_to(patch.instance)
@@ -1087,7 +1096,7 @@ class PatchedSpherePatchFactory(PatchFactory):
         patch = SpherePatch(
             parent, lod, density, x, y, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes
         )
-        patch.add_layer(SpherePatchLayer())
+        patch.add_layer(SpherePatchLayer(self.use_skirt))
         # TODO: Temporary or make right
         patch.owner = self.owner
         return patch
@@ -1249,7 +1258,7 @@ class NormalizedSquarePatchFactory(PatchFactory):
             mean_height,
             self.owner.axes,
         )
-        patch.add_layer(NormalizedSquarePatchLayer())
+        patch.add_layer(NormalizedSquarePatchLayer(self.use_skirt))
         # TODO: Temporary or make right
         patch.owner = self.owner
         return patch
@@ -1284,7 +1293,7 @@ class SquaredDistanceSquarePatchFactory(PatchFactory):
             mean_height,
             self.owner.axes,
         )
-        patch.add_layer(SquaredDistanceSquarePatchLayer())
+        patch.add_layer(SquaredDistanceSquarePatchLayer(self.use_skirt))
         # TODO: Temporary or make right
         patch.owner = self.owner
         return patch

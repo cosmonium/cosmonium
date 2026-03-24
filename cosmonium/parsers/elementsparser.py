@@ -36,7 +36,7 @@ class CloudsYamlParser(YamlModuleParser):
         if data is None:
             return None
         height = float(data.get('height'))
-        shape, extra = ShapeYamlParser.decode(data.get('shape'))
+        shape, extra = ShapeYamlParser.decode(data.get('shape'), use_skirt=False)
         appearance = AppearanceYamlParser.decode(data.get('appearance'))
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:

@@ -48,53 +48,53 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 
 class PatchedSphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
-        factory = PatchedSpherePatchFactory()
+    def decode(cls, data, use_skirt=True, **kwargs):
+        factory = PatchedSpherePatchFactory(use_skirt)
         shape = PatchedSphereShape(factory)
         return (shape, {})
 
 
 class SphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
+    def decode(cls, data, **kwargs):
         shape = SphereShape()
         return (shape, {})
 
 
 class IcoSphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
+    def decode(cls, data, **kwargs):
         shape = IcoSphereShape(data.subdivisions)
         return (shape, {})
 
 
 class SqrtSphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
-        factory = NormalizedSquarePatchFactory()
+    def decode(cls, data, use_skirt=True, **kwargs):
+        factory = NormalizedSquarePatchFactory(use_skirt)
         shape = NormalizedSquareShape(factory)
         return (shape, {})
 
 
 class CubeSphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
-        factory = SquaredDistanceSquarePatchFactory()
+    def decode(cls, data, use_skirt=True, **kwargs):
+        factory = SquaredDistanceSquarePatchFactory(use_skirt)
         shape = SquaredDistanceSquareShape(factory)
         return (shape, {})
 
 
 class SeSphereYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
-        factory = SpaceEngineTextureSquarePatchFactory()
+    def decode(cls, data, use_skirt=True, **kwargs):
+        factory = SpaceEngineTextureSquarePatchFactory(use_skirt)
         shape = SpaceEnginePatchedSquareShape(factory)
         return (shape, {})
 
 
 class MeshYamlParser(YamlModuleParser):
     @classmethod
-    def decode(cls, data, radius=None):
+    def decode(cls, data, radius=None, **kwargs):
         model = data.model
         create_uv = data.create_uv
         panda = data.panda

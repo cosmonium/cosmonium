@@ -43,7 +43,7 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
         self.target = GrayTarget()
 
     def create(self, body):
-        factory = SquaredDistanceSquarePatchFactory()
+        factory = SquaredDistanceSquarePatchFactory(use_skirt=False)
         lod_control = VertexSizeLodControl(
             max_vertex_size=settings.patch_max_vertex_size,
             density=settings.patch_default_density,

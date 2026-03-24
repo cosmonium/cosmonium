@@ -147,7 +147,7 @@ class GpuPatchTerrainLayerFactory(TerrainLayerFactoryInterface):
 class TileFactory(PatchFactory):
 
     def __init__(self, heightmap, tile_density, size, terrain_layer_factory):
-        super().__init__()
+        super().__init__(use_skirt=settings.use_patch_skirts)
         self.heightmap = heightmap
         self.tile_density = tile_density
         self.size = size
