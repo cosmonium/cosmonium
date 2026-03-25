@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,25 +18,35 @@
 #
 
 
-from math import sin, cos, atan2
+from math import atan2, cos, sin
 
-from panda3d.core import LPoint3d, OmniBoundingVolume
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
-from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath
+from direct.showbase.PythonUtil import clamp
+from panda3d.core import (
+    Geom,
+    GeomLines,
+    GeomNode,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexRewriter,
+    GeomVertexWriter,
+    InternalName,
+    LPoint3d,
+    LVector3d,
+    NodePath,
+    OmniBoundingVolume,
+)
 
+from ... import settings
 from ...appearances import ModelAppearance
+from ...astro import units
 from ...astro.astro import position_to_equatorial
 from ...astro.projection import InfinitePosition
-from ...astro import units
 from ...bodyclass import bodyClasses
-from ...foundation import VisibleObject, LabelledObject
+from ...foundation import LabelledObject, VisibleObject
 from ...scene.sceneanchor import SceneAnchor
-from ...shaders.rendering import RenderingShader
 from ...shaders.lighting.flat import FlatLightingModel
-from ...utils import srgb_to_linear
-from ... import settings
-
+from ...shaders.rendering import RenderingShader
+from ...utils import TransparencyBlend, srgb_to_linear
 from .background_label import BackgroundLabel
 
 
@@ -58,6 +68,7 @@ class Asterism(VisibleObject):
         cls.appearance = ModelAppearance()
         cls.appearance.has_vertex_color = True
         cls.appearance.has_material = False
+        cls.appearance.transparency_blend = TransparencyBlend.TB_Additive
         cls.shader = RenderingShader(lighting_model=FlatLightingModel())
         cls.shader.color_picking = False
         cls.shader.create(None, cls.appearance)
@@ -77,22 +88,15 @@ class Asterism(VisibleObject):
             decl /= len(self.segments[0])
             self.position = InfinitePosition(ra * units.Rad, decl * units.Rad)
 
-    def create_instance(self):
-        self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHStatic)
-        self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
-        self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
-        # TODO: Ugly hack to calculate star position from the sun...
-        old_global_position = self.context.observer.anchor.get_absolute_reference_point()
-        old_local_position = self.context.observer.anchor.get_local_position()
-        self.context.observer.anchor.set_absolute_reference_point(LPoint3d())
-        self.context.observer.anchor.set_local_position(LPoint3d())
-        self.context.update_id += 1
+    def update_vertices(self):
+        geom = self.node.modify_geom(0)
+        vdata = geom.modify_vertex_data()
+        vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
         for segment in self.segments:
             if len(segment) < 2:
                 continue
             for anchor in segment:
-                # TODO: Temporary workaround to have star pos
-                anchor.update(0, self.context.update_id)
+                anchor.update(self.context.time.time_full, self.context.update_id)
                 anchor.update_observer(self.context.observer.anchor, self.context.update_id)
                 position = SceneAnchor.calc_scene_position(
                     self.context.scene_manager,
@@ -101,10 +105,18 @@ class Asterism(VisibleObject):
                     anchor.distance_to_obs,
                     anchor.vector_to_obs,
                 )
-                self.vertexWriter.addData3f(*position)
+                vwriter.setData3f(*position)
+
+    def create_instance(self):
+        self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3c4(), Geom.UHDynamic)
+        self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
+        self.colorwriter = GeomVertexWriter(self.vertexData, 'color')
+        for segment in self.segments:
+            if len(segment) < 2:
+                continue
+            for anchor in segment:
+                self.vertexWriter.addData3f(0, 0, 0)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
-        self.context.observer.anchor.set_absolute_reference_point(old_global_position)
-        self.context.observer.anchor.set_local_position(old_local_position)
         self.lines = GeomLines(Geom.UHStatic)
         index = 0
         for segment in self.segments:
@@ -131,6 +143,26 @@ class Asterism(VisibleObject):
         self.instance.set_depth_write(False)
         self.instance.node().setBounds(OmniBoundingVolume())
         self.instance.node().setFinal(True)
+        TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
+        self.update_vertices()
+
+    def check_visibility(self, frustum, pixel_size):
+        super().check_visibility(frustum, pixel_size)
+        # If asterism fading is enabled, hide the asterism when the observer is farther than 2 times the fade distance
+        # This would disable vertex updates.
+        if settings.asterism_fade > 0:
+            self.visible = (
+                LVector3d(self.context.observer.get_absolute_position()).length() < settings.asterism_fade * 2
+            )
+
+    def update_instance(self, scene_manager, camera_pos, camera_rot):
+        if settings.asterism_fade > 0:
+            # Calculate the fade factor based on the observer's distance
+            observer_distance = LVector3d(self.context.observer.get_absolute_position()).length()
+            # Fade out when the observer is between 1 and 2 times the fade distance
+            fade = clamp(1.0 - (observer_distance - settings.asterism_fade) / settings.asterism_fade, 0.0, 1.0)
+            self.instance.setColorScale(fade, fade, fade, 1.0)
+        self.update_vertices()
 
 
 class NamedAsterism(LabelledObject):

@@ -1386,6 +1386,8 @@ class Cosmonium(CosmoniumBase):
         self.worlds.update_scene_anchor(scene_manager)
         for controller in self.controllers_to_update:
             controller.check_and_update_instance(camera_pos, camera_rot)
+        # TODO: Update annotations registered as components of the universe, but we should find a better way to do this
+        self.universe.components.check_and_update_instance(scene_manager, camera_pos, camera_rot)
 
     @pstat
     def update_gui(self):

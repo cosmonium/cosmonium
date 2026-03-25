@@ -208,6 +208,7 @@ orbit_smooth_blend = 1.5
 grid_thickness = 0.5
 
 asterism_thickness = 0.9
+asterism_fade = 100.0 * units.Ly
 boundary_thickness = 0.9
 
 wireframe_fill_color = LColor(1, 0.0, 0.0, 1.0)
