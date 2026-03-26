@@ -4,7 +4,7 @@ permissions:
   contents: read
 jobs:
   build-linux:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    if: "! contains(github.ref, 'copilot/') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name)"
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
@@ -46,7 +46,7 @@ jobs:
         path: ~/.local/state/cosmonium/log/output.log
 
   build-macos:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    if: "! contains(github.ref, 'copilot/') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name)"
     runs-on: macos-15-intel
     steps:
     - name: Checkout repository
@@ -88,7 +88,7 @@ jobs:
         path: ~/Library/Logs/cosmonium/output.log
 
   build-windows:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    if: "! contains(github.ref, 'copilot/') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name)"
     runs-on: windows-latest
     steps:
     - name: Checkout repository
