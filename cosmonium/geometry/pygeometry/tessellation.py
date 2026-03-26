@@ -88,7 +88,7 @@ def make_square_primitives(prim, inner: int, nb_vertices: int) -> None:
     no adaptive tessellation is needed.
 
     Args:
-        prim: Panda3D GeomTriangles primitive to add vertices to.
+        prim: GeomTriangles primitive to add vertices to.
         inner: Number of subdivisions along each edge.
         nb_vertices: Number of vertices along each axis (inner + 1).
 
@@ -116,7 +116,7 @@ def make_adapted_square_primitives(prim, inner: int, nb_vertices: int, ratio: li
     tessellation levels.
 
     Args:
-        prim: Panda3D GeomTriangles primitive to add vertices to.
+        prim: GeomTriangles primitive to add vertices to.
         inner: Number of subdivisions along each inner edge.
         nb_vertices: Number of vertices along each axis (inner + 1).
         ratio: List of 4 integers specifying subdivision ratios for each edge
@@ -221,7 +221,7 @@ def make_adapted_square_primitives_skirt(prim, inner: int, nb_vertices: int, rat
     vertices per skirt edge.
 
     Args:
-        prim: Panda3D GeomTriangles primitive to add vertices to.
+        prim: GeomTriangles primitive to add vertices to.
         inner: Number of subdivisions along each inner edge.
         nb_vertices: Number of vertices along each axis (inner + 1).
         ratio: List of 4 integers specifying subdivision ratios for each edge
@@ -271,6 +271,169 @@ def make_adapted_square_primitives_skirt(prim, inner: int, nb_vertices: int, rat
                     prim.add_vertices(skirt, v + 1, skirt + ratio[i])
 
 
+def make_adapted_uv_primitives(prim, rings: int, sectors: int, r_rings: int, r_sectors: int, ratio: list[int]) -> None:
+    """Generate adaptive triangles for a UV patch grid with edge subdivision.
+
+    Creates triangles for a UV (latitude/longitude) spherical patch with
+    adaptive tessellation along the edges. The patch adapts its edge
+    triangulation to match neighbouring patches with different tessellation
+    levels, preventing cracks and T-junctions.
+
+    The adaptation occurs along the four edges, where vertices may be merged
+    based on the ratio between inner and outer tessellation levels.
+
+    Args:
+        prim: GeomTriangles primitive to add vertices to.
+        rings: Number of subdivisions in latitude direction.
+        sectors: Number of subdivisions in longitude direction.
+        r_rings: Number of vertices along the rings axis (rings + 1).
+        r_sectors: Number of vertices along the sectors axis (sectors + 1).
+        ratio: List of 4 integers specifying subdivision ratios for each edge
+            [left, bottom, right, top].
+
+    Notes:
+        - Uses UV winding convention: (v, v+1, v+r_sectors) for interior cells.
+        - Corner vertices require special handling to maintain consistency.
+    """
+    for r in range(0, rings):
+        for s in range(0, sectors):
+            v = r_sectors * r + s
+            if r == 0:
+                # Bottom edge
+                i = 1  # bottom ratio, merges s
+                if s == 0:
+                    # Bottom-left corner
+                    j = 0  # left ratio, merges r
+                    if ratio[i] == 1 and ratio[j] == 1:
+                        prim.add_vertices(v, v + 1, v + r_sectors)
+                        prim.add_vertices(v + 1, v + r_sectors + 1, v + r_sectors)
+                    else:
+                        prim.add_vertices(v, v + r_sectors + 1, v + r_sectors * ratio[j])
+                        prim.add_vertices(v, v + ratio[i], v + r_sectors + 1)
+                elif s == sectors - 1:
+                    # Bottom-right corner
+                    j = 2  # right ratio, merges r
+                    if ratio[i] == 1:
+                        prim.add_vertices(v, v + 1, v + r_sectors)
+                    prim.add_vertices(v + 1, v + r_sectors * ratio[j] + 1, v + r_sectors * ratio[j])
+                else:
+                    # Bottom edge, not corner
+                    vp = r * r_sectors + (s // ratio[i]) * ratio[i]
+                    if (s % ratio[i]) == 0:
+                        prim.add_vertices(v, v + ratio[i], v + r_sectors)
+                    prim.add_vertices(vp + ratio[i], v + r_sectors + 1, v + r_sectors)
+            elif r == rings - 1:
+                # Top edge
+                i = 3  # top ratio, merges s
+                if s == 0:
+                    # Top-left corner
+                    j = 0  # left ratio, merges r
+                    if ratio[j] == 1:
+                        prim.add_vertices(v, v + 1, v + r_sectors)
+                    prim.add_vertices(v + ratio[i], v + r_sectors + ratio[i], v + r_sectors)
+                elif s == sectors - 1:
+                    # Top-right corner
+                    j = 2  # right ratio, merges r
+                    if ratio[i] == 1 and ratio[j] == 1:
+                        prim.add_vertices(v, v + 1, v + r_sectors)
+                        prim.add_vertices(v + 1, v + r_sectors + 1, v + r_sectors)
+                    else:
+                        vpx = r_sectors * (r // ratio[j]) * ratio[j] + s
+                        prim.add_vertices(vpx + 1, v + r_sectors + 1, v)
+                        vpy = r * r_sectors + ((s // ratio[i]) * ratio[i])
+                        prim.add_vertices(v, v + r_sectors + 1, vpy + r_sectors)
+                else:
+                    # Top edge, not corner
+                    vp = r * r_sectors + ((s // ratio[i]) * ratio[i])
+                    prim.add_vertices(v, v + 1, vp + r_sectors)
+                    if ((s + 1) % ratio[i]) == 0:
+                        prim.add_vertices(v + 1, v + r_sectors + 1, vp + r_sectors)
+            elif s == 0:
+                # Left edge
+                i = 0  # left ratio, merges r
+                vp = r_sectors * (r // ratio[i]) * ratio[i] + s
+                prim.add_vertices(v + 1, v + r_sectors + 1, vp + r_sectors * ratio[i])
+                if (r % ratio[i]) == 0:
+                    prim.add_vertices(v, v + 1, vp + r_sectors * ratio[i])
+            elif s == sectors - 1:
+                # Right edge
+                i = 2  # right ratio, merges r
+                vp = r_sectors * (r // ratio[i]) * ratio[i] + s
+                prim.add_vertices(v, vp + 1, v + r_sectors)
+                if ((r + 1) % ratio[i]) == 0:
+                    prim.add_vertices(vp + 1, v + r_sectors + 1, v + r_sectors)
+            else:
+                prim.add_vertices(v, v + 1, v + r_sectors)
+                prim.add_vertices(v + 1, v + r_sectors + 1, v + r_sectors)
+
+
+def make_adapted_uv_primitives_skirt(
+    prim, rings: int, sectors: int, r_rings: int, r_sectors: int, ratio: list[int]
+) -> None:
+    """Generate adaptive triangles for UV patch edge skirts.
+
+    Creates triangles connecting the UV patch edges to surrounding skirt
+    vertices. Skirts extend beyond the patch boundaries to prevent gaps
+    between patches due to floating-point precision or LOD transitions. The
+    skirt triangulation adapts to match the edge subdivision ratios.
+
+    Skirt vertices are stored after the main patch vertices in the order:
+    [left_skirt(r_rings), right_skirt(r_rings), bottom_skirt(r_sectors),
+    top_skirt(r_sectors)].
+
+    Args:
+        prim: GeomTriangles primitive to add vertices to.
+        rings: Number of subdivisions in latitude direction.
+        sectors: Number of subdivisions in longitude direction.
+        r_rings: Number of vertices along the rings axis (rings + 1).
+        r_sectors: Number of vertices along the sectors axis (sectors + 1).
+        ratio: List of 4 integers specifying subdivision ratios for each edge
+            [left, bottom, right, top].
+
+    Notes:
+        - Skirt vertices start at index (r_rings * r_sectors).
+        - Adapts triangulation based on ratio to maintain consistency.
+        - Only generates triangles at ratio-boundary positions for adapted edges.
+    """
+    base_idx = r_rings * r_sectors
+
+    # Left edge (s=0), varies along r
+    skirt_start = base_idx
+    for r in range(0, rings):
+        v = r * r_sectors
+        skirt = skirt_start + r
+        if (r % ratio[0]) == 0:
+            prim.add_vertices(v, v + r_sectors * ratio[0], skirt)
+            prim.add_vertices(skirt, v + r_sectors * ratio[0], skirt + ratio[0])
+
+    # Right edge (s=sectors), varies along r
+    skirt_start = base_idx + r_rings
+    for r in range(0, rings):
+        v = r * r_sectors + sectors
+        skirt = skirt_start + r
+        if (r % ratio[2]) == 0:
+            prim.add_vertices(skirt, v, v + r_sectors * ratio[2])
+            prim.add_vertices(v + r_sectors * ratio[2], skirt + ratio[2], skirt)
+
+    # Bottom edge (r=0), varies along s
+    skirt_start = base_idx + 2 * r_rings
+    for s in range(0, sectors):
+        v = s
+        skirt = skirt_start + s
+        if (s % ratio[1]) == 0:
+            prim.add_vertices(skirt, v, v + ratio[1])
+            prim.add_vertices(v + ratio[1], skirt + ratio[1], skirt)
+
+    # Top edge (r=rings), varies along s
+    skirt_start = base_idx + 2 * r_rings + r_sectors
+    for s in range(0, sectors):
+        v = rings * r_sectors + s
+        skirt = skirt_start + s
+        if (s % ratio[3]) == 0:
+            prim.add_vertices(v, skirt, v + ratio[3])
+            prim.add_vertices(skirt, skirt + ratio[3], v + ratio[3])
+
+
 def make_primitives_skirt(prim, inner: int, nb_vertices: int) -> None:
     """Generate uniform triangles for patch edge skirts.
 
@@ -283,7 +446,7 @@ def make_primitives_skirt(prim, inner: int, nb_vertices: int) -> None:
     vertices per skirt edge.
 
     Args:
-        prim: Panda3D GeomTriangles primitive to add vertices to.
+        prim: GeomTriangles primitive to add vertices to.
         inner: Number of subdivisions along each inner edge.
         nb_vertices: Number of vertices along each axis (inner + 1).
 

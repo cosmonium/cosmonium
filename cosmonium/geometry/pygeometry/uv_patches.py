@@ -24,11 +24,13 @@ UV (latitude/longitude) parameterization.
 """
 
 from math import cos, pi, sin
+from typing import Optional
 
 from panda3d.core import LPoint3d, LVector3d, NodePath
 
 from ...pstats import named_pstat
 from .core import empty_geom, empty_node
+from .tessellation import make_adapted_uv_primitives, make_adapted_uv_primitives_skirt
 
 
 def UVPatchPoint(
@@ -56,14 +58,7 @@ def UVPatchPoint(
     Notes:
         - (r, s) = (0, 0) maps to patch corner (x0, y0).
         - (r, s) = (1, 1) maps to patch corner (x1, y1).
-        - Uses spherical coordinates: longitude θ = 2π(x0 + s·Δx), latitude φ = π(y0 + r·Δy).
-        - Point is offset inward if offset > 0.
-
-    Example:
-        >>> from panda3d.core import LVector3d
-        >>> axes = LVector3d(1, 1, 1)
-        >>> # Get center point of patch covering upper-right quadrant
-        >>> point = UVPatchPoint(axes, 0.5, 0.5, 0.5, 0, 1.0, 0.5)
+        - Positive offset moves the points inward.
     """
     dx = x1 - x0
     dy = y1 - y0
@@ -159,9 +154,11 @@ def UVPatch(
     inv_texture_u: bool = False,
     inv_texture_v: bool = False,
     offset: float = 0.0,
+    use_patch_adaptation: bool = True,
     use_patch_skirts=True,
     skirt_size=0.05,
     skirt_uv=0.05,
+    outer: Optional[list[int]] = None,
 ) -> NodePath:
     """Create UV-mapped spherical patch.
 
@@ -183,25 +180,37 @@ def UVPatch(
         inv_texture_v: If True, invert V texture coordinates. Default is False.
         offset: Offset distance from surface.
             Default is 0.0.
+        use_patch_adaptation: If True, use adaptive tessellation along edges when
+            outer tessellation levels differ from the inner level. Default is True.
         use_patch_skirts: If True, generate skirts along patch edges to hide gaps.
             Default is True.
         skirt_size: Size of edge skirts (as fraction of patch size).
                 Default is 0.05 (5% of patch size).
         skirt_uv: UV offset for skirt texture coordinates.
             Default is 0.05 (5% beyond patch UV range).
+        outer: Optional list of 4 integers for outer edge subdivision levels in
+            order [left, bottom, right, top].
+            When provided and use_patch_adaptation is True, the edge triangulation
+            is adapted to match neighbouring patches of different resolutions.
 
     Returns:
         NodePath containing the patch geometry with positions, normals,
         texture coordinates, tangents, and binormals.
 
     Notes:
-        - Geometry has (rings+1) × (sectors+1) vertices.
-        - Creates rings × sectors quads (2 triangles each).
+        - Geometry has (rings+1) x (sectors+1) vertices (without adaptive tessellation).
         - Tangents point in longitude direction.
         - Binormals point in latitude direction.
     """
     r_sectors = sectors + 1
     r_rings = rings + 1
+
+    # Compute outer tessellation ratios if adaptation is requested
+    # Note: Assumes same number of rings and sectors on all edges for simplicity.
+    if use_patch_adaptation and outer is not None:
+        ratio = [rings // x if x > 0 and rings >= x else 1 for x in outer]
+    else:
+        ratio = None
 
     nb_data = r_rings * r_sectors
     # Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
@@ -420,14 +429,20 @@ def UVPatch(
                     gbiw.add_data3d(binormal)
 
     # Generate main patch primitives
-    for r in range(0, r_rings - 1):
-        for s in range(0, r_sectors - 1):
-            prim.add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s)
-            prim.add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s)
+    if ratio is not None:
+        make_adapted_uv_primitives(prim, rings, sectors, r_rings, r_sectors, ratio)
+    else:
+        for r in range(0, r_rings - 1):
+            for s in range(0, r_sectors - 1):
+                prim.add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s)
+                prim.add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s)
 
     # Generate skirt primitives if enabled
     if use_patch_skirts:
-        make_uv_primitives_skirt(prim, rings, sectors, r_rings, r_sectors)
+        if ratio is not None:
+            make_adapted_uv_primitives_skirt(prim, rings, sectors, r_rings, r_sectors, ratio)
+        else:
+            make_uv_primitives_skirt(prim, rings, sectors, r_rings, r_sectors)
 
     prim.closePrimitive()
     geom.addPrimitive(prim)
@@ -448,8 +463,8 @@ def UVPatchBoundingPoints(
     """Calculate bounding points for UV patch.
 
     Computes a set of points that define the bounding volume of a UV patch,
-    accounting for minimum and maximum terrain heights. Used for frustum
-    culling and LOD calculations.
+    accounting for minimum and maximum terrain heights. Used to construct bounding
+    boxes or spheres for frustum culling and LOD calculations.
 
     Args:
         axes: Semi-axes of the ellipsoid (rx, ry, rz).
@@ -470,7 +485,6 @@ def UVPatchBoundingPoints(
         - Samples patch at 9 locations: corners (0,0), (0.5,0), (1,0), (0,0.5),
           (0.5,0.5), (1,0.5), (0,1), (0.5,1), (1,1).
         - Heights are applied along surface normals.
-        - Used to construct bounding boxes or spheres for culling.
     """
     points = []
     if min_height != max_height:

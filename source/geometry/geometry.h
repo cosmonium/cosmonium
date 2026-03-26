@@ -26,6 +26,7 @@
 #include "nodePath.h"
 
 class GeomVertexWriter;
+class GeomTriangles;
 
 /**
  * @brief Stores tessellation configuration for adaptive mesh generation.
@@ -121,16 +122,69 @@ PUBLISHED:
    * @param inv_texture_u If true, invert U texture coordinates
    * @param inv_texture_v If true, invert V texture coordinates
    * @param offset Offset distance from surface
+   * @param use_patch_adaptation If true, enable adaptive edge tessellation to
+   *        match neighbouring patches with different LOD levels
    * @param use_patch_skirts If true, generate edge skirts
    * @param skirt_size Size of edge skirts (as fraction of patch size)
    * @param skirt_uv UV offset for skirt texture coordinates
+   * @param outer Four outer edge tessellation densities [left, bottom, right, top]
+   *        used when use_patch_adaptation is true. Zero values disable adaptation
+   *        on the corresponding edge.
    * @return NodePath containing the generated patch geometry
    */
   NodePath
   make(LVector3d axes, unsigned int rings, unsigned int sectors,
       double x0, double y0, double x1, double y1,
       bool global_texture=false, bool inv_texture_u=false, bool inv_texture_v=false,
-      double offset=0.0, bool use_patch_skirts=true, double skirt_size=0.05, double skirt_uv=0.05);
+      double offset=0.0, bool use_patch_adaptation=true, bool use_patch_skirts=true,
+      double skirt_size=0.05, double skirt_uv=0.05,
+      LVecBase4i outer=LVecBase4i(0, 0, 0, 0));
+
+private:
+  /**
+   * @brief Generates adaptive triangle primitives for a UV patch grid.
+   *
+   * Creates triangles for a UV (latitude/longitude) spherical patch with
+   * adaptive tessellation along the edges. The patch adapts its edge
+   * triangulation to match neighbouring patches with different tessellation
+   * levels, preventing cracks and T-junctions.
+   *
+   * @param prim GeomTriangles primitive to add vertex indices to
+   * @param rings Number of latitude subdivisions
+   * @param sectors Number of longitude subdivisions
+   * @param r_rings Number of vertices along the rings axis (rings + 1)
+   * @param r_sectors Number of vertices along the sectors axis (sectors + 1)
+   * @param ratio Subdivision ratios for the four edges [left, bottom, right, top]
+   */
+  void
+  make_adapted_uv_primitives(GeomTriangles *prim,
+      unsigned int rings, unsigned int sectors,
+      unsigned int r_rings, unsigned int r_sectors,
+      LVecBase4i ratio);
+
+  /**
+   * @brief Generates adaptive triangle primitives for UV patch edge skirts.
+   *
+   * Creates triangles connecting the UV patch edges to surrounding skirt
+   * vertices. The skirt triangulation adapts to match the outer tessellation
+   * ratios, maintaining consistency with the main patch adaptive triangulation.
+   *
+   * Skirt vertices are stored after the main patch vertices in the order:
+   * [left_skirt (r_rings), right_skirt (r_rings), bottom_skirt (r_sectors),
+   * top_skirt (r_sectors)].
+   *
+   * @param prim GeomTriangles primitive to add vertex indices to
+   * @param rings Number of latitude subdivisions
+   * @param sectors Number of longitude subdivisions
+   * @param r_rings Number of vertices along the rings axis (rings + 1)
+   * @param r_sectors Number of vertices along the sectors axis (sectors + 1)
+   * @param ratio Subdivision ratios for the four edges [left, bottom, right, top]
+   */
+  void
+  make_adapted_uv_primitives_skirt(GeomTriangles *prim,
+      unsigned int rings, unsigned int sectors,
+      unsigned int r_rings, unsigned int r_sectors,
+      LVecBase4i ratio);
 };
 
 /**

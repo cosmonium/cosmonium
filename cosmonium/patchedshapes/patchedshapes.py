@@ -369,7 +369,9 @@ class SpherePatchLayer(GeometryPatchLayer):
             patch.x1,
             patch.y1,
             offset=patch.offset,
+            use_patch_adaptation=settings.use_patch_adaptation,
             use_patch_skirts=self.use_skirt,
+            outer=patch.tessellation_outer_level,
         )
         self.instance.reparent_to(patch.instance)
 
@@ -1105,6 +1107,12 @@ class PatchedSpherePatchFactory(PatchFactory):
 class PatchedSphereShape(EllipsoidPatchedShape):
     def create_root_patches(self):
         self.root_patches = [self.create_patch(None, 0, -1, 0, 0), self.create_patch(None, 0, -1, 1, 0)]
+        p0, p1 = self.root_patches
+        # The two hemispheres wrap around the sphere and are each other's EAST and WEST neighbours:
+        # p0 EAST edge (longitude=0.5) borders p1 WEST edge, and
+        # p0 WEST edge (longitude=0.0) borders p1 EAST edge (longitude=1.0, wrapping).
+        p0.neighbours.set_all_neighbours(set(), {p1}, set(), {p1})
+        p1.neighbours.set_all_neighbours(set(), {p0}, set(), {p0})
         for patch in self.root_patches:
             for linked_object in self.linked_objects:
                 linked_object.create_root_patch(patch)
@@ -1145,6 +1153,12 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         top = self.create_patch(None, 0, SquarePatchBase.TOP, 0, 0)
         bottom = self.create_patch(None, 0, SquarePatchBase.BOTTOM, 0, 0)
         self.root_patches = [right, left, back, front, top, bottom]
+        # TODO: Establish the cross-face neighbour links between the 6 cube-face root
+        # patches so that calc_outer_tessellation_level can compute the correct
+        # adaptation level at face boundaries.  This is not yet done because
+        # remove_detached_neighbours uses local x/y coordinate ranges to prune stale
+        # neighbours, and those local coordinates are not comparable across different
+        # cube faces, so the links would be incorrectly discarded after the first split.
         # north, east, south, west
         #         right.set_all_neighbours([front], [bottom], [back], [top])
         #         left.set_all_neighbours([], [], [], [])

@@ -139,12 +139,22 @@ NodePath
 UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         double x0, double y0, double x1, double y1,
         bool global_texture, bool inv_texture_u, bool inv_texture_v,
-        double offset, bool use_patch_skirts, double skirt_size, double skirt_uv)
+        double offset, bool use_patch_adaptation, bool use_patch_skirts,
+        double skirt_size, double skirt_uv, LVecBase4i outer)
 {
     _geom_collector.start();
 
     unsigned int r_sectors = sectors + 1;
     unsigned int r_rings = rings + 1;
+
+    // Compute outer tessellation ratios for edge adaptation
+    LVecBase4i ratio;
+    if (use_patch_adaptation) {
+        for (unsigned int i = 0; i < 4; ++i) {
+            unsigned int x = outer[i];
+            ratio[i] = (x > 0 && rings >= x) ? rings / x : 1;
+        }
+    }
 
     unsigned int nb_data = r_rings * r_sectors;
     // Reserve space for primitive indices: each quad becomes 2 triangles with 3 indices each
@@ -426,51 +436,59 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     }
 
     // Generate main patch primitives
-    for (unsigned int r = 0; r < r_rings - 1; ++r) {
-        for (unsigned int s = 0; s < r_sectors - 1; ++s) {
-            prim->add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s);
-            prim->add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s);
+    if (use_patch_adaptation) {
+        make_adapted_uv_primitives(prim, rings, sectors, r_rings, r_sectors, ratio);
+    } else {
+        for (unsigned int r = 0; r < r_rings - 1; ++r) {
+            for (unsigned int s = 0; s < r_sectors - 1; ++s) {
+                prim->add_vertices(r * r_sectors + s, r * r_sectors + (s + 1), (r + 1) * r_sectors + s);
+                prim->add_vertices(r * r_sectors + (s + 1), (r + 1) * r_sectors + (s + 1), (r + 1) * r_sectors + s);
+            }
         }
     }
 
     // Generate skirt primitives if enabled
     if (use_patch_skirts) {
-        unsigned int base_idx = r_rings * r_sectors;
+        if (use_patch_adaptation) {
+            make_adapted_uv_primitives_skirt(prim, rings, sectors, r_rings, r_sectors, ratio);
+        } else {
+            unsigned int base_idx = r_rings * r_sectors;
 
-        // Left edge (s=0): Connect to skirt
-        unsigned int skirt_start = base_idx;
-        for (unsigned int r = 0; r < rings; ++r) {
-            unsigned int v = r * r_sectors;
-            unsigned int skirt = skirt_start + r;
-            prim->add_vertices(v, v + r_sectors, skirt);
-            prim->add_vertices(skirt, v + r_sectors, skirt + 1);
-        }
+            // Left edge (s=0): Connect to skirt
+            unsigned int skirt_start = base_idx;
+            for (unsigned int r = 0; r < rings; ++r) {
+                unsigned int v = r * r_sectors;
+                unsigned int skirt = skirt_start + r;
+                prim->add_vertices(v, v + r_sectors, skirt);
+                prim->add_vertices(skirt, v + r_sectors, skirt + 1);
+            }
 
-        // Right edge (s=sectors): Connect to skirt
-        skirt_start = base_idx + r_rings;
-        for (unsigned int r = 0; r < rings; ++r) {
-            unsigned int v = r * r_sectors + sectors;
-            unsigned int skirt = skirt_start + r;
-            prim->add_vertices(skirt, v, v + r_sectors);
-            prim->add_vertices(v + r_sectors, skirt + 1, skirt);
-        }
+            // Right edge (s=sectors): Connect to skirt
+            skirt_start = base_idx + r_rings;
+            for (unsigned int r = 0; r < rings; ++r) {
+                unsigned int v = r * r_sectors + sectors;
+                unsigned int skirt = skirt_start + r;
+                prim->add_vertices(skirt, v, v + r_sectors);
+                prim->add_vertices(v + r_sectors, skirt + 1, skirt);
+            }
 
-        // Bottom edge (r=0): Connect to skirt
-        skirt_start = base_idx + 2 * r_rings;
-        for (unsigned int s = 0; s < sectors; ++s) {
-            unsigned int v = s;
-            unsigned int skirt = skirt_start + s;
-            prim->add_vertices(skirt, v, v + 1);
-            prim->add_vertices(v + 1, skirt + 1, skirt);
-        }
+            // Bottom edge (r=0): Connect to skirt
+            skirt_start = base_idx + 2 * r_rings;
+            for (unsigned int s = 0; s < sectors; ++s) {
+                unsigned int v = s;
+                unsigned int skirt = skirt_start + s;
+                prim->add_vertices(skirt, v, v + 1);
+                prim->add_vertices(v + 1, skirt + 1, skirt);
+            }
 
-        // Top edge (r=rings): Connect to skirt
-        skirt_start = base_idx + 2 * r_rings + r_sectors;
-        for (unsigned int s = 0; s < sectors; ++s) {
-            unsigned int v = rings * r_sectors + s;
-            unsigned int skirt = skirt_start + s;
-            prim->add_vertices(v, skirt, v + 1);
-            prim->add_vertices(skirt, skirt + 1, v + 1);
+            // Top edge (r=rings): Connect to skirt
+            skirt_start = base_idx + 2 * r_rings + r_sectors;
+            for (unsigned int s = 0; s < sectors; ++s) {
+                unsigned int v = rings * r_sectors + s;
+                unsigned int skirt = skirt_start + s;
+                prim->add_vertices(v, skirt, v + 1);
+                prim->add_vertices(skirt, skirt + 1, v + 1);
+            }
         }
     }
 
@@ -481,6 +499,170 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
     _geom_collector.stop();
 
     return NodePath(node);
+}
+
+// ============================================================================
+// UVPatchGenerator Adaptive Primitive Helpers
+// ============================================================================
+
+/**
+ * @brief Generates adaptive triangle primitives for a UV patch grid.
+ *
+ * Creates triangles for a UV (latitude/longitude) spherical patch with
+ * adaptive tessellation along the edges to match neighbouring patches with
+ * different LOD levels.
+ *
+ * ratio ordering: [left (s=0), bottom (r=0), right (s=sectors), top (r=rings)].
+ */
+void
+UVPatchGenerator::make_adapted_uv_primitives(GeomTriangles *prim,
+        unsigned int rings, unsigned int sectors,
+        unsigned int r_rings, unsigned int r_sectors,
+        LVecBase4i ratio)
+{
+    for (unsigned int r = 0; r < rings; ++r) {
+        for (unsigned int s = 0; s < sectors; ++s) {
+            unsigned int v = r_sectors * r + s;
+            if (r == 0) {
+                unsigned int i = 1;  // bottom: merges s
+                if (s == 0) {
+                    // Bottom-left corner
+                    unsigned int j = 0;  // left
+                    if (ratio[i] == 1 && ratio[j] == 1) {
+                        prim->add_vertices(v, v + 1, v + r_sectors);
+                        prim->add_vertices(v + 1, v + r_sectors + 1, v + r_sectors);
+                    } else {
+                        prim->add_vertices(v, v + r_sectors + 1, v + r_sectors * ratio[j]);
+                        prim->add_vertices(v, v + ratio[i], v + r_sectors + 1);
+                    }
+                } else if (s == sectors - 1) {
+                    // Bottom-right corner
+                    unsigned int j = 2;  // right
+                    if (ratio[i] == 1) {
+                        prim->add_vertices(v, v + 1, v + r_sectors);
+                    }
+                    prim->add_vertices(v + 1, v + r_sectors * ratio[j] + 1, v + r_sectors * ratio[j]);
+                } else {
+                    // Bottom edge, not corner
+                    unsigned int vp = r * r_sectors + (s / ratio[i]) * ratio[i];
+                    if ((s % ratio[i]) == 0) {
+                        prim->add_vertices(v, v + ratio[i], v + r_sectors);
+                    }
+                    prim->add_vertices(vp + ratio[i], v + r_sectors + 1, v + r_sectors);
+                }
+            } else if (r == rings - 1) {
+                unsigned int i = 3;  // top: merges s
+                if (s == 0) {
+                    // Top-left corner
+                    unsigned int j = 0;  // left
+                    if (ratio[j] == 1) {
+                        prim->add_vertices(v, v + 1, v + r_sectors);
+                    }
+                    prim->add_vertices(v + ratio[i], v + r_sectors + ratio[i], v + r_sectors);
+                } else if (s == sectors - 1) {
+                    // Top-right corner
+                    unsigned int j = 2;  // right
+                    if (ratio[i] == 1 && ratio[j] == 1) {
+                        prim->add_vertices(v, v + 1, v + r_sectors);
+                        prim->add_vertices(v + 1, v + r_sectors + 1, v + r_sectors);
+                    } else {
+                        unsigned int vpx = r_sectors * (r / ratio[j]) * ratio[j] + s;
+                        prim->add_vertices(vpx + 1, v + r_sectors + 1, v);
+                        unsigned int vpy = r * r_sectors + (s / ratio[i]) * ratio[i];
+                        prim->add_vertices(v, v + r_sectors + 1, vpy + r_sectors);
+                    }
+                } else {
+                    // Top edge, not corner
+                    unsigned int vp = r * r_sectors + (s / ratio[i]) * ratio[i];
+                    prim->add_vertices(v, v + 1, vp + r_sectors);
+                    if (((s + 1) % ratio[i]) == 0) {
+                        prim->add_vertices(v + 1, v + r_sectors + 1, vp + r_sectors);
+                    }
+                }
+            } else if (s == 0) {
+                // Left edge: merges r
+                unsigned int i = 0;
+                unsigned int vp = r_sectors * (r / ratio[i]) * ratio[i] + s;
+                prim->add_vertices(v + 1, v + r_sectors + 1, vp + r_sectors * ratio[i]);
+                if ((r % ratio[i]) == 0) {
+                    prim->add_vertices(v, v + 1, vp + r_sectors * ratio[i]);
+                }
+            } else if (s == sectors - 1) {
+                // Right edge: merges r
+                unsigned int i = 2;
+                unsigned int vp = r_sectors * (r / ratio[i]) * ratio[i] + s;
+                prim->add_vertices(v, vp + 1, v + r_sectors);
+                if (((r + 1) % ratio[i]) == 0) {
+                    prim->add_vertices(vp + 1, v + r_sectors + 1, v + r_sectors);
+                }
+            } else {
+                prim->add_vertices(v, v + 1, v + r_sectors);
+                prim->add_vertices(v + 1, v + r_sectors + 1, v + r_sectors);
+            }
+        }
+    }
+}
+
+/**
+ * @brief Generates adaptive triangle primitives for UV patch edge skirts.
+ *
+ * Creates triangles connecting the UV patch edges to surrounding skirt
+ * vertices. Adapts per-edge tessellation to match the outer levels.
+ *
+ * Skirt vertices start at index (r_rings * r_sectors) in the order:
+ * [left (r_rings), right (r_rings), bottom (r_sectors), top (r_sectors)].
+ */
+void
+UVPatchGenerator::make_adapted_uv_primitives_skirt(GeomTriangles *prim,
+        unsigned int rings, unsigned int sectors,
+        unsigned int r_rings, unsigned int r_sectors,
+        LVecBase4i ratio)
+{
+    unsigned int base_idx = r_rings * r_sectors;
+
+    // Left edge (s=0): adapts along r
+    unsigned int skirt_start = base_idx;
+    for (unsigned int r = 0; r < rings; ++r) {
+        unsigned int v = r * r_sectors;
+        unsigned int skirt = skirt_start + r;
+        if ((r % ratio[0]) == 0) {
+            prim->add_vertices(v, v + r_sectors * ratio[0], skirt);
+            prim->add_vertices(skirt, v + r_sectors * ratio[0], skirt + ratio[0]);
+        }
+    }
+
+    // Right edge (s=sectors): adapts along r
+    skirt_start = base_idx + r_rings;
+    for (unsigned int r = 0; r < rings; ++r) {
+        unsigned int v = r * r_sectors + sectors;
+        unsigned int skirt = skirt_start + r;
+        if ((r % ratio[2]) == 0) {
+            prim->add_vertices(skirt, v, v + r_sectors * ratio[2]);
+            prim->add_vertices(v + r_sectors * ratio[2], skirt + ratio[2], skirt);
+        }
+    }
+
+    // Bottom edge (r=0): adapts along s
+    skirt_start = base_idx + 2 * r_rings;
+    for (unsigned int s = 0; s < sectors; ++s) {
+        unsigned int v = s;
+        unsigned int skirt = skirt_start + s;
+        if ((s % ratio[1]) == 0) {
+            prim->add_vertices(skirt, v, v + ratio[1]);
+            prim->add_vertices(v + ratio[1], skirt + ratio[1], skirt);
+        }
+    }
+
+    // Top edge (r=rings): adapts along s
+    skirt_start = base_idx + 2 * r_rings + r_sectors;
+    for (unsigned int s = 0; s < sectors; ++s) {
+        unsigned int v = rings * r_sectors + s;
+        unsigned int skirt = skirt_start + s;
+        if ((s % ratio[3]) == 0) {
+            prim->add_vertices(v, skirt, v + ratio[3]);
+            prim->add_vertices(skirt, skirt + ratio[3], v + ratio[3]);
+        }
+    }
 }
 
 // ============================================================================

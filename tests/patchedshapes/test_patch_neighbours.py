@@ -23,7 +23,7 @@ from unittest.mock import Mock
 from cosmonium.patchedshapes.patchneighbours import PatchNeighbours, PatchNoNeighbours
 
 
-def create_mock_patch(x0=0, x1=1, y0=0, y1=1, lod=0):
+def create_mock_patch(x0=0, x1=1, y0=0, y1=1, lod=0, max_level=2):
     """Create a mock patch object for testing."""
     mock = Mock(
         spec_set=[
@@ -32,7 +32,9 @@ def create_mock_patch(x0=0, x1=1, y0=0, y1=1, lod=0):
             'y0',
             'y1',
             'lod',
+            'max_level',
             'children',
+            'neighbours',
             'tessellation_outer_level',
         ]
     )
@@ -41,8 +43,11 @@ def create_mock_patch(x0=0, x1=1, y0=0, y1=1, lod=0):
     mock.y0 = y0
     mock.y1 = y1
     mock.lod = lod
+    mock.max_level = max_level
     mock.children = []
-    mock.tessellation_outer_level = [1, 1, 1, 1]
+    mock.neighbours = PatchNeighbours(mock)
+    density = 1 << max_level  # 2^max_level
+    mock.tessellation_outer_level = [density] * 4
     return mock
 
 
@@ -284,3 +289,134 @@ class TestPatchNoNeighbours:
 
         # If we reach here, all operations completed without errors
         assert True
+
+
+class TestSpherePatchHemisphereJunction:
+    """Tests for adaptation at UV sphere hemisphere boundaries.
+
+    At LOD 0 there are only two patches (one per hemisphere).  When one of them
+    is split the children at the shared longitude boundary must know about the
+    unsplit neighbour so that calc_outer_tessellation_level computes a ratio > 1
+    and the edge triangulation is adapted.
+    """
+
+    # Mapping produced by conv = [WEST, SOUTH, EAST, NORTH]
+    TESS_IDX_WEST = 0
+    TESS_IDX_SOUTH = 1
+    TESS_IDX_EAST = 2
+    TESS_IDX_NORTH = 3
+    # Note: In geometry, the edges are named [left, bottom, right, top].
+
+    def _make_sphere_root_patches(self):
+        """Create two LOD-0 hemisphere patches linked as in PatchedSphereShape."""
+        # p0: longitude 0.0–0.5,  p1: longitude 0.5–1.0
+        p0 = create_mock_patch(x0=0.0, x1=0.5, y0=0.0, y1=1.0, lod=0, max_level=2)
+        p1 = create_mock_patch(x0=0.5, x1=1.0, y0=0.0, y1=1.0, lod=0, max_level=2)
+        # The two hemispheres wrap: p0.EAST↔p1.WEST and p0.WEST↔p1.EAST
+        # set_all_neighbours(north, east, south, west)
+        p0.neighbours.set_all_neighbours(set(), {p1}, set(), {p1})
+        p1.neighbours.set_all_neighbours(set(), {p0}, set(), {p0})
+        return p0, p1
+
+    def _split_patch(self, parent):
+        """Simulate splitting a patch into four children (bl, br, tr, tl)."""
+        bl = create_mock_patch(x0=parent.x0, x1=(parent.x0 + parent.x1) / 2,
+                               y0=parent.y0, y1=(parent.y0 + parent.y1) / 2,
+                               lod=parent.lod + 1, max_level=parent.max_level)
+        br = create_mock_patch(x0=(parent.x0 + parent.x1) / 2, x1=parent.x1,
+                               y0=parent.y0, y1=(parent.y0 + parent.y1) / 2,
+                               lod=parent.lod + 1, max_level=parent.max_level)
+        tr = create_mock_patch(x0=(parent.x0 + parent.x1) / 2, x1=parent.x1,
+                               y0=(parent.y0 + parent.y1) / 2, y1=parent.y1,
+                               lod=parent.lod + 1, max_level=parent.max_level)
+        tl = create_mock_patch(x0=parent.x0, x1=(parent.x0 + parent.x1) / 2,
+                               y0=(parent.y0 + parent.y1) / 2, y1=parent.y1,
+                               lod=parent.lod + 1, max_level=parent.max_level)
+        for child in (bl, br, tr, tl):
+            child.neighbours = PatchNeighbours(child)
+        parent.children = [bl, br, tr, tl]
+        return bl, br, tr, tl
+
+    def test_root_patches_are_east_west_neighbours(self):
+        """After create_root_patches the two hemispheres know about each other."""
+        p0, p1 = self._make_sphere_root_patches()
+
+        assert p1 in p0.neighbours.get_neighbours(PatchNeighbours.EAST)
+        assert p1 in p0.neighbours.get_neighbours(PatchNeighbours.WEST)
+        assert p0 in p1.neighbours.get_neighbours(PatchNeighbours.EAST)
+        assert p0 in p1.neighbours.get_neighbours(PatchNeighbours.WEST)
+
+    def test_east_junction_children_get_adapted_when_neighbour_is_coarser(self):
+        """Children at the EAST junction of a split patch adapt to the unsplit neighbour.
+
+        When p0 (LOD 0) is split and p1 (LOD 0) remains unsplit, the children
+        tr and br on the EAST side of p0 should compute tessellation_outer_level
+        for the EAST edge to a value smaller than the density (ratio > 1).
+        """
+        p0, p1 = self._make_sphere_root_patches()
+        bl, br, tr, tl = self._split_patch(p0)
+        update = []
+        p0.neighbours.split_neighbours(update)
+
+        density = 1 << tr.max_level
+        half_density = 1 << (tr.max_level - 1)
+        # EAST side (junction) patches should adapt to the unsplit neighbour
+        assert tr.tessellation_outer_level[self.TESS_IDX_EAST] == half_density
+        assert br.tessellation_outer_level[self.TESS_IDX_EAST] == half_density
+
+        # WEST side (interior) patches should remain at full density
+        assert tr.tessellation_outer_level[self.TESS_IDX_WEST] == density
+        assert br.tessellation_outer_level[self.TESS_IDX_WEST] == density
+
+    def test_west_junction_children_get_adapted_when_neighbour_is_coarser(self):
+        """Children at the WEST junction of a split patch adapt to the unsplit neighbour.
+
+        When p0 (LOD 0) is split and p1 (LOD 0) remains unsplit, the children
+        tl and bl on the WEST side of p0 should compute tessellation_outer_level
+        for the WEST edge to a value smaller than the density.
+        """
+        p0, p1 = self._make_sphere_root_patches()
+        bl, br, tr, tl = self._split_patch(p0)
+        update = []
+        p0.neighbours.split_neighbours(update)
+
+        density = 1 << tr.max_level
+        half_density = 1 << (tr.max_level - 1)
+        # WEST side (junction) patches should adapt to the unsplit neighbour
+        assert tl.tessellation_outer_level[self.TESS_IDX_WEST] == half_density
+        assert bl.tessellation_outer_level[self.TESS_IDX_WEST] == half_density
+
+        # EAST side (interior) patches should remain at full density
+        assert tl.tessellation_outer_level[self.TESS_IDX_EAST] == density
+        assert bl.tessellation_outer_level[self.TESS_IDX_EAST] == density
+
+    def test_p1_neighbour_list_updated_after_p0_splits(self):
+        """When p0 splits, p1's own neighbour list is updated to point to p0's children."""
+        p0, p1 = self._make_sphere_root_patches()
+        bl, br, tr, tl = self._split_patch(p0)
+        p0.neighbours.split_neighbours([])
+
+        # p1's WEST neighbours should now be tr and br (the EAST side of p0)
+        west_of_p1 = p1.neighbours.get_neighbours(PatchNeighbours.WEST)
+        assert tr in west_of_p1
+        assert br in west_of_p1
+        assert p0 not in west_of_p1
+
+        # p1's EAST neighbours should now be tl and bl (the WEST side of p0)
+        east_of_p1 = p1.neighbours.get_neighbours(PatchNeighbours.EAST)
+        assert tl in east_of_p1
+        assert bl in east_of_p1
+        assert p0 not in east_of_p1
+
+    def test_no_adaptation_when_both_patches_same_lod(self):
+        """When both hemispheres are at the same LOD no adaptation is needed."""
+        p0, p1 = self._make_sphere_root_patches()
+        density = 1 << p0.max_level  # 4
+        update = []
+        p0.neighbours.calc_outer_tessellation_level(update)
+        p1.neighbours.calc_outer_tessellation_level(update)
+
+        # Both at LOD 0, delta = 0, outer_level = max_level, new_level = density
+        for idx in range(4):
+            assert p0.tessellation_outer_level[idx] == density
+            assert p1.tessellation_outer_level[idx] == density
